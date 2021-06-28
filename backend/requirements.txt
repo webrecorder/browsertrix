@@ -1,0 +1,3 @@
+uvicorn
+fastapi-users[mongodb]==6.0.0
+loguru

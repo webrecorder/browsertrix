@@ -1,0 +1,35 @@
+version: '3.5'
+
+services:
+  backend:
+    build: ./backend
+    image: btrixcloud/backend
+    ports:
+      - 8000:8000
+
+    environment:
+      MONGO_HOST: mongo
+      PASSWORD_SECRET: 'c9085f33ecce4347aa1d69339e16c499'
+ 
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+    volumes:
+      - mongodata:/data/db
+
+  minio:
+    image: minio/minio
+    command: server /data
+    ports:
+      - 8010:9000
+
+    volumes:
+      - miniodata:/data
+
+volumes:
+  mongodata:
+  miniodata:
+
