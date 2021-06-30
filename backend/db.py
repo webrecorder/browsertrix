@@ -1,3 +1,7 @@
+"""
+Browsertrix API Mongo DB initialization
+"""
+
 import os
 import motor.motor_asyncio
 
@@ -8,10 +12,11 @@ DATABASE_URL = (
 
 
 def init_db():
+    """ initializde the mongodb connector """
     client = motor.motor_asyncio.AsyncIOMotorClient(
         DATABASE_URL, uuidRepresentation="standard"
     )
 
-    db = client["browsertrixcloud"]
+    mdb = client["browsertrixcloud"]
 
-    return db
+    return mdb

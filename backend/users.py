@@ -1,6 +1,9 @@
+"""
+FastAPI user handling (via fastapi-users)
+"""
+
 import os
 import uuid
-from fastapi import Request
 from fastapi_users import FastAPIUsers, models
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
@@ -8,36 +11,43 @@ from fastapi_users.db import MongoDBUserDatabase
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
 
+# ============================================================================
 class User(models.BaseUser):
-    pass
+    """
+    Base User Model
+    """
 
-
+# ============================================================================
 class UserCreate(models.BaseUserCreate):
-    pass
+    """
+    User Creation Model
+    """
 
-
+# ============================================================================
 class UserUpdate(User, models.BaseUserUpdate):
-    pass
+    """
+    User Update Model
+    """
 
-
+# ============================================================================
 class UserDB(User, models.BaseUserDB):
-    pass
+    """
+    User in DB Model
+    """
 
+# ============================================================================
+def init_users_api(
+    app,
+    mdb,
+    on_after_register=None,
+    on_after_forgot_password=None,
+    after_verification_request=None,
+):
+    """
+    Load users table and init /users routes
+    """
 
-def on_after_register(user: UserDB, request: Request):
-    print(f"User {user.id} has registered.")
-
-
-def on_after_forgot_password(user: UserDB, token: str, request: Request):
-    print(f"User {user.id} has forgot their password. Reset token: {token}")
-
-
-def after_verification_request(user: UserDB, token: str, request: Request):
-    print(f"Verification requested for user {user.id}. Verification token: {token}")
-
-
-def init_users_api(app, db):
-    user_collection = db["users"]
+    user_collection = mdb["users"]
 
     user_db = MongoDBUserDatabase(UserDB, user_collection)
 
