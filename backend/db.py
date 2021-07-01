@@ -12,7 +12,7 @@ DATABASE_URL = (
 
 
 def init_db():
-    """ initializde the mongodb connector """
+    """initializde the mongodb connector"""
     client = motor.motor_asyncio.AsyncIOMotorClient(
         DATABASE_URL, uuidRepresentation="standard"
     )

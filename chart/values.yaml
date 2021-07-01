@@ -1,0 +1,85 @@
+name: browsertrix-cloud
+
+# API Image
+# =========================================
+api_image: "webrecorder/browsertrix-api"
+api_pull_policy: "Never"
+
+api_password_secret: "c9085f33ecce4347aa1d69339e16c499"
+
+api_num_replicas: 1
+
+api_limit_cpu: "100m"
+api_requests_cpu: "25m"
+
+
+
+# MongoDB Image
+# =========================================
+mongo_image: "mongo"
+mongo_pull_policy: "IfNotPresent"
+
+mongo_limit_cpu: "100m"
+mongo_requests_cpu: "25m"
+
+mongo_auth:
+  username: root
+  password: example 
+
+
+# Crawler Image
+# =========================================
+
+crawler_image: "webrecorder/browsertrix-crawler:0.4.0-beta.2"
+crawler_pull_policy: "Never"
+
+crawler_namespace: "crawlers"
+
+
+# Storage
+# =========================================
+
+storage:
+  access_key: "ADMIN"
+  secret_key: "PASSW"
+  # api_endpoint can be "" if using AWS S3, otherwise, set to your provider's S3 endpoint
+  endpoint: "http://local-minio.default:9000"
+  # if your provider requires path-style URLs for S3 objects, set force_path_style to "true" (any truthy string)
+  # https://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html
+  force_path_style: "true"
+  # the target bucket's name and desired storage subpath, formatted as an s3:// URL for convenience
+  # (the protocol is ignored; the bucket == the netloc; the subpath == the rest)
+  storage_prefix: "s3://browsertrix/archives/"
+  # acl settings for uploaded files, if any.
+  # for example, to enable uploaded files to be public, set to:
+  # acl: "public-read"
+  # https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+  acl: ""
+
+
+# Local Minio Pod (optional)
+# =========================================
+# set to true to use a local minio image
+use_minio: True
+
+minio_image: minio/minio
+minio_pull_policy: "IfNotPresent"
+
+
+# Deployment options
+# =========================================
+
+# Ingress (Optional)
+# Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
+ingress:
+  host: ""
+  cert_email: "ikreymer@gmail.com"
+
+
+
+# Optional: configure load balancing
+service:
+  type: NodePort
+#   annotations:
+#     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+#     helm.sh/resource-policy: keep

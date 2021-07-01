@@ -14,29 +14,32 @@ from users import User
 # ============================================================================
 class Storage(BaseModel):
     """Storage Base Model"""
+
     title: str
     user: UUID4
 
 
 # ============================================================================
 class S3Storage(Storage):
-    """ S3 Storage Model"""
+    """S3 Storage Model"""
+
     endpoint_url: str
     is_public: Optional[bool]
 
 
 # ============================================================================
 class StorageOps:
-    """ Storage API operations"""
+    """Storage API operations"""
+
     def __init__(self, db):
         self.storages_coll = db["storages"]
 
     async def add_storage(self, storage: S3Storage):
-        """ Add new storage"""
+        """Add new storage"""
         return await self.storages_coll.insert_one(storage.dict())
 
     async def create_storage_for_user(self, endpoint_prefix: str, user: User):
-        """ Create default storage for new user"""
+        """Create default storage for new user"""
         endpoint_url = os.path.join(endpoint_prefix, str(user.id)) + "/"
         storage = S3Storage(
             endpoint_url=endpoint_url, is_public=False, user=user.id, title="default"
@@ -45,18 +48,20 @@ class StorageOps:
         await self.add_storage(storage)
 
     async def get_storages(self, user: User):
-        """ Get all storages for user"""
+        """Get all storages for user"""
         cursor = self.storages_coll.find({"user": user.id})
         return await cursor.to_list(length=1000)
 
     async def get_storage(self, uid: str, user: User):
-        """ Get a storage for user"""
-        return await self.storages_coll.find_one({"_id": ObjectId(uid), "user": user.id})
+        """Get a storage for user"""
+        return await self.storages_coll.find_one(
+            {"_id": ObjectId(uid), "user": user.id}
+        )
 
 
 # ============================================================================
 def init_storages_api(app, mdb, user_dep: User):
-    """ Init storage api router for /storages"""
+    """Init storage api router for /storages"""
     ops = StorageOps(mdb)
 
     router = APIRouter(

@@ -1,0 +1,65 @@
+{{- if .Values.use_minio }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-minio
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: local-minio
+
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: local-minio
+
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+    spec:
+      volumes:
+        - name: data-storage
+          emptyDir: {}
+
+      containers:
+        - name: minio
+          image: {{ .Values.minio_image }}
+          imagePullPolicy: {{ .Values.minio_pull_policy }}
+          args: ["server", "/data"]
+          envFrom:
+            - secretRef:
+                name: storage-auth
+
+          volumeMounts:
+            - name: data-storage
+              mountPath: /data
+
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-minio
+  labels:
+    app: local-minio
+
+spec:
+  type: NodePort
+  selector:
+    app: local-minio
+
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+      name: minio
+
+{{- end }}
+
+

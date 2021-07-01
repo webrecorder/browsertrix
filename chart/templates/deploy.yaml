@@ -1,0 +1,96 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  replicas: {{ .Values.api_num_replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+    spec:
+      volumes:
+        - name: data-db
+          hostPath:
+            path: /browsertrix-mongo-data
+            type: DirectoryOrCreate
+
+        - name: data-storage
+          emptyDir: {}
+
+      containers:
+        - name: api
+          image: {{ .Values.api_image }}
+          imagePullPolicy: {{ .Values.api_pull_policy }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.name }}-env-config
+
+          {{- if .Values.storage }}
+            - secretRef:
+                name: storage-auth
+          {{- end }}
+
+          resources:
+            limits:
+              cpu: {{ .Values.api_limit_cpu }}
+
+            requests:
+              cpu: {{ .Values.api_requests_cpu }}
+
+        - name: mongo
+          image: {{ .Values.mongo_image }}
+          imagePullPolicy: {{ .Values.mongo_pull_policy }}
+          envFrom:
+            - secretRef:
+                name: mongo-auth
+
+          volumeMounts:
+            - name: data-db
+              mountPath: /data/db
+
+
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.name }}
+  labels:
+    app: {{ .Values.name }}
+
+{{- if .Values.service }}
+  {{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.service.annotations }}
+    {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+spec:
+  selector:
+    app: {{ .Values.name }}
+
+{{- if .Values.service }}
+  {{- if .Values.service.type }}
+  type: {{ .Values.service.type | quote }}
+  {{- end }}
+{{- end }}
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+      name: api
