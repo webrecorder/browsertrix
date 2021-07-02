@@ -17,11 +17,13 @@ class User(models.BaseUser):
     Base User Model
     """
 
+
 # ============================================================================
 class UserCreate(models.BaseUserCreate):
     """
     User Creation Model
     """
+
 
 # ============================================================================
 class UserUpdate(User, models.BaseUserUpdate):
@@ -29,11 +31,13 @@ class UserUpdate(User, models.BaseUserUpdate):
     User Update Model
     """
 
+
 # ============================================================================
 class UserDB(User, models.BaseUserDB):
     """
     User in DB Model
     """
+
 
 # ============================================================================
 def init_users_api(

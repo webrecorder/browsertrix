@@ -8,14 +8,13 @@ import os
 from fastapi import FastAPI, Request
 
 # from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 
 
 from users import init_users_api, UserDB
 from db import init_db
 from storages import init_storages_api
 from crawls import init_crawl_config_api
-
 from k8sman import K8SManager
 
 
@@ -27,18 +26,19 @@ class BrowsertrixAPI:
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
-        self.default_storage = os.environ.get(
-            "DEFAULT_STORAGE", "http://localhost:8010/store-bucket/"
+        self.default_storage_endpoint_url = os.environ.get(
+            "STORE_ENDPOINT_URL", "http://localhost:8010/store-bucket/"
         )
+        self.default_storage_access_key = os.environ.get("STORE_ACCESS_KEY")
+        self.default_storage_secret_key = os.environ.get("STORE_SECRET_KEY")
 
         self.app = FastAPI()
 
-        if os.environ.get("K8S"):
+        if os.environ.get("KUBERNETES_SERVICE_HOST"):
             self.crawl_manager = K8SManager()
         else:
-            self.crawl_manager = None
-
-        # self.app.mount("/static", StaticFiles(directory="static"), name="static")
+            #to implement
+            raise Exception("Currently, only running in Kubernetes is supported")
 
         self.mdb = init_db()
 
@@ -55,7 +55,11 @@ class BrowsertrixAPI:
         self.storage_ops = init_storages_api(self.app, self.mdb, current_active_user)
 
         self.crawl_config_ops = init_crawl_config_api(
-            self.app, self.mdb, current_active_user, self.crawl_manager
+            self.app,
+            self.mdb,
+            current_active_user,
+            self.storage_ops,
+            self.crawl_manager,
         )
 
         # @app.get("/")
@@ -65,7 +69,14 @@ class BrowsertrixAPI:
     # pylint: disable=no-self-use, unused-argument
     async def on_after_register(self, user: UserDB, request):
         """callback after registeration"""
-        await self.storage_ops.create_storage_for_user(self.default_storage, user)
+
+        await self.storage_ops.create_storage_for_user(
+            endpoint_url=self.default_storage_endpoint_url,
+            access_key=self.default_storage_access_key,
+            secret_key=self.default_storage_secret_key,
+            user=user,
+        )
+
         print(f"User {user.id} has registered.")
 
     # pylint: disable=no-self-use, unused-argument

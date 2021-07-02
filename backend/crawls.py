@@ -43,6 +43,8 @@ class BaseCrawlConfig(BaseModel):
 
     seeds: List[Union[str, Seed]]
 
+    collection: Optional[str] = "my-web-archive"
+
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
     scope: Union[str, List[str], None] = ""
     exclude: Union[str, List[str], None] = ""
@@ -66,6 +68,7 @@ class CrawlConfig(BaseCrawlConfig):
     """Schedulable config"""
 
     schedule: Optional[str] = ""
+    storageName: Optional[str] = "default"
 
 
 # ============================================================================
@@ -85,8 +88,9 @@ def to_crawl_config(data, uid=None):
 class CrawlOps:
     """Crawl Config Operations"""
 
-    def __init__(self, mdb, crawl_manager):
+    def __init__(self, mdb, storage_ops, crawl_manager):
         self.crawl_configs = mdb["crawl_configs"]
+        self.storage_ops = storage_ops
         self.crawl_manager = crawl_manager
         self.default_crawl_params = [
             "--collection",
@@ -102,10 +106,18 @@ class CrawlOps:
         data = config.dict()
         data["user"] = user.id
 
+        storage = await self.storage_ops.get_storage_by_name(config.storageName, user)
+
+        if not storage:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid Config: Storage '{config.storageName}' not found",
+            )
+
         result = await self.crawl_configs.insert_one(data)
         out = to_crawl_config(data, result.inserted_id)
         await self.crawl_manager.add_crawl_config(
-            out.dict(), str(user.id), self.default_crawl_params
+            out.dict(), str(user.id), storage, self.default_crawl_params
         )
         return result
 
@@ -118,9 +130,7 @@ class CrawlOps:
     async def delete_crawl_config(self, _id: str, user: User):
         """Delete config"""
         await self.crawl_manager.delete_crawl_configs(f"btrix.crawlconfig={_id}")
-        return self.crawl_configs.delete_one(
-            {"_id": ObjectId(_id), "user": user.id}
-        )
+        return self.crawl_configs.delete_one({"_id": ObjectId(_id), "user": user.id})
 
     async def delete_crawl_configs(self, user: User):
         """Delete all crawl configs for user"""
@@ -143,9 +153,9 @@ class CrawlOps:
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name
-def init_crawl_config_api(app, mdb, user_dep: User, crawl_manager):
+def init_crawl_config_api(app, mdb, user_dep: User, storage_ops, crawl_manager):
     """Init /crawlconfigs api routes"""
-    ops = CrawlOps(mdb, crawl_manager)
+    ops = CrawlOps(mdb, storage_ops, crawl_manager)
 
     router = APIRouter(
         prefix="/crawlconfigs",
@@ -170,7 +180,7 @@ def init_crawl_config_api(app, mdb, user_dep: User, crawl_manager):
         if not result or not result.deleted_count:
             raise HTTPException(status_code=404, detail="Crawl Config Not Found")
 
-        return {"deleted": result.deleted_count}
+        return {"deleted": 1}
 
     @router.get("/{id}")
     async def get_crawl_config(id: str, user: User = Depends(user_dep)):

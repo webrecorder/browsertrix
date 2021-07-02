@@ -1,4 +1,4 @@
-{{- if .Values.use_minio }}
+{{- if .Values.minio_local }}
 
 ---
 apiVersion: apps/v1
@@ -17,13 +17,12 @@ spec:
       labels:
         app: local-minio
 
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-
     spec:
       volumes:
         - name: data-storage
-          emptyDir: {}
+          hostPath:
+            path: /browsertrix-minio-data
+            type: DirectoryOrCreate
 
       containers:
         - name: minio
@@ -39,7 +38,6 @@ spec:
               mountPath: /data
 
 ---
-
 apiVersion: v1
 kind: Service
 

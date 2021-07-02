@@ -12,13 +12,6 @@ from jinja2 import Environment, FileSystemLoader
 
 
 # ============================================================================
-if os.environ.get("IN_CLUSTER"):
-    print("Cluster Init")
-    config.load_incluster_config()
-else:
-    config.load_kube_config()
-
-
 DEFAULT_NAMESPACE = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
 
 DEFAULT_NO_SCHEDULE = "* * 31 2 *"
@@ -26,10 +19,12 @@ DEFAULT_NO_SCHEDULE = "* * 31 2 *"
 
 # ============================================================================
 class K8SManager:
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-many-instance-attributes,too-many-locals
     """K8SManager, manager creation of k8s resources from crawl api requests"""
 
     def __init__(self, namespace=DEFAULT_NAMESPACE):
+        config.load_incluster_config()
+
         self.core_api = client.CoreV1Api()
         self.batch_api = client.BatchV1Api()
         self.batch_beta_api = client.BatchV1beta1Api()
@@ -45,7 +40,11 @@ class K8SManager:
         self.crawler_image_pull_policy = "IfNotPresent"
 
     async def add_crawl_config(
-        self, crawlconfig: dict, userid: str, extra_crawl_params: list = None
+        self,
+        crawlconfig: dict,
+        userid: str,
+        storage: dict,
+        extra_crawl_params: list = None,
     ):
         """add new crawl as cron job, store crawl config in configmap"""
         uid = str(crawlconfig["id"])
@@ -54,6 +53,7 @@ class K8SManager:
 
         extra_crawl_params = extra_crawl_params or []
 
+        # Create Config Map
         config_map = client.V1ConfigMap(
             metadata={
                 "name": f"crawl-config-{uid}",
@@ -67,6 +67,30 @@ class K8SManager:
             namespace=self.namespace, body=config_map
         )
 
+        # Create Secret
+        endpoint_with_coll_url = os.path.join(
+            storage["endpoint_url"], crawlconfig["collection"] + "/"
+        )
+
+        crawl_secret = client.V1Secret(
+            metadata={
+                "name": f"crawl-secret-{uid}",
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            string_data={
+                "STORE_USER": userid,
+                "STORE_ENDPOINT_URL": endpoint_with_coll_url,
+                "STORE_ACCESS_KEY": storage["access_key"],
+                "STORE_SECRET_KEY": storage["secret_key"],
+            },
+        )
+
+        api_response = await self.core_api.create_namespaced_secret(
+            namespace=self.namespace, body=crawl_secret
+        )
+
+        # Create Cron Job
         run_now = False
         schedule = crawlconfig.get("schedule")
         suspend = False
@@ -100,16 +124,28 @@ class K8SManager:
             namespace=self.namespace, body=cron_job
         )
 
-        # print(api_response)
-
+        # Run Job Now
         if run_now:
             await self.create_run_now_job(api_response, labels)
 
         return api_response
 
     async def delete_crawl_configs(self, label):
-        """Delete Crawl Cron Job and all dependent resources"""
+        """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
+
         await self.batch_beta_api.delete_collection_namespaced_cron_job(
+            namespace=self.namespace,
+            label_selector=label,
+            propagation_policy="Foreground",
+        )
+
+        await self.core_api.delete_collection_namespaced_secret(
+            namespace=self.namespace,
+            label_selector=label,
+            propagation_policy="Foreground",
+        )
+
+        await self.core_api.delete_collection_namespaced_config_map(
             namespace=self.namespace,
             label_selector=label,
             propagation_policy="Foreground",
@@ -173,6 +209,9 @@ class K8SManager:
                                         "subPath": "crawl-config.json",
                                         "readOnly": True,
                                     }
+                                ],
+                                "envFrom": [
+                                    {"secretRef": {"name": f"crawl-secret-{uid}"}}
                                 ],
                             }
                         ],

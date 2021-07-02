@@ -2,7 +2,6 @@
 Storage API handling
 """
 
-import os
 from typing import Optional
 
 from pydantic import BaseModel, UUID4
@@ -15,7 +14,7 @@ from users import User
 class Storage(BaseModel):
     """Storage Base Model"""
 
-    title: str
+    name: str
     user: UUID4
 
 
@@ -24,6 +23,8 @@ class S3Storage(Storage):
     """S3 Storage Model"""
 
     endpoint_url: str
+    access_key: str
+    secret_key: str
     is_public: Optional[bool]
 
 
@@ -38,11 +39,17 @@ class StorageOps:
         """Add new storage"""
         return await self.storages_coll.insert_one(storage.dict())
 
-    async def create_storage_for_user(self, endpoint_prefix: str, user: User):
+    async def create_storage_for_user(
+        self, endpoint_url: str, access_key: str, secret_key: str, user: User
+    ):
         """Create default storage for new user"""
-        endpoint_url = os.path.join(endpoint_prefix, str(user.id)) + "/"
+
         storage = S3Storage(
-            endpoint_url=endpoint_url, is_public=False, user=user.id, title="default"
+            endpoint_url=endpoint_url,
+            access_key=access_key,
+            secret_key=secret_key,
+            user=user.id,
+            name="default",
         )
         print(f"Created Default Endpoint at ${endpoint_url}")
         await self.add_storage(storage)
@@ -52,11 +59,15 @@ class StorageOps:
         cursor = self.storages_coll.find({"user": user.id})
         return await cursor.to_list(length=1000)
 
-    async def get_storage(self, uid: str, user: User):
-        """Get a storage for user"""
+    async def get_storage_by_id(self, uid: str, user: User):
+        """Get a storage for user by unique id"""
         return await self.storages_coll.find_one(
             {"_id": ObjectId(uid), "user": user.id}
         )
+
+    async def get_storage_by_name(self, name: str, user: User):
+        """Get a storage for user by name"""
+        return await self.storages_coll.find_one({"name": name, "user": user.id})
 
 
 # ============================================================================
@@ -77,7 +88,7 @@ def init_storages_api(app, mdb, user_dep: User):
             "storages": [
                 {
                     "id": str(res["_id"]),
-                    "title": res["title"],
+                    "name": res["name"],
                     "endpoint_url": res["endpoint_url"],
                 }
                 for res in results
@@ -86,12 +97,12 @@ def init_storages_api(app, mdb, user_dep: User):
 
     @router.get("/{id}")
     async def get_storage(uid: str, user: User = Depends(user_dep)):
-        res = await ops.get_storage(uid, user)
+        res = await ops.get_storage_by_id(uid, user)
         print(res)
         if not res:
             return {}
 
-        return {"id": uid, "title": res["title"], "endpoint_url": res["endpoint_url"]}
+        return {"id": uid, "name": res["name"], "endpoint_url": res["endpoint_url"]}
 
     @router.post("/")
     async def add_storage(storage: S3Storage, user: User = Depends(user_dep)):

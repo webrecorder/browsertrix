@@ -1,0 +1,74 @@
+{{- if .Values.mongo_local }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongo-auth
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+stringData:
+  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongo_auth.username | quote }}
+  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongo_auth.password | quote }}
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-mongo
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: local-mongo
+  replicas: {{ .Values.api_num_replicas }}
+  template:
+    metadata:
+      labels:
+        app: local-mongo
+
+    spec:
+      volumes:
+        - name: data-db
+          hostPath:
+            path: /browsertrix-mongo-data
+            type: DirectoryOrCreate
+
+      containers:
+        - name: mongo
+          image: {{ .Values.mongo_image }}
+          imagePullPolicy: {{ .Values.mongo_pull_policy }}
+          envFrom:
+            - secretRef:
+                name: mongo-auth
+
+          volumeMounts:
+            - name: data-db
+              mountPath: /data/db
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-mongo
+  labels:
+    app: local-mongo
+
+spec:
+  type: ClusterIP
+  selector:
+    app: local-mongo
+
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+      name: minio
+
+{{- end }}
+
+

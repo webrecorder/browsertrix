@@ -16,6 +16,10 @@ api_requests_cpu: "25m"
 
 # MongoDB Image
 # =========================================
+mongo_local: true
+
+mongo_host: "local-mongo"
+
 mongo_image: "mongo"
 mongo_pull_policy: "IfNotPresent"
 
@@ -41,15 +45,15 @@ crawler_namespace: "crawlers"
 
 storage:
   access_key: "ADMIN"
-  secret_key: "PASSW"
+  secret_key: "PASSW0RD"
   # api_endpoint can be "" if using AWS S3, otherwise, set to your provider's S3 endpoint
-  endpoint: "http://local-minio.default:9000"
+  endpoint: "http://local-minio.default:9000/test-bucket/"
   # if your provider requires path-style URLs for S3 objects, set force_path_style to "true" (any truthy string)
   # https://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html
   force_path_style: "true"
   # the target bucket's name and desired storage subpath, formatted as an s3:// URL for convenience
   # (the protocol is ignored; the bucket == the netloc; the subpath == the rest)
-  storage_prefix: "s3://browsertrix/archives/"
+  storage_prefix: "s3://test/bucket/"
   # acl settings for uploaded files, if any.
   # for example, to enable uploaded files to be public, set to:
   # acl: "public-read"
@@ -60,7 +64,7 @@ storage:
 # Local Minio Pod (optional)
 # =========================================
 # set to true to use a local minio image
-use_minio: True
+minio_local: True
 
 minio_image: minio/minio
 minio_pull_policy: "IfNotPresent"
