@@ -7,15 +7,14 @@ import os
 
 from fastapi import FastAPI, Request
 
-# from fastapi.responses import HTMLResponse
-# from fastapi.staticfiles import StaticFiles
-
+from db import init_db
 
 from users import init_users_api, UserDB
-from db import init_db
-from storages import init_storages_api
+from archives import init_archives_api
 from crawls import init_crawl_config_api
-from k8sman import K8SManager
+
+
+app = FastAPI()
 
 
 # ============================================================================
@@ -25,20 +24,26 @@ class BrowsertrixAPI:
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self):
+    def __init__(self, _app):
+        self.app = _app
+
         self.default_storage_endpoint_url = os.environ.get(
             "STORE_ENDPOINT_URL", "http://localhost:8010/store-bucket/"
         )
-        self.default_storage_access_key = os.environ.get("STORE_ACCESS_KEY")
-        self.default_storage_secret_key = os.environ.get("STORE_SECRET_KEY")
 
-        self.app = FastAPI()
+        self.default_storage_access_key = os.environ.get("STORE_ACCESS_KEY", "access")
+        self.default_storage_secret_key = os.environ.get("STORE_SECRET_KEY", "secret")
 
+        # pylint: disable=import-outside-toplevel
         if os.environ.get("KUBERNETES_SERVICE_HOST"):
+            from k8sman import K8SManager
+
             self.crawl_manager = K8SManager()
         else:
-            #to implement
-            raise Exception("Currently, only running in Kubernetes is supported")
+            from dockerman import DockerManager
+
+            self.crawl_manager = DockerManager()
+            # raise Exception("Currently, only running in Kubernetes is supported")
 
         self.mdb = init_db()
 
@@ -52,15 +57,16 @@ class BrowsertrixAPI:
 
         current_active_user = self.fastapi_users.current_user(active=True)
 
-        self.storage_ops = init_storages_api(self.app, self.mdb, current_active_user)
+        self.archive_ops = init_archives_api(self.app, self.mdb, current_active_user)
 
         self.crawl_config_ops = init_crawl_config_api(
-            self.app,
             self.mdb,
             current_active_user,
-            self.storage_ops,
+            self.archive_ops,
             self.crawl_manager,
         )
+
+        self.app.include_router(self.archive_ops.router)
 
         # @app.get("/")
         # async def root():
@@ -70,8 +76,9 @@ class BrowsertrixAPI:
     async def on_after_register(self, user: UserDB, request):
         """callback after registeration"""
 
-        await self.storage_ops.create_storage_for_user(
-            endpoint_url=self.default_storage_endpoint_url,
+        await self.archive_ops.create_new_archive_for_user(
+            archive_name="default",
+            base_endpoint_url=self.default_storage_endpoint_url,
             access_key=self.default_storage_access_key,
             secret_key=self.default_storage_secret_key,
             user=user,
@@ -91,4 +98,10 @@ class BrowsertrixAPI:
 
 
 # ============================================================================
-app = BrowsertrixAPI().app
+# app = BrowsertrixAPI().app
+
+
+@app.on_event("startup")
+async def startup():
+    """init on startup"""
+    BrowsertrixAPI(app)

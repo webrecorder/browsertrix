@@ -28,7 +28,7 @@ spec:
         - name: minio
           image: {{ .Values.minio_image }}
           imagePullPolicy: {{ .Values.minio_pull_policy }}
-          args: ["server", "/data"]
+          args: ["server", "/data", "--console-address", ":9001"]
           envFrom:
             - secretRef:
                 name: storage-auth
@@ -55,8 +55,11 @@ spec:
   ports:
     - protocol: TCP
       port: 9000
-      targetPort: 9000
       name: minio
+
+    - protocol: TCP
+      port: 9001
+      name: minio-console
 
 {{- end }}
 

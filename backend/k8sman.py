@@ -19,7 +19,7 @@ DEFAULT_NO_SCHEDULE = "* * 31 2 *"
 
 # ============================================================================
 class K8SManager:
-    # pylint: disable=too-many-instance-attributes,too-many-locals
+    # pylint: disable=too-many-instance-attributes,too-many-locals,too-many-arguments
     """K8SManager, manager creation of k8s resources from crawl api requests"""
 
     def __init__(self, namespace=DEFAULT_NAMESPACE):
@@ -41,26 +41,31 @@ class K8SManager:
 
     async def add_crawl_config(
         self,
-        crawlconfig: dict,
         userid: str,
-        storage: dict,
+        aid: str,
+        storage,
+        crawlconfig,
         extra_crawl_params: list = None,
     ):
         """add new crawl as cron job, store crawl config in configmap"""
-        uid = str(crawlconfig["id"])
+        cid = str(crawlconfig.id)
 
-        labels = {"btrix.user": userid, "btrix.crawlconfig": uid}
+        labels = {
+            "btrix.user": userid,
+            "btrix.archive": aid,
+            "btrix.crawlconfig": cid,
+        }
 
         extra_crawl_params = extra_crawl_params or []
 
         # Create Config Map
         config_map = client.V1ConfigMap(
             metadata={
-                "name": f"crawl-config-{uid}",
+                "name": f"crawl-config-{cid}",
                 "namespace": self.namespace,
                 "labels": labels,
             },
-            data={"crawl-config.json": json.dumps(crawlconfig)},
+            data={"crawl-config.json": json.dumps(crawlconfig.config.dict())},
         )
 
         api_response = await self.core_api.create_namespaced_config_map(
@@ -69,20 +74,21 @@ class K8SManager:
 
         # Create Secret
         endpoint_with_coll_url = os.path.join(
-            storage["endpoint_url"], crawlconfig["collection"] + "/"
+            storage.endpoint_url, crawlconfig.config.collection + "/"
         )
 
         crawl_secret = client.V1Secret(
             metadata={
-                "name": f"crawl-secret-{uid}",
+                "name": f"crawl-secret-{cid}",
                 "namespace": self.namespace,
                 "labels": labels,
             },
             string_data={
                 "STORE_USER": userid,
+                "STORE_ARCHIVE": aid,
                 "STORE_ENDPOINT_URL": endpoint_with_coll_url,
-                "STORE_ACCESS_KEY": storage["access_key"],
-                "STORE_SECRET_KEY": storage["secret_key"],
+                "STORE_ACCESS_KEY": storage.access_key,
+                "STORE_SECRET_KEY": storage.secret_key,
             },
         )
 
@@ -92,7 +98,7 @@ class K8SManager:
 
         # Create Cron Job
         run_now = False
-        schedule = crawlconfig.get("schedule")
+        schedule = crawlconfig.schedule
         suspend = False
         if not schedule or schedule == "now":
             if schedule == "now":
@@ -100,7 +106,7 @@ class K8SManager:
             schedule = DEFAULT_NO_SCHEDULE
             suspend = True
 
-        job_template = self.get_job_template(uid, labels, extra_crawl_params)
+        job_template = self._get_job_template(cid, labels, extra_crawl_params)
 
         spec = client.V1beta1CronJobSpec(
             schedule=schedule,
@@ -113,7 +119,7 @@ class K8SManager:
 
         cron_job = client.V1beta1CronJob(
             metadata={
-                "name": f"scheduled-crawl-{uid}",
+                "name": f"scheduled-crawl-{cid}",
                 "namespace": self.namespace,
                 "labels": labels,
             },
@@ -126,11 +132,19 @@ class K8SManager:
 
         # Run Job Now
         if run_now:
-            await self.create_run_now_job(api_response, labels)
+            await self._create_run_now_job(api_response, labels)
 
         return api_response
 
-    async def delete_crawl_configs(self, label):
+    async def delete_crawl_configs_for_archive(self, archive):
+        """Delete all crawl configs for given archive"""
+        return await self._delete_crawl_configs(f"btrix.archive={archive}")
+
+    async def delete_crawl_config_by_id(self, cid):
+        """Delete all crawl configs by id"""
+        return await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
+
+    async def _delete_crawl_configs(self, label):
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
 
         await self.batch_beta_api.delete_collection_namespaced_cron_job(
@@ -151,7 +165,7 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-    async def create_run_now_job(self, cron_job, labels):
+    async def _create_run_now_job(self, cron_job, labels):
         """Create new job from cron job to run instantly"""
         annotations = {}
         annotations["cronjob.kubernetes.io/instantiate"] = "manual"
@@ -183,7 +197,7 @@ class K8SManager:
             body=job, namespace=self.namespace
         )
 
-    def get_job_template(self, uid, labels, extra_crawl_params):
+    def _get_job_template(self, uid, labels, extra_crawl_params):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
         command = ["crawl", "--config", "/tmp/crawl-config.json"]

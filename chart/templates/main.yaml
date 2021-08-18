@@ -105,6 +105,7 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8000
+      port: 8000
       name: api
+  #externalIPs:
+  #  - 127.0.0.1

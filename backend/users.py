@@ -51,7 +51,7 @@ def init_users_api(
     Load users table and init /users routes
     """
 
-    user_collection = mdb["users"]
+    user_collection = mdb.get_collection("users")
 
     user_db = MongoDBUserDatabase(UserDB, user_collection)
 
