@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 from archives import Archive
 from crawls import CrawlConfig
 

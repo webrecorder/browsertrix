@@ -26,6 +26,8 @@ stringData:
 {{- if .Values.minio_local }}
   MINIO_ROOT_USER: "{{ .Values.storage.access_key }}"
   MINIO_ROOT_PASSWORD: "{{ .Values.storage.secret_key }}"
+
+  MC_HOST: "{{ .Values.minio_scheme }}://{{ .Values.storage.access_key }}:{{ .Values.storage.secret_key }}@{{ .Values.minio_host }}"
 {{- end }}
  
   STORE_ACCESS_KEY: "{{ .Values.storage.access_key }}"
@@ -52,6 +54,23 @@ spec:
         app: {{ .Values.name }}
 
     spec:
+
+{{- if .Values.minio_local }}
+      initContainers:
+        - name: init-bucket
+          image: {{ .Values.minio_mc_image }}
+          imagePullPolicy: {{ .Values.minio_pull_policy }}
+          env:
+            - name: MC_HOST_local
+              valueFrom:
+                secretKeyRef:
+                  name: storage-auth
+                  key: MC_HOST
+
+          command: ['/bin/sh']
+          args: ['-c', 'mc mb local/test-bucket; mc policy set public local/test-bucket' ]
+{{- end }}
+
       containers:
         - name: api
           image: {{ .Values.api_image }}
@@ -67,10 +86,12 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.api_limit_cpu }}
+              cpu: {{ .Values.api_limits_cpu }}
+              memory: {{ .Values.api_limits_memory }}
 
             requests:
               cpu: {{ .Values.api_requests_cpu }}
+              memory: {{ .Values.api_requests_memory }}
 
 
 ---

@@ -7,9 +7,6 @@ import json
 
 from kubernetes_asyncio import client, config
 
-# from fastapi.templating import Jinja2Templates
-from jinja2 import Environment, FileSystemLoader
-
 
 # ============================================================================
 DEFAULT_NAMESPACE = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
@@ -30,11 +27,6 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
-
-        loader = FileSystemLoader("templates")
-        self.jinja_env = Environment(
-            loader=loader, autoescape=False, lstrip_blocks=False, trim_blocks=False
-        )
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
@@ -97,14 +89,16 @@ class K8SManager:
         )
 
         # Create Cron Job
-        run_now = False
-        schedule = crawlconfig.schedule
         suspend = False
-        if not schedule or schedule == "now":
-            if schedule == "now":
-                run_now = True
+        schedule = crawlconfig.schedule
+
+        if not schedule:
             schedule = DEFAULT_NO_SCHEDULE
             suspend = True
+
+        run_now = False
+        if crawlconfig.runNow:
+            run_now = True
 
         job_template = self._get_job_template(cid, labels, extra_crawl_params)
 
@@ -205,6 +199,23 @@ class K8SManager:
         if extra_crawl_params:
             command += extra_crawl_params
 
+        requests_memory = "256M"
+        limit_memory = "1G"
+
+        requests_cpu = "120m"
+        limit_cpu = "1000m"
+
+        resources = {
+            "limits": {
+                "cpu": limit_cpu,
+                "memory": limit_memory,
+            },
+            "requests": {
+                "cpu": requests_cpu,
+                "memory": requests_memory,
+            },
+        }
+
         return {
             "spec": {
                 "template": {
@@ -227,6 +238,7 @@ class K8SManager:
                                 "envFrom": [
                                     {"secretRef": {"name": f"crawl-secret-{uid}"}}
                                 ],
+                                "resources": resources
                             }
                         ],
                         "volumes": [

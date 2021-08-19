@@ -73,8 +73,9 @@ class CrawlConfigIn(BaseModel):
     """CrawlConfig input model, submitted via API"""
 
     schedule: Optional[str] = ""
+    runNow: Optional[bool] = False
 
-    storageName: Optional[str] = "default"
+    #storageName: Optional[str] = "default"
 
     config: RawCrawlConfig
 
@@ -84,8 +85,9 @@ class CrawlConfig(BaseMongoModel):
     """Schedulable config"""
 
     schedule: Optional[str] = ""
+    runNow: Optional[bool] = False
 
-    storageName: Optional[str] = "default"
+    #storageName: Optional[str] = "default"
 
     archive: Optional[str]
 
