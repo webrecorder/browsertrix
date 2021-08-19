@@ -57,7 +57,9 @@ class BrowsertrixAPI:
 
         current_active_user = self.fastapi_users.current_user(active=True)
 
-        self.archive_ops = init_archives_api(self.app, self.mdb, current_active_user)
+        self.archive_ops = init_archives_api(
+            self.app, self.mdb, self.fastapi_users, current_active_user
+        )
 
         self.crawl_config_ops = init_crawl_config_api(
             self.mdb,

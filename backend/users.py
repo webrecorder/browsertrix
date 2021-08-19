@@ -4,6 +4,15 @@ FastAPI user handling (via fastapi-users)
 
 import os
 import uuid
+
+from datetime import datetime
+
+from typing import Dict
+from enum import IntEnum
+
+
+from pydantic import BaseModel
+
 from fastapi_users import FastAPIUsers, models
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
@@ -12,10 +21,30 @@ PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
 
 # ============================================================================
+class UserRole(IntEnum):
+    """User role"""
+
+    VIEWER = 10
+    CRAWLER = 20
+    OWNER = 40
+
+
+# ============================================================================
+class InvitePending(BaseModel):
+    """Pending Request to join an archive"""
+
+    aid: str
+    created: datetime
+    role: UserRole = UserRole.VIEWER
+
+
+# ============================================================================
 class User(models.BaseUser):
     """
     Base User Model
     """
+
+    invites: Dict[str, InvitePending] = {}
 
 
 # ============================================================================
@@ -24,6 +53,8 @@ class UserCreate(models.BaseUserCreate):
     User Creation Model
     """
 
+    invites: Dict[str, InvitePending] = {}
+
 
 # ============================================================================
 class UserUpdate(User, models.BaseUserUpdate):
@@ -31,12 +62,16 @@ class UserUpdate(User, models.BaseUserUpdate):
     User Update Model
     """
 
+    invites: Dict[str, InvitePending] = {}
+
 
 # ============================================================================
 class UserDB(User, models.BaseUserDB):
     """
     User in DB Model
     """
+
+    invites: Dict[str, InvitePending] = {}
 
 
 # ============================================================================

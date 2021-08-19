@@ -128,7 +128,7 @@ class CrawlOps:
         crawlconfig = CrawlConfig.from_dict(data)
 
         await self.crawl_manager.add_crawl_config(
-            uid=str(user.id),
+            userid=str(user.id),
             aid=str(archive.id),
             storage=archive.storage,
             crawlconfig=crawlconfig,
@@ -194,16 +194,36 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         archive: Archive = Depends(archive_dep),
         user: User = Depends(user_dep),
     ):
+
+        if not archive.is_crawler(user):
+            raise HTTPException(
+                status_code=403, detail="User does not have permission to modify crawls"
+            )
+
         res = await ops.add_crawl_config(config, archive, user)
         return {"added": str(res.inserted_id)}
 
     @router.delete("")
-    async def delete_crawl_configs(archive: Archive = Depends(archive_dep)):
+    async def delete_crawl_configs(
+        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    ):
+        if not archive.is_crawler(user):
+            raise HTTPException(
+                status_code=403, detail="User does not have permission to modify crawls"
+            )
+
         result = await ops.delete_crawl_configs(archive)
         return {"deleted": result.deleted_count}
 
     @router.delete("/{id}")
-    async def delete_crawl_config(id: str, archive: Archive = Depends(archive_dep)):
+    async def delete_crawl_config(
+        id: str, archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    ):
+        if not archive.is_crawler(user):
+            raise HTTPException(
+                status_code=403, detail="User does not have permission to modify crawls"
+            )
+
         result = await ops.delete_crawl_config(id, archive)
         if not result or not result.deleted_count:
             raise HTTPException(status_code=404, detail="Crawl Config Not Found")
