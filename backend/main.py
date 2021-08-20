@@ -4,15 +4,15 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 """
 
 import os
-import asyncio
 
-from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException
 
 from db import init_db
 
 from users import init_users_api, UserDB
 from archives import init_archives_api
-from crawls import init_crawl_config_api, CrawlCompleteMsg
+from crawlconfigs import init_crawl_config_api
+from crawls import init_crawls_api
 from emailsender import EmailSender
 
 app = FastAPI()
@@ -72,30 +72,13 @@ class BrowsertrixAPI:
             self.crawl_manager,
         )
 
+        init_crawls_api(self.app, self.crawl_manager)
+
         self.app.include_router(self.archive_ops.router)
 
         # @app.get("/")
         # async def root():
         #    return {"message": "Hello World"}
-
-        async def on_handle_crawl_complete(msg: CrawlCompleteMsg):
-            print("crawl complete started")
-            try:
-                data = await self.crawl_manager.validate_crawl_data(msg)
-                if data:
-                    data.update(msg.dict())
-                    print(data)
-                else:
-                    print("Not a valid crawl complete msg!")
-            except Exception as e:
-                print(e)
-
-        @app.post("/crawldone")
-        async def webhook(msg: CrawlCompleteMsg, background_tasks: BackgroundTasks):
-            #background_tasks.add_task(on_handle_crawl_complete, msg)
-            #asyncio.ensure_future(on_handle_crawl_complete(msg))
-            await on_handle_crawl_complete(msg)
-            return {"message": "webhook received"}
 
 
     # pylint: disable=no-self-use, unused-argument

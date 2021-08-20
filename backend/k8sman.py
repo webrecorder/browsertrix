@@ -1,7 +1,7 @@
 """ K8s support"""
 
 import os
-
+import datetime
 import json
 
 from kubernetes_asyncio import client, config
@@ -30,18 +30,20 @@ class K8SManager:
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
 
-    async def validate_crawl_data(self, data):
-        pod = await self.core_api.read_namespaced_pod(data.crawl, self.namespace)
+    async def validate_crawl_data(self, crawlcomplete):
+        """ Ensure the crawlcomplete data is valid (pod exists and user matches)
+        Fill in additional details about the crawl """
+        pod = await self.core_api.read_namespaced_pod(name=crawlcomplete.id, namespace=self.namespace)
 
-        if not pod or pod.metadata.labels["btrix.user"] != data.user:
-            return None
+        if not pod or pod.metadata.labels["btrix.user"] != crawlcomplete.user:
+            return False
 
-        result = {}
-        data.crawl = pod.metadata.labels["job-name"]
-        result["created"] = pod.metadata.creation_timestamp
-        result["archive"] = pod.metadata.labels["btrix.archive"]
-        result["crawlconfig"] = pod.metadata.labels["btrix.crawlconfig"]
-        return result
+        crawlcomplete.id = pod.metadata.labels["job-name"]
+        crawlcomplete.created = pod.metadata.creation_timestamp
+        crawlcomplete.aid = pod.metadata.labels["btrix.archive"]
+        crawlcomplete.cid = pod.metadata.labels["btrix.crawlconfig"]
+        crawlcomplete.finished = datetime.datetime.utcnow()
+        return True
 
     async def add_crawl_config(
         self,
@@ -93,7 +95,7 @@ class K8SManager:
                 "STORE_ENDPOINT_URL": endpoint_with_coll_url,
                 "STORE_ACCESS_KEY": storage.access_key,
                 "STORE_SECRET_KEY": storage.secret_key,
-                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/crawldone",
+                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/crawls/done",
             },
         )
 
