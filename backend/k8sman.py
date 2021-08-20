@@ -2,7 +2,6 @@
 
 import os
 
-# import urllib.parse
 import json
 
 from kubernetes_asyncio import client, config
@@ -30,6 +29,19 @@ class K8SManager:
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
+
+    async def validate_crawl_data(self, data):
+        pod = await self.core_api.read_namespaced_pod(data.crawl, self.namespace)
+
+        if not pod or pod.metadata.labels["btrix.user"] != data.user:
+            return None
+
+        result = {}
+        data.crawl = pod.metadata.labels["job-name"]
+        result["created"] = pod.metadata.creation_timestamp
+        result["archive"] = pod.metadata.labels["btrix.archive"]
+        result["crawlconfig"] = pod.metadata.labels["btrix.crawlconfig"]
+        return result
 
     async def add_crawl_config(
         self,
@@ -66,7 +78,7 @@ class K8SManager:
 
         # Create Secret
         endpoint_with_coll_url = os.path.join(
-            storage.endpoint_url, crawlconfig.config.collection + "/"
+            storage.endpoint_url, "collections", crawlconfig.config.collection + "/"
         )
 
         crawl_secret = client.V1Secret(
@@ -81,6 +93,7 @@ class K8SManager:
                 "STORE_ENDPOINT_URL": endpoint_with_coll_url,
                 "STORE_ACCESS_KEY": storage.access_key,
                 "STORE_SECRET_KEY": storage.secret_key,
+                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/crawldone",
             },
         )
 
@@ -238,7 +251,15 @@ class K8SManager:
                                 "envFrom": [
                                     {"secretRef": {"name": f"crawl-secret-{uid}"}}
                                 ],
-                                "resources": resources
+                                "env": [
+                                    {
+                                        "name": "CRAWL_ID",
+                                        "valueFrom": {
+                                            "fieldRef": {"fieldPath": "metadata.name"}
+                                        },
+                                    }
+                                ],
+                                "resources": resources,
                             }
                         ],
                         "volumes": [

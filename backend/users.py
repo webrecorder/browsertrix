@@ -7,7 +7,7 @@ import uuid
 
 from datetime import datetime
 
-from typing import Dict
+from typing import Dict, Optional
 from enum import IntEnum
 
 
@@ -44,8 +44,6 @@ class User(models.BaseUser):
     Base User Model
     """
 
-    invites: Dict[str, InvitePending] = {}
-
 
 # ============================================================================
 class UserCreate(models.BaseUserCreate):
@@ -53,7 +51,8 @@ class UserCreate(models.BaseUserCreate):
     User Creation Model
     """
 
-    invites: Dict[str, InvitePending] = {}
+    inviteToken: Optional[str]
+    newArchive: bool
 
 
 # ============================================================================
@@ -61,8 +60,6 @@ class UserUpdate(User, models.BaseUserUpdate):
     """
     User Update Model
     """
-
-    invites: Dict[str, InvitePending] = {}
 
 
 # ============================================================================
@@ -126,6 +123,7 @@ def init_users_api(
         prefix="/auth",
         tags=["auth"],
     )
+
     app.include_router(
         fastapi_users.get_users_router(), prefix="/users", tags=["users"]
     )

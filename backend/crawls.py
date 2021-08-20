@@ -75,7 +75,7 @@ class CrawlConfigIn(BaseModel):
     schedule: Optional[str] = ""
     runNow: Optional[bool] = False
 
-    #storageName: Optional[str] = "default"
+    # storageName: Optional[str] = "default"
 
     config: RawCrawlConfig
 
@@ -87,11 +87,20 @@ class CrawlConfig(BaseMongoModel):
     schedule: Optional[str] = ""
     runNow: Optional[bool] = False
 
-    #storageName: Optional[str] = "default"
+    # storageName: Optional[str] = "default"
 
     archive: Optional[str]
 
     config: RawCrawlConfig
+
+
+# ============================================================================
+class CrawlCompleteMsg(BaseModel):
+    filename: Optional[str]
+    user: Optional[str]
+    crawl: Optional[str]
+    size: int
+    hash: str
 
 
 # ============================================================================

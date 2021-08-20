@@ -25,6 +25,13 @@ class InviteRequest(BaseModel):
 
 
 # ============================================================================
+class NewUserInvite(InvitePending, BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
+
+    email: str
+
+
+# ============================================================================
 class UpdateRole(InviteRequest):
     """Update existing role for user"""
 
@@ -88,8 +95,12 @@ class Archive(BaseMongoModel):
 class ArchiveOps:
     """Archive API operations"""
 
-    def __init__(self, db):
+    def __init__(self, db, email):
         self.archives = db["archives"]
+
+        self.invites = db["invites"]
+        self.email = email
+
         self.router = None
         self.archive_dep = None
 
@@ -149,20 +160,66 @@ class ArchiveOps:
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 
-    async def get_archive_by_id(self, uid: str):
+    async def get_archive_by_id(self, aid: str):
         """Get an archive by id"""
-        res = await self.archives.find_one({"_id": uid})
+        res = await self.archives.find_one({"_id": aid})
         return Archive.from_dict(res)
 
     async def update(self, archive: Archive):
         """Update existing archive"""
         self.archives.replace_one({"_id": archive.id}, archive.to_dict())
 
+    async def add_new_user_invite(
+        self, new_user_invite: NewUserInvite, inviter_email, archive_name
+    ):
+        """Add invite for new user"""
+
+        res = await self.invites.find_one({"email": new_user_invite.email})
+        if res:
+            raise HTTPException(
+                status_code=403, detail="This user has already been invited"
+            )
+
+        await self.invites.insert_one(new_user_invite.to_dict())
+
+        self.email.send_new_user_invite(
+            new_user_invite.email, inviter_email, archive_name, new_user_invite.id
+        )
+
+    async def handle_new_user_invite(self, invite_token: str, user: User):
+        """Handle invite from a new user"""
+        invite_data = await self.invites.find_one({"_id": invite_token})
+        if not invite_data:
+            raise HTTPException(status_code=400, detail="Invalid Invite Code")
+
+        new_user_invite = NewUserInvite.from_dict(invite_data)
+
+        if user.email != new_user_invite.email:
+            raise HTTPException(
+                status_code=400, detail="Invalid Invite Code for this user"
+            )
+
+        await self.add_user_by_invite(new_user_invite, user)
+        await self.invites.delete_one({"_id": invite_token})
+        return True
+
+    async def add_user_by_invite(self, invite: InvitePending, user: User):
+        """Add user to an Archive from an InvitePending"""
+        archive = await self.get_archive_by_id(invite.aid)
+        if not archive:
+            raise HTTPException(
+                status_code=400, detail="Invalid Invite Code, No Such Archive"
+            )
+
+        archive.users[str(user.id)] = invite.role
+        await self.update(archive)
+        return True
+
 
 # ============================================================================
-def init_archives_api(app, mdb, users, user_dep: User):
+def init_archives_api(app, mdb, users, email, user_dep: User):
     """Init archives api router for /archives"""
-    ops = ArchiveOps(mdb)
+    ops = ArchiveOps(mdb, email)
 
     async def archive_dep(aid: str, user: User = Depends(user_dep)):
         archive = await ops.get_archive_for_user_by_id(aid, user)
@@ -204,11 +261,25 @@ def init_archives_api(app, mdb, users, user_dep: User):
                 detail="User does not have permission to invite other users",
             )
 
+        invite_code = uuid.uuid4().hex
+
+        invite_pending = InvitePending(
+            aid=str(archive.id), created=datetime.datetime.utcnow(), role=invite.role
+        )
+
         other_user = await users.db.get_by_email(invite.email)
+
         if not other_user:
-            raise HTTPException(
-                status_code=400, detail="No user found for specified e-mail"
+
+            await ops.add_new_user_invite(
+                NewUserInvite(
+                    id=invite_code, email=invite.email, **invite_pending.dict()
+                ),
+                user.email,
+                archive.name,
             )
+
+            return {"invited": "new_user"}
 
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't invite ourselves!")
@@ -218,21 +289,12 @@ def init_archives_api(app, mdb, users, user_dep: User):
                 status_code=400, detail="User already a member of this archive."
             )
 
-        # try:
-        #    role = UserRole[invite.role].name
-        # except KeyError:
-        #    # pylint: disable=raise-missing-from
-        #    raise HTTPException(status_code=400, detail="Invalid User Role")
+        other_user.invites[invite_code] = invite_pending
 
-        invite_code = uuid.uuid4().hex
-        other_user.invites[invite_code] = InvitePending(
-            aid=str(archive.id), created=datetime.datetime.utcnow(), role=invite.role
-        )
         await users.db.update(other_user)
+
         return {
-            "invite_code": invite_code,
-            "email": invite.email,
-            "role": invite.role.value,
+            "invited": "existing_user",
         }
 
     @router.patch("/user-role", tags=["invites"])
@@ -268,14 +330,7 @@ def init_archives_api(app, mdb, users, user_dep: User):
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
-        archive = await ops.get_archive_by_id(invite.aid)
-        if not archive:
-            raise HTTPException(
-                status_code=400, detail="Invalid Invite Code, No Such Archive"
-            )
-
-        archive.users[str(user.id)] = invite.role
-        await ops.update(archive)
+        await ops.add_user_by_invite(invite, user)
         await users.db.update(user)
         return {"added": True}
 
