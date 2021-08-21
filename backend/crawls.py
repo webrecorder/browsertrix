@@ -5,11 +5,10 @@ import asyncio
 from typing import Optional
 from datetime import datetime
 
-from pydantic import BaseModel
-
+from db import BaseMongoModel
 
 # ============================================================================
-class CrawlComplete(BaseModel):
+class CrawlComplete(BaseMongoModel):
     """ Store State of Completed Crawls """
 
     id: str
@@ -27,29 +26,43 @@ class CrawlComplete(BaseModel):
 
 
 # ============================================================================
-def init_crawls_api(app, crawl_manager, users, archives):
-    """ API for crawl management, including crawl done callback"""
+class CrawlOps:
+    """ Crawl Ops """
 
-    async def on_handle_crawl_complete(msg: CrawlComplete):
-        if not await crawl_manager.validate_crawl_complete(msg):
+    def __init__(self, mdb, crawl_manager, users, archives):
+        self.crawls = mdb["crawls"]
+        self.crawl_manager = crawl_manager
+        self.users = users
+        self.archives = archives
+
+    async def on_handle_crawl_complete(self, msg: CrawlComplete):
+        """ Handle completed crawl, add to crawls db collection, also update archive usage """
+        if not await self.crawl_manager.validate_crawl_complete(msg):
             print("Not a valid crawl complete msg!", flush=True)
             return
 
         print(msg, flush=True)
+        await self.crawls.insert_one(msg.to_dict())
 
         dura = int((msg.finished - msg.started).total_seconds())
 
         print(f"Duration: {dura}", flush=True)
-        await users.inc_usage(msg.user, dura)
-        await archives.inc_usage(msg.aid, dura)
+        await self.archives.inc_usage(msg.aid, dura)
+
+    async def delete_crawl(self, cid: str, aid: str):
+        """ Delete crawl by id """
+        return await self.crawls.delete_one({"_id": cid, "aid": aid})
+
+
+# ============================================================================
+def init_crawls_api(app, mdb, crawl_manager, users, archives):
+    """ API for crawl management, including crawl done callback"""
+
+    ops = CrawlOps(mdb, crawl_manager, users, archives)
 
     @app.post("/crawls/done")
     async def webhook(msg: CrawlComplete):
-        # background_tasks.add_task(on_handle_crawl_complete, msg)
-        # asyncio.ensure_future(on_handle_crawl_complete(msg))
-
         loop = asyncio.get_running_loop()
-        loop.create_task(on_handle_crawl_complete(msg))
+        loop.create_task(ops.on_handle_crawl_complete(msg))
 
-        # await on_handle_crawl_complete(msg)
         return {"message": "webhook received"}

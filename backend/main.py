@@ -73,7 +73,11 @@ class BrowsertrixAPI:
         )
 
         init_crawls_api(
-            self.app, self.crawl_manager, self.fastapi_users.db, self.archive_ops
+            self.app,
+            self.mdb,
+            self.crawl_manager,
+            self.fastapi_users.db,
+            self.archive_ops,
         )
 
         self.app.include_router(self.archive_ops.router)
