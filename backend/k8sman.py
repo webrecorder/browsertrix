@@ -30,19 +30,35 @@ class K8SManager:
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
 
-    async def validate_crawl_data(self, crawlcomplete):
-        """ Ensure the crawlcomplete data is valid (pod exists and user matches)
-        Fill in additional details about the crawl """
-        pod = await self.core_api.read_namespaced_pod(name=crawlcomplete.id, namespace=self.namespace)
+        # loop = asyncio.get_running_loop()
+        # loop.create_task(self.watch_job_done())
 
-        if not pod or pod.metadata.labels["btrix.user"] != crawlcomplete.user:
+    async def validate_crawl_complete(self, crawlcomplete):
+        """Ensure the crawlcomplete data is valid (job exists and user matches)
+        Fill in additional details about the crawl"""
+        job = await self.batch_api.read_namespaced_job(
+            name=crawlcomplete.id, namespace=self.namespace
+        )
+
+        if not job or job.metadata.labels["btrix.user"] != crawlcomplete.user:
             return False
 
-        crawlcomplete.id = pod.metadata.labels["job-name"]
-        crawlcomplete.created = pod.metadata.creation_timestamp
-        crawlcomplete.aid = pod.metadata.labels["btrix.archive"]
-        crawlcomplete.cid = pod.metadata.labels["btrix.crawlconfig"]
-        crawlcomplete.finished = datetime.datetime.utcnow()
+        # job.metadata.annotations = {
+        #    "crawl.size": str(crawlcomplete.size),
+        #    "crawl.filename": crawlcomplete.filename,
+        #    "crawl.hash": crawlcomplete.hash
+        # }
+
+        # await self.batch_api.patch_namespaced_job(
+        #    name=crawlcomplete.id, namespace=self.namespace, body=job
+        # )
+
+        crawlcomplete.started = job.status.start_time.replace(tzinfo=None)
+        crawlcomplete.aid = job.metadata.labels["btrix.archive"]
+        crawlcomplete.cid = job.metadata.labels["btrix.crawlconfig"]
+        crawlcomplete.finished = datetime.datetime.utcnow().replace(
+            microsecond=0, tzinfo=None
+        )
         return True
 
     async def add_crawl_config(
@@ -257,7 +273,9 @@ class K8SManager:
                                     {
                                         "name": "CRAWL_ID",
                                         "valueFrom": {
-                                            "fieldRef": {"fieldPath": "metadata.name"}
+                                            "fieldRef": {
+                                                "fieldPath": "metadata.labels['job-name']"
+                                            }
                                         },
                                     }
                                 ],

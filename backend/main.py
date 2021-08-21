@@ -72,14 +72,15 @@ class BrowsertrixAPI:
             self.crawl_manager,
         )
 
-        init_crawls_api(self.app, self.crawl_manager)
+        init_crawls_api(
+            self.app, self.crawl_manager, self.fastapi_users.db, self.archive_ops
+        )
 
         self.app.include_router(self.archive_ops.router)
 
         # @app.get("/")
         # async def root():
         #    return {"message": "Hello World"}
-
 
     # pylint: disable=no-self-use, unused-argument
     async def on_after_register(self, user: UserDB, request: Request):
@@ -123,9 +124,6 @@ class BrowsertrixAPI:
 
 
 # ============================================================================
-# app = BrowsertrixAPI().app
-
-
 @app.on_event("startup")
 async def startup():
     """init on startup"""

@@ -3,7 +3,7 @@ Archive API handling
 """
 import os
 import uuid
-import datetime
+from datetime import datetime
 
 from typing import Optional, Dict
 
@@ -57,6 +57,8 @@ class Archive(BaseMongoModel):
 
     storage: S3Storage
 
+    usage: Dict[str, int] = {}
+
     def is_owner(self, user):
         """Check if user is owner"""
         return self._is_auth(user, UserRole.OWNER)
@@ -79,9 +81,12 @@ class Archive(BaseMongoModel):
 
     def serialize_for_user(self, user: User):
         """Serialize based on current user access"""
-        exclude = {}
+        exclude = set()
         if not self.is_owner(user):
             exclude = {"users", "storage"}
+
+        if not self.is_crawler(user):
+            exclude.add("usage")
 
         return self.dict(
             exclude_unset=True,
@@ -215,6 +220,15 @@ class ArchiveOps:
         await self.update(archive)
         return True
 
+    async def inc_usage(self, aid, amount):
+        """ Increment usage counter by month for this archive """
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        res = await self.archives.find_one_and_update(
+            {"_id": aid}, {"$inc": {f"usage.{yymm}": amount}}
+        )
+        print(res)
+        return res is not None
+
 
 # ============================================================================
 def init_archives_api(app, mdb, users, email, user_dep: User):
@@ -264,7 +278,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
         invite_code = uuid.uuid4().hex
 
         invite_pending = InvitePending(
-            aid=str(archive.id), created=datetime.datetime.utcnow(), role=invite.role
+            aid=str(archive.id), created=datetime.utcnow(), role=invite.role
         )
 
         other_user = await users.db.get_by_email(invite.email)
