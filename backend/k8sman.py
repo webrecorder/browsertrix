@@ -78,19 +78,10 @@ class K8SManager:
             "btrix.crawlconfig": cid,
         }
 
-        extra_crawl_params = extra_crawl_params or []
-
         # Create Config Map
-        config_map = client.V1ConfigMap(
-            metadata={
-                "name": f"crawl-config-{cid}",
-                "namespace": self.namespace,
-                "labels": labels,
-            },
-            data={"crawl-config.json": json.dumps(crawlconfig.config.dict())},
-        )
+        config_map = self._create_config_map(crawlconfig, labels)
 
-        api_response = await self.core_api.create_namespaced_config_map(
+        await self.core_api.create_namespaced_config_map(
             namespace=self.namespace, body=config_map
         )
 
@@ -115,21 +106,15 @@ class K8SManager:
             },
         )
 
-        api_response = await self.core_api.create_namespaced_secret(
+        await self.core_api.create_namespaced_secret(
             namespace=self.namespace, body=crawl_secret
         )
 
         # Create Cron Job
-        suspend = False
-        schedule = crawlconfig.schedule
 
-        if not schedule:
-            schedule = DEFAULT_NO_SCHEDULE
-            suspend = True
+        suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
 
-        run_now = False
-        if crawlconfig.runNow:
-            run_now = True
+        extra_crawl_params = extra_crawl_params or []
 
         job_template = self._get_job_template(cid, labels, extra_crawl_params)
 
@@ -151,15 +136,99 @@ class K8SManager:
             spec=spec,
         )
 
-        api_response = await self.batch_beta_api.create_namespaced_cron_job(
+        cron_job = await self.batch_beta_api.create_namespaced_cron_job(
             namespace=self.namespace, body=cron_job
         )
 
         # Run Job Now
         if run_now:
-            await self._create_run_now_job(api_response, labels)
+            await self._create_run_now_job(cron_job)
 
-        return api_response
+        return cron_job
+
+    async def update_crawl_config(self, crawlconfig):
+        """ Update existing crawl config """
+
+        cid = crawlconfig.id
+
+        cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
+            namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
+        )
+
+        if len(cron_jobs.items) != 1:
+            return
+
+        cron_job = cron_jobs.items[0]
+
+        if crawlconfig.archive != cron_job.metadata.labels["btrix.archive"]:
+            print("wrong archive")
+            return
+
+        labels = {
+            "btrix.user": cron_job.metadata.labels["btrix.user"],
+            "btrix.archive": crawlconfig.archive,
+            "btrix.crawlconfig": cid,
+        }
+
+        # Update Config Map
+        config_map = self._create_config_map(crawlconfig, labels)
+
+        await self.core_api.patch_namespaced_config_map(
+            name=f"crawl-config-{cid}", namespace=self.namespace, body=config_map
+        )
+
+        # Update CronJob, if needed
+        suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
+
+        changed = False
+
+        if schedule != cron_job.spec.schedule:
+            cron_job.spec.schedule = schedule
+            changed = True
+
+        if suspend != cron_job.spec.suspend:
+            cron_job.spec.suspend = suspend
+            changed = True
+
+        if changed:
+            await self.batch_beta_api.patch_namespaced_cron_job(
+                name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
+            )
+
+        # Run Job Now
+        if run_now:
+            await self._create_run_now_job(cron_job)
+
+    def _create_config_map(self, crawlconfig, labels):
+        """ Create Config Map based on CrawlConfig + labels """
+        config_map = client.V1ConfigMap(
+            metadata={
+                "name": f"crawl-config-{crawlconfig.id}",
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            data={"crawl-config.json": json.dumps(crawlconfig.config.dict())},
+        )
+
+        return config_map
+
+    #pylint: disable=no-self-use
+    def _get_schedule_suspend_run_now(self, crawlconfig):
+        """ get schedule/suspend/run_now data based on crawlconfig """
+
+        # Create Cron Job
+        suspend = False
+        schedule = crawlconfig.schedule
+
+        if not schedule:
+            schedule = DEFAULT_NO_SCHEDULE
+            suspend = True
+
+        run_now = False
+        if crawlconfig.runNow:
+            run_now = True
+
+        return suspend, schedule, run_now
 
     async def delete_crawl_configs_for_archive(self, archive):
         """Delete all crawl configs for given archive"""
@@ -190,7 +259,16 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-    async def _create_run_now_job(self, cron_job, labels):
+    async def run_crawl_config(self, cid):
+        """ Run crawl job for cron job based on specified crawlconfig id (cid) """
+        cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
+            namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
+        )
+
+        res = await self._create_run_now_job(cron_jobs.items[0])
+        return res.metadata.name
+
+    async def _create_run_now_job(self, cron_job):
         """Create new job from cron job to run instantly"""
         annotations = {}
         annotations["cronjob.kubernetes.io/instantiate"] = "manual"
@@ -204,10 +282,13 @@ class K8SManager:
             api_version="batch/v1beta1",
         )
 
+        ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"
+
         object_meta = client.V1ObjectMeta(
-            name=cron_job.metadata.name + "-run-now",
+            name=name,
             annotations=annotations,
-            labels=labels,
+            labels=cron_job.metadata.labels,
             owner_references=[owner_ref],
         )
 
