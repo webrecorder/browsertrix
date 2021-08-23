@@ -87,9 +87,9 @@ class CrawlConfig(BaseMongoModel):
     schedule: Optional[str] = ""
     runNow: Optional[bool] = False
 
-    # storageName: Optional[str] = "default"
-
     archive: Optional[str]
+
+    user: Optional[str]
 
     config: RawCrawlConfig
 
@@ -122,7 +122,7 @@ class CrawlOps:
         """Add new crawl config"""
         data = config.dict()
         data["archive"] = archive.id
-        data["user"] = user.id
+        data["user"] = str(user.id)
         data["_id"] = str(uuid.uuid4())
 
         result = await self.crawl_configs.insert_one(data)
@@ -130,10 +130,8 @@ class CrawlOps:
         crawlconfig = CrawlConfig.from_dict(data)
 
         await self.crawl_manager.add_crawl_config(
-            userid=str(user.id),
-            aid=str(archive.id),
-            storage=archive.storage,
             crawlconfig=crawlconfig,
+            storage=archive.storage,
             extra_crawl_params=self.default_crawl_params,
         )
         return result
@@ -144,7 +142,7 @@ class CrawlOps:
         """ Update existing crawl config"""
         data = config.dict()
         data["archive"] = archive.id
-        data["user"] = user.id
+        data["user"] = str(user.id)
         data["_id"] = cid
 
         await self.crawl_configs.find_one_and_replace({"_id": cid}, data)
@@ -185,9 +183,9 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
     router = ops.router
 
-    archive_dep = archive_ops.archive_dep
+    archive_crawl_dep = archive_ops.archive_crawl_dep
 
-    async def crawls_dep(cid: str, archive: Archive = Depends(archive_dep)):
+    async def crawls_dep(cid: str, archive: Archive = Depends(archive_crawl_dep)):
         crawl_config = await ops.get_crawl_config(cid, archive)
         if not crawl_config:
             raise HTTPException(
@@ -197,7 +195,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         return archive
 
     @router.get("")
-    async def get_crawl_configs(archive: Archive = Depends(archive_dep)):
+    async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         results = await ops.get_crawl_configs(archive)
         return {"crawl_configs": [res.serialize() for res in results]}
 
@@ -208,15 +206,9 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     @router.post("/")
     async def add_crawl_config(
         config: CrawlConfigIn,
-        archive: Archive = Depends(archive_dep),
+        archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-
-        if not archive.is_crawler(user):
-            raise HTTPException(
-                status_code=403, detail="User does not have permission to modify crawls"
-            )
-
         res = await ops.add_crawl_config(config, archive, user)
         return {"added": str(res.inserted_id)}
 
@@ -224,14 +216,9 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     async def update_crawl_config(
         config: CrawlConfigIn,
         cid: str,
-        archive: Archive = Depends(archive_dep),
+        archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-
-        if not archive.is_crawler(user):
-            raise HTTPException(
-                status_code=403, detail="User does not have permission to modify crawls"
-            )
 
         try:
             await ops.update_crawl_config(cid, config, archive, user)
@@ -244,15 +231,12 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         return {"updated": cid}
 
     @router.post("/{cid}/run")
-    async def run_now(
-        cid: str,
-        archive: Archive = Depends(archive_dep),
-        user: User = Depends(user_dep),
-    ):
+    async def run_now(cid: str, archive: Archive = Depends(archive_crawl_dep)):
+        crawl_config = await ops.get_crawl_config(cid, archive)
 
-        if not archive.is_crawler(user):
+        if not crawl_config:
             raise HTTPException(
-                status_code=403, detail="User does not have permission to modify crawls"
+                status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
         crawl_id = None
@@ -265,28 +249,14 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         return {"started": crawl_id}
 
     @router.delete("")
-    async def delete_crawl_configs(
-        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
-    ):
-        if not archive.is_crawler(user):
-            raise HTTPException(
-                status_code=403, detail="User does not have permission to modify crawls"
-            )
-
+    async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         result = await ops.delete_crawl_configs(archive)
         return {"deleted": result.deleted_count}
 
     @router.delete("/{cid}")
     async def delete_crawl_config(
-        cid: str,
-        archive: Archive = Depends(archive_dep),
-        user: User = Depends(user_dep),
+        cid: str, archive: Archive = Depends(archive_crawl_dep)
     ):
-        if not archive.is_crawler(user):
-            raise HTTPException(
-                status_code=403, detail="User does not have permission to modify crawls"
-            )
-
         result = await ops.delete_crawl_config(cid, archive)
         if not result or not result.deleted_count:
             raise HTTPException(status_code=404, detail="Crawl Config Not Found")

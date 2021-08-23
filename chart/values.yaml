@@ -36,7 +36,7 @@ mongo_auth:
 # Crawler Image
 # =========================================
 
-crawler_image: "webrecorder/browsertrix-crawler:0.4.4"
+crawler_image: "webrecorder/browsertrix-crawler:latest"
 crawler_pull_policy: "Never"
 
 crawler_namespace: "crawlers"

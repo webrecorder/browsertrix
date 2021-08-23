@@ -107,7 +107,7 @@ class ArchiveOps:
         self.email = email
 
         self.router = None
-        self.archive_dep = None
+        self.archive_crawl_dep = None
 
     async def add_archive(self, archive: Archive):
         """Add new archive"""
@@ -242,6 +242,16 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
 
         return archive
 
+    async def archive_crawl_dep(
+        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    ):
+        if not archive.is_crawler(user):
+            raise HTTPException(
+                status_code=403, detail="User does not have permission to modify crawls"
+            )
+
+        return archive
+
     router = APIRouter(
         prefix="/archives/{aid}",
         dependencies=[Depends(archive_dep)],
@@ -249,7 +259,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
     )
 
     ops.router = router
-    ops.archive_dep = archive_dep
+    ops.archive_crawl_dep = archive_crawl_dep
 
     @app.get("/archives", tags=["archives"])
     async def get_archives(user: User = Depends(user_dep)):

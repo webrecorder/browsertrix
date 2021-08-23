@@ -76,7 +76,6 @@ class BrowsertrixAPI:
             self.app,
             self.mdb,
             self.crawl_manager,
-            self.fastapi_users.db,
             self.archive_ops,
         )
 
