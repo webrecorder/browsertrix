@@ -41,6 +41,12 @@ crawler_pull_policy: "Never"
 
 crawler_namespace: "crawlers"
 
+# set 0 to disable timeout
+crawl_timeout: 0
+
+# num retries
+crawl_retries: 1
+
 
 # Storage
 # =========================================

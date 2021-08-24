@@ -11,6 +11,9 @@ data:
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
   CRAWLER_IMAGE: {{ .Values.crawler_image }}
 
+  CRAWL_TIMEOUT: "{{ .Values.crawl_timeout }}"
+  CRAWL_RETRIES: "{{ .Values.crawl_retries }}"
+
 
 ---
 apiVersion: v1

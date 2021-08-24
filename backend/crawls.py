@@ -1,6 +1,7 @@
 """ Crawl API """
 
 import asyncio
+import traceback
 
 from typing import Optional, List
 from datetime import datetime
@@ -64,6 +65,8 @@ class CrawlOps:
         self.crawl_manager = crawl_manager
         self.archives = archives
 
+        self.crawl_manager.set_crawl_ops(self)
+
     async def on_handle_crawl_complete(self, msg: CrawlCompleteIn):
         """ Handle completed crawl, add to crawls db collection, also update archive usage """
         crawl = await self.crawl_manager.validate_crawl_complete(msg)
@@ -78,6 +81,9 @@ class CrawlOps:
         await self.crawls.insert_one(crawl.to_dict())
 
         dura = int((crawl.finished - crawl.started).total_seconds())
+
+        print(crawl, flush=True)
+        print(f"Duration: {dura}", flush=True)
 
         await self.archives.inc_usage(crawl.aid, dura)
 
@@ -138,13 +144,17 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
         try:
-            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id)
+            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id, graceful=False)
             if not crawl:
                 raise HTTPException(
                     status_code=404, detail=f"Crawl not found: {crawl_id}"
                 )
 
             await ops.handle_finished(crawl)
+
+        except HTTPException as httpe:
+            raise httpe
+
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
@@ -159,17 +169,21 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
         try:
-            canceled = await crawl_manager.stop_crawl_graceful(
-                crawl_id, str(archive.id)
+            canceled = await crawl_manager.stop_crawl(
+                crawl_id, archive.id, graceful=True
             )
             if not canceled:
                 raise HTTPException(
                     status_code=404, detail=f"Crawl not found: {crawl_id}"
                 )
 
+        except HTTPException as httpe:
+            raise httpe
+
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
+            traceback.print_exc()
+            raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
 
         return {"stopped_gracefully": True}
 
