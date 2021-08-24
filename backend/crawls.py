@@ -1,13 +1,13 @@
 """ Crawl API """
 
 import asyncio
-import traceback
 
 from typing import Optional, List
 from datetime import datetime
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
+import pymongo
 
 from db import BaseMongoModel
 from archives import Archive
@@ -74,11 +74,20 @@ class CrawlOps:
             print("Not a valid crawl complete msg!", flush=True)
             return
 
-        await self.handle_finished(crawl)
+        await self.store_crawl(crawl, update_existing=True)
 
-    async def handle_finished(self, crawl: Crawl):
+    async def store_crawl(self, crawl: Crawl, update_existing=False):
         """ Add finished crawl to db, increment archive usage """
-        await self.crawls.insert_one(crawl.to_dict())
+        if update_existing:
+            await self.crawls.find_one_and_replace(
+                {"_id": crawl.id}, crawl.to_dict(), upsert=True
+            )
+        else:
+            try:
+                await self.crawls.insert_one(crawl.to_dict())
+            except pymongo.errors.DuplicateKeyError:
+                print(f"Crawl Already Added: {crawl.id}")
+                return False
 
         dura = int((crawl.finished - crawl.started).total_seconds())
 
@@ -150,7 +159,7 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
                     status_code=404, detail=f"Crawl not found: {crawl_id}"
                 )
 
-            await ops.handle_finished(crawl)
+            await ops.store_crawl(crawl)
 
         except HTTPException as httpe:
             raise httpe
@@ -182,7 +191,6 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            traceback.print_exc()
             raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
 
         return {"stopped_gracefully": True}

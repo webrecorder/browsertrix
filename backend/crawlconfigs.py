@@ -75,7 +75,7 @@ class CrawlConfigIn(BaseModel):
     schedule: Optional[str] = ""
     runNow: Optional[bool] = False
 
-    # storageName: Optional[str] = "default"
+    crawlTimeout: Optional[int] = 0
 
     config: RawCrawlConfig
 
@@ -92,6 +92,8 @@ class CrawlConfig(BaseMongoModel):
     user: Optional[str]
 
     config: RawCrawlConfig
+
+    crawlTimeout: Optional[int] = 0
 
 
 # ============================================================================
