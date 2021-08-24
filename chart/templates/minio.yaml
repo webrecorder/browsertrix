@@ -21,7 +21,7 @@ spec:
       volumes:
         - name: data-storage
           hostPath:
-            path: /browsertrix-minio-data
+            path: /tmp/browsertrix-minio-data
             type: DirectoryOrCreate
 
       containers:

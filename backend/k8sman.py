@@ -7,7 +7,7 @@ import json
 from kubernetes_asyncio import client, config
 from kubernetes_asyncio.stream import WsApiClient
 
-from crawls import CrawlFinished
+from crawls import Crawl
 
 
 # ============================================================================
@@ -88,11 +88,15 @@ class K8SManager:
 
         # Create Cron Job
 
+        annotations = {"btrix.run.schedule": crawlconfig.schedule}
+
         suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
 
         extra_crawl_params = extra_crawl_params or []
 
-        job_template = self._get_job_template(cid, labels, extra_crawl_params)
+        job_template = self._get_job_template(
+            cid, labels, annotations, extra_crawl_params
+        )
 
         spec = client.V1beta1CronJobSpec(
             schedule=schedule,
@@ -137,7 +141,6 @@ class K8SManager:
         cron_job = cron_jobs.items[0]
 
         if crawlconfig.archive != cron_job.metadata.labels["btrix.archive"]:
-            print("wrong archive")
             return
 
         labels = {
@@ -167,6 +170,10 @@ class K8SManager:
             changed = True
 
         if changed:
+            cron_job.spec.job_template.metadata.annotations[
+                "btrix.run.schedule"
+            ] = crawlconfig.schedule
+
             await self.batch_beta_api.patch_namespaced_cron_job(
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
@@ -177,7 +184,6 @@ class K8SManager:
 
     async def run_crawl_config(self, cid):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """
-        print(f"btrix.crawlconfig={cid}")
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
         )
@@ -187,6 +193,38 @@ class K8SManager:
 
         res = await self._create_run_now_job(cron_jobs.items[0])
         return res.metadata.name
+
+    async def list_running_crawls(self, cid=None, aid=None, userid=None):
+        """ Return a list of running crawls """
+        filters = []
+        if cid:
+            filters.append(f"btrix.crawlconfig={cid}")
+
+        if aid:
+            filters.append(f"btrix.archive={aid}")
+
+        if userid:
+            filters.append(f"btrix.user={userid}")
+
+        jobs = await self.batch_api.list_namespaced_job(
+            namespace=self.namespace,
+            label_selector=",".join(filters),
+            field_selector="status.successful=0",
+        )
+
+        return [
+            Crawl(
+                id=job.metadata.name,
+                state="running",
+                user=job.metadata.labels["btrix.user"],
+                aid=job.metadata.labels["btrix.archive"],
+                cid=job.metadata.labels["btrix.crawlconfig"],
+                schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
+                manual=job.metadata.annotations.get("btrix.run.manual") == "1",
+                started=job.status.start_time.replace(tzinfo=None),
+            )
+            for job in jobs.items
+        ]
 
     async def validate_crawl_complete(self, crawlcomplete):
         """Ensure the crawlcomplete data is valid (job exists and user matches)
@@ -198,19 +236,28 @@ class K8SManager:
         if not job or job.metadata.labels["btrix.user"] != crawlcomplete.user:
             return None
 
-        return CrawlFinished(
+        manual = job.metadata.annotations.get("btrix.run.manual") == "1"
+        if not manual:
+            await self.batch_api.delete_namespaced_job(
+                name=job.metadata.name,
+                namespace=self.namespace,
+                grace_period_seconds=10,
+                propagation_policy="Foreground",
+            )
+
+        return Crawl(
             id=crawlcomplete.id,
             state="complete" if crawlcomplete.completed else "partial_complete",
-
             user=crawlcomplete.user,
             aid=job.metadata.labels["btrix.archive"],
             cid=job.metadata.labels["btrix.crawlconfig"],
+            schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
+            manual=manual,
             started=job.status.start_time.replace(tzinfo=None),
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None),
-
             filename=crawlcomplete.filename,
             size=crawlcomplete.size,
-            hash=crawlcomplete.hash
+            hash=crawlcomplete.hash,
         )
 
     async def stop_crawl(self, job_id, aid):
@@ -223,18 +270,20 @@ class K8SManager:
             return None
 
         await self.batch_api.delete_namespaced_job(
-            name=job_id, namespace=self.namespace,
+            name=job_id,
+            namespace=self.namespace,
             grace_period_seconds=10,
             propagation_policy="Foreground",
         )
 
-        return CrawlFinished(
+        return Crawl(
             id=job_id,
             state="canceled",
-
             user=job.metadata.labels["btrix.user"],
             aid=job.metadata.labels["btrix.archive"],
             cid=job.metadata.labels["btrix.crawlconfig"],
+            schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
+            manual=job.metadata.annotations.get("btrix.run.manual") == "1",
             started=job.status.start_time.replace(tzinfo=None),
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None),
         )
@@ -252,12 +301,13 @@ class K8SManager:
 
         for pod in pods.items:
             if pod.metadata.labels["btrix.archive"] != aid:
-                print("wrong archive")
                 continue
 
             await self.core_api_ws.connect_get_namespaced_pod_exec(
-                pod.metadata.name, namespace=self.namespace, command=command,
-                stdout=True
+                pod.metadata.name,
+                namespace=self.namespace,
+                command=command,
+                stdout=True,
             )
             interrupted = True
 
@@ -328,17 +378,17 @@ class K8SManager:
 
     async def _create_run_now_job(self, cron_job):
         """Create new job from cron job to run instantly"""
-        annotations = {}
-        annotations["cronjob.kubernetes.io/instantiate"] = "manual"
+        annotations = cron_job.spec.job_template.metadata.annotations
+        annotations["btrix.run.manual"] = "1"
 
-        owner_ref = client.V1OwnerReference(
-            kind="CronJob",
-            name=cron_job.metadata.name,
-            block_owner_deletion=True,
-            controller=True,
-            uid=cron_job.metadata.uid,
-            api_version="batch/v1beta1",
-        )
+        # owner_ref = client.V1OwnerReference(
+        #    kind="CronJob",
+        #    name=cron_job.metadata.name,
+        #    block_owner_deletion=True,
+        #    controller=True,
+        #    uid=cron_job.metadata.uid,
+        #    api_version="batch/v1beta1",
+        # )
 
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"
@@ -347,7 +397,7 @@ class K8SManager:
             name=name,
             annotations=annotations,
             labels=cron_job.metadata.labels,
-            owner_references=[owner_ref],
+            # owner_references=[owner_ref],
         )
 
         job = client.V1Job(
@@ -361,7 +411,7 @@ class K8SManager:
             body=job, namespace=self.namespace
         )
 
-    def _get_job_template(self, uid, labels, extra_crawl_params):
+    def _get_job_template(self, uid, labels, annotations, extra_crawl_params):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
         command = ["crawl", "--config", "/tmp/crawl-config.json"]
@@ -387,6 +437,7 @@ class K8SManager:
         }
 
         return {
+            "metadata": {"annotations": annotations},
             "spec": {
                 "template": {
                     "metadata": {"labels": labels},
@@ -438,5 +489,5 @@ class K8SManager:
                         "restartPolicy": "OnFailure",
                     },
                 }
-            }
+            },
         }

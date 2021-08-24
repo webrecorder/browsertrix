@@ -226,7 +226,6 @@ class ArchiveOps:
         res = await self.archives.find_one_and_update(
             {"_id": aid}, {"$inc": {f"usage.{yymm}": amount}}
         )
-        print(res, flush=True)
         return res is not None
 
 

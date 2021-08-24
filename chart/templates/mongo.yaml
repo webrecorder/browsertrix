@@ -33,7 +33,7 @@ spec:
       volumes:
         - name: data-db
           hostPath:
-            path: /browsertrix-mongo-data
+            path: /tmp/browsertrix-mongo-data
             type: DirectoryOrCreate
 
       containers:

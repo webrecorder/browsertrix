@@ -2,7 +2,7 @@
 
 import asyncio
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from fastapi import Depends, HTTPException
@@ -13,15 +13,25 @@ from archives import Archive
 
 
 # ============================================================================
-class CrawlFinished(BaseMongoModel):
-    """ Store State of Finished Crawls """
+class DeleteCrawlList(BaseModel):
+    """ delete crawl list POST body """
+
+    crawl_ids: List[str]
+
+
+# ============================================================================
+class Crawl(BaseMongoModel):
+    """ Store State of a Crawl (Finished or Running) """
 
     user: str
     aid: str
     cid: str
 
+    schedule: Optional[str]
+    manual: Optional[bool]
+
     started: datetime
-    finished: datetime
+    finished: Optional[datetime]
 
     state: str
 
@@ -33,6 +43,7 @@ class CrawlFinished(BaseMongoModel):
 # ============================================================================
 class CrawlCompleteIn(BaseModel):
     """ Completed Crawl Webhook POST message  """
+
     id: str
 
     user: str
@@ -55,27 +66,37 @@ class CrawlOps:
 
     async def on_handle_crawl_complete(self, msg: CrawlCompleteIn):
         """ Handle completed crawl, add to crawls db collection, also update archive usage """
-        crawl_finished = await self.crawl_manager.validate_crawl_complete(msg)
-        if not crawl_finished:
+        crawl = await self.crawl_manager.validate_crawl_complete(msg)
+        if not crawl:
             print("Not a valid crawl complete msg!", flush=True)
             return
 
-        await self.handle_finished(crawl_finished)
+        await self.handle_finished(crawl)
 
-    async def handle_finished(self, crawl_finished: CrawlFinished):
+    async def handle_finished(self, crawl: Crawl):
         """ Add finished crawl to db, increment archive usage """
-        await self.crawls.insert_one(crawl_finished.to_dict())
+        await self.crawls.insert_one(crawl.to_dict())
 
-        print(crawl_finished)
+        dura = int((crawl.finished - crawl.started).total_seconds())
 
-        dura = int((crawl_finished.finished - crawl_finished.started).total_seconds())
+        await self.archives.inc_usage(crawl.aid, dura)
 
-        print(f"Duration: {dura}", flush=True)
-        await self.archives.inc_usage(crawl_finished.aid, dura)
+    async def list_crawls(self, aid: str, cid: str = None):
+        """Get all crawl configs for an archive is a member of"""
+        query = {"aid": aid}
+        if cid:
+            query["cid"] = cid
 
-    async def delete_crawl(self, cid: str, aid: str):
-        """ Delete crawl by id """
-        return await self.crawls.delete_one({"_id": cid, "aid": aid})
+        cursor = self.crawls.find(query)
+        results = await cursor.to_list(length=1000)
+        return [Crawl.from_dict(res) for res in results]
+
+    async def delete_crawls(self, aid: str, delete_list: DeleteCrawlList):
+        """ Delete a list of crawls by id for given archive """
+        res = await self.crawls.delete_many(
+            {"_id": {"$in": delete_list.crawl_ids}, "aid": aid}
+        )
+        return res.deleted_count
 
 
 # ============================================================================
@@ -93,21 +114,37 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
 
         return {"success": True}
 
-    @app.delete(
-        "/archives/{aid}/crawls/{crawl_id}",
+    @app.get("/archives/{aid}/crawls", tags=["crawls"])
+    async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
+        aid = str(archive.id)
+
+        running_crawls = await crawl_manager.list_running_crawls(aid=aid)
+
+        finished_crawls = await ops.list_crawls(aid)
+
+        return {
+            "running": [
+                crawl.dict(exclude_none=True, exclude_unset=True)
+                for crawl in running_crawls
+            ],
+            "finished": finished_crawls,
+        }
+
+    @app.post(
+        "/archives/{aid}/crawls/{crawl_id}/cancel",
         tags=["crawls"],
     )
-    async def crawl_delete_stop(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
+    async def crawl_cancel_stop(
+        crawl_id, archive: Archive = Depends(archive_crawl_dep)
+    ):
         try:
-            crawl_finished = await crawl_manager.stop_crawl(
-                crawl_id, str(archive.id)
-            )
-            if not crawl_finished:
+            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id)
+            if not crawl:
                 raise HTTPException(
                     status_code=404, detail=f"Crawl not found: {crawl_id}"
                 )
 
-            await ops.handle_finished(crawl_finished)
+            await ops.handle_finished(crawl)
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
@@ -135,3 +172,10 @@ def init_crawls_api(app, mdb, crawl_manager, archives):
             raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
 
         return {"stopped_gracefully": True}
+
+    @app.post("/archives/{aid}/crawls/delete", tags=["crawls"])
+    async def delete_crawls(
+        delete_list: DeleteCrawlList, archive: Archive = Depends(archive_crawl_dep)
+    ):
+        res = await ops.delete_crawls(archive.id, delete_list)
+        return {"deleted": res}
