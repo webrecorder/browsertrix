@@ -5,3 +5,4 @@ aiofiles
 kubernetes-asyncio
 aiodocker
 apscheduler
+aioprocessing

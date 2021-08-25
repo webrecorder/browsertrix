@@ -169,10 +169,8 @@ class K8SManager:
 
         return cron_job
 
-    async def update_crawl_config(self, crawlconfig):
-        """ Update existing crawl config """
-
-        cid = crawlconfig.id
+    async def update_crawl_config(self, cid, schedule):
+        """ Update the schedule for existing crawl config """
 
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
@@ -183,56 +181,19 @@ class K8SManager:
 
         cron_job = cron_jobs.items[0]
 
-        if crawlconfig.archive != cron_job.metadata.labels["btrix.archive"]:
-            return
+        real_schedule = schedule or DEFAULT_NO_SCHEDULE
 
-        labels = {
-            "btrix.user": crawlconfig.user,
-            "btrix.archive": crawlconfig.archive,
-            "btrix.crawlconfig": cid,
-        }
+        if real_schedule != cron_job.spec.schedule:
+            cron_job.spec.schedule = real_schedule
+            cron_job.spec.suspend = not schedule
 
-        # Update Config Map
-        config_map = self._create_config_map(crawlconfig, labels)
-
-        await self.core_api.patch_namespaced_config_map(
-            name=f"crawl-config-{cid}", namespace=self.namespace, body=config_map
-        )
-
-        # Update CronJob, if needed
-        suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
-
-        changed = False
-
-        if schedule != cron_job.spec.schedule:
-            cron_job.spec.schedule = schedule
-            changed = True
-
-        if suspend != cron_job.spec.suspend:
-            cron_job.spec.suspend = suspend
-            changed = True
-
-        if (
-            crawlconfig.crawlTimeout
-            != cron_job.spec.job_template.spec.active_deadline_seconds
-        ):
-            cron_job.spec.job_template.spec.active_deadline_seconds = (
-                crawlconfig.crawlTimeout
-            )
-            changed = True
-
-        if changed:
             cron_job.spec.job_template.metadata.annotations[
                 "btrix.run.schedule"
-            ] = crawlconfig.schedule
+            ] = schedule
 
             await self.batch_beta_api.patch_namespaced_cron_job(
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
-
-        # Run Job Now
-        if run_now:
-            await self._create_run_now_job(cron_job)
 
     async def run_crawl_config(self, cid, manual=True, schedule=""):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """

@@ -5,6 +5,7 @@ Docker crawl manager
 import tarfile
 import os
 import json
+import time
 import asyncio
 
 from datetime import datetime
@@ -12,8 +13,11 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 
 import aiodocker
+import aioprocessing
 
 from crawls import Crawl
+
+from scheduler import run_scheduler
 
 
 # ============================================================================
@@ -30,10 +34,33 @@ class DockerManager:
         self.archive_ops = archive_ops
         self.crawl_ops = None
 
-        self.loop = asyncio.get_running_loop()
-        self.loop.create_task(self.run_event_loop())
-
         self.extra_crawl_params = extra_crawl_params or []
+        self._event_q = None
+
+        self.loop = asyncio.get_running_loop()
+
+        self.loop.create_task(self.run_event_loop())
+        self.loop.create_task(self.init_trigger_queue())
+        self.loop.create_task(self.cleanup_loop())
+
+    # pylint: disable=no-member
+    async def init_trigger_queue(self):
+        """ Crawl trigger queue from separate scheduling process """
+        self._event_q = aioprocessing.AioQueue()
+        _trigger_q = aioprocessing.AioQueue()
+
+        self.sched = aioprocessing.AioProcess(
+            target=run_scheduler, args=(self._event_q, _trigger_q)
+        )
+        self.sched.start()
+
+        while True:
+            try:
+                result = await _trigger_q.coro_get()
+                self.loop.create_task(self.run_crawl_config(manual=False, **result))
+            # pylint: disable=broad-except
+            except Exception as exc:
+                print(f"Error trigger crawl: {exc}")
 
     async def run_event_loop(self):
         """ Run Docker event loop"""
@@ -48,6 +75,46 @@ class DockerManager:
 
             if event["Action"] == "die":
                 self.loop.create_task(self._handle_container_die(event["Actor"]))
+
+    async def cleanup_loop(self):
+        """Clean-up any orphaned crawler images that are not running.
+        Stop containers whose crawlTimeout has been exceeded"""
+
+        while True:
+            # cleanup orphaned
+            results = await self.client.containers.list(
+                filters=json.dumps(
+                    {
+                        "label": ["btrix.crawlconfig"],
+                        "status": ["exited"],
+                        "exited": ["1"],
+                    }
+                )
+            )
+
+            for container in results:
+                print(f"Cleaning Up Orphan Container {container['Id']}", flush=True)
+                await container.delete()
+
+            results = await self.client.containers.list(
+                filters=json.dumps(
+                    {
+                        "label": ["btrix.timeout"],
+                        "status": ["running"],
+                    }
+                )
+            )
+
+            for container in results:
+                timeout = int(container["Labels"]["btrix.timeout"])
+                actual = int(time.time()) - int(container["Created"])
+                if actual >= timeout:
+                    print(
+                        f"Crawl {container['Id']} running for {actual} seconds, exceeded timeout {timeout}, stopping..."
+                    )
+                    await container.kill(signal="SIGTERM")
+
+            await asyncio.sleep(30)
 
     def set_crawl_ops(self, ops):
         """ set crawl ops """
@@ -70,14 +137,17 @@ class DockerManager:
             "btrix.coll": crawlconfig.config.collection,
         }
 
+        if crawlconfig.crawlTimeout:
+            labels["btrix.timeout"] = str(crawlconfig.crawlTimeout)
+
         # Create Config Volume
         volume = await self._create_volume(crawlconfig, labels)
 
         if crawlconfig.schedule:
             print("Scheduling...", flush=True)
 
-            await self._send_sched_msg(
-                {"type": "add", "id": crawlconfig.id, "schedule": crawlconfig.schedule}
+            await self._schedule_update(
+                cid=crawlconfig.id, schedule=crawlconfig.schedule
             )
 
         if crawlconfig.runNow:
@@ -87,22 +157,15 @@ class DockerManager:
                 volume,
             )
 
-    async def update_crawl_config(self, crawlconfig):
-        """ Only updating the schedule + run now """
+    async def update_crawl_schedule(self, cid, schedule):
+        """ Update the schedule for existing crawl config """
 
-        if crawlconfig.schedule:
+        if schedule:
             print("Updating Schedule..", flush=True)
 
-            await self._send_sched_msg(
-                {"type": "add", "id": crawlconfig.id, "schedule": crawlconfig.schedule}
-            )
+            await self._schedule_update(cid=cid, schedule=schedule)
         else:
-            await self._send_sched_msg(
-                {"type": "remove", "id": crawlconfig.id}
-            )
-
-        if crawlconfig.runNow:
-            await self.run_crawl_config(crawlconfig.id)
+            await self._schedule_update(cid=cid, schedule="")
 
     async def list_running_crawls(self, aid):
         """ List running containers for this archive """
@@ -189,13 +252,11 @@ class DockerManager:
 
     async def delete_crawl_config_by_id(self, cid):
         """ Delete Crawl Config by Crawl Config Id"""
-        await self._delete_volume_by_labels(
-            filters={"label": [f"btrix.crawlconfig={cid}"]}
-        )
+        await self._delete_volume_by_labels([f"btrix.crawlconfig={cid}"])
 
     async def delete_crawl_configs_for_archive(self, aid):
         """ Delete Crawl Config by Archive Id"""
-        await self._delete_volume_by_labels(filters={"label": [f"btrix.archive={aid}"]})
+        await self._delete_volume_by_labels([f"btrix.archive={aid}"])
 
     # ========================================================================
     async def _create_volume(self, crawlconfig, labels):
@@ -242,19 +303,25 @@ class DockerManager:
 
         await container.delete()
 
-    async def _delete_volume_by_labels(self, filters):
+    async def _delete_volume_by_labels(self, labels):
         """ Delete Crawl Configs by specified filter """
+
+        containers = await self._list_running_containers(labels)
+        if len(containers):
+            raise Exception("Cannot delete crawl config, in use for running crawl")
 
         # pylint: disable=protected-access
         resp = await self.client._query_json(
-            "volumes", method="GET", params={"filters": json.dumps(filters)}
+            "volumes",
+            method="GET",
+            params={"filters": json.dumps({"label": labels})},
         )
 
         for volume in resp["Volumes"]:
             vol_obj = aiodocker.docker.DockerVolume(self.client, volume["Name"])
 
-            await self._send_sched_msg(
-                {"type": "remove", "id": volume["Labels"]["btrix.crawlconfig"]}
+            await self._schedule_update(
+                cid=volume["Labels"]["btrix.crawlconfig"], schedule=""
             )
 
             try:
@@ -263,13 +330,8 @@ class DockerManager:
             except:
                 print("Warning: Volume Delete Failed, Container in Use", flush=True)
 
-    async def _send_sched_msg(self, msg):
-        reader, writer = await asyncio.open_connection("scheduler", 9017)
-        writer.write(json.dumps(msg).encode("utf-8") + b"\n")
-        await writer.drain()
-        await reader.readline()
-        writer.close()
-        await writer.wait_closed()
+    async def _schedule_update(self, cid, schedule=""):
+        await self._event_q.coro_put({"cid": cid, "schedule": schedule})
 
     # pylint: disable=too-many-arguments
     async def _run_crawl_now(self, storage, labels, volume, schedule="", manual=True):

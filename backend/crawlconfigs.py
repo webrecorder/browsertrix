@@ -95,12 +95,13 @@ class CrawlConfig(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
 
+    crawlCount: Optional[int] = 0
+
 
 # ============================================================================
-class TriggerCrawl(BaseModel):
-    """ Crawl trigger from internal scheduler """
+class UpdateSchedule(BaseModel):
+    """ Update the crawl schedule """
 
-    id: str
     schedule: str
 
 
@@ -138,20 +139,21 @@ class CrawlOps:
         )
         return result
 
-    async def update_crawl_config(
-        self, cid: str, config: CrawlConfigIn, archive: Archive, user: User
-    ):
-        """ Update existing crawl config"""
-        data = config.dict()
-        data["archive"] = archive.id
-        data["user"] = str(user.id)
-        data["_id"] = cid
+    async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):
+        """ Update schedule for existing crawl config"""
+        if not await self.crawl_configs.find_one_and_update(
+            {"_id": cid}, {"$set": {"schedule": update.schedule}}
+        ):
+            return None
 
-        await self.crawl_configs.find_one_and_replace({"_id": cid}, data)
+        await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
+        return True
 
-        crawlconfig = CrawlConfig.from_dict(data)
-
-        await self.crawl_manager.update_crawl_config(crawlconfig)
+    async def inc_crawls(self, cid: str):
+        """ Increment Crawl Counter """
+        await self.crawl_configs.find_one_and_update(
+            {"_id": cid}, {"$inc": {"crawlCount": 1}}
+        )
 
     async def get_crawl_configs(self, archive: Archive):
         """Get all crawl configs for an archive is a member of"""
@@ -179,7 +181,7 @@ class CrawlOps:
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals
-def init_crawl_config_api(app, mdb, user_dep, archive_ops, crawl_manager):
+def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     """Init /crawlconfigs api routes"""
     ops = CrawlOps(mdb, archive_ops, crawl_manager)
 
@@ -214,16 +216,18 @@ def init_crawl_config_api(app, mdb, user_dep, archive_ops, crawl_manager):
         res = await ops.add_crawl_config(config, archive, user)
         return {"added": str(res.inserted_id)}
 
-    @router.patch("/{cid}")
-    async def update_crawl_config(
-        config: CrawlConfigIn,
+    @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
+    async def update_crawl_schedule(
+        update: UpdateSchedule,
         cid: str,
-        archive: Archive = Depends(archive_crawl_dep),
-        user: User = Depends(user_dep),
     ):
 
         try:
-            await ops.update_crawl_config(cid, config, archive, user)
+            if not await ops.update_crawl_schedule(cid, update):
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl Config '{cid}' not found"
+                )
+
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(
@@ -249,13 +253,6 @@ def init_crawl_config_api(app, mdb, user_dep, archive_ops, crawl_manager):
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")
 
         return {"started": crawl_id}
-
-    @app.post("/crawls/trigger", tags=["crawlconfigs"])
-    async def trigger_crawl(trigger: TriggerCrawl):
-        await crawl_manager.run_crawl_config(
-            trigger.id, manual=False, schedule=trigger.schedule
-        )
-        return {}
 
     @router.delete("")
     async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):

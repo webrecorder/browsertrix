@@ -60,9 +60,10 @@ class CrawlCompleteIn(BaseModel):
 class CrawlOps:
     """ Crawl Ops """
 
-    def __init__(self, mdb, crawl_manager, archives):
+    def __init__(self, mdb, crawl_manager, crawl_configs, archives):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
+        self.crawl_configs = crawl_configs
         self.archives = archives
 
         self.crawl_manager.set_crawl_ops(self)
@@ -96,6 +97,8 @@ class CrawlOps:
 
         await self.archives.inc_usage(crawl.aid, dura)
 
+        await self.crawl_configs.inc_crawls(crawl.cid)
+
     async def list_crawls(self, aid: str, cid: str = None):
         """Get all crawl configs for an archive is a member of"""
         query = {"aid": aid}
@@ -115,10 +118,10 @@ class CrawlOps:
 
 
 # ============================================================================
-def init_crawls_api(app, mdb, crawl_manager, archives):
+def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
     """ API for crawl management, including crawl done callback"""
 
-    ops = CrawlOps(mdb, crawl_manager, archives)
+    ops = CrawlOps(mdb, crawl_manager, crawl_config_ops, archives)
 
     archive_crawl_dep = archives.archive_crawl_dep
 

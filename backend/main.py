@@ -75,7 +75,6 @@ class BrowsertrixAPI:
             )
 
         self.crawl_config_ops = init_crawl_config_api(
-            self.app,
             self.mdb,
             current_active_user,
             self.archive_ops,
@@ -86,6 +85,7 @@ class BrowsertrixAPI:
             self.app,
             self.mdb,
             self.crawl_manager,
+            self.crawl_config_ops,
             self.archive_ops,
         )
 
