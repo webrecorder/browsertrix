@@ -29,7 +29,7 @@ class DockerManager:
         self.client = aiodocker.Docker()
 
         self.crawler_image = os.environ["CRAWLER_IMAGE"]
-        self.default_network = "crawlercloud_default"
+        self.default_network = os.environ.get("CRAWLER_NETWORK", "btrix-cloud-net")
 
         self.archive_ops = archive_ops
         self.crawl_ops = None

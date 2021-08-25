@@ -51,8 +51,12 @@ services:
       - minio
 
 
-
 volumes:
   mongodata:
   miniodata:
+
+
+networks:
+  default:
+    name: btrix-cloud-net
 
