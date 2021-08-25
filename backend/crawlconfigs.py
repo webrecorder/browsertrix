@@ -104,13 +104,6 @@ class CrawlOps:
         self.crawl_configs = mdb["crawl_configs"]
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
-        self.default_crawl_params = [
-            "--timeout",
-            "90",
-            "--logging",
-            "behaviors,debug",
-            "--generateWACZ",
-        ]
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -134,7 +127,6 @@ class CrawlOps:
         await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=archive.storage,
-            extra_crawl_params=self.default_crawl_params,
         )
         return result
 

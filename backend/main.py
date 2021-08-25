@@ -29,7 +29,7 @@ class BrowsertrixAPI:
         self.app = _app
 
         self.default_storage_endpoint_url = os.environ.get(
-            "STORE_ENDPOINT_URL", "http://localhost:8010/store-bucket/"
+            "STORE_ENDPOINT_URL", "http://minio:9000/test-bucket/"
         )
 
         self.default_storage_access_key = os.environ.get("STORE_ACCESS_KEY", "access")
@@ -38,16 +38,13 @@ class BrowsertrixAPI:
         self.email = EmailSender()
         self.crawl_manager = None
 
-        # pylint: disable=import-outside-toplevel
-        if os.environ.get("KUBERNETES_SERVICE_HOST"):
-            from k8sman import K8SManager
-
-            self.crawl_manager = K8SManager()
-        else:
-            from dockerman import DockerManager
-
-            self.crawl_manager = DockerManager()
-            # raise Exception("Currently, only running in Kubernetes is supported")
+        self.default_crawl_params = [
+            "--timeout",
+            "90",
+            "--logging",
+            "behaviors,debug",
+            "--generateWACZ",
+        ]
 
         self.mdb = init_db()
 
@@ -64,6 +61,19 @@ class BrowsertrixAPI:
         self.archive_ops = init_archives_api(
             self.app, self.mdb, self.fastapi_users, self.email, current_active_user
         )
+
+        # pylint: disable=import-outside-toplevel
+        if os.environ.get("KUBERNETES_SERVICE_HOST"):
+            from k8sman import K8SManager
+
+            self.crawl_manager = K8SManager(self.default_crawl_params)
+        else:
+            from dockerman import DockerManager
+
+            self.crawl_manager = DockerManager(
+                self.archive_ops, self.default_crawl_params
+            )
+            # raise Exception("Currently, only running in Kubernetes is supported")
 
         self.crawl_config_ops = init_crawl_config_api(
             self.mdb,

@@ -7,25 +7,49 @@ services:
     ports:
       - 8000:8000
 
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+
     env_file:
       - ./config.env
+
+    depends_on:
+      - mongo
+      - minio
 
   mongo:
     image: mongo
-    env_file:
-      - ./config.env
-
     volumes:
       - mongodata:/data/db
 
+    env_file:
+      - ./config.env
+
   minio:
     image: minio/minio
-    command: server /data
+    command: server /data --console-address :9001
     ports:
-      - 8010:9000
+      - 9000:9000
+      - 9001:9001
 
     volumes:
       - miniodata:/data
+
+    env_file:
+      - ./config.env
+
+  init_minio_bucket:
+    image: minio/mc
+    entrypoint: "/bin/sh"
+    command: ['-c', 'mc mb local/test-bucket; mc policy set public local/test-bucket' ]
+
+    env_file:
+      - ./config.env
+
+    depends_on:
+      - minio
+
+
 
 volumes:
   mongodata:

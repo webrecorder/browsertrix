@@ -22,7 +22,7 @@ class K8SManager:
     # pylint: disable=too-many-instance-attributes,too-many-locals,too-many-arguments
     """K8SManager, manager creation of k8s resources from crawl api requests"""
 
-    def __init__(self, namespace=DEFAULT_NAMESPACE):
+    def __init__(self, extra_crawl_params=None, namespace=DEFAULT_NAMESPACE):
         config.load_incluster_config()
 
         self.crawl_ops = None
@@ -33,6 +33,7 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
+        self.extra_crawl_params = extra_crawl_params or []
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
@@ -86,7 +87,6 @@ class K8SManager:
         self,
         crawlconfig,
         storage,
-        extra_crawl_params: list = None,
     ):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
@@ -137,10 +137,8 @@ class K8SManager:
 
         suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
 
-        extra_crawl_params = extra_crawl_params or []
-
         job_template = self._get_job_template(
-            cid, labels, annotations, crawlconfig.crawlTimeout, extra_crawl_params
+            cid, labels, annotations, crawlconfig.crawlTimeout, self.extra_crawl_params
         )
 
         spec = client.V1beta1CronJobSpec(
@@ -286,19 +284,13 @@ class K8SManager:
         if not manual:
             await self._delete_job(job.metadata.name)
 
-        return Crawl(
-            id=crawlcomplete.id,
-            state="complete" if crawlcomplete.completed else "partial_complete",
-            user=crawlcomplete.user,
-            aid=job.metadata.labels["btrix.archive"],
-            cid=job.metadata.labels["btrix.crawlconfig"],
-            schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
-            manual=manual,
-            started=job.status.start_time.replace(tzinfo=None),
-            finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None),
+        return self._make_crawl_for_job(
+            job,
+            "complete" if crawlcomplete.completed else "partial_complete",
+            finish_now=True,
             filename=crawlcomplete.filename,
             size=crawlcomplete.size,
-            hash=crawlcomplete.hash,
+            hashstr=crawlcomplete.hash,
         )
 
     async def stop_crawl(self, job_name, aid, graceful=True):
@@ -362,7 +354,9 @@ class K8SManager:
     # Internal Methods
 
     # pylint: disable=no-self-use
-    def _make_crawl_for_job(self, job, state, finish_now=False):
+    def _make_crawl_for_job(
+        self, job, state, finish_now=False, filename=None, size=None, hashstr=None
+    ):
         """ Make a crawl object from a job"""
         return Crawl(
             id=job.metadata.name,
@@ -376,6 +370,9 @@ class K8SManager:
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
+            filename=filename,
+            size=size,
+            hash=hashstr,
         )
 
     async def _delete_job(self, name):

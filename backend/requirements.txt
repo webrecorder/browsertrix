@@ -3,3 +3,4 @@ fastapi-users[mongodb]==6.0.0
 loguru
 aiofiles
 kubernetes-asyncio
+aiodocker
