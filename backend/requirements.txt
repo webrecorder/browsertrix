@@ -4,3 +4,4 @@ loguru
 aiofiles
 kubernetes-asyncio
 aiodocker
+apscheduler

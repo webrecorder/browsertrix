@@ -73,9 +73,9 @@ class BrowsertrixAPI:
             self.crawl_manager = DockerManager(
                 self.archive_ops, self.default_crawl_params
             )
-            # raise Exception("Currently, only running in Kubernetes is supported")
 
         self.crawl_config_ops = init_crawl_config_api(
+            self.app,
             self.mdb,
             current_active_user,
             self.archive_ops,

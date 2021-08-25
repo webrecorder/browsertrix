@@ -234,11 +234,14 @@ class K8SManager:
         if run_now:
             await self._create_run_now_job(cron_job)
 
-    async def run_crawl_config(self, cid):
+    async def run_crawl_config(self, cid, manual=True, schedule=""):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
         )
+
+        if not manual or schedule:
+            raise Exception("Manual trigger not supported")
 
         if len(cron_jobs.items) != 1:
             raise Exception("Crawl Config Not Found")

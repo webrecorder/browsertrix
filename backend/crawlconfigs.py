@@ -97,6 +97,14 @@ class CrawlConfig(BaseMongoModel):
 
 
 # ============================================================================
+class TriggerCrawl(BaseModel):
+    """ Crawl trigger from internal scheduler """
+
+    id: str
+    schedule: str
+
+
+# ============================================================================
 class CrawlOps:
     """Crawl Config Operations"""
 
@@ -170,8 +178,8 @@ class CrawlOps:
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name
-def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals
+def init_crawl_config_api(app, mdb, user_dep, archive_ops, crawl_manager):
     """Init /crawlconfigs api routes"""
     ops = CrawlOps(mdb, archive_ops, crawl_manager)
 
@@ -241,6 +249,13 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")
 
         return {"started": crawl_id}
+
+    @app.post("/crawls/trigger", tags=["crawlconfigs"])
+    async def trigger_crawl(trigger: TriggerCrawl):
+        await crawl_manager.run_crawl_config(
+            trigger.id, manual=False, schedule=trigger.schedule
+        )
+        return {}
 
     @router.delete("")
     async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):

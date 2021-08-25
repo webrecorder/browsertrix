@@ -14,8 +14,20 @@ services:
       - ./config.env
 
     depends_on:
-      - mongo
       - minio
+      - mongo
+      - scheduler
+
+  scheduler:
+    build: ./backend
+    image: webrecorder/browsertrix-api
+    command: python -u scheduler.py
+
+    env_file:
+      - ./config.env
+
+    depends_on:
+      - mongo
 
   mongo:
     image: mongo

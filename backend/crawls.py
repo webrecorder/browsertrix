@@ -86,7 +86,7 @@ class CrawlOps:
             try:
                 await self.crawls.insert_one(crawl.to_dict())
             except pymongo.errors.DuplicateKeyError:
-                print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
+                # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
                 return False
 
         dura = int((crawl.finished - crawl.started).total_seconds())
