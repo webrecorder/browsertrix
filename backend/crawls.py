@@ -125,7 +125,7 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
 
     archive_crawl_dep = archives.archive_crawl_dep
 
-    @app.post("/crawls/done", tags=["crawls"])
+    @app.post("/_crawls/done", tags=["_internal"])
     async def crawl_done(msg: CrawlCompleteIn):
         loop = asyncio.get_running_loop()
         loop.create_task(ops.on_handle_crawl_complete(msg))
@@ -152,24 +152,21 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
         "/archives/{aid}/crawls/{crawl_id}/cancel",
         tags=["crawls"],
     )
-    async def crawl_cancel_stop(
+    async def crawl_cancel_immediately(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
+        crawl = None
         try:
             crawl = await crawl_manager.stop_crawl(crawl_id, archive.id, graceful=False)
-            if not crawl:
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl not found: {crawl_id}"
-                )
-
-            await ops.store_crawl(crawl)
-
-        except HTTPException as httpe:
-            raise httpe
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
+
+        if not crawl:
+            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
+
+        await ops.store_crawl(crawl)
 
         return {"canceled": True}
 
@@ -180,21 +177,18 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
     async def crawl_graceful_stop(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
+        canceled = False
         try:
             canceled = await crawl_manager.stop_crawl(
                 crawl_id, archive.id, graceful=True
             )
-            if not canceled:
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl not found: {crawl_id}"
-                )
-
-        except HTTPException as httpe:
-            raise httpe
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
+
+        if not canceled:
+            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
 
         return {"stopped_gracefully": True}
 
@@ -202,5 +196,14 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
     async def delete_crawls(
         delete_list: DeleteCrawlList, archive: Archive = Depends(archive_crawl_dep)
     ):
+        try:
+            for crawl_id in delete_list:
+                await crawl_manager.stop_crawl(crawl_id, archive.id, graceful=False)
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
+
         res = await ops.delete_crawls(archive.id, delete_list)
+
         return {"deleted": res}

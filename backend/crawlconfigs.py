@@ -141,10 +141,11 @@ class CrawlOps:
 
     async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):
         """ Update schedule for existing crawl config"""
+
         if not await self.crawl_configs.find_one_and_update(
             {"_id": cid}, {"$set": {"schedule": update.schedule}}
         ):
-            return None
+            return False
 
         await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
         return True
@@ -222,16 +223,19 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         cid: str,
     ):
 
+        success = False
         try:
-            if not await ops.update_crawl_schedule(cid, update):
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl Config '{cid}' not found"
-                )
+            success = await ops.update_crawl_schedule(cid, update)
 
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(
                 status_code=403, detail=f"Error updating crawl config: {e}"
+            )
+
+        if not success:
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
         return {"updated": cid}
@@ -265,7 +269,9 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     ):
         result = await ops.delete_crawl_config(cid, archive)
         if not result or not result.deleted_count:
-            raise HTTPException(status_code=404, detail="Crawl Config Not Found")
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' Not Found"
+            )
 
         return {"deleted": 1}
 

@@ -123,7 +123,7 @@ class K8SManager:
                 "STORE_ENDPOINT_URL": endpoint_with_coll_url,
                 "STORE_ACCESS_KEY": storage.access_key,
                 "STORE_SECRET_KEY": storage.secret_key,
-                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/crawls/done",
+                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/_crawls/done",
             },
         )
 
@@ -169,7 +169,7 @@ class K8SManager:
 
         return cron_job
 
-    async def update_crawl_config(self, cid, schedule):
+    async def update_crawl_schedule(self, cid, schedule):
         """ Update the schedule for existing crawl config """
 
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
@@ -195,14 +195,11 @@ class K8SManager:
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
 
-    async def run_crawl_config(self, cid, manual=True, schedule=""):
+    async def run_crawl_config(self, cid):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
         )
-
-        if not manual or schedule:
-            raise Exception("Manual trigger not supported")
 
         if len(cron_jobs.items) != 1:
             raise Exception("Crawl Config Not Found")
@@ -245,8 +242,8 @@ class K8SManager:
             return None
 
         manual = job.metadata.annotations.get("btrix.run.manual") == "1"
-        if not manual:
-            await self._delete_job(job.metadata.name)
+        if manual:
+            self.loop.create_task(self._delete_job(job.metadata.name))
 
         return self._make_crawl_for_job(
             job,
@@ -426,6 +423,7 @@ class K8SManager:
         """Create new job from cron job to run instantly"""
         annotations = cron_job.spec.job_template.metadata.annotations
         annotations["btrix.run.manual"] = "1"
+        annotations["btrix.run.schedule"] = ""
 
         # owner_ref = client.V1OwnerReference(
         #    kind="CronJob",

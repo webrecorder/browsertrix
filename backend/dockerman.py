@@ -109,6 +109,7 @@ class DockerManager:
                 timeout = int(container["Labels"]["btrix.timeout"])
                 actual = int(time.time()) - int(container["Created"])
                 if actual >= timeout:
+                    # pylint: disable=line-too-long
                     print(
                         f"Crawl {container['Id']} running for {actual} seconds, exceeded timeout {timeout}, stopping..."
                     )
@@ -181,18 +182,27 @@ class DockerManager:
 
     async def stop_crawl(self, crawl_id, aid, graceful=True):
         """ Stop crawl, if not graceful, issue SIGUSR1 to indicate cancelation """
-        container = await self.client.containers.get(crawl_id)
 
-        if container["Config"]["Labels"]["btrix.archive"] != aid:
-            return None
+        result = None
 
-        if not graceful:
-            await container.kill(signal="SIGUSR1")
-            result = self._make_crawl_for_container(container, "canceled", True)
-        else:
-            result = True
+        try:
+            container = await self.client.containers.get(crawl_id)
 
-        await container.kill(signal="SIGTERM")
+            if container["Config"]["Labels"]["btrix.archive"] != aid:
+                return None
+
+            if not graceful:
+                await container.kill(signal="SIGUSR1")
+                result = self._make_crawl_for_container(container, "canceled", True)
+            else:
+                result = True
+
+            await container.kill(signal="SIGTERM")
+        except aiodocker.exceptions.DockerError as exc:
+            if exc.status == 404:
+                return None
+
+            raise exc
 
         return result
 
@@ -351,7 +361,7 @@ class DockerManager:
             f"STORE_ENDPOINT_URL={endpoint_with_coll_url}",
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
-            "WEBHOOK_URL=http://backend:8000/crawls/done",
+            "WEBHOOK_URL=http://backend:8000/_crawls/done",
         ]
 
         labels["btrix.run.schedule"] = schedule
