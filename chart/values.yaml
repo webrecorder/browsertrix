@@ -33,6 +33,17 @@ mongo_auth:
   password: example 
 
 
+# Redis Image
+# =========================================
+redis_local: true
+
+redis_image: "redis"
+redis_pull_policy: "IfNotPresent"
+
+redis_url: "redis://local-redis.default:6379/1"
+
+
+
 # Crawler Image
 # =========================================
 
@@ -43,6 +54,10 @@ crawler_namespace: "crawlers"
 
 # num retries
 crawl_retries: 1
+
+# browsertrix-crawler args:
+crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ"
+
 
 
 # Storage

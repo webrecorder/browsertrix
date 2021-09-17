@@ -9,11 +9,11 @@ from fastapi import FastAPI, Request, HTTPException
 
 from db import init_db
 
+from emailsender import EmailSender
 from users import init_users_api, UserDB
 from archives import init_archives_api
 from crawlconfigs import init_crawl_config_api
 from crawls import init_crawls_api
-from emailsender import EmailSender
 
 app = FastAPI()
 
@@ -38,14 +38,6 @@ class BrowsertrixAPI:
         self.email = EmailSender()
         self.crawl_manager = None
 
-        self.default_crawl_params = [
-            "--timeout",
-            "90",
-            "--logging",
-            "behaviors,debug",
-            "--generateWACZ",
-        ]
-
         self.mdb = init_db()
 
         self.fastapi_users = init_users_api(
@@ -66,13 +58,11 @@ class BrowsertrixAPI:
         if os.environ.get("KUBERNETES_SERVICE_HOST"):
             from k8sman import K8SManager
 
-            self.crawl_manager = K8SManager(self.default_crawl_params)
+            self.crawl_manager = K8SManager()
         else:
             from dockerman import DockerManager
 
-            self.crawl_manager = DockerManager(
-                self.archive_ops, self.default_crawl_params
-            )
+            self.crawl_manager = DockerManager(self.archive_ops)
 
         self.crawl_config_ops = init_crawl_config_api(
             self.mdb,
@@ -84,6 +74,7 @@ class BrowsertrixAPI:
         init_crawls_api(
             self.app,
             self.mdb,
+            os.environ.get("REDIS_URL"),
             self.crawl_manager,
             self.crawl_config_ops,
             self.archive_ops,

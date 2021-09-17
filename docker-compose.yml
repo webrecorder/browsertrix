@@ -16,12 +16,21 @@ services:
     depends_on:
       - minio
       - mongo
-      - scheduler
+
+  redis:
+    image: redis
+    command: redis-server --appendonly yes
+
+    ports:
+      - 6379:6379
+
+    volumes:
+      - btrix-redis-data:/data
 
   mongo:
     image: mongo
     volumes:
-      - mongodata:/data/db
+      - btrix-mongo-data:/data/db
 
     env_file:
       - ./config.env
@@ -34,7 +43,7 @@ services:
       - 9001:9001
 
     volumes:
-      - miniodata:/data
+      - btrix-minio-data:/data
 
     env_file:
       - ./config.env
@@ -52,8 +61,9 @@ services:
 
 
 volumes:
-  mongodata:
-  miniodata:
+  btrix-redis-data:
+  btrix-mongo-data:
+  btrix-minio-data:
 
 
 networks:

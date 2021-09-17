@@ -4,3 +4,5 @@ metadata:
   name: {{ .Values.crawler_namespace }}
   labels:
     release: {{ .Release.Name }}
+  annotations:
+    "helm.sh/resource-policy": keep

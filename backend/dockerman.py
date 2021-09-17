@@ -15,9 +15,9 @@ from tempfile import NamedTemporaryFile
 import aiodocker
 import aioprocessing
 
-from crawls import Crawl
-
 from scheduler import run_scheduler
+
+from crawls import Crawl
 
 
 # ============================================================================
@@ -260,6 +260,10 @@ class DockerManager:
 
         return crawl
 
+    async def scale_crawl(self): # job_name, aid, parallelism=1):
+        """ Scale running crawl, currently only supported in k8s"""
+        return "Not Supported"
+
     async def delete_crawl_config_by_id(self, cid):
         """ Delete Crawl Config by Crawl Config Id"""
         await self._delete_volume_by_labels([f"btrix.crawlconfig={cid}"])
@@ -346,7 +350,13 @@ class DockerManager:
     # pylint: disable=too-many-arguments
     async def _run_crawl_now(self, storage, labels, volume, schedule="", manual=True):
         # Set Run Config
-        command = ["crawl", "--config", "/tmp/crawlconfig/crawl-config.json"]
+        command = [
+            "crawl",
+            "--config",
+            "/tmp/crawlconfig/crawl-config.json",
+            "--redisStoreUrl",
+            "redis://redis:6379/0",
+        ]
 
         if self.extra_crawl_params:
             command += self.extra_crawl_params

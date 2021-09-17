@@ -1,51 +1,10 @@
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.name }}-env-config
-  namespace: {{ .Release.Namespace }}
-
-data:
-  MONGO_HOST: {{ .Values.mongo_host }}
-
-  CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
-  CRAWLER_IMAGE: {{ .Values.crawler_image }}
-
-  CRAWL_TIMEOUT: "{{ .Values.crawl_timeout }}"
-  CRAWL_RETRIES: "{{ .Values.crawl_retries }}"
-
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: storage-auth
-  namespace: {{ .Release.Namespace }}
-
-type: Opaque
-stringData:
-  PASSWORD_SECRET: "{{ .Values.api_password_secret }}"
-
-{{- if .Values.minio_local }}
-  MINIO_ROOT_USER: "{{ .Values.storage.access_key }}"
-  MINIO_ROOT_PASSWORD: "{{ .Values.storage.secret_key }}"
-
-  MC_HOST: "{{ .Values.minio_scheme }}://{{ .Values.storage.access_key }}:{{ .Values.storage.secret_key }}@{{ .Values.minio_host }}"
-{{- end }}
- 
-  STORE_ACCESS_KEY: "{{ .Values.storage.access_key }}"
-  STORE_SECRET_KEY: "{{ .Values.storage.secret_key }}"
-  STORE_ENDPOINT_URL: "{{ .Values.storage.endpoint }}"
-  #S3_FORCE_PATH_STYLE: "{{ .Values.storage.force_path_style | quote }}"
-
-
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
+
 spec:
   selector:
     matchLabels:
@@ -55,6 +14,10 @@ spec:
     metadata:
       labels:
         app: {{ .Values.name }}
+
+      annotations:
+        # force helm to update the deployment each time
+        "helm.update": {{ randAlphaNum 5 | quote }}
 
     spec:
 

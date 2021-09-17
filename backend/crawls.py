@@ -2,12 +2,13 @@
 
 import asyncio
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 import pymongo
+import aioredis
 
 from db import BaseMongoModel
 from archives import Archive
@@ -18,6 +19,13 @@ class DeleteCrawlList(BaseModel):
     """ delete crawl list POST body """
 
     crawl_ids: List[str]
+
+
+# ============================================================================
+class CrawlScale(BaseModel):
+    """ scale the crawl to N parallel containers """
+
+    scale: int = 1
 
 
 # ============================================================================
@@ -35,6 +43,10 @@ class Crawl(BaseMongoModel):
     finished: Optional[datetime]
 
     state: str
+
+    scale: int = 1
+
+    stats: Optional[Dict[str, str]]
 
     filename: Optional[str]
     size: Optional[int]
@@ -60,13 +72,21 @@ class CrawlCompleteIn(BaseModel):
 class CrawlOps:
     """ Crawl Ops """
 
-    def __init__(self, mdb, crawl_manager, crawl_configs, archives):
+    # pylint: disable=too-many-arguments
+    def __init__(self, mdb, redis_url, crawl_manager, crawl_configs, archives):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
         self.crawl_configs = crawl_configs
         self.archives = archives
 
+        self.redis = None
+        asyncio.create_task(self.init_redis(redis_url))
+
         self.crawl_manager.set_crawl_ops(self)
+
+    async def init_redis(self, redis_url):
+        """ init redis async """
+        self.redis = await aioredis.from_url(redis_url)
 
     async def on_handle_crawl_complete(self, msg: CrawlCompleteIn):
         """ Handle completed crawl, add to crawls db collection, also update archive usage """
@@ -99,8 +119,10 @@ class CrawlOps:
 
         await self.crawl_configs.inc_crawls(crawl.cid)
 
-    async def list_crawls(self, aid: str, cid: str = None):
-        """Get all crawl configs for an archive is a member of"""
+        return True
+
+    async def list_db_crawls(self, aid: str, cid: str = None):
+        """List all finished crawls from the db """
         query = {"aid": aid}
         if cid:
             query["cid"] = cid
@@ -108,6 +130,42 @@ class CrawlOps:
         cursor = self.crawls.find(query)
         results = await cursor.to_list(length=1000)
         return [Crawl.from_dict(res) for res in results]
+
+    async def list_crawls(self, aid: str):
+        """ list finished and running crawl data """
+        running_crawls = await self.crawl_manager.list_running_crawls(aid=aid)
+
+        await self.get_redis_stats(running_crawls)
+
+        finished_crawls = await self.list_db_crawls(aid)
+
+        return {
+            "running": [
+                crawl.dict(exclude_none=True, exclude_unset=True)
+                for crawl in running_crawls
+            ],
+            "finished": finished_crawls,
+        }
+
+    # pylint: disable=too-many-arguments
+    async def get_redis_stats(self, crawl_list):
+        """ Add additional live crawl stats from redis """
+        results = None
+
+        def pairwise(iterable):
+            val = iter(iterable)
+            return zip(val, val)
+
+        async with self.redis.pipeline(transaction=True) as pipe:
+            for crawl in crawl_list:
+                key = crawl.id
+                pipe.llen(f"{key}:d")
+                pipe.scard(f"{key}:s")
+
+            results = await pipe.execute()
+
+        for crawl, (done, total) in zip(crawl_list, pairwise(results)):
+            crawl.stats = {"done": done, "found": total}
 
     async def delete_crawls(self, aid: str, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
@@ -118,10 +176,11 @@ class CrawlOps:
 
 
 # ============================================================================
-def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
+# pylint: disable=too-many-arguments
+def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archives):
     """ API for crawl management, including crawl done callback"""
 
-    ops = CrawlOps(mdb, crawl_manager, crawl_config_ops, archives)
+    ops = CrawlOps(mdb, redis_url, crawl_manager, crawl_config_ops, archives)
 
     archive_crawl_dep = archives.archive_crawl_dep
 
@@ -134,19 +193,7 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"])
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
-        aid = str(archive.id)
-
-        running_crawls = await crawl_manager.list_running_crawls(aid=aid)
-
-        finished_crawls = await ops.list_crawls(aid)
-
-        return {
-            "running": [
-                crawl.dict(exclude_none=True, exclude_unset=True)
-                for crawl in running_crawls
-            ],
-            "finished": finished_crawls,
-        }
+        return await ops.list_crawls(archive.id)
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/cancel",
@@ -207,3 +254,17 @@ def init_crawls_api(app, mdb, crawl_manager, crawl_config_ops, archives):
         res = await ops.delete_crawls(archive.id, delete_list)
 
         return {"deleted": res}
+
+    @app.post(
+        "/archives/{aid}/crawls/{crawl_id}/scale",
+        tags=["crawls"],
+    )
+    async def scale_crawl(
+        scale: CrawlScale, crawl_id, archive: Archive = Depends(archive_crawl_dep)
+    ):
+
+        error = await crawl_manager.scale_crawl(crawl_id, archive.id, scale.scale)
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+
+        return {"scaled": scale.scale}

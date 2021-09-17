@@ -12,8 +12,9 @@ from crawls import Crawl
 
 
 # ============================================================================
-DEFAULT_NAMESPACE = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
+CRAWLER_NAMESPACE = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
 
+# an 2/31 schedule that will never run as empty is not allowed
 DEFAULT_NO_SCHEDULE = "* * 31 2 *"
 
 
@@ -22,7 +23,7 @@ class K8SManager:
     # pylint: disable=too-many-instance-attributes,too-many-locals,too-many-arguments
     """K8SManager, manager creation of k8s resources from crawl api requests"""
 
-    def __init__(self, extra_crawl_params=None, namespace=DEFAULT_NAMESPACE):
+    def __init__(self, namespace=CRAWLER_NAMESPACE):
         config.load_incluster_config()
 
         self.crawl_ops = None
@@ -33,7 +34,7 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
-        self.extra_crawl_params = extra_crawl_params or []
+        print(self.namespace, flush=True)
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
@@ -138,7 +139,11 @@ class K8SManager:
         suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
 
         job_template = self._get_job_template(
-            cid, labels, annotations, crawlconfig.crawlTimeout, self.extra_crawl_params
+            cid,
+            labels,
+            annotations,
+            crawlconfig.crawlTimeout,
+            crawlconfig.parallel,
         )
 
         spec = client.V1beta1CronJobSpec(
@@ -286,6 +291,31 @@ class K8SManager:
 
         return result
 
+    async def scale_crawl(self, job_name, aid, parallelism=1):
+        """ Set the crawl scale (job parallelism) on the specified job """
+
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=job_name, namespace=self.namespace
+            )
+        # pylint: disable=broad-except
+        except Exception:
+            return "Crawl not found"
+
+        if not job or job.metadata.labels["btrix.archive"] != aid:
+            return "Invalid Crawled"
+
+        if parallelism < 1 or parallelism > 10:
+            return "Invalid Scale: Must be between 1 and 10"
+
+        job.spec.parallelism = parallelism
+
+        await self.batch_api.patch_namespaced_job(
+            name=job.metadata.name, namespace=self.namespace, body=job
+        )
+
+        return None
+
     async def delete_crawl_configs_for_archive(self, archive):
         """Delete all crawl configs for given archive"""
         return await self._delete_crawl_configs(f"btrix.archive={archive}")
@@ -307,9 +337,12 @@ class K8SManager:
 
         crawl = self._make_crawl_for_job(job, reason, True)
 
-        await self.crawl_ops.store_crawl(crawl)
+        # if update succeeds, than crawl has not completed, so likely a failure
+        failure = await self.crawl_ops.store_crawl(crawl)
 
-        await self._delete_job(job_name)
+        # keep failed jobs around, for now
+        if not failure:
+            await self._delete_job(job_name)
 
     # ========================================================================
     # Internal Methods
@@ -322,6 +355,7 @@ class K8SManager:
         return Crawl(
             id=job.metadata.name,
             state=state,
+            scale=job.spec.parallelism or 1,
             user=job.metadata.labels["btrix.user"],
             aid=job.metadata.labels["btrix.archive"],
             cid=job.metadata.labels["btrix.crawlconfig"],
@@ -455,15 +489,8 @@ class K8SManager:
             body=job, namespace=self.namespace
         )
 
-    def _get_job_template(
-        self, uid, labels, annotations, crawl_timeout, extra_crawl_params
-    ):
+    def _get_job_template(self, uid, labels, annotations, crawl_timeout, parallel):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
-
-        command = ["crawl", "--config", "/tmp/crawl-config.json"]
-
-        if extra_crawl_params:
-            command += extra_crawl_params
 
         requests_memory = "256M"
         limit_memory = "1G"
@@ -486,6 +513,7 @@ class K8SManager:
             "metadata": {"annotations": annotations},
             "spec": {
                 "backoffLimit": self.crawl_retries,
+                "parallelism": parallel,
                 "template": {
                     "metadata": {"labels": labels},
                     "spec": {
@@ -494,7 +522,11 @@ class K8SManager:
                                 "name": "crawler",
                                 "image": self.crawler_image,
                                 "imagePullPolicy": "Never",
-                                "command": command,
+                                "command": [
+                                    "crawl",
+                                    "--config",
+                                    "/tmp/crawl-config.json",
+                                ],
                                 "volumeMounts": [
                                     {
                                         "name": "crawl-config",
@@ -504,7 +536,8 @@ class K8SManager:
                                     }
                                 ],
                                 "envFrom": [
-                                    {"secretRef": {"name": f"crawl-secret-{uid}"}}
+                                    {"configMapRef": {"name": "shared-crawler-config"}},
+                                    {"secretRef": {"name": f"crawl-secret-{uid}"}},
                                 ],
                                 "env": [
                                     {

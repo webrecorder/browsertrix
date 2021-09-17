@@ -6,3 +6,4 @@ kubernetes-asyncio
 aiodocker
 apscheduler
 aioprocessing
+aioredis

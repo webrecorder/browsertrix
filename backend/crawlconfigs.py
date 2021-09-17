@@ -76,6 +76,7 @@ class CrawlConfigIn(BaseModel):
     runNow: Optional[bool] = False
 
     crawlTimeout: Optional[int] = 0
+    parallel: Optional[int] = 1
 
     config: RawCrawlConfig
 
@@ -94,6 +95,7 @@ class CrawlConfig(BaseMongoModel):
     config: RawCrawlConfig
 
     crawlTimeout: Optional[int] = 0
+    parallel: Optional[int] = 1
 
     crawlCount: Optional[int] = 0
 
