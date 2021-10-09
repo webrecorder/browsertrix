@@ -8,7 +8,7 @@ import asyncio
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
 
-from crawls import Crawl
+from crawls import Crawl, CrawlFile
 
 
 # ============================================================================
@@ -34,7 +34,6 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
-        print(self.namespace, flush=True)
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
@@ -84,6 +83,64 @@ class K8SManager:
                 except Exception as exc:
                     print(exc)
 
+    # pylint: disable=unused-argument
+    async def check_storage(self, storage_name, is_default=False):
+        """Check if storage_name is valid by checking existing secret
+        is_default flag ignored"""
+        try:
+            await self.core_api.read_namespaced_secret(
+                f"storage-{storage_name}",
+                namespace=self.namespace,
+            )
+        except Exception:
+            # pylint: disable=broad-except,raise-missing-from
+            raise Exception(f"Storage {storage_name} not found")
+
+        return True
+
+    async def update_archive_storage(self, aid, uid, storage):
+        """Update storage by either creating a per-archive secret, if using custom storage
+        or deleting per-archive secret, if using default storage"""
+        archive_storage_name = f"storage-{aid}"
+        if storage.type == "default":
+            try:
+                await self.core_api.delete_namespaced_secret(
+                    archive_storage_name,
+                    namespace=self.namespace,
+                    propagation_policy="Foreground",
+                )
+            # pylint: disable=bare-except
+            except:
+                pass
+
+            return
+
+        labels = {"btrix.archive": aid, "btrix.user": uid}
+
+        crawl_secret = client.V1Secret(
+            metadata={
+                "name": archive_storage_name,
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            string_data={
+                "STORE_ENDPOINT_URL": storage.endpoint_url,
+                "STORE_ACCESS_KEY": storage.access_key,
+                "STORE_SECRET_KEY": storage.secret_key,
+            },
+        )
+
+        try:
+            await self.core_api.create_namespaced_secret(
+                namespace=self.namespace, body=crawl_secret
+            )
+
+        # pylint: disable=bare-except
+        except:
+            await self.core_api.patch_namespaced_secret(
+                name=archive_storage_name, namespace=self.namespace, body=crawl_secret
+            )
+
     async def add_crawl_config(
         self,
         crawlconfig,
@@ -94,11 +151,20 @@ class K8SManager:
         userid = crawlconfig.user
         aid = crawlconfig.archive
 
+        if storage.type == "default":
+            storage_name = storage.name
+            storage_path = storage.path
+        else:
+            storage_name = aid
+            storage_path = ""
+
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
             "btrix.crawlconfig": cid,
         }
+
+        await self.check_storage(storage_name)
 
         # Create Config Map
         config_map = self._create_config_map(crawlconfig, labels)
@@ -107,39 +173,19 @@ class K8SManager:
             namespace=self.namespace, body=config_map
         )
 
-        # Create Secret
-        endpoint_with_coll_url = os.path.join(
-            storage.endpoint_url, "collections", crawlconfig.config.collection + "/"
-        )
-
-        crawl_secret = client.V1Secret(
-            metadata={
-                "name": f"crawl-secret-{cid}",
-                "namespace": self.namespace,
-                "labels": labels,
-            },
-            string_data={
-                "STORE_USER": userid,
-                "STORE_ARCHIVE": aid,
-                "STORE_ENDPOINT_URL": endpoint_with_coll_url,
-                "STORE_ACCESS_KEY": storage.access_key,
-                "STORE_SECRET_KEY": storage.secret_key,
-                "WEBHOOK_URL": "http://browsertrix-cloud.default:8000/_crawls/done",
-            },
-        )
-
-        await self.core_api.create_namespaced_secret(
-            namespace=self.namespace, body=crawl_secret
-        )
-
         # Create Cron Job
-
-        annotations = {"btrix.run.schedule": crawlconfig.schedule}
+        annotations = {
+            "btrix.run.schedule": crawlconfig.schedule,
+            "btrix.storage_name": storage_name,
+            "btrix.tag.coll": crawlconfig.config.collection,
+        }
 
         suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
 
         job_template = self._get_job_template(
             cid,
+            storage_name,
+            storage_path,
             labels,
             annotations,
             crawlconfig.crawlTimeout,
@@ -236,28 +282,38 @@ class K8SManager:
             if job.status.active
         ]
 
-    async def validate_crawl_complete(self, crawlcomplete):
+    async def process_crawl_complete(self, crawlcomplete):
         """Ensure the crawlcomplete data is valid (job exists and user matches)
         Fill in additional details about the crawl"""
         job = await self.batch_api.read_namespaced_job(
             name=crawlcomplete.id, namespace=self.namespace
         )
 
-        if not job or job.metadata.labels["btrix.user"] != crawlcomplete.user:
-            return None
+        if not job:  # or job.metadata.labels["btrix.user"] != crawlcomplete.user:
+            return None, None
 
         manual = job.metadata.annotations.get("btrix.run.manual") == "1"
         if manual:
             self.loop.create_task(self._delete_job(job.metadata.name))
 
-        return self._make_crawl_for_job(
+        crawl = self._make_crawl_for_job(
             job,
             "complete" if crawlcomplete.completed else "partial_complete",
             finish_now=True,
-            filename=crawlcomplete.filename,
-            size=crawlcomplete.size,
-            hashstr=crawlcomplete.hash,
         )
+
+        filename = (
+            job.metadata.annotations.get("btrix.bucket_endpoint_prefix", "")
+            + crawlcomplete.filename
+        )
+
+        crawl_file = CrawlFile(
+            filename=filename,
+            size=crawlcomplete.size,
+            hash=crawlcomplete.hash,
+        )
+
+        return crawl, crawl_file
 
     async def stop_crawl(self, job_name, aid, graceful=True):
         """Attempt to stop crawl, either gracefully by issuing a SIGTERM which
@@ -348,10 +404,13 @@ class K8SManager:
     # Internal Methods
 
     # pylint: disable=no-self-use
-    def _make_crawl_for_job(
-        self, job, state, finish_now=False, filename=None, size=None, hashstr=None
-    ):
+    def _make_crawl_for_job(self, job, state, finish_now=False):
         """ Make a crawl object from a job"""
+        tags = {}
+        for name in job.metadata.annotations:
+            if name.startswith("btrix.tag."):
+                tags[name[len("btrix.tag.") :]] = job.metadata.annotations.get(name)
+
         return Crawl(
             id=job.metadata.name,
             state=state,
@@ -365,9 +424,7 @@ class K8SManager:
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
-            filename=filename,
-            size=size,
-            hash=hashstr,
+            tags=tags,
         )
 
     async def _delete_job(self, name):
@@ -441,11 +498,11 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-        await self.core_api.delete_collection_namespaced_secret(
-            namespace=self.namespace,
-            label_selector=label,
-            propagation_policy="Foreground",
-        )
+        # await self.core_api.delete_collection_namespaced_secret(
+        #    namespace=self.namespace,
+        #    label_selector=label,
+        #    propagation_policy="Foreground",
+        # )
 
         await self.core_api.delete_collection_namespaced_config_map(
             namespace=self.namespace,
@@ -470,6 +527,7 @@ class K8SManager:
 
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"
+        print("NAME", name, flush=True)
 
         object_meta = client.V1ObjectMeta(
             name=name,
@@ -489,7 +547,16 @@ class K8SManager:
             body=job, namespace=self.namespace
         )
 
-    def _get_job_template(self, uid, labels, annotations, crawl_timeout, parallel):
+    def _get_job_template(
+        self,
+        cid,
+        storage_name,
+        storage_path,
+        labels,
+        annotations,
+        crawl_timeout,
+        parallel,
+    ):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
         requests_memory = "256M"
@@ -537,7 +604,7 @@ class K8SManager:
                                 ],
                                 "envFrom": [
                                     {"configMapRef": {"name": "shared-crawler-config"}},
-                                    {"secretRef": {"name": f"crawl-secret-{uid}"}},
+                                    {"secretRef": {"name": f"storage-{storage_name}"}},
                                 ],
                                 "env": [
                                     {
@@ -547,7 +614,12 @@ class K8SManager:
                                                 "fieldPath": "metadata.labels['job-name']"
                                             }
                                         },
-                                    }
+                                    },
+                                    {"name": "STORE_PATH", "value": storage_path},
+                                    {
+                                        "name": "STORE_FILENAME",
+                                        "value": "@ts-@hostname.wacz",
+                                    },
                                 ],
                                 "resources": resources,
                             }
@@ -556,7 +628,7 @@ class K8SManager:
                             {
                                 "name": "crawl-config",
                                 "configMap": {
-                                    "name": f"crawl-config-{uid}",
+                                    "name": f"crawl-config-{cid}",
                                     "items": [
                                         {
                                             "key": "crawl-config.json",

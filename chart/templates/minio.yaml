@@ -31,7 +31,7 @@ spec:
           args: ["server", "/data", "--console-address", ":9001"]
           envFrom:
             - secretRef:
-                name: storage-auth
+                name: auth-secrets
 
           volumeMounts:
             - name: data-storage

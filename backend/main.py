@@ -12,6 +12,8 @@ from db import init_db
 from emailsender import EmailSender
 from users import init_users_api, UserDB
 from archives import init_archives_api
+
+from storages import init_storages_api
 from crawlconfigs import init_crawl_config_api
 from crawls import init_crawls_api
 
@@ -27,13 +29,6 @@ class BrowsertrixAPI:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, _app):
         self.app = _app
-
-        self.default_storage_endpoint_url = os.environ.get(
-            "STORE_ENDPOINT_URL", "http://minio:9000/test-bucket/"
-        )
-
-        self.default_storage_access_key = os.environ.get("STORE_ACCESS_KEY", "access")
-        self.default_storage_secret_key = os.environ.get("STORE_SECRET_KEY", "secret")
 
         self.email = EmailSender()
         self.crawl_manager = None
@@ -63,6 +58,8 @@ class BrowsertrixAPI:
             from dockerman import DockerManager
 
             self.crawl_manager = DockerManager(self.archive_ops)
+
+        init_storages_api(self.archive_ops, self.crawl_manager, current_active_user)
 
         self.crawl_config_ops = init_crawl_config_api(
             self.mdb,
@@ -101,9 +98,7 @@ class BrowsertrixAPI:
 
             await self.archive_ops.create_new_archive_for_user(
                 archive_name=archive_name,
-                base_endpoint_url=self.default_storage_endpoint_url,
-                access_key=self.default_storage_access_key,
-                secret_key=self.default_storage_secret_key,
+                storage_name="default",
                 user=user,
             )
 

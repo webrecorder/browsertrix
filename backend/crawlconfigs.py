@@ -136,9 +136,9 @@ class CrawlOps:
         crawlconfig = CrawlConfig.from_dict(data)
 
         await self.crawl_manager.add_crawl_config(
-            crawlconfig=crawlconfig,
-            storage=archive.storage,
+            crawlconfig=crawlconfig, storage=archive.storage
         )
+
         return result
 
     async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):

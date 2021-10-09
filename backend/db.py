@@ -45,8 +45,8 @@ class BaseMongoModel(BaseModel):
         """convert Archive to dict"""
         return self.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
 
-    def to_dict(self):
+    def to_dict(self, **opts):
         """convert to dict for mongo"""
-        res = self.dict()
+        res = self.dict(**opts)
         res["_id"] = res.pop("id", "")
         return res

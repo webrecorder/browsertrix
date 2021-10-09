@@ -30,7 +30,7 @@ spec:
             - name: MC_HOST_local
               valueFrom:
                 secretKeyRef:
-                  name: storage-auth
+                  name: auth-secrets
                   key: MC_HOST
 
           command: ['/bin/sh']
@@ -44,11 +44,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Values.name }}-env-config
-
-          {{- if .Values.storage }}
             - secretRef:
-                name: storage-auth
-          {{- end }}
+                name: auth-secrets
 
           resources:
             limits:

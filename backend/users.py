@@ -11,7 +11,7 @@ from typing import Dict, Optional
 from enum import IntEnum
 
 
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 
 from fastapi_users import FastAPIUsers, models
 from fastapi_users.authentication import JWTAuthentication
@@ -44,9 +44,6 @@ class User(models.BaseUser):
     Base User Model
     """
 
-    usage: Dict[str, int] = {}
-
-
 # ============================================================================
 class UserCreate(models.BaseUserCreate):
     """
@@ -71,19 +68,11 @@ class UserDB(User, models.BaseUserDB):
     """
 
     invites: Dict[str, InvitePending] = {}
-    usage: Dict[str, int] = {}
 
 
 # ============================================================================
 class UserDBOps(MongoDBUserDatabase):
     """ User DB Operations wrapper """
-
-    async def inc_usage(self, userid, amount):
-        """ Increment usage counter by month for this user """
-        yymm = datetime.utcnow().strftime("%Y-%m")
-        await self.collection.find_one_and_update(
-            {"id": UUID4(userid)}, {"$inc": {f"usage.{yymm}": amount}}
-        )
 
 
 # ============================================================================

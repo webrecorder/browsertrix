@@ -1,12 +1,10 @@
 """
 Archive API handling
 """
-import os
 import uuid
 from datetime import datetime
 
-from typing import Optional, Dict
-
+from typing import Dict, Union, Literal
 
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
@@ -37,14 +35,23 @@ class UpdateRole(InviteRequest):
 
 
 # ============================================================================
+class DefaultStorage(BaseModel):
+    """ Storage reference """
+
+    type: Literal["default"] = "default"
+    name: str
+    path: str = ""
+
+
+# ============================================================================
 class S3Storage(BaseModel):
     """S3 Storage Model"""
 
-    type: str = "S3Storage"
+    type: Literal["s3"] = "s3"
+
     endpoint_url: str
     access_key: str
     secret_key: str
-    is_public: Optional[bool]
 
 
 # ============================================================================
@@ -55,7 +62,7 @@ class Archive(BaseMongoModel):
 
     users: Dict[str, UserRole]
 
-    storage: S3Storage
+    storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
 
@@ -81,9 +88,10 @@ class Archive(BaseMongoModel):
 
     def serialize_for_user(self, user: User):
         """Serialize based on current user access"""
-        exclude = set()
+        exclude = {"storage"}
+
         if not self.is_owner(user):
-            exclude = {"users", "storage"}
+            exclude.add("users")
 
         if not self.is_crawler(user):
             exclude.add("usage")
@@ -108,22 +116,16 @@ class ArchiveOps:
 
         self.router = None
         self.archive_crawl_dep = None
+        self.archive_owner_dep = None
 
     async def add_archive(self, archive: Archive):
         """Add new archive"""
         return await self.archives.insert_one(archive.to_dict())
 
-    @staticmethod
-    def get_endpoint_url(base, id_):
-        """Get endpoint for a specific archive from base"""
-        return os.path.join(base, id_) + "/"
-
     async def create_new_archive_for_user(
         self,
         archive_name: str,
-        base_endpoint_url: str,
-        access_key: str,
-        secret_key: str,
+        storage_name,
         user: User,
     ):
         # pylint: disable=too-many-arguments
@@ -131,23 +133,16 @@ class ArchiveOps:
 
         id_ = str(uuid.uuid4())
 
-        endpoint_url = self.get_endpoint_url(base_endpoint_url, id_)
-
-        storage = S3Storage(
-            endpoint_url=endpoint_url,
-            access_key=access_key,
-            secret_key=secret_key,
-            name="default",
-        )
+        storage_path = id_ + "/"
 
         archive = Archive(
             id=id_,
             name=archive_name,
             users={str(user.id): UserRole.OWNER},
-            storage=storage,
+            storage=DefaultStorage(name=storage_name, path=storage_path),
         )
 
-        print(f"Created New Archive with storage at {endpoint_url}")
+        print(f"Created New Archive with storage {storage_name} / {storage_path}")
         await self.add_archive(archive)
 
     async def get_archives_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
@@ -173,6 +168,14 @@ class ArchiveOps:
     async def update(self, archive: Archive):
         """Update existing archive"""
         self.archives.replace_one({"_id": archive.id}, archive.to_dict())
+
+    async def update_storage(
+        self, archive: Archive, storage: Union[S3Storage, DefaultStorage]
+    ):
+        """ Update storage on an existing archive """
+        return await self.archives.find_one_and_update(
+            {"_id": archive.id}, {"$set": {"storage": storage.dict()}}
+        )
 
     async def add_new_user_invite(
         self, new_user_invite: NewUserInvite, inviter_email, archive_name
@@ -251,6 +254,17 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
 
         return archive
 
+    async def archive_owner_dep(
+        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    ):
+        if not archive.is_owner(user):
+            raise HTTPException(
+                status_code=403,
+                detail="User does not have permission to perform this action",
+            )
+
+        return archive
+
     router = APIRouter(
         prefix="/archives/{aid}",
         dependencies=[Depends(archive_dep)],
@@ -259,6 +273,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
 
     ops.router = router
     ops.archive_crawl_dep = archive_crawl_dep
+    ops.archive_owner_dep = archive_owner_dep
 
     @app.get("/archives", tags=["archives"])
     async def get_archives(user: User = Depends(user_dep)):
@@ -274,16 +289,9 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
     @router.post("/invite", tags=["invites"])
     async def invite_user(
         invite: InviteRequest,
-        archive: Archive = Depends(archive_dep),
+        archive: Archive = Depends(archive_owner_dep),
         user: User = Depends(user_dep),
     ):
-
-        if not archive.is_owner(user):
-            raise HTTPException(
-                status_code=403,
-                detail="User does not have permission to invite other users",
-            )
-
         invite_code = uuid.uuid4().hex
 
         invite_pending = InvitePending(
@@ -323,15 +331,9 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
     @router.patch("/user-role", tags=["invites"])
     async def set_role(
         update: UpdateRole,
-        archive: Archive = Depends(archive_dep),
+        archive: Archive = Depends(archive_owner_dep),
         user: User = Depends(user_dep),
     ):
-
-        if not archive.is_owner(user):
-            raise HTTPException(
-                status_code=403,
-                detail="User does not have permission to invite other users",
-            )
 
         other_user = await users.db.get_by_email(update.email)
         if not other_user:

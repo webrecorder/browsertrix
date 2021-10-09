@@ -63,28 +63,18 @@ crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ"
 # Storage
 # =========================================
 
-storage:
-  access_key: "ADMIN"
-  secret_key: "PASSW0RD"
-  # api_endpoint can be "" if using AWS S3, otherwise, set to your provider's S3 endpoint
-  endpoint: "http://local-minio.default:9000/test-bucket/"
-  # if your provider requires path-style URLs for S3 objects, set force_path_style to "true" (any truthy string)
-  # https://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html
-  force_path_style: "true"
-  # the target bucket's name and desired storage subpath, formatted as an s3:// URL for convenience
-  # (the protocol is ignored; the bucket == the netloc; the subpath == the rest)
-  storage_prefix: "s3://test/bucket/"
-  # acl settings for uploaded files, if any.
-  # for example, to enable uploaded files to be public, set to:
-  # acl: "public-read"
-  # https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-  acl: ""
+storages:
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+
+    endpoint_url: "http://local-minio.default:9000/test-bucket/"
 
 
 # Local Minio Pod (optional)
 # =========================================
 # set to true to use a local minio image
-minio_local: True
+minio_local: true
 
 minio_scheme: "http"
 minio_host: "local-minio.default:9000"

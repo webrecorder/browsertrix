@@ -37,13 +37,13 @@ Note: When deployed in local Docker, failed crawls are not retried currently. Sc
 
 To deploy to K8s, `helm` is required. Browsertrix Cloud comes with a helm chart, which can be installed as follows:
 
-`helm install -f ./chart/values.yaml btrix`
+`helm install -f ./chart/values.yaml btrix ./chart/`
 
 This will create a `browsertrix-cloud` service in the default namespace.
 
 For a quick update, the following is recommended:
 
-`helm upgrade -f ./chart/values.yaml btrix ./chart/ --recreate-pods
+`helm upgrade -f ./chart/values.yaml btrix ./chart/`
 
 
 Note: When deployed in Kubernetes, failed crawls are automatically retried. Scheduling is handled via Kubernetes Cronjobs, and crawl jobs are run in the `crawlers` namespace.

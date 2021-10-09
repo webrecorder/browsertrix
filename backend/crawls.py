@@ -29,6 +29,15 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
+class CrawlFile(BaseModel):
+    """ output of a crawl """
+
+    filename: str
+    hash: str
+    size: int
+
+
+# ============================================================================
 class Crawl(BaseMongoModel):
     """ Store State of a Crawl (Finished or Running) """
 
@@ -45,12 +54,13 @@ class Crawl(BaseMongoModel):
     state: str
 
     scale: int = 1
+    completions: Optional[int] = 0
 
     stats: Optional[Dict[str, str]]
 
-    filename: Optional[str]
-    size: Optional[int]
-    hash: Optional[str]
+    files: Optional[List[CrawlFile]]
+
+    tags: Optional[Dict[str, str]]
 
 
 # ============================================================================
@@ -90,19 +100,31 @@ class CrawlOps:
 
     async def on_handle_crawl_complete(self, msg: CrawlCompleteIn):
         """ Handle completed crawl, add to crawls db collection, also update archive usage """
-        crawl = await self.crawl_manager.validate_crawl_complete(msg)
+        crawl, crawl_file = await self.crawl_manager.process_crawl_complete(msg)
         if not crawl:
             print("Not a valid crawl complete msg!", flush=True)
             return
 
-        await self.store_crawl(crawl, update_existing=True)
+        await self.store_crawl(crawl, crawl_file)
 
-    async def store_crawl(self, crawl: Crawl, update_existing=False):
-        """ Add finished crawl to db, increment archive usage """
-        if update_existing:
-            await self.crawls.find_one_and_replace(
-                {"_id": crawl.id}, crawl.to_dict(), upsert=True
+    async def store_crawl(self, crawl: Crawl, crawl_file: CrawlFile = None):
+        """Add finished crawl to db, increment archive usage.
+        If crawl file provided, update and add file"""
+        if crawl_file:
+            crawl_update = {
+                "$set": crawl.to_dict(exclude={"files", "completions"}),
+                "$push": {"files": crawl_file.dict()},
+            }
+
+            if crawl.state == "complete":
+                crawl_update["$inc"] = {"completions": 1}
+
+            await self.crawls.find_one_and_update(
+                {"_id": crawl.id},
+                crawl_update,
+                upsert=True,
             )
+
         else:
             try:
                 await self.crawls.insert_one(crawl.to_dict())
@@ -112,7 +134,6 @@ class CrawlOps:
 
         dura = int((crawl.finished - crawl.started).total_seconds())
 
-        print(crawl, flush=True)
         print(f"Duration: {dura}", flush=True)
 
         await self.archives.inc_usage(crawl.aid, dura)

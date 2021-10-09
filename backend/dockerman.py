@@ -17,6 +17,8 @@ import aioprocessing
 
 from scheduler import run_scheduler
 
+from archives import S3Storage
+
 from crawls import Crawl
 
 
@@ -36,6 +38,15 @@ class DockerManager:
 
         self.extra_crawl_params = extra_crawl_params or []
         self._event_q = None
+
+        self.storages = {
+            "default": S3Storage(
+                name="default",
+                access_key=os.environ["STORE_ACCESS_KEY"],
+                secret_key=os.environ["STORE_SECRET_KEY"],
+                endpont_url=os.environ["STORE_ENDPOINT_URL"],
+            )
+        }
 
         self.loop = asyncio.get_running_loop()
 
@@ -121,6 +132,27 @@ class DockerManager:
         """ set crawl ops """
         self.crawl_ops = ops
 
+    async def get_storage(self, storage):
+        """ get storage from existing storage object or reference """
+
+        # pylint: disable=no-else-return
+        if storage.type == "default":
+            return self.storages[storage], storage.path
+        else:
+            return storage, ""
+
+    async def check_storage(self, storage_name, is_default=False):
+        """ check if storage_name is valid storage """
+        # if not default, don't validate
+        if not is_default:
+            return True
+
+        # if default, ensure name is in default storages list
+        return self.storages[storage_name]
+
+    async def update_archive_storage(self, aid, uid, storage):
+        """ No storage kept for docker manager """
+
     async def add_crawl_config(
         self,
         crawlconfig,
@@ -130,6 +162,8 @@ class DockerManager:
         cid = str(crawlconfig.id)
         userid = crawlconfig.user
         aid = crawlconfig.archive
+
+        storage, storage_path = await self.get_storage(storage)
 
         labels = {
             "btrix.user": userid,
@@ -154,6 +188,7 @@ class DockerManager:
         if crawlconfig.runNow:
             await self._run_crawl_now(
                 storage,
+                storage_path,
                 labels,
                 volume,
             )
@@ -225,10 +260,12 @@ class DockerManager:
         labels = volume_data["Labels"]
 
         archive = None
+        storage = None
+        storage_path = None
 
         try:
             archive = await self.archive_ops.get_archive_by_id(labels["btrix.archive"])
-            storage = archive.storage
+            storage, storage_path = await self.get_storage(archive.storage)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -236,11 +273,11 @@ class DockerManager:
             return None
 
         container = await self._run_crawl_now(
-            storage, labels, volume_name, schedule, manual
+            storage, storage_path, labels, volume_name, schedule, manual
         )
         return container["id"][:12]
 
-    async def validate_crawl_complete(self, crawlcomplete):
+    async def process_crawl_complete(self, crawlcomplete):
         """Validate that crawl is valid by checking that container exists and label matches
         Return completed crawl object from container"""
 
@@ -260,7 +297,7 @@ class DockerManager:
 
         return crawl
 
-    async def scale_crawl(self): # job_name, aid, parallelism=1):
+    async def scale_crawl(self):  # job_name, aid, parallelism=1):
         """ Scale running crawl, currently only supported in k8s"""
         return "Not Supported"
 
@@ -348,7 +385,9 @@ class DockerManager:
         await self._event_q.coro_put({"cid": cid, "schedule": schedule})
 
     # pylint: disable=too-many-arguments
-    async def _run_crawl_now(self, storage, labels, volume, schedule="", manual=True):
+    async def _run_crawl_now(
+        self, storage, storage_path, labels, volume, schedule="", manual=True
+    ):
         # Set Run Config
         command = [
             "crawl",
@@ -361,16 +400,17 @@ class DockerManager:
         if self.extra_crawl_params:
             command += self.extra_crawl_params
 
-        endpoint_with_coll_url = os.path.join(
-            storage.endpoint_url, "collections", labels["btrix.coll"] + "/"
-        )
+        # endpoint_with_coll_url = os.path.join(
+        #    storage.endpoint_url, "collections", labels["btrix.coll"] + "/"
+        # )
 
         env_vars = [
             f"STORE_USER={labels['btrix.user']}",
             f"STORE_ARCHIVE={labels['btrix.archive']}",
-            f"STORE_ENDPOINT_URL={endpoint_with_coll_url}",
+            f"STORE_ENDPOINT_URL={storage.endpoint_url}",
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
+            f"STORE_PATH={storage_path}",
             "WEBHOOK_URL=http://backend:8000/_crawls/done",
         ]
 
