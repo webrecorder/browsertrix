@@ -1,0 +1,59 @@
+{{- if .Values.redis_local }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: local-redis
+
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: local-redis
+
+    spec:
+      volumes:
+        - name: data-storage
+          hostPath:
+            path: /tmp/browsertrix-redis-data
+            type: DirectoryOrCreate
+
+      containers:
+        - name: redis
+          image: {{ .Values.redis_image }}
+          imagePullPolicy: {{ .Values.redis_pull_policy }}
+
+          args: ["--appendonly", "yes"]
+          volumeMounts:
+            - name: data-storage
+              mountPath: /data
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-redis
+  labels:
+    app: local-redis
+
+spec:
+  type: ClusterIP
+  selector:
+    app: local-redis
+
+  ports:
+    - protocol: TCP
+      port: 6379
+      name: redis
+
+{{- end }}
+
+

@@ -135,11 +135,11 @@ class CrawlOps:
 
         crawlconfig = CrawlConfig.from_dict(data)
 
-        await self.crawl_manager.add_crawl_config(
+        new_name = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig, storage=archive.storage
         )
 
-        return result
+        return result, new_name
 
     async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):
         """ Update schedule for existing crawl config"""
@@ -216,8 +216,8 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        res = await ops.add_crawl_config(config, archive, user)
-        return {"added": str(res.inserted_id)}
+        res, new_job_name = await ops.add_crawl_config(config, archive, user)
+        return {"added": str(res.inserted_id), "run_now_job": new_job_name}
 
     @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
     async def update_crawl_schedule(

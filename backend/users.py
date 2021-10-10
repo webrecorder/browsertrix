@@ -44,6 +44,7 @@ class User(models.BaseUser):
     Base User Model
     """
 
+
 # ============================================================================
 class UserCreate(models.BaseUserCreate):
     """

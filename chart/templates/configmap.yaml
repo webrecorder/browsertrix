@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-env-config
+  namespace: {{ .Release.Namespace }}
+
+data:
+  MONGO_HOST: {{ .Values.mongo_host }}
+
+  CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
+  CRAWLER_IMAGE: {{ .Values.crawler_image }}
+
+  CRAWL_TIMEOUT: "{{ .Values.crawl_timeout }}"
+  CRAWL_RETRIES: "{{ .Values.crawl_retries }}"
+
+  REDIS_URL: "{{ .Values.redis_url }}"
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-crawler-config
+  namespace: {{ .Values.crawler_namespace }}
+
+data:
+  CRAWL_ARGS: "{{ .Values.crawler_args }} --redisStoreUrl {{ .Values.redis_url }}"
+  WEBHOOK_URL: "http://browsertrix-cloud.default/_crawls/done"
+  STORE_USER: ""
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: {{ .Release.Namespace }}
+
+data:
+{{ (.Files.Glob "*.conf").AsConfig | indent 2 }}

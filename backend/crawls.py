@@ -5,7 +5,7 @@ import asyncio
 from typing import Optional, List, Dict
 from datetime import datetime
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, Request, HTTPException
 from pydantic import BaseModel
 import pymongo
 import aioredis
@@ -197,7 +197,7 @@ class CrawlOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, too-many-locals
 def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archives):
     """ API for crawl management, including crawl done callback"""
 
@@ -276,6 +276,16 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
 
         return {"deleted": res}
 
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}/running",
+        tags=["crawls"],
+    )
+    async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
+        if not crawl_manager.is_running(crawl_id, archive.id):
+            raise HTTPException(status_code=404, detail="No Such Crawl")
+
+        return {"running": True}
+
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/scale",
         tags=["crawls"],
@@ -289,3 +299,11 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
             raise HTTPException(status_code=400, detail=error)
 
         return {"scaled": scale.scale}
+
+    @app.post("/archives/{aid}/crawls/{crawl_id}/watch", tags=["crawls"])
+    async def watch_crawl(
+        crawl_id, request: Request, archive: Archive = Depends(archive_crawl_dep)
+    ):
+        await crawl_manager.init_crawl_screencast(crawl_id, archive.id)
+        watch_url = f"{request.url.scheme}://{request.url.netloc}/watch/{archive.id}/{crawl_id}/ws"
+        return {"watch_url": watch_url}

@@ -216,9 +216,10 @@ class K8SManager:
 
         # Run Job Now
         if run_now:
-            await self._create_run_now_job(cron_job)
+            new_job = await self._create_run_now_job(cron_job)
+            return new_job.metadata.name
 
-        return cron_job
+        return ""
 
     async def update_crawl_schedule(self, cid, schedule):
         """ Update the schedule for existing crawl config """
@@ -282,6 +283,31 @@ class K8SManager:
             if job.status.active
         ]
 
+    async def init_crawl_screencast(self, crawl_id, aid):
+        """ Init service for this job/crawl_id to support screencasting """
+        labels = {"btrix.archive": aid}
+
+        service = client.V1Service(
+            kind="Service",
+            api_version="v1",
+            metadata={
+                "name": crawl_id,
+                "labels": labels,
+            },
+            spec={
+                "selector": {"job-name": crawl_id},
+                "ports": [{"protocol": "TCP", "port": 9037, "name": "screencast"}],
+            },
+        )
+
+        try:
+            await self.core_api.create_namespaced_service(
+                body=service, namespace=self.namespace
+            )
+        except client.exceptions.ApiException as api_exc:
+            if api_exc.status != 409:
+                raise api_exc
+
     async def process_crawl_complete(self, crawlcomplete):
         """Ensure the crawlcomplete data is valid (job exists and user matches)
         Fill in additional details about the crawl"""
@@ -314,6 +340,21 @@ class K8SManager:
         )
 
         return crawl, crawl_file
+
+    async def is_running(self, job_name, aid):
+        """ Return true if the specified crawl (by job_name) is running """
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=job_name, namespace=self.namespace
+            )
+
+            if not job or job.metadata.labels["btrix.archive"] != aid:
+                return False
+
+            return True
+        # pylint: disable=broad-except
+        except Exception:
+            return False
 
     async def stop_crawl(self, job_name, aid, graceful=True):
         """Attempt to stop crawl, either gracefully by issuing a SIGTERM which
@@ -435,6 +476,17 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
+        try:
+            await self.core_api.delete_namespaced_service(
+                name=name,
+                namespace=self.namespace,
+                grace_period_seconds=60,
+                propagation_policy="Foreground",
+            )
+        # pylint: disable=bare-except
+        except:
+            pass
+
     def _create_config_map(self, crawlconfig, labels):
         """ Create Config Map based on CrawlConfig + labels """
         config_map = client.V1ConfigMap(
@@ -498,12 +550,6 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-        # await self.core_api.delete_collection_namespaced_secret(
-        #    namespace=self.namespace,
-        #    label_selector=label,
-        #    propagation_policy="Foreground",
-        # )
-
         await self.core_api.delete_collection_namespaced_config_map(
             namespace=self.namespace,
             label_selector=label,
@@ -527,7 +573,6 @@ class K8SManager:
 
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"
-        print("NAME", name, flush=True)
 
         object_meta = client.V1ObjectMeta(
             name=name,

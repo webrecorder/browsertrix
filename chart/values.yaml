@@ -16,6 +16,15 @@ api_requests_memory: "100M"
 api_limits_memory: "256M"
 
 
+# Nginx Image
+# =========================================
+nginx_image: "nginx"
+nginx_pull_policy: "IfNotPresent"
+
+nginx_limit_cpu: "100m"
+nginx_requests_cpu: "25m"
+
+
 # MongoDB Image
 # =========================================
 mongo_local: true
@@ -56,7 +65,7 @@ crawler_namespace: "crawlers"
 crawl_retries: 1
 
 # browsertrix-crawler args:
-crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ"
+crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --screencastPort 9037 --headless"
 
 
 
@@ -90,8 +99,11 @@ minio_pull_policy: "IfNotPresent"
 # Ingress (Optional)
 # Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
 ingress:
-  host: ""
-  cert_email: "ikreymer@gmail.com"
+  host: "btrix.cloud"
+  cert_email: "test@example.com"
+  scheme: "http"
+  tls: false
+
 
 
 

@@ -11,7 +11,7 @@ services:
         - /var/run/docker.sock:/var/run/docker.sock
 
     env_file:
-      - ./config.env
+      - ./configs/config.env
 
     depends_on:
       - minio
@@ -33,7 +33,7 @@ services:
       - btrix-mongo-data:/data/db
 
     env_file:
-      - ./config.env
+      - ./configs/config.env
 
   minio:
     image: minio/minio
@@ -46,7 +46,7 @@ services:
       - btrix-minio-data:/data
 
     env_file:
-      - ./config.env
+      - ./configs/config.env
 
   init_minio_bucket:
     image: minio/mc
@@ -54,7 +54,7 @@ services:
     command: ['-c', 'mc mb local/test-bucket; mc policy set public local/test-bucket' ]
 
     env_file:
-      - ./config.env
+      - ./configs/config.env
 
     depends_on:
       - minio
