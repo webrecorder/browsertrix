@@ -19,7 +19,7 @@ from scheduler import run_scheduler
 
 from archives import S3Storage
 
-from crawls import Crawl
+from crawls import Crawl, CrawlFile
 
 
 # ============================================================================
@@ -33,6 +33,11 @@ class DockerManager:
         self.crawler_image = os.environ["CRAWLER_IMAGE"]
         self.default_network = os.environ.get("CRAWLER_NETWORK", "btrix-cloud-net")
 
+        self.redis_url = os.environ["REDIS_URL"]
+        self.crawls_done_key = "crawls-done"
+
+        self.crawl_args = os.environ["CRAWL_ARGS"]
+
         self.archive_ops = archive_ops
         self.crawl_ops = None
 
@@ -44,7 +49,7 @@ class DockerManager:
                 name="default",
                 access_key=os.environ["STORE_ACCESS_KEY"],
                 secret_key=os.environ["STORE_SECRET_KEY"],
-                endpont_url=os.environ["STORE_ENDPOINT_URL"],
+                endpoint_url=os.environ["STORE_ENDPOINT_URL"],
             )
         }
 
@@ -137,7 +142,7 @@ class DockerManager:
 
         # pylint: disable=no-else-return
         if storage.type == "default":
-            return self.storages[storage], storage.path
+            return self.storages[storage.name], storage.path
         else:
             return storage, ""
 
@@ -169,7 +174,7 @@ class DockerManager:
             "btrix.user": userid,
             "btrix.archive": aid,
             "btrix.crawlconfig": cid,
-            "btrix.coll": crawlconfig.config.collection,
+            "btrix.tag.coll": crawlconfig.config.collection,
         }
 
         if crawlconfig.crawlTimeout:
@@ -186,12 +191,14 @@ class DockerManager:
             )
 
         if crawlconfig.runNow:
-            await self._run_crawl_now(
+            return await self._run_crawl_now(
                 storage,
                 storage_path,
                 labels,
                 volume,
             )
+
+        return ""
 
     async def update_crawl_schedule(self, cid, schedule):
         """ Update the schedule for existing crawl config """
@@ -272,10 +279,9 @@ class DockerManager:
             print(exc, flush=True)
             return None
 
-        container = await self._run_crawl_now(
+        return await self._run_crawl_now(
             storage, storage_path, labels, volume_name, schedule, manual
         )
-        return container["id"][:12]
 
     async def process_crawl_complete(self, crawlcomplete):
         """Validate that crawl is valid by checking that container exists and label matches
@@ -290,12 +296,15 @@ class DockerManager:
             container,
             "complete" if crawlcomplete.completed else "partial_complete",
             finish_now=True,
-            filename=crawlcomplete.filename,
-            size=crawlcomplete.size,
-            hashstr=crawlcomplete.hash,
         )
 
-        return crawl
+        crawl_file = CrawlFile(
+            filename=crawlcomplete.filename,
+            size=crawlcomplete.size,
+            hash=crawlcomplete.hash,
+        )
+
+        return crawl, crawl_file
 
     async def scale_crawl(self):  # job_name, aid, parallelism=1):
         """ Scale running crawl, currently only supported in k8s"""
@@ -394,7 +403,7 @@ class DockerManager:
             "--config",
             "/tmp/crawlconfig/crawl-config.json",
             "--redisStoreUrl",
-            "redis://redis:6379/0",
+            self.redis_url,
         ]
 
         if self.extra_crawl_params:
@@ -411,7 +420,8 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
-            "WEBHOOK_URL=http://backend:8000/_crawls/done",
+            f"WEBHOOK_URL={self.redis_url}/{self.crawls_done_key}",
+            f"CRAWL_ARGS={self.crawl_args}",
         ]
 
         labels["btrix.run.schedule"] = schedule
@@ -429,7 +439,8 @@ class DockerManager:
             },
         }
 
-        return await self.client.containers.run(run_config)
+        container = await self.client.containers.run(run_config)
+        return container["id"]
 
     async def _list_running_containers(self, labels):
         results = await self.client.containers.list(
@@ -454,11 +465,14 @@ class DockerManager:
         await container.delete()
 
     # pylint: disable=no-self-use,too-many-arguments
-    def _make_crawl_for_container(
-        self, container, state, finish_now=False, filename=None, size=None, hashstr=None
-    ):
+    def _make_crawl_for_container(self, container, state, finish_now=False):
         """ Make a crawl object from a container data"""
         labels = container["Config"]["Labels"]
+
+        tags = {}
+        for name in labels:
+            if name.startswith("btrix.tag."):
+                tags[name[len("btrix.tag.") :]] = labels.get(name)
 
         return Crawl(
             id=container["Id"],
@@ -472,7 +486,5 @@ class DockerManager:
             finished=datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
-            filename=filename,
-            size=size,
-            hash=hashstr,
+            tags=tags,
         )

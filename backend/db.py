@@ -41,9 +41,11 @@ class BaseMongoModel(BaseModel):
         data["id"] = str(data.pop("_id"))
         return cls(**data)
 
-    def serialize(self):
+    def serialize(self, **opts):
         """convert Archive to dict"""
-        return self.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+        return self.dict(
+            exclude_unset=True, exclude_defaults=True, exclude_none=True, **opts
+        )
 
     def to_dict(self, **opts):
         """convert to dict for mongo"""

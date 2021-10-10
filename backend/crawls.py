@@ -1,6 +1,7 @@
 """ Crawl API """
 
 import asyncio
+import json
 
 from typing import Optional, List, Dict
 from datetime import datetime
@@ -88,6 +89,7 @@ class CrawlOps:
         self.crawl_manager = crawl_manager
         self.crawl_configs = crawl_configs
         self.archives = archives
+        self.crawls_done_key = "crawls-done"
 
         self.redis = None
         asyncio.create_task(self.init_redis(redis_url))
@@ -96,10 +98,29 @@ class CrawlOps:
 
     async def init_redis(self, redis_url):
         """ init redis async """
-        self.redis = await aioredis.from_url(redis_url)
+        self.redis = await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
+
+        loop = asyncio.get_running_loop()
+        loop.create_task(self.run_crawl_complete_loop())
+
+    async def run_crawl_complete_loop(self):
+        """ Wait for any crawls done from redis queue """
+        while True:
+            try:
+                _, value = await self.redis.blpop(self.crawls_done_key, timeout=0)
+                value = json.loads(value)
+                await self.on_handle_crawl_complete(CrawlCompleteIn(**value))
+
+            # pylint: disable=broad-except
+            except Exception as exc:
+                print(f"Retrying crawls done loop: {exc}")
+                await asyncio.sleep(10)
 
     async def on_handle_crawl_complete(self, msg: CrawlCompleteIn):
         """ Handle completed crawl, add to crawls db collection, also update archive usage """
+        print(msg, flush=True)
         crawl, crawl_file = await self.crawl_manager.process_crawl_complete(msg)
         if not crawl:
             print("Not a valid crawl complete msg!", flush=True)
@@ -204,13 +225,6 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
     ops = CrawlOps(mdb, redis_url, crawl_manager, crawl_config_ops, archives)
 
     archive_crawl_dep = archives.archive_crawl_dep
-
-    @app.post("/_crawls/done", tags=["_internal"])
-    async def crawl_done(msg: CrawlCompleteIn):
-        loop = asyncio.get_running_loop()
-        loop.create_task(ops.on_handle_crawl_complete(msg))
-
-        return {"success": True}
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"])
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):

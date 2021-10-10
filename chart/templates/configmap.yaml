@@ -16,6 +16,7 @@ data:
 
   REDIS_URL: "{{ .Values.redis_url }}"
 
+  REDIS_CRAWLS_DONE_KEY: "crawls-done"
 
 ---
 apiVersion: v1
@@ -26,7 +27,8 @@ metadata:
 
 data:
   CRAWL_ARGS: "{{ .Values.crawler_args }} --redisStoreUrl {{ .Values.redis_url }}"
-  WEBHOOK_URL: "http://browsertrix-cloud.default/_crawls/done"
+  #WEBHOOK_URL: "http://browsertrix-cloud.default/_crawls/done"
+  WEBHOOK_URL: "{{ .Values.redis_url }}/crawls-done"
   STORE_USER: ""
 
 ---

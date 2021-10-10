@@ -204,7 +204,11 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     @router.get("")
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         results = await ops.get_crawl_configs(archive)
-        return {"crawl_configs": [res.serialize() for res in results]}
+        return {
+            "crawl_configs": [
+                res.serialize(exclude={"archive", "runNow"}) for res in results
+            ]
+        }
 
     @router.get("/{cid}")
     async def get_crawl_config(crawl_config: CrawlConfig = Depends(crawls_dep)):
