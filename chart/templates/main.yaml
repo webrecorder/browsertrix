@@ -79,8 +79,9 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /docs
+              path: /healthz
               port: 80
+              
 
         - name: api
           image: {{ .Values.api_image }}
@@ -102,7 +103,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /docs
+              path: /healthz
               port: 8000
 ---
 

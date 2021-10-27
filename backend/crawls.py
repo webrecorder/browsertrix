@@ -36,6 +36,7 @@ class CrawlFile(BaseModel):
     filename: str
     hash: str
     size: int
+    def_storage_name: Optional[str]
 
 
 # ============================================================================
@@ -59,9 +60,9 @@ class Crawl(BaseMongoModel):
 
     stats: Optional[Dict[str, str]]
 
-    files: Optional[List[CrawlFile]]
+    files: Optional[List[CrawlFile]] = []
 
-    tags: Optional[Dict[str, str]]
+    colls: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -93,8 +94,13 @@ class CrawlOps:
 
         self.redis = None
         asyncio.create_task(self.init_redis(redis_url))
+        asyncio.create_task(self.init_index())
 
         self.crawl_manager.set_crawl_ops(self)
+
+    async def init_index(self):
+        """ init index for crawls db """
+        await self.crawls.create_index("colls")
 
     async def init_redis(self, redis_url):
         """ init redis async """
@@ -159,15 +165,23 @@ class CrawlOps:
 
         await self.archives.inc_usage(crawl.aid, dura)
 
-        await self.crawl_configs.inc_crawls(crawl.cid)
+        await self.crawl_configs.inc_crawls(crawl.cid, crawl.id, crawl.finished)
 
         return True
 
-    async def list_db_crawls(self, aid: str, cid: str = None):
+    async def list_finished_crawls(
+        self, aid: str = None, cid: str = None, collid: str = None
+    ):
         """List all finished crawls from the db """
-        query = {"aid": aid}
+        query = {}
+        if aid:
+            query["aid"] = aid
+
         if cid:
             query["cid"] = cid
+
+        if collid:
+            query["colls"] = collid
 
         cursor = self.crawls.find(query)
         results = await cursor.to_list(length=1000)
@@ -179,7 +193,7 @@ class CrawlOps:
 
         await self.get_redis_stats(running_crawls)
 
-        finished_crawls = await self.list_db_crawls(aid)
+        finished_crawls = await self.list_finished_crawls(aid=aid)
 
         return {
             "running": [
@@ -321,3 +335,5 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
         await crawl_manager.init_crawl_screencast(crawl_id, archive.id)
         watch_url = f"{request.url.scheme}://{request.url.netloc}/watch/{archive.id}/{crawl_id}/ws"
         return {"watch_url": watch_url}
+
+    return ops

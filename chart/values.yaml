@@ -76,8 +76,9 @@ storages:
   - name: "default"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
+    bucket_name: "test-bucket"
 
-    endpoint_url: "http://local-minio.default:9000/test-bucket/"
+    endpoint_url: "http://local-minio.default:9000/"
 
 
 # Local Minio Pod (optional)

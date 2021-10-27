@@ -5,6 +5,7 @@ Crawl Config API handling
 from typing import List, Union, Optional
 from enum import Enum
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
@@ -46,7 +47,7 @@ class RawCrawlConfig(BaseModel):
 
     seeds: List[Union[str, Seed]]
 
-    collection: Optional[str] = "my-web-archive"
+    # collection: Optional[str] = "my-web-archive"
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
     scope: Union[str, List[str], None] = ""
@@ -75,10 +76,12 @@ class CrawlConfigIn(BaseModel):
     schedule: Optional[str] = ""
     runNow: Optional[bool] = False
 
+    config: RawCrawlConfig
+
+    colls: Optional[List[str]] = []
+
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
-
-    config: RawCrawlConfig
 
 
 # ============================================================================
@@ -86,18 +89,21 @@ class CrawlConfig(BaseMongoModel):
     """Schedulable config"""
 
     schedule: Optional[str] = ""
-    runNow: Optional[bool] = False
-
-    archive: Optional[str]
-
-    user: Optional[str]
 
     config: RawCrawlConfig
+
+    colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
 
+    archive: str
+
+    user: str
+
     crawlCount: Optional[int] = 0
+    lastCrawlId: Optional[str]
+    lastCrawlTime: Optional[datetime]
 
 
 # ============================================================================
@@ -122,6 +128,12 @@ class CrawlOps:
             responses={404: {"description": "Not found"}},
         )
 
+        self.coll_ops = None
+
+    def set_coll_ops(self, coll_ops):
+        """ set collection ops """
+        self.coll_ops = coll_ops
+
     async def add_crawl_config(
         self, config: CrawlConfigIn, archive: Archive, user: User
     ):
@@ -131,12 +143,17 @@ class CrawlOps:
         data["user"] = str(user.id)
         data["_id"] = str(uuid.uuid4())
 
+        if config.colls:
+            data["colls"] = await self.coll_ops.find_collections(
+                archive.id, config.colls
+            )
+
         result = await self.crawl_configs.insert_one(data)
 
         crawlconfig = CrawlConfig.from_dict(data)
 
         new_name = await self.crawl_manager.add_crawl_config(
-            crawlconfig=crawlconfig, storage=archive.storage
+            crawlconfig=crawlconfig, storage=archive.storage, run_now=config.runNow
         )
 
         return result, new_name
@@ -152,10 +169,14 @@ class CrawlOps:
         await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
         return True
 
-    async def inc_crawls(self, cid: str):
+    async def inc_crawls(self, cid: str, crawl_id: str, finished: datetime):
         """ Increment Crawl Counter """
         await self.crawl_configs.find_one_and_update(
-            {"_id": cid}, {"$inc": {"crawlCount": 1}}
+            {"_id": cid},
+            {
+                "$inc": {"crawlCount": 1},
+                "$set": {"lastCrawlId": crawl_id, "lastCrawlTime": finished},
+            },
         )
 
     async def get_crawl_configs(self, archive: Archive):
@@ -205,9 +226,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         results = await ops.get_crawl_configs(archive)
         return {
-            "crawl_configs": [
-                res.serialize(exclude={"archive", "runNow"}) for res in results
-            ]
+            "crawl_configs": [res.serialize(exclude={"archive"}) for res in results]
         }
 
     @router.get("/{cid}")

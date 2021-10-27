@@ -4,6 +4,7 @@ import os
 import datetime
 import json
 import asyncio
+import base64
 
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
@@ -34,6 +35,7 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
+        self._default_storage_endpoints = {}
 
         self.crawler_image = os.environ.get("CRAWLER_IMAGE")
         self.crawler_image_pull_policy = "IfNotPresent"
@@ -84,11 +86,11 @@ class K8SManager:
                     print(exc)
 
     # pylint: disable=unused-argument
-    async def check_storage(self, storage_name, is_default=False):
+    async def get_storage(self, storage_name, is_default=False):
         """Check if storage_name is valid by checking existing secret
         is_default flag ignored"""
         try:
-            await self.core_api.read_namespaced_secret(
+            return await self.core_api.read_namespaced_secret(
                 f"storage-{storage_name}",
                 namespace=self.namespace,
             )
@@ -96,7 +98,7 @@ class K8SManager:
             # pylint: disable=broad-except,raise-missing-from
             raise Exception(f"Storage {storage_name} not found")
 
-        return True
+        return None
 
     async def update_archive_storage(self, aid, uid, storage):
         """Update storage by either creating a per-archive secret, if using custom storage
@@ -141,19 +143,23 @@ class K8SManager:
                 name=archive_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
-    async def add_crawl_config(
-        self,
-        crawlconfig,
-        storage,
-    ):
+    async def add_crawl_config(self, crawlconfig, storage, run_now):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
         userid = crawlconfig.user
         aid = crawlconfig.archive
 
+        annotations = {
+            "btrix.run.schedule": crawlconfig.schedule,
+            "btrix.storage_name": storage.name,
+            "btrix.colls": json.dumps(crawlconfig.colls),
+        }
+
+        # Configure Annotations + Labels
         if storage.type == "default":
             storage_name = storage.name
             storage_path = storage.path
+            annotations["btrix.def_storage_path"] = storage_path
         else:
             storage_name = aid
             storage_path = ""
@@ -164,23 +170,17 @@ class K8SManager:
             "btrix.crawlconfig": cid,
         }
 
-        await self.check_storage(storage_name)
+        await self.get_storage(storage_name)
 
         # Create Config Map
         config_map = self._create_config_map(crawlconfig, labels)
 
+        # Create Cron Job
         await self.core_api.create_namespaced_config_map(
             namespace=self.namespace, body=config_map
         )
 
-        # Create Cron Job
-        annotations = {
-            "btrix.run.schedule": crawlconfig.schedule,
-            "btrix.storage_name": storage_name,
-            "btrix.tag.coll": crawlconfig.config.collection,
-        }
-
-        suspend, schedule, run_now = self._get_schedule_suspend_run_now(crawlconfig)
+        suspend, schedule = self._get_schedule_suspend_run_now(crawlconfig)
 
         job_template = self._get_job_template(
             cid,
@@ -328,18 +328,37 @@ class K8SManager:
             finish_now=True,
         )
 
-        filename = (
-            job.metadata.annotations.get("btrix.bucket_endpoint_prefix", "")
-            + crawlcomplete.filename
-        )
+        storage_path = job.metadata.annotations.get("btrix.def_storage_path")
+        inx = None
+        filename = None
+        storage_name = None
+        if storage_path:
+            inx = crawlcomplete.filename.index(storage_path)
+            filename = (
+                crawlcomplete.filename[inx:] if inx > 0 else crawlcomplete.filename
+            )
+            storage_name = job.metadata.annotations.get("btrix.storage_name")
+
+        def_storage_name = storage_name if inx else None
 
         crawl_file = CrawlFile(
-            filename=filename,
+            def_storage_name=def_storage_name,
+            filename=filename or crawlcomplete.filename,
             size=crawlcomplete.size,
             hash=crawlcomplete.hash,
         )
 
         return crawl, crawl_file
+
+    async def get_default_storage_access_endpoint(self, name):
+        """ Get access_endpoint for default storage """
+        if name not in self._default_storage_endpoints:
+            storage_secret = await self.get_storage(name, is_default=True)
+            self._default_storage_endpoints[name] = base64.standard_b64decode(
+                storage_secret.data["STORE_ACCESS_ENDPOINT_URL"]
+            ).decode()
+
+        return self._default_storage_endpoints[name]
 
     async def is_running(self, job_name, aid):
         """ Return true if the specified crawl (by job_name) is running """
@@ -447,11 +466,6 @@ class K8SManager:
     # pylint: disable=no-self-use
     def _make_crawl_for_job(self, job, state, finish_now=False):
         """ Make a crawl object from a job"""
-        tags = {}
-        for name in job.metadata.annotations:
-            if name.startswith("btrix.tag."):
-                tags[name[len("btrix.tag.") :]] = job.metadata.annotations.get(name)
-
         return Crawl(
             id=job.metadata.name,
             state=state,
@@ -465,7 +479,7 @@ class K8SManager:
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
-            tags=tags,
+            colls=json.loads(job.metadata.annotations.get("btrix.colls", [])),
         )
 
     async def _delete_job(self, name):
@@ -512,11 +526,7 @@ class K8SManager:
             schedule = DEFAULT_NO_SCHEDULE
             suspend = True
 
-        run_now = False
-        if crawlconfig.runNow:
-            run_now = True
-
-        return suspend, schedule, run_now
+        return suspend, schedule
 
     async def _send_sig_to_pods(self, pods, aid):
         command = ["kill", "-s", "SIGUSR1", "1"]

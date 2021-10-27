@@ -50,6 +50,7 @@ class DockerManager:
                 access_key=os.environ["STORE_ACCESS_KEY"],
                 secret_key=os.environ["STORE_SECRET_KEY"],
                 endpoint_url=os.environ["STORE_ENDPOINT_URL"],
+                access_endpoint_url=os.environ["STORE_ACCESS_ENDPOINT_URL"],
             )
         }
 
@@ -158,24 +159,24 @@ class DockerManager:
     async def update_archive_storage(self, aid, uid, storage):
         """ No storage kept for docker manager """
 
-    async def add_crawl_config(
-        self,
-        crawlconfig,
-        storage,
-    ):
+    async def add_crawl_config(self, crawlconfig, storage, run_now):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
         userid = crawlconfig.user
         aid = crawlconfig.archive
 
-        storage, storage_path = await self.get_storage(storage)
-
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
             "btrix.crawlconfig": cid,
-            "btrix.tag.coll": crawlconfig.config.collection,
+            "btrix.colls": json.dumps(crawlconfig.colls),
+            "btrix.storage_name": storage.name,
         }
+
+        if storage.type == "default":
+            labels["btrix.def_storage_path"] = storage.path
+
+        storage, storage_path = await self.get_storage(storage)
 
         if crawlconfig.crawlTimeout:
             labels["btrix.timeout"] = str(crawlconfig.crawlTimeout)
@@ -190,7 +191,7 @@ class DockerManager:
                 cid=crawlconfig.id, schedule=crawlconfig.schedule
             )
 
-        if crawlconfig.runNow:
+        if run_now:
             return await self._run_crawl_now(
                 storage,
                 storage_path,
@@ -289,7 +290,9 @@ class DockerManager:
 
         container = await self.client.containers.get(crawlcomplete.id)
 
-        if container["Config"]["Labels"]["btrix.user"] != crawlcomplete.user:
+        labels = container["Config"]["Labels"]
+
+        if labels["btrix.user"] != crawlcomplete.user:
             return None
 
         crawl = self._make_crawl_for_container(
@@ -298,13 +301,31 @@ class DockerManager:
             finish_now=True,
         )
 
+        storage_path = labels.get("btrix.def_storage_path")
+        inx = None
+        filename = None
+        storage_name = None
+        if storage_path:
+            inx = crawlcomplete.filename.index(storage_path)
+            filename = (
+                crawlcomplete.filename[inx:] if inx > 0 else crawlcomplete.filename
+            )
+            storage_name = labels.get("btrix.storage_name")
+
+        def_storage_name = storage_name if inx else None
+
         crawl_file = CrawlFile(
-            filename=crawlcomplete.filename,
+            def_storage_name=def_storage_name,
+            filename=filename or crawlcomplete.filename,
             size=crawlcomplete.size,
             hash=crawlcomplete.hash,
         )
 
         return crawl, crawl_file
+
+    async def get_default_storage_access_endpoint(self, name):
+        """ Return the access endpoint url for default storage """
+        return self.storages[name].access_endpoint_url
 
     async def scale_crawl(self):  # job_name, aid, parallelism=1):
         """ Scale running crawl, currently only supported in k8s"""
@@ -469,11 +490,6 @@ class DockerManager:
         """ Make a crawl object from a container data"""
         labels = container["Config"]["Labels"]
 
-        tags = {}
-        for name in labels:
-            if name.startswith("btrix.tag."):
-                tags[name[len("btrix.tag.") :]] = labels.get(name)
-
         return Crawl(
             id=container["Id"],
             state=state,
@@ -486,5 +502,5 @@ class DockerManager:
             finished=datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
-            tags=tags,
+            colls=json.loads(labels.get("btrix.colls", [])),
         )

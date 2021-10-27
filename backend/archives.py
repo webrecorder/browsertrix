@@ -4,7 +4,7 @@ Archive API handling
 import uuid
 from datetime import datetime
 
-from typing import Dict, Union, Literal
+from typing import Dict, Union, Literal, Optional
 
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
@@ -52,6 +52,7 @@ class S3Storage(BaseModel):
     endpoint_url: str
     access_key: str
     secret_key: str
+    access_endpoint_url: Optional[str]
 
 
 # ============================================================================
@@ -115,6 +116,7 @@ class ArchiveOps:
         self.email = email
 
         self.router = None
+        self.archive_viewer_dep = None
         self.archive_crawl_dep = None
         self.archive_owner_dep = None
 
@@ -272,6 +274,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
     )
 
     ops.router = router
+    ops.archive_viewer_dep = archive_dep
     ops.archive_crawl_dep = archive_crawl_dep
     ops.archive_owner_dep = archive_owner_dep
 

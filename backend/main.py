@@ -15,6 +15,7 @@ from archives import init_archives_api
 
 from storages import init_storages_api
 from crawlconfigs import init_crawl_config_api
+from colls import init_collections_api
 from crawls import init_crawls_api
 
 app = FastAPI()
@@ -68,7 +69,7 @@ class BrowsertrixAPI:
             self.crawl_manager,
         )
 
-        init_crawls_api(
+        self.crawls = init_crawls_api(
             self.app,
             self.mdb,
             os.environ.get("REDIS_URL"),
@@ -77,11 +78,17 @@ class BrowsertrixAPI:
             self.archive_ops,
         )
 
+        self.coll_ops = init_collections_api(
+            self.mdb, self.crawls, self.archive_ops, self.crawl_manager
+        )
+
+        self.crawl_config_ops.set_coll_ops(self.coll_ops)
+
         self.app.include_router(self.archive_ops.router)
 
-        # @app.get("/")
-        # async def root():
-        #    return {"message": "Hello World"}
+        @app.get("/healthz")
+        async def healthz():
+            return {}
 
     # pylint: disable=no-self-use, unused-argument
     async def on_after_register(self, user: UserDB, request: Request):
