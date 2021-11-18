@@ -13,6 +13,7 @@
     "tailwindcss": "^2.2.16"
   },
   "scripts": {
+    "test": "web-test-runner \"src/**/*.test.js\" --node-resolve --playwright",
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "start-dev": "webpack serve --mode=development",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@web/test-runner": "^0.13.22",
+    "@web/test-runner-playwright": "^0.8.8",
     "autoprefixer": "^10.3.6",
     "css-loader": "^6.3.0",
     "eslint": "^8.2.0",
