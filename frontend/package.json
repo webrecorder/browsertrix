@@ -46,8 +46,7 @@
       "lit"
     ],
     "rules": {
-      "no-unused-vars": "warn",
-      "no-empty": "warn"
+      "no-unused-vars": "warn"
     }
   }
 }

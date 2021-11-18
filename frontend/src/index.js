@@ -50,7 +50,7 @@ class App extends LiteElement
     if (this.viewState._route === "login") {
       this.clearAuthState();
     }
-    //console.log(this.view._route, window.location.href); 
+    //console.log(this.view._route, window.location.href);
     window.history.pushState(this.viewState, "", this.viewState._path);
   }
 
@@ -73,11 +73,11 @@ class App extends LiteElement
     <div class="navbar shadow-lg bg-neutral text-neutral-content">
       <div class="flex-1 px-2 mx-2">
         <a href="/" class="link link-hover text-lg font-bold" @click="${this.navLink}">Browsertrix Cloud</a>
-      </div> 
+      </div>
       <div class="flex-none">
         ${this.authState ? html`
-        <a class="link link-hover font-bold px-4" href="/my-account" @click="${this.navLink}">My Account</a> 
-        <button class="btn btn-error" @click="${this.onLogOut}">Log Out</button>` 
+        <a class="link link-hover font-bold px-4" href="/my-account" @click="${this.navLink}">My Account</a>
+        <button class="btn btn-error" @click="${this.onLogOut}">Log Out</button>`
         : html`
         <button class="btn ${this.viewState._route !== "login" ? "btn-primary" : "btn-ghost"}" @click="${this.onNeedLogin}">Log In</button>
         `}
@@ -160,17 +160,17 @@ class LogIn extends LiteElement
             <div class="form-control">
               <label class="label">
                 <span class="label-text">User</span>
-              </label> 
+              </label>
               <input id="username" name="username" type="text" placeholder="Username" class="input input-bordered">
             </div>
             <div class="form-control">
               <label class="label">
                 <span class="label-text">Password</span>
-              </label> 
+              </label>
               <input id="password" name="password" type="password" placeholder="Password" class="input input-bordered">
             </div>
             <div class="form-control py-4">
-              <button class="btn btn-primary" type="submit">Log In</button> 
+              <button class="btn btn-primary" type="submit">Log In</button>
             </div>
           </form>
           <div id="login-error" class="text-red-600">
@@ -208,9 +208,9 @@ class LogIn extends LiteElement
         const detail = {auth, username};
         this.dispatchEvent(new CustomEvent("logged-in", {detail}));
       }
-      
-    } catch(e) {
 
+    } catch(e) {
+      console.error(e);
     }
 
     if (!this.auth) {
@@ -260,10 +260,10 @@ class MyAccount extends LiteElement
           <span class="mr-4">${archive.name}</span>${this.getAccessValue(archive)}
           </div>
           <div class="card-actions">
-            <a class="btn btn-primary" href="/archive/${archive.id}" @click="${this.navLink}">View Archive</a> 
+            <a class="btn btn-primary" href="/archive/${archive.id}" @click="${this.navLink}">View Archive</a>
           </div>
         </div>
-      </div> 
+      </div>
 
       `)}
     </div>
@@ -302,7 +302,7 @@ class Archive extends LiteElement
       <div class="tabs tabs-boxed">
         <a href="/archive/${aid}/running" class="tab ${tab === "running" ? 'tab-active' : ''}" @click="${this.navLink}">Crawls Running</a>
         <a href="/archive/${aid}/finished" class="tab ${tab === "finished" ? 'tab-active' : ''}" @click="${this.navLink}">Finished</a>
-        <a href="/archive/${aid}/configs" class="tab ${tab === "configs" ? 'tab-active' : ''}" @click="${this.navLink}">Crawl Configs</a> 
+        <a href="/archive/${aid}/configs" class="tab ${tab === "configs" ? 'tab-active' : ''}" @click="${this.navLink}">Crawl Configs</a>
       </div>
       ${tab === "configs" ?
       html`<btrix-archive-configs .archive=${this}></btrix-archive-configs>` : ""}
