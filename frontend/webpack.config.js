@@ -53,8 +53,6 @@ module.exports = {
     new ESLintPlugin({
       // lint only changed files:
       lintDirtyModulesOnly: true,
-      // allow build to complete with errors:
-      failOnError: false,
       // enable to auto-fix source files:
       // fix: true
     }),
