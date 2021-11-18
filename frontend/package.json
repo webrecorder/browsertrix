@@ -15,7 +15,8 @@
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "start-dev": "webpack serve --mode=development",
-    "lint": "eslint --fix \"src/**/*.js\""
+    "lint": "eslint --fix \"src/**/*.js\"",
+    "format": "prettier --write \"**/*.{js,html,css}\""
   },
   "devDependencies": {
     "autoprefixer": "^10.3.6",
@@ -40,9 +41,9 @@
       "es2017": true
     },
     "extends": [
-      "eslint:recommended",
       "plugin:wc/recommended",
-      "plugin:lit/recommended"
+      "plugin:lit/recommended",
+      "prettier"
     ],
     "plugins": [
       "lit"
@@ -51,5 +52,6 @@
       "no-unused-vars": "warn",
       "no-empty": "warn"
     }
-  }
+  },
+  "prettier": {}
 }
