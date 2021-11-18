@@ -20,6 +20,8 @@
     "format": "prettier --write \"**/*.{js,html,css}\""
   },
   "devDependencies": {
+    "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@web/test-runner": "^0.13.22",
     "autoprefixer": "^10.3.6",
     "css-loader": "^6.3.0",
     "eslint": "^8.2.0",
