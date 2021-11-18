@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "private": true,
   "dependencies": {
     "axios": "^0.22.0",
     "daisyui": "^1.14.2",
