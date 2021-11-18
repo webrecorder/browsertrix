@@ -24,3 +24,4 @@ This will open `localhost:9870` in a new tab in your default browser.
 | `build-dev`   | bundles app and outputs it in `dist` directory                      |
 | `build`       | bundles app app, optimized for production, and outputs it to `dist` |
 | `lint`        | find and fix auto-fixable javascript errors                         |
+| `format`      | formats js, html and css files                                      |
