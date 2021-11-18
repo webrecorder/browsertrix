@@ -14,7 +14,8 @@
   "scripts": {
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
-    "start-dev": "webpack serve --mode=development"
+    "start-dev": "webpack serve --mode=development",
+    "lint": "eslint \"src/**/*.js\""
   },
   "devDependencies": {
     "autoprefixer": "^10.3.6",
