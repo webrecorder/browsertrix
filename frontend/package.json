@@ -46,6 +46,11 @@
       "lit"
     ],
     "rules": {
+      "no-restricted-globals": [
+        2,
+        "event",
+        "error"
+      ],
       "no-unused-vars": "warn"
     }
   }
