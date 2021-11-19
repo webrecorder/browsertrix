@@ -13,15 +13,16 @@
     "tailwindcss": "^2.2.16"
   },
   "scripts": {
-    "test": "web-test-runner \"src/**/*.test.js\" --node-resolve --playwright --browsers chromium",
+    "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "start-dev": "webpack serve --mode=development",
-    "lint": "eslint --fix \"src/**/*.js\"",
-    "format": "prettier --write \"**/*.{js,html,css}\""
+    "lint": "eslint --fix \"src/**/*.{ts,js}\"",
+    "format": "prettier --write \"**/*.{ts,js,html,css}\""
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@web/dev-server-esbuild": "^0.2.16",
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/test-runner": "^0.13.22",
     "@web/test-runner-playwright": "^0.8.8",

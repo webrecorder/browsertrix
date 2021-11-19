@@ -1,6 +1,6 @@
 import { expect } from "@esm-bundle/chai";
 
-import { App } from "./index.js";
+import { App } from "./index";
 
 describe("App", () => {
   it("should exist", () => {
