@@ -1,17 +1,21 @@
-import { LiteElement, APIRouter, html } from "./utils";
-
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
+import LiteElement, { html } from "./utils/LiteElement";
+import APIRouter from "./utils/APIRouter";
+import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState } from "./utils/auth";
-import type { ViewState, NavigateEvent } from "./utils/router";
 
 // ===========================================================================
 export class App extends LiteElement {
   authState: AuthState | null;
   router: APIRouter;
-  viewState: ViewState;
+  viewState: ViewState & {
+    aid?: string;
+    // TODO common tab type
+    tab?: "running" | "finished" | "configs";
+  };
 
   constructor() {
     super();
@@ -133,7 +137,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           .authState="${this.authState}"
           .viewState="${this.viewState}"
-          aid="${this.viewState.aid}"
+          aid="${this.viewState.aid!}"
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`;
 

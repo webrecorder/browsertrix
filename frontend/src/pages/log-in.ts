@@ -1,8 +1,8 @@
-import { LiteElement, html } from "../utils";
+import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../utils/auth";
 
 export class LogInPage extends LiteElement {
-  auth: Auth;
+  auth?: Auth;
   loginError: string = "";
 
   static get properties() {

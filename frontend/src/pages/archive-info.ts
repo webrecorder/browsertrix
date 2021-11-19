@@ -1,11 +1,12 @@
-import { LiteElement, html } from "../utils";
+import LiteElement, { html } from "../utils/LiteElement";
 import type { Archive } from "../utils/archives";
 import type { AuthState } from "../utils/auth";
 
 export class ArchivePage extends LiteElement {
-  authState: AuthState;
+  authState: AuthState = null;
   aid?: Archive["aid"];
-  tab?: "running" | "finished" | "configs";
+  // TODO common tab type
+  tab: "running" | "finished" | "configs" = "running";
 
   static get properties() {
     return {
@@ -18,7 +19,7 @@ export class ArchivePage extends LiteElement {
 
   render() {
     const aid = this.aid;
-    const tab = this.tab || "running";
+    const tab = this.tab;
     return html`
       <div
         class="container bg-base-200 m-auto border shadow-xl rounded-lg px-8 py-8"

@@ -1,9 +1,8 @@
 export type Archive = {
-  name: string;
-  id: string;
   aid: string;
-  authState: any;
-  users: any;
+  name?: string;
+  id?: string;
+  users?: any;
 };
 
 export type ArchiveConfig = any;

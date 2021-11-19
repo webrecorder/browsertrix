@@ -1,11 +1,10 @@
-import { LiteElement, html } from "../utils";
-
+import LiteElement, { html } from "../utils/LiteElement";
 import type { Archive } from "../utils/archives";
 import type { AuthState } from "../utils/auth";
 
 export class MyAccountPage extends LiteElement {
   archiveList: Archive[] = [];
-  authState: AuthState;
+  authState: AuthState = null;
 
   static get properties() {
     return {

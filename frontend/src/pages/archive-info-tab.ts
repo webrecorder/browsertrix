@@ -1,8 +1,11 @@
-import { LiteElement, html } from "../utils";
+import LiteElement, { html } from "../utils/LiteElement";
 import type { Archive, ArchiveConfig } from "../utils/archives";
+import type { AuthState } from "../utils/auth";
 
 export class ArchiveConfigsPage extends LiteElement {
-  archive?: Archive;
+  archive!: Archive & {
+    authState: AuthState;
+  };
   configs: ArchiveConfig;
 
   static get properties() {
@@ -13,7 +16,7 @@ export class ArchiveConfigsPage extends LiteElement {
   }
 
   async firstUpdated() {
-    if (!this.archive) {
+    if (!this.archive?.authState) {
       // TODO
       return;
     }
