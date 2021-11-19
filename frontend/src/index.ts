@@ -4,9 +4,15 @@ import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
+import type { AuthState } from "./utils/auth";
+import type { ViewState } from "./utils/router";
 
 // ===========================================================================
 export class App extends LiteElement {
+  authState: AuthState | null;
+  router: APIRouter;
+  viewState: ViewState;
+
   constructor() {
     super();
     this.authState = null;
@@ -45,7 +51,7 @@ export class App extends LiteElement {
     this.viewState = this.router.match(window.location.pathname);
   }
 
-  navigate(newView) {
+  navigate(newView: string) {
     if (newView.startsWith("http")) {
       newView = new URL(newView).pathname;
     }
