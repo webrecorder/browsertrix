@@ -2,7 +2,7 @@ import { LiteElement, APIRouter, html } from "./utils";
 
 
 // ===========================================================================
-class App extends LiteElement
+export class App extends LiteElement
 {
   constructor() {
     super();
@@ -208,7 +208,6 @@ class LogIn extends LiteElement
         const detail = {auth, username};
         this.dispatchEvent(new CustomEvent("logged-in", {detail}));
       }
-
     } catch(e) {
       console.error(e);
     }
