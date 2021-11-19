@@ -82,6 +82,12 @@ export class App extends LiteElement {
 
   renderNavBar() {
     return html`
+      <style>
+        :root {
+          --sl-color-primary-600: hsla(var(--p) / var(--tw-bg-opacity, 1));
+        }
+      </style>
+
       <div class="navbar shadow-lg bg-neutral text-neutral-content">
         <div class="flex-1 px-2 mx-2">
           <a
