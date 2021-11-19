@@ -1,15 +1,15 @@
 // webpack.config.js
-const path = require('path')
-const ESLintPlugin = require('eslint-webpack-plugin')
+const path = require("path");
+const ESLintPlugin = require("eslint-webpack-plugin");
 
-const backendUrl = new URL('http://btrix.cloud/')
+const backendUrl = new URL("http://btrix.cloud/");
 
 module.exports = {
-  entry: './src/index.js',
+  entry: "./src/index.js",
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'main.js',
-    publicPath: '/',
+    path: path.resolve(__dirname, "dist"),
+    filename: "main.js",
+    publicPath: "/",
   },
 
   module: {
@@ -17,16 +17,16 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          'style-loader',
-          { loader: 'css-loader', options: { importLoaders: 1 } },
-          'postcss-loader',
+          "style-loader",
+          { loader: "css-loader", options: { importLoaders: 1 } },
+          "postcss-loader",
         ],
       },
     ],
   },
 
   devServer: {
-    watchFiles: ['src/*.js'],
+    watchFiles: ["src/*.js"],
     open: true,
     compress: true,
     hot: true,
@@ -37,12 +37,12 @@ module.exports = {
     },
     historyApiFallback: true,
     proxy: {
-      '/api': {
+      "/api": {
         target: backendUrl.href,
         headers: {
           Host: backendUrl.host,
         },
-        pathRewrite: { '^/api': '' },
+        pathRewrite: { "^/api": "" },
       },
     },
     port: 9870,
@@ -57,4 +57,4 @@ module.exports = {
       // fix: true
     }),
   ],
-}
+};

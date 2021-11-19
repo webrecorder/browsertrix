@@ -1,9 +1,9 @@
-import { expect } from '@esm-bundle/chai';
+import { expect } from "@esm-bundle/chai";
 
-import { App } from './index.js';
+import { App } from "./index.js";
 
-describe('App', () => {
-  it('should exist', () => {
+describe("App", () => {
+  it("should exist", () => {
     expect(App).to.exist;
   });
 });
