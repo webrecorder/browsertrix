@@ -5,6 +5,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@shoelace-style/shoelace": "^2.0.0-beta.61",
     "axios": "^0.22.0",
     "daisyui": "^1.14.2",
     "lit": "^2.0.0",
@@ -29,6 +30,7 @@
     "@web/test-runner": "^0.13.22",
     "@web/test-runner-playwright": "^0.8.8",
     "autoprefixer": "^10.3.6",
+    "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",
     "dotenv": "^10.0.0",
     "eslint": "^8.2.0",
