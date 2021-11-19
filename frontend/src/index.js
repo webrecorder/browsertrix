@@ -1,6 +1,8 @@
 import { LiteElement, APIRouter, html } from "./utils";
 
 import { LogIn } from "./pages/log-in";
+import { MyAccount } from "./pages/my-account";
+import { Archive } from "./pages/archive";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -159,126 +161,6 @@ export class App extends LiteElement {
   clearAuthState() {
     this.authState = null;
     window.localStorage.setItem("authState", "");
-  }
-}
-
-// ===========================================================================
-
-// ===========================================================================
-class MyAccount extends LiteElement {
-  constructor() {
-    super();
-    this.archiveList = [];
-  }
-
-  static get properties() {
-    return {
-      authState: { type: Object },
-      archiveList: { type: Array },
-      id: { type: String },
-    };
-  }
-
-  async firstUpdated() {
-    if (!this.authState) {
-      this.dispatchEvent(new CustomEvent("need-login"));
-      return;
-    }
-
-    const data = await this.apiFetch("/archives", this.authState);
-    this.archiveList = data.archives;
-
-    const data2 = await this.apiFetch("/users/me", this.authState);
-    this.id = data2.id;
-  }
-
-  render() {
-    return html`
-      <div class="container bg-base-200 m-auto border rounded-lg px-8 py-8">
-        <h2 class="text-2xl font-bold">Your Archives</h2>
-        ${this.archiveList.map(
-          (archive) => html`
-            <div
-              class="card mt-6 ml-6 border rounded-none border-gray-600 hover:bg-gray-300"
-            >
-              <div class="card-body">
-                <div class="card-title">
-                  <span class="mr-4">${archive.name}</span
-                  >${this.getAccessValue(archive)}
-                </div>
-                <div class="card-actions">
-                  <a
-                    class="btn btn-primary"
-                    href="/archive/${archive.id}"
-                    @click="${this.navLink}"
-                    >View Archive</a
-                  >
-                </div>
-              </div>
-            </div>
-          `
-        )}
-      </div>
-    `;
-  }
-
-  getAccessValue(archive) {
-    const value = archive.users && archive.users[this.id];
-    switch (value) {
-      case 40:
-        return html`<div class="badge badge-info">Owner</div>`;
-
-      default:
-        return "";
-    }
-  }
-}
-
-// ===========================================================================
-class Archive extends LiteElement {
-  static get properties() {
-    return {
-      authState: { type: Object },
-      aid: { type: String },
-      tab: { type: String },
-      viewState: { type: Object },
-    };
-  }
-
-  render() {
-    const aid = this.aid;
-    const tab = this.tab || "running";
-    return html`
-      <div
-        class="container bg-base-200 m-auto border shadow-xl rounded-lg px-8 py-8"
-      >
-        <div class="tabs tabs-boxed">
-          <a
-            href="/archive/${aid}/running"
-            class="tab ${tab === "running" ? "tab-active" : ""}"
-            @click="${this.navLink}"
-            >Crawls Running</a
-          >
-          <a
-            href="/archive/${aid}/finished"
-            class="tab ${tab === "finished" ? "tab-active" : ""}"
-            @click="${this.navLink}"
-            >Finished</a
-          >
-          <a
-            href="/archive/${aid}/configs"
-            class="tab ${tab === "configs" ? "tab-active" : ""}"
-            @click="${this.navLink}"
-            >Crawl Configs</a
-          >
-        </div>
-        ${tab === "configs"
-          ? html`<btrix-archive-configs
-              .archive=${this}
-            ></btrix-archive-configs>`
-          : ""}
-      </div>
-    `;
   }
 }
 

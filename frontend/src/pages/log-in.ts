@@ -1,8 +1,9 @@
-import "tailwindcss/tailwind.css";
 import { LiteElement, html } from "../utils";
 
+type Auth = any;
+
 export class LogIn extends LiteElement {
-  auth: any;
+  auth: Auth;
   loginError: string = "";
 
   static get properties() {
