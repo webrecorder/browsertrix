@@ -5,7 +5,7 @@ import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import type { AuthState } from "./utils/auth";
-import type { ViewState } from "./utils/router";
+import type { ViewState, NavigateEvent } from "./utils/router";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -63,9 +63,9 @@ export class App extends LiteElement {
     window.history.pushState(this.viewState, "", this.viewState._path);
   }
 
-  navLink(event) {
+  navLink(event: Event) {
     event.preventDefault();
-    this.navigate(event.currentTarget.href);
+    this.navigate((event.currentTarget as HTMLAnchorElement).href);
   }
 
   render() {
@@ -147,7 +147,7 @@ export class App extends LiteElement {
     this.navigate("/");
   }
 
-  onLoggedIn(event) {
+  onLoggedIn(event: CustomEvent<{ auth: string; username: string }>) {
     this.authState = {
       username: event.detail.username,
       headers: { Authorization: event.detail.auth },
@@ -161,7 +161,7 @@ export class App extends LiteElement {
     this.navigate("/log-in");
   }
 
-  onNavigateTo(event) {
+  onNavigateTo(event: NavigateEvent) {
     this.navigate(event.detail);
   }
 
