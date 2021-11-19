@@ -5,7 +5,7 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const backendUrl = new URL("http://btrix.cloud/");
 
 module.exports = {
-  entry: "./src/index.js",
+  entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "main.js",
