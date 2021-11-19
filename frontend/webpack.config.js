@@ -11,15 +11,23 @@ require("dotenv").config({
 const backendUrl = new URL(process.env.API_BASE_URL || "http://btrix.cloud/");
 
 module.exports = {
-  entry: "./src/index.js",
+  entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "main.js",
     publicPath: "/",
   },
 
+  devtool: "inline-source-map",
+
   module: {
     rules: [
+      {
+        test: /\.ts$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+
       {
         test: /\.css$/,
         use: [
@@ -29,6 +37,10 @@ module.exports = {
         ],
       },
     ],
+  },
+
+  resolve: {
+    extensions: [".ts", ".js"],
   },
 
   devServer: {
@@ -59,6 +71,8 @@ module.exports = {
     new ESLintPlugin({
       // lint only changed files:
       lintDirtyModulesOnly: true,
+      // prevent warnings from stopping dev build
+      emitWarning: false,
       // enable to auto-fix source files:
       // fix: true
     }),
