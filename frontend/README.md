@@ -2,6 +2,12 @@
 
 ## Quickstart
 
+Copy environment variables from the sample file:
+
+```sh
+cp sample.env.local .env.local
+```
+
 Install dependencies:
 
 ```sh
@@ -15,6 +21,9 @@ yarn start-dev
 ```
 
 This will open `localhost:9870` in a new tab in your default browser.
+
+To develop against a local instance of the backend API,
+follow instructions for deploying to a local Docker instance. Update `API_BASE_URL` and then restart the dev server.
 
 ## Scripts
 
@@ -32,11 +41,13 @@ This will open `localhost:9870` in a new tab in your default browser.
 Tests assertions are written in [Chai](https://www.chaijs.com/api/bdd/).
 
 To watch for file changes while running tests:
+
 ```sh
 yarn test --watch
 ```
 
 To run tests in multiple browsers:
+
 ```sh
 yarn test --browsers chromium firefox webkit
 ```
