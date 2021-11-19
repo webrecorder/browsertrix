@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
     "@web/dev-server-esbuild": "^0.2.16",
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/test-runner": "^0.13.22",
@@ -44,6 +46,7 @@
     "webpack-dev-server": "^4.3.0"
   },
   "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
     "env": {
       "browser": true,
       "commonjs": true,
@@ -55,6 +58,7 @@
       "prettier"
     ],
     "plugins": [
+      "@typescript-eslint",
       "lit"
     ],
     "rules": {
