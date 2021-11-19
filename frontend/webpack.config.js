@@ -12,6 +12,8 @@ module.exports = {
     publicPath: "/",
   },
 
+  devtool: "inline-source-map",
+
   module: {
     rules: [
       {
