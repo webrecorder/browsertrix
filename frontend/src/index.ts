@@ -5,7 +5,7 @@ import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { AuthState } from "./utils/auth";
+import type { AuthState } from "./types/auth";
 
 // ===========================================================================
 export class App extends LiteElement {

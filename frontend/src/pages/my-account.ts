@@ -1,6 +1,6 @@
 import LiteElement, { html } from "../utils/LiteElement";
-import type { Archive } from "../utils/archives";
-import type { AuthState } from "../utils/auth";
+import type { Archive } from "../types/archives";
+import type { AuthState } from "../types/auth";
 
 export class MyAccountPage extends LiteElement {
   archiveList: Archive[] = [];
