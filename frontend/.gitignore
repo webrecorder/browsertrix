@@ -1,0 +1,27 @@
+## editors
+/.idea
+/.vscode
+
+## system files
+.DS_Store
+
+## npm
+/node_modules/
+/npm-debug.log
+
+## testing
+/coverage/
+
+## temp folders
+/.tmp/
+/tmp/
+
+# build
+/dist/
+
+# dotenv
+.env.local
+.env.*.local
+
+storybook-static
+custom-elements.json

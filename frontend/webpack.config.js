@@ -1,6 +1,6 @@
 // webpack.config.js
-const path = require("path")
-
+const path = require("path");
+const ESLintPlugin = require("eslint-webpack-plugin");
 
 const backendUrl = new URL("http://btrix.cloud/");
 
@@ -9,7 +9,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "main.js",
-    publicPath: "/"
+    publicPath: "/",
   },
 
   module: {
@@ -24,6 +24,7 @@ module.exports = {
       },
     ],
   },
+
   devServer: {
     watchFiles: ["src/*.js"],
     open: true,
@@ -32,18 +33,28 @@ module.exports = {
     static: {
       directory: path.join(__dirname),
       //publicPath: "/",
-      watch: true
+      watch: true,
     },
     historyApiFallback: true,
     proxy: {
-      '/api': {
+      "/api": {
         target: backendUrl.href,
         headers: {
-          'Host': backendUrl.host
-        },    
-        pathRewrite: { '^/api': '' },
+          Host: backendUrl.host,
+        },
+        pathRewrite: { "^/api": "" },
       },
     },
-    port: 9870
+    port: 9870,
   },
-}
+
+  plugins: [
+    // Lint js files
+    new ESLintPlugin({
+      // lint only changed files:
+      lintDirtyModulesOnly: true,
+      // enable to auto-fix source files:
+      // fix: true
+    }),
+  ],
+};

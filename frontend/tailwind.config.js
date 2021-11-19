@@ -1,18 +1,14 @@
 module.exports = {
-  mode: 'jit',
-  
+  mode: "jit",
+
   purge: {
-    content: ['./*.html', './src/*.js'],
+    content: ["./*.html", "./src/*.js"],
     options: {
-      safelist: [
-        /data-theme$/,
-      ]
+      safelist: [/data-theme$/],
     },
   },
-  plugins: [
-    require('daisyui')
-  ],
+  plugins: [require("daisyui")],
   extract: {
-    include: ['./src/*.js'],
+    include: ["./src/*.js"],
   },
 };
