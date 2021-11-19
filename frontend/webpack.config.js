@@ -2,7 +2,13 @@
 const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
 
-const backendUrl = new URL("http://btrix.cloud/");
+const isDevServer = process.env.WEBPACK_SERVE;
+
+require("dotenv").config({
+  path: path.resolve(process.cwd(), `.env${isDevServer ? `.local` : ""}`),
+});
+
+const backendUrl = new URL(process.env.API_BASE_URL || "http://btrix.cloud/");
 
 module.exports = {
   entry: "./src/index.js",
