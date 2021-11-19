@@ -1,10 +1,8 @@
 import { LiteElement, html } from "../utils";
+import type { Archive, ArchiveConfig } from "../utils/archives";
 
-type Archive = any;
-type ArchiveConfig = any;
-
-export class ArchiveConfigs extends LiteElement {
-  archive: Archive;
+export class ArchiveConfigsPage extends LiteElement {
+  archive?: Archive;
   configs: ArchiveConfig;
 
   static get properties() {
@@ -15,6 +13,11 @@ export class ArchiveConfigs extends LiteElement {
   }
 
   async firstUpdated() {
+    if (!this.archive) {
+      // TODO
+      return;
+    }
+
     const res = await this.apiFetch(
       `/archives/${this.archive.aid}/crawlconfigs`,
       this.archive.authState

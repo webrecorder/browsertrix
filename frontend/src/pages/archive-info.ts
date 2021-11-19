@@ -1,8 +1,11 @@
 import { LiteElement, html } from "../utils";
+import type { Archive } from "../utils/archives";
+import type { AuthState } from "../utils/auth";
 
-export class Archive extends LiteElement {
-  aid?: string;
-  tab?: string;
+export class ArchivePage extends LiteElement {
+  authState: AuthState;
+  aid?: Archive["aid"];
+  tab?: "running" | "finished" | "configs";
 
   static get properties() {
     return {
@@ -42,7 +45,10 @@ export class Archive extends LiteElement {
         </div>
         ${tab === "configs"
           ? html`<btrix-archive-configs
-              .archive=${this}
+              .archive=${{
+                aid: this.aid!,
+                authState: this.authState,
+              }}
             ></btrix-archive-configs>`
           : ""}
       </div>

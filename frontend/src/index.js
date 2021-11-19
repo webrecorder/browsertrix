@@ -1,9 +1,9 @@
 import { LiteElement, APIRouter, html } from "./utils";
 
-import { LogIn } from "./pages/log-in";
-import { MyAccount } from "./pages/my-account";
-import { Archive } from "./pages/archive-info";
-import { ArchiveConfigs } from "./pages/archive-info-tab";
+import { LogInPage } from "./pages/log-in";
+import { MyAccountPage } from "./pages/my-account";
+import { ArchivePage } from "./pages/archive-info";
+import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -166,7 +166,7 @@ export class App extends LiteElement {
 }
 
 customElements.define("browsertrix-app", App);
-customElements.define("log-in", LogIn);
-customElements.define("my-account", MyAccount);
-customElements.define("btrix-archive", Archive);
-customElements.define("btrix-archive-configs", ArchiveConfigs);
+customElements.define("log-in", LogInPage);
+customElements.define("my-account", MyAccountPage);
+customElements.define("btrix-archive", ArchivePage);
+customElements.define("btrix-archive-configs", ArchiveConfigsPage);

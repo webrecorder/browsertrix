@@ -1,8 +1,7 @@
 import { LiteElement, html } from "../utils";
+import type { Auth } from "../utils/auth";
 
-type Auth = any;
-
-export class LogIn extends LiteElement {
+export class LogInPage extends LiteElement {
   auth: Auth;
   loginError: string = "";
 
