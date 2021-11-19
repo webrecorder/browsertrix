@@ -1,3 +1,4 @@
+import "./shoelace";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
