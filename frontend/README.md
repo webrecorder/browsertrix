@@ -21,7 +21,7 @@ This will open `localhost:9870` in a new tab in your default browser.
 | `yarn <name>` |                                                                     |
 | ------------- | ------------------------------------------------------------------- |
 | `start-dev`   | runs app in development server, reloading on file changes           |
-| `test`        | runs tests in chromium with puppeteer                               |
+| `test`        | runs tests in chromium with playwright                              |
 | `build-dev`   | bundles app and outputs it in `dist` directory                      |
 | `build`       | bundles app app, optimized for production, and outputs it to `dist` |
 | `lint`        | find and fix auto-fixable javascript errors                         |
