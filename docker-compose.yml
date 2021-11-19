@@ -3,7 +3,7 @@ version: '3.5'
 services:
   backend:
     build: ./backend
-    image: webrecorder/browsertrix-api
+    image: registry.digitalocean.com/btrix/webrecorder/browsertrix-api
     ports:
       - 8000:8000
 

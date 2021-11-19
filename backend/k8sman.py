@@ -37,8 +37,8 @@ class K8SManager:
         self.namespace = namespace
         self._default_storage_endpoints = {}
 
-        self.crawler_image = os.environ.get("CRAWLER_IMAGE")
-        self.crawler_image_pull_policy = "IfNotPresent"
+        self.crawler_image = os.environ["CRAWLER_IMAGE"]
+        self.crawler_image_pull_policy = os.environ["CRAWLER_PULL_POLICY"]
 
         self.crawl_retries = int(os.environ.get("CRAWL_RETRIES", "3"))
 
@@ -643,7 +643,7 @@ class K8SManager:
                             {
                                 "name": "crawler",
                                 "image": self.crawler_image,
-                                "imagePullPolicy": "Never",
+                                "imagePullPolicy": self.crawler_image_pull_policy,
                                 "command": [
                                     "crawl",
                                     "--config",
