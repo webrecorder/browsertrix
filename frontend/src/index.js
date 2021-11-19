@@ -2,7 +2,8 @@ import { LiteElement, APIRouter, html } from "./utils";
 
 import { LogIn } from "./pages/log-in";
 import { MyAccount } from "./pages/my-account";
-import { Archive } from "./pages/archive";
+import { Archive } from "./pages/archive-info";
+import { ArchiveConfigs } from "./pages/archive-info-tab";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -164,35 +165,6 @@ export class App extends LiteElement {
   }
 }
 
-// ===========================================================================
-class ArchiveConfigs extends LiteElement {
-  static get properties() {
-    return {
-      archive: { type: Object },
-      configs: { type: Array },
-    };
-  }
-
-  async firstUpdated() {
-    const res = await this.apiFetch(
-      `/archives/${this.archive.aid}/crawlconfigs`,
-      this.archive.authState
-    );
-    this.configs = res.crawl_configs;
-  }
-
-  render() {
-    return html`<div>Archive Configs!</div>
-      ${this.configs &&
-      this.configs.map(
-        (config) => html`
-          <div>${config.crawlCount} ${config.config.seeds}</div>
-        `
-      )} `;
-  }
-}
-
-// ===========================================================================
 customElements.define("browsertrix-app", App);
 customElements.define("log-in", LogIn);
 customElements.define("my-account", MyAccount);
