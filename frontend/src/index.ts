@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { msg, updateWhenLocaleChanges } from "@lit/localize";
 
 import "./shoelace";
@@ -92,7 +93,7 @@ export class App extends LiteElement {
       <div class="min-w-screen min-h-screen flex flex-col">
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
-        <footer class="flex justify-center p-4">
+        <footer class="flex justify-center p-4 border-t">
           <locale-picker></locale-picker>
         </footer>
       </div>
@@ -127,6 +128,25 @@ export class App extends LiteElement {
   }
 
   renderPage() {
+    const navLink = ({ href, label }: { href: string; label: string }) => html`
+      <li>
+        <a class="block p-2" href="${href}" @click="${this.navLink}"
+          >${label}</a
+        >
+      </li>
+    `;
+    const appLayout = (template: TemplateResult) => html`
+      <div class="w-full flex flex-col md:flex-row">
+        <nav class="md:w-80 md:p-4 md:border-r">
+          <ul class="flex md:flex-col">
+            ${navLink({ href: "/my-account", label: "Archives" })}
+            ${navLink({ href: "/users", label: "Users" })}
+          </ul>
+        </nav>
+        ${template}
+      </div>
+    `;
+
     switch (this.viewState._route) {
       case "login":
         return html`<log-in
@@ -142,21 +162,23 @@ export class App extends LiteElement {
         </div>`;
 
       case "my-account":
-        return html`<my-account
+        return appLayout(html`<my-account
+          class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
-        ></my-account>`;
+        ></my-account>`);
 
       case "archive-info":
       case "archive-info-tab":
-        return html`<btrix-archive
+        return appLayout(html`<btrix-archive
+          class="w-full"
           @navigate="${this.onNavigateTo}"
           .authState="${this.authState}"
           .viewState="${this.viewState}"
           aid="${this.viewState.aid!}"
           tab="${this.viewState.tab || "running"}"
-        ></btrix-archive>`;
+        ></btrix-archive>`);
 
       default:
         return html`<div>Not Found!</div>`;
