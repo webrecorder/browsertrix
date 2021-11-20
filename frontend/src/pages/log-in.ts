@@ -1,15 +1,16 @@
+import { state, property } from "lit/decorators.js";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
 export class LogInPage extends LiteElement {
+  @property({ type: Object })
   auth?: Auth;
-  loginError: string = "";
 
-  static get properties() {
-    return {
-      loginError: { type: String },
-    };
-  }
+  @state()
+  isLoggingIn: boolean = false;
+
+  @state()
+  loginError?: string;
 
   render() {
     return html`
@@ -18,6 +19,7 @@ export class LogInPage extends LiteElement {
           <sl-form @sl-submit="${this.onSubmit}">
             <div class="mb-5">
               <sl-input
+                id="username"
                 name="username"
                 label="Username"
                 placeholder="Username"
@@ -27,6 +29,7 @@ export class LogInPage extends LiteElement {
             </div>
             <div class="mb-5">
               <sl-input
+                id="password"
                 name="password"
                 type="password"
                 label="Password"
@@ -35,7 +38,13 @@ export class LogInPage extends LiteElement {
               >
               </sl-input>
             </div>
-            <sl-button class="w-full" type="primary" submit>Log in</sl-button>
+            <sl-button
+              class="w-full"
+              type="primary"
+              ?loading=${this.isLoggingIn}
+              submit
+              >Log in</sl-button
+            >
           </sl-form>
 
           <div id="login-error" class="text-red-600">${this.loginError}</div>
@@ -45,6 +54,8 @@ export class LogInPage extends LiteElement {
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
+    this.isLoggingIn = true;
+
     const { formData } = event.detail;
 
     const username = formData.get("username") as string;
@@ -63,6 +74,7 @@ export class LogInPage extends LiteElement {
       body: params.toString(),
     });
     if (resp.status !== 200) {
+      this.isLoggingIn = false;
       this.loginError = "Sorry, invalid credentials";
       return;
     }
@@ -81,5 +93,7 @@ export class LogInPage extends LiteElement {
     if (!this.auth) {
       this.loginError = "Unknown login response";
     }
+
+    this.isLoggingIn = false;
   }
 }

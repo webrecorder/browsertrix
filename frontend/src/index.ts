@@ -120,11 +120,7 @@ export class App extends LiteElement {
                 <button class="btn btn-error" @click="${this.onLogOut}">
                   ${msg("Log Out")}
                 </button>`
-            : html`
-                <sl-button type="text" @click="${this.onNeedLogin}">
-                  <span class="text-gray-100">${msg("Log In")}</span>
-                </sl-button>
-              `}
+            : html` <a href="/log-in"> ${msg("Log In")} </a> `}
         </div>
       </nav>
     `;
