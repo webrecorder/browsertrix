@@ -41,13 +41,10 @@ export class LocalePicker extends LitElement {
         isFirstPolyfill = false;
       }
 
-      switch (locale) {
-        default:
-          await import("@formatjs/intl-displaynames/locale-data/en");
-          break;
-        case "ko":
-          await import("@formatjs/intl-displaynames/locale-data/ko"); // @ts-ignore
-          break;
+      try {
+        await import("@formatjs/intl-displaynames/locale-data/" + locale);
+      } catch (e) {
+        console.debug(e);
       }
     };
 
