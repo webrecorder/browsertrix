@@ -26,7 +26,9 @@ export class LocalePicker extends LitElement {
   async firstUpdated() {
     let isFirstPolyfill = true;
 
-    // polyfill if needed
+    // Polyfill if needed
+    // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames#browser_compatibility
+    // TODO actually test if polyfill works in older browser
     const polyfill = async (locale: LocaleCode) => {
       if (!shouldPolyfill(locale)) {
         return;
