@@ -56,6 +56,35 @@ yarn test --browsers chromium firefox webkit
 
 ## Localization
 
+Wrap text or templates in the `msg` helper to make them localizable:
+
+```js
+// import from @lit/localize:
+import { msg } from "@lit/localize";
+
+// later, in the render function:
+render() {
+  return html`
+    <button>
+      ${msg("Click me")}
+    </button>
+  `
+}
+```
+
+Entire templates can be wrapped as well:
+
+```js
+render() {
+  return msg(html`
+    <p>Click the button</p>
+    <button>Click me</button>
+  `)
+}
+```
+
+See: <https://lit.dev/docs/localization/overview/#message-types>
+
 To add new languages:
 
 1. Add [BCP 47 language tag](https://www.w3.org/International/articles/language-tags/index.en) to `targetLocales` in `lit-localize.json`
@@ -64,4 +93,4 @@ To add new languages:
 4. Replace .xlf file once translated
 5. Run `yarn localize:build` bring translation into `src`
 
-See: <https://lit.dev/docs/localization/overview>
+See: <https://lit.dev/docs/localization/overview/#extracting-messages>
