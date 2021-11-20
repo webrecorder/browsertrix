@@ -87,7 +87,7 @@ export class App extends LiteElement {
     return html`
       ${this.renderNavBar()}
       <div class="w-full h-full px-12 py-12">${this.renderPage()}</div>
-      <footer class="text-center p-4">
+      <footer class="flex justify-center p-4">
         <locale-picker></locale-picker>
       </footer>
     `;
@@ -99,7 +99,9 @@ export class App extends LiteElement {
         ${theme}
       </style>
 
-      <div class="flex p-3 shadow-lg bg-white text-neutral-content">
+      <div
+        class="flex p-2 items-center shadow-lg bg-white text-neutral-content"
+      >
         <div class="flex-1 px-2 mx-2">
           <a href="/" class="text-lg font-bold" @click="${this.navLink}"
             >${msg("Browsertrix Cloud")}</a
@@ -117,14 +119,9 @@ export class App extends LiteElement {
                   ${msg("Log Out")}
                 </button>`
             : html`
-                <button
-                  class="btn ${this.viewState._route !== "login"
-                    ? "btn-primary"
-                    : "btn-ghost"}"
-                  @click="${this.onNeedLogin}"
-                >
+                <sl-button type="primary" @click="${this.onNeedLogin}">
                   ${msg("Log In")}
-                </button>
+                </sl-button>
               `}
         </div>
       </div>
