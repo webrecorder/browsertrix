@@ -66,7 +66,7 @@ class RawCrawlConfig(BaseModel):
     combineWARC: Optional[bool] = False
 
     logging: Optional[str] = ""
-    behaviors: Optional[str] = "autoscroll"
+    behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
 
 # ============================================================================
