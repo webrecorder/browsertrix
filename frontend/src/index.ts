@@ -1,4 +1,7 @@
+import { msg, updateWhenLocaleChanges } from "@lit/localize";
+
 import "./shoelace";
+import { LocalePicker } from "./components/locale-picker";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
@@ -21,6 +24,8 @@ export class App extends LiteElement {
 
   constructor() {
     super();
+    updateWhenLocaleChanges(this);
+
     this.authState = null;
 
     const authState = window.localStorage.getItem("authState");
@@ -78,6 +83,9 @@ export class App extends LiteElement {
     return html`
       ${this.renderNavBar()}
       <div class="w-full h-full px-12 py-12">${this.renderPage()}</div>
+      <footer class="text-center p-4">
+        <locale-picker></locale-picker>
+      </footer>
     `;
   }
 
@@ -90,7 +98,7 @@ export class App extends LiteElement {
       <div class="flex p-3 shadow-lg bg-white text-neutral-content">
         <div class="flex-1 px-2 mx-2">
           <a href="/" class="text-lg font-bold" @click="${this.navLink}"
-            >Browsertrix Cloud</a
+            >${msg("Browsertrix Cloud")}</a
           >
         </div>
         <div class="flex-none">
@@ -99,10 +107,10 @@ export class App extends LiteElement {
                   class="font-bold px-4"
                   href="/my-account"
                   @click="${this.navLink}"
-                  >My Account</a
+                  >${msg("My Account")}</a
                 >
                 <button class="btn btn-error" @click="${this.onLogOut}">
-                  Log Out
+                  ${msg("Log Out")}
                 </button>`
             : html`
                 <button
@@ -111,7 +119,7 @@ export class App extends LiteElement {
                     : "btn-ghost"}"
                   @click="${this.onNeedLogin}"
                 >
-                  Log In
+                  ${msg("Log In")}
                 </button>
               `}
         </div>
@@ -178,6 +186,7 @@ export class App extends LiteElement {
   }
 }
 
+customElements.define("locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);
