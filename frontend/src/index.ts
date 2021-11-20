@@ -106,7 +106,7 @@ export class App extends LiteElement {
         class="flex items-center justify-between p-2 bg-gray-900 text-gray-50"
       >
         <div>
-          <a href="/" class="text-lg font-bold" @click="${this.navLink}"
+          <a href="/" @click="${this.navLink}"
             ><h1 class="text-base px-2">${msg("Browsertrix Cloud")}</h1></a
           >
         </div>
