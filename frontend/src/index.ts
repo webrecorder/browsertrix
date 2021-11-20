@@ -85,29 +85,31 @@ export class App extends LiteElement {
 
   render() {
     return html`
-      ${this.renderNavBar()}
-      <div class="w-full h-full px-12 py-12">${this.renderPage()}</div>
-      <footer class="flex justify-center p-4">
-        <locale-picker></locale-picker>
-      </footer>
+      <style>
+        ${theme}
+      </style>
+
+      <div class="min-w-screen min-h-screen flex flex-col">
+        ${this.renderNavBar()}
+        <main class="relative flex-auto flex">${this.renderPage()}</main>
+        <footer class="flex justify-center p-4">
+          <locale-picker></locale-picker>
+        </footer>
+      </div>
     `;
   }
 
   renderNavBar() {
     return html`
-      <style>
-        ${theme}
-      </style>
-
-      <div
-        class="flex p-2 items-center shadow-lg bg-white text-neutral-content"
+      <nav
+        class="flex items-center justify-between p-2 bg-gray-900 text-gray-50"
       >
-        <div class="flex-1 px-2 mx-2">
+        <div>
           <a href="/" class="text-lg font-bold" @click="${this.navLink}"
-            >${msg("Browsertrix Cloud")}</a
+            ><h1 class="text-base px-2">${msg("Browsertrix Cloud")}</h1></a
           >
         </div>
-        <div class="flex-none">
+        <div>
           ${this.authState
             ? html` <a
                   class="font-bold px-4"
@@ -119,22 +121,29 @@ export class App extends LiteElement {
                   ${msg("Log Out")}
                 </button>`
             : html`
-                <sl-button type="primary" @click="${this.onNeedLogin}">
-                  ${msg("Log In")}
+                <sl-button type="text" @click="${this.onNeedLogin}">
+                  <span class="text-gray-100">${msg("Log In")}</span>
                 </sl-button>
               `}
         </div>
-      </div>
+      </nav>
     `;
   }
 
   renderPage() {
     switch (this.viewState._route) {
       case "login":
-        return html`<log-in @logged-in="${this.onLoggedIn}"></log-in>`;
+        return html`<log-in
+          class="w-full bg-gray-100 flex items-center justify-center"
+          @logged-in="${this.onLoggedIn}"
+        ></log-in>`;
 
       case "home":
-        return html`<div>Home</div>`;
+        return html`<div class="w-full flex items-center justify-center">
+          <sl-button type="primary" size="large" @click="${this.onNeedLogin}">
+            ${msg("Log In")}
+          </sl-button>
+        </div>`;
 
       case "my-account":
         return html`<my-account

@@ -13,34 +13,32 @@ export class LogInPage extends LiteElement {
 
   render() {
     return html`
-      <div class="flex items-center justify-center min-h-screen bg-blue-400">
-        <div class="bg-white shadow-2xl rounded-xl px-12 py-12">
-          <div class="max-w-md">
-            <sl-form @sl-submit="${this.onSubmit}">
-              <div class="mb-5">
-                <sl-input
-                  name="username"
-                  label="Username"
-                  placeholder="Username"
-                  required
-                >
-                </sl-input>
-              </div>
-              <div class="mb-5">
-                <sl-input
-                  name="password"
-                  type="password"
-                  label="Password"
-                  placeholder="Password"
-                  required
-                >
-                </sl-input>
-              </div>
-              <sl-button class="w-full" type="primary" submit>Log in</sl-button>
-            </sl-form>
+      <div class="bg-white shadow-2xl rounded-lg px-12 py-12">
+        <div class="max-w-md">
+          <sl-form @sl-submit="${this.onSubmit}">
+            <div class="mb-5">
+              <sl-input
+                name="username"
+                label="Username"
+                placeholder="Username"
+                required
+              >
+              </sl-input>
+            </div>
+            <div class="mb-5">
+              <sl-input
+                name="password"
+                type="password"
+                label="Password"
+                placeholder="Password"
+                required
+              >
+              </sl-input>
+            </div>
+            <sl-button class="w-full" type="primary" submit>Log in</sl-button>
+          </sl-form>
 
-            <div id="login-error" class="text-red-600">${this.loginError}</div>
-          </div>
+          <div id="login-error" class="text-red-600">${this.loginError}</div>
         </div>
       </div>
     `;
