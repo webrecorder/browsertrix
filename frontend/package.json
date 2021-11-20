@@ -5,6 +5,9 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@formatjs/intl-displaynames": "^5.2.5",
+    "@formatjs/intl-getcanonicallocales": "^1.8.0",
+    "@lit/localize": "^0.11.1",
     "@shoelace-style/shoelace": "^2.0.0-beta.61",
     "axios": "^0.22.0",
     "lit": "^2.0.0",
@@ -14,14 +17,19 @@
   },
   "scripts": {
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
+    "prebuild": "npm run localize:build",
+    "prebuild-dev": "npm run localize:build",
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "start-dev": "webpack serve --mode=development",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
-    "format": "prettier --write \"**/*.{ts,js,html,css}\""
+    "format": "prettier --write \"**/*.{ts,js,html,css}\"",
+    "localize:extract": "lit-localize extract",
+    "localize:build": "lit-localize build"
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@lit/localize-tools": "^0.5.0",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "@web/dev-server-esbuild": "^0.2.16",
