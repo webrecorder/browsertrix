@@ -15,10 +15,7 @@ export class LocalePicker extends LitElement {
   localeNames?: LocaleNames;
 
   private setLocaleName = (locale: LocaleCode) => {
-    // TODO figure out what version
-    // https://github.com/microsoft/TypeScript/pull/45647
-    // is in and remove `as any`
-    this.localeNames![locale] = new (Intl as any).DisplayNames([locale], {
+    this.localeNames![locale] = new Intl.DisplayNames([locale], {
       type: "language",
     }).of(locale);
   };
