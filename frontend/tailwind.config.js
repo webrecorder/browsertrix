@@ -7,7 +7,7 @@ module.exports = {
       safelist: [/data-theme$/],
     },
   },
-  plugins: [require("daisyui")],
+  // plugins: [require("daisyui")],
   extract: {
     include: ["./src/**/*.{ts,js}"],
   },
