@@ -13,8 +13,8 @@ export class LogInPage extends LiteElement {
 
   render() {
     return html`
-      <div class="hero min-h-screen bg-blue-400">
-        <div class="hero-content bg-base-200 shadow-2xl rounded-xl px-12 py-12">
+      <div class="flex items-center justify-center min-h-screen bg-blue-400">
+        <div class="bg-white shadow-2xl rounded-xl px-12 py-12">
           <div class="max-w-md">
             <sl-form @sl-submit="${this.onSubmit}">
               <div class="mb-5">
