@@ -1,3 +1,4 @@
+import "./shoelace";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
@@ -6,6 +7,7 @@ import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState } from "./types/auth";
+import theme from "./theme";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -81,19 +83,20 @@ export class App extends LiteElement {
 
   renderNavBar() {
     return html`
-      <div class="navbar shadow-lg bg-neutral text-neutral-content">
+      <style>
+        ${theme}
+      </style>
+
+      <div class="flex p-3 shadow-lg bg-white text-neutral-content">
         <div class="flex-1 px-2 mx-2">
-          <a
-            href="/"
-            class="link link-hover text-lg font-bold"
-            @click="${this.navLink}"
+          <a href="/" class="text-lg font-bold" @click="${this.navLink}"
             >Browsertrix Cloud</a
           >
         </div>
         <div class="flex-none">
           ${this.authState
             ? html` <a
-                  class="link link-hover font-bold px-4"
+                  class="font-bold px-4"
                   href="/my-account"
                   @click="${this.navLink}"
                   >My Account</a

@@ -1,6 +1,7 @@
 // webpack.config.js
 const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -75,6 +76,19 @@ module.exports = {
       emitWarning: false,
       // enable to auto-fix source files:
       // fix: true
+    }),
+
+    new CopyPlugin({
+      patterns: [
+        // Copy Shoelace assets to dist/shoelace
+        {
+          from: path.resolve(
+            __dirname,
+            "node_modules/@shoelace-style/shoelace/dist/assets"
+          ),
+          to: path.resolve(__dirname, "dist/shoelace/assets"),
+        },
+      ],
     }),
   ],
 };

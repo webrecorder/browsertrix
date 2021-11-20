@@ -13,40 +13,32 @@ export class LogInPage extends LiteElement {
 
   render() {
     return html`
-      <div class="hero min-h-screen bg-blue-400">
-        <div
-          class="text-center hero-content bg-base-200 shadow-2xl rounded-xl px-16 py-8"
-        >
+      <div class="flex items-center justify-center min-h-screen bg-blue-400">
+        <div class="bg-white shadow-2xl rounded-xl px-12 py-12">
           <div class="max-w-md">
-            <form action="" @submit="${this.onSubmit}">
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">User</span>
-                </label>
-                <input
-                  id="username"
+            <sl-form @sl-submit="${this.onSubmit}">
+              <div class="mb-5">
+                <sl-input
                   name="username"
-                  type="text"
+                  label="Username"
                   placeholder="Username"
-                  class="input input-bordered"
-                />
+                  required
+                >
+                </sl-input>
               </div>
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text">Password</span>
-                </label>
-                <input
-                  id="password"
+              <div class="mb-5">
+                <sl-input
                   name="password"
                   type="password"
+                  label="Password"
                   placeholder="Password"
-                  class="input input-bordered"
-                />
+                  required
+                >
+                </sl-input>
               </div>
-              <div class="form-control py-4">
-                <button class="btn btn-primary" type="submit">Log In</button>
-              </div>
-            </form>
+              <sl-button class="w-full" type="primary" submit>Log in</sl-button>
+            </sl-form>
+
             <div id="login-error" class="text-red-600">${this.loginError}</div>
           </div>
         </div>
@@ -54,19 +46,16 @@ export class LogInPage extends LiteElement {
     `;
   }
 
-  async onSubmit(event: Event) {
-    event.preventDefault();
+  async onSubmit(event: { detail: { formData: FormData } }) {
+    const { formData } = event.detail;
 
-    const username = (this.querySelector("#username") as HTMLInputElement)!
-      .value;
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
 
     const params = new URLSearchParams();
     params.set("grant_type", "password");
     params.set("username", username);
-    params.set(
-      "password",
-      (this.querySelector("#password") as HTMLInputElement)!.value
-    );
+    params.set("password", password);
 
     const headers = { "Content-Type": "application/x-www-form-urlencoded" };
 
