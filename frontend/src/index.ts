@@ -24,6 +24,10 @@ export class App extends LiteElement {
 
   constructor() {
     super();
+
+    // Note we use updateWhenLocaleChanges here so that we're always up to date with
+    // the active locale (the result of getLocale()) when the locale changes via a
+    // history navigation.
     updateWhenLocaleChanges(this);
 
     this.authState = null;

@@ -5,6 +5,8 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@formatjs/intl-displaynames": "^5.2.5",
+    "@formatjs/intl-getcanonicallocales": "^1.8.0",
     "@lit/localize": "^0.11.1",
     "@shoelace-style/shoelace": "^2.0.0-beta.61",
     "axios": "^0.22.0",
