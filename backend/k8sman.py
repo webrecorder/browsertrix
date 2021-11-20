@@ -42,6 +42,8 @@ class K8SManager:
 
         self.crawl_retries = int(os.environ.get("CRAWL_RETRIES", "3"))
 
+        self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
 
@@ -319,7 +321,7 @@ class K8SManager:
             return None, None
 
         manual = job.metadata.annotations.get("btrix.run.manual") == "1"
-        if manual:
+        if manual and not self.no_delete_jobs:
             self.loop.create_task(self._delete_job(job.metadata.name))
 
         crawl = self._make_crawl_for_job(
@@ -457,7 +459,7 @@ class K8SManager:
         failure = await self.crawl_ops.store_crawl(crawl)
 
         # keep failed jobs around, for now
-        if not failure:
+        if not failure and not self.no_delete_jobs:
             await self._delete_job(job_name)
 
     # ========================================================================
