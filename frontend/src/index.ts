@@ -118,9 +118,20 @@ export class App extends LiteElement {
                   @click="${this.navLink}"
                   >${msg("My Account")}</a
                 >
-                <button class="btn btn-error" @click="${this.onLogOut}">
-                  ${msg("Log Out")}
-                </button>`
+                <sl-dropdown>
+                  <div class="p-2" role="button" slot="trigger">
+                    ${this.authState.username}
+                    <span class="text-xs"
+                      ><sl-icon name="chevron-down"></sl-icon
+                    ></span>
+                  </div>
+                  <sl-menu>
+                    <sl-menu-item>Your account</sl-menu-item>
+                    <sl-menu-item @click="${this.onLogOut}"
+                      >${msg("Log Out")}</sl-menu-item
+                    >
+                  </sl-menu>
+                </sl-dropdown>`
             : html` <a href="/log-in"> ${msg("Log In")} </a> `}
         </div>
       </nav>
