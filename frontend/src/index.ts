@@ -7,6 +7,7 @@ import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState } from "./types/auth";
+import theme from "./theme";
 
 // ===========================================================================
 export class App extends LiteElement {
@@ -83,9 +84,7 @@ export class App extends LiteElement {
   renderNavBar() {
     return html`
       <style>
-        :root {
-          --sl-color-primary-600: hsla(var(--p) / var(--tw-bg-opacity, 1));
-        }
+        ${theme}
       </style>
 
       <div class="navbar shadow-lg bg-neutral text-neutral-content">
