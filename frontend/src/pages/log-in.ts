@@ -14,7 +14,7 @@ export class LogInPage extends LiteElement {
 
   render() {
     return html`
-      <div class="bg-white shadow-2xl rounded-lg px-12 py-12">
+      <div class="md:bg-white md:shadow-2xl md:rounded-lg md:px-12 md:py-12">
         <div class="max-w-md">
           <sl-form @sl-submit="${this.onSubmit}">
             <div class="mb-5">

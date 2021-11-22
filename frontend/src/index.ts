@@ -112,26 +112,20 @@ export class App extends LiteElement {
         </div>
         <div>
           ${this.authState
-            ? html` <a
-                  class="font-bold px-4"
-                  href="/my-account"
-                  @click="${this.navLink}"
-                  >${msg("My Account")}</a
-                >
-                <sl-dropdown>
-                  <div class="p-2" role="button" slot="trigger">
-                    ${this.authState.username}
-                    <span class="text-xs"
-                      ><sl-icon name="chevron-down"></sl-icon
-                    ></span>
-                  </div>
-                  <sl-menu>
-                    <sl-menu-item>Your account</sl-menu-item>
-                    <sl-menu-item @click="${this.onLogOut}"
-                      >${msg("Log Out")}</sl-menu-item
-                    >
-                  </sl-menu>
-                </sl-dropdown>`
+            ? html` <sl-dropdown>
+                <div class="p-2" role="button" slot="trigger">
+                  ${this.authState.username}
+                  <span class="text-xs"
+                    ><sl-icon name="chevron-down"></sl-icon
+                  ></span>
+                </div>
+                <sl-menu>
+                  <sl-menu-item>Your account</sl-menu-item>
+                  <sl-menu-item @click="${this.onLogOut}"
+                    >${msg("Log Out")}</sl-menu-item
+                  >
+                </sl-menu>
+              </sl-dropdown>`
             : html` <a href="/log-in"> ${msg("Log In")} </a> `}
         </div>
       </nav>
@@ -141,7 +135,12 @@ export class App extends LiteElement {
   renderPage() {
     const navLink = ({ href, label }: { href: string; label: string }) => html`
       <li>
-        <a class="block p-2" href="${href}" @click="${this.navLink}"
+        <a
+          class="block p-2 ${href === this.viewState._path
+            ? "text-primary"
+            : ""}"
+          href="${href}"
+          @click="${this.navLink}"
           >${label}</a
         >
       </li>
@@ -161,7 +160,7 @@ export class App extends LiteElement {
     switch (this.viewState._route) {
       case "login":
         return html`<log-in
-          class="w-full bg-gray-100 flex items-center justify-center"
+          class="w-full md:bg-gray-100 flex items-center justify-center"
           @logged-in="${this.onLoggedIn}"
         ></log-in>`;
 
