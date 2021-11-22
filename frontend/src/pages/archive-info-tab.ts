@@ -1,11 +1,12 @@
 import LiteElement, { html } from "../utils/LiteElement";
+import { needLogin } from "../utils/auth";
 import type { Archive, ArchiveConfig } from "../types/archives";
 import type { AuthState } from "../types/auth";
 
+@needLogin
 export class ArchiveConfigsPage extends LiteElement {
-  archive!: Archive & {
-    authState: AuthState;
-  };
+  archive!: Archive;
+  authState!: AuthState;
   configs: ArchiveConfig;
 
   static get properties() {
@@ -16,14 +17,9 @@ export class ArchiveConfigsPage extends LiteElement {
   }
 
   async firstUpdated() {
-    if (!this.archive?.authState) {
-      // TODO
-      return;
-    }
-
     const res = await this.apiFetch(
       `/archives/${this.archive.aid}/crawlconfigs`,
-      this.archive.authState
+      this.authState!
     );
     this.configs = res.crawl_configs;
   }

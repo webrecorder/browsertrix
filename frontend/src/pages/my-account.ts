@@ -1,7 +1,9 @@
 import LiteElement, { html } from "../utils/LiteElement";
+import { needLogin } from "../utils/auth";
 import type { Archive } from "../types/archives";
 import type { AuthState } from "../types/auth";
 
+@needLogin
 export class MyAccountPage extends LiteElement {
   archiveList: Archive[] = [];
   authState: AuthState = null;
@@ -15,15 +17,10 @@ export class MyAccountPage extends LiteElement {
   }
 
   async firstUpdated() {
-    if (!this.authState) {
-      this.dispatchEvent(new CustomEvent("need-login"));
-      return;
-    }
-
-    const data = await this.apiFetch("/archives", this.authState);
+    const data = await this.apiFetch("/archives", this.authState!);
     this.archiveList = data.archives;
 
-    const data2 = await this.apiFetch("/users/me", this.authState);
+    const data2 = await this.apiFetch("/users/me", this.authState!);
     this.id = data2.id;
   }
 
