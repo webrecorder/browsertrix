@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { msg, updateWhenLocaleChanges } from "@lit/localize";
 
 import "./shoelace";
@@ -85,73 +86,109 @@ export class App extends LiteElement {
 
   render() {
     return html`
-      ${this.renderNavBar()}
-      <div class="w-full h-full px-12 py-12">${this.renderPage()}</div>
-      <footer class="flex justify-center p-4">
-        <locale-picker></locale-picker>
-      </footer>
+      <style>
+        ${theme}
+      </style>
+
+      <div class="min-w-screen min-h-screen flex flex-col">
+        ${this.renderNavBar()}
+        <main class="relative flex-auto flex">${this.renderPage()}</main>
+        <footer class="flex justify-center p-4 border-t">
+          <locale-picker></locale-picker>
+        </footer>
+      </div>
     `;
   }
 
   renderNavBar() {
     return html`
-      <style>
-        ${theme}
-      </style>
-
-      <div
-        class="flex p-2 items-center shadow-lg bg-white text-neutral-content"
+      <nav
+        class="flex items-center justify-between p-2 bg-gray-900 text-gray-50"
       >
-        <div class="flex-1 px-2 mx-2">
-          <a href="/" class="text-lg font-bold" @click="${this.navLink}"
-            >${msg("Browsertrix Cloud")}</a
+        <div>
+          <a href="/" @click="${this.navLink}"
+            ><h1 class="text-base px-2">${msg("Browsertrix Cloud")}</h1></a
           >
         </div>
-        <div class="flex-none">
+        <div>
           ${this.authState
-            ? html` <a
-                  class="font-bold px-4"
-                  href="/my-account"
-                  @click="${this.navLink}"
-                  >${msg("My Account")}</a
-                >
-                <button class="btn btn-error" @click="${this.onLogOut}">
-                  ${msg("Log Out")}
-                </button>`
-            : html`
-                <sl-button type="primary" @click="${this.onNeedLogin}">
-                  ${msg("Log In")}
-                </sl-button>
-              `}
+            ? html` <sl-dropdown>
+                <div class="p-2" role="button" slot="trigger">
+                  ${this.authState.username}
+                  <span class="text-xs"
+                    ><sl-icon name="chevron-down"></sl-icon
+                  ></span>
+                </div>
+                <sl-menu>
+                  <sl-menu-item>Your account</sl-menu-item>
+                  <sl-menu-item @click="${this.onLogOut}"
+                    >${msg("Log Out")}</sl-menu-item
+                  >
+                </sl-menu>
+              </sl-dropdown>`
+            : html` <a href="/log-in"> ${msg("Log In")} </a> `}
         </div>
-      </div>
+      </nav>
     `;
   }
 
   renderPage() {
+    const navLink = ({ href, label }: { href: string; label: string }) => html`
+      <li>
+        <a
+          class="block p-2 ${href === this.viewState._path
+            ? "text-primary"
+            : ""}"
+          href="${href}"
+          @click="${this.navLink}"
+          >${label}</a
+        >
+      </li>
+    `;
+    const appLayout = (template: TemplateResult) => html`
+      <div class="w-full flex flex-col md:flex-row">
+        <nav class="md:w-80 md:p-4 md:border-r">
+          <ul class="flex md:flex-col">
+            ${navLink({ href: "/my-account", label: "Archives" })}
+            ${navLink({ href: "/users", label: "Users" })}
+          </ul>
+        </nav>
+        ${template}
+      </div>
+    `;
+
     switch (this.viewState._route) {
       case "login":
-        return html`<log-in @logged-in="${this.onLoggedIn}"></log-in>`;
+        return html`<log-in
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @logged-in="${this.onLoggedIn}"
+        ></log-in>`;
 
       case "home":
-        return html`<div>Home</div>`;
+        return html`<div class="w-full flex items-center justify-center">
+          <sl-button type="primary" size="large" @click="${this.onNeedLogin}">
+            ${msg("Log In")}
+          </sl-button>
+        </div>`;
 
       case "my-account":
-        return html`<my-account
+        return appLayout(html`<my-account
+          class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
-        ></my-account>`;
+        ></my-account>`);
 
       case "archive-info":
       case "archive-info-tab":
-        return html`<btrix-archive
+        return appLayout(html`<btrix-archive
+          class="w-full"
           @navigate="${this.onNavigateTo}"
           .authState="${this.authState}"
           .viewState="${this.viewState}"
           aid="${this.viewState.aid!}"
           tab="${this.viewState.tab || "running"}"
-        ></btrix-archive>`;
+        ></btrix-archive>`);
 
       default:
         return html`<div>Not Found!</div>`;

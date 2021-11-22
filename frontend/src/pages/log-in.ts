@@ -1,52 +1,61 @@
+import { state, property } from "lit/decorators.js";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
 export class LogInPage extends LiteElement {
+  @property({ type: Object })
   auth?: Auth;
-  loginError: string = "";
 
-  static get properties() {
-    return {
-      loginError: { type: String },
-    };
-  }
+  @state()
+  isLoggingIn: boolean = false;
+
+  @state()
+  loginError?: string;
 
   render() {
     return html`
-      <div class="flex items-center justify-center min-h-screen bg-blue-400">
-        <div class="bg-white shadow-2xl rounded-xl px-12 py-12">
-          <div class="max-w-md">
-            <sl-form @sl-submit="${this.onSubmit}">
-              <div class="mb-5">
-                <sl-input
-                  name="username"
-                  label="Username"
-                  placeholder="Username"
-                  required
-                >
-                </sl-input>
-              </div>
-              <div class="mb-5">
-                <sl-input
-                  name="password"
-                  type="password"
-                  label="Password"
-                  placeholder="Password"
-                  required
-                >
-                </sl-input>
-              </div>
-              <sl-button class="w-full" type="primary" submit>Log in</sl-button>
-            </sl-form>
+      <div class="md:bg-white md:shadow-2xl md:rounded-lg md:px-12 md:py-12">
+        <div class="max-w-md">
+          <sl-form @sl-submit="${this.onSubmit}">
+            <div class="mb-5">
+              <sl-input
+                id="username"
+                name="username"
+                label="Username"
+                placeholder="Username"
+                required
+              >
+              </sl-input>
+            </div>
+            <div class="mb-5">
+              <sl-input
+                id="password"
+                name="password"
+                type="password"
+                label="Password"
+                placeholder="Password"
+                required
+              >
+              </sl-input>
+            </div>
+            <sl-button
+              class="w-full"
+              type="primary"
+              ?loading=${this.isLoggingIn}
+              submit
+              >Log in</sl-button
+            >
+          </sl-form>
 
-            <div id="login-error" class="text-red-600">${this.loginError}</div>
-          </div>
+          <div id="login-error" class="text-red-600">${this.loginError}</div>
         </div>
       </div>
     `;
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
+    this.isLoggingIn = true;
+
     const { formData } = event.detail;
 
     const username = formData.get("username") as string;
@@ -65,6 +74,7 @@ export class LogInPage extends LiteElement {
       body: params.toString(),
     });
     if (resp.status !== 200) {
+      this.isLoggingIn = false;
       this.loginError = "Sorry, invalid credentials";
       return;
     }
@@ -83,5 +93,7 @@ export class LogInPage extends LiteElement {
     if (!this.auth) {
       this.loginError = "Unknown login response";
     }
+
+    this.isLoggingIn = false;
   }
 }

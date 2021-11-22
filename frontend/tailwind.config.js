@@ -21,7 +21,10 @@ function makeTheme() {
     }));
 
   return {
-    colors: colors.map(makeColorPalette),
+    colors: {
+      ...colors.map(makeColorPalette),
+      primary: `var(--primary)`,
+    },
     fontFamily: {
       sans: `var(--sl-font-sans)`,
       serif: `var(--sl-font-serif)`,

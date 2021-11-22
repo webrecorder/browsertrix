@@ -10,6 +10,11 @@ require("dotenv").config({
 });
 
 const backendUrl = new URL(process.env.API_BASE_URL || "http://btrix.cloud/");
+const shoelaceAssetsSrcPath = path.resolve(
+  __dirname,
+  "node_modules/@shoelace-style/shoelace/dist/assets"
+);
+const shoelaceAssetsPublicPath = "/shoelace/assets";
 
 module.exports = {
   entry: "./src/index.ts",
@@ -49,11 +54,18 @@ module.exports = {
     open: true,
     compress: true,
     hot: true,
-    static: {
-      directory: path.join(__dirname),
-      //publicPath: "/",
-      watch: true,
-    },
+    static: [
+      {
+        directory: shoelaceAssetsSrcPath,
+        publicPath: shoelaceAssetsPublicPath,
+      },
+
+      {
+        directory: path.join(__dirname),
+        //publicPath: "/",
+        watch: true,
+      },
+    ],
     historyApiFallback: true,
     proxy: {
       "/api": {
@@ -82,11 +94,8 @@ module.exports = {
       patterns: [
         // Copy Shoelace assets to dist/shoelace
         {
-          from: path.resolve(
-            __dirname,
-            "node_modules/@shoelace-style/shoelace/dist/assets"
-          ),
-          to: path.resolve(__dirname, "dist/shoelace/assets"),
+          from: shoelaceAssetsSrcPath,
+          to: path.resolve(__dirname, "dist", shoelaceAssetsPublicPath),
         },
       ],
     }),
