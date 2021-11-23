@@ -1,32 +1,56 @@
 import { state, query } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { createMachine, interpret } from "@xstate/fsm";
 
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+
+const machine = createMachine({
+  id: "changePasswordForm",
+  initial: "readOnly",
+  states: {
+    ["readOnly"]: { on: { EDIT: "editingForm" } },
+    ["editingForm"]: {
+      on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
+    },
+    ["submittingForm"]: { on: { SUCCESS: "readOnly", ERROR: "editingForm" } },
+  },
+});
 
 @needLogin
 @localized()
 export class AccountSettings extends LiteElement {
   authState?: AuthState;
 
-  @state()
-  isChangingPassword: boolean = false;
+  private _stateService = interpret(machine);
 
   @state()
-  isSubmitting: boolean = false;
+  private formState = machine.initialState;
 
   @state()
-  submitErrors: {
+  private submitErrors: {
     _server?: string;
     password?: string;
   } = {};
 
   @query("#newPassword")
-  newPasswordInput?: HTMLInputElement;
+  private newPasswordInput?: HTMLInputElement;
 
   @query("#confirmNewPassword")
-  confirmNewPasswordInput?: HTMLInputElement;
+  private confirmNewPasswordInput?: HTMLInputElement;
+
+  firstUpdated() {
+    this._stateService.subscribe((state) => {
+      this.formState = state;
+    });
+
+    this._stateService.start();
+  }
+
+  disconnectedCallback() {
+    this._stateService.stop();
+  }
 
   checkPasswordMatch() {
     const newPassword = this.newPasswordInput!.value;
@@ -51,14 +75,14 @@ export class AccountSettings extends LiteElement {
           <div>${this.authState!.username}</div>
         </div>
 
-        ${this.isChangingPassword
+        ${this.formState.value === "editingForm"
           ? this.renderChangePasswordForm()
           : html`
               <div>
                 <sl-button
                   type="primary"
                   outline
-                  @click=${() => (this.isChangingPassword = true)}
+                  @click=${() => this._stateService.send("EDIT")}
                   >${msg("Change password")}</sl-button
                 >
               </div>
@@ -125,9 +149,19 @@ export class AccountSettings extends LiteElement {
 
         ${formError}
 
-        <sl-button type="primary" ?loading=${this.isSubmitting} submit
-          >${msg("Update password")}</sl-button
-        >
+        <div>
+          <sl-button
+            type="primary"
+            ?loading=${this.formState.value === "submittingForm"}
+            submit
+            >${msg("Update password")}</sl-button
+          >
+          <sl-button
+            type="text"
+            @click=${() => this._stateService.send("CANCEL")}
+            >${msg("Cancel")}</sl-button
+          >
+        </div>
       </sl-form>
     </div>`;
   }
@@ -136,7 +170,7 @@ export class AccountSettings extends LiteElement {
     if (!this.authState) return;
 
     this.submitErrors = {};
-    this.isSubmitting = true;
+    this._stateService.send("SUBMIT");
 
     const { formData } = event.detail;
     let nextAuthState: AuthState = null;
@@ -179,7 +213,7 @@ export class AccountSettings extends LiteElement {
 
     if (!nextAuthState) {
       this.submitErrors.password = msg("Wrong password");
-      this.isSubmitting = false;
+      this._stateService.send("ERROR");
       return;
     }
 
@@ -192,12 +226,13 @@ export class AccountSettings extends LiteElement {
         method: "PATCH",
         body: JSON.stringify(params),
       });
+
+      this._stateService.send("SUCCESS");
     } catch (e) {
       console.error(e);
 
+      this._stateService.send("ERROR");
       this.submitErrors._server = msg("Something went wrong changing password");
     }
-
-    this.isSubmitting = false;
   }
 }

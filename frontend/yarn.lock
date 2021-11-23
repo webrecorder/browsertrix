@@ -1041,6 +1041,11 @@
   resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.7.5.tgz#09fa51e356d07d0be200642b0e4f91d8e6dd408d"
   integrity sha512-V3BIhmY36fXZ1OtVcI9W+FxQqxVLsPKcNjWigIaa81dLC9IolJl5Mt4Cvhmr0flUnjSpTdrbMTSbXqYqV5dT6A==
 
+"@xstate/fsm@^1.6.2":
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/@xstate/fsm/-/fsm-1.6.2.tgz#177a6920ba0d7d8522585641adc42ba59ecd9e36"
+  integrity sha512-vOfiFVQu9mQceA8oJ3PcA4vwhtyo/j/mbVDVIlHDOh3iuiTqMnp805zZ3QsouRdO2Ie3B7n3jMw8BntI74fZxg==
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"
