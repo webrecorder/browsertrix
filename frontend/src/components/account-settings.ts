@@ -1,9 +1,12 @@
 import { state, query } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
+
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 
 @needLogin
+@localized()
 export class AccountSettings extends LiteElement {
   authState?: AuthState;
 
@@ -32,13 +35,15 @@ export class AccountSettings extends LiteElement {
     if (newPassword === confirmNewPassword) {
       this.confirmNewPasswordInput!.setCustomValidity("");
     } else {
-      this.confirmNewPasswordInput!.setCustomValidity(`Passwords don't match`);
+      this.confirmNewPasswordInput!.setCustomValidity(
+        msg("Passwords don't match")
+      );
     }
   }
 
   render() {
     return html`<div class="grid gap-4">
-      <h1 class="text-xl font-bold">Account settings</h1>
+      <h1 class="text-xl font-bold">${msg("Account settings")}</h1>
 
       <section class="p-4 md:p-8 border rounded-lg grid gap-6">
         <div>
@@ -54,7 +59,7 @@ export class AccountSettings extends LiteElement {
                   type="primary"
                   outline
                   @click=${() => (this.isChangingPassword = true)}
-                  >Change password</sl-button
+                  >${msg("Change password")}</sl-button
                 >
               </div>
             `}
@@ -76,7 +81,7 @@ export class AccountSettings extends LiteElement {
     }
 
     return html` <div class="max-w-sm">
-      <h3 class="font-bold mb-3">Change password</h3>
+      <h3 class="font-bold mb-3">${msg("Change password")}</h3>
       <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
         <div class="mb-5">
           <sl-input
@@ -84,7 +89,7 @@ export class AccountSettings extends LiteElement {
             class="${this.submitErrors.password ? "text-danger" : ""}"
             name="password"
             type="password"
-            label="Current password"
+            label="${msg("Current password")}"
             aria-describedby="passwordError"
             required
           >
@@ -100,7 +105,7 @@ export class AccountSettings extends LiteElement {
             id="newPassword"
             name="newPassword"
             type="password"
-            label="New password"
+            label="${msg("New password")}"
             required
             @sl-blur=${this.checkPasswordMatch}
           >
@@ -111,7 +116,7 @@ export class AccountSettings extends LiteElement {
             id="confirmNewPassword"
             name="confirmNewPassword"
             type="password"
-            label="Confirm new password"
+            label="${msg("Confirm new password")}"
             required
             @sl-blur=${this.checkPasswordMatch}
           >
@@ -121,7 +126,7 @@ export class AccountSettings extends LiteElement {
         ${formError}
 
         <sl-button type="primary" ?loading=${this.isSubmitting} submit
-          >Update</sl-button
+          >${msg("Update password")}</sl-button
         >
       </sl-form>
     </div>`;
@@ -173,8 +178,7 @@ export class AccountSettings extends LiteElement {
     }
 
     if (!nextAuthState) {
-      // TODO localize
-      this.submitErrors.password = "Wrong password";
+      this.submitErrors.password = msg("Wrong password");
       this.isSubmitting = false;
       return;
     }
@@ -191,7 +195,7 @@ export class AccountSettings extends LiteElement {
     } catch (e) {
       console.error(e);
 
-      this.submitErrors._server = "Something went wrong changing password";
+      this.submitErrors._server = msg("Something went wrong changing password");
     }
 
     this.isSubmitting = false;

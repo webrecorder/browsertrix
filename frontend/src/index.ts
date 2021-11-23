@@ -1,6 +1,6 @@
 import type { TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
-import { msg, updateWhenLocaleChanges } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 
 import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
@@ -25,7 +25,7 @@ const ROUTES = {
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 
-// ===========================================================================
+@localized()
 export class App extends LiteElement {
   router: APIRouter;
 
@@ -41,11 +41,6 @@ export class App extends LiteElement {
 
   constructor() {
     super();
-
-    // Note we use updateWhenLocaleChanges here so that we're always up to date with
-    // the active locale (the result of getLocale()) when the locale changes via a
-    // history navigation.
-    updateWhenLocaleChanges(this);
 
     const authState = window.localStorage.getItem("authState");
     if (authState) {
