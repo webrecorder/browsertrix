@@ -105,17 +105,18 @@ export class AccountSettings extends LiteElement {
           >
           </sl-input>
         </div>
+        ${this.submitErrors._server
+          ? html`<div class="mb-5">
+              <btrix-alert id="formError" type="danger">
+                ${this.submitErrors._server}
+              </btrix-alert>
+            </div>`
+          : ""}
+
         <sl-button type="primary" ?loading=${this.isSubmitting} submit
           >Update</sl-button
         >
       </sl-form>
-
-      <!-- TODO style -->
-      ${this.submitErrors._server
-        ? html`<div id="formError" class="text-danger" role="alert">
-            ${this.submitErrors._server}
-          </div>`
-        : ""}
     </div>`;
   }
 

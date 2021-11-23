@@ -4,6 +4,7 @@ import { msg, updateWhenLocaleChanges } from "@lit/localize";
 
 import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
+import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
@@ -255,6 +256,7 @@ export class App extends LiteElement {
   }
 }
 
+customElements.define("btrix-alert", Alert);
 customElements.define("locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("log-in", LogInPage);
