@@ -4,6 +4,7 @@ import { msg, updateWhenLocaleChanges } from "@lit/localize";
 
 import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
+import { AccountSettings } from "./components/account-settings";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
@@ -18,6 +19,7 @@ const ROUTES = {
   home: "/",
   login: "/log-in",
   myAccount: "/my-account",
+  accountSettings: "/account/settings",
   "archive-info": "/archive/:aid",
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
@@ -122,7 +124,10 @@ export class App extends LiteElement {
                   ></span>
                 </div>
                 <sl-menu>
-                  <sl-menu-item>Your account</sl-menu-item>
+                  <sl-menu-item>
+                    <!-- TODO check tabindex -->
+                    <a href="${ROUTES.accountSettings}">Your account</a>
+                  </sl-menu-item>
                   <sl-menu-item @click="${this.onLogOut}"
                     >${msg("Log Out")}</sl-menu-item
                   >
@@ -155,7 +160,7 @@ export class App extends LiteElement {
             ${navLink({ href: "/users", label: "Users" })}
           </ul>
         </nav>
-        ${template}
+        <div class="p-4 md:p-8 flex-1">${template}</div>
       </div>
     `;
 
@@ -186,6 +191,14 @@ export class App extends LiteElement {
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
         ></my-account>`);
+
+      case "accountSettings":
+        return appLayout(html`<btrix-account-settings
+          class="w-full"
+          @navigate="${this.onNavigateTo}"
+          @need-login="${this.onNeedLogin}"
+          .authState="${this.authState}"
+        ></btrix-account-settings>`);
 
       case "archive-info":
       case "archive-info-tab":
@@ -242,3 +255,4 @@ customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
+customElements.define("btrix-account-settings", AccountSettings);
