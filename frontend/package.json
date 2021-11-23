@@ -31,7 +31,9 @@
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@lit/localize-tools": "^0.5.0",
+    "@open-wc/testing": "^3.0.3",
     "@types/color": "^3.0.2",
+    "@types/sinon": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "@web/dev-server-esbuild": "^0.2.16",
