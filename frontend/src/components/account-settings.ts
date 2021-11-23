@@ -14,13 +14,27 @@ export class AccountSettings extends LiteElement {
   isSubmitting: boolean = false;
 
   @state()
-  submitError?: string;
+  submitErrors: {
+    _server?: string;
+    password?: string;
+  } = {};
 
   @query("#newPassword")
   newPasswordInput?: HTMLInputElement;
 
   @query("#confirmNewPassword")
   confirmNewPasswordInput?: HTMLInputElement;
+
+  checkPasswordMatch() {
+    const newPassword = this.newPasswordInput!.value;
+    const confirmNewPassword = this.confirmNewPasswordInput!.value;
+
+    if (newPassword === confirmNewPassword) {
+      this.confirmNewPasswordInput!.setCustomValidity("");
+    } else {
+      this.confirmNewPasswordInput!.setCustomValidity(`Passwords don't match`);
+    }
+  }
 
   render() {
     return html`<div class="grid gap-4">
@@ -51,15 +65,23 @@ export class AccountSettings extends LiteElement {
   renderChangePasswordForm() {
     return html` <div class="max-w-sm">
       <h3 class="font-bold mb-3">Change password</h3>
-      <sl-form @sl-submit="${this.onSubmit}">
+      <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
         <div class="mb-5">
           <sl-input
+            id="password"
+            class="${this.submitErrors.password ? "text-danger" : ""}"
             name="password"
             type="password"
             label="Current password"
+            aria-describedby="passwordError"
             required
           >
           </sl-input>
+          ${this.submitErrors.password
+            ? html`<div id="passwordError" class="text-danger" role="alert">
+                ${this.submitErrors.password}
+              </div>`
+            : ""}
         </div>
         <div class="mb-5">
           <sl-input
@@ -68,6 +90,7 @@ export class AccountSettings extends LiteElement {
             type="password"
             label="New password"
             required
+            @sl-blur=${this.checkPasswordMatch}
           >
           </sl-input>
         </div>
@@ -78,6 +101,7 @@ export class AccountSettings extends LiteElement {
             type="password"
             label="Confirm new password"
             required
+            @sl-blur=${this.checkPasswordMatch}
           >
           </sl-input>
         </div>
@@ -86,41 +110,82 @@ export class AccountSettings extends LiteElement {
         >
       </sl-form>
 
-      <div id="login-error" class="text-red-600">${this.submitError}</div>
+      <!-- TODO style -->
+      ${this.submitErrors._server
+        ? html`<div id="formError" class="text-danger" role="alert">
+            ${this.submitErrors._server}
+          </div>`
+        : ""}
     </div>`;
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
+    if (!this.authState) return;
+
+    this.submitErrors = {};
+    this.isSubmitting = true;
+
     const { formData } = event.detail;
+    let nextAuthState: AuthState = null;
 
-    const newPassword = formData.get("newPassword");
-    const confirmNewPassword = formData.get("confirmNewPassword");
+    // Validate current password by generating token
+    try {
+      // TODO consolidate with log-in method
+      const resp = await fetch("/api/auth/jwt/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "password",
+          username: this.authState.username,
+          password: formData.get("password") as string,
+        }).toString(),
+      });
 
-    if (newPassword === confirmNewPassword) {
-      this.confirmNewPasswordInput!.setCustomValidity("");
-    } else {
-      this.confirmNewPasswordInput!.setCustomValidity(
-        `Passwords don't match, try again`
-      );
+      const data = await resp.json();
 
-      return;
+      if (data.token_type === "bearer" && data.access_token) {
+        const detail = {
+          api: true,
+          auth: `Bearer ${data.access_token}`,
+          username: this.authState.username,
+        };
+        this.dispatchEvent(new CustomEvent("logged-in", { detail }));
+
+        nextAuthState = {
+          username: detail.username,
+          headers: {
+            Authorization: detail.auth,
+          },
+        };
+      }
+    } catch (e) {
+      console.error(e);
     }
 
-    // TODO verify old password
+    if (!nextAuthState) {
+      // TODO localize
+      this.submitErrors.password = "Wrong password";
+      this.isSubmitting = false;
+      return;
+    }
 
     const params = {
       password: formData.get("newPassword"),
     };
 
     try {
-      await this.apiFetch("/users/me", this.authState!, {
+      await this.apiFetch("/users/me", nextAuthState, {
         method: "PATCH",
         body: JSON.stringify(params),
       });
     } catch (e) {
       console.error(e);
 
-      this.submitError = "Something went wrong changing password";
+      this.submitErrors._server = "Something went wrong changing password";
     }
+
+    this.isSubmitting = false;
   }
 }

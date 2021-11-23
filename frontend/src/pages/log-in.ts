@@ -44,7 +44,7 @@ export class LogInPage extends LiteElement {
             >
           </sl-form>
 
-          <div id="login-error" class="text-red-600">${this.loginError}</div>
+          <div id="login-error" class="text-danger">${this.loginError}</div>
         </div>
       </div>
     `;

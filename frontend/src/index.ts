@@ -221,13 +221,19 @@ export class App extends LiteElement {
     this.navigate("/");
   }
 
-  onLoggedIn(event: CustomEvent<{ auth: string; username: string }>) {
+  onLoggedIn(
+    event: CustomEvent<{ api?: boolean; auth: string; username: string }>
+  ) {
+    const { detail } = event;
     this.authState = {
-      username: event.detail.username,
-      headers: { Authorization: event.detail.auth },
+      username: detail.username,
+      headers: { Authorization: detail.auth },
     };
     window.localStorage.setItem("authState", JSON.stringify(this.authState));
-    this.navigate(ROUTES.myAccount);
+
+    if (!detail.api) {
+      this.navigate(ROUTES.myAccount);
+    }
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {

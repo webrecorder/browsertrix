@@ -24,6 +24,7 @@ function makeTheme() {
     colors: {
       ...colors.map(makeColorPalette),
       primary: `var(--primary)`,
+      danger: `var(--sl-color-danger-600)`,
     },
     fontFamily: {
       sans: `var(--sl-font-sans)`,
