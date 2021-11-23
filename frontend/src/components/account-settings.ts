@@ -7,10 +7,16 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 
 type FormContext = {
+  successMessage?: string;
   serverError?: string;
   fieldErrors: { [fieldName: string]: string };
 };
-
+type FormSuccessEvent = {
+  type: "SUCCESS";
+  detail: {
+    successMessage?: FormContext["successMessage"];
+  };
+};
 type FormErrorEvent = {
   type: "ERROR";
   detail: {
@@ -22,7 +28,7 @@ type FormEvent =
   | { type: "EDIT" }
   | { type: "CANCEL" }
   | { type: "SUBMIT" }
-  | { type: "SUCCESS" }
+  | FormSuccessEvent
   | FormErrorEvent;
 
 type FormTypestate =
@@ -39,22 +45,33 @@ type FormTypestate =
       context: FormContext;
     };
 
+const initialContext = {
+  fieldErrors: {},
+};
+
 const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   {
     id: "changePasswordForm",
     initial: "readOnly",
-    context: {
-      serverError: undefined,
-      fieldErrors: {},
-    },
+    context: initialContext,
     states: {
-      ["readOnly"]: { on: { EDIT: "editingForm" } },
+      ["readOnly"]: {
+        on: {
+          EDIT: {
+            target: "editingForm",
+            actions: "reset",
+          },
+        },
+      },
       ["editingForm"]: {
         on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
       },
       ["submittingForm"]: {
         on: {
-          SUCCESS: "readOnly",
+          SUCCESS: {
+            target: "readOnly",
+            actions: "setSucessMessage",
+          },
           ERROR: {
             target: "editingForm",
             actions: "setError",
@@ -65,6 +82,11 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   },
   {
     actions: {
+      reset: assign(() => initialContext),
+      setSucessMessage: assign((context, event) => ({
+        ...context,
+        ...(event as FormSuccessEvent).detail,
+      })),
       setError: assign((context, event) => ({
         ...context,
         ...(event as FormErrorEvent).detail,
@@ -118,9 +140,22 @@ export class AccountSettings extends LiteElement {
     const showForm =
       this.formState.value === "editingForm" ||
       this.formState.value === "submittingForm";
+    let successMessage;
+
+    if (this.formState.context.successMessage) {
+      successMessage = html`
+        <div>
+          <bt-alert type="success"
+            >${this.formState.context.successMessage}</bt-alert
+          >
+        </div>
+      `;
+    }
 
     return html`<div class="grid gap-4">
       <h1 class="text-xl font-bold">${msg("Account settings")}</h1>
+
+      ${successMessage}
 
       <section class="p-4 md:p-8 border rounded-lg grid gap-6">
         <div>
@@ -286,7 +321,12 @@ export class AccountSettings extends LiteElement {
         body: JSON.stringify(params),
       });
 
-      this._stateService.send("SUCCESS");
+      this._stateService.send({
+        type: "SUCCESS",
+        detail: {
+          successMessage: "Successfully updated password",
+        },
+      });
     } catch (e) {
       console.error(e);
 
