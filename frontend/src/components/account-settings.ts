@@ -1,43 +1,77 @@
 import { state, query } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { createMachine, interpret } from "@xstate/fsm";
+import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 
+type FormContext = {
+  serverError?: string;
+  fieldErrors: { [fieldName: string]: string };
+};
+
+type FormErrorEvent = {
+  type: "ERROR";
+  detail: {
+    serverError?: FormContext["serverError"];
+    fieldErrors?: FormContext["fieldErrors"];
+  };
+};
 type FormEvent =
   | { type: "EDIT" }
   | { type: "CANCEL" }
   | { type: "SUBMIT" }
   | { type: "SUCCESS" }
-  | { type: "ERROR" };
+  | FormErrorEvent;
 
 type FormTypestate =
   | {
       value: "readOnly";
-      context: any;
+      context: FormContext;
     }
   | {
       value: "editingForm";
-      context: any;
+      context: FormContext;
     }
   | {
       value: "submittingForm";
-      context: any;
+      context: FormContext;
     };
 
-const machine = createMachine<any, FormEvent, FormTypestate>({
-  id: "changePasswordForm",
-  initial: "readOnly",
-  states: {
-    ["readOnly"]: { on: { EDIT: "editingForm" } },
-    ["editingForm"]: {
-      on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
+const machine = createMachine<FormContext, FormEvent, FormTypestate>(
+  {
+    id: "changePasswordForm",
+    initial: "readOnly",
+    context: {
+      serverError: undefined,
+      fieldErrors: {},
     },
-    ["submittingForm"]: { on: { SUCCESS: "readOnly", ERROR: "editingForm" } },
+    states: {
+      ["readOnly"]: { on: { EDIT: "editingForm" } },
+      ["editingForm"]: {
+        on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
+      },
+      ["submittingForm"]: {
+        on: {
+          SUCCESS: "readOnly",
+          ERROR: {
+            target: "editingForm",
+            actions: "setError",
+          },
+        },
+      },
+    },
   },
-});
+  {
+    actions: {
+      setError: assign((context, event) => ({
+        ...context,
+        ...(event as FormErrorEvent).detail,
+      })),
+    },
+  }
+);
 
 @needLogin
 @localized()
@@ -48,12 +82,6 @@ export class AccountSettings extends LiteElement {
 
   @state()
   private formState = machine.initialState;
-
-  @state()
-  private submitErrors: {
-    _server?: string;
-    password?: string;
-  } = {};
 
   @query("#newPassword")
   private newPasswordInput?: HTMLInputElement;
@@ -87,6 +115,10 @@ export class AccountSettings extends LiteElement {
   }
 
   render() {
+    const showForm =
+      this.formState.value === "editingForm" ||
+      this.formState.value === "submittingForm";
+
     return html`<div class="grid gap-4">
       <h1 class="text-xl font-bold">${msg("Account settings")}</h1>
 
@@ -96,7 +128,7 @@ export class AccountSettings extends LiteElement {
           <div>${this.authState!.username}</div>
         </div>
 
-        ${this.formState.value === "editingForm"
+        ${showForm
           ? this.renderChangePasswordForm()
           : html`
               <div>
@@ -113,13 +145,14 @@ export class AccountSettings extends LiteElement {
   }
 
   renderChangePasswordForm() {
+    const passwordFieldError = this.formState.context.fieldErrors.password;
     let formError;
 
-    if (this.submitErrors._server) {
+    if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
           <bt-alert id="formError" type="danger"
-            >${this.submitErrors._server}</bt-alert
+            >${this.formState.context.serverError}</bt-alert
           >
         </div>
       `;
@@ -131,7 +164,7 @@ export class AccountSettings extends LiteElement {
         <div class="mb-5">
           <sl-input
             id="password"
-            class="${this.submitErrors.password ? "text-danger" : ""}"
+            class="${passwordFieldError ? "text-danger" : ""}"
             name="password"
             type="password"
             label="${msg("Current password")}"
@@ -139,9 +172,9 @@ export class AccountSettings extends LiteElement {
             required
           >
           </sl-input>
-          ${this.submitErrors.password
+          ${passwordFieldError
             ? html`<div id="passwordError" class="text-danger" role="alert">
-                ${this.submitErrors.password}
+                ${passwordFieldError}
               </div>`
             : ""}
         </div>
@@ -190,7 +223,6 @@ export class AccountSettings extends LiteElement {
   async onSubmit(event: { detail: { formData: FormData } }) {
     if (!this.authState) return;
 
-    this.submitErrors = {};
     this._stateService.send("SUBMIT");
 
     const { formData } = event.detail;
@@ -233,8 +265,14 @@ export class AccountSettings extends LiteElement {
     }
 
     if (!nextAuthState) {
-      this.submitErrors.password = msg("Wrong password");
-      this._stateService.send("ERROR");
+      this._stateService.send({
+        type: "ERROR",
+        detail: {
+          fieldErrors: {
+            password: msg("Wrong password"),
+          },
+        },
+      });
       return;
     }
 
@@ -252,8 +290,12 @@ export class AccountSettings extends LiteElement {
     } catch (e) {
       console.error(e);
 
-      this._stateService.send("ERROR");
-      this.submitErrors._server = msg("Something went wrong changing password");
+      this._stateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Something went wrong changing password"),
+        },
+      });
     }
   }
 }
