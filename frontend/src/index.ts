@@ -217,8 +217,12 @@ export class App extends LiteElement {
     this.navigate(ROUTES.myAccount);
   }
 
-  onNeedLogin() {
+  onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
     this.clearAuthState();
+
+    if (event?.detail.api) {
+      // TODO refresh instead of redirect
+    }
     this.navigate(ROUTES.login);
   }
 
