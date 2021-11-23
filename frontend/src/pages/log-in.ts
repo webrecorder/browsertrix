@@ -1,7 +1,10 @@
 import { state, property } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
+
 import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
+@localized()
 export class LogInPage extends LiteElement {
   @state()
   isLoggingIn: boolean = false;
@@ -28,8 +31,7 @@ export class LogInPage extends LiteElement {
               <sl-input
                 id="username"
                 name="username"
-                label="Username"
-                placeholder="Username"
+                label="${msg("Username")}"
                 required
               >
               </sl-input>
@@ -39,8 +41,7 @@ export class LogInPage extends LiteElement {
                 id="password"
                 name="password"
                 type="password"
-                label="Password"
-                placeholder="Password"
+                label="${msg("Password")}"
                 required
               >
               </sl-input>
@@ -53,7 +54,7 @@ export class LogInPage extends LiteElement {
               type="primary"
               ?loading=${this.isLoggingIn}
               submit
-              >Log in</sl-button
+              >${msg("Log in")}</sl-button
             >
           </sl-form>
         </div>
@@ -83,7 +84,7 @@ export class LogInPage extends LiteElement {
     });
     if (resp.status !== 200) {
       this.isLoggingIn = false;
-      this.loginError = "Sorry, invalid credentials";
+      this.loginError = msg("Sorry, invalid username or password");
       return;
     }
 
