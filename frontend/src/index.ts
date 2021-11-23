@@ -120,9 +120,10 @@ export class App extends LiteElement {
                   ></span>
                 </div>
                 <sl-menu>
-                  <sl-menu-item>
-                    <!-- TODO check tabindex -->
-                    <a href="${ROUTES.accountSettings}">Your account</a>
+                  <sl-menu-item
+                    @click=${() => this.navigate(ROUTES.accountSettings)}
+                  >
+                    ${msg("Your account")}
                   </sl-menu-item>
                   <sl-menu-item @click="${this.onLogOut}"
                     >${msg("Log Out")}</sl-menu-item
