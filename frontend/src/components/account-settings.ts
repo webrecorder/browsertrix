@@ -1,4 +1,4 @@
-import { state } from "lit/decorators.js";
+import { state, query } from "lit/decorators.js";
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
@@ -15,6 +15,12 @@ export class AccountSettings extends LiteElement {
 
   @state()
   submitError?: string;
+
+  @query("#newPassword")
+  newPasswordInput?: HTMLInputElement;
+
+  @query("#confirmNewPassword")
+  confirmNewPasswordInput?: HTMLInputElement;
 
   render() {
     return html`<div class="grid gap-4">
@@ -57,6 +63,7 @@ export class AccountSettings extends LiteElement {
         </div>
         <div class="mb-5">
           <sl-input
+            id="newPassword"
             name="newPassword"
             type="password"
             label="New password"
@@ -66,6 +73,7 @@ export class AccountSettings extends LiteElement {
         </div>
         <div class="mb-5">
           <sl-input
+            id="confirmNewPassword"
             name="confirmNewPassword"
             type="password"
             label="Confirm new password"
@@ -84,6 +92,35 @@ export class AccountSettings extends LiteElement {
 
   async onSubmit(event: { detail: { formData: FormData } }) {
     const { formData } = event.detail;
-    console.log(formData);
+
+    const newPassword = formData.get("newPassword");
+    const confirmNewPassword = formData.get("confirmNewPassword");
+
+    if (newPassword === confirmNewPassword) {
+      this.confirmNewPasswordInput!.setCustomValidity("");
+    } else {
+      this.confirmNewPasswordInput!.setCustomValidity(
+        `Passwords don't match, try again`
+      );
+
+      return;
+    }
+
+    // TODO verify old password
+
+    const params = {
+      password: formData.get("newPassword"),
+    };
+
+    try {
+      await this.apiFetch("/users/me", this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify(params),
+      });
+    } catch (e) {
+      console.error(e);
+
+      this.submitError = "Something went wrong changing password";
+    }
   }
 }

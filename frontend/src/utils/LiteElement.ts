@@ -25,8 +25,20 @@ export default class LiteElement extends LitElement {
     );
   }
 
-  async apiFetch(path: string, auth: Auth) {
-    const resp = await fetch("/api" + path, { headers: auth.headers });
+  async apiFetch(
+    path: string,
+    auth: Auth,
+    options?: { method?: string; headers?: any; body?: any }
+  ) {
+    const { headers, ...opts } = options || {};
+    const resp = await fetch("/api" + path, {
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...auth.headers,
+      },
+      ...opts,
+    });
 
     if (resp.status !== 200) {
       if (resp.status === 401) {
