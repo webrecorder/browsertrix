@@ -6,7 +6,28 @@ import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 
-const machine = createMachine({
+type FormEvent =
+  | { type: "EDIT" }
+  | { type: "CANCEL" }
+  | { type: "SUBMIT" }
+  | { type: "SUCCESS" }
+  | { type: "ERROR" };
+
+type FormTypestate =
+  | {
+      value: "readOnly";
+      context: any;
+    }
+  | {
+      value: "editingForm";
+      context: any;
+    }
+  | {
+      value: "submittingForm";
+      context: any;
+    };
+
+const machine = createMachine<any, FormEvent, FormTypestate>({
   id: "changePasswordForm",
   initial: "readOnly",
   states: {
