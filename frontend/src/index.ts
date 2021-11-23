@@ -99,7 +99,7 @@ export class App extends LiteElement {
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <footer class="flex justify-center p-4 border-t">
-          <locale-picker></locale-picker>
+          <bt-locale-picker></bt-locale-picker>
         </footer>
       </div>
     `;
@@ -256,8 +256,8 @@ export class App extends LiteElement {
   }
 }
 
-customElements.define("btrix-alert", Alert);
-customElements.define("locale-picker", LocalePicker);
+customElements.define("bt-alert", Alert);
+customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);

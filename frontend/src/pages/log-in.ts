@@ -10,10 +10,20 @@ export class LogInPage extends LiteElement {
   loginError?: string;
 
   render() {
+    let formError;
+
+    if (this.loginError) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger">${this.loginError}</bt-alert>
+        </div>
+      `;
+    }
+
     return html`
       <div class="md:bg-white md:shadow-2xl md:rounded-lg md:px-12 md:py-12">
         <div class="max-w-md">
-          <sl-form @sl-submit="${this.onSubmit}">
+          <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
             <div class="mb-5">
               <sl-input
                 id="username"
@@ -35,6 +45,9 @@ export class LogInPage extends LiteElement {
               >
               </sl-input>
             </div>
+
+            ${formError}
+
             <sl-button
               class="w-full"
               type="primary"
@@ -43,8 +56,6 @@ export class LogInPage extends LiteElement {
               >Log in</sl-button
             >
           </sl-form>
-
-          <div id="login-error" class="text-danger">${this.loginError}</div>
         </div>
       </div>
     `;

@@ -63,6 +63,18 @@ export class AccountSettings extends LiteElement {
   }
 
   renderChangePasswordForm() {
+    let formError;
+
+    if (this.submitErrors._server) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger"
+            >${this.submitErrors._server}</bt-alert
+          >
+        </div>
+      `;
+    }
+
     return html` <div class="max-w-sm">
       <h3 class="font-bold mb-3">Change password</h3>
       <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
@@ -105,13 +117,8 @@ export class AccountSettings extends LiteElement {
           >
           </sl-input>
         </div>
-        ${this.submitErrors._server
-          ? html`<div class="mb-5">
-              <btrix-alert id="formError" type="danger">
-                ${this.submitErrors._server}
-              </btrix-alert>
-            </div>`
-          : ""}
+
+        ${formError}
 
         <sl-button type="primary" ?loading=${this.isSubmitting} submit
           >Update</sl-button
