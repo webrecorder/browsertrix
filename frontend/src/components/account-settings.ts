@@ -26,7 +26,9 @@ class RequestVerify extends LitElement {
     if (this.requestSuccess) {
       return html`
         <div class="text-sm text-gray-400 inline-flex items-center">
-          <sl-icon class="mr-1" name="check-lg"></sl-icon> Sent
+          <sl-icon class="mr-1" name="check-lg"></sl-icon> ${msg("Sent", {
+            desc: "Status message after sending verification email",
+          })}
         </div>
       `;
     }
@@ -38,7 +40,7 @@ class RequestVerify extends LitElement {
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
       >
-        Resend verification email
+        ${msg("Resend verification email")}
       </span>
     `;
   }
@@ -204,11 +206,19 @@ export class AccountSettings extends LiteElement {
     if (this.userInfo) {
       if (this.userInfo.isVerified) {
         verificationMessage = html`
-          <sl-tag type="success" size="small">verified</sl-tag>
+          <sl-tag type="success" size="small"
+            >${msg("verified", {
+              desc: "Status text when user email is verified",
+            })}</sl-tag
+          >
         `;
       } else {
         verificationMessage = html`
-          <sl-tag class="mr-2" type="warning" size="small">unverified</sl-tag>
+          <sl-tag class="mr-2" type="warning" size="small"
+            >${msg("unverified", {
+              desc: "Status text when user email is not yet verified",
+            })}</sl-tag
+          >
 
           <bt-request-verify email=${this.userInfo.email}></bt-request-verify>
         `;
@@ -222,7 +232,7 @@ export class AccountSettings extends LiteElement {
 
       <section class="p-4 md:p-8 border rounded-lg grid gap-6">
         <div>
-          <div class="mb-1 text-gray-500">Email</div>
+          <div class="mb-1 text-gray-500">${msg("Email")}</div>
           <div class="inline-flex items-center">
             <span class="mr-3">${this.userInfo?.email}</span>
             ${verificationMessage}
