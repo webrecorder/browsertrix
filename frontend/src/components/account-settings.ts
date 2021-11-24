@@ -105,12 +105,6 @@ export class AccountSettings extends LiteElement {
   @state()
   private formState = machine.initialState;
 
-  @query("#newPassword")
-  private newPasswordInput?: HTMLInputElement;
-
-  @query("#confirmNewPassword")
-  private confirmNewPasswordInput?: HTMLInputElement;
-
   firstUpdated() {
     this.formStateService.subscribe((state) => {
       this.formState = state;
@@ -121,19 +115,6 @@ export class AccountSettings extends LiteElement {
 
   disconnectedCallback() {
     this.formStateService.stop();
-  }
-
-  checkPasswordMatch() {
-    const newPassword = this.newPasswordInput!.value;
-    const confirmNewPassword = this.confirmNewPasswordInput!.value;
-
-    if (newPassword === confirmNewPassword) {
-      this.confirmNewPasswordInput!.setCustomValidity("");
-    } else {
-      this.confirmNewPasswordInput!.setCustomValidity(
-        msg("Passwords don't match")
-      );
-    }
   }
 
   render() {
@@ -204,6 +185,7 @@ export class AccountSettings extends LiteElement {
             type="password"
             label="${msg("Current password")}"
             aria-describedby="passwordError"
+            autocomplete="current-password"
             required
           >
           </sl-input>
@@ -219,19 +201,9 @@ export class AccountSettings extends LiteElement {
             name="newPassword"
             type="password"
             label="${msg("New password")}"
+            autocomplete="new-password"
+            toggle-password
             required
-            @sl-blur=${this.checkPasswordMatch}
-          >
-          </sl-input>
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="confirmNewPassword"
-            name="confirmNewPassword"
-            type="password"
-            label="${msg("Confirm new password")}"
-            required
-            @sl-blur=${this.checkPasswordMatch}
           >
           </sl-input>
         </div>
