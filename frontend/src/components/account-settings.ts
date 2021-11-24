@@ -1,4 +1,4 @@
-import { state, query } from "lit/decorators.js";
+import { state, query, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
@@ -98,9 +98,10 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 @needLogin
 @localized()
 export class AccountSettings extends LiteElement {
-  authState?: AuthState;
-
   private formStateService = interpret(machine);
+
+  @property({ type: Object })
+  authState?: AuthState;
 
   @state()
   private formState = machine.initialState;
