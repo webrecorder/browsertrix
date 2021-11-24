@@ -19,6 +19,7 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   login: "/log-in",
+  forgotPassword: "/log-in/forgot-password",
   myAccount: "/my-account",
   accountSettings: "/account/settings",
   "archive-info": "/archive/:aid",
@@ -165,11 +166,13 @@ export class App extends LiteElement {
 
     switch (this.viewState.route) {
       case "login":
+      case "forgotPassword":
         return html`<log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
-          .authState="${this.authState}"
+          @navigate=${this.onNavigateTo}
+          @logged-in=${this.onLoggedIn}
+          .authState=${this.authState}
+          .viewState=${this.viewState}
         ></log-in>`;
 
       case "home":
