@@ -33,7 +33,7 @@ export class App extends LiteElement {
   authState: AuthState | null = null;
 
   @state()
-  viewState: ViewState & {
+  viewState!: ViewState & {
     aid?: string;
     // TODO common tab type
     tab?: "running" | "finished" | "configs";
@@ -48,31 +48,34 @@ export class App extends LiteElement {
     }
 
     this.router = new APIRouter(ROUTES);
-
-    this.viewState = this.router.match(window.location.pathname);
+    this.syncViewState();
   }
 
-  firstUpdated() {
+  private syncViewState() {
+    this.viewState = this.router.match(
+      `${window.location.pathname}${window.location.search}`
+    );
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
     window.addEventListener("popstate", (event) => {
-      // if (event.state.view) {
-      //   this.view = event.state.view;
-      // }
-      this.viewState = this.router.match(window.location.pathname);
+      this.syncViewState();
     });
-
-    this.viewState = this.router.match(window.location.pathname);
   }
 
-  navigate(newView: string) {
-    if (newView.startsWith("http")) {
-      newView = new URL(newView).pathname;
+  navigate(newViewPath: string) {
+    if (newViewPath.startsWith("http")) {
+      const url = new URL(newViewPath);
+      newViewPath = `${url.pathname}${url.search}`;
     }
 
-    if (newView === "/log-in" && this.authState) {
+    if (newViewPath === "/log-in" && this.authState) {
       // Redirect to logged in home page
       this.viewState = this.router.match(ROUTES.myAccount);
     } else {
-      this.viewState = this.router.match(newView);
+      this.viewState = this.router.match(newViewPath);
     }
 
     //console.log(this.view._route, window.location.href);
@@ -204,7 +207,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           .authState="${this.authState}"
           .viewState="${this.viewState}"
-          aid="${this.viewState.aid!}"
+          aid="${this.viewState._params.aid}"
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`);
 
