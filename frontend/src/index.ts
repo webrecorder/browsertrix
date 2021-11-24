@@ -78,8 +78,7 @@ export class App extends LiteElement {
       this.viewState = this.router.match(newViewPath);
     }
 
-    //console.log(this.view._route, window.location.href);
-    window.history.pushState(this.viewState, "", this.viewState._path);
+    window.history.pushState(this.viewState, "", this.viewState.pathname);
   }
 
   navLink(event: Event) {
@@ -143,7 +142,7 @@ export class App extends LiteElement {
     const navLink = ({ href, label }: { href: string; label: string }) => html`
       <li>
         <a
-          class="block p-2 ${href === this.viewState._path
+          class="block p-2 ${href === this.viewState.pathname
             ? "text-primary"
             : ""}"
           href="${href}"
@@ -164,7 +163,7 @@ export class App extends LiteElement {
       </div>
     `;
 
-    switch (this.viewState._route) {
+    switch (this.viewState.route) {
       case "login":
         return html`<log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
@@ -207,7 +206,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           .authState="${this.authState}"
           .viewState="${this.viewState}"
-          aid="${this.viewState._params.aid}"
+          aid="${this.viewState.params.aid}"
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`);
 

@@ -4,9 +4,14 @@ type Routes = { [key: string]: Path };
 type Paths = { [key: string]: string };
 
 export type ViewState = {
-  _route: string | null;
-  _path: string;
-  _params: { [key: string]: string };
+  // route name, e.g. "home"
+  route: string | null;
+  // path name, e.g. "/dashboard"
+  pathname: string;
+  // params from URL (:) or query (?)
+  // e.g. "/users/:id"
+  // e.g. "/redirect?url"
+  params: { [key: string]: string };
 };
 export type NavigateEvent = {
   detail: string;
@@ -28,10 +33,10 @@ export default class APIRouter {
       const res = route.test(path);
 
       if (res) {
-        return { _route: name, _path: path, _params: res };
+        return { route: name, pathname: path, params: res };
       }
     }
 
-    return { _route: null, _path: path, _params: {} };
+    return { route: null, pathname: path, params: {} };
   }
 }
