@@ -1,9 +1,11 @@
 import type { TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
-import { msg, updateWhenLocaleChanges } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 
 import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
+import { Alert } from "./components/alert";
+import { AccountSettings } from "./components/account-settings";
 import { LogInPage } from "./pages/log-in";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
@@ -18,11 +20,12 @@ const ROUTES = {
   home: "/",
   login: "/log-in",
   myAccount: "/my-account",
+  accountSettings: "/account/settings",
   "archive-info": "/archive/:aid",
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 
-// ===========================================================================
+@localized()
 export class App extends LiteElement {
   router: APIRouter;
 
@@ -38,11 +41,6 @@ export class App extends LiteElement {
 
   constructor() {
     super();
-
-    // Note we use updateWhenLocaleChanges here so that we're always up to date with
-    // the active locale (the result of getLocale()) when the locale changes via a
-    // history navigation.
-    updateWhenLocaleChanges(this);
 
     const authState = window.localStorage.getItem("authState");
     if (authState) {
@@ -96,7 +94,7 @@ export class App extends LiteElement {
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <footer class="flex justify-center p-4 border-t">
-          <locale-picker></locale-picker>
+          <bt-locale-picker></bt-locale-picker>
         </footer>
       </div>
     `;
@@ -122,7 +120,11 @@ export class App extends LiteElement {
                   ></span>
                 </div>
                 <sl-menu>
-                  <sl-menu-item>Your account</sl-menu-item>
+                  <sl-menu-item
+                    @click=${() => this.navigate(ROUTES.accountSettings)}
+                  >
+                    ${msg("Your account")}
+                  </sl-menu-item>
                   <sl-menu-item @click="${this.onLogOut}"
                     >${msg("Log Out")}</sl-menu-item
                   >
@@ -155,7 +157,7 @@ export class App extends LiteElement {
             ${navLink({ href: "/users", label: "Users" })}
           </ul>
         </nav>
-        ${template}
+        <div class="p-4 md:p-8 flex-1">${template}</div>
       </div>
     `;
 
@@ -187,6 +189,14 @@ export class App extends LiteElement {
           .authState="${this.authState}"
         ></my-account>`);
 
+      case "accountSettings":
+        return appLayout(html`<btrix-account-settings
+          class="w-full"
+          @navigate="${this.onNavigateTo}"
+          @need-login="${this.onNeedLogin}"
+          .authState="${this.authState}"
+        ></btrix-account-settings>`);
+
       case "archive-info":
       case "archive-info-tab":
         return appLayout(html`<btrix-archive
@@ -208,13 +218,19 @@ export class App extends LiteElement {
     this.navigate("/");
   }
 
-  onLoggedIn(event: CustomEvent<{ auth: string; username: string }>) {
+  onLoggedIn(
+    event: CustomEvent<{ api?: boolean; auth: string; username: string }>
+  ) {
+    const { detail } = event;
     this.authState = {
-      username: event.detail.username,
-      headers: { Authorization: event.detail.auth },
+      username: detail.username,
+      headers: { Authorization: detail.auth },
     };
     window.localStorage.setItem("authState", JSON.stringify(this.authState));
-    this.navigate(ROUTES.myAccount);
+
+    if (!detail.api) {
+      this.navigate(ROUTES.myAccount);
+    }
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
@@ -236,9 +252,11 @@ export class App extends LiteElement {
   }
 }
 
-customElements.define("locale-picker", LocalePicker);
+customElements.define("bt-alert", Alert);
+customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
+customElements.define("btrix-account-settings", AccountSettings);

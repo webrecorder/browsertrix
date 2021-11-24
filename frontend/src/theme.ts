@@ -14,7 +14,11 @@ const primaryColor = Color(PRIMARY_COLOR);
 
 const theme = css`
   :root {
+    /* contextual variables */
     --primary: ${unsafeCSS(PRIMARY_COLOR)};
+    --success: var(--sl-color-success-600);
+    --warning: var(--sl-color-warning-600);
+    --danger: var(--sl-color-danger-600);
 
     /*
      * Theme Tokens

@@ -1,7 +1,10 @@
 import { state, property } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
+
 import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
+@localized()
 export class LogInPage extends LiteElement {
   @state()
   isLoggingIn: boolean = false;
@@ -10,16 +13,25 @@ export class LogInPage extends LiteElement {
   loginError?: string;
 
   render() {
+    let formError;
+
+    if (this.loginError) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger">${this.loginError}</bt-alert>
+        </div>
+      `;
+    }
+
     return html`
       <div class="md:bg-white md:shadow-2xl md:rounded-lg md:px-12 md:py-12">
         <div class="max-w-md">
-          <sl-form @sl-submit="${this.onSubmit}">
+          <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
             <div class="mb-5">
               <sl-input
                 id="username"
                 name="username"
-                label="Username"
-                placeholder="Username"
+                label="${msg("Username")}"
                 required
               >
               </sl-input>
@@ -29,22 +41,22 @@ export class LogInPage extends LiteElement {
                 id="password"
                 name="password"
                 type="password"
-                label="Password"
-                placeholder="Password"
+                label="${msg("Password")}"
                 required
               >
               </sl-input>
             </div>
+
+            ${formError}
+
             <sl-button
               class="w-full"
               type="primary"
               ?loading=${this.isLoggingIn}
               submit
-              >Log in</sl-button
+              >${msg("Log in")}</sl-button
             >
           </sl-form>
-
-          <div id="login-error" class="text-red-600">${this.loginError}</div>
         </div>
       </div>
     `;
@@ -72,7 +84,7 @@ export class LogInPage extends LiteElement {
     });
     if (resp.status !== 200) {
       this.isLoggingIn = false;
-      this.loginError = "Sorry, invalid credentials";
+      this.loginError = msg("Sorry, invalid username or password");
       return;
     }
 
