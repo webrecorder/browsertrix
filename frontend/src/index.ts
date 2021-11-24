@@ -15,7 +15,7 @@ import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { AuthState } from "./types/auth";
+import type { AuthState, CurrentUser } from "./types/auth";
 import theme from "./theme";
 
 const ROUTES = {
@@ -36,6 +36,9 @@ export class App extends LiteElement {
 
   @state()
   authState: AuthState | null = null;
+
+  @state()
+  userInfo?: CurrentUser;
 
   @state()
   viewState!: ViewState & {
@@ -80,6 +83,16 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
+  }
+
+  updated(changedProperties: any) {
+    if (changedProperties.has("authState") && this.authState) {
+      const prevAuthState = changedProperties.get("authState");
+
+      if (this.authState.username !== prevAuthState?.username) {
+        this.getUserInfo();
+      }
+    }
   }
 
   navigate(newViewPath: string) {
@@ -239,6 +252,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
+          .userInfo="${this.userInfo}"
         ></btrix-account-settings>`);
 
       case "archive-info":
@@ -299,6 +313,15 @@ export class App extends LiteElement {
   clearAuthState() {
     this.authState = null;
     window.localStorage.setItem("authState", "");
+  }
+
+  private async getUserInfo() {
+    const data = await this.apiFetch("/users/me", this.authState!);
+
+    this.userInfo = {
+      email: data.email,
+      isVerified: data.is_verified,
+    };
   }
 }
 
