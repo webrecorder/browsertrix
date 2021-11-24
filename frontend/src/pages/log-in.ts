@@ -329,9 +329,11 @@ export class LogInPage extends LiteElement {
       if (data.token_type === "bearer" && data.access_token) {
         const auth = "Bearer " + data.access_token;
         const detail = { auth, username };
+
         this.dispatchEvent(new CustomEvent("logged-in", { detail }));
 
-        this.formStateService.send("SUCCESS");
+        // no state update here, since "logged-in" event
+        // will result in a route change
       } else {
         throw new Error("Unknown auth type");
       }
