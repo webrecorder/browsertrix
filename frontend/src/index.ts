@@ -30,7 +30,7 @@ const ROUTES = {
 
 @localized()
 export class App extends LiteElement {
-  private router: APIRouter;
+  private router: APIRouter = new APIRouter(ROUTES);
 
   @state()
   authState: AuthState | null = null;
@@ -48,9 +48,21 @@ export class App extends LiteElement {
     const authState = window.localStorage.getItem("authState");
     if (authState) {
       this.authState = JSON.parse(authState);
+
+      if (
+        window.location.pathname === "/log-in" ||
+        window.location.pathname === "/reset-password"
+      ) {
+        // Redirect to logged in home page
+        this.viewState = this.router.match(ROUTES.myAccount);
+        window.history.replaceState(
+          this.viewState,
+          "",
+          this.viewState.pathname
+        );
+      }
     }
 
-    this.router = new APIRouter(ROUTES);
     this.syncViewState();
   }
 
