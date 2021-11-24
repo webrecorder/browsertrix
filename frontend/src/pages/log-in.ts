@@ -1,24 +1,141 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
+type FormContext = {
+  successMessage?: string;
+  serverError?: string;
+};
+type FormSuccessEvent = {
+  type: "SUCCESS";
+  detail: {
+    successMessage?: FormContext["successMessage"];
+  };
+};
+type FormErrorEvent = {
+  type: "ERROR";
+  detail: {
+    serverError?: FormContext["serverError"];
+  };
+};
+type FormEvent =
+  | { type: "CLICK_FORGOT_PASSWORD" }
+  | { type: "CANCEL" }
+  | { type: "SUBMIT" }
+  | FormSuccessEvent
+  | FormErrorEvent;
+
+type FormTypestate =
+  | {
+      value: "signIn";
+      context: FormContext;
+    }
+  | {
+      value: "signingIn";
+      context: FormContext;
+    }
+  | {
+      value: "signIn";
+      context: FormContext;
+    }
+  | {
+      value: "forgotPassword";
+      context: FormContext;
+    }
+  | {
+      value: "submittingForgotPassword";
+      context: FormContext;
+    };
+
+const initialContext = {};
+
+const machine = createMachine<FormContext, FormEvent, FormTypestate>(
+  {
+    id: "loginForm",
+    initial: "signIn",
+    context: initialContext,
+    states: {
+      ["signIn"]: {
+        on: {
+          CLICK_FORGOT_PASSWORD: {
+            target: "forgotPassword",
+            actions: "reset",
+          },
+          SUBMIT: "signingIn",
+        },
+      },
+      ["signingIn"]: {
+        on: {
+          SUCCESS: "signedIn",
+          ERROR: {
+            target: "signIn",
+            actions: "setError",
+          },
+        },
+      },
+      ["forgotPassword"]: {
+        on: { CANCEL: "signIn", SUBMIT: "submittingForgotPassword" },
+      },
+      ["submittingForgotPassword"]: {
+        on: {
+          SUCCESS: {
+            target: "signIn",
+            actions: "setSucessMessage",
+          },
+          ERROR: {
+            target: "forgotPassword",
+            actions: "setError",
+          },
+        },
+      },
+    },
+  },
+  {
+    actions: {
+      reset: assign(() => initialContext),
+      setSucessMessage: assign((context, event) => ({
+        ...context,
+        ...(event as FormSuccessEvent).detail,
+      })),
+      setError: assign((context, event) => ({
+        ...context,
+        ...(event as FormErrorEvent).detail,
+      })),
+    },
+  }
+);
+
 @localized()
 export class LogInPage extends LiteElement {
-  @state()
-  isLoggingIn: boolean = false;
+  private formStateService = interpret(machine);
 
   @state()
-  loginError?: string;
+  private formState = machine.initialState;
+
+  firstUpdated() {
+    this.formStateService.subscribe((state) => {
+      this.formState = state;
+    });
+
+    this.formStateService.start();
+  }
+
+  disconnectedCallback() {
+    this.formStateService.stop();
+  }
 
   render() {
     let formError;
 
-    if (this.loginError) {
+    if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <bt-alert id="formError" type="danger">${this.loginError}</bt-alert>
+          <bt-alert id="formError" type="danger"
+            >${this.formState.context.serverError}</bt-alert
+          >
         </div>
       `;
     }
@@ -52,7 +169,7 @@ export class LogInPage extends LiteElement {
             <sl-button
               class="w-full"
               type="primary"
-              ?loading=${this.isLoggingIn}
+              ?loading=${this.formState.value === "signingIn"}
               submit
               >${msg("Log in")}</sl-button
             >
@@ -63,7 +180,7 @@ export class LogInPage extends LiteElement {
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
-    this.isLoggingIn = true;
+    this.formStateService.send("SUBMIT");
 
     const { formData } = event.detail;
 
@@ -83,8 +200,12 @@ export class LogInPage extends LiteElement {
       body: params.toString(),
     });
     if (resp.status !== 200) {
-      this.isLoggingIn = false;
-      this.loginError = msg("Sorry, invalid username or password");
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Sorry, invalid username or password"),
+        },
+      });
       return;
     }
 
@@ -94,11 +215,20 @@ export class LogInPage extends LiteElement {
         const auth = "Bearer " + data.access_token;
         const detail = { auth, username };
         this.dispatchEvent(new CustomEvent("logged-in", { detail }));
+
+        this.formStateService.send("SUCCESS");
+      } else {
+        throw new Error("Unknown auth type");
       }
     } catch (e) {
       console.error(e);
-    }
 
-    this.isLoggingIn = false;
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Something went wrong, couldn't sign you in"),
+        },
+      });
+    }
   }
 }
