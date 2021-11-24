@@ -213,6 +213,7 @@ export class App extends LiteElement {
       case "verify":
         return html`<btrix-verify
           class="w-full flex items-center justify-center"
+          token="${this.viewState.params.token}"
         ></btrix-verify>`;
 
       case "login":
