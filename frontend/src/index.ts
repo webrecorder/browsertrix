@@ -7,6 +7,7 @@ import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { SignUp } from "./pages/sign-up";
+import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { MyAccountPage } from "./pages/my-account";
@@ -21,6 +22,7 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   signUp: "/sign-up",
+  verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password?token",
@@ -208,6 +210,11 @@ export class App extends LiteElement {
           .authState="${this.authState}"
         ></btrix-sign-up>`;
 
+      case "verify":
+        return html`<btrix-verify
+          class="w-full flex items-center justify-center"
+        ></btrix-verify>`;
+
       case "login":
       case "forgotPassword":
         return html`<log-in
@@ -329,6 +336,7 @@ customElements.define("bt-alert", Alert);
 customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("btrix-sign-up", SignUp);
+customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
