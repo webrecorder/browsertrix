@@ -1,10 +1,14 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
+import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()
 export class ResetPassword extends LiteElement {
+  @property({ type: Object })
+  viewState!: ViewState;
+
   @state()
   private serverError?: string;
 
@@ -48,12 +52,23 @@ export class ResetPassword extends LiteElement {
             >
           </sl-form>
         </div>
+
+        <div class="text-center">
+          <a
+            class="text-sm text-gray-400 hover:text-gray-500"
+            href="/log-in/forgot-password"
+            @click=${this.navLink}
+            >${msg("Resend password reset email?")}</a
+          >
+        </div>
       </div>
     `;
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
     this.isSubmitting = true;
+
+    console.log(this.viewState.params.token);
 
     const { formData } = event.detail;
     const password = formData.get("password") as string;
@@ -63,16 +78,34 @@ export class ResetPassword extends LiteElement {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token: "TODO", password }),
+      body: JSON.stringify({
+        token: this.viewState.params.token,
+        password,
+      }),
     });
 
-    if (resp.status === 200) {
-      // TODO redirect
-    } else if (resp.status === 422) {
-      // TODO password validation details
-      this.serverError = msg("Invalid password");
-    } else {
-      this.serverError = msg("Something unexpected went wrong");
+    switch (resp.status) {
+      case 200:
+        // TODO redirect
+        break;
+      case 400:
+      case 422:
+        const { detail } = await resp.json();
+
+        if (detail === "RESET_PASSWORD_BAD_TOKEN") {
+          // TODO password validation details
+          this.serverError = msg(
+            "Password reset email is not valid. Request a new password reset email"
+          );
+        } else {
+          // TODO password validation details
+          this.serverError = msg("Invalid password");
+        }
+
+        break;
+      default:
+        this.serverError = msg("Something unexpected went wrong");
+        break;
     }
 
     this.isSubmitting = false;

@@ -30,7 +30,7 @@ const ROUTES = {
 
 @localized()
 export class App extends LiteElement {
-  router: APIRouter;
+  private router: APIRouter;
 
   @state()
   authState: AuthState | null = null;
@@ -183,6 +183,7 @@ export class App extends LiteElement {
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authState}
+          .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
       case "home":
