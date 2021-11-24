@@ -87,12 +87,17 @@ export class App extends LiteElement {
     });
   }
 
-  updated(changedProperties: any) {
+  async updated(changedProperties: any) {
     if (changedProperties.has("authState") && this.authState) {
       const prevAuthState = changedProperties.get("authState");
 
       if (this.authState.username !== prevAuthState?.username) {
-        this.getUserInfo();
+        const data = await this.getUserInfo();
+
+        this.userInfo = {
+          email: data.email,
+          isVerified: data.is_verified,
+        };
       }
     }
   }
@@ -323,13 +328,8 @@ export class App extends LiteElement {
     window.localStorage.setItem("authState", "");
   }
 
-  private async getUserInfo() {
-    const data = await this.apiFetch("/users/me", this.authState!);
-
-    this.userInfo = {
-      email: data.email,
-      isVerified: data.is_verified,
-    };
+  getUserInfo() {
+    return this.apiFetch("/users/me", this.authState!);
   }
 }
 
