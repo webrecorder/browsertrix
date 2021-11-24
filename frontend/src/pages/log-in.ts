@@ -221,9 +221,10 @@ export class LogInPage extends LiteElement {
       <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
         <div class="mb-5">
           <sl-input
-            id="username"
+            id="email"
             name="username"
-            label="${msg("Username")}"
+            type="email"
+            label="${msg("Email")}"
             required
           >
           </sl-input>
