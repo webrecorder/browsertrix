@@ -144,7 +144,7 @@ export class LogInPage extends LiteElement {
 
   updated(changedProperties: any) {
     if (changedProperties.has("viewState")) {
-      const route = this.viewState._route;
+      const route = this.viewState.route;
 
       if (route === "login") {
         this.formStateService.send("SHOW_SIGN_IN_WITH_PASSWORD");

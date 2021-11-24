@@ -7,6 +7,7 @@ import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { LogInPage } from "./pages/log-in";
+import { ResetPassword } from "./pages/reset-password";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
@@ -20,6 +21,7 @@ const ROUTES = {
   home: "/",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
+  resetPassword: "/reset-password?token",
   myAccount: "/my-account",
   accountSettings: "/account/settings",
   "archive-info": "/archive/:aid",
@@ -175,6 +177,14 @@ export class App extends LiteElement {
           .viewState=${this.viewState}
         ></log-in>`;
 
+      case "resetPassword":
+        return html`<btrix-reset-password
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          @logged-in=${this.onLoggedIn}
+          .authState=${this.authState}
+        ></btrix-reset-password>`;
+
       case "home":
         return html`<div class="w-full flex items-center justify-center">
           <sl-button
@@ -265,3 +275,4 @@ customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
+customElements.define("btrix-reset-password", ResetPassword);
