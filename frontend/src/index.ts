@@ -1,4 +1,5 @@
 import type { TemplateResult } from "lit";
+import { state } from "lit/decorators.js";
 import { msg, updateWhenLocaleChanges } from "@lit/localize";
 
 import "./shoelace";
@@ -13,10 +14,22 @@ import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState } from "./types/auth";
 import theme from "./theme";
 
+const ROUTES = {
+  home: "/",
+  login: "/log-in",
+  myAccount: "/my-account",
+  "archive-info": "/archive/:aid",
+  "archive-info-tab": "/archive/:aid/:tab",
+} as const;
+
 // ===========================================================================
 export class App extends LiteElement {
-  authState: AuthState | null;
   router: APIRouter;
+
+  @state()
+  authState: AuthState | null = null;
+
+  @state()
   viewState: ViewState & {
     aid?: string;
     // TODO common tab type
@@ -31,29 +44,14 @@ export class App extends LiteElement {
     // history navigation.
     updateWhenLocaleChanges(this);
 
-    this.authState = null;
-
     const authState = window.localStorage.getItem("authState");
     if (authState) {
       this.authState = JSON.parse(authState);
     }
 
-    this.router = new APIRouter({
-      home: "/",
-      login: "/log-in",
-      "my-account": "/my-account",
-      "archive-info": "/archive/:aid",
-      "archive-info-tab": "/archive/:aid/:tab",
-    });
+    this.router = new APIRouter(ROUTES);
 
     this.viewState = this.router.match(window.location.pathname);
-  }
-
-  static get properties() {
-    return {
-      viewState: { type: Object },
-      authState: { type: Object },
-    };
   }
 
   firstUpdated() {
@@ -71,10 +69,14 @@ export class App extends LiteElement {
     if (newView.startsWith("http")) {
       newView = new URL(newView).pathname;
     }
-    this.viewState = this.router.match(newView);
-    if (this.viewState._route === "login") {
-      this.clearAuthState();
+
+    if (newView === "/log-in" && this.authState) {
+      // Redirect to logged in home page
+      this.viewState = this.router.match(ROUTES.myAccount);
+    } else {
+      this.viewState = this.router.match(newView);
     }
+
     //console.log(this.view._route, window.location.href);
     window.history.pushState(this.viewState, "", this.viewState._path);
   }
@@ -149,7 +151,7 @@ export class App extends LiteElement {
       <div class="w-full flex flex-col md:flex-row">
         <nav class="md:w-80 md:p-4 md:border-r">
           <ul class="flex md:flex-col">
-            ${navLink({ href: "/my-account", label: "Archives" })}
+            ${navLink({ href: ROUTES.myAccount, label: "Archives" })}
             ${navLink({ href: "/users", label: "Users" })}
           </ul>
         </nav>
@@ -161,17 +163,23 @@ export class App extends LiteElement {
       case "login":
         return html`<log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
+          .authState="${this.authState}"
         ></log-in>`;
 
       case "home":
         return html`<div class="w-full flex items-center justify-center">
-          <sl-button type="primary" size="large" @click="${this.onNeedLogin}">
+          <sl-button
+            type="primary"
+            size="large"
+            @click="${() => this.navigate("/log-in")}"
+          >
             ${msg("Log In")}
           </sl-button>
         </div>`;
 
-      case "my-account":
+      case "myAccount":
         return appLayout(html`<my-account
           class="w-full"
           @navigate="${this.onNavigateTo}"
@@ -206,12 +214,16 @@ export class App extends LiteElement {
       headers: { Authorization: event.detail.auth },
     };
     window.localStorage.setItem("authState", JSON.stringify(this.authState));
-    this.navigate("/my-account");
+    this.navigate(ROUTES.myAccount);
   }
 
-  onNeedLogin() {
+  onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
     this.clearAuthState();
-    this.navigate("/log-in");
+
+    if (event?.detail?.api) {
+      // TODO refresh instead of redirect
+    }
+    this.navigate(ROUTES.login);
   }
 
   onNavigateTo(event: NavigateEvent) {

@@ -3,9 +3,6 @@ import LiteElement, { html } from "../utils/LiteElement";
 import type { Auth } from "../types/auth";
 
 export class LogInPage extends LiteElement {
-  @property({ type: Object })
-  auth?: Auth;
-
   @state()
   isLoggingIn: boolean = false;
 
@@ -88,10 +85,6 @@ export class LogInPage extends LiteElement {
       }
     } catch (e) {
       console.error(e);
-    }
-
-    if (!this.auth) {
-      this.loginError = "Unknown login response";
     }
 
     this.isLoggingIn = false;

@@ -1,7 +1,9 @@
 import LiteElement, { html } from "../utils/LiteElement";
+import { needLogin } from "../utils/auth";
 import type { Archive } from "../types/archives";
 import type { AuthState } from "../types/auth";
 
+@needLogin
 export class ArchivePage extends LiteElement {
   authState: AuthState = null;
   aid?: Archive["aid"];
@@ -48,8 +50,8 @@ export class ArchivePage extends LiteElement {
           ? html`<btrix-archive-configs
               .archive=${{
                 aid: this.aid!,
-                authState: this.authState,
               }}
+              .authState=${this.authState}
             ></btrix-archive-configs>`
           : ""}
       </div>
