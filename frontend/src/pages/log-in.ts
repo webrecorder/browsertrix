@@ -225,6 +225,7 @@ export class LogInPage extends LiteElement {
             name="username"
             type="email"
             label="${msg("Email")}"
+            autocomplete="username"
             required
           >
           </sl-input>
@@ -235,6 +236,7 @@ export class LogInPage extends LiteElement {
             name="password"
             type="password"
             label="${msg("Password")}"
+            autocomplete="current-password"
             required
           >
           </sl-input>

@@ -36,6 +36,8 @@ export class ResetPassword extends LiteElement {
                 name="password"
                 type="password"
                 label="${msg("New password")}"
+                autocomplete="new-password"
+                toggle-password
                 required
               >
               </sl-input>

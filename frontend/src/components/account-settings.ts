@@ -186,6 +186,7 @@ export class AccountSettings extends LiteElement {
             label="${msg("Current password")}"
             aria-describedby="passwordError"
             autocomplete="current-password"
+            toggle-password
             required
           >
           </sl-input>
