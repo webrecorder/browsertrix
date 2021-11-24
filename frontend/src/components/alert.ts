@@ -42,7 +42,6 @@ export class Alert extends LitElement {
   `;
 
   render() {
-    console.log("id:", this.id);
     return html`
       <div class="${this.type}" role="alert">
         <slot></slot>
