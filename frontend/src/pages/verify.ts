@@ -35,12 +35,7 @@ export class Verify extends LiteElement {
 
     switch (resp.status) {
       case 200:
-        const data = await resp.json();
-
-        if (data.is_active) {
-          // Log in right away
-          // TODO
-        }
+        this.navTo("/log-in");
         break;
       case 400:
         const { detail } = await resp.json();

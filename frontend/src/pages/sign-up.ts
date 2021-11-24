@@ -157,7 +157,13 @@ export class SignUp extends LiteElement {
     this.isSubmitting = false;
   }
 
-  async logIn({ email, password }: { email: string; password: string }) {
+  private async logIn({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }) {
     const loginParams = new URLSearchParams();
     loginParams.set("grant_type", "password");
     loginParams.set("username", email);
