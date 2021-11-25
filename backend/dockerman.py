@@ -44,6 +44,8 @@ class DockerManager:
         self.extra_crawl_params = extra_crawl_params or []
         self._event_q = None
 
+        self.no_delete_on_fail = os.environ.get("NO_DELETE_ON_FAIL", "")
+
         self.storages = {
             "default": S3Storage(
                 name="default",
@@ -111,7 +113,8 @@ class DockerManager:
 
             for container in results:
                 print(f"Cleaning Up Orphan Container {container['Id']}", flush=True)
-                await container.delete()
+                if not self.no_delete_on_fail:
+                    await container.delete()
 
             results = await self.client.containers.list(
                 filters=json.dumps(
@@ -482,8 +485,10 @@ class DockerManager:
         if actor["Attributes"]["exitCode"] != 0:
             crawl = self._make_crawl_for_container(container, "failed", True)
             await self.crawl_ops.store_crawl(crawl)
-
-        await container.delete()
+            if not self.no_delete_on_fail:
+                await container.delete()
+        else:
+            await container.delete()
 
     # pylint: disable=no-self-use,too-many-arguments
     def _make_crawl_for_container(self, container, state, finish_now=False):

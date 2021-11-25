@@ -57,7 +57,7 @@ redis_url: "redis://local-redis.default:6379/1"
 # =========================================
 
 crawler_image: "webrecorder/browsertrix-crawler:latest"
-crawler_pull_policy: "Never"
+crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
 
@@ -66,19 +66,6 @@ crawl_retries: 1
 
 # browsertrix-crawler args:
 crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --screencastPort 9037"
-
-
-
-# Storage
-# =========================================
-
-storages:
-  - name: "default"
-    access_key: "ADMIN"
-    secret_key: "PASSW0RD"
-    bucket_name: "test-bucket"
-
-    endpoint_url: "http://local-minio.default:9000/"
 
 
 # Local Minio Pod (optional)
@@ -92,6 +79,21 @@ minio_host: "local-minio.default:9000"
 minio_image: minio/minio
 minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
+
+minio_local_bucket_name: &local_bucket_name "test-bucket"
+
+
+# Storage
+# =========================================
+# should include the local minio bucket, if enabled, and any other available buckets for default storage
+
+storages:
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
 
 
 # Deployment options

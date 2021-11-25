@@ -29,8 +29,8 @@ spec:
   rules:
   - host: {{ .Values.ingress.host }}
     http:
-{{- if .Values.minio_local }}
       paths:
+{{- if .Values.minio_local }}
       - path: /data/(.*)
         pathType: Prefix
         backend:
@@ -51,7 +51,7 @@ spec:
 {{ if .Values.ingress.tls }}
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: cert-main
