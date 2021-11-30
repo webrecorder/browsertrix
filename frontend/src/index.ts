@@ -92,12 +92,23 @@ export class App extends LiteElement {
       const prevAuthState = changedProperties.get("authState");
 
       if (this.authState.username !== prevAuthState?.username) {
-        const data = await this.getUserInfo();
+        this.updateUserInfo();
+      }
+    }
+  }
 
-        this.userInfo = {
-          email: data.email,
-          isVerified: data.is_verified,
-        };
+  private async updateUserInfo() {
+    try {
+      const data = await this.getUserInfo();
+
+      this.userInfo = {
+        email: data.email,
+        isVerified: data.is_verified,
+      };
+    } catch (err: any) {
+      if (err?.message === "Unauthorized") {
+        this.clearAuthState();
+        this.navigate(ROUTES.login);
       }
     }
   }
