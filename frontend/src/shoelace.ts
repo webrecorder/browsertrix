@@ -12,6 +12,8 @@ import "@shoelace-style/shoelace/dist/components/icon/icon";
 import "@shoelace-style/shoelace/dist/components/input/input";
 import "@shoelace-style/shoelace/dist/components/menu/menu";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item";
+import "@shoelace-style/shoelace/dist/components/radio/radio";
+import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
 import "@shoelace-style/shoelace/dist/components/select/select";
 import "@shoelace-style/shoelace/dist/components/spinner/spinner";
 import "@shoelace-style/shoelace/dist/components/tab/tab";

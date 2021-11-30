@@ -78,47 +78,128 @@ export class Archive extends LiteElement {
           <sl-tab-panel
             name="settings"
             ?active=${this.archiveTab === "settings"}
-            >TODO</sl-tab-panel
+            >${this.renderSetting()}</sl-tab-panel
           >
           <sl-tab-panel name="members" ?active=${this.archiveTab === "members"}>
-            <div class="text-right">
-              <sl-button type="primary" @click=${this.onClickAddMember}
-                >Add Member</sl-button
-              >
-            </div>
-
-            <div role="table">
-              <div class="border-b" role="rowgroup">
-                <div class="flex font-medium" role="row">
-                  <div
-                    class="w-1/2 px-3 py-2"
-                    role="columnheader"
-                    aria-sort="none"
-                  >
-                    Name
-                  </div>
-                  <div class="px-3 py-2" role="columnheader" aria-sort="none">
-                    Roles
-                  </div>
-                </div>
-              </div>
-              <div role="rowgroup">
-                ${Object.entries(this.archive.users).map(
-                  ([id, accessCode]) => html`
-                    <div class="border-b flex" role="row">
-                      <div class="w-1/2 p-3" role="cell">(TODO) ${id}</div>
-                      <div class="p-3" role="cell">
-                        ${isOwner(accessCode) ? msg("Owner") : msg("Member")}
-                      </div>
-                    </div>
-                  `
-                )}
-              </div>
-            </div>
+            ${this.isAddingMember
+              ? this.renderAddMember()
+              : this.renderMembers()}
           </sl-tab-panel>
         </sl-tab-group>
       </main>
     </article>`;
+  }
+
+  private renderSetting() {
+    return html` TODO `;
+  }
+
+  private renderAddMember() {
+    let formError;
+
+    // TODO
+    // if (this.formState.context.serverError) {
+    //   formError = html`
+    //     <div class="mb-5">
+    //       <bt-alert id="formError" type="danger"
+    //         >${this.formState.context.serverError}</bt-alert
+    //       >
+    //     </div>
+    //   `;
+    // }
+
+    return html`
+      <sl-button
+        type="text"
+        href=${`/archives/${this.archiveId}/members`}
+        @click=${this.navLink}
+        ><sl-icon name="arrow-left"></sl-icon> ${msg(
+          "Back to members list"
+        )}</sl-button
+      >
+
+      <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
+        <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
+
+        <sl-form
+          class="max-w-md"
+          @sl-submit=${this.onSubmitInvite}
+          aria-describedby="formError"
+        >
+          <div class="mb-5">
+            <sl-input
+              id="inviteEmail"
+              name="inviteEmail"
+              type="email"
+              label="${msg("Email")}"
+              placeholder="team-member@email.com"
+              required
+            >
+            </sl-input>
+          </div>
+          <div class="mb-5">
+            <!-- TODO role list & permissions -->
+            <sl-radio-group label="Select an option">
+              <sl-radio value=${40}>
+                ${msg("Admin")}
+                <span class="text-gray-500">
+                  - ${msg("Read and write access")}</span
+                >
+              </sl-radio>
+              <sl-radio value=${10} checked>
+                ${msg("Member")}
+                <span class="text-gray-500"> - ${msg("Read-only access")}</span>
+              </sl-radio>
+            </sl-radio-group>
+          </div>
+
+          ${formError}
+
+          <div>
+            <sl-button type="primary" submit>${msg("Invite")}</sl-button>
+            <sl-button type="text" @click=${console.log}
+              >${msg("Cancel")}</sl-button
+            >
+          </div>
+        </sl-form>
+      </div>
+    `;
+  }
+
+  private renderMembers() {
+    return html` <div class="text-right">
+        <sl-button
+          href=${`/archives/${this.archiveId}/members/add-member`}
+          type="primary"
+          @click=${this.navLink}
+          >${msg("Add Member")}</sl-button
+        >
+      </div>
+
+      <div role="table">
+        <div class="border-b" role="rowgroup">
+          <div class="flex font-medium" role="row">
+            <div class="w-1/2 px-3 py-2" role="columnheader" aria-sort="none">
+              ${msg("Name", { desc: "Team member's name" })}
+            </div>
+            <div class="px-3 py-2" role="columnheader" aria-sort="none">
+              ${msg("Roles", { desc: "Team member's roles" })}
+            </div>
+          </div>
+        </div>
+        <div role="rowgroup">
+          ${Object.entries(this.archive!.users).map(
+            ([id, accessCode]) => html`
+              <div class="border-b flex" role="row">
+                <div class="w-1/2 p-3" role="cell">(TODO) ${id}</div>
+                <div class="p-3" role="cell">
+                  ${isOwner(accessCode) ? msg("Owner") : msg("Member")}
+                </div>
+              </div>
+            `
+          )}
+        </div>
+      </div>`;
   }
 
   async getArchive(archiveId: string): Promise<ArchiveData> {
@@ -127,19 +208,13 @@ export class Archive extends LiteElement {
     return data;
   }
 
+  async onSubmitInvite() {}
+
   updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
     window.history.pushState(
       null,
       "",
       `/archives/${this.archiveId}/${event.detail.name}`
-    );
-  }
-
-  onClickAddMember() {
-    window.history.pushState(
-      null,
-      "",
-      `/archives/${this.archiveId}/members/add-member`
     );
   }
 }
