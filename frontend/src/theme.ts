@@ -24,7 +24,7 @@ const theme = css`
      * Theme Tokens
      */
     /* Primary */
-    --sl-color-primary-50: ${unsafeCSS(primaryColor.lighten(0.6))};
+    --sl-color-primary-50: ${unsafeCSS(primaryColor.lighten(0.54))};
     --sl-color-primary-100: ${unsafeCSS(primaryColor.lighten(0.5))};
     --sl-color-primary-200: ${unsafeCSS(primaryColor.lighten(0.4))};
     --sl-color-primary-300: ${unsafeCSS(primaryColor.lighten(0.3))};

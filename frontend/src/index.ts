@@ -12,7 +12,7 @@ import { SignUp } from "./pages/sign-up";
 import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
-import { MyAccountPage } from "./pages/my-account";
+import { Archives } from "./pages/archives";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
@@ -30,9 +30,11 @@ const ROUTES = {
   resetPassword: "/reset-password?token",
   myAccount: "/my-account",
   accountSettings: "/account/settings",
+  archives: "/archives",
   "archive-info": "/archive/:aid",
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
+const DASHBOARD_ROUTE = ROUTES.archives;
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -124,6 +126,7 @@ export class App extends LiteElement {
       const data = await this.getUserInfo();
 
       this.userInfo = {
+        id: data.id,
         email: data.email,
         isVerified: data.is_verified,
       };
@@ -143,7 +146,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.myAccount);
+      this.viewState = this.router.match(DASHBOARD_ROUTE);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -238,7 +241,7 @@ export class App extends LiteElement {
       <div class="w-full flex flex-col md:flex-row">
         <nav class="md:w-80 md:p-4 md:border-r">
           <ul class="flex md:flex-col">
-            ${navLink({ href: ROUTES.myAccount, label: "Archives" })}
+            ${navLink({ href: DASHBOARD_ROUTE, label: "Archives" })}
             ${navLink({ href: "/users", label: "Users" })}
           </ul>
         </nav>
@@ -297,13 +300,14 @@ export class App extends LiteElement {
           </sl-button>
         </div>`;
 
-      case "myAccount":
-        return appLayout(html`<my-account
+      case "archives":
+        return appLayout(html`<btrix-archives
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
-        ></my-account>`);
+          .userInfo="${this.userInfo}"
+        ></btrix-archives>`);
 
       case "accountSettings":
         return appLayout(html`<btrix-account-settings
@@ -357,7 +361,7 @@ export class App extends LiteElement {
     window.localStorage.setItem("authState", JSON.stringify(this.authState));
 
     if (!detail.api) {
-      this.navigate(ROUTES.myAccount);
+      this.navigate(DASHBOARD_ROUTE);
     }
 
     if (detail.firstLogin) {
@@ -484,7 +488,7 @@ customElements.define("browsertrix-app", App);
 customElements.define("btrix-sign-up", SignUp);
 customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
-customElements.define("my-account", MyAccountPage);
+customElements.define("btrix-archives", Archives);
 customElements.define("btrix-archive", ArchivePage);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
