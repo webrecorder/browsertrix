@@ -1,6 +1,8 @@
+import type { CurrentUser } from "../types/auth";
+
 type Role = "owner";
 
-export const AccessCode: Record<Role, number> = {
+const AccessCode: Record<Role, number> = {
   owner: 40,
 } as const;
 
@@ -18,3 +20,9 @@ export type Archive = {
 };
 
 export type ArchiveConfig = any;
+
+export function isOwner(archive: ArchiveData, userInfo?: CurrentUser): boolean {
+  if (!userInfo) return false;
+
+  return archive.users[userInfo.id] === AccessCode.owner;
+}

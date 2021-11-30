@@ -2,10 +2,10 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import type { AuthState, CurrentUser } from "../types/auth";
-import { AccessCode } from "../types/archives";
-import type { ArchiveData } from "../types/archives";
+import type { ArchiveData } from "../utils/archives";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+import { isOwner } from "../utils/archives";
 
 @needLogin
 @localized()
@@ -27,7 +27,11 @@ export class Archives extends LiteElement {
 
   render() {
     if (!this.archiveList) {
-      return html`<div class="text-4xl"><sl-spinner></sl-spinner></div>`;
+      return html`<div
+        class="w-full flex items-center justify-center my-24 text-4xl"
+      >
+        <sl-spinner></sl-spinner>
+      </div>`;
     }
 
     return html`<div class="grid gap-4">
@@ -45,7 +49,7 @@ export class Archives extends LiteElement {
                 <span class="text-primary font-medium mr-2"
                   >${archive.name}</span
                 >
-                ${this.isOwner(archive)
+                ${isOwner(archive, this.userInfo)
                   ? html`<sl-tag size="small" type="primary">Owner</sl-tag>`
                   : ""}
               </li>
@@ -61,14 +65,8 @@ export class Archives extends LiteElement {
     return data.archives;
   }
 
-  isOwner(archive: ArchiveData): boolean {
-    if (!this.userInfo) return false;
-
-    return archive.users[this.userInfo.id] === AccessCode.owner;
-  }
-
   makeOnArchiveClick(archive: ArchiveData): Function {
-    const navigate = () => this.navTo(`/archive/${archive.id}`);
+    const navigate = () => this.navTo(`/archives/${archive.id}`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {

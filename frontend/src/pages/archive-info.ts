@@ -1,6 +1,6 @@
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import type { Archive } from "../types/archives";
+import type { Archive } from "../utils/archives";
 import type { AuthState } from "../types/auth";
 
 @needLogin

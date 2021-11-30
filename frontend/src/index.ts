@@ -13,7 +13,7 @@ import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { Archives } from "./pages/archives";
-import { ArchivePage } from "./pages/archive-info";
+import { Archive } from "./pages/archive";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -31,8 +31,9 @@ const ROUTES = {
   myAccount: "/my-account",
   accountSettings: "/account/settings",
   archives: "/archives",
-  "archive-info": "/archive/:aid",
-  "archive-info-tab": "/archive/:aid/:tab",
+  archive: "/archives/:id",
+  // "archive-info": "/archive/:aid",
+  // "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 const DASHBOARD_ROUTE = ROUTES.archives;
 
@@ -225,10 +226,18 @@ export class App extends LiteElement {
   }
 
   renderPage() {
-    const navLink = ({ href, label }: { href: string; label: string }) => html`
+    const navLink = ({
+      activeRoutes,
+      href,
+      label,
+    }: {
+      activeRoutes: string[];
+      href: string;
+      label: string;
+    }) => html`
       <li>
         <a
-          class="block p-2 ${href === this.viewState.pathname
+          class="block p-2 ${activeRoutes.includes(this.viewState.route!)
             ? "text-primary"
             : ""}"
           href="${href}"
@@ -241,8 +250,11 @@ export class App extends LiteElement {
       <div class="w-full flex flex-col md:flex-row">
         <nav class="md:w-80 md:p-4 md:border-r">
           <ul class="flex md:flex-col">
-            ${navLink({ href: DASHBOARD_ROUTE, label: "Archives" })}
-            ${navLink({ href: "/users", label: "Users" })}
+            ${navLink({
+              activeRoutes: ["archives", "archive"],
+              href: DASHBOARD_ROUTE,
+              label: "Archives",
+            })}
           </ul>
         </nav>
         <div class="p-4 md:p-8 flex-1">${template}</div>
@@ -308,6 +320,16 @@ export class App extends LiteElement {
           .authState="${this.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-archives>`);
+
+      case "archive":
+        return appLayout(html`<btrix-archive
+          class="w-full"
+          @navigate="${this.onNavigateTo}"
+          @need-login="${this.onNeedLogin}"
+          .authState="${this.authState}"
+          .userInfo="${this.userInfo}"
+          archiveId="${this.viewState.params.id}"
+        ></btrix-archive>`);
 
       case "accountSettings":
         return appLayout(html`<btrix-account-settings
@@ -489,7 +511,7 @@ customElements.define("btrix-sign-up", SignUp);
 customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("btrix-archives", Archives);
-customElements.define("btrix-archive", ArchivePage);
+customElements.define("btrix-archive", Archive);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
 customElements.define("btrix-reset-password", ResetPassword);
