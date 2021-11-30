@@ -1,10 +1,74 @@
-import { state, query } from "lit/decorators.js";
+import { LitElement } from "lit";
+import { state, query, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
-import type { AuthState } from "../types/auth";
+import type { AuthState, CurrentUser } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+
+@localized()
+class RequestVerify extends LitElement {
+  @property({ type: String })
+  email!: string;
+
+  @state()
+  private isRequesting: boolean = false;
+
+  @state()
+  private requestSuccess: boolean = false;
+
+  createRenderRoot() {
+    return this;
+  }
+
+  render() {
+    if (this.requestSuccess) {
+      return html`
+        <div class="text-sm text-gray-400 inline-flex items-center">
+          <sl-icon class="mr-1" name="check-lg"></sl-icon> ${msg("Sent", {
+            desc: "Status message after sending verification email",
+          })}
+        </div>
+      `;
+    }
+
+    return html`
+      <span
+        class="text-sm text-blue-400 hover:text-blue-500"
+        role="button"
+        ?disabled=${this.isRequesting}
+        @click=${this.requestVerification}
+      >
+        ${msg("Resend verification email")}
+      </span>
+    `;
+  }
+
+  private async requestVerification() {
+    this.isRequesting = true;
+
+    const resp = await fetch("/api/auth/request-verify-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: this.email,
+      }),
+    });
+
+    switch (resp.status) {
+      case 202:
+        this.requestSuccess = true;
+        break;
+      default:
+        // TODO generic toast error
+        break;
+    }
+
+    this.isRequesting = false;
+  }
+}
+customElements.define("bt-request-verify", RequestVerify);
 
 type FormContext = {
   successMessage?: string;
@@ -98,14 +162,19 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 @needLogin
 @localized()
 export class AccountSettings extends LiteElement {
+  private formStateService = interpret(machine);
+
+  @property({ type: Object })
   authState?: AuthState;
 
-  private formStateService = interpret(machine);
+  @property({ type: Object })
+  userInfo?: CurrentUser;
 
   @state()
   private formState = machine.initialState;
 
   firstUpdated() {
+    // Enable state machine
     this.formStateService.subscribe((state) => {
       this.formState = state;
     });
@@ -122,6 +191,7 @@ export class AccountSettings extends LiteElement {
       this.formState.value === "editingForm" ||
       this.formState.value === "submittingForm";
     let successMessage;
+    let verificationMessage;
 
     if (this.formState.context.successMessage) {
       successMessage = html`
@@ -133,6 +203,28 @@ export class AccountSettings extends LiteElement {
       `;
     }
 
+    if (this.userInfo) {
+      if (this.userInfo.isVerified) {
+        verificationMessage = html`
+          <sl-tag type="success" size="small"
+            >${msg("verified", {
+              desc: "Status text when user email is verified",
+            })}</sl-tag
+          >
+        `;
+      } else {
+        verificationMessage = html`
+          <sl-tag class="mr-2" type="warning" size="small"
+            >${msg("unverified", {
+              desc: "Status text when user email is not yet verified",
+            })}</sl-tag
+          >
+
+          <bt-request-verify email=${this.userInfo.email}></bt-request-verify>
+        `;
+      }
+    }
+
     return html`<div class="grid gap-4">
       <h1 class="text-xl font-bold">${msg("Account settings")}</h1>
 
@@ -140,8 +232,11 @@ export class AccountSettings extends LiteElement {
 
       <section class="p-4 md:p-8 border rounded-lg grid gap-6">
         <div>
-          <div class="mb-1 text-gray-500">Email</div>
-          <div>${this.authState!.username}</div>
+          <div class="mb-1 text-gray-500">${msg("Email")}</div>
+          <div class="inline-flex items-center">
+            <span class="mr-3">${this.userInfo?.email}</span>
+            ${verificationMessage}
+          </div>
         </div>
 
         ${showForm

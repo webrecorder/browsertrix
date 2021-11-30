@@ -6,3 +6,8 @@ export type Auth = {
 };
 
 export type AuthState = Auth | null;
+
+export type CurrentUser = {
+  email: string;
+  isVerified: boolean;
+};

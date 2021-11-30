@@ -6,6 +6,8 @@ import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
+import { SignUp } from "./pages/sign-up";
+import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { MyAccountPage } from "./pages/my-account";
@@ -14,11 +16,13 @@ import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { AuthState } from "./types/auth";
+import type { AuthState, CurrentUser } from "./types/auth";
 import theme from "./theme";
 
 const ROUTES = {
   home: "/",
+  signUp: "/sign-up",
+  verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password?token",
@@ -34,6 +38,9 @@ export class App extends LiteElement {
 
   @state()
   authState: AuthState | null = null;
+
+  @state()
+  userInfo?: CurrentUser;
 
   @state()
   viewState!: ViewState & {
@@ -78,6 +85,32 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
+  }
+
+  async updated(changedProperties: any) {
+    if (changedProperties.has("authState") && this.authState) {
+      const prevAuthState = changedProperties.get("authState");
+
+      if (this.authState.username !== prevAuthState?.username) {
+        this.updateUserInfo();
+      }
+    }
+  }
+
+  private async updateUserInfo() {
+    try {
+      const data = await this.getUserInfo();
+
+      this.userInfo = {
+        email: data.email,
+        isVerified: data.is_verified,
+      };
+    } catch (err: any) {
+      if (err?.message === "Unauthorized") {
+        this.clearAuthState();
+        this.navigate(ROUTES.login);
+      }
+    }
   }
 
   navigate(newViewPath: string) {
@@ -127,7 +160,7 @@ export class App extends LiteElement {
             ><h1 class="text-base px-2">${msg("Browsertrix Cloud")}</h1></a
           >
         </div>
-        <div>
+        <div class="grid grid-flow-col gap-5 items-center">
           ${this.authState
             ? html` <sl-dropdown>
                 <div class="p-2" role="button" slot="trigger">
@@ -147,7 +180,12 @@ export class App extends LiteElement {
                   >
                 </sl-menu>
               </sl-dropdown>`
-            : html` <a href="/log-in"> ${msg("Log In")} </a> `}
+            : html`
+                <a href="/log-in"> ${msg("Log In")} </a>
+                <sl-button outline @click="${() => this.navigate("/sign-up")}">
+                  <span class="text-white">${msg("Sign up")}</span>
+                </sl-button>
+              `}
         </div>
       </nav>
     `;
@@ -179,6 +217,21 @@ export class App extends LiteElement {
     `;
 
     switch (this.viewState.route) {
+      case "signUp":
+        return html`<btrix-sign-up
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate="${this.onNavigateTo}"
+          @logged-in="${this.onLoggedIn}"
+          @log-out="${this.onLogOut}"
+          .authState="${this.authState}"
+        ></btrix-sign-up>`;
+
+      case "verify":
+        return html`<btrix-verify
+          class="w-full flex items-center justify-center"
+          token="${this.viewState.params.token}"
+        ></btrix-verify>`;
+
       case "login":
       case "forgotPassword":
         return html`<log-in
@@ -223,6 +276,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
+          .userInfo="${this.userInfo}"
         ></btrix-account-settings>`);
 
       case "archive-info":
@@ -241,9 +295,15 @@ export class App extends LiteElement {
     }
   }
 
-  onLogOut() {
+  onLogOut(event: CustomEvent<{ redirect?: boolean }>) {
+    const { detail } = event;
+    const redirect = detail.redirect !== false;
+
     this.clearAuthState();
-    this.navigate("/");
+
+    if (redirect) {
+      this.navigate("/");
+    }
   }
 
   onLoggedIn(
@@ -278,11 +338,17 @@ export class App extends LiteElement {
     this.authState = null;
     window.localStorage.setItem("authState", "");
   }
+
+  getUserInfo() {
+    return this.apiFetch("/users/me", this.authState!);
+  }
 }
 
 customElements.define("bt-alert", Alert);
 customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
+customElements.define("btrix-sign-up", SignUp);
+customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
