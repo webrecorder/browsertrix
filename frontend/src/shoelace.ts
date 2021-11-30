@@ -14,5 +14,8 @@ import "@shoelace-style/shoelace/dist/components/menu/menu";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item";
 import "@shoelace-style/shoelace/dist/components/select/select";
 import "@shoelace-style/shoelace/dist/components/spinner/spinner";
+import "@shoelace-style/shoelace/dist/components/tab/tab";
+import "@shoelace-style/shoelace/dist/components/tab-group/tab-group";
+import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel";
 
 setBasePath("/shoelace");

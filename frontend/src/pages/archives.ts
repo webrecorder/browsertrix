@@ -49,7 +49,7 @@ export class Archives extends LiteElement {
                 <span class="text-primary font-medium mr-2"
                   >${archive.name}</span
                 >
-                ${isOwner(archive, this.userInfo)
+                ${this.userInfo && isOwner(archive.users[this.userInfo.id])
                   ? html`<sl-tag size="small" type="primary">Owner</sl-tag>`
                   : ""}
               </li>

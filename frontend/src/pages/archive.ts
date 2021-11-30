@@ -32,7 +32,7 @@ export class Archive extends LiteElement {
     } else {
       this.archive = archive;
 
-      console.log(archive);
+      // TODO get archive members
     }
   }
 
@@ -45,16 +45,50 @@ export class Archive extends LiteElement {
       </div>`;
     }
 
-    return html`<div class="grid gap-4">
+    return html`<article class="grid gap-4">
       <header>
         <h1 class="text-2xl font-bold">${this.archive.name}</h1>
-        <div class="my-2">
-          ${isOwner(this.archive, this.userInfo)
-            ? html`<sl-tag size="small" type="primary">Owner</sl-tag>`
-            : html`<sl-tag size="small">Member</sl-tag>`}
-        </div>
       </header>
-    </div>`;
+
+      <main>
+        <sl-tab-group>
+          <!-- <sl-tab slot="nav" panel="general">General</sl-tab> -->
+          <sl-tab slot="nav" panel="members">Members</sl-tab>
+
+          <!-- <sl-tab-panel name="general">TODO</sl-tab-panel> -->
+          <sl-tab-panel name="members">
+            <div role="table">
+              <div class="border-b" role="rowgroup">
+                <div class="flex font-medium" role="row">
+                  <div
+                    class="w-1/2 px-3 py-2"
+                    role="columnheader"
+                    aria-sort="none"
+                  >
+                    Name
+                  </div>
+                  <div class="px-3 py-2" role="columnheader" aria-sort="none">
+                    Roles
+                  </div>
+                </div>
+              </div>
+              <div role="rowgroup">
+                ${Object.entries(this.archive.users).map(
+                  ([id, accessCode]) => html`
+                    <div class="border-b flex" role="row">
+                      <div class="w-1/2 p-3" role="cell">(TODO) ${id}</div>
+                      <div class="p-3" role="cell">
+                        ${isOwner(accessCode) ? msg("Owner") : msg("Member")}
+                      </div>
+                    </div>
+                  `
+                )}
+              </div>
+            </div>
+          </sl-tab-panel>
+        </sl-tab-group>
+      </main>
+    </article>`;
   }
 
   async getArchive(archiveId: string): Promise<ArchiveData> {
