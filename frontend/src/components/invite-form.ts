@@ -14,10 +14,10 @@ export class InviteForm extends LiteElement {
   authState?: AuthState;
 
   @state()
-  isSubmitting: boolean = false;
+  private isSubmitting: boolean = false;
 
   @state()
-  serverError?: string;
+  private serverError?: string;
 
   render() {
     let formError;
@@ -67,7 +67,13 @@ export class InviteForm extends LiteElement {
         ${formError}
 
         <div>
-          <sl-button type="primary" submit>${msg("Invite")}</sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?loading=${this.isSubmitting}
+            ?disabled=${this.isSubmitting}
+            >${msg("Invite")}</sl-button
+          >
           <sl-button
             type="text"
             @click=${() => this.dispatchEvent(new CustomEvent("cancel"))}

@@ -30,10 +30,10 @@ export class Archive extends LiteElement {
   isAddingMember: boolean = false;
 
   @state()
-  archive?: ArchiveData;
+  private archive?: ArchiveData;
 
   @state()
-  successfullyInvitedEmail?: string;
+  private successfullyInvitedEmail?: string;
 
   async firstUpdated() {
     if (!this.archiveId) return;
