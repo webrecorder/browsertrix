@@ -121,12 +121,13 @@ class BrowsertrixAPI:
     def on_after_forgot_password(self, user: UserDB, token: str, request: Request):
         """callback after password forgot"""
         print(f"User {user.id} has forgot their password. Reset token: {token}")
+        self.email.send_user_forgot_password(user.email, token)
 
     # pylint: disable=no-self-use, unused-argument
     def on_after_verification_request(self, user: UserDB, token: str, request: Request):
         """callback after verification request"""
 
-        self.email.send_user_validation(token, user.email)
+        self.email.send_user_validation(user.email, token)
 
 
 # ============================================================================

@@ -14,7 +14,7 @@ class EmailSender:
         self.password = os.environ.get("EMAIL_PASSWORD")
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
 
-        self.host = "http://localhost:8000/"
+        self.host = os.environ.get("APP_ORIGIN")
 
     def _send_encrypted(self, receiver, message):
         """Send Encrypted SMTP Message"""
@@ -52,5 +52,14 @@ You are invited by {sender} to join their archive, {archive_name} on Browsertrix
 You can join by clicking here: {self.host}/app/join/{token}
 
 The invite token is: {token}"""
+
+        self._send_encrypted(receiver_email, message)
+
+    def send_user_forgot_password(self, receiver_email, token):
+        """Send password reset email with token"""
+        message = f"""
+We received your password reset request. Please click here: {self.host}/reset-password?token={token}
+to create a new password
+        """
 
         self._send_encrypted(receiver_email, message)
