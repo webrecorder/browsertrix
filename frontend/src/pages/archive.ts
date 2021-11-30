@@ -143,12 +143,14 @@ export class Archive extends LiteElement {
               <sl-radio value=${40}>
                 ${msg("Admin")}
                 <span class="text-gray-500">
-                  - ${msg("Read and write access")}</span
+                  - ${msg("Can view, run, configure and manage crawls")}</span
                 >
               </sl-radio>
               <sl-radio value=${10} checked>
                 ${msg("Member")}
-                <span class="text-gray-500"> - ${msg("Read-only access")}</span>
+                <span class="text-gray-500">
+                  - ${msg("Can only view crawls")}</span
+                >
               </sl-radio>
             </sl-radio-group>
           </div>

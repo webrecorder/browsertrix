@@ -21,8 +21,6 @@ export class Archives extends LiteElement {
 
   async firstUpdated() {
     this.archiveList = await this.getArchives();
-
-    console.log(this.archiveList);
   }
 
   render() {
