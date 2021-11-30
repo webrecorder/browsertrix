@@ -9,6 +9,7 @@ import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { InviteForm } from "./components/invite-form";
+import { SignUpForm } from "./components/sign-up-form";
 import { Join } from "./pages/join";
 import { SignUp } from "./pages/sign-up";
 import { Verify } from "./pages/verify";
@@ -275,7 +276,7 @@ export class App extends LiteElement {
 
       case "verify":
         return html`<btrix-verify
-          class="w-full flex items-center justify-center"
+          class="w-full md:bg-gray-100 flex items-center justify-center"
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
           @notify="${this.onNotify}"
@@ -286,7 +287,7 @@ export class App extends LiteElement {
 
       case "join":
         return html`<btrix-join
-          class="w-full flex items-center justify-center"
+          class="w-full md:bg-gray-100 flex items-center justify-center"
           token="${this.viewState.params.token}"
         ></btrix-join>`;
 
@@ -519,6 +520,7 @@ customElements.define("bt-alert", Alert);
 customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("btrix-sign-up", SignUp);
+customElements.define("btrix-sign-up-form", SignUpForm);
 customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("btrix-archives", Archives);

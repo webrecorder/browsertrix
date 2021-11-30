@@ -1,5 +1,5 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import LiteElement, { html } from "../utils/LiteElement";
@@ -126,34 +126,46 @@ export class Join extends LiteElement {
   }
 
   render() {
+    const isSignUp =
+      this.joinState.value === "initial" ||
+      this.joinState.value === "submittingForm";
+    const isAcceptInvite =
+      this.joinState.value === "acceptInvite" ||
+      this.joinState.value === "acceptingInvite";
+
     let content;
 
-    console.log(this.joinState.value);
-
-    switch (this.joinState.value) {
-      case "initial":
-      case "submittingForm":
-        content = this.renderSignUp();
-        break;
-      case "acceptInvite":
-      case "acceptingInvite":
-        content = "TODO";
-        break;
-      default:
-        break;
+    if (isSignUp) {
+      content = this.renderSignUp();
+    } else if (isAcceptInvite) {
+      content = this.renderAccept();
     }
 
     return html`
       <article class="w-full max-w-sm grid gap-5">
-        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          <h1 class="text-3xl font-semibold mb-3">${msg("Join archive")}</h1>
+        <h1 class="text-3xl font-semibold mb-3">${msg("Join archive")}</h1>
 
-          <div class="flex items-center text-sm font-medium mb-6">
-            <div class="mx-2 text-primary">1. Create account</div>
-            <hr class="flex-1 mx-1 border-gray-300" />
-            <div class="mx-2 text-gray-300">2. Accept invite</div>
+        <!-- TODO invitation details -->
+
+        <div class="flex items-center text-sm font-medium">
+          <div
+            class="flex-0 mx-3 ${isSignUp ? "text-primary" : "text-blue-400"}"
+          >
+            1. Create account
           </div>
+          <hr
+            class="flex-1 mx-3 ${isSignUp
+              ? "border-gray-400"
+              : "border-blue-400"}"
+          />
+          <div
+            class="flex-0 mx-3 ${isSignUp ? "text-gray-400" : "text-primary"}"
+          >
+            2. Accept invite
+          </div>
+        </div>
 
+        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
           ${content}
         </main>
       </article>
@@ -204,15 +216,47 @@ export class Join extends LiteElement {
     `;
   }
 
-  private async onSignUp() {}
+  private renderAccept() {
+    let serverError;
+
+    if (this.joinState.context.serverError) {
+      serverError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger"
+            >${this.joinState.context.serverError}</bt-alert
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      ${serverError}
+
+      <div class="text-center">
+        <sl-button type="primary" size="large" @click=${this.onAccept}
+          >Accept invitation</sl-button
+        >
+      </div>
+    `;
+  }
+
+  private async onSignUp() {
+    this.joinStateService.send("SUBMIT_SIGN_UP");
+
+    // TODO
+  }
 
   private async onAccept() {
+    this.joinStateService.send("ACCEPT_INVITE");
+
     const resp = await fetch(`/api/invite/accept/${this.token}`);
 
     switch (resp.status) {
       case 200:
-        this.joinStateService.send("SUCCESS");
-        // this.navTo("/log-in");
+        // this.joinStateService.send("SUCCESS");
+
+        // TODO automatically log in?
+        this.navTo("/log-in");
         break;
       case 401:
         const { detail } = await resp.json();
