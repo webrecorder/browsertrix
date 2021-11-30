@@ -211,10 +211,6 @@ export class Archive extends LiteElement {
   async onSubmitInvite() {}
 
   updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
-    window.history.pushState(
-      null,
-      "",
-      `/archives/${this.archiveId}/${event.detail.name}`
-    );
+    this.navTo(`/archives/${this.archiveId}/${event.detail.name}`);
   }
 }
