@@ -126,10 +126,87 @@ export class Join extends LiteElement {
   }
 
   render() {
-    return html`TODO`;
+    let content;
+
+    console.log(this.joinState.value);
+
+    switch (this.joinState.value) {
+      case "initial":
+      case "submittingForm":
+        content = this.renderSignUp();
+        break;
+      case "acceptInvite":
+      case "acceptingInvite":
+        content = "TODO";
+        break;
+      default:
+        break;
+    }
+
+    return html`
+      <article class="w-full max-w-sm grid gap-5">
+        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+          <h1 class="text-3xl font-semibold mb-3">${msg("Join archive")}</h1>
+
+          <div class="flex items-center text-sm font-medium mb-6">
+            <div class="mx-2 text-primary">1. Create account</div>
+            <hr class="flex-1 mx-1 border-gray-300" />
+            <div class="mx-2 text-gray-300">2. Accept invite</div>
+          </div>
+
+          ${content}
+        </main>
+      </article>
+    `;
   }
 
-  private async accept() {
+  private renderSignUp() {
+    let serverError;
+
+    if (this.joinState.context.serverError) {
+      serverError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger"
+            >${this.joinState.context.serverError}</bt-alert
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      <sl-form @sl-submit="${this.onSignUp}" aria-describedby="formError">
+        <div class="mb-5">
+          <sl-input value=${"TODO@example.com"} readonly> </sl-input>
+        </div>
+        <div class="mb-5">
+          <sl-input
+            id="password"
+            name="password"
+            type="password"
+            label=${msg("Enter a password")}
+            autocomplete="new-password"
+            toggle-password
+            required
+          >
+          </sl-input>
+        </div>
+
+        ${serverError}
+
+        <sl-button
+          class="w-full"
+          type="primary"
+          ?loading=${this.joinState.value === "submittingForm"}
+          submit
+          >${msg("Create account")}</sl-button
+        >
+      </sl-form>
+    `;
+  }
+
+  private async onSignUp() {}
+
+  private async onAccept() {
     const resp = await fetch(`/api/invite/accept/${this.token}`);
 
     switch (resp.status) {
