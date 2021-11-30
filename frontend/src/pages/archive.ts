@@ -1,11 +1,11 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState, CurrentUser } from "../types/auth";
 import type { ArchiveData } from "../utils/archives";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import { isOwner } from "../utils/archives";
+import { isOwner, AccessCode } from "../utils/archives";
 
 export type ArchiveTab = "settings" | "members";
 
@@ -31,6 +31,15 @@ export class Archive extends LiteElement {
 
   @state()
   archive?: ArchiveData;
+
+  @state()
+  isSubmitting: boolean = false;
+
+  @state()
+  serverError?: string;
+
+  @state()
+  successfullyInvitedEmail?: string;
 
   async firstUpdated() {
     if (!this.archiveId) return;
@@ -94,80 +103,6 @@ export class Archive extends LiteElement {
     return html` TODO `;
   }
 
-  private renderAddMember() {
-    let formError;
-
-    // TODO
-    // if (this.formState.context.serverError) {
-    //   formError = html`
-    //     <div class="mb-5">
-    //       <bt-alert id="formError" type="danger"
-    //         >${this.formState.context.serverError}</bt-alert
-    //       >
-    //     </div>
-    //   `;
-    // }
-
-    return html`
-      <sl-button
-        type="text"
-        href=${`/archives/${this.archiveId}/members`}
-        @click=${this.navLink}
-        ><sl-icon name="arrow-left"></sl-icon> ${msg(
-          "Back to members list"
-        )}</sl-button
-      >
-
-      <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
-        <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
-
-        <sl-form
-          class="max-w-md"
-          @sl-submit=${this.onSubmitInvite}
-          aria-describedby="formError"
-        >
-          <div class="mb-5">
-            <sl-input
-              id="inviteEmail"
-              name="inviteEmail"
-              type="email"
-              label="${msg("Email")}"
-              placeholder="team-member@email.com"
-              required
-            >
-            </sl-input>
-          </div>
-          <div class="mb-5">
-            <!-- TODO role list & permissions -->
-            <sl-radio-group label="Select an option">
-              <sl-radio value=${40}>
-                ${msg("Admin")}
-                <span class="text-gray-500">
-                  - ${msg("Can view, run, configure and manage crawls")}</span
-                >
-              </sl-radio>
-              <sl-radio value=${10} checked>
-                ${msg("Member")}
-                <span class="text-gray-500">
-                  - ${msg("Can only view crawls")}</span
-                >
-              </sl-radio>
-            </sl-radio-group>
-          </div>
-
-          ${formError}
-
-          <div>
-            <sl-button type="primary" submit>${msg("Invite")}</sl-button>
-            <sl-button type="text" @click=${console.log}
-              >${msg("Cancel")}</sl-button
-            >
-          </div>
-        </sl-form>
-      </div>
-    `;
-  }
-
   private renderMembers() {
     return html` <div class="text-right">
         <sl-button
@@ -204,13 +139,131 @@ export class Archive extends LiteElement {
       </div>`;
   }
 
+  private renderAddMember() {
+    let successMessage, formError;
+
+    if (this.successfullyInvitedEmail) {
+      successMessage = html`
+        <div class="mb-3">
+          <bt-alert type="success"
+            >${msg(
+              str`Successfully invited ${this.successfullyInvitedEmail}`
+            )}</bt-alert
+          >
+        </div>
+      `;
+    }
+
+    if (this.serverError) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger">${this.serverError}</bt-alert>
+        </div>
+      `;
+    }
+
+    return html`
+      ${successMessage}
+
+      <sl-button
+        type="text"
+        href=${`/archives/${this.archiveId}/members`}
+        @click=${this.navLink}
+        ><sl-icon name="arrow-left"></sl-icon> ${msg(
+          "Back to members list"
+        )}</sl-button
+      >
+
+      <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
+        <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
+
+        <sl-form
+          class="max-w-md"
+          @sl-submit=${this.onSubmitInvite}
+          aria-describedby="formError"
+        >
+          <div class="mb-5">
+            <sl-input
+              id="inviteEmail"
+              name="inviteEmail"
+              type="email"
+              label="${msg("Email")}"
+              placeholder="team-member@email.com"
+              required
+            >
+            </sl-input>
+          </div>
+          <div class="mb-5">
+            <sl-radio-group label="Select an option">
+              <sl-radio name="role" value=${AccessCode.owner}>
+                ${msg("Admin")}
+                <span class="text-gray-500">
+                  - ${msg("Can view, run, configure and manage crawls")}</span
+                >
+              </sl-radio>
+              <sl-radio name="role" value=${AccessCode.viewer} checked>
+                ${msg("Viewer")}
+                <span class="text-gray-500">
+                  - ${msg("Can only view crawls")}</span
+                >
+              </sl-radio>
+            </sl-radio-group>
+          </div>
+
+          ${formError}
+
+          <div>
+            <sl-button type="primary" submit>${msg("Invite")}</sl-button>
+            <sl-button
+              type="text"
+              href=${`/archives/${this.archiveId}/members`}
+              @click=${this.navLink}
+              >${msg("Cancel")}</sl-button
+            >
+          </div>
+        </sl-form>
+      </div>
+    `;
+  }
+
   async getArchive(archiveId: string): Promise<ArchiveData> {
     const data = await this.apiFetch(`/archives/${archiveId}`, this.authState!);
 
     return data;
   }
 
-  async onSubmitInvite() {}
+  async onSubmitInvite(event: { detail: { formData: FormData } }) {
+    if (!this.authState) return;
+
+    this.isSubmitting = true;
+
+    const { formData } = event.detail;
+    const inviteEmail = formData.get("inviteEmail") as string;
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/invite`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: Number(formData.get("role")),
+          }),
+        }
+      );
+
+      this.successfullyInvitedEmail = inviteEmail;
+    } catch (e: any) {
+      if (e?.isApiError) {
+        this.serverError = e?.message;
+      } else {
+        this.serverError = msg("Something unexpected went wrong");
+      }
+    }
+
+    this.isSubmitting = false;
+  }
 
   updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
     this.navTo(`/archives/${this.archiveId}/${event.detail.name}`);

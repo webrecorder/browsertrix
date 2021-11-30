@@ -1,7 +1,7 @@
 // From UserRole in backend
 type UserRole = "viewer" | "crawler" | "owner";
 
-const AccessCode: Record<UserRole, number> = {
+export const AccessCode: Record<UserRole, number> = {
   viewer: 10,
   crawler: 20,
   owner: 40,
