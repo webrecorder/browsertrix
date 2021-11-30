@@ -87,7 +87,7 @@ export class InviteForm extends LiteElement {
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/invite`,
         this.authState,
         {
@@ -100,7 +100,12 @@ export class InviteForm extends LiteElement {
       );
 
       this.dispatchEvent(
-        new CustomEvent("success", { detail: { inviteEmail } })
+        new CustomEvent("success", {
+          detail: {
+            inviteEmail,
+            isExistingUser: data.invited === "existing_user",
+          },
+        })
       );
     } catch (e: any) {
       if (e?.isApiError) {

@@ -9,6 +9,7 @@ import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { InviteForm } from "./components/invite-form";
+import { Join } from "./pages/join";
 import { SignUp } from "./pages/sign-up";
 import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
@@ -25,6 +26,7 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   signUp: "/sign-up",
+  join: "/join/:token",
   verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
@@ -282,6 +284,12 @@ export class App extends LiteElement {
           .authState="${this.authState}"
         ></btrix-verify>`;
 
+      case "join":
+        return html`<btrix-join
+          class="w-full flex items-center justify-center"
+          token="${this.viewState.params.token}"
+        ></btrix-join>`;
+
       case "login":
       case "forgotPassword":
         return html`<log-in
@@ -518,4 +526,5 @@ customElements.define("btrix-archive", Archive);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
 customElements.define("btrix-invite-form", InviteForm);
+customElements.define("btrix-join", Join);
 customElements.define("btrix-reset-password", ResetPassword);

@@ -178,7 +178,9 @@ export class Archive extends LiteElement {
     return data;
   }
 
-  onInviteSuccess(event: CustomEvent<{ inviteEmail: string }>) {
+  onInviteSuccess(
+    event: CustomEvent<{ inviteEmail: string; isExistingUser: boolean }>
+  ) {
     this.successfullyInvitedEmail = event.detail.inviteEmail;
   }
 
