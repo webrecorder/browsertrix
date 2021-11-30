@@ -171,8 +171,12 @@ export class Join extends LiteElement {
   }
 
   private renderSignUp() {
+    // TODO actual initial email
+    const email = "TODO@example.com";
+
     return html`
       <btrix-sign-up-form
+        email=${email}
         @submit=${this.onSignUp}
         @error=${() => this.joinStateService.send("ERROR")}
         @authenticated=${this.onAuthenticated}

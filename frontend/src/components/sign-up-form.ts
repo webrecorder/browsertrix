@@ -1,4 +1,5 @@
-import { state, property, query } from "lit/decorators.js";
+import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
@@ -11,6 +12,10 @@ import LiteElement, { html } from "../utils/LiteElement";
  */
 @localized()
 export class SignUpForm extends LiteElement {
+  /** Optonal read-only email, e.g. for invitations */
+  @property({ type: String })
+  email?: string;
+
   @state()
   private serverError?: string;
 
@@ -34,9 +39,12 @@ export class SignUpForm extends LiteElement {
           <sl-input
             id="email"
             name="email"
+            type="email"
             label=${msg("Email")}
             placeholder=${msg("you@email.com")}
+            value=${ifDefined(this.email)}
             autocomplete="username"
+            ?readonly=${Boolean(this.email)}
             required
           >
           </sl-input>
