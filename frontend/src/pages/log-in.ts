@@ -1,72 +1,306 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { createMachine, interpret, assign } from "@xstate/fsm";
 
+import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
-import type { Auth } from "../types/auth";
+
+type FormContext = {
+  successMessage?: string;
+  serverError?: string;
+};
+type FormSuccessEvent = {
+  type: "SUCCESS";
+  detail: {
+    successMessage?: FormContext["successMessage"];
+  };
+};
+type FormErrorEvent = {
+  type: "ERROR";
+  detail: {
+    serverError?: FormContext["serverError"];
+  };
+};
+type FormEvent =
+  | { type: "SHOW_SIGN_IN_WITH_PASSWORD" }
+  | { type: "SHOW_FORGOT_PASSWORD" }
+  | { type: "SUBMIT" }
+  | FormSuccessEvent
+  | FormErrorEvent;
+
+type FormTypestate =
+  | {
+      value: "signIn";
+      context: FormContext;
+    }
+  | {
+      value: "signingIn";
+      context: FormContext;
+    }
+  | {
+      value: "signIn";
+      context: FormContext;
+    }
+  | {
+      value: "forgotPassword";
+      context: FormContext;
+    }
+  | {
+      value: "submittingForgotPassword";
+      context: FormContext;
+    };
+
+const initialContext = {};
+
+const machine = createMachine<FormContext, FormEvent, FormTypestate>(
+  {
+    id: "loginForm",
+    initial: "signIn",
+    context: initialContext,
+    states: {
+      ["signIn"]: {
+        on: {
+          SHOW_FORGOT_PASSWORD: {
+            target: "forgotPassword",
+            actions: "reset",
+          },
+          SUBMIT: {
+            target: "signingIn",
+            actions: "reset",
+          },
+        },
+      },
+      ["signingIn"]: {
+        on: {
+          SUCCESS: "signedIn",
+          ERROR: {
+            target: "signIn",
+            actions: "setError",
+          },
+        },
+      },
+      ["forgotPassword"]: {
+        on: {
+          SHOW_SIGN_IN_WITH_PASSWORD: {
+            target: "signIn",
+            actions: "reset",
+          },
+          SUBMIT: {
+            target: "submittingForgotPassword",
+            actions: "reset",
+          },
+        },
+      },
+      ["submittingForgotPassword"]: {
+        on: {
+          SUCCESS: {
+            target: "signIn",
+            actions: "setSucessMessage",
+          },
+          ERROR: {
+            target: "forgotPassword",
+            actions: "setError",
+          },
+        },
+      },
+    },
+  },
+  {
+    actions: {
+      reset: assign(() => initialContext),
+      setSucessMessage: assign((context, event) => ({
+        ...context,
+        ...(event as FormSuccessEvent).detail,
+      })),
+      setError: assign((context, event) => ({
+        ...context,
+        ...(event as FormErrorEvent).detail,
+      })),
+    },
+  }
+);
 
 @localized()
 export class LogInPage extends LiteElement {
-  @state()
-  isLoggingIn: boolean = false;
+  @property({ type: Object })
+  viewState!: ViewState;
+
+  private formStateService = interpret(machine);
 
   @state()
-  loginError?: string;
+  private formState = machine.initialState;
+
+  firstUpdated() {
+    this.formStateService.subscribe((state) => {
+      this.formState = state;
+    });
+
+    this.formStateService.start();
+  }
+
+  disconnectedCallback() {
+    this.formStateService.stop();
+  }
+
+  updated(changedProperties: any) {
+    if (changedProperties.has("viewState")) {
+      const route = this.viewState.route;
+
+      if (route === "login") {
+        this.formStateService.send("SHOW_SIGN_IN_WITH_PASSWORD");
+      } else if (route === "forgotPassword") {
+        this.formStateService.send("SHOW_FORGOT_PASSWORD");
+      }
+    }
+  }
 
   render() {
-    let formError;
+    let form, link, successMessage;
 
-    if (this.loginError) {
-      formError = html`
-        <div class="mb-5">
-          <bt-alert id="formError" type="danger">${this.loginError}</bt-alert>
+    if (
+      this.formState.value === "forgotPassword" ||
+      this.formState.value === "submittingForgotPassword"
+    ) {
+      form = this.renderForgotPasswordForm();
+      link = html`
+        <a
+          class="text-sm text-gray-400 hover:text-gray-500"
+          href="/log-in"
+          @click=${this.navLink}
+          >${msg("Sign in with password")}</a
+        >
+      `;
+    } else {
+      form = this.renderLoginForm();
+      link = html`
+        <a
+          class="text-sm text-gray-400 hover:text-gray-500"
+          href="/log-in/forgot-password"
+          @click=${this.navLink}
+          >${msg("Forgot your password?")}</a
+        >
+      `;
+    }
+
+    if (this.formState.context.successMessage) {
+      successMessage = html`
+        <div>
+          <bt-alert type="success"
+            >${this.formState.context.successMessage}</bt-alert
+          >
         </div>
       `;
     }
 
     return html`
-      <div class="md:bg-white md:shadow-2xl md:rounded-lg md:px-12 md:py-12">
-        <div class="max-w-md">
-          <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
-            <div class="mb-5">
-              <sl-input
-                id="username"
-                name="username"
-                label="${msg("Username")}"
-                required
-              >
-              </sl-input>
-            </div>
-            <div class="mb-5">
-              <sl-input
-                id="password"
-                name="password"
-                type="password"
-                label="${msg("Password")}"
-                required
-              >
-              </sl-input>
-            </div>
+      <article class="w-full max-w-sm grid gap-5">
+        ${successMessage}
 
-            ${formError}
-
-            <sl-button
-              class="w-full"
-              type="primary"
-              ?loading=${this.isLoggingIn}
-              submit
-              >${msg("Log in")}</sl-button
-            >
-          </sl-form>
-        </div>
-      </div>
+        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+          <div>${form}</div>
+        </main>
+        <footer class="text-center">${link}</footer>
+      </article>
     `;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
-    this.isLoggingIn = true;
+  private renderLoginForm() {
+    let formError;
+
+    if (this.formState.context.serverError) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger"
+            >${this.formState.context.serverError}</bt-alert
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
+        <div class="mb-5">
+          <sl-input
+            id="email"
+            name="username"
+            type="email"
+            label="${msg("Email")}"
+            autocomplete="username"
+            required
+          >
+          </sl-input>
+        </div>
+        <div class="mb-5">
+          <sl-input
+            id="password"
+            name="password"
+            type="password"
+            label="${msg("Password")}"
+            autocomplete="current-password"
+            required
+          >
+          </sl-input>
+        </div>
+
+        ${formError}
+
+        <sl-button
+          class="w-full"
+          type="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          submit
+          >${msg("Log in")}</sl-button
+        >
+      </sl-form>
+    `;
+  }
+
+  private renderForgotPasswordForm() {
+    let formError;
+
+    if (this.formState.context.serverError) {
+      formError = html`
+        <div class="mb-5">
+          <bt-alert id="formError" type="danger"
+            >${this.formState.context.serverError}</bt-alert
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      <sl-form
+        @sl-submit="${this.onSubmitResetPassword}"
+        aria-describedby="formError"
+      >
+        <div class="mb-5">
+          <sl-input
+            id="email"
+            name="email"
+            type="email"
+            label="${msg("Your email address")}"
+            required
+          >
+          </sl-input>
+        </div>
+
+        ${formError}
+
+        <sl-button
+          class="w-full"
+          type="primary"
+          ?loading=${this.formState.value === "submittingForgotPassword"}
+          submit
+          >${msg("Request password reset")}</sl-button
+        >
+      </sl-form>
+    `;
+  }
+
+  async onSubmitLogIn(event: { detail: { formData: FormData } }) {
+    this.formStateService.send("SUBMIT");
 
     const { formData } = event.detail;
-
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
@@ -83,8 +317,12 @@ export class LogInPage extends LiteElement {
       body: params.toString(),
     });
     if (resp.status !== 200) {
-      this.isLoggingIn = false;
-      this.loginError = msg("Sorry, invalid username or password");
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Sorry, invalid username or password"),
+        },
+      });
       return;
     }
 
@@ -93,12 +331,63 @@ export class LogInPage extends LiteElement {
       if (data.token_type === "bearer" && data.access_token) {
         const auth = "Bearer " + data.access_token;
         const detail = { auth, username };
+
         this.dispatchEvent(new CustomEvent("logged-in", { detail }));
+
+        // no state update here, since "logged-in" event
+        // will result in a route change
+      } else {
+        throw new Error("Unknown auth type");
       }
     } catch (e) {
       console.error(e);
-    }
 
-    this.isLoggingIn = false;
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Something went wrong, couldn't sign you in"),
+        },
+      });
+    }
+  }
+
+  async onSubmitResetPassword(event: { detail: { formData: FormData } }) {
+    this.formStateService.send("SUBMIT");
+
+    const { formData } = event.detail;
+    const email = formData.get("email") as string;
+
+    const resp = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (resp.status === 202) {
+      this.formStateService.send({
+        type: "SUCCESS",
+        detail: {
+          successMessage: msg(
+            "Successfully received your request. You will receive an email to reset your password if your email is found in our system."
+          ),
+        },
+      });
+    } else if (resp.status === 422) {
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("That email is not a valid email address"),
+        },
+      });
+    } else {
+      this.formStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Something unexpected went wrong"),
+        },
+      });
+    }
   }
 }

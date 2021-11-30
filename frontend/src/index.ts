@@ -7,6 +7,7 @@ import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
 import { LogInPage } from "./pages/log-in";
+import { ResetPassword } from "./pages/reset-password";
 import { MyAccountPage } from "./pages/my-account";
 import { ArchivePage } from "./pages/archive-info";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
@@ -19,6 +20,8 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   login: "/log-in",
+  forgotPassword: "/log-in/forgot-password",
+  resetPassword: "/reset-password?token",
   myAccount: "/my-account",
   accountSettings: "/account/settings",
   "archive-info": "/archive/:aid",
@@ -27,7 +30,7 @@ const ROUTES = {
 
 @localized()
 export class App extends LiteElement {
-  router: APIRouter;
+  private router: APIRouter = new APIRouter(ROUTES);
 
   @state()
   authState: AuthState | null = null;
@@ -45,9 +48,21 @@ export class App extends LiteElement {
     const authState = window.localStorage.getItem("authState");
     if (authState) {
       this.authState = JSON.parse(authState);
+
+      if (
+        window.location.pathname === "/log-in" ||
+        window.location.pathname === "/reset-password"
+      ) {
+        // Redirect to logged in home page
+        this.viewState = this.router.match(ROUTES.myAccount);
+        window.history.replaceState(
+          this.viewState,
+          "",
+          this.viewState.pathname
+        );
+      }
     }
 
-    this.router = new APIRouter(ROUTES);
     this.syncViewState();
   }
 
@@ -165,12 +180,23 @@ export class App extends LiteElement {
 
     switch (this.viewState.route) {
       case "login":
+      case "forgotPassword":
         return html`<log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
-          .authState="${this.authState}"
+          @navigate=${this.onNavigateTo}
+          @logged-in=${this.onLoggedIn}
+          .authState=${this.authState}
+          .viewState=${this.viewState}
         ></log-in>`;
+
+      case "resetPassword":
+        return html`<btrix-reset-password
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          @logged-in=${this.onLoggedIn}
+          .authState=${this.authState}
+          .viewState=${this.viewState}
+        ></btrix-reset-password>`;
 
       case "home":
         return html`<div class="w-full flex items-center justify-center">
@@ -262,3 +288,4 @@ customElements.define("my-account", MyAccountPage);
 customElements.define("btrix-archive", ArchivePage);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
+customElements.define("btrix-reset-password", ResetPassword);

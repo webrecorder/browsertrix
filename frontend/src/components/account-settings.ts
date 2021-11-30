@@ -100,40 +100,21 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 export class AccountSettings extends LiteElement {
   authState?: AuthState;
 
-  private _stateService = interpret(machine);
+  private formStateService = interpret(machine);
 
   @state()
   private formState = machine.initialState;
 
-  @query("#newPassword")
-  private newPasswordInput?: HTMLInputElement;
-
-  @query("#confirmNewPassword")
-  private confirmNewPasswordInput?: HTMLInputElement;
-
   firstUpdated() {
-    this._stateService.subscribe((state) => {
+    this.formStateService.subscribe((state) => {
       this.formState = state;
     });
 
-    this._stateService.start();
+    this.formStateService.start();
   }
 
   disconnectedCallback() {
-    this._stateService.stop();
-  }
-
-  checkPasswordMatch() {
-    const newPassword = this.newPasswordInput!.value;
-    const confirmNewPassword = this.confirmNewPasswordInput!.value;
-
-    if (newPassword === confirmNewPassword) {
-      this.confirmNewPasswordInput!.setCustomValidity("");
-    } else {
-      this.confirmNewPasswordInput!.setCustomValidity(
-        msg("Passwords don't match")
-      );
-    }
+    this.formStateService.stop();
   }
 
   render() {
@@ -170,7 +151,7 @@ export class AccountSettings extends LiteElement {
                 <sl-button
                   type="primary"
                   outline
-                  @click=${() => this._stateService.send("EDIT")}
+                  @click=${() => this.formStateService.send("EDIT")}
                   >${msg("Change password")}</sl-button
                 >
               </div>
@@ -204,6 +185,8 @@ export class AccountSettings extends LiteElement {
             type="password"
             label="${msg("Current password")}"
             aria-describedby="passwordError"
+            autocomplete="current-password"
+            toggle-password
             required
           >
           </sl-input>
@@ -219,19 +202,9 @@ export class AccountSettings extends LiteElement {
             name="newPassword"
             type="password"
             label="${msg("New password")}"
+            autocomplete="new-password"
+            toggle-password
             required
-            @sl-blur=${this.checkPasswordMatch}
-          >
-          </sl-input>
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="confirmNewPassword"
-            name="confirmNewPassword"
-            type="password"
-            label="${msg("Confirm new password")}"
-            required
-            @sl-blur=${this.checkPasswordMatch}
           >
           </sl-input>
         </div>
@@ -247,7 +220,7 @@ export class AccountSettings extends LiteElement {
           >
           <sl-button
             type="text"
-            @click=${() => this._stateService.send("CANCEL")}
+            @click=${() => this.formStateService.send("CANCEL")}
             >${msg("Cancel")}</sl-button
           >
         </div>
@@ -258,7 +231,7 @@ export class AccountSettings extends LiteElement {
   async onSubmit(event: { detail: { formData: FormData } }) {
     if (!this.authState) return;
 
-    this._stateService.send("SUBMIT");
+    this.formStateService.send("SUBMIT");
 
     const { formData } = event.detail;
     let nextAuthState: AuthState = null;
@@ -300,7 +273,7 @@ export class AccountSettings extends LiteElement {
     }
 
     if (!nextAuthState) {
-      this._stateService.send({
+      this.formStateService.send({
         type: "ERROR",
         detail: {
           fieldErrors: {
@@ -321,7 +294,7 @@ export class AccountSettings extends LiteElement {
         body: JSON.stringify(params),
       });
 
-      this._stateService.send({
+      this.formStateService.send({
         type: "SUCCESS",
         detail: {
           successMessage: "Successfully updated password",
@@ -330,7 +303,7 @@ export class AccountSettings extends LiteElement {
     } catch (e) {
       console.error(e);
 
-      this._stateService.send({
+      this.formStateService.send({
         type: "ERROR",
         detail: {
           serverError: msg("Something went wrong changing password"),
