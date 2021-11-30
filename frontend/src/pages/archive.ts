@@ -7,7 +7,7 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import { isOwner } from "../utils/archives";
 
-type Tab = "settings" | "members";
+export type ArchiveTab = "settings" | "members";
 
 const defaultTab = "settings";
 
@@ -24,7 +24,10 @@ export class Archive extends LiteElement {
   archiveId?: string;
 
   @property({ type: String })
-  archiveTab?: Tab = defaultTab;
+  archiveTab: ArchiveTab = defaultTab;
+
+  @property({ type: Boolean })
+  isAddingMember: boolean = false;
 
   @state()
   archive?: ArchiveData;
@@ -62,24 +65,26 @@ export class Archive extends LiteElement {
           <sl-tab
             slot="nav"
             panel="settings"
-            .active=${this.archiveTab === "settings"}
+            ?active=${this.archiveTab === "settings"}
             >Settings</sl-tab
           >
           <sl-tab
             slot="nav"
             panel="members"
-            .active=${this.archiveTab === "members"}
+            ?active=${this.archiveTab === "members"}
             >Members</sl-tab
           >
 
           <sl-tab-panel
             name="settings"
-            .active=${this.archiveTab === "settings"}
+            ?active=${this.archiveTab === "settings"}
             >TODO</sl-tab-panel
           >
-          <sl-tab-panel name="members" .active=${this.archiveTab === "members"}>
+          <sl-tab-panel name="members" ?active=${this.archiveTab === "members"}>
             <div class="text-right">
-              <sl-button type="primary">Add Member</sl-button>
+              <sl-button type="primary" @click=${this.onClickAddMember}
+                >Add Member</sl-button
+              >
             </div>
 
             <div role="table">
@@ -122,11 +127,19 @@ export class Archive extends LiteElement {
     return data;
   }
 
-  updateUrl(event: CustomEvent<{ name: Tab }>) {
+  updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
     window.history.pushState(
       null,
       "",
       `/archives/${this.archiveId}/${event.detail.name}`
+    );
+  }
+
+  onClickAddMember() {
+    window.history.pushState(
+      null,
+      "",
+      `/archives/${this.archiveId}/members/add-member`
     );
   }
 }

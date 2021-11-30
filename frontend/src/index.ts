@@ -13,7 +13,7 @@ import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { Archives } from "./pages/archives";
-import { Archive } from "./pages/archive";
+import { Archive, ArchiveTab } from "./pages/archive";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -32,8 +32,7 @@ const ROUTES = {
   accountSettings: "/account/settings",
   archives: "/archives",
   archive: "/archives/:id/:tab",
-  // "archive-info": "/archive/:aid",
-  // "archive-info-tab": "/archive/:aid/:tab",
+  archiveAddMember: "/archives/:id/:tab/add-member",
 } as const;
 const DASHBOARD_ROUTE = ROUTES.archives;
 
@@ -322,14 +321,16 @@ export class App extends LiteElement {
         ></btrix-archives>`);
 
       case "archive":
+      case "archiveAddMember":
         return appLayout(html`<btrix-archive
           class="w-full"
-          @navigate="${this.onNavigateTo}"
-          @need-login="${this.onNeedLogin}"
-          .authState="${this.authState}"
-          .userInfo="${this.userInfo}"
-          archiveId="${this.viewState.params.id}"
-          archiveTab="${this.viewState.params.tab}"
+          @navigate=${this.onNavigateTo}
+          @need-login=${this.onNeedLogin}
+          .authState=${this.authState}
+          .userInfo=${this.userInfo}
+          archiveId=${this.viewState.params.id}
+          archiveTab=${this.viewState.params.tab as ArchiveTab}
+          ?isAddingMember=${this.viewState.route === "archiveAddMember"}
         ></btrix-archive>`);
 
       case "accountSettings":
