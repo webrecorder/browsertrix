@@ -4,28 +4,29 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import LiteElement, { html } from "../utils/LiteElement";
 
+// TODO consolidate with auth
+type AuthEventDetail = { auth: string; username: string };
+
 type JoinContext = {
-  successMessage?: string;
+  auth?: AuthEventDetail;
   serverError?: string;
-  fieldErrors: { [fieldName: string]: string };
 };
-type JoinSuccessEvent = {
-  type: "SUCCESS";
+type JoinSignUpSuccessEvent = {
+  type: "SIGN_UP_SUCCESS";
   detail: {
-    successMessage?: JoinContext["successMessage"];
+    auth?: JoinContext["auth"];
   };
 };
 type JoinErrorEvent = {
   type: "ERROR";
   detail: {
     serverError?: JoinContext["serverError"];
-    fieldErrors?: JoinContext["fieldErrors"];
   };
 };
 type JoinEvent =
   | { type: "SUBMIT_SIGN_UP" }
   | { type: "ACCEPT_INVITE" }
-  | JoinSuccessEvent
+  | JoinSignUpSuccessEvent
   | JoinErrorEvent;
 type JoinTypestate =
   | {
@@ -45,9 +46,7 @@ type JoinTypestate =
       context: JoinContext;
     };
 
-const initialContext = {
-  fieldErrors: {},
-};
+const initialContext = {};
 
 const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
   {
@@ -62,7 +61,10 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
       },
       ["submittingForm"]: {
         on: {
-          SUCCESS: "acceptInvite",
+          SIGN_UP_SUCCESS: {
+            target: "acceptInvite",
+            actions: "setAuth",
+          },
           ERROR: {
             target: "initial",
             actions: "setError",
@@ -76,10 +78,6 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
       },
       ["acceptingInvite"]: {
         on: {
-          SUCCESS: {
-            target: "acceptInvite",
-            actions: "setSucessMessage",
-          },
           ERROR: {
             target: "acceptInvite",
             actions: "setError",
@@ -90,9 +88,9 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
   },
   {
     actions: {
-      setSucessMessage: assign((context, event) => ({
+      setAuth: assign((context, event) => ({
         ...context,
-        ...(event as JoinSuccessEvent).detail,
+        ...(event as JoinSignUpSuccessEvent).detail,
       })),
       setError: assign((context, event) => ({
         ...context,
@@ -173,46 +171,12 @@ export class Join extends LiteElement {
   }
 
   private renderSignUp() {
-    let serverError;
-
-    if (this.joinState.context.serverError) {
-      serverError = html`
-        <div class="mb-5">
-          <bt-alert id="formError" type="danger"
-            >${this.joinState.context.serverError}</bt-alert
-          >
-        </div>
-      `;
-    }
-
     return html`
-      <sl-form @sl-submit="${this.onSignUp}" aria-describedby="formError">
-        <div class="mb-5">
-          <sl-input value=${"TODO@example.com"} readonly> </sl-input>
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="password"
-            name="password"
-            type="password"
-            label=${msg("Enter a password")}
-            autocomplete="new-password"
-            toggle-password
-            required
-          >
-          </sl-input>
-        </div>
-
-        ${serverError}
-
-        <sl-button
-          class="w-full"
-          type="primary"
-          ?loading=${this.joinState.value === "submittingForm"}
-          submit
-          >${msg("Create account")}</sl-button
-        >
-      </sl-form>
+      <btrix-sign-up-form
+        @submit=${this.onSignUp}
+        @error=${() => this.joinStateService.send("ERROR")}
+        @authenticated=${this.onAuthenticated}
+      ></btrix-sign-up-form>
     `;
   }
 
@@ -240,10 +204,19 @@ export class Join extends LiteElement {
     `;
   }
 
-  private async onSignUp() {
+  private onSignUp() {
     this.joinStateService.send("SUBMIT_SIGN_UP");
+  }
 
-    // TODO
+  private onAuthenticated(
+    event: CustomEvent<{ auth: string; username: string }>
+  ) {
+    this.joinStateService.send({
+      type: "SIGN_UP_SUCCESS",
+      detail: {
+        auth: event.detail,
+      },
+    });
   }
 
   private async onAccept() {
@@ -253,10 +226,21 @@ export class Join extends LiteElement {
 
     switch (resp.status) {
       case 200:
-        // this.joinStateService.send("SUCCESS");
+        const auth = this.joinState.context.auth;
 
-        // TODO automatically log in?
-        this.navTo("/log-in");
+        if (auth) {
+          this.dispatchEvent(
+            new CustomEvent("logged-in", {
+              detail: {
+                ...auth,
+                api: true,
+              },
+            })
+          );
+        }
+
+        // TODO go to archives detail page
+        this.navTo("/archives");
         break;
       case 401:
         const { detail } = await resp.json();
@@ -264,9 +248,7 @@ export class Join extends LiteElement {
           this.joinStateService.send({
             type: "ERROR",
             detail: {
-              fieldErrors: {
-                password: msg("This invitation is not valid."),
-              },
+              serverError: msg("This invitation is not valid."),
             },
           });
           break;
@@ -275,9 +257,7 @@ export class Join extends LiteElement {
         this.joinStateService.send({
           type: "ERROR",
           detail: {
-            fieldErrors: {
-              password: msg("Something unexpected went wrong"),
-            },
+            serverError: msg("Something unexpected went wrong"),
           },
         });
         break;

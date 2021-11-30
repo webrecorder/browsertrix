@@ -1,13 +1,13 @@
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 
 /**
  * @event submit
  * @event success
  * @event failure
+ * @event authenticated
  */
 @localized()
 export class SignUpForm extends LiteElement {
@@ -161,8 +161,9 @@ export class SignUpForm extends LiteElement {
     const data = await resp.json();
     if (data.token_type === "bearer" && data.access_token) {
       const auth = "Bearer " + data.access_token;
-      const detail = { auth, username: email, firstLogin: true };
-      this.dispatchEvent(new CustomEvent("logged-in", { detail }));
+      const detail = { auth, username: email };
+
+      this.dispatchEvent(new CustomEvent("authenticated", { detail }));
     } else {
       throw new Error("Unknown authorization type");
     }

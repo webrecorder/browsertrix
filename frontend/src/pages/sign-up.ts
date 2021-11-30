@@ -1,4 +1,4 @@
-import { state, property, query } from "lit/decorators.js";
+import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../types/auth";
@@ -12,23 +12,7 @@ export class SignUp extends LiteElement {
   @state()
   isSignUpComplete?: boolean;
 
-  @state()
-  serverError?: string;
-
-  @state()
-  isSubmitting: boolean = false;
-
   render() {
-    let serverError;
-
-    if (this.serverError) {
-      serverError = html`
-        <div class="mb-5">
-          <bt-alert id="formError" type="danger">${this.serverError}</bt-alert>
-        </div>
-      `;
-    }
-
     return html`
       <article class="w-full max-w-sm grid gap-5">
         <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
@@ -52,6 +36,7 @@ export class SignUp extends LiteElement {
                 <btrix-sign-up-form
                   @submit=${this.onSubmit}
                   @success=${this.onSuccess}
+                  @authenticated=${this.onAuthenticated}
                 ></btrix-sign-up-form>
               `}
         </main>
@@ -69,5 +54,18 @@ export class SignUp extends LiteElement {
 
   private onSuccess() {
     this.isSignUpComplete = true;
+  }
+
+  private onAuthenticated(
+    event: CustomEvent<{ auth: string; username: string }>
+  ) {
+    this.dispatchEvent(
+      new CustomEvent("logged-in", {
+        detail: {
+          ...event.detail,
+          firstLogin: true,
+        },
+      })
+    );
   }
 }
