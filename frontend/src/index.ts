@@ -31,7 +31,7 @@ const ROUTES = {
   myAccount: "/my-account",
   accountSettings: "/account/settings",
   archives: "/archives",
-  archive: "/archives/:id",
+  archive: "/archives/:id/:tab",
   // "archive-info": "/archive/:aid",
   // "archive-info-tab": "/archive/:aid/:tab",
 } as const;
@@ -329,6 +329,7 @@ export class App extends LiteElement {
           .authState="${this.authState}"
           .userInfo="${this.userInfo}"
           archiveId="${this.viewState.params.id}"
+          archiveTab="${this.viewState.params.tab}"
         ></btrix-archive>`);
 
       case "accountSettings":

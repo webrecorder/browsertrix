@@ -7,6 +7,10 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import { isOwner } from "../utils/archives";
 
+type Tab = "settings" | "members";
+
+const defaultTab = "settings";
+
 @needLogin
 @localized()
 export class Archive extends LiteElement {
@@ -18,6 +22,9 @@ export class Archive extends LiteElement {
 
   @property({ type: String })
   archiveId?: string;
+
+  @property({ type: String })
+  archiveTab?: Tab = defaultTab;
 
   @state()
   archive?: ArchiveData;
@@ -51,12 +58,30 @@ export class Archive extends LiteElement {
       </header>
 
       <main>
-        <sl-tab-group>
-          <!-- <sl-tab slot="nav" panel="general">General</sl-tab> -->
-          <sl-tab slot="nav" panel="members">Members</sl-tab>
+        <sl-tab-group @sl-tab-show=${this.updateUrl}>
+          <sl-tab
+            slot="nav"
+            panel="settings"
+            .active=${this.archiveTab === "settings"}
+            >Settings</sl-tab
+          >
+          <sl-tab
+            slot="nav"
+            panel="members"
+            .active=${this.archiveTab === "members"}
+            >Members</sl-tab
+          >
 
-          <!-- <sl-tab-panel name="general">TODO</sl-tab-panel> -->
-          <sl-tab-panel name="members">
+          <sl-tab-panel
+            name="settings"
+            .active=${this.archiveTab === "settings"}
+            >TODO</sl-tab-panel
+          >
+          <sl-tab-panel name="members" .active=${this.archiveTab === "members"}>
+            <div class="text-right">
+              <sl-button type="primary">Add Member</sl-button>
+            </div>
+
             <div role="table">
               <div class="border-b" role="rowgroup">
                 <div class="flex font-medium" role="row">
@@ -95,5 +120,13 @@ export class Archive extends LiteElement {
     const data = await this.apiFetch(`/archives/${archiveId}`, this.authState!);
 
     return data;
+  }
+
+  updateUrl(event: CustomEvent<{ name: Tab }>) {
+    window.history.pushState(
+      null,
+      "",
+      `/archives/${this.archiveId}/${event.detail.name}`
+    );
   }
 }
