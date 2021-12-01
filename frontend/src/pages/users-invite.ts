@@ -3,7 +3,9 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
+import { needLogin } from "../utils/auth";
 
+@needLogin
 @localized()
 export class UsersInvite extends LiteElement {
   @property({ type: Object })
