@@ -301,7 +301,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
             aid=str(archive.id), created=datetime.utcnow(), role=invite.role
         )
 
-        other_user = await users.db.get_by_email(invite.email)
+        other_user = await users.user_db.get_by_email(invite.email)
 
         if not other_user:
 
@@ -325,7 +325,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
 
         other_user.invites[invite_code] = invite_pending
 
-        await users.db.update(other_user)
+        await users.user_db.update(other_user)
 
         return {
             "invited": "existing_user",
@@ -338,7 +338,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
         user: User = Depends(user_dep),
     ):
 
-        other_user = await users.db.get_by_email(update.email)
+        other_user = await users.user_db.get_by_email(update.email)
         if not other_user:
             raise HTTPException(
                 status_code=400, detail="No user found for specified e-mail"
@@ -359,7 +359,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
         await ops.add_user_by_invite(invite, user)
-        await users.db.update(user)
+        await users.user_db.update(user)
         return {"added": True}
 
     return ops
