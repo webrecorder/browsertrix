@@ -4,6 +4,7 @@ FastAPI user handling (via fastapi-users)
 
 import os
 import uuid
+import asyncio
 
 from datetime import datetime
 
@@ -13,10 +14,14 @@ from enum import IntEnum
 
 from pydantic import BaseModel
 
-from fastapi_users import FastAPIUsers, models
+from fastapi import Request, HTTPException
+
+from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
 
+
+# ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
 
@@ -72,15 +77,26 @@ class UserDB(User, models.BaseUserDB):
 
 
 # ============================================================================
+# pylint: disable=too-few-public-methods
 class UserDBOps(MongoDBUserDatabase):
     """ User DB Operations wrapper """
 
 
 # ============================================================================
 class UserManager(BaseUserManager[UserCreate, UserDB]):
+    """ Browsertrix UserManager """
     user_db_model = UserDB
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
+
+    def __init__(self, user_db, email):
+        super().__init__(user_db)
+        self.email = email
+        self.archive_ops = None
+
+    def set_archive_ops(self, ops):
+        """ set archive ops """
+        self.archive_ops = ops
 
     # pylint: disable=no-self-use, unused-argument
     async def on_after_register(self, user: UserDB, request: Optional[Request] = None):
@@ -109,7 +125,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             except HTTPException as exc:
                 print(exc)
 
-        self.request_verify(user, request)
+        asyncio.create_task(self.request_verify(user, request))
 
     # pylint: disable=no-self-use, unused-argument
     async def on_after_forgot_password(
@@ -146,11 +162,10 @@ def init_users_api(
         secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
     )
 
-    def get_user_manager():
-        return UserManager(user_db, emailsender)
+    user_manager = UserManager(user_db, emailsender)
 
     fastapi_users = FastAPIUsers(
-        get_user_manager,
+        lambda: user_manager,
         [jwt_authentication],
         User,
         UserCreate,
@@ -164,21 +179,17 @@ def init_users_api(
         tags=["auth"],
     )
     app.include_router(
-        fastapi_users.get_register_router(on_after_register),
+        fastapi_users.get_register_router(),
         prefix="/auth",
         tags=["auth"],
     )
     app.include_router(
-        fastapi_users.get_reset_password_router(
-            PASSWORD_SECRET, after_forgot_password=on_after_forgot_password
-        ),
+        fastapi_users.get_reset_password_router(),
         prefix="/auth",
         tags=["auth"],
     )
     app.include_router(
-        fastapi_users.get_verify_router(
-            PASSWORD_SECRET, after_verification_request=after_verification_request
-        ),
+        fastapi_users.get_verify_router(),
         prefix="/auth",
         tags=["auth"],
     )
@@ -187,4 +198,4 @@ def init_users_api(
         fastapi_users.get_users_router(), prefix="/users", tags=["users"]
     )
 
-    return fastapi_users
+    return fastapi_users, user_manager
