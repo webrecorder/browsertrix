@@ -32,6 +32,14 @@ const ROUTES = {
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 
+/**
+ * @event navigate
+ * @event notify
+ * @event need-login
+ * @event logged-in
+ * @event log-out
+ * @event user-info-change
+ */
 @localized()
 export class App extends LiteElement {
   private router: APIRouter = new APIRouter(ROUTES);
@@ -230,6 +238,11 @@ export class App extends LiteElement {
         return html`<btrix-verify
           class="w-full flex items-center justify-center"
           token="${this.viewState.params.token}"
+          @navigate="${this.onNavigateTo}"
+          @notify="${this.onNotify}"
+          @log-out="${this.onLogOut}"
+          @user-info-change="${this.onUserInfoChange}"
+          .authState="${this.authState}"
         ></btrix-verify>`;
 
       case "login":
@@ -295,8 +308,8 @@ export class App extends LiteElement {
     }
   }
 
-  onLogOut(event: CustomEvent<{ redirect?: boolean }>) {
-    const { detail } = event;
+  onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
+    const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
     this.clearAuthState();
@@ -332,6 +345,61 @@ export class App extends LiteElement {
 
   onNavigateTo(event: NavigateEvent) {
     this.navigate(event.detail);
+  }
+
+  onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
+    // @ts-ignore
+    this.userInfo = {
+      ...this.userInfo,
+      ...event.detail,
+    };
+  }
+
+  onNotify(
+    event: CustomEvent<{
+      title?: string;
+      message?: string;
+      type?: "success" | "warning" | "danger" | "primary";
+      icon?: string;
+      duration?: number;
+    }>
+  ) {
+    const {
+      title,
+      message,
+      type = "primary",
+      icon = "info-circle",
+      duration = 5000,
+    } = event.detail;
+
+    const escapeHtml = (html: any) => {
+      const div = document.createElement("div");
+      div.textContent = html;
+      return div.innerHTML;
+    };
+
+    const alert = Object.assign(document.createElement("sl-alert"), {
+      type: type,
+      closable: true,
+      duration: duration,
+      style: [
+        "--sl-panel-background-color: var(--sl-color-neutral-1000)",
+        "--sl-color-neutral-700: var(--sl-color-neutral-0)",
+        // "--sl-panel-border-width: 0px",
+        "--sl-spacing-large: var(--sl-spacing-medium)",
+      ].join(";"),
+      innerHTML: `
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        <span>
+          ${title ? `<strong>${escapeHtml(title)}</strong>` : ""}
+          ${message ? `<div>${escapeHtml(message)}</div>` : ""}
+        </span>
+
+      `,
+    });
+
+    document.body.append(alert);
+    alert.toast();
   }
 
   clearAuthState() {
