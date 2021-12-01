@@ -34,6 +34,7 @@ const ROUTES = {
 
 /**
  * @event navigate
+ * @event notify
  * @event need-login
  * @event logged-in
  * @event log-out
@@ -238,6 +239,7 @@ export class App extends LiteElement {
           class="w-full flex items-center justify-center"
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
+          @notify="${this.onNotify}"
           @log-out="${this.onLogOut}"
           @user-info-change="${this.onUserInfoChange}"
           .authState="${this.authState}"
@@ -351,6 +353,41 @@ export class App extends LiteElement {
       ...this.userInfo,
       ...event.detail,
     };
+  }
+
+  onNotify(
+    event: CustomEvent<{
+      message: TemplateResult | string;
+      type?: string;
+      icon?: string;
+      duration?: number;
+    }>
+  ) {
+    const {
+      message,
+      type = "primary",
+      icon = "info-circle",
+      duration = 4000,
+    } = event.detail;
+
+    const escapeHtml = (html: any) => {
+      const div = document.createElement("div");
+      div.textContent = html;
+      return div.innerHTML;
+    };
+
+    const alert = Object.assign(document.createElement("sl-alert"), {
+      type: type,
+      closable: true,
+      duration: duration,
+      innerHTML: `
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        ${escapeHtml(message)}
+      `,
+    });
+
+    document.body.append(alert);
+    alert.toast();
   }
 
   clearAuthState() {
