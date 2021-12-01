@@ -357,17 +357,19 @@ export class App extends LiteElement {
 
   onNotify(
     event: CustomEvent<{
-      message: TemplateResult | string;
+      title?: string;
+      message?: string;
       type?: "success" | "warning" | "danger" | "primary";
       icon?: string;
       duration?: number;
     }>
   ) {
     const {
+      title,
       message,
       type = "primary",
       icon = "info-circle",
-      duration = 4000,
+      duration = 5000,
     } = event.detail;
 
     const escapeHtml = (html: any) => {
@@ -388,7 +390,11 @@ export class App extends LiteElement {
       ].join(";"),
       innerHTML: `
         <sl-icon name="${icon}" slot="icon"></sl-icon>
-        ${escapeHtml(message)}
+        <span>
+          ${title ? `<strong>${escapeHtml(title)}</strong>` : ""}
+          ${message ? `<div>${escapeHtml(message)}</div>` : ""}
+        </span>
+
       `,
     });
 
