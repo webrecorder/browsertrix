@@ -40,7 +40,9 @@ class RequestVerify extends LitElement {
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
       >
-        ${msg("Resend verification email")}
+        ${this.isRequesting
+          ? msg("Sending...")
+          : msg("Resend verification email")}
       </span>
     `;
   }

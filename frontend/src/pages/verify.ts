@@ -1,10 +1,14 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
+import { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()
 export class Verify extends LiteElement {
+  @property({ type: Object })
+  authState?: AuthState;
+
   @property({ type: String })
   token?: string;
 
@@ -24,7 +28,7 @@ export class Verify extends LiteElement {
     return html` <div class="text-4xl"><sl-spinner></sl-spinner></div> `;
   }
 
-  private async verify() {
+  private async verify(): Promise<void> {
     const resp = await fetch("/api/auth/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,24 +37,32 @@ export class Verify extends LiteElement {
       }),
     });
 
+    const data = await resp.json();
+
     switch (resp.status) {
       case 200:
-        this.navTo("/log-in");
-        break;
+        return this.onVerificationComplete(data);
       case 400:
-        const { detail } = await resp.json();
+        const { detail } = data;
         if (detail === "VERIFY_USER_BAD_TOKEN") {
           this.serverError = msg("This verification email is not valid.");
           break;
         }
 
         if (detail === "VERIFY_USER_ALREADY_VERIFIED") {
-          this.navTo("/log-in");
-          break;
+          return this.onVerificationComplete(data);
         }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;
+    }
+  }
+
+  private onVerificationComplete(data: { email: string }) {
+    if (this.authState && this.authState.username !== data.email) {
+      this.dispatchEvent(new CustomEvent("log-out"));
+    } else {
+      this.navTo("/log-in");
     }
   }
 }
