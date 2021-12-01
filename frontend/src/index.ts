@@ -1,5 +1,6 @@
 import type { TemplateResult } from "lit";
 import { state, query } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 
@@ -33,6 +34,12 @@ const ROUTES = {
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 
+type DialogContent = {
+  label?: TemplateResult | string;
+  body?: TemplateResult | string;
+  noHeader?: boolean;
+};
+
 /**
  * @event navigate
  * @event notify
@@ -59,7 +66,7 @@ export class App extends LiteElement {
   };
 
   @state()
-  private globalDialogContent?: TemplateResult;
+  private globalDialogContent: DialogContent = {};
 
   @query("#globalDialog")
   private globalDialog!: SlDialog;
@@ -100,15 +107,6 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
-  }
-
-  private showDialog(content: TemplateResult) {
-    this.globalDialogContent = content;
-    this.globalDialog.show();
-  }
-
-  private hideDialog() {
-    this.globalDialog.hide();
   }
 
   async updated(changedProperties: any) {
@@ -174,8 +172,10 @@ export class App extends LiteElement {
 
       <sl-dialog
         id="globalDialog"
-        @sl-after-hide=${() => (this.globalDialogContent = undefined)}
-        >${this.globalDialogContent}</sl-dialog
+        ?no-header=${this.globalDialogContent?.noHeader === true}
+        label=${ifDefined(this.globalDialogContent?.label)}
+        @sl-after-hide=${() => (this.globalDialogContent = {})}
+        >${this.globalDialogContent?.body}</sl-dialog
       >
     `;
   }
@@ -359,6 +359,10 @@ export class App extends LiteElement {
     if (!detail.api) {
       this.navigate(ROUTES.myAccount);
     }
+
+    if (detail.firstLogin) {
+      this.onFirstLogin({ email: detail.username });
+    }
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
@@ -436,6 +440,41 @@ export class App extends LiteElement {
 
   getUserInfo() {
     return this.apiFetch("/users/me", this.authState!);
+  }
+
+  private showDialog(content: DialogContent) {
+    this.globalDialogContent = content;
+    this.globalDialog.show();
+  }
+
+  private closeDialog() {
+    this.globalDialog.hide();
+  }
+
+  private onFirstLogin({ email }: { email: string }) {
+    this.showDialog({
+      label: "Welcome to Browsertrix Cloud",
+      noHeader: true,
+      body: html`
+        <div class="grid gap-4 text-center">
+          <p class="mt-8 text-2xl font-medium">Welcome to Browsertrix Cloud!</p>
+
+          <p>
+            A confirmation email was sent to: <br />
+            <strong>${email}</strong>.
+          </p>
+          <p class="max-w-xs mx-auto">
+            Click the link in your email to confirm your email address.
+          </p>
+        </div>
+
+        <div class="mb-4 mt-8 text-center">
+          <sl-button type="primary" @click=${() => this.closeDialog()}
+            >Got it, go to dashboard</sl-button
+          >
+        </div>
+      `,
+    });
   }
 }
 
