@@ -70,8 +70,6 @@ export class ResetPassword extends LiteElement {
   async onSubmit(event: { detail: { formData: FormData } }) {
     this.isSubmitting = true;
 
-    console.log(this.viewState.params.token);
-
     const { formData } = event.detail;
     const password = formData.get("password") as string;
 
@@ -88,7 +86,8 @@ export class ResetPassword extends LiteElement {
 
     switch (resp.status) {
       case 200:
-        // TODO redirect
+        // TODO show toast notification
+        this.navTo("/log-in");
         break;
       case 400:
       case 422:
