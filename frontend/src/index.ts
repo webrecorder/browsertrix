@@ -230,6 +230,7 @@ export class App extends LiteElement {
         return html`<btrix-verify
           class="w-full flex items-center justify-center"
           token="${this.viewState.params.token}"
+          @navigate="${this.onNavigateTo}"
         ></btrix-verify>`;
 
       case "login":

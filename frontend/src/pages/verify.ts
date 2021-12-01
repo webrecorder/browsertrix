@@ -43,6 +43,11 @@ export class Verify extends LiteElement {
           this.serverError = msg("This verification email is not valid.");
           break;
         }
+
+        if (detail === "VERIFY_USER_ALREADY_VERIFIED") {
+          this.navTo("/log-in");
+          break;
+        }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;
