@@ -10,13 +10,13 @@ export class SignUp extends LiteElement {
   authState?: AuthState;
 
   @state()
-  isSignUpComplete?: boolean;
+  isSignedUpWithoutAuth?: boolean;
 
   render() {
     return html`
       <article class="w-full max-w-sm grid gap-5">
         <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          ${this.isSignUpComplete
+          ${this.isSignedUpWithoutAuth
             ? html`
                 <div
                   class="text-2xl font-semibold mb-5 text-primary"
@@ -35,8 +35,8 @@ export class SignUp extends LiteElement {
 
                 <btrix-sign-up-form
                   @submit=${this.onSubmit}
-                  @success=${this.onSuccess}
                   @authenticated=${this.onAuthenticated}
+                  @unauthenticated=${this.onUnauthenticated}
                 ></btrix-sign-up-form>
               `}
         </main>
@@ -52,10 +52,6 @@ export class SignUp extends LiteElement {
     }
   }
 
-  private onSuccess() {
-    this.isSignUpComplete = true;
-  }
-
   private onAuthenticated(
     event: CustomEvent<{ auth: string; username: string }>
   ) {
@@ -67,5 +63,9 @@ export class SignUp extends LiteElement {
         },
       })
     );
+  }
+
+  private onUnauthenticated() {
+    this.isSignedUpWithoutAuth = true;
   }
 }

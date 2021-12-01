@@ -27,7 +27,7 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   signUp: "/sign-up",
-  join: "/join/:token",
+  join: "/join/:token?email",
   verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
@@ -288,7 +288,10 @@ export class App extends LiteElement {
       case "join":
         return html`<btrix-join
           class="w-full md:bg-gray-100 flex items-center justify-center"
+          @logged-in="${this.onLoggedIn}"
+          .authState="${this.authState}"
           token="${this.viewState.params.token}"
+          email="${this.viewState.params.email}"
         ></btrix-join>`;
 
       case "login":

@@ -2,20 +2,11 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
+import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 
-// TODO consolidate with auth
-type AuthEventDetail = { auth: string; username: string };
-
 type JoinContext = {
-  auth?: AuthEventDetail;
   serverError?: string;
-};
-type JoinSignUpSuccessEvent = {
-  type: "SIGN_UP_SUCCESS";
-  detail: {
-    auth?: JoinContext["auth"];
-  };
 };
 type JoinErrorEvent = {
   type: "ERROR";
@@ -26,7 +17,7 @@ type JoinErrorEvent = {
 type JoinEvent =
   | { type: "SUBMIT_SIGN_UP" }
   | { type: "ACCEPT_INVITE" }
-  | JoinSignUpSuccessEvent
+  | { type: "SIGN_UP_SUCCESS" }
   | JoinErrorEvent;
 type JoinTypestate =
   | {
@@ -61,10 +52,7 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
       },
       ["submittingForm"]: {
         on: {
-          SIGN_UP_SUCCESS: {
-            target: "acceptInvite",
-            actions: "setAuth",
-          },
+          SIGN_UP_SUCCESS: "acceptInvite",
           ERROR: {
             target: "initial",
             actions: "setError",
@@ -88,10 +76,6 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
   },
   {
     actions: {
-      setAuth: assign((context, event) => ({
-        ...context,
-        ...(event as JoinSignUpSuccessEvent).detail,
-      })),
       setError: assign((context, event) => ({
         ...context,
         ...(event as JoinErrorEvent).detail,
@@ -104,11 +88,25 @@ const machine = createMachine<JoinContext, JoinEvent, JoinTypestate>(
 export class Join extends LiteElement {
   private joinStateService = interpret(machine);
 
+  @property({ type: Object })
+  authState?: AuthState;
+
   @property({ type: String })
   token?: string;
 
+  @property({ type: String })
+  email?: string;
+
   @state()
   private joinState = machine.initialState;
+
+  connectedCallback(): void {
+    if (this.token && this.email) {
+      super.connectedCallback();
+    } else {
+      throw new Error("Missing email or token");
+    }
+  }
 
   firstUpdated() {
     // Enable state machine
@@ -171,12 +169,10 @@ export class Join extends LiteElement {
   }
 
   private renderSignUp() {
-    // TODO actual initial email
-    const email = "TODO@example.com";
-
     return html`
       <btrix-sign-up-form
-        email=${email}
+        email=${this.email!}
+        inviteToken=${this.token!}
         @submit=${this.onSignUp}
         @error=${() => this.joinStateService.send("ERROR")}
         @authenticated=${this.onAuthenticated}
@@ -201,7 +197,7 @@ export class Join extends LiteElement {
       ${serverError}
 
       <div class="text-center">
-        <sl-button type="primary" size="large" @click=${this.onAccept}
+        <sl-button type="primary" @click=${this.onAccept}
           >Accept invitation</sl-button
         >
       </div>
@@ -215,56 +211,52 @@ export class Join extends LiteElement {
   private onAuthenticated(
     event: CustomEvent<{ auth: string; username: string }>
   ) {
-    this.joinStateService.send({
-      type: "SIGN_UP_SUCCESS",
-      detail: {
-        auth: event.detail,
-      },
-    });
+    this.joinStateService.send("SIGN_UP_SUCCESS");
+
+    this.dispatchEvent(
+      new CustomEvent("logged-in", {
+        detail: {
+          ...event.detail,
+          api: true,
+        },
+      })
+    );
   }
 
   private async onAccept() {
     this.joinStateService.send("ACCEPT_INVITE");
 
-    const resp = await fetch(`/api/invite/accept/${this.token}`);
+    if (!this.authState) {
+      this.joinStateService.send({
+        type: "ERROR",
+        detail: {
+          serverError: msg("Something unexpected went wrong"),
+        },
+      });
 
-    switch (resp.status) {
-      case 200:
-        const auth = this.joinState.context.auth;
+      return;
+    }
 
-        if (auth) {
-          this.dispatchEvent(
-            new CustomEvent("logged-in", {
-              detail: {
-                ...auth,
-                api: true,
-              },
-            })
-          );
-        }
+    try {
+      await this.apiFetch(`/invite/accept/${this.token}`, this.authState);
 
-        // TODO go to archives detail page
-        this.navTo("/archives");
-        break;
-      case 401:
-        const { detail } = await resp.json();
-        if (detail === "Unauthorized") {
-          this.joinStateService.send({
-            type: "ERROR",
-            detail: {
-              serverError: msg("This invitation is not valid."),
-            },
-          });
-          break;
-        }
-      default:
+      this.navTo("/archives");
+    } catch (err: any) {
+      if (err.isApiError && err.message === "Invalid Invite Code") {
+        this.joinStateService.send({
+          type: "ERROR",
+          detail: {
+            serverError: msg("This invitation is not valid."),
+          },
+        });
+      } else {
         this.joinStateService.send({
           type: "ERROR",
           detail: {
             serverError: msg("Something unexpected went wrong"),
           },
         });
-        break;
+      }
     }
   }
 }

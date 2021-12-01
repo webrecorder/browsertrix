@@ -9,12 +9,16 @@ import LiteElement, { html } from "../utils/LiteElement";
  * @event success
  * @event failure
  * @event authenticated
+ * @event unauthenticated
  */
 @localized()
 export class SignUpForm extends LiteElement {
   /** Optonal read-only email, e.g. for invitations */
   @property({ type: String })
   email?: string;
+
+  @property({ type: String })
+  inviteToken?: string;
 
   @state()
   private serverError?: string;
@@ -84,11 +88,20 @@ export class SignUpForm extends LiteElement {
     const { formData } = event.detail;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const registerParams = {
+    const registerParams: {
+      email: string;
+      password: string;
+      newArchive: boolean;
+      inviteToken?: string;
+    } = {
       email,
       password,
       newArchive: true,
     };
+
+    if (this.inviteToken) {
+      registerParams.inviteToken = this.inviteToken;
+    }
 
     const resp = await fetch("/api/auth/register", {
       method: "POST",
@@ -111,12 +124,7 @@ export class SignUpForm extends LiteElement {
       case 422:
         const { detail } = await resp.json();
         if (detail === "REGISTER_USER_ALREADY_EXISTS") {
-          // Try logging user in
-          try {
-            await this.logIn({ email, password });
-          } catch {
-            this.serverError = msg("Invalid email address or password");
-          }
+          shouldLogIn = true;
         } else {
           // TODO show validation details
           this.serverError = msg("Invalid email address or password");
@@ -127,20 +135,21 @@ export class SignUpForm extends LiteElement {
         break;
     }
 
-    this.isSubmitting = false;
-
     if (this.serverError) {
       this.dispatchEvent(new CustomEvent("error"));
     } else {
+      this.dispatchEvent(new CustomEvent("success"));
+
       if (shouldLogIn) {
         try {
           await this.logIn({ email, password });
-          return;
-        } catch {}
+        } catch {
+          this.dispatchEvent(new CustomEvent("unauthenticated"));
+        }
       }
-
-      this.dispatchEvent(new CustomEvent("success"));
     }
+
+    this.isSubmitting = false;
   }
 
   private async logIn({

@@ -49,6 +49,12 @@ export class Archive extends LiteElement {
     }
   }
 
+  updated(changedProperties: any) {
+    if (changedProperties.has("isAddingMember") && this.isAddingMember) {
+      this.successfullyInvitedEmail = undefined;
+    }
+  }
+
   render() {
     if (!this.archive) {
       return html`<div
@@ -98,7 +104,22 @@ export class Archive extends LiteElement {
   }
 
   private renderMembers() {
-    return html` <div class="text-right">
+    let successMessage;
+
+    if (this.successfullyInvitedEmail) {
+      successMessage = html`
+        <div class="my-3">
+          <bt-alert type="success"
+            >${msg(
+              str`Successfully invited ${this.successfullyInvitedEmail}`
+            )}</bt-alert
+          >
+        </div>
+      `;
+    }
+    return html`${successMessage}
+
+      <div class="text-right">
         <sl-button
           href=${`/archives/${this.archiveId}/members/add-member`}
           type="primary"
@@ -134,23 +155,7 @@ export class Archive extends LiteElement {
   }
 
   private renderAddMember() {
-    let successMessage;
-
-    if (this.successfullyInvitedEmail) {
-      successMessage = html`
-        <div class="mb-3">
-          <bt-alert type="success"
-            >${msg(
-              str`Successfully invited ${this.successfullyInvitedEmail}`
-            )}</bt-alert
-          >
-        </div>
-      `;
-    }
-
     return html`
-      ${successMessage}
-
       <sl-button
         type="text"
         href=${`/archives/${this.archiveId}/members`}
@@ -182,6 +187,8 @@ export class Archive extends LiteElement {
     event: CustomEvent<{ inviteEmail: string; isExistingUser: boolean }>
   ) {
     this.successfullyInvitedEmail = event.detail.inviteEmail;
+
+    this.navTo(`/archives/${this.archiveId}/members`);
   }
 
   updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
