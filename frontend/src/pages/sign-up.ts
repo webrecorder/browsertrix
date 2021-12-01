@@ -34,11 +34,11 @@ export class SignUp extends LiteElement {
             : html`
                 <h1 class="text-3xl font-semibold mb-5">${msg("Sign up")}</h1>
 
-                <btrix-sign-up-form
+                <bt-sign-up-form
                   @submit=${this.onSubmit}
                   @authenticated=${this.onAuthenticated}
                   @unauthenticated=${this.onUnauthenticated}
-                ></btrix-sign-up-form>
+                ></bt-sign-up-form>
               `}
         </main>
       </article>

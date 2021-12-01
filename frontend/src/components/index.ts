@@ -5,6 +5,9 @@ import("./locale-picker").then(({ LocalePicker }) => {
 import("./account-settings").then(({ AccountSettings }) => {
   customElements.define("btrix-account-settings", AccountSettings);
 });
+import("./archive-invite-form").then(({ ArchiveInviteForm }) => {
+  customElements.define("btrix-archive-invite-form", ArchiveInviteForm);
+});
 import("./invite-form").then(({ InviteForm }) => {
   customElements.define("btrix-invite-form", InviteForm);
 });

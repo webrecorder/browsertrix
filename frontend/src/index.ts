@@ -365,13 +365,13 @@ export class App extends LiteElement {
         ></btrix-archive>`);
 
       case "accountSettings":
-        return appLayout(html`<btrix-account-settings
+        return appLayout(html`<bt-account-settings
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
-        ></btrix-account-settings>`);
+        ></bt-account-settings>`);
 
       case "archive-info":
       case "archive-info-tab":
