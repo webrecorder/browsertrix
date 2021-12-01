@@ -101,6 +101,7 @@ export class SignUpForm extends LiteElement {
 
     if (this.inviteToken) {
       registerParams.inviteToken = this.inviteToken;
+      registerParams.newArchive = false;
     }
 
     const resp = await fetch("/api/auth/register", {
