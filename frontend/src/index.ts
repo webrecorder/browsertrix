@@ -122,16 +122,13 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const data = await this.getUserInfo();
-      console.log(data);
 
       this.userInfo = {
         id: data.id,
         email: data.email,
         name: data.name,
         isVerified: data.is_verified,
-        // TODO remove placeholder
-        isAdmin: true,
-        // isAdmin: data.is_superuser,
+        isAdmin: data.is_superuser,
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {

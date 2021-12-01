@@ -3,8 +3,10 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
-import { AccessCode } from "../utils/archives";
 
+/**
+ * @event success
+ */
 @localized()
 export class InviteForm extends LiteElement {
   @property({ type: Object })
