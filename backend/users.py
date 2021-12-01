@@ -154,16 +154,16 @@ def init_user_manager(mdb, emailsender):
 
     user_db = UserDBOps(UserDB, user_collection)
 
-    jwt_authentication = JWTAuthentication(
-        secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
-    )
-
     return UserManager(user_db, emailsender)
 
 
 # ============================================================================
 def init_users_api(app, user_manager):
     """ init fastapi_users """
+    jwt_authentication = JWTAuthentication(
+        secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
+    )
+
     fastapi_users = FastAPIUsers(
         lambda: user_manager,
         [jwt_authentication],
