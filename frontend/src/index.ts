@@ -31,6 +31,8 @@ const ROUTES = {
   archives: "/archives",
   archive: "/archives/:id/:tab",
   archiveAddMember: "/archives/:id/:tab/add-member",
+  users: "/users",
+  usersInvite: "/users/invite",
 } as const;
 
 if (REGISTRATION_ENABLED) {
@@ -120,12 +122,16 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const data = await this.getUserInfo();
+      console.log(data);
 
       this.userInfo = {
         id: data.id,
         email: data.email,
         name: data.name,
         isVerified: data.is_verified,
+        // TODO remove placeholder
+        isAdmin: true,
+        // isAdmin: data.is_superuser,
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -159,6 +165,10 @@ export class App extends LiteElement {
   render() {
     return html`
       <style>
+        .uppercase {
+          letter-spacing: 0.06em;
+        }
+
         ${theme}
       </style>
 
@@ -249,9 +259,24 @@ export class App extends LiteElement {
             ${navLink({
               activeRoutes: ["archives", "archive"],
               href: DASHBOARD_ROUTE,
-              label: "Archives",
+              label: msg("Archives"),
             })}
           </ul>
+          ${this.userInfo?.isAdmin
+            ? html` <span class="uppercase text-sm font-medium"
+                  >${msg("Admin", {
+                    desc: "Heading for links to administrative pages",
+                  })}</span
+                >
+                <ul class="flex md:flex-col">
+                  ${navLink({
+                    // activeRoutes: ["users", "usersInvite"],
+                    activeRoutes: ["usersInvite"],
+                    href: ROUTES.usersInvite,
+                    label: msg("Invite Users"),
+                  })}
+                </ul>`
+            : ""}
         </nav>
         <div class="p-4 md:p-8 flex-1">${template}</div>
       </div>
@@ -358,6 +383,15 @@ export class App extends LiteElement {
           aid="${this.viewState.params.aid}"
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`);
+
+      case "usersInvite":
+        return appLayout(html`<btrix-users-invite
+          class="w-full"
+          @navigate="${this.onNavigateTo}"
+          @need-login="${this.onNeedLogin}"
+          .authState="${this.authService.authState}"
+          .userInfo="${this.userInfo}"
+        ></btrix-users-invite>`);
 
       default:
         return html`<div>Not Found!</div>`;

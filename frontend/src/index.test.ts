@@ -12,6 +12,7 @@ describe("browsertrix-app", () => {
         email: "test-user@example.com",
         name: "Test User",
         is_verified: false,
+        is_superuser: false,
       })
     );
   });
@@ -55,6 +56,7 @@ describe("browsertrix-app", () => {
       email: "test-user@example.com",
       name: "Test User",
       isVerified: false,
+      isAdmin: false,
     });
   });
 });
