@@ -1,6 +1,7 @@
 import type { TemplateResult } from "lit";
-import { state } from "lit/decorators.js";
+import { state, query } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import type { SlDialog } from "@shoelace-style/shoelace";
 
 import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
@@ -51,11 +52,17 @@ export class App extends LiteElement {
   userInfo?: CurrentUser;
 
   @state()
-  viewState!: ViewState & {
+  private viewState!: ViewState & {
     aid?: string;
     // TODO common tab type
     tab?: "running" | "finished" | "configs";
   };
+
+  @state()
+  private globalDialogContent?: TemplateResult;
+
+  @query("#globalDialog")
+  private globalDialog!: SlDialog;
 
   constructor() {
     super();
@@ -93,6 +100,15 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
+  }
+
+  private showDialog(content: TemplateResult) {
+    this.globalDialogContent = content;
+    this.globalDialog.show();
+  }
+
+  private hideDialog() {
+    this.globalDialog.hide();
   }
 
   async updated(changedProperties: any) {
@@ -155,6 +171,12 @@ export class App extends LiteElement {
           <bt-locale-picker></bt-locale-picker>
         </footer>
       </div>
+
+      <sl-dialog
+        id="globalDialog"
+        @sl-after-hide=${() => (this.globalDialogContent = undefined)}
+        >${this.globalDialogContent}</sl-dialog
+      >
     `;
   }
 
@@ -320,7 +342,12 @@ export class App extends LiteElement {
   }
 
   onLoggedIn(
-    event: CustomEvent<{ api?: boolean; auth: string; username: string }>
+    event: CustomEvent<{
+      api?: boolean;
+      firstLogin?: boolean;
+      auth: string;
+      username: string;
+    }>
   ) {
     const { detail } = event;
     this.authState = {
