@@ -1,3 +1,4 @@
+import { DASHBOARD_ROUTE } from "../routes";
 import LiteElement from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
 import type { CurrentUser } from "../types/user";
@@ -59,7 +60,7 @@ export function adminOnly<T extends { new (...args: any[]): LiteElement }>(
         super.connectedCallback();
       } else {
         this.dispatchEvent(
-          new CustomEvent("navigate", { detail: "/archives" })
+          new CustomEvent("navigate", { detail: DASHBOARD_ROUTE })
         );
       }
     }

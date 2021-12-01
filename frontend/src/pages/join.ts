@@ -2,7 +2,12 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
+<<<<<<< HEAD
 import type { AuthState } from "../utils/AuthService";
+=======
+import { DASHBOARD_ROUTE } from "../routes";
+import type { AuthState } from "../types/auth";
+>>>>>>> d60aace (refactor to use routes)
 import LiteElement, { html } from "../utils/LiteElement";
 import type { LoggedInEvent } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
@@ -238,7 +243,7 @@ export class Join extends LiteElement {
     try {
       await this.apiFetch(`/invite/accept/${this.token}`, this.authState);
 
-      this.navTo("/archives");
+      this.navTo(DASHBOARD_ROUTE);
     } catch (err: any) {
       if (err.isApiError && err.message === "Invalid Invite Code") {
         this.joinStateService.send({
