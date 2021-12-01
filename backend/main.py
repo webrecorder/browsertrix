@@ -39,9 +39,7 @@ class BrowsertrixAPI:
         self.fastapi_users = init_users_api(
             self.app,
             self.mdb,
-            self.on_after_register,
-            self.on_after_forgot_password,
-            self.on_after_verification_request,
+            self.email,
         )
 
         current_active_user = self.fastapi_users.current_user(active=True)
@@ -89,45 +87,6 @@ class BrowsertrixAPI:
         @app.get("/healthz")
         async def healthz():
             return {}
-
-    # pylint: disable=no-self-use, unused-argument
-    async def on_after_register(self, user: UserDB, request: Request):
-        """callback after registeration"""
-
-        print(f"User {user.id} has registered.")
-
-        req_data = await request.json()
-
-        if req_data.get("newArchive"):
-            print(f"Creating new archive for {user.id}")
-
-            archive_name = req_data.get("name") or f"{user.email} Archive"
-
-            await self.archive_ops.create_new_archive_for_user(
-                archive_name=archive_name,
-                storage_name="default",
-                user=user,
-            )
-
-        if req_data.get("inviteToken"):
-            try:
-                await self.archive_ops.handle_new_user_invite(
-                    req_data.get("inviteToken"), user
-                )
-            except HTTPException as exc:
-                print(exc)
-
-    # pylint: disable=no-self-use, unused-argument
-    def on_after_forgot_password(self, user: UserDB, token: str, request: Request):
-        """callback after password forgot"""
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
-        self.email.send_user_forgot_password(user.email, token)
-
-    # pylint: disable=no-self-use, unused-argument
-    def on_after_verification_request(self, user: UserDB, token: str, request: Request):
-        """callback after verification request"""
-
-        self.email.send_user_validation(user.email, token)
 
 
 # ============================================================================

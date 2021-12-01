@@ -18,10 +18,10 @@ class EmailSender:
 
     def _send_encrypted(self, receiver, message):
         """Send Encrypted SMTP Message"""
-        print(message)
+        print(message, flush=True)
 
         if not self.smtp_server:
-            print("Email: No SMTP Server, not sending")
+            print("Email: No SMTP Server, not sending", flush=True)
             return
 
         context = ssl.create_default_context()

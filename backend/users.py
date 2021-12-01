@@ -77,12 +77,62 @@ class UserDBOps(MongoDBUserDatabase):
 
 
 # ============================================================================
+class UserManager(BaseUserManager[UserCreate, UserDB]):
+    user_db_model = UserDB
+    reset_password_token_secret = PASSWORD_SECRET
+    verification_token_secret = PASSWORD_SECRET
+
+    # pylint: disable=no-self-use, unused-argument
+    async def on_after_register(self, user: UserDB, request: Optional[Request] = None):
+        """callback after registeration"""
+
+        print(f"User {user.id} has registered.")
+
+        req_data = await request.json()
+
+        if req_data.get("newArchive"):
+            print(f"Creating new archive for {user.id}")
+
+            archive_name = req_data.get("name") or f"{user.email} Archive"
+
+            await self.archive_ops.create_new_archive_for_user(
+                archive_name=archive_name,
+                storage_name="default",
+                user=user,
+            )
+
+        if req_data.get("inviteToken"):
+            try:
+                await self.archive_ops.handle_new_user_invite(
+                    req_data.get("inviteToken"), user
+                )
+            except HTTPException as exc:
+                print(exc)
+
+        self.request_verify(user, request)
+
+    # pylint: disable=no-self-use, unused-argument
+    async def on_after_forgot_password(
+        self, user: UserDB, token: str, request: Optional[Request] = None
+    ):
+        """callback after password forgot"""
+        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        self.email.send_user_forgot_password(user.email, token)
+
+    # pylint: disable=no-self-use, unused-argument
+    async def on_after_request_verify(
+        self, user: UserDB, token: str, request: Optional[Request] = None
+    ):
+        """callback after verification request"""
+
+        self.email.send_user_validation(user.email, token)
+
+
+# ============================================================================
 def init_users_api(
     app,
     mdb,
-    on_after_register=None,
-    on_after_forgot_password=None,
-    after_verification_request=None,
+    emailsender,
 ):
     """
     Load users table and init /users routes
@@ -96,8 +146,11 @@ def init_users_api(
         secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
     )
 
+    def get_user_manager():
+        return UserManager(user_db, emailsender)
+
     fastapi_users = FastAPIUsers(
-        user_db,
+        get_user_manager,
         [jwt_authentication],
         User,
         UserCreate,
