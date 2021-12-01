@@ -308,8 +308,8 @@ export class App extends LiteElement {
     }
   }
 
-  onLogOut(event: CustomEvent<{ redirect?: boolean }>) {
-    const { detail } = event;
+  onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
+    const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
     this.clearAuthState();
