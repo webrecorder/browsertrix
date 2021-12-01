@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from db import init_db
 
 from emailsender import EmailSender
-from users import init_users_api
+from users import init_users_api, init_user_manager
 from archives import init_archives_api
 
 from storages import init_storages_api
@@ -30,16 +30,14 @@ def main():
 
     mdb = init_db()
 
-    fastapi_users, user_manager = init_users_api(
-        app,
-        mdb,
-        email,
-    )
+    user_manager = init_user_manager(mdb, email)
+
+    fastapi_users = init_users_api(app, user_manager)
 
     current_active_user = fastapi_users.current_user(active=True)
 
     archive_ops = init_archives_api(
-        app, mdb, fastapi_users, email, current_active_user
+        app, mdb, user_manager, email, current_active_user
     )
 
     user_manager.set_archive_ops(archive_ops)

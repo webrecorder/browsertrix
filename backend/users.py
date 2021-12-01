@@ -145,11 +145,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
 
 # ============================================================================
-def init_users_api(
-    app,
-    mdb,
-    emailsender,
-):
+def init_user_manager(mdb, emailsender):
     """
     Load users table and init /users routes
     """
@@ -162,8 +158,12 @@ def init_users_api(
         secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
     )
 
-    user_manager = UserManager(user_db, emailsender)
+    return UserManager(user_db, emailsender)
 
+
+# ============================================================================
+def init_users_api(app, user_manager):
+    """ init fastapi_users """
     fastapi_users = FastAPIUsers(
         lambda: user_manager,
         [jwt_authentication],
@@ -198,4 +198,4 @@ def init_users_api(
         fastapi_users.get_users_router(), prefix="/users", tags=["users"]
     )
 
-    return fastapi_users, user_manager
+    return fastapi_users
