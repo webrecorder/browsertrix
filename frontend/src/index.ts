@@ -249,35 +249,42 @@ export class App extends LiteElement {
         >
       </li>
     `;
-    const appLayout = (template: TemplateResult) => html`
-      <div class="w-full flex flex-col md:flex-row">
-        <nav class="md:w-80 md:p-4 md:border-r">
-          <ul class="flex md:flex-col">
-            ${navLink({
-              activeRoutes: ["archives", "archive"],
-              href: DASHBOARD_ROUTE,
-              label: msg("Archives"),
-            })}
-          </ul>
-          ${this.userInfo?.isAdmin
-            ? html` <span class="uppercase text-sm font-medium"
-                  >${msg("Admin", {
-                    desc: "Heading for links to administrative pages",
-                  })}</span
-                >
+    const appLayout = (template: TemplateResult) =>
+      this.userInfo
+        ? html`
+            <div class="w-full flex flex-col md:flex-row">
+              <nav class="md:w-80 md:p-4 md:border-r">
                 <ul class="flex md:flex-col">
                   ${navLink({
-                    // activeRoutes: ["users", "usersInvite"],
-                    activeRoutes: ["usersInvite"],
-                    href: ROUTES.usersInvite,
-                    label: msg("Invite Users"),
+                    activeRoutes: ["archives", "archive"],
+                    href: DASHBOARD_ROUTE,
+                    label: msg("Archives"),
                   })}
-                </ul>`
-            : ""}
-        </nav>
-        <div class="p-4 md:p-8 flex-1">${template}</div>
-      </div>
-    `;
+                </ul>
+                ${this.userInfo.isAdmin
+                  ? html` <span class="uppercase text-sm font-medium"
+                        >${msg("Admin", {
+                          desc: "Heading for links to administrative pages",
+                        })}</span
+                      >
+                      <ul class="flex md:flex-col">
+                        ${navLink({
+                          // activeRoutes: ["users", "usersInvite"],
+                          activeRoutes: ["usersInvite"],
+                          href: ROUTES.usersInvite,
+                          label: msg("Invite Users"),
+                        })}
+                      </ul>`
+                  : ""}
+              </nav>
+              <div class="p-4 md:p-8 flex-1">${template}</div>
+            </div>
+          `
+        : html`
+            <div class="w-full flex items-center justify-center text-4xl">
+              <sl-spinner></sl-spinner>
+            </div>
+          `;
 
     switch (this.viewState.route) {
       case "signUp":
