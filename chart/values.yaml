@@ -96,6 +96,17 @@ storages:
     endpoint_url: "http://local-minio.default:9000/"
 
 
+# Email Options
+# =========================================
+email:
+  # email sending is enabled when 'smtp_host' is set to non-empty value
+  #ex: smtp_host: smtp.gmail.com
+  smtp_host: ""
+  smtp_port: 587
+  sender_email: example@example.com
+  password: password
+
+
 # Deployment options
 # =========================================
 
