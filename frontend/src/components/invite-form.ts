@@ -52,14 +52,12 @@ export class InviteForm extends LiteElement {
             <sl-radio name="role" value=${AccessCode.owner}>
               ${msg("Admin")}
               <span class="text-gray-500">
-                - ${msg("Can view, run, configure and manage crawls")}</span
+                - ${msg("Can start & configure crawls and invite others")}</span
               >
             </sl-radio>
             <sl-radio name="role" value=${AccessCode.viewer} checked>
               ${msg("Viewer")}
-              <span class="text-gray-500">
-                - ${msg("Can only view crawls")}</span
-              >
+              <span class="text-gray-500"> - ${msg("Can view crawls")}</span>
             </sl-radio>
           </sl-radio-group>
         </div>
