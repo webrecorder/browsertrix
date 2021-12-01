@@ -50,6 +50,11 @@ const theme = css`
     --sl-input-label-font-size-medium: var(--sl-font-size-small);
     --sl-input-label-font-size-large: var(--sl-font-size-medium);
   }
+
+  .sl-toast-stack {
+    bottom: 0;
+    top: auto;
+  }
 `;
 
 export default theme;

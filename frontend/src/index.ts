@@ -358,7 +358,7 @@ export class App extends LiteElement {
   onNotify(
     event: CustomEvent<{
       message: TemplateResult | string;
-      type?: string;
+      type?: "success" | "warning" | "danger" | "primary";
       icon?: string;
       duration?: number;
     }>
@@ -380,6 +380,12 @@ export class App extends LiteElement {
       type: type,
       closable: true,
       duration: duration,
+      style: [
+        "--sl-panel-background-color: var(--sl-color-neutral-1000)",
+        "--sl-color-neutral-700: var(--sl-color-neutral-0)",
+        // "--sl-panel-border-width: 0px",
+        "--sl-spacing-large: var(--sl-spacing-medium)",
+      ].join(";"),
       innerHTML: `
         <sl-icon name="${icon}" slot="icon"></sl-icon>
         ${escapeHtml(message)}
