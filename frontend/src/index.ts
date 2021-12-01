@@ -32,6 +32,13 @@ const ROUTES = {
   "archive-info-tab": "/archive/:aid/:tab",
 } as const;
 
+/**
+ * @event navigate
+ * @event need-login
+ * @event logged-in
+ * @event log-out
+ * @event user-info-change
+ */
 @localized()
 export class App extends LiteElement {
   private router: APIRouter = new APIRouter(ROUTES);
@@ -232,6 +239,7 @@ export class App extends LiteElement {
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
           @log-out="${this.onLogOut}"
+          @user-info-change="${this.onUserInfoChange}"
           .authState="${this.authState}"
         ></btrix-verify>`;
 
@@ -335,6 +343,14 @@ export class App extends LiteElement {
 
   onNavigateTo(event: NavigateEvent) {
     this.navigate(event.detail);
+  }
+
+  onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
+    // @ts-ignore
+    this.userInfo = {
+      ...this.userInfo,
+      ...event.detail,
+    };
   }
 
   clearAuthState() {

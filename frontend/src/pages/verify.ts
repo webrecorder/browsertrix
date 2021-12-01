@@ -58,10 +58,20 @@ export class Verify extends LiteElement {
     }
   }
 
-  private onVerificationComplete(data: { email: string }) {
+  private onVerificationComplete(data: {
+    email: string;
+    is_verified: boolean;
+  }) {
     if (this.authState && this.authState.username !== data.email) {
       this.dispatchEvent(new CustomEvent("log-out"));
     } else {
+      this.dispatchEvent(
+        new CustomEvent("user-info-change", {
+          detail: {
+            isVerified: data.is_verified,
+          },
+        })
+      );
       this.navTo("/log-in");
     }
   }
