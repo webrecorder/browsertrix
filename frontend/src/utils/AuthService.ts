@@ -5,7 +5,8 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
-  expiresAtTs: number;
+  sessionExpiresAt: number;
+  tokenExpiresAt: number;
 };
 
 export type AuthState = Auth | null;
@@ -19,7 +20,10 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
+const freshnessTimerInterval = 60 * 1000 * 0.5;
+
 export default class AuthService {
+  private timerId?: number;
   private _authState: AuthState = null;
 
   static storageKey = "btrix.auth";
@@ -60,17 +64,25 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
 
+    return {
+      username: email,
+      headers: authHeaders,
+      // TODO get expires at from server
+      // Hardcode 1hr expiry for now
+      tokenExpiresAt: Date.now() + 1000 * 60 * 60,
+      sessionExpiresAt: Date.now() + 1000 * 60 * 60 * 24,
+    };
+  }
+
+  private static parseAuthHeaders(data: {
+    token_type: string;
+    access_token: string;
+  }): Auth["headers"] {
     if (data.token_type === "bearer" && data.access_token) {
       return {
-        username: email,
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-        // TODO get expires at from server
-        // Hardcode 1hr expiry for now
-        expiresAtTs: Date.now() + 3600 * 1000,
+        Authorization: `Bearer ${data.access_token}`,
       };
     }
 
@@ -82,6 +94,7 @@ export default class AuthService {
 
     if (authState) {
       this._authState = JSON.parse(authState);
+      this.checkFreshness();
     }
 
     return this._authState;
@@ -94,6 +107,7 @@ export default class AuthService {
         AuthService.storageKey,
         JSON.stringify(this.authState)
       );
+      this.checkFreshness();
     } else {
       console.warn("No authState to persist");
     }
@@ -102,5 +116,72 @@ export default class AuthService {
   revoke() {
     this._authState = null;
     window.localStorage.setItem(AuthService.storageKey, "");
+  }
+
+  private async checkFreshness() {
+    window.clearTimeout(this.timerId);
+
+    if (!this.authState) return;
+
+    console.log(this.authState);
+
+    const now = Date.now();
+
+    if (this.authState.sessionExpiresAt > now + freshnessTimerInterval) {
+      if (this.authState.tokenExpiresAt > now + freshnessTimerInterval) {
+        console.log("not expired");
+
+        // Restart timer
+        this.timerId = window.setTimeout(() => {
+          this.checkFreshness();
+        }, freshnessTimerInterval);
+      } else {
+        console.log("expires before next check");
+
+        try {
+          this._authState = await this.refresh();
+
+          // Restart timer
+          this.timerId = window.setTimeout(() => {
+            this.checkFreshness();
+          }, freshnessTimerInterval);
+        } catch (e) {
+          console.debug(e);
+
+          // TODO handle
+        }
+      }
+    } else {
+      // TODO notify expired
+    }
+  }
+
+  private async refresh(): Promise<Auth> {
+    if (!this.authState) {
+      throw new Error("No this.authState");
+    }
+
+    const resp = await fetch("/api/auth/jwt/login", {
+      method: "POST",
+      headers: this.authState.headers,
+    });
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
+
+    return {
+      username: this.authState.username,
+      headers: authHeaders,
+      // TODO get expires at from server
+      // Hardcode 1hr expiry for now
+      tokenExpiresAt: Date.now() + 1000 * 60 * 60,
+      sessionExpiresAt: this.authState.sessionExpiresAt,
+    };
   }
 }

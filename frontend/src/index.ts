@@ -384,7 +384,8 @@ export class App extends LiteElement {
     this.authService.persist({
       username: detail.username,
       headers: detail.headers,
-      expiresAtTs: detail.expiresAtTs,
+      sessionExpiresAt: detail.sessionExpiresAt,
+      tokenExpiresAt: detail.tokenExpiresAt,
     });
 
     if (!detail.api) {
