@@ -140,7 +140,7 @@ export class App extends LiteElement {
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
-        this.clearAuthState();
+        this.authService.revoke();
         this.navigate(ROUTES.login);
       }
     }
@@ -379,7 +379,7 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.clearAuthState();
+    this.authService.revoke();
 
     if (redirect) {
       this.navigate("/");
@@ -388,11 +388,11 @@ export class App extends LiteElement {
 
   onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
-    this.authState = {
+
+    this.authService.persist({
       username: detail.username,
       headers: detail.headers,
-    };
-    window.localStorage.setItem("btrix.auth", JSON.stringify(this.authState));
+    });
 
     if (!detail.api) {
       this.navigate(DASHBOARD_ROUTE);
@@ -404,7 +404,7 @@ export class App extends LiteElement {
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
-    this.clearAuthState();
+    this.authService.revoke();
 
     if (event?.detail?.api) {
       // TODO refresh instead of redirect
@@ -469,11 +469,6 @@ export class App extends LiteElement {
 
     document.body.append(alert);
     alert.toast();
-  }
-
-  clearAuthState() {
-    this.authState = null;
-    window.localStorage.setItem("btrix.auth", "");
   }
 
   getUserInfo() {

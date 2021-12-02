@@ -65,17 +65,13 @@ export default class AuthService {
     throw new Error(AuthService.unsupportedAuthErrorCode);
   }
 
-  logout() {
-    // TODO
+  persist(authState: AuthState) {
+    this._authState = authState;
+    window.localStorage.setItem("btrix.auth", JSON.stringify(this.authState));
   }
 
-  // setAuth() {
-  //   // this._authState = {}
-  //   // window.localStorage.setItem("btrix.auth", JSON.stringify(this.authState));
-  // }
-
-  // revoke() {
-  //   this._authState = null;
-  //   window.localStorage.setItem(AuthService.storageKey, "");
-  // }
+  revoke() {
+    this._authState = null;
+    window.localStorage.setItem(AuthService.storageKey, "");
+  }
 }
