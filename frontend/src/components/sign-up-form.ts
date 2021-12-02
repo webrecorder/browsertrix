@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
+import AuthService from "../utils/AuthService";
 
 /**
  * @event submit
@@ -191,30 +192,12 @@ export class SignUpForm extends LiteElement {
     email: string;
     password: string;
   }) {
-    const loginParams = new URLSearchParams();
-    loginParams.set("grant_type", "password");
-    loginParams.set("username", email);
-    loginParams.set("password", password);
+    try {
+      const data = await AuthService.login({ email, password });
 
-    const resp = await fetch("/api/auth/jwt/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: loginParams.toString(),
-    });
-
-    if (resp.status !== 200) {
-      throw new Error(resp.statusText);
-    }
-
-    // TODO consolidate with log-in method
-    const data = await resp.json();
-    if (data.token_type === "bearer" && data.access_token) {
-      const auth = "Bearer " + data.access_token;
-      const detail = { auth, username: email };
-
-      this.dispatchEvent(new CustomEvent("authenticated", { detail }));
-    } else {
-      throw new Error("Unknown authorization type");
+      this.dispatchEvent(AuthService.createLoggedInEvent(data));
+    } catch (e) {
+      throw e;
     }
   }
 }
