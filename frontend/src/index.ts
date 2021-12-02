@@ -62,9 +62,6 @@ export class App extends LiteElement {
   private authService: AuthService = new AuthService();
 
   @state()
-  authState: AuthState | null = null;
-
-  @state()
   userInfo?: CurrentUser;
 
   @state()
@@ -86,8 +83,6 @@ export class App extends LiteElement {
     const authState = this.authService.retrieve();
 
     if (authState) {
-      this.authState = authState;
-
       if (
         window.location.pathname === "/log-in" ||
         window.location.pathname === "/reset-password"
@@ -120,10 +115,10 @@ export class App extends LiteElement {
   }
 
   async updated(changedProperties: any) {
-    if (changedProperties.has("authState") && this.authState) {
+    if (changedProperties.has("authState") && this.authService.authState) {
       const prevAuthState = changedProperties.get("authState");
 
-      if (this.authState.username !== prevAuthState?.username) {
+      if (this.authService.authState.username !== prevAuthState?.username) {
         this.updateUserInfo();
       }
     }
@@ -153,7 +148,7 @@ export class App extends LiteElement {
       newViewPath = `${url.pathname}${url.search}`;
     }
 
-    if (newViewPath === "/log-in" && this.authState) {
+    if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
       this.viewState = this.router.match(DASHBOARD_ROUTE);
     } else {
@@ -203,10 +198,10 @@ export class App extends LiteElement {
           >
         </div>
         <div class="grid grid-flow-col gap-5 items-center">
-          ${this.authState
+          ${this.authService.authState
             ? html` <sl-dropdown>
                 <div class="p-2" role="button" slot="trigger">
-                  ${this.authState.username}
+                  ${this.authService.authState.username}
                   <span class="text-xs"
                     ><sl-icon name="chevron-down"></sl-icon
                   ></span>
@@ -276,7 +271,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           @log-out="${this.onLogOut}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
         ></btrix-sign-up>`;
 
       case "verify":
@@ -287,14 +282,14 @@ export class App extends LiteElement {
           @notify="${this.onNotify}"
           @log-out="${this.onLogOut}"
           @user-info-change="${this.onUserInfoChange}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
         ></btrix-verify>`;
 
       case "join":
         return html`<btrix-join
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @logged-in="${this.onLoggedIn}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
@@ -305,7 +300,7 @@ export class App extends LiteElement {
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .viewState=${this.viewState}
         ></log-in>`;
 
@@ -314,7 +309,7 @@ export class App extends LiteElement {
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
@@ -334,7 +329,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-archives>`);
 
@@ -344,7 +339,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           archiveId=${this.viewState.params.id}
           archiveTab=${this.viewState.params.tab as ArchiveTab}
@@ -356,7 +351,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-account-settings>`);
 
@@ -365,7 +360,7 @@ export class App extends LiteElement {
         return appLayout(html`<btrix-archive
           class="w-full"
           @navigate="${this.onNavigateTo}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .viewState="${this.viewState}"
           aid="${this.viewState.params.aid}"
           tab="${this.viewState.tab || "running"}"
@@ -473,7 +468,7 @@ export class App extends LiteElement {
   }
 
   getUserInfo() {
-    return this.apiFetch("/users/me", this.authState!);
+    return this.apiFetch("/users/me", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {
