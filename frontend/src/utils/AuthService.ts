@@ -20,7 +20,11 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
-const freshnessTimerInterval = 60 * 1000 * 0.5;
+// Check for token freshness every 5 minutes
+const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
+// TODO get expires at from server
+// Hardcode 1hr expiry for now
+const ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60;
 
 export default class AuthService {
   private timerId?: number;
@@ -71,7 +75,7 @@ export default class AuthService {
       headers: authHeaders,
       // TODO get expires at from server
       // Hardcode 1hr expiry for now
-      tokenExpiresAt: Date.now() + 1000 * 60 * 60,
+      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
       sessionExpiresAt: Date.now() + 1000 * 60 * 60 * 24,
     };
   }
@@ -125,16 +129,16 @@ export default class AuthService {
 
     console.log(this.authState);
 
-    const now = Date.now();
+    const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
 
-    if (this.authState.sessionExpiresAt > now + freshnessTimerInterval) {
-      if (this.authState.tokenExpiresAt > now + freshnessTimerInterval) {
+    if (this.authState.sessionExpiresAt > paddedNow) {
+      if (this.authState.tokenExpiresAt > paddedNow) {
         console.log("not expired");
 
         // Restart timer
         this.timerId = window.setTimeout(() => {
           this.checkFreshness();
-        }, freshnessTimerInterval);
+        }, FRESHNESS_TIMER_INTERVAL);
       } else {
         console.log("expires before next check");
 
@@ -144,7 +148,7 @@ export default class AuthService {
           // Restart timer
           this.timerId = window.setTimeout(() => {
             this.checkFreshness();
-          }, freshnessTimerInterval);
+          }, FRESHNESS_TIMER_INTERVAL);
         } catch (e) {
           console.debug(e);
 
@@ -161,7 +165,7 @@ export default class AuthService {
       throw new Error("No this.authState");
     }
 
-    const resp = await fetch("/api/auth/jwt/login", {
+    const resp = await fetch("/api/auth/jwt/refresh", {
       method: "POST",
       headers: this.authState.headers,
     });
@@ -180,7 +184,7 @@ export default class AuthService {
       headers: authHeaders,
       // TODO get expires at from server
       // Hardcode 1hr expiry for now
-      tokenExpiresAt: Date.now() + 1000 * 60 * 60,
+      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
       sessionExpiresAt: this.authState.sessionExpiresAt,
     };
   }
