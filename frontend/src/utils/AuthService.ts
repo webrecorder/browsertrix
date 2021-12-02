@@ -5,6 +5,7 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
+  expiresAtTs: number;
 };
 
 export type AuthState = Auth | null;
@@ -67,6 +68,9 @@ export default class AuthService {
         headers: {
           Authorization: `Bearer ${data.access_token}`,
         },
+        // TODO get expires at from server
+        // Hardcode 1hr expiry for now
+        expiresAtTs: Date.now() + 3600 * 1000,
       };
     }
 
@@ -84,11 +88,15 @@ export default class AuthService {
   }
 
   persist(authState: AuthState) {
-    this._authState = authState;
-    window.localStorage.setItem(
-      AuthService.storageKey,
-      JSON.stringify(this.authState)
-    );
+    if (authState) {
+      this._authState = authState;
+      window.localStorage.setItem(
+        AuthService.storageKey,
+        JSON.stringify(this.authState)
+      );
+    } else {
+      console.warn("No authState to persist");
+    }
   }
 
   revoke() {
