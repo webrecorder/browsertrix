@@ -83,9 +83,10 @@ export class App extends LiteElement {
   constructor() {
     super();
 
-    const authState = window.localStorage.getItem("btrix.auth");
+    const authState = this.authService.retrieve();
+
     if (authState) {
-      this.authState = JSON.parse(authState);
+      this.authState = authState;
 
       if (
         window.location.pathname === "/log-in" ||
