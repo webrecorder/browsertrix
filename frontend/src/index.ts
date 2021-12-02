@@ -114,13 +114,9 @@ export class App extends LiteElement {
     });
   }
 
-  async updated(changedProperties: any) {
-    if (changedProperties.has("authState") && this.authService.authState) {
-      const prevAuthState = changedProperties.get("authState");
-
-      if (this.authService.authState.username !== prevAuthState?.username) {
-        this.updateUserInfo();
-      }
+  firstUpdated() {
+    if (this.authService.authState) {
+      this.updateUserInfo();
     }
   }
 
@@ -398,6 +394,8 @@ export class App extends LiteElement {
     if (detail.firstLogin) {
       this.onFirstLogin({ email: detail.username });
     }
+
+    this.updateUserInfo();
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
