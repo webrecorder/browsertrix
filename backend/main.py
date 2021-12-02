@@ -18,7 +18,7 @@ from crawlconfigs import init_crawl_config_api
 from colls import init_collections_api
 from crawls import init_crawls_api
 
-app = FastAPI()
+app = FastAPI(openapi_url=os.environ.get("OPENAPI_URL", "/openapi.json"))
 
 
 # ============================================================================

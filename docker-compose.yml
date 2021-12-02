@@ -17,6 +17,10 @@ services:
       - minio
       - mongo
 
+  frontend:
+    build: ./frontend
+    image: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend
+
   redis:
     image: redis
     command: redis-server --appendonly yes

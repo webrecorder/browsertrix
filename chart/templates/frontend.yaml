@@ -23,19 +23,6 @@ spec:
 
     spec:
       volumes:
-        - name: nginx-config
-          configMap:
-            name: nginx-config
-            items:
-              - key: nginx.conf
-                path: nginx.conf
-
-              - key: main.js
-                path: main.js
-
-              - key: index.html
-                path: index.thml
-
         - name: nginx-resolver
           emptyDir: {}
 
@@ -54,21 +41,6 @@ spec:
           image: {{ .Values.nginx_image }}
           imagePullPolicy: {{ .Values.nginx_pull_policy }}
           volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-              readOnly: true
-
-            - name: nginx-config
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
-              readOnly: true
-
-            - name: nginx-config
-              mountPath: /usr/share/nginx/html/main.js
-              subPath: main.js
-              readOnly: true
-
             - name: nginx-resolver
               mountPath: /etc/nginx/resolvers/
               readOnly: true
