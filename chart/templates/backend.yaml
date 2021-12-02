@@ -19,7 +19,9 @@ spec:
 
       annotations:
         # force helm to update the deployment each time
+        {{- if not .Values.frontend_only }}
         "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
 
     spec:
       initContainers:
@@ -57,6 +59,13 @@ spec:
             requests:
               cpu: {{ .Values.api_requests_cpu }}
               memory: {{ .Values.api_requests_memory }}
+
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 5
 
           readinessProbe:
             httpGet:

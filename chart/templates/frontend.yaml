@@ -19,7 +19,10 @@ spec:
 
       annotations:
         # force helm to update the deployment each time
+        {{- if not .Values.backend_only }}
         "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
+
 
     spec:
       volumes:

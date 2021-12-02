@@ -23,8 +23,6 @@ data:
 
   NO_DELETE_JOBS: "{{ .Values.no_delete_jobs | default '0' }}"
 
-  OPENAPI_URL: "/api/openapi.json"
-
 ---
 apiVersion: v1
 kind: ConfigMap
