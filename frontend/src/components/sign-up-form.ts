@@ -40,30 +40,58 @@ export class SignUpForm extends LiteElement {
     return html`
       <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
         <div class="mb-5">
-          <sl-input
-            id="email"
-            name="email"
-            type="email"
-            label=${msg("Email")}
-            placeholder=${msg("you@email.com")}
-            value=${ifDefined(this.email)}
-            autocomplete="username"
-            ?readonly=${Boolean(this.email)}
-            required
-          >
-          </sl-input>
+          ${this.email
+            ? html`
+                <span class="text-gray-400">${msg("Joining as")}</span>
+                <span class="text-primary font-medium">${this.email}</span>
+                <input
+                  type="hidden"
+                  id="email"
+                  name="email"
+                  value=${this.email}
+                />
+              `
+            : html`
+                <sl-input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label=${msg("Enter your email")}
+                  placeholder=${msg("you@email.com")}
+                  autocomplete="email"
+                  required
+                >
+                </sl-input>
+              `}
         </div>
         <div class="mb-5">
           <sl-input
             id="password"
             name="password"
             type="password"
-            label=${msg("Password")}
+            label=${msg("Create a password")}
             autocomplete="new-password"
             toggle-password
             required
           >
           </sl-input>
+        </div>
+        <div class="mb-5">
+          <sl-input
+            id="name"
+            name="name"
+            label=${msg("Your name")}
+            placeholder=${msg("Lisa Simpson", {
+              desc: "Example user's name",
+            })}
+            autocomplete="nickname"
+          >
+          </sl-input>
+          <p class="mt-2 text-sm text-gray-500">
+            <span class="text-gray-400">${msg("(optional)")}</span> ${msg(
+              "Your name will be visible to archive collaborators."
+            )}
+          </p>
         </div>
 
         ${serverError}
@@ -88,14 +116,17 @@ export class SignUpForm extends LiteElement {
     const { formData } = event.detail;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const name = formData.get("name") as string;
     const registerParams: {
       email: string;
       password: string;
+      name: string;
       newArchive: boolean;
       inviteToken?: string;
     } = {
       email,
       password,
+      name: name || email,
       newArchive: true,
     };
 
