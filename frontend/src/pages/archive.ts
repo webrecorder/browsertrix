@@ -64,6 +64,8 @@ export class Archive extends LiteElement {
       </div>`;
     }
 
+    const showMembers = Boolean(this.archive.users);
+
     return html`<article class="grid gap-4">
       <header>
         <h1 class="text-2xl font-bold">${this.archive.name}</h1>
@@ -77,23 +79,30 @@ export class Archive extends LiteElement {
             ?active=${this.archiveTab === "settings"}
             >${msg("Settings")}</sl-tab
           >
-          <sl-tab
-            slot="nav"
-            panel="members"
-            ?active=${this.archiveTab === "members"}
-            >${msg("Members")}</sl-tab
-          >
+          ${showMembers
+            ? html`<sl-tab
+                slot="nav"
+                panel="members"
+                ?active=${this.archiveTab === "members"}
+                >${msg("Members")}</sl-tab
+              >`
+            : ""}
 
           <sl-tab-panel
             name="settings"
             ?active=${this.archiveTab === "settings"}
             >${this.renderSettings()}</sl-tab-panel
           >
-          <sl-tab-panel name="members" ?active=${this.archiveTab === "members"}>
-            ${this.isAddingMember
-              ? this.renderAddMember()
-              : this.renderMembers()}
-          </sl-tab-panel>
+          ${showMembers
+            ? html`<sl-tab-panel
+                name="members"
+                ?active=${this.archiveTab === "members"}
+              >
+                ${this.isAddingMember
+                  ? this.renderAddMember()
+                  : this.renderMembers()}
+              </sl-tab-panel>`
+            : ""}
         </sl-tab-group>
       </main>
     </article>`;
@@ -104,6 +113,8 @@ export class Archive extends LiteElement {
   }
 
   private renderMembers() {
+    if (!this.archive!.users) return;
+
     let successMessage;
 
     if (this.successfullyInvitedEmail) {

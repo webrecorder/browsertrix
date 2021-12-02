@@ -10,7 +10,7 @@ export const AccessCode: Record<UserRole, number> = {
 export type ArchiveData = {
   id: string;
   name: string;
-  users: {
+  users?: {
     [id: string]: {
       role: typeof AccessCode[UserRole];
       name: "string";
