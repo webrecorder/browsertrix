@@ -6,7 +6,9 @@ type Paths = { [key: string]: string };
 export type ViewState = {
   // route name, e.g. "home"
   route: string | null;
-  // path name, e.g. "/dashboard"
+  // path name
+  // e.g. "/dashboard"
+  // e.g. "/users/abc123"
   pathname: string;
   // params from URL (:) or query (?)
   // e.g. "/users/:id"

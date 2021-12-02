@@ -2,6 +2,7 @@ import { LitElement, html } from "lit";
 import "tailwindcss/tailwind.css";
 
 import type { Auth } from "../types/auth";
+import { APIError } from "./api";
 
 export { html };
 
@@ -49,15 +50,26 @@ export default class LiteElement extends LitElement {
         );
       }
 
-      // TODO get error details
       let errorMessage: string;
 
       try {
-        errorMessage = (await resp.json()).detail;
+        const detail = (await resp.json()).detail;
+
+        if (typeof detail === "string") {
+          errorMessage = detail;
+        } else {
+          // TODO client error details
+          errorMessage = "Unknown API error";
+        }
       } catch {
         errorMessage = "Unknown API error";
       }
-      throw new Error(errorMessage);
+
+      // TODO client error details
+      throw new APIError({
+        message: errorMessage,
+        status: resp.status,
+      });
     }
 
     return await resp.json();

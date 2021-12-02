@@ -8,12 +8,15 @@ import "./shoelace";
 import { LocalePicker } from "./components/locale-picker";
 import { Alert } from "./components/alert";
 import { AccountSettings } from "./components/account-settings";
+import { InviteForm } from "./components/invite-form";
+import { SignUpForm } from "./components/sign-up-form";
+import { Join } from "./pages/join";
 import { SignUp } from "./pages/sign-up";
 import { Verify } from "./pages/verify";
 import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
-import { MyAccountPage } from "./pages/my-account";
-import { ArchivePage } from "./pages/archive-info";
+import { Archives } from "./pages/archives";
+import { Archive, ArchiveTab } from "./pages/archive";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -24,15 +27,18 @@ import theme from "./theme";
 const ROUTES = {
   home: "/",
   signUp: "/sign-up",
+  join: "/join/:token?email",
   verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password?token",
   myAccount: "/my-account",
   accountSettings: "/account/settings",
-  "archive-info": "/archive/:aid",
-  "archive-info-tab": "/archive/:aid/:tab",
+  archives: "/archives",
+  archive: "/archives/:id/:tab",
+  archiveAddMember: "/archives/:id/:tab/add-member",
 } as const;
+const DASHBOARD_ROUTE = ROUTES.archives;
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -124,7 +130,9 @@ export class App extends LiteElement {
       const data = await this.getUserInfo();
 
       this.userInfo = {
+        id: data.id,
         email: data.email,
+        name: data.name,
         isVerified: data.is_verified,
       };
     } catch (err: any) {
@@ -143,7 +151,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.myAccount);
+      this.viewState = this.router.match(DASHBOARD_ROUTE);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -222,10 +230,18 @@ export class App extends LiteElement {
   }
 
   renderPage() {
-    const navLink = ({ href, label }: { href: string; label: string }) => html`
+    const navLink = ({
+      activeRoutes,
+      href,
+      label,
+    }: {
+      activeRoutes: string[];
+      href: string;
+      label: string;
+    }) => html`
       <li>
         <a
-          class="block p-2 ${href === this.viewState.pathname
+          class="block p-2 ${activeRoutes.includes(this.viewState.route!)
             ? "text-primary"
             : ""}"
           href="${href}"
@@ -238,8 +254,11 @@ export class App extends LiteElement {
       <div class="w-full flex flex-col md:flex-row">
         <nav class="md:w-80 md:p-4 md:border-r">
           <ul class="flex md:flex-col">
-            ${navLink({ href: ROUTES.myAccount, label: "Archives" })}
-            ${navLink({ href: "/users", label: "Users" })}
+            ${navLink({
+              activeRoutes: ["archives", "archive"],
+              href: DASHBOARD_ROUTE,
+              label: "Archives",
+            })}
           </ul>
         </nav>
         <div class="p-4 md:p-8 flex-1">${template}</div>
@@ -258,7 +277,7 @@ export class App extends LiteElement {
 
       case "verify":
         return html`<btrix-verify
-          class="w-full flex items-center justify-center"
+          class="w-full md:bg-gray-100 flex items-center justify-center"
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
           @notify="${this.onNotify}"
@@ -266,6 +285,15 @@ export class App extends LiteElement {
           @user-info-change="${this.onUserInfoChange}"
           .authState="${this.authState}"
         ></btrix-verify>`;
+
+      case "join":
+        return html`<btrix-join
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @logged-in="${this.onLoggedIn}"
+          .authState="${this.authState}"
+          token="${this.viewState.params.token}"
+          email="${this.viewState.params.email}"
+        ></btrix-join>`;
 
       case "login":
       case "forgotPassword":
@@ -297,13 +325,27 @@ export class App extends LiteElement {
           </sl-button>
         </div>`;
 
-      case "myAccount":
-        return appLayout(html`<my-account
+      case "archives":
+        return appLayout(html`<btrix-archives
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authState}"
-        ></my-account>`);
+          .userInfo="${this.userInfo}"
+        ></btrix-archives>`);
+
+      case "archive":
+      case "archiveAddMember":
+        return appLayout(html`<btrix-archive
+          class="w-full"
+          @navigate=${this.onNavigateTo}
+          @need-login=${this.onNeedLogin}
+          .authState=${this.authState}
+          .userInfo=${this.userInfo}
+          archiveId=${this.viewState.params.id}
+          archiveTab=${this.viewState.params.tab as ArchiveTab}
+          ?isAddingMember=${this.viewState.route === "archiveAddMember"}
+        ></btrix-archive>`);
 
       case "accountSettings":
         return appLayout(html`<btrix-account-settings
@@ -357,7 +399,7 @@ export class App extends LiteElement {
     window.localStorage.setItem("authState", JSON.stringify(this.authState));
 
     if (!detail.api) {
-      this.navigate(ROUTES.myAccount);
+      this.navigate(DASHBOARD_ROUTE);
     }
 
     if (detail.firstLogin) {
@@ -482,10 +524,13 @@ customElements.define("bt-alert", Alert);
 customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
 customElements.define("btrix-sign-up", SignUp);
+customElements.define("btrix-sign-up-form", SignUpForm);
 customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
-customElements.define("my-account", MyAccountPage);
-customElements.define("btrix-archive", ArchivePage);
+customElements.define("btrix-archives", Archives);
+customElements.define("btrix-archive", Archive);
 customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
+customElements.define("btrix-invite-form", InviteForm);
+customElements.define("btrix-join", Join);
 customElements.define("btrix-reset-password", ResetPassword);

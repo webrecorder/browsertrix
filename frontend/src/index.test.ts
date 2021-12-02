@@ -8,7 +8,9 @@ describe("browsertrix-app", () => {
   beforeEach(() => {
     stub(App.prototype, "getUserInfo").callsFake(() =>
       Promise.resolve({
+        id: "test_id",
         email: "test-user@example.com",
+        name: "Test User",
         is_verified: false,
       })
     );
@@ -49,7 +51,9 @@ describe("browsertrix-app", () => {
     const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
 
     expect(el.userInfo).to.eql({
+      id: "test_id",
       email: "test-user@example.com",
+      name: "Test User",
       isVerified: false,
     });
   });
