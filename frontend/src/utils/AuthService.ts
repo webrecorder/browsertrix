@@ -94,7 +94,7 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const authState = window.localStorage.getItem(AuthService.storageKey);
+    const authState = window.sessionStorage.getItem(AuthService.storageKey);
 
     if (authState) {
       this._authState = JSON.parse(authState);
@@ -107,7 +107,7 @@ export default class AuthService {
   persist(authState: AuthState) {
     if (authState) {
       this._authState = authState;
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         AuthService.storageKey,
         JSON.stringify(this.authState)
       );
@@ -119,7 +119,7 @@ export default class AuthService {
 
   revoke() {
     this._authState = null;
-    window.localStorage.setItem(AuthService.storageKey, "");
+    window.sessionStorage.setItem(AuthService.storageKey, "");
   }
 
   private async checkFreshness() {
