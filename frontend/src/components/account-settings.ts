@@ -6,6 +6,7 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 import type { AuthState, CurrentUser } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+import AuthService from "../utils/AuthService";
 
 @localized()
 class RequestVerify extends LitElement {
@@ -333,40 +334,15 @@ export class AccountSettings extends LiteElement {
     const { formData } = event.detail;
     let nextAuthState: AuthState = null;
 
-    // Validate current password by generating token
     try {
-      // TODO consolidate with log-in method
-      const resp = await fetch("/api/auth/jwt/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "password",
-          username: this.authState.username,
-          password: formData.get("password") as string,
-        }).toString(),
+      nextAuthState = await AuthService.login({
+        email: this.authState.username,
+        password: formData.get("password") as string,
       });
 
-      const data = await resp.json();
-
-      if (data.token_type === "bearer" && data.access_token) {
-        const detail = {
-          api: true,
-          auth: `Bearer ${data.access_token}`,
-          username: this.authState.username,
-        };
-        this.dispatchEvent(new CustomEvent("logged-in", { detail }));
-
-        nextAuthState = {
-          username: detail.username,
-          headers: {
-            Authorization: detail.auth,
-          },
-        };
-      }
-    } catch (e) {
-      console.error(e);
+      this.dispatchEvent(AuthService.createLoggedInEvent(nextAuthState));
+    } catch (e: any) {
+      console.debug(e);
     }
 
     if (!nextAuthState) {
