@@ -27,7 +27,7 @@ describe("browsertrix-app", () => {
 
   it("sets auth state from local storage", async () => {
     stub(window.localStorage, "getItem").callsFake((key) => {
-      if (key === "authState")
+      if (key === "btrix.auth")
         return JSON.stringify({
           username: "test-auth@example.com",
         });
@@ -42,7 +42,7 @@ describe("browsertrix-app", () => {
 
   it("sets user info", async () => {
     stub(window.localStorage, "getItem").callsFake((key) => {
-      if (key === "authState")
+      if (key === "btrix.auth")
         return JSON.stringify({
           username: "test-auth@example.com",
         });

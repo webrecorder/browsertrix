@@ -80,7 +80,7 @@ export class App extends LiteElement {
   constructor() {
     super();
 
-    const authState = window.localStorage.getItem("authState");
+    const authState = window.localStorage.getItem("btrix.auth");
     if (authState) {
       this.authState = JSON.parse(authState);
 
@@ -396,7 +396,7 @@ export class App extends LiteElement {
       username: detail.username,
       headers: { Authorization: detail.auth },
     };
-    window.localStorage.setItem("authState", JSON.stringify(this.authState));
+    window.localStorage.setItem("btrix.auth", JSON.stringify(this.authState));
 
     if (!detail.api) {
       this.navigate(DASHBOARD_ROUTE);
@@ -477,7 +477,7 @@ export class App extends LiteElement {
 
   clearAuthState() {
     this.authState = null;
-    window.localStorage.setItem("authState", "");
+    window.localStorage.setItem("btrix.auth", "");
   }
 
   getUserInfo() {
