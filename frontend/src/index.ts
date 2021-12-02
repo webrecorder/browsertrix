@@ -22,7 +22,7 @@ import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { CurrentUser } from "./types/auth";
+import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
 

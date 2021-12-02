@@ -3,7 +3,7 @@ import { state, query, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
-import type { CurrentUser } from "../types/auth";
+import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import type { AuthState } from "../utils/AuthService";
