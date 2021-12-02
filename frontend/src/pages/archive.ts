@@ -75,13 +75,13 @@ export class Archive extends LiteElement {
             slot="nav"
             panel="settings"
             ?active=${this.archiveTab === "settings"}
-            >Settings</sl-tab
+            >${msg("Settings")}</sl-tab
           >
           <sl-tab
             slot="nav"
             panel="members"
             ?active=${this.archiveTab === "members"}
-            >Members</sl-tab
+            >${msg("Members")}</sl-tab
           >
 
           <sl-tab-panel
@@ -141,11 +141,14 @@ export class Archive extends LiteElement {
         </div>
         <div role="rowgroup">
           ${Object.entries(this.archive!.users).map(
-            ([id, accessCode]) => html`
+            ([id, { name, role }]) => html`
               <div class="border-b flex" role="row">
-                <div class="w-1/2 p-3" role="cell">(TODO) ${id}</div>
+                <div class="w-1/2 p-3" role="cell">
+                  ${name ||
+                  html`<span class="text-gray-400">${msg("Member")}</span>`}
+                </div>
                 <div class="p-3" role="cell">
-                  ${isOwner(accessCode) ? msg("Admin") : msg("Viewer")}
+                  ${isOwner(role) ? msg("Admin") : msg("Viewer")}
                 </div>
               </div>
             `
