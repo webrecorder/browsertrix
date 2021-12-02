@@ -20,6 +20,7 @@ import { Archive, ArchiveTab } from "./pages/archive";
 import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
+import AuthService from "./utils/AuthService";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState, CurrentUser } from "./types/auth";
 import theme from "./theme";
@@ -57,6 +58,7 @@ type DialogContent = {
 @localized()
 export class App extends LiteElement {
   private router: APIRouter = new APIRouter(ROUTES);
+  private authService: AuthService = new AuthService();
 
   @state()
   authState: AuthState | null = null;

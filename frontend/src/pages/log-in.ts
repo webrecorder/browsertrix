@@ -4,6 +4,7 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
+import AuthService from "../utils/AuthService";
 
 type FormContext = {
   successMessage?: string;
@@ -304,50 +305,30 @@ export class LogInPage extends LiteElement {
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
-    const params = new URLSearchParams();
-    params.set("grant_type", "password");
-    params.set("username", username);
-    params.set("password", password);
-
-    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
-
-    const resp = await fetch("/api/auth/jwt/login", {
-      headers,
-      method: "POST",
-      body: params.toString(),
-    });
-    if (resp.status !== 200) {
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          serverError: msg("Sorry, invalid username or password"),
-        },
-      });
-      return;
-    }
-
     try {
-      const data = await resp.json();
-      if (data.token_type === "bearer" && data.access_token) {
-        const auth = "Bearer " + data.access_token;
-        const detail = { auth, username };
+      const data = await AuthService.login({ email: username, password });
 
-        this.dispatchEvent(new CustomEvent("logged-in", { detail }));
+      this.dispatchEvent(AuthService.createLoggedInEvent(data));
 
-        // no state update here, since "logged-in" event
-        // will result in a route change
+      // no state update here, since "logged-in" event
+      // will result in a route change
+    } catch (e: any) {
+      if (e.isApiError) {
+        // TODO check error details
+        this.formStateService.send({
+          type: "ERROR",
+          detail: {
+            serverError: msg("Sorry, invalid username or password"),
+          },
+        });
       } else {
-        throw new Error("Unknown auth type");
+        this.formStateService.send({
+          type: "ERROR",
+          detail: {
+            serverError: msg("Something went wrong, couldn't sign you in"),
+          },
+        });
       }
-    } catch (e) {
-      console.error(e);
-
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          serverError: msg("Something went wrong, couldn't sign you in"),
-        },
-      });
     }
   }
 
