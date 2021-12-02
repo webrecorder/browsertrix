@@ -21,6 +21,7 @@ import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
+import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { AuthState, CurrentUser } from "./types/auth";
 import theme from "./theme";
@@ -385,18 +386,11 @@ export class App extends LiteElement {
     }
   }
 
-  onLoggedIn(
-    event: CustomEvent<{
-      api?: boolean;
-      firstLogin?: boolean;
-      auth: string;
-      username: string;
-    }>
-  ) {
+  onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
     this.authState = {
       username: detail.username,
-      headers: { Authorization: detail.auth },
+      headers: detail.headers,
     };
     window.localStorage.setItem("btrix.auth", JSON.stringify(this.authState));
 

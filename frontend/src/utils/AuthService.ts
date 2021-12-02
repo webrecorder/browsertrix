@@ -1,7 +1,12 @@
 import type { AuthState, Auth } from "../types/auth";
 import { APIError } from "./api";
 
-export interface LoggedInEvent<T = Auth> extends CustomEvent {
+type LoggedInEventDetail = Auth & {
+  api?: boolean;
+  firstLogin?: boolean;
+};
+
+export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
@@ -16,7 +21,7 @@ export default class AuthService {
     return this._authState;
   }
 
-  static createLoggedInEvent = (detail: Auth): LoggedInEvent => {
+  static createLoggedInEvent = (detail: LoggedInEventDetail): LoggedInEvent => {
     return new CustomEvent(AuthService.loggedInEvent, { detail });
   };
 
