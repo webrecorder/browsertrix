@@ -4,6 +4,8 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
+import type { LoggedInEvent } from "../utils/AuthService";
+import AuthService from "../utils/AuthService";
 
 type JoinContext = {
   serverError?: string;
@@ -208,17 +210,13 @@ export class Join extends LiteElement {
     this.joinStateService.send("SUBMIT_SIGN_UP");
   }
 
-  private onAuthenticated(
-    event: CustomEvent<{ auth: string; username: string }>
-  ) {
+  private onAuthenticated(event: LoggedInEvent) {
     this.joinStateService.send("SIGN_UP_SUCCESS");
 
     this.dispatchEvent(
-      new CustomEvent("logged-in", {
-        detail: {
-          ...event.detail,
-          api: true,
-        },
+      AuthService.createLoggedInEvent({
+        ...event.detail,
+        api: true,
       })
     );
   }

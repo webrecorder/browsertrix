@@ -3,6 +3,8 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../types/auth";
 import LiteElement, { html } from "../utils/LiteElement";
+import type { LoggedInEvent } from "../utils/AuthService";
+import AuthService from "../utils/AuthService";
 
 @localized()
 export class SignUp extends LiteElement {
@@ -52,15 +54,11 @@ export class SignUp extends LiteElement {
     }
   }
 
-  private onAuthenticated(
-    event: CustomEvent<{ auth: string; username: string }>
-  ) {
+  private onAuthenticated(event: LoggedInEvent) {
     this.dispatchEvent(
-      new CustomEvent("logged-in", {
-        detail: {
-          ...event.detail,
-          firstLogin: true,
-        },
+      AuthService.createLoggedInEvent({
+        ...event.detail,
+        firstLogin: true,
       })
     );
   }

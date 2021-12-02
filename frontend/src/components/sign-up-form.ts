@@ -195,7 +195,7 @@ export class SignUpForm extends LiteElement {
     try {
       const data = await AuthService.login({ email, password });
 
-      this.dispatchEvent(AuthService.createLoggedInEvent(data));
+      this.dispatchEvent(new CustomEvent("authenticated", { detail: data }));
     } catch (e) {
       throw e;
     }
