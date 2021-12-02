@@ -40,11 +40,19 @@ spec:
               number: 9000
 {{- end }}
 
+      - path: /api/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: browsertrix-cloud-backend
+            port:
+              number: 8000
+
       - path: /(.*)
         pathType: Prefix
         backend:
           service:
-            name: browsertrix-cloud
+            name: browsertrix-cloud-frontend
             port:
               number: 80
 

@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-backend
+  namespace: {{ .Release.Namespace }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      role: backend
+  replicas: {{ .Values.api_num_replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        role: backend
+
+      annotations:
+        # force helm to update the deployment each time
+        "helm.update": {{ randAlphaNum 5 | quote }}
+
+    spec:
+      initContainers:
+{{- if .Values.minio_local }}
+        - name: init-bucket
+          image: {{ .Values.minio_mc_image }}
+          imagePullPolicy: {{ .Values.minio_pull_policy }}
+          env:
+            - name: MC_HOST_local
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secrets
+                  key: MC_HOST
+
+          command: ['/bin/sh']
+          args: ['-c', 'mc mb --ignore-existing local/{{ .Values.minio_local_bucket_name }}' ]
+{{- end }}
+
+
+      containers:
+        - name: api
+          image: {{ .Values.api_image }}
+          imagePullPolicy: {{ .Values.api_pull_policy }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.name }}-env-config
+            - secretRef:
+                name: auth-secrets
+
+          resources:
+            limits:
+              cpu: {{ .Values.api_limits_cpu }}
+              memory: {{ .Values.api_limits_memory }}
+
+            requests:
+              cpu: {{ .Values.api_requests_cpu }}
+              memory: {{ .Values.api_requests_memory }}
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.name }}-backend
+  labels:
+    app: {{ .Values.name }}
+    role: backend
+
+{{- if .Values.service }}
+  {{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.service.annotations }}
+    {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+spec:
+  selector:
+    app: {{ .Values.name }}
+    role: backend
+
+{{- if .Values.service }}
+  {{- if .Values.service.type }}
+  type: {{ .Values.service.type | quote }}
+  {{- end }}
+{{- end }}
+
+  ports:
+    - protocol: TCP
+      port: 8000
+      name: api

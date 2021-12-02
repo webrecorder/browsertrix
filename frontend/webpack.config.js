@@ -14,7 +14,7 @@ const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
   "node_modules/@shoelace-style/shoelace/dist/assets"
 );
-const shoelaceAssetsPublicPath = "/shoelace/assets";
+const shoelaceAssetsPublicPath = "shoelace/assets";
 
 module.exports = {
   entry: "./src/index.ts",
@@ -57,7 +57,7 @@ module.exports = {
     static: [
       {
         directory: shoelaceAssetsSrcPath,
-        publicPath: shoelaceAssetsPublicPath,
+        publicPath: "/" + shoelaceAssetsPublicPath,
       },
 
       {
