@@ -36,9 +36,7 @@ def main():
 
     current_active_user = fastapi_users.current_user(active=True)
 
-    archive_ops = init_archives_api(
-        app, mdb, user_manager, email, current_active_user
-    )
+    archive_ops = init_archives_api(app, mdb, user_manager, email, current_active_user)
 
     user_manager.set_archive_ops(archive_ops)
 
@@ -70,9 +68,7 @@ def main():
         archive_ops,
     )
 
-    coll_ops = init_collections_api(
-        mdb, crawls, archive_ops, crawl_manager
-    )
+    coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
