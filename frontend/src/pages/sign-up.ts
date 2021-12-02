@@ -183,7 +183,7 @@ export class SignUp extends LiteElement {
     const data = await resp.json();
     if (data.token_type === "bearer" && data.access_token) {
       const auth = "Bearer " + data.access_token;
-      const detail = { auth, username: email };
+      const detail = { auth, username: email, firstLogin: true };
       this.dispatchEvent(new CustomEvent("logged-in", { detail }));
     } else {
       throw new Error("Unknown authorization type");
