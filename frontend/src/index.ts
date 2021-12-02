@@ -197,7 +197,7 @@ export class App extends LiteElement {
           ${this.authService.authState
             ? html` <sl-dropdown>
                 <div class="p-2" role="button" slot="trigger">
-                  ${this.authService.authState.username}
+                  ${this.userInfo?.name || this.userInfo?.email}
                   <span class="text-xs"
                     ><sl-icon name="chevron-down"></sl-icon
                   ></span>
