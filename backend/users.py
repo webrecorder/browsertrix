@@ -11,10 +11,9 @@ from datetime import datetime
 from typing import Dict, Optional
 from enum import IntEnum
 
+from pydantic import BaseModel, EmailStr, UUID4
 
-from pydantic import BaseModel
-
-from fastapi import Request, HTTPException
+from fastapi import Request, Response, HTTPException, Depends
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.authentication import JWTAuthentication
@@ -23,6 +22,8 @@ from fastapi_users.db import MongoDBUserDatabase
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
+
+JWT_LIFETIME = int(os.environ.get("JWT_LIFETIME", 3600))
 
 
 # ============================================================================
@@ -49,22 +50,35 @@ class User(models.BaseUser):
     Base User Model
     """
 
+    name: Optional[str] = ""
+
 
 # ============================================================================
-class UserCreate(models.BaseUserCreate):
+# use custom model as model.BaseUserCreate includes is_* fields which should not be set
+class UserCreate(models.CreateUpdateDictModel):
     """
     User Creation Model
     """
 
+    email: EmailStr
+    password: str
+
+    name: Optional[str] = ""
+
     inviteToken: Optional[str]
+
     newArchive: bool
+    newArchiveName: Optional[str] = ""
 
 
 # ============================================================================
-class UserUpdate(User, models.BaseUserUpdate):
+class UserUpdate(User, models.CreateUpdateDictModel):
     """
     User Update Model
     """
+
+    password: Optional[str]
+    email: Optional[EmailStr]
 
 
 # ============================================================================
@@ -85,6 +99,7 @@ class UserDBOps(MongoDBUserDatabase):
 # ============================================================================
 class UserManager(BaseUserManager[UserCreate, UserDB]):
     """ Browsertrix UserManager """
+
     user_db_model = UserDB
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
@@ -98,6 +113,14 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         """ set archive ops """
         self.archive_ops = ops
 
+    async def get_user_names_by_ids(self, user_ids):
+        """ return list of user names for given ids """
+        user_ids = [UUID4(id_) for id_ in user_ids]
+        cursor = self.user_db.collection.find(
+            {"id": {"$in": user_ids}}, projection=["id", "name"]
+        )
+        return await cursor.to_list(length=1000)
+
     # pylint: disable=no-self-use, unused-argument
     async def on_after_register(self, user: UserDB, request: Optional[Request] = None):
         """callback after registeration"""
@@ -109,7 +132,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         if req_data.get("newArchive"):
             print(f"Creating new archive for {user.id}")
 
-            archive_name = req_data.get("name") or f"{user.email} Archive"
+            archive_name = req_data.get("newArchiveName") or f"{user.name}'s Archive"
 
             await self.archive_ops.create_new_archive_for_user(
                 archive_name=archive_name,
@@ -161,7 +184,9 @@ def init_user_manager(mdb, emailsender):
 def init_users_api(app, user_manager):
     """ init fastapi_users """
     jwt_authentication = JWTAuthentication(
-        secret=PASSWORD_SECRET, lifetime_seconds=3600, tokenUrl="/auth/jwt/login"
+        secret=PASSWORD_SECRET,
+        lifetime_seconds=JWT_LIFETIME,
+        tokenUrl="/auth/jwt/login",
     )
 
     fastapi_users = FastAPIUsers(
@@ -173,11 +198,20 @@ def init_users_api(app, user_manager):
         UserDB,
     )
 
+    auth_router = fastapi_users.get_auth_router(jwt_authentication)
+
+    @auth_router.post("/refresh")
+    async def refresh_jwt(
+        response: Response, user=Depends(fastapi_users.current_user(active=True))
+    ):
+        return await jwt_authentication.get_login_response(user, response, user_manager)
+
     app.include_router(
-        fastapi_users.get_auth_router(jwt_authentication),
+        auth_router,
         prefix="/auth/jwt",
         tags=["auth"],
     )
+
     app.include_router(
         fastapi_users.get_register_router(),
         prefix="/auth",

@@ -87,7 +87,7 @@ class Archive(BaseMongoModel):
 
         return res >= value
 
-    def serialize_for_user(self, user: User):
+    async def serialize_for_user(self, user: User, user_manager):
         """Serialize based on current user access"""
         exclude = {"storage"}
 
@@ -97,12 +97,29 @@ class Archive(BaseMongoModel):
         if not self.is_crawler(user):
             exclude.add("usage")
 
-        return self.dict(
+        result = self.dict(
             exclude_unset=True,
             exclude_defaults=True,
             exclude_none=True,
             exclude=exclude,
         )
+
+        if self.is_owner(user):
+            keys = list(result["users"].keys())
+            user_list = await user_manager.get_user_names_by_ids(keys)
+
+            for archive_user in user_list:
+                id_ = str(archive_user["id"])
+                role = result["users"].get(id_)
+                if not role:
+                    continue
+
+                result["users"][id_] = {
+                    "role": role,
+                    "name": archive_user.get("name", ""),
+                }
+
+        return result
 
 
 # ============================================================================
@@ -235,7 +252,7 @@ class ArchiveOps:
 
 
 # ============================================================================
-def init_archives_api(app, mdb, users, email, user_dep: User):
+def init_archives_api(app, mdb, user_manager, email, user_dep: User):
     """Init archives api router for /archives"""
     ops = ArchiveOps(mdb, email)
 
@@ -281,13 +298,17 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
     @app.get("/archives", tags=["archives"])
     async def get_archives(user: User = Depends(user_dep)):
         results = await ops.get_archives_for_user(user)
-        return {"archives": [res.serialize_for_user(user) for res in results]}
+        return {
+            "archives": [
+                await res.serialize_for_user(user, user_manager) for res in results
+            ]
+        }
 
     @router.get("", tags=["archives"])
     async def get_archive(
         archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
     ):
-        return archive.serialize_for_user(user)
+        return await archive.serialize_for_user(user, user_manager)
 
     @router.post("/invite", tags=["invites"])
     async def invite_user(
@@ -301,7 +322,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
             aid=str(archive.id), created=datetime.utcnow(), role=invite.role
         )
 
-        other_user = await users.user_db.get_by_email(invite.email)
+        other_user = await user_manager.user_db.get_by_email(invite.email)
 
         if not other_user:
 
@@ -318,14 +339,14 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't invite ourselves!")
 
-        if archive.users.get(str(other_user.id)):
+        if archive.user_manager.get(str(other_user.id)):
             raise HTTPException(
                 status_code=400, detail="User already a member of this archive."
             )
 
         other_user.invites[invite_code] = invite_pending
 
-        await users.user_db.update(other_user)
+        await user_manager.user_db.update(other_user)
 
         return {
             "invited": "existing_user",
@@ -338,7 +359,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
         user: User = Depends(user_dep),
     ):
 
-        other_user = await users.user_db.get_by_email(update.email)
+        other_user = await user_manager.user_db.get_by_email(update.email)
         if not other_user:
             raise HTTPException(
                 status_code=400, detail="No user found for specified e-mail"
@@ -359,7 +380,7 @@ def init_archives_api(app, mdb, users, email, user_dep: User):
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
         await ops.add_user_by_invite(invite, user)
-        await users.user_db.update(user)
+        await user_manager.user_db.update(user)
         return {"added": True}
 
     return ops
