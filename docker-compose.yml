@@ -20,6 +20,8 @@ services:
   frontend:
     build: ./frontend
     image: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend
+    ports:
+      - 8010:80
 
   redis:
     image: redis
