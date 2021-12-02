@@ -5,11 +5,14 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
-  sessionExpiresAt: number;
   tokenExpiresAt: number;
 };
 
-export type AuthState = Auth | null;
+type Session = {
+  sessionExpiresAt: number;
+};
+
+export type AuthState = (Auth & Session) | null;
 
 type LoggedInEventDetail = Auth & {
   api?: boolean;
@@ -25,6 +28,8 @@ const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 // TODO get expires at from server
 // Hardcode 1hr expiry for now
 const ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60;
+// Hardcode 24h expiry for now
+const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
 export default class AuthService {
   private timerId?: number;
@@ -76,7 +81,6 @@ export default class AuthService {
       // TODO get expires at from server
       // Hardcode 1hr expiry for now
       tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
-      sessionExpiresAt: Date.now() + 1000 * 60 * 60 * 24,
     };
   }
 
@@ -94,22 +98,28 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const authState = window.sessionStorage.getItem(AuthService.storageKey);
+    const auth = window.sessionStorage.getItem(AuthService.storageKey);
 
-    if (authState) {
-      this._authState = JSON.parse(authState);
+    if (auth) {
+      this._authState = JSON.parse(auth);
       this.checkFreshness();
     }
 
     return this._authState;
   }
 
-  persist(authState: AuthState) {
-    if (authState) {
-      this._authState = authState;
+  persist(auth: Auth) {
+    if (auth) {
+      this._authState = {
+        username: auth.username,
+        headers: auth.headers,
+        tokenExpiresAt: auth.tokenExpiresAt,
+        sessionExpiresAt: Date.now() + SESSION_LIFETIME,
+      };
+
       window.sessionStorage.setItem(
         AuthService.storageKey,
-        JSON.stringify(this.authState)
+        JSON.stringify(auth)
       );
       this.checkFreshness();
     } else {
@@ -119,20 +129,20 @@ export default class AuthService {
 
   revoke() {
     this._authState = null;
-    window.sessionStorage.setItem(AuthService.storageKey, "");
+    window.sessionStorage.removeItem(AuthService.storageKey);
   }
 
   private async checkFreshness() {
     window.clearTimeout(this.timerId);
 
-    if (!this.authState) return;
+    if (!this._authState) return;
 
-    console.log(this.authState);
+    console.log(this._authState);
 
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
 
-    if (this.authState.sessionExpiresAt > paddedNow) {
-      if (this.authState.tokenExpiresAt > paddedNow) {
+    if (this._authState.sessionExpiresAt > paddedNow) {
+      if (this._authState.tokenExpiresAt > paddedNow) {
         console.log("not expired");
 
         // Restart timer
@@ -143,7 +153,9 @@ export default class AuthService {
         console.log("expires before next check");
 
         try {
-          this._authState = await this.refresh();
+          const auth = await this.refresh();
+          this._authState.headers = auth.headers;
+          this._authState.tokenExpiresAt = auth.tokenExpiresAt;
 
           // Restart timer
           this.timerId = window.setTimeout(() => {
@@ -160,7 +172,10 @@ export default class AuthService {
     }
   }
 
-  private async refresh(): Promise<Auth> {
+  private async refresh(): Promise<{
+    headers: Auth["headers"];
+    tokenExpiresAt: Auth["tokenExpiresAt"];
+  }> {
     if (!this.authState) {
       throw new Error("No this.authState");
     }
@@ -180,12 +195,10 @@ export default class AuthService {
     const authHeaders = AuthService.parseAuthHeaders(await resp.json());
 
     return {
-      username: this.authState.username,
       headers: authHeaders,
       // TODO get expires at from server
       // Hardcode 1hr expiry for now
       tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
-      sessionExpiresAt: this.authState.sessionExpiresAt,
     };
   }
 }

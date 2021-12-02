@@ -59,7 +59,7 @@ type DialogContent = {
 @localized()
 export class App extends LiteElement {
   private router: APIRouter = new APIRouter(ROUTES);
-  private authService: AuthService = new AuthService();
+  authService: AuthService = new AuthService();
 
   @state()
   userInfo?: CurrentUser;
@@ -384,7 +384,6 @@ export class App extends LiteElement {
     this.authService.persist({
       username: detail.username,
       headers: detail.headers,
-      sessionExpiresAt: detail.sessionExpiresAt,
       tokenExpiresAt: detail.tokenExpiresAt,
     });
 
