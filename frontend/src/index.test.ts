@@ -10,6 +10,7 @@ describe("browsertrix-app", () => {
       Promise.resolve({
         id: "test_id",
         email: "test-user@example.com",
+        name: "Test User",
         is_verified: false,
       })
     );
@@ -52,6 +53,7 @@ describe("browsertrix-app", () => {
     expect(el.userInfo).to.eql({
       id: "test_id",
       email: "test-user@example.com",
+      name: "Test User",
       isVerified: false,
     });
   });

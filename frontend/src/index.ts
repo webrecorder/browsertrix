@@ -132,6 +132,7 @@ export class App extends LiteElement {
       this.userInfo = {
         id: data.id,
         email: data.email,
+        name: data.name,
         isVerified: data.is_verified,
       };
     } catch (err: any) {
