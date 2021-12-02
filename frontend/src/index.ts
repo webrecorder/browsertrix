@@ -17,13 +17,13 @@ import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { Archives } from "./pages/archives";
 import { Archive, ArchiveTab } from "./pages/archive";
-import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { AuthState, CurrentUser } from "./types/auth";
+import type { CurrentUser } from "./types/auth";
+import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
 
 const ROUTES = {
@@ -521,7 +521,6 @@ customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("btrix-archives", Archives);
 customElements.define("btrix-archive", Archive);
-customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
 customElements.define("btrix-invite-form", InviteForm);
 customElements.define("btrix-join", Join);

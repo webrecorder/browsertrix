@@ -1,5 +1,13 @@
-import type { AuthState, Auth } from "../types/auth";
 import { APIError } from "./api";
+
+export type Auth = {
+  username: string;
+  headers: {
+    Authorization: string;
+  };
+};
+
+export type AuthState = Auth | null;
 
 type LoggedInEventDetail = Auth & {
   api?: boolean;
