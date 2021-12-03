@@ -5,11 +5,6 @@ import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 
 import "./shoelace";
-import { LocalePicker } from "./components/locale-picker";
-import { Alert } from "./components/alert";
-import { AccountSettings } from "./components/account-settings";
-import { InviteForm } from "./components/invite-form";
-import { SignUpForm } from "./components/sign-up-form";
 import type { ArchiveTab } from "./pages/archive";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -19,6 +14,7 @@ import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
+import "./components";
 import "./pages";
 
 const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
@@ -169,7 +165,7 @@ export class App extends LiteElement {
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <footer class="flex justify-center p-4 border-t">
-          <bt-locale-picker></bt-locale-picker>
+          <btrix-locale-picker></btrix-locale-picker>
         </footer>
       </div>
 
@@ -504,9 +500,4 @@ export class App extends LiteElement {
   }
 }
 
-customElements.define("bt-alert", Alert);
-customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
-customElements.define("btrix-sign-up-form", SignUpForm);
-customElements.define("btrix-account-settings", AccountSettings);
-customElements.define("btrix-invite-form", InviteForm);

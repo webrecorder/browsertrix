@@ -21,7 +21,9 @@ export class ResetPassword extends LiteElement {
     if (this.serverError) {
       formError = html`
         <div class="mb-5">
-          <bt-alert id="formError" type="danger">${this.serverError}</bt-alert>
+          <btrix-alert id="formError" type="danger"
+            >${this.serverError}</btrix-alert
+          >
         </div>
       `;
     }

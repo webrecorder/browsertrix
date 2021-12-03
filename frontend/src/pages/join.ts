@@ -188,8 +188,8 @@ export class Join extends LiteElement {
     if (this.joinState.context.serverError) {
       serverError = html`
         <div class="mb-5">
-          <bt-alert id="formError" type="danger"
-            >${this.joinState.context.serverError}</bt-alert
+          <btrix-alert id="formError" type="danger"
+            >${this.joinState.context.serverError}</btrix-alert
           >
         </div>
       `;

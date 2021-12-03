@@ -7,7 +7,7 @@ import { property } from "lit/decorators.js";
  * Usage example:
  * ```ts
  * <input aria-describedby="error_message" />
- * <bt-alert id="error_message>${errorMessage}</bt-alert>
+ * <btrix-alert id="error_message>${errorMessage}</btrix-alert>
  * ```
  */
 export class Alert extends LitElement {

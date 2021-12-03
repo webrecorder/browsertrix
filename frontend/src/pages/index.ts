@@ -1,16 +1,15 @@
-import(/* webpackPrefetch: true */ "./sign-up").then(({ SignUp }) => {
+import("./sign-up").then(({ SignUp }) => {
   customElements.define("btrix-sign-up", SignUp);
 });
-import(/* webpackPrefetch: true */ "./log-in").then(({ LogInPage }) => {
+import("./log-in").then(({ LogInPage }) => {
   customElements.define("btrix-log-in", LogInPage);
 });
-import(/* webpackPrefetch: true */ "./archives").then(({ Archives }) => {
+import("./archives").then(({ Archives }) => {
   customElements.define("btrix-archives", Archives);
 });
-import(/* webpackPrefetch: true */ "./archive").then(({ Archive }) => {
+import("./archive").then(({ Archive }) => {
   customElements.define("btrix-archive", Archive);
 });
-
 import("./join").then(({ Join }) => {
   customElements.define("btrix-join", Join);
 });

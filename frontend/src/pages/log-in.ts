@@ -186,8 +186,8 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.successMessage) {
       successMessage = html`
         <div>
-          <bt-alert type="success"
-            >${this.formState.context.successMessage}</bt-alert
+          <btrix-alert type="success"
+            >${this.formState.context.successMessage}</btrix-alert
           >
         </div>
       `;
@@ -211,8 +211,8 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <bt-alert id="formError" type="danger"
-            >${this.formState.context.serverError}</bt-alert
+          <btrix-alert id="formError" type="danger"
+            >${this.formState.context.serverError}</btrix-alert
           >
         </div>
       `;
@@ -262,8 +262,8 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <bt-alert id="formError" type="danger"
-            >${this.formState.context.serverError}</bt-alert
+          <btrix-alert id="formError" type="danger"
+            >${this.formState.context.serverError}</btrix-alert
           >
         </div>
       `;
