@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import "tailwindcss/tailwind.css";
 
-import type { Auth } from "../types/auth";
+import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
 
 export { html };

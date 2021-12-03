@@ -1,5 +1,5 @@
 import LiteElement from "../utils/LiteElement";
-import type { AuthState } from "../types/auth";
+import type { AuthState } from "../utils/AuthService";
 
 /**
  * Block rendering and dispatch event if user is not logged in

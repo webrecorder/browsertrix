@@ -17,11 +17,13 @@ import { LogInPage } from "./pages/log-in";
 import { ResetPassword } from "./pages/reset-password";
 import { Archives } from "./pages/archives";
 import { Archive, ArchiveTab } from "./pages/archive";
-import { ArchiveConfigsPage } from "./pages/archive-info-tab";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
+import AuthService from "./utils/AuthService";
+import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState, NavigateEvent } from "./utils/APIRouter";
-import type { AuthState, CurrentUser } from "./types/auth";
+import type { CurrentUser } from "./types/user";
+import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
 
 const ROUTES = {
@@ -57,9 +59,7 @@ type DialogContent = {
 @localized()
 export class App extends LiteElement {
   private router: APIRouter = new APIRouter(ROUTES);
-
-  @state()
-  authState: AuthState | null = null;
+  private authService: AuthService = new AuthService();
 
   @state()
   userInfo?: CurrentUser;
@@ -80,10 +80,9 @@ export class App extends LiteElement {
   constructor() {
     super();
 
-    const authState = window.localStorage.getItem("authState");
-    if (authState) {
-      this.authState = JSON.parse(authState);
+    const authState = this.authService.retrieve();
 
+    if (authState) {
       if (
         window.location.pathname === "/log-in" ||
         window.location.pathname === "/reset-password"
@@ -115,13 +114,9 @@ export class App extends LiteElement {
     });
   }
 
-  async updated(changedProperties: any) {
-    if (changedProperties.has("authState") && this.authState) {
-      const prevAuthState = changedProperties.get("authState");
-
-      if (this.authState.username !== prevAuthState?.username) {
-        this.updateUserInfo();
-      }
+  firstUpdated() {
+    if (this.authService.authState) {
+      this.updateUserInfo();
     }
   }
 
@@ -137,7 +132,7 @@ export class App extends LiteElement {
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
-        this.clearAuthState();
+        this.authService.revoke();
         this.navigate(ROUTES.login);
       }
     }
@@ -149,7 +144,7 @@ export class App extends LiteElement {
       newViewPath = `${url.pathname}${url.search}`;
     }
 
-    if (newViewPath === "/log-in" && this.authState) {
+    if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
       this.viewState = this.router.match(DASHBOARD_ROUTE);
     } else {
@@ -199,10 +194,10 @@ export class App extends LiteElement {
           >
         </div>
         <div class="grid grid-flow-col gap-5 items-center">
-          ${this.authState
+          ${this.authService.authState
             ? html` <sl-dropdown>
                 <div class="p-2" role="button" slot="trigger">
-                  ${this.authState.username}
+                  ${this.userInfo?.name || this.userInfo?.email}
                   <span class="text-xs"
                     ><sl-icon name="chevron-down"></sl-icon
                   ></span>
@@ -272,7 +267,7 @@ export class App extends LiteElement {
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           @log-out="${this.onLogOut}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
         ></btrix-sign-up>`;
 
       case "verify":
@@ -283,14 +278,14 @@ export class App extends LiteElement {
           @notify="${this.onNotify}"
           @log-out="${this.onLogOut}"
           @user-info-change="${this.onUserInfoChange}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
         ></btrix-verify>`;
 
       case "join":
         return html`<btrix-join
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @logged-in="${this.onLoggedIn}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
@@ -301,7 +296,7 @@ export class App extends LiteElement {
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .viewState=${this.viewState}
         ></log-in>`;
 
@@ -310,7 +305,7 @@ export class App extends LiteElement {
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
@@ -330,7 +325,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-archives>`);
 
@@ -340,7 +335,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
-          .authState=${this.authState}
+          .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           archiveId=${this.viewState.params.id}
           archiveTab=${this.viewState.params.tab as ArchiveTab}
@@ -352,7 +347,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-account-settings>`);
 
@@ -361,7 +356,7 @@ export class App extends LiteElement {
         return appLayout(html`<btrix-archive
           class="w-full"
           @navigate="${this.onNavigateTo}"
-          .authState="${this.authState}"
+          .authState="${this.authService.authState}"
           .viewState="${this.viewState}"
           aid="${this.viewState.params.aid}"
           tab="${this.viewState.tab || "running"}"
@@ -376,27 +371,21 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.clearAuthState();
+    this.authService.revoke();
 
     if (redirect) {
       this.navigate("/");
     }
   }
 
-  onLoggedIn(
-    event: CustomEvent<{
-      api?: boolean;
-      firstLogin?: boolean;
-      auth: string;
-      username: string;
-    }>
-  ) {
+  onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
-    this.authState = {
+
+    this.authService.persist({
       username: detail.username,
-      headers: { Authorization: detail.auth },
-    };
-    window.localStorage.setItem("authState", JSON.stringify(this.authState));
+      headers: detail.headers,
+      expiresAtTs: detail.expiresAtTs,
+    });
 
     if (!detail.api) {
       this.navigate(DASHBOARD_ROUTE);
@@ -405,10 +394,12 @@ export class App extends LiteElement {
     if (detail.firstLogin) {
       this.onFirstLogin({ email: detail.username });
     }
+
+    this.updateUserInfo();
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
-    this.clearAuthState();
+    this.authService.revoke();
 
     if (event?.detail?.api) {
       // TODO refresh instead of redirect
@@ -475,13 +466,8 @@ export class App extends LiteElement {
     alert.toast();
   }
 
-  clearAuthState() {
-    this.authState = null;
-    window.localStorage.setItem("authState", "");
-  }
-
   getUserInfo() {
-    return this.apiFetch("/users/me", this.authState!);
+    return this.apiFetch("/users/me", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {
@@ -529,7 +515,6 @@ customElements.define("btrix-verify", Verify);
 customElements.define("log-in", LogInPage);
 customElements.define("btrix-archives", Archives);
 customElements.define("btrix-archive", Archive);
-customElements.define("btrix-archive-configs", ArchiveConfigsPage);
 customElements.define("btrix-account-settings", AccountSettings);
 customElements.define("btrix-invite-form", InviteForm);
 customElements.define("btrix-join", Join);

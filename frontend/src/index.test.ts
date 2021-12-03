@@ -25,24 +25,24 @@ describe("browsertrix-app", () => {
     expect(el).instanceOf(App);
   });
 
-  it("sets auth state from local storage", async () => {
-    stub(window.localStorage, "getItem").callsFake((key) => {
-      if (key === "authState")
-        return JSON.stringify({
-          username: "test-auth@example.com",
-        });
-      return null;
-    });
-    const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
+  // it("sets auth state from local storage", async () => {
+  //   stub(window.localStorage, "getItem").callsFake((key) => {
+  //     if (key === "btrix.auth")
+  //       return JSON.stringify({
+  //         username: "test-auth@example.com",
+  //       });
+  //     return null;
+  //   });
+  //   const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
 
-    expect(el.authState).to.eql({
-      username: "test-auth@example.com",
-    });
-  });
+  //   expect(el.authService.authState).to.eql({
+  //     username: "test-auth@example.com",
+  //   });
+  // });
 
   it("sets user info", async () => {
     stub(window.localStorage, "getItem").callsFake((key) => {
-      if (key === "authState")
+      if (key === "btrix.auth")
         return JSON.stringify({
           username: "test-auth@example.com",
         });
