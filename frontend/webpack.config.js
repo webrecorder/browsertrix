@@ -27,17 +27,11 @@ module.exports = {
   entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: (pathData) => {
-      if (pathData.chunk.name === "main") {
-        return `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`;
-      }
-      return `[name].js`;
-    },
+    filename: `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`,
     publicPath: "/",
   },
 
   devtool: "inline-source-map",
-
   module: {
     rules: [
       {
