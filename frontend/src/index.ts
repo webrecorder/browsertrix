@@ -399,12 +399,9 @@ export class App extends LiteElement {
     this.updateUserInfo();
   }
 
-  onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
+  onNeedLogin() {
     this.authService.logout();
 
-    if (event?.detail?.api) {
-      // TODO refresh instead of redirect
-    }
     this.navigate(ROUTES.login);
   }
 

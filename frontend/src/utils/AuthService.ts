@@ -162,12 +162,10 @@ export default class AuthService {
           }, FRESHNESS_TIMER_INTERVAL);
         } catch (e) {
           console.debug(e);
-
-          // TODO handle
         }
       }
     } else {
-      // TODO notify expired
+      this.logout();
     }
   }
 
