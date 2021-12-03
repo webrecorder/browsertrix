@@ -98,7 +98,7 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const auth = window.sessionStorage.getItem(AuthService.storageKey);
+    const auth = window.localStorage.getItem(AuthService.storageKey);
 
     if (auth) {
       this._authState = JSON.parse(auth);
@@ -108,28 +108,34 @@ export default class AuthService {
     return this._authState;
   }
 
-  persist(auth: Auth) {
+  startPersist(auth: Auth) {
     if (auth) {
-      this._authState = {
-        username: auth.username,
-        headers: auth.headers,
-        tokenExpiresAt: auth.tokenExpiresAt,
-        sessionExpiresAt: Date.now() + SESSION_LIFETIME,
-      };
-
-      window.sessionStorage.setItem(
-        AuthService.storageKey,
-        JSON.stringify(auth)
-      );
+      this.persist(auth);
       this.checkFreshness();
     } else {
       console.warn("No authState to persist");
     }
   }
 
-  revoke() {
+  logout() {
+    window.clearTimeout(this.timerId);
+    this.revoke();
+  }
+
+  private revoke() {
     this._authState = null;
-    window.sessionStorage.removeItem(AuthService.storageKey);
+    window.localStorage.removeItem(AuthService.storageKey);
+  }
+
+  private persist(auth: Auth) {
+    this._authState = {
+      username: auth.username,
+      headers: auth.headers,
+      tokenExpiresAt: auth.tokenExpiresAt,
+      sessionExpiresAt: Date.now() + SESSION_LIFETIME,
+    };
+
+    window.localStorage.setItem(AuthService.storageKey, JSON.stringify(auth));
   }
 
   private async checkFreshness() {

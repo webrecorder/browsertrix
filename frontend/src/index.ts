@@ -132,7 +132,7 @@ export class App extends LiteElement {
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
-        this.authService.revoke();
+        this.authService.logout();
         this.navigate(ROUTES.login);
       }
     }
@@ -371,7 +371,8 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.authService.revoke();
+    this.authService.logout();
+    this.authService = new AuthService();
 
     if (redirect) {
       this.navigate("/");
@@ -381,7 +382,7 @@ export class App extends LiteElement {
   onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
 
-    this.authService.persist({
+    this.authService.startPersist({
       username: detail.username,
       headers: detail.headers,
       tokenExpiresAt: detail.tokenExpiresAt,
@@ -399,7 +400,7 @@ export class App extends LiteElement {
   }
 
   onNeedLogin(event?: CustomEvent<{ api: boolean }>) {
-    this.authService.revoke();
+    this.authService.logout();
 
     if (event?.detail?.api) {
       // TODO refresh instead of redirect

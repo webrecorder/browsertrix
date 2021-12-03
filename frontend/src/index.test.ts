@@ -26,7 +26,7 @@ describe("browsertrix-app", () => {
   });
 
   it("sets auth state from session storage", async () => {
-    stub(window.sessionStorage, "getItem").callsFake((key) => {
+    stub(window.localStorage, "getItem").callsFake((key) => {
       if (key === "btrix.auth")
         return JSON.stringify({
           username: "test-auth@example.com",
@@ -41,7 +41,7 @@ describe("browsertrix-app", () => {
   });
 
   it("sets user info", async () => {
-    stub(window.sessionStorage, "getItem").callsFake((key) => {
+    stub(window.localStorage, "getItem").callsFake((key) => {
       if (key === "btrix.auth")
         return JSON.stringify({
           username: "test-auth@example.com",
