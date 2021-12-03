@@ -4,7 +4,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 
-import "./shoelace";
 import type { ArchiveTab } from "./pages/archive";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -14,6 +13,7 @@ import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
+import "./shoelace";
 import "./components";
 import "./pages";
 

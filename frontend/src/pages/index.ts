@@ -1,21 +1,23 @@
-import("./sign-up").then(({ SignUp }) => {
+import(/* webpackChunkName: "sign-up" */ "./sign-up").then(({ SignUp }) => {
   customElements.define("btrix-sign-up", SignUp);
 });
-import("./log-in").then(({ LogInPage }) => {
+import(/* webpackChunkName: "log-in" */ "./log-in").then(({ LogInPage }) => {
   customElements.define("btrix-log-in", LogInPage);
 });
-import("./archives").then(({ Archives }) => {
+import(/* webpackChunkName: "archives" */ "./archives").then(({ Archives }) => {
   customElements.define("btrix-archives", Archives);
 });
-import("./archive").then(({ Archive }) => {
+import(/* webpackChunkName: "archive" */ "./archive").then(({ Archive }) => {
   customElements.define("btrix-archive", Archive);
 });
-import("./join").then(({ Join }) => {
+import(/* webpackChunkName: "join" */ "./join").then(({ Join }) => {
   customElements.define("btrix-join", Join);
 });
-import("./verify").then(({ Verify }) => {
+import(/* webpackChunkName: "verify" */ "./verify").then(({ Verify }) => {
   customElements.define("btrix-verify", Verify);
 });
-import("./reset-password").then(({ ResetPassword }) => {
-  customElements.define("btrix-reset-password", ResetPassword);
-});
+import(/* webpackChunkName: "reset-password" */ "./reset-password").then(
+  ({ ResetPassword }) => {
+    customElements.define("btrix-reset-password", ResetPassword);
+  }
+);

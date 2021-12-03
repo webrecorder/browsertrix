@@ -8,6 +8,7 @@ module.exports = merge(common, {
 
   // TODO figure out minifying lit templates
   optimization: {
+    runtimeChunk: "single",
     splitChunks: {
       // Split both async and non-async chunks (only async by default)
       chunks: "all",
