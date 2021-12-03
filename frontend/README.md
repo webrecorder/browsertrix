@@ -14,6 +14,12 @@ Install dependencies:
 yarn
 ```
 
+Generate locale files:
+
+```sh
+yarn localize:build
+```
+
 Start the dev server:
 
 ```sh
