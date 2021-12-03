@@ -26,9 +26,9 @@ import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
 
+const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
 const ROUTES = {
   home: "/",
-  signUp: "/sign-up",
   join: "/join/:token?email",
   verify: "/verify?token",
   login: "/log-in",
@@ -40,6 +40,11 @@ const ROUTES = {
   archive: "/archives/:id/:tab",
   archiveAddMember: "/archives/:id/:tab/add-member",
 } as const;
+
+if (REGISTRATION_ENABLED) {
+  (ROUTES as any).signUp = "/sign-up";
+}
+
 const DASHBOARD_ROUTE = ROUTES.archives;
 
 type DialogContent = {
