@@ -94,6 +94,9 @@ module.exports = {
 
     new HtmlWebpackPlugin({
       template: "src/index.html",
+      // Need to block during local development for HMR:
+      inject: isDevServer ? "head" : true,
+      scriptLoading: isDevServer ? "blocking" : "defer",
     }),
 
     // Lint js files
