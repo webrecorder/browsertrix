@@ -43,11 +43,7 @@ export default class LiteElement extends LitElement {
 
     if (resp.status !== 200) {
       if (resp.status === 401) {
-        this.dispatchEvent(
-          new CustomEvent("need-login", {
-            detail: { api: true },
-          })
-        );
+        this.dispatchEvent(new CustomEvent("need-login"));
       }
 
       let errorMessage: string;

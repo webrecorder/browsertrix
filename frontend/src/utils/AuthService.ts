@@ -5,10 +5,14 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
-  expiresAtTs: number;
+  tokenExpiresAt: number;
 };
 
-export type AuthState = Auth | null;
+type Session = {
+  sessionExpiresAt: number;
+};
+
+export type AuthState = (Auth & Session) | null;
 
 type LoggedInEventDetail = Auth & {
   api?: boolean;
@@ -19,7 +23,16 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
+// Check for token freshness every 5 minutes
+const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
+// TODO get expires at from server
+// Hardcode 1hr expiry for now
+const ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60;
+// Hardcode 24h expiry for now
+const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
+
 export default class AuthService {
+  private timerId?: number;
   private _authState: AuthState = null;
 
   static storageKey = "btrix.auth";
@@ -60,17 +73,24 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
 
+    return {
+      username: email,
+      headers: authHeaders,
+      // TODO get expires at from server
+      // Hardcode 1hr expiry for now
+      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
+    };
+  }
+
+  private static parseAuthHeaders(data: {
+    token_type: string;
+    access_token: string;
+  }): Auth["headers"] {
     if (data.token_type === "bearer" && data.access_token) {
       return {
-        username: email,
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-        // TODO get expires at from server
-        // Hardcode 1hr expiry for now
-        expiresAtTs: Date.now() + 3600 * 1000,
+        Authorization: `Bearer ${data.access_token}`,
       };
     }
 
@@ -78,29 +98,104 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const authState = window.localStorage.getItem(AuthService.storageKey);
+    const auth = window.localStorage.getItem(AuthService.storageKey);
 
-    if (authState) {
-      this._authState = JSON.parse(authState);
+    if (auth) {
+      this._authState = JSON.parse(auth);
+      this.checkFreshness();
     }
 
     return this._authState;
   }
 
-  persist(authState: AuthState) {
-    if (authState) {
-      this._authState = authState;
-      window.localStorage.setItem(
-        AuthService.storageKey,
-        JSON.stringify(this.authState)
-      );
+  startPersist(auth: Auth) {
+    if (auth) {
+      this.persist(auth);
+      this.checkFreshness();
     } else {
       console.warn("No authState to persist");
     }
   }
 
-  revoke() {
+  logout() {
+    window.clearTimeout(this.timerId);
+    this.revoke();
+  }
+
+  private revoke() {
     this._authState = null;
-    window.localStorage.setItem(AuthService.storageKey, "");
+    window.localStorage.removeItem(AuthService.storageKey);
+  }
+
+  private persist(auth: Auth) {
+    this._authState = {
+      username: auth.username,
+      headers: auth.headers,
+      tokenExpiresAt: auth.tokenExpiresAt,
+      sessionExpiresAt: Date.now() + SESSION_LIFETIME,
+    };
+
+    window.localStorage.setItem(AuthService.storageKey, JSON.stringify(auth));
+  }
+
+  private async checkFreshness() {
+    window.clearTimeout(this.timerId);
+
+    if (!this._authState) return;
+    const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
+
+    if (this._authState.sessionExpiresAt > paddedNow) {
+      if (this._authState.tokenExpiresAt > paddedNow) {
+        // Restart timer
+        this.timerId = window.setTimeout(() => {
+          this.checkFreshness();
+        }, FRESHNESS_TIMER_INTERVAL);
+      } else {
+        try {
+          const auth = await this.refresh();
+          this._authState.headers = auth.headers;
+          this._authState.tokenExpiresAt = auth.tokenExpiresAt;
+
+          // Restart timer
+          this.timerId = window.setTimeout(() => {
+            this.checkFreshness();
+          }, FRESHNESS_TIMER_INTERVAL);
+        } catch (e) {
+          console.debug(e);
+        }
+      }
+    } else {
+      this.logout();
+    }
+  }
+
+  private async refresh(): Promise<{
+    headers: Auth["headers"];
+    tokenExpiresAt: Auth["tokenExpiresAt"];
+  }> {
+    if (!this.authState) {
+      throw new Error("No this.authState");
+    }
+
+    const resp = await fetch("/api/auth/jwt/refresh", {
+      method: "POST",
+      headers: this.authState.headers,
+    });
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
+
+    return {
+      headers: authHeaders,
+      // TODO get expires at from server
+      // Hardcode 1hr expiry for now
+      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
+    };
   }
 }

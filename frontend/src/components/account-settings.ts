@@ -6,7 +6,7 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import type { AuthState } from "../utils/AuthService";
+import type { AuthState, Auth } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
 
 @localized()
@@ -333,7 +333,7 @@ export class AccountSettings extends LiteElement {
     this.formStateService.send("SUBMIT");
 
     const { formData } = event.detail;
-    let nextAuthState: AuthState = null;
+    let nextAuthState: Auth | null = null;
 
     try {
       nextAuthState = await AuthService.login({
