@@ -2,11 +2,16 @@
 const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const Dotenv = require("dotenv-webpack");
 
 const isDevServer = process.env.WEBPACK_SERVE;
+const dotEnvPath = path.resolve(
+  process.cwd(),
+  `.env${isDevServer ? `.local` : ""}`
+);
 
 require("dotenv").config({
-  path: path.resolve(process.cwd(), `.env${isDevServer ? `.local` : ""}`),
+  path: dotEnvPath,
 });
 
 const backendUrl = new URL(process.env.API_BASE_URL || "http://btrix.cloud/");
@@ -80,6 +85,8 @@ module.exports = {
   },
 
   plugins: [
+    new Dotenv({ path: dotEnvPath }),
+
     // Lint js files
     new ESLintPlugin({
       // lint only changed files:
