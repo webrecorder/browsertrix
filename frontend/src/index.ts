@@ -3,6 +3,7 @@ import { state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
+import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
 import LiteElement, { html } from "./utils/LiteElement";
