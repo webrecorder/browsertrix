@@ -97,6 +97,7 @@ module.exports = {
       // Need to block during local development for HMR:
       inject: isDevServer ? "head" : true,
       scriptLoading: isDevServer ? "blocking" : "defer",
+      hash: !isDevServer,
     }),
 
     // Lint js files
