@@ -28,7 +28,7 @@
     "format": "prettier --write \"**/*.{ts,js,html,css}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build",
-    "get-settings": "node ./scripts/get-settings.js"
+    "get-settings": "node ./scripts/get-settings.mjs"
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
@@ -52,10 +52,10 @@
     "eslint-plugin-lit": "^1.6.1",
     "eslint-plugin-wc": "^1.3.2",
     "eslint-webpack-plugin": "^3.1.1",
+    "node-fetch": "^3.1.0",
     "postcss": "^8.3.8",
     "postcss-loader": "^6.1.1",
     "prettier": "^2.4.1",
-    "request": "^2.88.2",
     "sinon": "^12.0.1",
     "style-loader": "^3.3.0",
     "ts-loader": "^9.2.6",
