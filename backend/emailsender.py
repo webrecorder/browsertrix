@@ -37,7 +37,7 @@ class EmailSender:
         message = f"""
 Please verify your registration for Browsertrix Cloud for {receiver_email}
 
-You can verify by clicking here: {self.host}/app/verify/{token}
+You can verify by clicking here: {self.host}/verify?token={token}
 
 The verification token is: {token}"""
 
@@ -49,7 +49,7 @@ The verification token is: {token}"""
         message = f"""
 You are invited by {sender} to join their archive, {archive_name} on Browsertrix Cloud!
 
-You can join by clicking here: {self.host}/app/join/{token}
+You can join by clicking here: {self.host}/join/{token}?email={receiver_email}
 
 The invite token is: {token}"""
 

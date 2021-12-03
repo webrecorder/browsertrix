@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-frontend
+  namespace: {{ .Release.Namespace }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      role: frontend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        role: frontend
+
+      annotations:
+        # force helm to update the deployment each time
+        {{- if not .Values.backend_only }}
+        "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
+
+
+    spec:
+      volumes:
+        - name: nginx-resolver
+          emptyDir: {}
+
+      initContainers:
+        - name: init-nginx
+          image: {{ .Values.nginx_image }}
+          command: ["/bin/sh"]
+          args: ["-c", "echo resolver $(awk 'BEGIN{ORS=\" \"} $1==\"nameserver\" {print $2}' /etc/resolv.conf) valid=30s \";\" > /etc/nginx/resolvers/resolvers.conf"]
+          volumeMounts:
+            - name: nginx-resolver
+              mountPath: /etc/nginx/resolvers/
+
+
+      containers:
+        - name: nginx
+          image: {{ .Values.nginx_image }}
+          imagePullPolicy: {{ .Values.nginx_pull_policy }}
+          volumeMounts:
+            - name: nginx-resolver
+              mountPath: /etc/nginx/resolvers/
+              readOnly: true
+
+          resources:
+            limits:
+              cpu: {{ .Values.nginx_limit_cpu }}
+
+            requests:
+              cpu: {{ .Values.nginx_requests_cpu }}
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+             
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.name }}-frontend
+  labels:
+    app: {{ .Values.name }}
+    role: frontend
+
+{{- if .Values.service }}
+  {{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.service.annotations }}
+    {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+spec:
+  selector:
+    app: {{ .Values.name }}
+    role: frontend
+
+{{- if .Values.service }}
+  {{- if .Values.service.type }}
+  type: {{ .Values.service.type | quote }}
+  {{- end }}
+{{- end }}
+
+  ports:
+    - protocol: TCP
+      port: 80
+      name: frontend
+

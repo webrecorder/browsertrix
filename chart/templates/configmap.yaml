@@ -45,3 +45,6 @@ metadata:
 
 data:
 {{ (.Files.Glob "*.conf").AsConfig | indent 2 }}
+
+#{{ (.Files.Glob "frontend/*.*").AsConfig | indent 2 }}
+

@@ -2,35 +2,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Values.name }}-backend
   namespace: {{ .Release.Namespace }}
 
 spec:
   selector:
     matchLabels:
       app: {{ .Values.name }}
+      role: backend
   replicas: {{ .Values.api_num_replicas }}
   template:
     metadata:
       labels:
         app: {{ .Values.name }}
+        role: backend
 
       annotations:
         # force helm to update the deployment each time
+        {{- if not .Values.frontend_only }}
         "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
 
     spec:
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: nginx-config
-            items:
-              - key: nginx.conf
-                path: nginx.conf
-
-        - name: nginx-resolver
-          emptyDir: {}
-
       initContainers:
 {{- if .Values.minio_local }}
         - name: init-bucket
@@ -47,42 +40,8 @@ spec:
           args: ['-c', 'mc mb --ignore-existing local/{{ .Values.minio_local_bucket_name }}' ]
 {{- end }}
 
-        - name: init-nginx
-          image: {{ .Values.nginx_image }}
-          command: ["/bin/sh"]
-          args: ["-c", "echo resolver $(awk 'BEGIN{ORS=\" \"} $1==\"nameserver\" {print $2}' /etc/resolv.conf) valid=30s \";\" > /etc/nginx/resolvers/resolvers.conf"]
-          volumeMounts:
-            - name: nginx-resolver
-              mountPath: /etc/nginx/resolvers/
-
 
       containers:
-        - name: nginx
-          image: {{ .Values.nginx_image }}
-          imagePullPolicy: {{ .Values.nginx_pull_policy }}
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-              readOnly: true
-
-            - name: nginx-resolver
-              mountPath: /etc/nginx/resolvers/
-              readOnly: true
-
-          resources:
-            limits:
-              cpu: {{ .Values.nginx_limit_cpu }}
-
-            requests:
-              cpu: {{ .Values.nginx_requests_cpu }}
-
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 80
-              
-
         - name: api
           image: {{ .Values.api_image }}
           imagePullPolicy: {{ .Values.api_pull_policy }}
@@ -101,6 +60,13 @@ spec:
               cpu: {{ .Values.api_requests_cpu }}
               memory: {{ .Values.api_requests_memory }}
 
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 5
+
           readinessProbe:
             httpGet:
               path: /healthz
@@ -112,9 +78,10 @@ kind: Service
 
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ .Values.name }}
+  name: {{ .Values.name }}-backend
   labels:
     app: {{ .Values.name }}
+    role: backend
 
 {{- if .Values.service }}
   {{- if .Values.service.annotations }}
@@ -128,6 +95,7 @@ metadata:
 spec:
   selector:
     app: {{ .Values.name }}
+    role: backend
 
 {{- if .Values.service }}
   {{- if .Values.service.type }}
@@ -137,7 +105,5 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 80
+      port: 8000
       name: api
-  #externalIPs:
-  #  - 127.0.0.1
