@@ -23,7 +23,7 @@ from fastapi_users.db import MongoDBUserDatabase
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
-JWT_LIFETIME = int(os.environ.get("JWT_LIFETIME", 3600))
+JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME", 60)) * 60
 
 
 # ============================================================================
@@ -185,7 +185,7 @@ def init_users_api(app, user_manager):
     """ init fastapi_users """
     jwt_authentication = JWTAuthentication(
         secret=PASSWORD_SECRET,
-        lifetime_seconds=JWT_LIFETIME,
+        lifetime_seconds=JWT_TOKEN_LIFETIME,
         tokenUrl="/auth/jwt/login",
     )
 

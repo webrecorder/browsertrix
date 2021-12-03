@@ -23,6 +23,11 @@ data:
 
   NO_DELETE_JOBS: "{{ .Values.no_delete_jobs | default '0' }}"
 
+  REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default '0' }}"
+
+  JWT_TOKEN_LIFETIME: "{{ .Values.jwt_token_lifetime | default '60' }}"
+
+
 ---
 apiVersion: v1
 kind: ConfigMap
