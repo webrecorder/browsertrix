@@ -21,7 +21,7 @@
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
     "prebuild": "npm run env:sync && npm run localize:build",
     "prebuild-dev": "npm run localize:build",
-    "build": "webpack --mode production",
+    "build": "webpack --mode production --devtool source-map",
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
