@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from db import init_db
 
 from emailsender import EmailSender
+from invites import init_invites
 from users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
 from archives import init_archives_api
 
@@ -22,6 +23,7 @@ app = FastAPI()
 
 
 # ============================================================================
+# pylint: disable=too-many-locals
 def main():
     """ init browsertrix cloud api """
 
@@ -32,16 +34,20 @@ def main():
 
     settings = {
         "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
-        "jwtTokenLifetime": JWT_TOKEN_LIFETIME
+        "jwtTokenLifetime": JWT_TOKEN_LIFETIME,
     }
 
-    user_manager = init_user_manager(mdb, email)
+    invites = init_invites(mdb, email)
+
+    user_manager = init_user_manager(mdb, email, invites)
 
     fastapi_users = init_users_api(app, user_manager)
 
     current_active_user = fastapi_users.current_user(active=True)
 
-    archive_ops = init_archives_api(app, mdb, user_manager, email, current_active_user)
+    archive_ops = init_archives_api(
+        app, mdb, user_manager, invites, current_active_user
+    )
 
     user_manager.set_archive_ops(archive_ops)
 

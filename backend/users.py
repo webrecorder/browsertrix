@@ -6,12 +6,9 @@ import os
 import uuid
 import asyncio
 
-from datetime import datetime
-
 from typing import Dict, Optional
-from enum import IntEnum
 
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import EmailStr, UUID4
 
 from fastapi import Request, Response, HTTPException, Depends
 
@@ -19,29 +16,13 @@ from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
 
+from invites import InvitePending, InviteRequest
+
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
-
-
-# ============================================================================
-class UserRole(IntEnum):
-    """User role"""
-
-    VIEWER = 10
-    CRAWLER = 20
-    OWNER = 40
-
-
-# ============================================================================
-class InvitePending(BaseModel):
-    """Pending Request to join an archive"""
-
-    aid: str
-    created: datetime
-    role: UserRole = UserRole.VIEWER
 
 
 # ============================================================================
@@ -54,7 +35,7 @@ class User(models.BaseUser):
 
 
 # ============================================================================
-# use custom model as model.BaseUserCreate includes is_* fields which should not be set
+# use custom model as model.BaseeserCreate includes is_* fields which should not be set
 class UserCreate(models.CreateUpdateDictModel):
     """
     User Creation Model
@@ -104,14 +85,36 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
 
-    def __init__(self, user_db, email):
+    def __init__(self, user_db, email, invites):
         super().__init__(user_db)
         self.email = email
+        self.invites = invites
         self.archive_ops = None
+
+        self.registration_enabled = os.environ.get("REGISTRATION_ENABLED") == "1"
 
     def set_archive_ops(self, ops):
         """ set archive ops """
         self.archive_ops = ops
+
+    async def create(
+        self, user: UserCreate, safe: bool = False, request: Optional[Request] = None
+    ):
+        """ override user creation to check if invite token is present"""
+        user.name = user.name or user.email
+
+        # if open registration not enabled, can only register with an invite
+        if not self.registration_enabled and not user.inviteToken:
+            raise HTTPException(status_code=400, detail="Invite Token Required")
+
+        if user.inviteToken and not await self.invites.get_valid_invite(
+            user.inviteToken, user
+        ):
+            raise HTTPException(status_code=400, detail="Invalid Invite Token")
+
+        created_user = await super().create(user, safe, request)
+        await self.on_after_register_custom(created_user, user, request)
+        return created_user
 
     async def get_user_names_by_ids(self, user_ids):
         """ return list of user names for given ids """
@@ -121,18 +124,19 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         )
         return await cursor.to_list(length=1000)
 
-    # pylint: disable=no-self-use, unused-argument
-    async def on_after_register(self, user: UserDB, request: Optional[Request] = None):
-        """callback after registeration"""
+    async def on_after_register_custom(
+        self, user: UserDB, user_create: UserCreate, request: Optional[Request]
+    ):
+        """ custom post registration callback, also receive the UserCreate object """
 
         print(f"User {user.id} has registered.")
 
-        req_data = await request.json()
-
-        if req_data.get("newArchive"):
+        if user_create.newArchive:
             print(f"Creating new archive for {user.id}")
 
-            archive_name = req_data.get("newArchiveName") or f"{user.name}'s Archive"
+            archive_name = (
+                user_create.newArchiveName or f"{user.name or user.email}'s Archive"
+            )
 
             await self.archive_ops.create_new_archive_for_user(
                 archive_name=archive_name,
@@ -140,17 +144,16 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 user=user,
             )
 
-        if req_data.get("inviteToken"):
+        if user_create.inviteToken:
             try:
                 await self.archive_ops.handle_new_user_invite(
-                    req_data.get("inviteToken"), user
+                    user_create.inviteToken, user
                 )
             except HTTPException as exc:
                 print(exc)
 
         asyncio.create_task(self.request_verify(user, request))
 
-    # pylint: disable=no-self-use, unused-argument
     async def on_after_forgot_password(
         self, user: UserDB, token: str, request: Optional[Request] = None
     ):
@@ -158,7 +161,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         print(f"User {user.id} has forgot their password. Reset token: {token}")
         self.email.send_user_forgot_password(user.email, token)
 
-    # pylint: disable=no-self-use, unused-argument
+    ###pylint: disable=no-self-use, unused-argument
     async def on_after_request_verify(
         self, user: UserDB, token: str, request: Optional[Request] = None
     ):
@@ -168,7 +171,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
 
 # ============================================================================
-def init_user_manager(mdb, emailsender):
+def init_user_manager(mdb, emailsender, invites):
     """
     Load users table and init /users routes
     """
@@ -177,7 +180,7 @@ def init_user_manager(mdb, emailsender):
 
     user_db = UserDBOps(UserDB, user_collection)
 
-    return UserManager(user_db, emailsender)
+    return UserManager(user_db, emailsender, invites)
 
 
 # ============================================================================
@@ -200,10 +203,10 @@ def init_users_api(app, user_manager):
 
     auth_router = fastapi_users.get_auth_router(jwt_authentication)
 
+    current_active_user = fastapi_users.current_user(active=True)
+
     @auth_router.post("/refresh")
-    async def refresh_jwt(
-        response: Response, user=Depends(fastapi_users.current_user(active=True))
-    ):
+    async def refresh_jwt(response: Response, user=Depends(current_active_user)):
         return await jwt_authentication.get_login_response(user, response, user_manager)
 
     app.include_router(
@@ -228,8 +231,22 @@ def init_users_api(app, user_manager):
         tags=["auth"],
     )
 
-    app.include_router(
-        fastapi_users.get_users_router(), prefix="/users", tags=["users"]
-    )
+    users_router = fastapi_users.get_users_router()
+
+    @users_router.post("/invite", tags=["invites"])
+    async def invite_user(
+        invite: InviteRequest,
+        user: User = Depends(current_active_user),
+    ):
+        # if not user.is_superuser:
+        #    raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await user_manager.invites.invite_user(
+            invite, user, user_manager, archive=None, allow_existing=False
+        )
+
+        return {"invited": "new_user"}
+
+    app.include_router(users_router, prefix="/users", tags=["users"])
 
     return fastapi_users
