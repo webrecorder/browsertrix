@@ -1,4 +1,10 @@
+# Settings
+# =========================================
 name: browsertrix-cloud
+
+registration_enabled: 1
+jwt_token_lifetime_minutes: 60
+
 
 # API Image
 # =========================================
