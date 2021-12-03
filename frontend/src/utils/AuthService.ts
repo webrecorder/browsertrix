@@ -142,22 +142,15 @@ export default class AuthService {
     window.clearTimeout(this.timerId);
 
     if (!this._authState) return;
-
-    console.log(this._authState);
-
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
 
     if (this._authState.sessionExpiresAt > paddedNow) {
       if (this._authState.tokenExpiresAt > paddedNow) {
-        console.log("not expired");
-
         // Restart timer
         this.timerId = window.setTimeout(() => {
           this.checkFreshness();
         }, FRESHNESS_TIMER_INTERVAL);
       } else {
-        console.log("expires before next check");
-
         try {
           const auth = await this.refresh();
           this._authState.headers = auth.headers;
