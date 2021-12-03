@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { shouldPolyfill } from "@formatjs/intl-displaynames/should-polyfill";
+// import { shouldPolyfill } from "@formatjs/intl-displaynames/should-polyfill";
 
 import { allLocales } from "../__generated__/locale-codes";
 import { getLocale, setLocaleFromUrl } from "../utils/localization";
@@ -21,33 +21,33 @@ export class LocalePicker extends LitElement {
   };
 
   async firstUpdated() {
-    let isFirstPolyfill = true;
+    // let isFirstPolyfill = true;
 
-    // Polyfill if needed
-    // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames#browser_compatibility
-    // TODO actually test if polyfill works in older browser
-    const polyfill = async (locale: LocaleCode) => {
-      if (!shouldPolyfill(locale)) {
-        return;
-      }
+    // // Polyfill if needed
+    // // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames#browser_compatibility
+    // // TODO actually test if polyfill works in older browser
+    // const polyfill = async (locale: LocaleCode) => {
+    //   if (!shouldPolyfill(locale)) {
+    //     return;
+    //   }
 
-      if (isFirstPolyfill) {
-        await import("@formatjs/intl-getcanonicallocales/polyfill");
-        await import("@formatjs/intl-displaynames/polyfill");
+    //   if (isFirstPolyfill) {
+    //     await import("@formatjs/intl-getcanonicallocales/polyfill");
+    //     await import("@formatjs/intl-displaynames/polyfill");
 
-        isFirstPolyfill = false;
-      }
+    //     isFirstPolyfill = false;
+    //   }
 
-      try {
-        await import("@formatjs/intl-displaynames/locale-data/" + locale);
-      } catch (e) {
-        console.debug(e);
-      }
-    };
+    //   try {
+    //     await import("@formatjs/intl-displaynames/locale-data/" + locale);
+    //   } catch (e) {
+    //     console.debug(e);
+    //   }
+    // };
 
-    await Promise.all(
-      allLocales.map((locale) => polyfill(locale as LocaleCode))
-    );
+    // await Promise.all(
+    //   allLocales.map((locale) => polyfill(locale as LocaleCode))
+    // );
 
     this.localeNames = {} as LocaleNames;
     allLocales.forEach(this.setLocaleName);
