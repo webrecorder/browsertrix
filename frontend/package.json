@@ -19,7 +19,7 @@
   },
   "scripts": {
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
-    "prebuild": "npm run env:sync && npm run localize:build",
+    "prebuild": "del-cli ./dist && npm run env:sync && npm run localize:build",
     "prebuild-dev": "npm run localize:build",
     "build": "webpack --mode production --devtool source-map",
     "build-dev": "webpack --mode development",
@@ -45,6 +45,7 @@
     "autoprefixer": "^10.3.6",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",
+    "del-cli": "^4.0.1",
     "dotenv": "^10.0.0",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^8.2.0",
