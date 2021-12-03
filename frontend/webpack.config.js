@@ -14,6 +14,7 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
+// TODO actual prod URL
 const backendUrl = new URL(process.env.API_BASE_URL || "http://btrix.cloud/");
 const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
