@@ -27,7 +27,12 @@ module.exports = {
   entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "main.js",
+    filename: (pathData) => {
+      if (pathData.chunk.name === "main") {
+        return `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`;
+      }
+      return `[name].js`;
+    },
     publicPath: "/",
   },
 
@@ -97,7 +102,6 @@ module.exports = {
       // Need to block during local development for HMR:
       inject: isDevServer ? "head" : true,
       scriptLoading: isDevServer ? "blocking" : "defer",
-      hash: !isDevServer,
     }),
 
     // Lint js files
