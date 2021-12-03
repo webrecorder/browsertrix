@@ -6,22 +6,11 @@ module.exports = merge(common, {
   mode: "production",
   devtool: "source-map",
 
+  // TODO figure out minifying lit templates
   optimization: {
-    // chunkIds: "deterministic",
-    // moduleIds: "deterministic",
-    // concatenateModules: true,
-    // flagIncludedChunks: true,
-    // mangleExports: "deterministic",
-    // removeAvailableModules: true,
-    // runtimeChunk: "single",
-    // splitChunks: {
-    //   cacheGroups: {
-    //     vendor: {
-    //       test: /[\\/]node_modules[\\/]/,
-    //       name: "vendor",
-    //       chunks: "all",
-    //     },
-    //   },
-    // },
+    splitChunks: {
+      // Split both async and non-async chunks (only async by default)
+      chunks: "all",
+    },
   },
 });
