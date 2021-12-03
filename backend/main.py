@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from db import init_db
 
 from emailsender import EmailSender
-from users import init_users_api, init_user_manager
+from users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
 from archives import init_archives_api
 
 from storages import init_storages_api
@@ -29,6 +29,11 @@ def main():
     crawl_manager = None
 
     mdb = init_db()
+
+    settings = {
+        "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
+        "jwtTokenLifetime": JWT_TOKEN_LIFETIME
+    }
 
     user_manager = init_user_manager(mdb, email)
 
@@ -73,6 +78,10 @@ def main():
     crawl_config_ops.set_coll_ops(coll_ops)
 
     app.include_router(archive_ops.router)
+
+    @app.get("/api/settings")
+    async def get_settings():
+        return settings
 
     @app.get("/healthz")
     async def healthz():
