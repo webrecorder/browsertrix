@@ -1,6 +1,7 @@
 // webpack.config.js
 const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
 
@@ -39,7 +40,6 @@ module.exports = {
         use: "ts-loader",
         exclude: /node_modules/,
       },
-
       {
         test: /\.css$/,
         use: [
@@ -47,6 +47,10 @@ module.exports = {
           { loader: "css-loader", options: { importLoaders: 1 } },
           "postcss-loader",
         ],
+      },
+      {
+        test: /\.html$/,
+        loader: "html-loader",
       },
     ],
   },
@@ -87,6 +91,10 @@ module.exports = {
 
   plugins: [
     new Dotenv({ path: dotEnvPath }),
+
+    new HtmlWebpackPlugin({
+      template: "src/index.html",
+    }),
 
     // Lint js files
     new ESLintPlugin({
