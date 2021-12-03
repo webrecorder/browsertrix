@@ -23,7 +23,7 @@ from fastapi_users.db import MongoDBUserDatabase
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
-JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME", 60)) * 60
+JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
 
 # ============================================================================
