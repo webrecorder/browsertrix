@@ -1,7 +1,7 @@
-const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
-const ROUTES = {
+export const ROUTES = {
   home: "/",
   join: "/join/:token?email",
+  signUp: "/sign-up",
   verify: "/verify?token",
   login: "/log-in",
   forgotPassword: "/log-in/forgot-password",
@@ -15,9 +15,4 @@ const ROUTES = {
   usersInvite: "/users/invite",
 } as const;
 
-if (REGISTRATION_ENABLED) {
-  (ROUTES as any).signUp = "/sign-up";
-}
-
-export { ROUTES };
 export const DASHBOARD_ROUTE = ROUTES.archives;

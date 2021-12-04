@@ -19,6 +19,8 @@ import "./shoelace";
 import "./components";
 import "./pages";
 
+const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
+
 type DialogContent = {
   label?: TemplateResult | string;
   body?: TemplateResult | string;
@@ -265,14 +267,19 @@ export class App extends LiteElement {
           `;
 
     switch (this.viewState.route) {
-      case "signUp":
-        return html`<btrix-sign-up
-          class="w-full md:bg-gray-100 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
-          @log-out="${this.onLogOut}"
-          .authState="${this.authService.authState}"
-        ></btrix-sign-up>`;
+      case "signUp": {
+        if (REGISTRATION_ENABLED) {
+          return html`<btrix-sign-up
+            class="w-full md:bg-gray-100 flex items-center justify-center"
+            @navigate="${this.onNavigateTo}"
+            @logged-in="${this.onLoggedIn}"
+            @log-out="${this.onLogOut}"
+            .authState="${this.authService.authState}"
+          ></btrix-sign-up>`;
+        } else {
+          return this.renderNotFoundPage();
+        }
+      }
 
       case "verify":
         return html`<btrix-verify
@@ -366,18 +373,29 @@ export class App extends LiteElement {
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`);
 
-      case "usersInvite":
-        return appLayout(html`<btrix-users-invite
-          class="w-full"
-          @navigate="${this.onNavigateTo}"
-          @need-login="${this.onNeedLogin}"
-          .authState="${this.authService.authState}"
-          .userInfo="${this.userInfo}"
-        ></btrix-users-invite>`);
+      case "usersInvite": {
+        if (this.userInfo?.isAdmin) {
+          return appLayout(html`<btrix-users-invite
+            class="w-full"
+            @navigate="${this.onNavigateTo}"
+            @need-login="${this.onNeedLogin}"
+            .authState="${this.authService.authState}"
+            .userInfo="${this.userInfo}"
+          ></btrix-users-invite>`);
+        } else {
+          return this.renderNotFoundPage();
+        }
+      }
 
       default:
-        return html`<div>Not Found!</div>`;
+        return this.renderNotFoundPage();
     }
+  }
+
+  renderNotFoundPage() {
+    return html`<bt-not-found
+      class="w-full md:bg-gray-100 flex items-center justify-center"
+    ></bt-not-found>`;
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
