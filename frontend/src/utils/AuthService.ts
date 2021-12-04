@@ -135,7 +135,10 @@ export default class AuthService {
       sessionExpiresAt: Date.now() + SESSION_LIFETIME,
     };
 
-    window.localStorage.setItem(AuthService.storageKey, JSON.stringify(auth));
+    window.localStorage.setItem(
+      AuthService.storageKey,
+      JSON.stringify(this._authState)
+    );
   }
 
   private async checkFreshness() {
