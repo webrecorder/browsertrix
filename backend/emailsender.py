@@ -47,13 +47,27 @@ The verification token is: {token}"""
         """Send email to invite new user"""
 
         message = f"""
-You are invited by {sender} to join their archive, {archive_name} on Browsertrix Cloud!
+You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
 
 You can join by clicking here: {self.host}/join/{token}?email={receiver_email}
 
 The invite token is: {token}"""
 
         self._send_encrypted(receiver_email, message)
+
+    def send_existing_user_invite(self, receiver_email, sender, archive_name, token):
+        """Send email to invite new user"""
+
+        message = f"""
+You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
+
+You can join by clicking here: {self.host}/invite/accept/{token}?email={receiver_email}
+
+The invite token is: {token}"""
+
+        self._send_encrypted(receiver_email, message)
+
+
 
     def send_user_forgot_password(self, receiver_email, token):
         """Send password reset email with token"""

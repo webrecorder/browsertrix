@@ -25,7 +25,7 @@ data:
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default '0' }}"
 
-  JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default '60' }}"
+  JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"
 
 
 ---

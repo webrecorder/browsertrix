@@ -159,8 +159,8 @@ class InviteOps:
 
         await user_manager.user_db.update(other_user)
 
-        self.email.send_new_user_invite(
-            other_user.email, user.name, archive_name, invite_code
+        self.email.send_existing_user_invite(
+            other_user.email, user.name, archive_name,invite_code
         )
 
         return False

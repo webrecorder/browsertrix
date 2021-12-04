@@ -152,7 +152,11 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             except HTTPException as exc:
                 print(exc)
 
-        asyncio.create_task(self.request_verify(user, request))
+            # if user has been invited, mark as verified immediately
+            await self._update(user, {"is_verified": True})
+
+        else:
+            asyncio.create_task(self.request_verify(user, request))
 
     async def on_after_forgot_password(
         self, user: UserDB, token: str, request: Optional[Request] = None
@@ -189,7 +193,7 @@ def init_users_api(app, user_manager):
     jwt_authentication = JWTAuthentication(
         secret=PASSWORD_SECRET,
         lifetime_seconds=JWT_TOKEN_LIFETIME,
-        tokenUrl="/auth/jwt/login",
+        tokenUrl="auth/jwt/login",
     )
 
     fastapi_users = FastAPIUsers(
