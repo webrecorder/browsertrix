@@ -23,7 +23,7 @@ export class Verify extends LiteElement {
 
   render() {
     if (this.serverError) {
-      return html`<bt-alert type="danger">${this.serverError}</bt-alert>`;
+      return html`<btrix-alert type="danger">${this.serverError}</btrix-alert>`;
     }
     return html` <div class="text-4xl"><sl-spinner></sl-spinner></div> `;
   }

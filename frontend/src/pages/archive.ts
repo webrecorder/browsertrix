@@ -121,10 +121,10 @@ export class Archive extends LiteElement {
     if (this.successfullyInvitedEmail) {
       successMessage = html`
         <div class="my-3">
-          <bt-alert type="success"
+          <btrix-alert type="success"
             >${msg(
               str`Successfully invited ${this.successfullyInvitedEmail}`
-            )}</bt-alert
+            )}</btrix-alert
           >
         </div>
       `;

@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import { state } from "lit/decorators.js";
 import { shouldPolyfill } from "@formatjs/intl-displaynames/should-polyfill";
 
 import { allLocales } from "../__generated__/locale-codes";
@@ -12,7 +13,8 @@ type LocaleNames = {
 
 @localized()
 export class LocalePicker extends LitElement {
-  localeNames?: LocaleNames;
+  @state()
+  private localeNames?: LocaleNames;
 
   private setLocaleName = (locale: LocaleCode) => {
     this.localeNames![locale] = new Intl.DisplayNames([locale], {
@@ -51,8 +53,6 @@ export class LocalePicker extends LitElement {
 
     this.localeNames = {} as LocaleNames;
     allLocales.forEach(this.setLocaleName);
-
-    this.requestUpdate();
   }
 
   render() {

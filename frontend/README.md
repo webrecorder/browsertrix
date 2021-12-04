@@ -14,10 +14,16 @@ Install dependencies:
 yarn
 ```
 
+Generate locale files:
+
+```sh
+yarn localize:build
+```
+
 Start the dev server:
 
 ```sh
-yarn start-dev
+yarn start
 ```
 
 This will open `localhost:9870` in a new tab in your default browser.
@@ -29,7 +35,7 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 
 | `yarn <name>`      |                                                                     |
 | ------------------ | ------------------------------------------------------------------- |
-| `start-dev`        | runs app in development server, reloading on file changes           |
+| `start`            | runs app in development server, reloading on file changes           |
 | `test`             | runs tests in chromium with playwright                              |
 | `build-dev`        | bundles app and outputs it in `dist` directory                      |
 | `build`            | bundles app app, optimized for production, and outputs it to `dist` |
@@ -37,6 +43,7 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 | `format`           | formats js, html and css files                                      |
 | `localize:extract` | generate XLIFF file to be translated                                |
 | `localize:build`   | output a localized version of strings/templates                     |
+| `env:sync`         | sync environment variables with API settings                        |
 
 ## Testing
 

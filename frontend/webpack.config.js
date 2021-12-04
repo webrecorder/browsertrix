@@ -1,6 +1,7 @@
 // webpack.config.js
 const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
 
@@ -26,20 +27,19 @@ module.exports = {
   entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "main.js",
+    filename: `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`,
     publicPath: "/",
   },
 
   devtool: "inline-source-map",
-
   module: {
     rules: [
       {
         test: /\.ts$/,
+        include: path.resolve(__dirname, "src"),
         use: "ts-loader",
         exclude: /node_modules/,
       },
-
       {
         test: /\.css$/,
         use: [
@@ -47,6 +47,10 @@ module.exports = {
           { loader: "css-loader", options: { importLoaders: 1 } },
           "postcss-loader",
         ],
+      },
+      {
+        test: /\.html$/,
+        loader: "html-loader",
       },
     ],
   },
@@ -87,6 +91,13 @@ module.exports = {
 
   plugins: [
     new Dotenv({ path: dotEnvPath }),
+
+    new HtmlWebpackPlugin({
+      template: "src/index.html",
+      // Need to block during local development for HMR:
+      inject: isDevServer ? "head" : true,
+      scriptLoading: isDevServer ? "blocking" : "defer",
+    }),
 
     // Lint js files
     new ESLintPlugin({

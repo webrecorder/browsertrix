@@ -3,20 +3,9 @@ import { state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
+import "tailwindcss/tailwind.css";
 
-import "./shoelace";
-import { LocalePicker } from "./components/locale-picker";
-import { Alert } from "./components/alert";
-import { AccountSettings } from "./components/account-settings";
-import { InviteForm } from "./components/invite-form";
-import { SignUpForm } from "./components/sign-up-form";
-import { Join } from "./pages/join";
-import { SignUp } from "./pages/sign-up";
-import { Verify } from "./pages/verify";
-import { LogInPage } from "./pages/log-in";
-import { ResetPassword } from "./pages/reset-password";
-import { Archives } from "./pages/archives";
-import { Archive, ArchiveTab } from "./pages/archive";
+import type { ArchiveTab } from "./pages/archive";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
@@ -25,6 +14,9 @@ import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
+import "./shoelace";
+import "./components";
+import "./pages";
 
 const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
 const ROUTES = {
@@ -174,7 +166,7 @@ export class App extends LiteElement {
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <footer class="flex justify-center p-4 border-t">
-          <bt-locale-picker></bt-locale-picker>
+          <btrix-locale-picker></btrix-locale-picker>
         </footer>
       </div>
 
@@ -297,13 +289,13 @@ export class App extends LiteElement {
 
       case "login":
       case "forgotPassword":
-        return html`<log-in
+        return html`<btrix-log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .viewState=${this.viewState}
-        ></log-in>`;
+        ></btrix-log-in>`;
 
       case "resetPassword":
         return html`<btrix-reset-password
@@ -509,16 +501,4 @@ export class App extends LiteElement {
   }
 }
 
-customElements.define("bt-alert", Alert);
-customElements.define("bt-locale-picker", LocalePicker);
 customElements.define("browsertrix-app", App);
-customElements.define("btrix-sign-up", SignUp);
-customElements.define("btrix-sign-up-form", SignUpForm);
-customElements.define("btrix-verify", Verify);
-customElements.define("log-in", LogInPage);
-customElements.define("btrix-archives", Archives);
-customElements.define("btrix-archive", Archive);
-customElements.define("btrix-account-settings", AccountSettings);
-customElements.define("btrix-invite-form", InviteForm);
-customElements.define("btrix-join", Join);
-customElements.define("btrix-reset-password", ResetPassword);
