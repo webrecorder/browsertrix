@@ -1,7 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { AuthState } from "../types/auth";
+import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { AccessCode } from "../utils/archives";
 
