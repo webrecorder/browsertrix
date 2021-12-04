@@ -33,36 +33,3 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
     }
   };
 }
-
-/**
- * Block rendering and redirect if user is not an admin
- *
- * Usage example:
- * ```ts
- * @adminOnly
- * MyComponent extends LiteElement {}
- * ```
- */
-export function adminOnly<T extends { new (...args: any[]): LiteElement }>(
-  constructor: T
-) {
-  return class extends constructor {
-    userInfo?: CurrentUser;
-
-    static get properties() {
-      return {
-        userInfo: { type: Object },
-      };
-    }
-
-    connectedCallback() {
-      if (this.userInfo?.isAdmin) {
-        super.connectedCallback();
-      } else {
-        this.dispatchEvent(
-          new CustomEvent("navigate", { detail: DASHBOARD_ROUTE })
-        );
-      }
-    }
-  };
-}

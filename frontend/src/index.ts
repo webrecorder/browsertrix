@@ -108,7 +108,7 @@ export class App extends LiteElement {
         email: data.email,
         name: data.name,
         isVerified: data.is_verified,
-        isAdmin: data.is_superuser,
+        isAdmin: true,
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
