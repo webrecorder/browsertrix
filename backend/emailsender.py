@@ -34,13 +34,13 @@ class EmailSender:
 
     def get_origin(self, headers):
         """ Return origin of the received request"""
-        scheme = headers.get("X-Forwarded-Proto")
-        if not scheme:
-            scheme = "http"
+        if not headers:
+            return self.default_origin
 
+        scheme = headers.get("X-Forwarded-Proto")
         host = headers.get("Host")
-        if not host:
-            host = self.default_origin
+        if not scheme or not host:
+            return self.default_origin
 
         return scheme + "://" + host
 

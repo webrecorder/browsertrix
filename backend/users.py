@@ -9,10 +9,12 @@ import asyncio
 from typing import Dict, Optional
 
 from pydantic import EmailStr, UUID4
+import passlib.pwd
 
 from fastapi import Request, Response, HTTPException, Depends
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
+from fastapi_users.manager import UserAlreadyExists
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
 
@@ -123,6 +125,25 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             {"id": {"$in": user_ids}}, projection=["id", "name"]
         )
         return await cursor.to_list(length=1000)
+
+    async def create_super_user(self):
+        """ Initialize a super user from env vars """
+        email = os.environ.get("SUPERUSER_EMAIL")
+        password = os.environ.get("SUPERUSER_PASSWORD")
+        if not email:
+            return
+
+        if not password:
+            password = passlib.pwd.genword()
+
+        try:
+            await self.create(
+                UserCreate(email=email, password=password, is_superuser=True, newArchive=False)
+            )
+            print(f"Super user {email} created")
+
+        except UserAlreadyExists:
+            print(f"User {email} already exists")
 
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
@@ -260,5 +281,7 @@ def init_users_api(app, user_manager):
         return {"invited": "new_user"}
 
     app.include_router(users_router, prefix="/users", tags=["users"])
+
+    asyncio.create_task(user_manager.create_super_user())
 
     return fastapi_users
