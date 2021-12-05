@@ -315,7 +315,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
 
         return {"invited": "existing_user"}
 
-    @app.get("/invite/accept/{token}", tags=["invites"])
+    @app.post("/archives/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = invites.accept_user_invite(user, token)
 
