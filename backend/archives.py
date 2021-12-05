@@ -298,9 +298,9 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
     @router.post("/invite", tags=["invites"])
     async def invite_user_to_archive(
         invite: InviteToArchiveRequest,
+        request: Request,
         archive: Archive = Depends(archive_owner_dep),
         user: User = Depends(user_dep),
-        request=Request,
     ):
 
         if await invites.invite_user(

@@ -54,7 +54,7 @@ spec:
 
             - name: BROWSER_SCREENCAST_URL
               value: http://$2.crawlers.svc.cluster.local:9037
-            
+
           resources:
             limits:
               cpu: {{ .Values.nginx_limit_cpu }}
