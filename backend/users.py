@@ -9,10 +9,12 @@ import asyncio
 from typing import Dict, Optional
 
 from pydantic import EmailStr, UUID4
+import passlib.pwd
 
 from fastapi import Request, Response, HTTPException, Depends
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
+from fastapi_users.manager import UserAlreadyExists
 from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.db import MongoDBUserDatabase
 
@@ -35,14 +37,28 @@ class User(models.BaseUser):
 
 
 # ============================================================================
-# use custom model as model.BaseeserCreate includes is_* fields which should not be set
-class UserCreate(models.CreateUpdateDictModel):
+# use custom model as model.BaseUserCreate includes is_* field
+class UserCreateIn(models.CreateUpdateDictModel):
     """
-    User Creation Model
+    User Creation Model exposed to API
     """
 
     email: EmailStr
     password: str
+
+    name: Optional[str] = ""
+
+    inviteToken: Optional[str]
+
+    newArchive: bool
+    newArchiveName: Optional[str] = ""
+
+
+# ============================================================================
+class UserCreate(models.BaseUserCreate):
+    """
+    User Creation Model
+    """
 
     name: Optional[str] = ""
 
@@ -124,6 +140,27 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         )
         return await cursor.to_list(length=1000)
 
+    async def create_super_user(self):
+        """ Initialize a super user from env vars """
+        email = os.environ.get("SUPERUSER_EMAIL")
+        password = os.environ.get("SUPERUSER_PASSWORD")
+        if not email:
+            print("No superuser defined", flush=True)
+            return
+
+        if not password:
+            password = passlib.pwd.genword()
+
+        try:
+            res = await self.create(
+                UserCreate(email=email, password=password, is_superuser=True, newArchive=False, is_verified=True)
+            )
+            print(f"Super user {email} created", flush=True)
+            print(res, flush=True)
+
+        except UserAlreadyExists:
+            print(f"User {email} already exists", flush=True)
+
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
     ):
@@ -144,6 +181,8 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 user=user,
             )
 
+        is_verified = hasattr(user_create, "is_verified") and user_create.is_verified
+
         if user_create.inviteToken:
             try:
                 await self.archive_ops.handle_new_user_invite(
@@ -152,10 +191,11 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             except HTTPException as exc:
                 print(exc)
 
-            # if user has been invited, mark as verified immediately
-            await self._update(user, {"is_verified": True})
+            if not is_verified:
+                # if user has been invited, mark as verified immediately
+                await self._update(user, {"is_verified": True})
 
-        else:
+        elif not is_verified:
             asyncio.create_task(self.request_verify(user, request))
 
     async def on_after_forgot_password(
@@ -202,7 +242,7 @@ def init_users_api(app, user_manager):
         lambda: user_manager,
         [jwt_authentication],
         User,
-        UserCreate,
+        UserCreateIn,
         UserUpdate,
         UserDB,
     )
@@ -260,5 +300,7 @@ def init_users_api(app, user_manager):
         return {"invited": "new_user"}
 
     app.include_router(users_router, prefix="/users", tags=["users"])
+
+    asyncio.create_task(user_manager.create_super_user())
 
     return fastapi_users

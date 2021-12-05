@@ -5,6 +5,13 @@ name: browsertrix-cloud
 registration_enabled: 1
 jwt_token_lifetime_minutes: 60
 
+superuser:
+  # set this to enable a superuser admin
+  email: admin@example.com
+
+  # optional: if not set, automatically generated
+  password:
+
 
 # API Image
 # =========================================
