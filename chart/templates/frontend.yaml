@@ -48,6 +48,13 @@ spec:
               mountPath: /etc/nginx/resolvers/
               readOnly: true
 
+          env:
+            - name: BACKEND_HOST
+              value: {{ .Values.name }}-frontend
+
+            - name: BROWSER_SCREENCAST_URL
+              value: http://$2.crawlers.svc.cluster.local:9037
+
           resources:
             limits:
               cpu: {{ .Values.nginx_limit_cpu }}
@@ -57,7 +64,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /
               port: 80
              
 ---

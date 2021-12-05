@@ -64,6 +64,7 @@ class InviteOps:
         new_user_invite: NewUserInvite,
         inviter_email: str,
         archive_name: Optional[str],
+        headers: Optional[dict],
     ):
         """Add invite for new user"""
 
@@ -76,7 +77,11 @@ class InviteOps:
         await self.invites.insert_one(new_user_invite.to_dict())
 
         self.email.send_new_user_invite(
-            new_user_invite.email, inviter_email, archive_name, new_user_invite.id
+            new_user_invite.email,
+            inviter_email,
+            archive_name,
+            new_user_invite.id,
+            headers,
         )
 
     async def get_valid_invite(self, invite_token: str, user):
@@ -115,6 +120,7 @@ class InviteOps:
         user_manager,
         archive=None,
         allow_existing=False,
+        headers: dict = None,
     ):
         """create new invite for user to join, optionally an archive.
         if allow_existing is false, don't allow invites to existing users"""
@@ -141,6 +147,7 @@ class InviteOps:
                 ),
                 user.email,
                 archive_name,
+                headers,
             )
             return True
 
@@ -160,7 +167,7 @@ class InviteOps:
         await user_manager.user_db.update(other_user)
 
         self.email.send_existing_user_invite(
-            other_user.email, user.name, archive_name,invite_code
+            other_user.email, user.name, archive_name, invite_code, headers
         )
 
         return False

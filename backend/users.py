@@ -163,7 +163,9 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     ):
         """callback after password forgot"""
         print(f"User {user.id} has forgot their password. Reset token: {token}")
-        self.email.send_user_forgot_password(user.email, token)
+        self.email.send_user_forgot_password(
+            user.email, token, request and request.headers
+        )
 
     ###pylint: disable=no-self-use, unused-argument
     async def on_after_request_verify(
@@ -171,7 +173,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     ):
         """callback after verification request"""
 
-        self.email.send_user_validation(user.email, token)
+        self.email.send_user_validation(user.email, token, request and request.headers)
 
 
 # ============================================================================
@@ -240,13 +242,19 @@ def init_users_api(app, user_manager):
     @users_router.post("/invite", tags=["invites"])
     async def invite_user(
         invite: InviteRequest,
+        request: Request,
         user: User = Depends(current_active_user),
     ):
-        # if not user.is_superuser:
-        #    raise HTTPException(status_code=403, detail="Not Allowed")
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
 
         await user_manager.invites.invite_user(
-            invite, user, user_manager, archive=None, allow_existing=False
+            invite,
+            user,
+            user_manager,
+            archive=None,
+            allow_existing=False,
+            headers=request.headers,
         )
 
         return {"invited": "new_user"}

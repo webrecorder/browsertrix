@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, Union, Literal, Optional
 
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from db import BaseMongoModel
 
@@ -298,18 +298,24 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
     @router.post("/invite", tags=["invites"])
     async def invite_user_to_archive(
         invite: InviteToArchiveRequest,
+        request: Request,
         archive: Archive = Depends(archive_owner_dep),
         user: User = Depends(user_dep),
     ):
 
         if await invites.invite_user(
-            invite, user, user_manager, archive=archive, allow_existing=True
+            invite,
+            user,
+            user_manager,
+            archive=archive,
+            allow_existing=True,
+            headers=request.headers,
         ):
             return {"invited": "new_user"}
 
         return {"invited": "existing_user"}
 
-    @app.get("/invite/accept/{token}", tags=["invites"])
+    @app.post("/archives/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = invites.accept_user_invite(user, token)
 

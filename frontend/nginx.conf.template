@@ -1,0 +1,63 @@
+include ./resolvers/resolvers.conf;
+
+server {
+    listen 80 default_server;
+    server_name _;
+    proxy_buffering off;
+    proxy_buffers 16 64k;
+    proxy_buffer_size 64k;
+    root /usr/share/nginx/html;
+    index index.html index.htm;
+
+    error_page 500 501 502 503 504 /50x.html;
+    
+    merge_slashes off;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+
+    # fallback to index for any page
+    error_page 404 /index.html;
+  
+    location ~* /watch/([^/]+)/([^/]+)/ws {
+      set $archive $1;
+      set $crawl $2;
+      #auth_request  /authcheck;
+
+      proxy_pass ${BROWSER_SCREENCAST_URL}/ws;
+      proxy_set_header Host "localhost";
+
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+    }
+
+    location ~* /watch/([^/]+)/([^/]+)/ {
+      set $archive $1;
+      set $crawl $2;
+      #auth_request  /authcheck;
+
+      proxy_pass ${BROWSER_SCREENCAST_URL}/;
+      proxy_set_header Host "localhost";
+    }
+
+    location = /authcheck {
+      internal;
+      proxy_pass http://localhost:8000/archives/$archive/crawls/$crawl;
+      proxy_pass_request_body off;
+      proxy_set_header Content-Length "";
+    }
+
+    location / {
+      root   /usr/share/nginx/html;
+      index  index.html index.htm;
+    }
+
+    # used by docker only: k8s deployment handles /api directly via ingress
+    location /api/ {
+      proxy_pass http://${BACKEND_HOST}:8000/;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+

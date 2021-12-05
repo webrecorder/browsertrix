@@ -4,9 +4,6 @@ services:
   backend:
     build: ./backend
     image: registry.digitalocean.com/btrix/webrecorder/browsertrix-api
-    ports:
-      - 8000:8000
-
     volumes:
         - /var/run/docker.sock:/var/run/docker.sock
 
@@ -17,11 +14,21 @@ services:
       - minio
       - mongo
 
+    ports:
+      - 8000:8000
+
   frontend:
     build: ./frontend
     image: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend
     ports:
-      - 8010:80
+      - 9870:80
+
+    depends_on:
+      - backend
+
+    environment:
+      - BACKEND_HOST=backend
+      - BROWSER_SCREENCAST_URL=http://$$2:9037
 
   redis:
     image: redis
