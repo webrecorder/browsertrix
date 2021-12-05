@@ -85,7 +85,7 @@ def main():
 
     app.include_router(archive_ops.router)
 
-    @app.get("/api/settings")
+    @app.get("/settings")
     async def get_settings():
         return settings
 

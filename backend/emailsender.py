@@ -14,7 +14,7 @@ class EmailSender:
         self.password = os.environ.get("EMAIL_PASSWORD")
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
 
-        self.host = os.environ.get("APP_ORIGIN")
+        self.default_origin = os.environ.get("APP_ORIGIN")
 
     def _send_encrypted(self, receiver, message):
         """Send Encrypted SMTP Message"""
@@ -32,47 +32,71 @@ class EmailSender:
             server.login(self.sender, self.password)
             server.sendmail(self.sender, receiver, message)
 
-    def send_user_validation(self, receiver_email, token):
+    def get_origin(self, headers):
+        """ Return origin of the received request"""
+        scheme = headers.get("X-Forwarded-Proto")
+        if not scheme:
+            scheme = "http"
+
+        host = headers.get("Host")
+        if not host:
+            host = self.default_origin
+
+        return scheme + "://" + host
+
+    def send_user_validation(self, receiver_email, token, headers=None):
         """Send email to validate registration email address"""
+
+        origin = self.get_origin(headers)
+
         message = f"""
 Please verify your registration for Browsertrix Cloud for {receiver_email}
 
-You can verify by clicking here: {self.host}/verify?token={token}
+You can verify by clicking here: {origin}/verify?token={token}
 
 The verification token is: {token}"""
 
         self._send_encrypted(receiver_email, message)
 
-    def send_new_user_invite(self, receiver_email, sender, archive_name, token):
+    # pylint: disable=too-many-arguments
+    def send_new_user_invite(
+        self, receiver_email, sender, archive_name, token, headers=None
+    ):
         """Send email to invite new user"""
+
+        origin = self.get_origin(headers)
 
         message = f"""
 You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
 
-You can join by clicking here: {self.host}/join/{token}?email={receiver_email}
+You can join by clicking here: {origin}/join/{token}?email={receiver_email}
 
 The invite token is: {token}"""
 
         self._send_encrypted(receiver_email, message)
 
-    def send_existing_user_invite(self, receiver_email, sender, archive_name, token):
+    # pylint: disable=too-many-arguments
+    def send_existing_user_invite(
+        self, receiver_email, sender, archive_name, token, headers=None
+    ):
         """Send email to invite new user"""
+        origin = self.get_origin(headers)
 
         message = f"""
 You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
 
-You can join by clicking here: {self.host}/invite/accept/{token}?email={receiver_email}
+You can join by clicking here: {origin}/invite/accept/{token}?email={receiver_email}
 
 The invite token is: {token}"""
 
         self._send_encrypted(receiver_email, message)
 
-
-
-    def send_user_forgot_password(self, receiver_email, token):
+    def send_user_forgot_password(self, receiver_email, token, headers=None):
         """Send password reset email with token"""
+        origin = self.get_origin(headers)
+
         message = f"""
-We received your password reset request. Please click here: {self.host}/reset-password?token={token}
+We received your password reset request. Please click here: {origin}/reset-password?token={token}
 to create a new password
         """
 
