@@ -173,13 +173,13 @@ export class Join extends LiteElement {
 
   private renderSignUp() {
     return html`
-      <bt-sign-up-form
+      <btrix-sign-up-form
         email=${this.email!}
         inviteToken=${this.token!}
         @submit=${this.onSignUp}
         @error=${() => this.joinStateService.send("ERROR")}
         @authenticated=${this.onAuthenticated}
-      ></bt-sign-up-form>
+      ></btrix-sign-up-form>
     `;
   }
 

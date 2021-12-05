@@ -347,13 +347,13 @@ export class App extends LiteElement {
         ></btrix-archive>`);
 
       case "accountSettings":
-        return appLayout(html`<bt-account-settings
+        return appLayout(html`<btrix-account-settings
           class="w-full"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
-        ></bt-account-settings>`);
+        ></btrix-account-settings>`);
 
       case "archive-info":
       case "archive-info-tab":
@@ -386,9 +386,9 @@ export class App extends LiteElement {
   }
 
   renderNotFoundPage() {
-    return html`<bt-not-found
+    return html`<btrix-not-found
       class="w-full md:bg-gray-100 flex items-center justify-center"
-    ></bt-not-found>`;
+    ></btrix-not-found>`;
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

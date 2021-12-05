@@ -72,7 +72,7 @@ class RequestVerify extends LitElement {
     this.isRequesting = false;
   }
 }
-customElements.define("bt-request-verify", RequestVerify);
+customElements.define("btrix-request-verify", RequestVerify);
 
 type FormContext = {
   successMessage?: string;
@@ -224,7 +224,9 @@ export class AccountSettings extends LiteElement {
             })}</sl-tag
           >
 
-          <bt-request-verify email=${this.userInfo.email}></bt-request-verify>
+          <btrix-request-verify
+            email=${this.userInfo.email}
+          ></btrix-request-verify>
         `;
       }
     }

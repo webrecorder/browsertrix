@@ -182,12 +182,12 @@ export class Archive extends LiteElement {
 
       <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
         <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
-        <bt-archive-invite-form
+        <btrix-archive-invite-form
           @success=${this.onInviteSuccess}
           @cancel=${() => this.navTo(`/archives/${this.archiveId}/members`)}
           .authState=${this.authState}
           .archiveId=${this.archiveId}
-        ></bt-archive-invite-form>
+        ></btrix-archive-invite-form>
       </div>
     `;
   }

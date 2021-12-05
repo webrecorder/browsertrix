@@ -20,8 +20,8 @@ export class UsersInvite extends LiteElement {
     if (this.invitedEmail) {
       successMessage = html`
         <div>
-          <bt-alert type="success"
-            >${msg(str`Sent invite to ${this.invitedEmail}`)}</bt-alert
+          <btrix-alert type="success"
+            >${msg(str`Sent invite to ${this.invitedEmail}`)}</btrix-alert
           >
         </div>
       `;
@@ -38,10 +38,10 @@ export class UsersInvite extends LiteElement {
 
       <main class="border rounded-lg p-4 md:p-8 md:pt-6">
         <h2 class="text-lg font-medium mb-4">${msg("Invite Users")}</h2>
-        <bt-invite-form
+        <btrix-invite-form
           .authState=${this.authState}
           @success=${this.onSuccess}
-        ></bt-invite-form>
+        ></btrix-invite-form>
       </main>
     </div>`;
   }
