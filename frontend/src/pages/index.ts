@@ -21,3 +21,8 @@ import(/* webpackChunkName: "reset-password" */ "./reset-password").then(
     customElements.define("btrix-reset-password", ResetPassword);
   }
 );
+import(/* webpackChunkName: "users-invite" */ "./users-invite").then(
+  ({ UsersInvite }) => {
+    customElements.define("btrix-users-invite", UsersInvite);
+  }
+);

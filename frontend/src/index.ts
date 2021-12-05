@@ -14,30 +14,12 @@ import type { ViewState, NavigateEvent } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
+import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
 import "./components";
 import "./pages";
 
 const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
-const ROUTES = {
-  home: "/",
-  join: "/join/:token?email",
-  verify: "/verify?token",
-  login: "/log-in",
-  forgotPassword: "/log-in/forgot-password",
-  resetPassword: "/reset-password?token",
-  myAccount: "/my-account",
-  accountSettings: "/account/settings",
-  archives: "/archives",
-  archive: "/archives/:id/:tab",
-  archiveAddMember: "/archives/:id/:tab/add-member",
-} as const;
-
-if (REGISTRATION_ENABLED) {
-  (ROUTES as any).signUp = "/sign-up";
-}
-
-const DASHBOARD_ROUTE = ROUTES.archives;
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -126,6 +108,7 @@ export class App extends LiteElement {
         email: data.email,
         name: data.name,
         isVerified: data.is_verified,
+        isAdmin: data.is_superuser,
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -159,6 +142,10 @@ export class App extends LiteElement {
   render() {
     return html`
       <style>
+        .uppercase {
+          letter-spacing: 0.06em;
+        }
+
         ${theme}
       </style>
 
@@ -249,23 +236,43 @@ export class App extends LiteElement {
             ${navLink({
               activeRoutes: ["archives", "archive"],
               href: DASHBOARD_ROUTE,
-              label: "Archives",
+              label: msg("Archives"),
             })}
           </ul>
+          ${this.userInfo?.isAdmin
+            ? html` <span class="uppercase text-sm font-medium"
+                  >${msg("Admin", {
+                    desc: "Heading for links to administrative pages",
+                  })}</span
+                >
+                <ul class="flex md:flex-col">
+                  ${navLink({
+                    // activeRoutes: ["users", "usersInvite"],
+                    activeRoutes: ["usersInvite"],
+                    href: ROUTES.usersInvite,
+                    label: msg("Invite Users"),
+                  })}
+                </ul>`
+            : ""}
         </nav>
         <div class="p-4 md:p-8 flex-1">${template}</div>
       </div>
     `;
 
     switch (this.viewState.route) {
-      case "signUp":
-        return html`<btrix-sign-up
-          class="w-full md:bg-gray-100 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
-          @log-out="${this.onLogOut}"
-          .authState="${this.authService.authState}"
-        ></btrix-sign-up>`;
+      case "signUp": {
+        if (REGISTRATION_ENABLED) {
+          return html`<btrix-sign-up
+            class="w-full md:bg-gray-100 flex items-center justify-center"
+            @navigate="${this.onNavigateTo}"
+            @logged-in="${this.onLoggedIn}"
+            @log-out="${this.onLogOut}"
+            .authState="${this.authService.authState}"
+          ></btrix-sign-up>`;
+        } else {
+          return this.renderNotFoundPage();
+        }
+      }
 
       case "verify":
         return html`<btrix-verify
@@ -359,9 +366,29 @@ export class App extends LiteElement {
           tab="${this.viewState.tab || "running"}"
         ></btrix-archive>`);
 
+      case "usersInvite": {
+        if (this.userInfo?.isAdmin) {
+          return appLayout(html`<btrix-users-invite
+            class="w-full"
+            @navigate="${this.onNavigateTo}"
+            @need-login="${this.onNeedLogin}"
+            .authState="${this.authService.authState}"
+            .userInfo="${this.userInfo}"
+          ></btrix-users-invite>`);
+        } else {
+          return this.renderNotFoundPage();
+        }
+      }
+
       default:
-        return html`<div>Not Found!</div>`;
+        return this.renderNotFoundPage();
     }
+  }
+
+  renderNotFoundPage() {
+    return html`<btrix-not-found
+      class="w-full md:bg-gray-100 flex items-center justify-center"
+    ></btrix-not-found>`;
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

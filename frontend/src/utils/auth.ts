@@ -1,5 +1,7 @@
+import { DASHBOARD_ROUTE } from "../routes";
 import LiteElement from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
+import type { CurrentUser } from "../types/user";
 
 /**
  * Block rendering and dispatch event if user is not logged in
