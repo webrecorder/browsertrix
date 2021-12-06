@@ -3,7 +3,7 @@ FROM node:16 as build
 WORKDIR /app
 COPY package.json .
 COPY yarn.lock .
-RUN yarn
+RUN yarn --frozen-lockfile
 COPY *.* ./
 COPY src ./src/
 COPY scripts ./scripts/
