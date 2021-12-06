@@ -28,7 +28,11 @@ export class Join extends LiteElement {
     return html`
       <article class="w-full max-w-sm grid gap-5">
         <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          <h1 class="text-3xl font-semibold mb-5">${msg("Join")}</h1>
+          <h1 class="text-3xl font-semibold mb-5">
+            ${msg("Join Browsertrix Cloud")}
+          </h1>
+
+          <!-- TODO archive details if available -->
 
           <btrix-sign-up-form
             email=${this.email!}
