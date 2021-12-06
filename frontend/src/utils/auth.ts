@@ -24,9 +24,9 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
       };
     }
 
-    connectedCallback() {
+    update(changedProperties: Map<string, any>) {
       if (this.authState) {
-        super.connectedCallback();
+        super.update(changedProperties);
       } else {
         this.dispatchEvent(new CustomEvent("need-login"));
       }
