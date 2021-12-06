@@ -26,9 +26,8 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
-// TODO get expires at from server
-// Hardcode 1hr expiry for now
-const ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60;
+const ACCESS_TOKEN_LIFETIME =
+  +(process.env.JWT_TOKEN_LIFETIME_SECONDS || 3600) * 1000;
 // Hardcode 24h expiry for now
 const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
@@ -79,8 +78,6 @@ export default class AuthService {
     return {
       username: email,
       headers: authHeaders,
-      // TODO get expires at from server
-      // Hardcode 1hr expiry for now
       tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
     };
   }
@@ -197,8 +194,6 @@ export default class AuthService {
 
     return {
       headers: authHeaders,
-      // TODO get expires at from server
-      // Hardcode 1hr expiry for now
       tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
     };
   }
