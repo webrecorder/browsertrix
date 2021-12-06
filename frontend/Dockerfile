@@ -9,7 +9,6 @@ COPY src ./src/
 COPY scripts ./scripts/
 RUN yarn build
 
-COPY xliff ./xliff/
 
 FROM nginx
 
