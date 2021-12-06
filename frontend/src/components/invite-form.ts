@@ -69,24 +69,19 @@ export class InviteForm extends LiteElement {
   async onSubmit(event: { detail: { formData: FormData } }) {
     if (!this.authState) return;
 
+    this.serverError = undefined;
     this.isSubmitting = true;
 
     const { formData } = event.detail;
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      const data = await this.apiFetch(
-        // TODO actual path
-        `/invite`,
-        this.authState,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: inviteEmail,
-            role: Number(formData.get("role")),
-          }),
-        }
-      );
+      const data = await this.apiFetch(`/users/invite`, this.authState, {
+        method: "POST",
+        body: JSON.stringify({
+          email: inviteEmail,
+        }),
+      });
 
       this.dispatchEvent(
         new CustomEvent("success", {

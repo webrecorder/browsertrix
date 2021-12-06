@@ -21,6 +21,11 @@ export class SignUpForm extends LiteElement {
   @property({ type: String })
   inviteToken?: string;
 
+  @property({ type: Boolean })
+  // TODO replace with archive info
+  // https://github.com/ikreymer/browsertrix-cloud/issues/35
+  isArchiveInvite?: boolean;
+
   @state()
   private serverError?: string;
 
@@ -133,7 +138,7 @@ export class SignUpForm extends LiteElement {
       newArchive: true,
     };
 
-    if (this.inviteToken) {
+    if (this.inviteToken && this.isArchiveInvite) {
       registerParams.inviteToken = this.inviteToken;
       registerParams.newArchive = false;
     }
