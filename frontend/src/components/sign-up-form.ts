@@ -23,6 +23,7 @@ export class SignUpForm extends LiteElement {
 
   @property({ type: Boolean })
   // TODO replace with archive info
+  // https://github.com/ikreymer/browsertrix-cloud/issues/35
   isArchiveInvite?: boolean;
 
   @state()
