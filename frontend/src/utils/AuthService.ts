@@ -14,9 +14,10 @@ type Session = {
 
 export type AuthState = (Auth & Session) | null;
 
-type LoggedInEventDetail = Auth & {
+export type LoggedInEventDetail = Auth & {
   api?: boolean;
   firstLogin?: boolean;
+  redirectUrl?: string;
 };
 
 export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {

@@ -36,12 +36,12 @@ export class Archives extends LiteElement {
     return html`<div class="grid gap-4">
       <h1 class="text-xl font-bold">${msg("Archives")}</h1>
 
-      <ul class="border rounded-lg grid gap-6 overflow-hidden">
+      <ul class="border rounded-lg overflow-hidden">
         ${this.archiveList.map(
-          (archive) =>
+          (archive, i) =>
             html`
               <li
-                class="p-3 md:p-6 hover:bg-gray-50"
+                class="p-3 md:p-6 hover:bg-gray-50${i > 0 ? " border-t" : ""}"
                 role="button"
                 @click=${this.makeOnArchiveClick(archive)}
               >

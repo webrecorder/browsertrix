@@ -288,13 +288,25 @@ export class App extends LiteElement {
       case "join":
         return html`<btrix-join
           class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
-          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
 
+      case "acceptInvite":
+        return html`<btrix-accept-invite
+          class="w-full md:bg-gray-100 flex items-center justify-center"
+          @navigate="${this.onNavigateTo}"
+          @logged-in="${this.onLoggedIn}"
+          @notify="${this.onNotify}"
+          .authState="${this.authService.authState}"
+          token="${this.viewState.params.token}"
+          email="${this.viewState.params.email}"
+        ></btrix-accept-invite>`;
+
       case "login":
+      case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
           class="w-full md:bg-gray-100 flex items-center justify-center"
@@ -302,6 +314,7 @@ export class App extends LiteElement {
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .viewState=${this.viewState}
+          redirectUrl=${this.viewState.params.redirectUrl}
         ></btrix-log-in>`;
 
       case "resetPassword":
@@ -413,7 +426,7 @@ export class App extends LiteElement {
     });
 
     if (!detail.api) {
-      this.navigate(DASHBOARD_ROUTE);
+      this.navigate(detail.redirectUrl || DASHBOARD_ROUTE);
     }
 
     if (detail.firstLogin) {

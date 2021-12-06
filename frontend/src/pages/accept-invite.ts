@@ -34,19 +34,28 @@ export class AcceptInvite extends LiteElement {
     );
   }
 
-  render() {
-    // TODO use API endpoint to check if it's an existing user
+  firstUpdated() {
+    if (!this.isLoggedIn) {
+      this.dispatchEvent(
+        new CustomEvent("notify", {
+          detail: {
+            message: msg("Log in to continue."),
+            type: "success",
+            icon: "check2-circle",
+            duration: 10000,
+          },
+        })
+      );
 
-    return html`
-      <article class="w-full max-w-sm grid gap-5">
-        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          ${this.isLoggedIn ? this.renderAccept() : this.renderSignUp()}
-        </main>
-      </article>
-    `;
+      this.navTo(
+        `/log-in?redirectUrl=${encodeURIComponent(
+          `${window.location.pathname}${window.location.search}`
+        )}`
+      );
+    }
   }
 
-  private renderAccept() {
+  render() {
     let serverError;
 
     if (this.serverError) {
@@ -60,29 +69,24 @@ export class AcceptInvite extends LiteElement {
     }
 
     return html`
-      ${serverError}
+      <article class="w-full max-w-sm grid gap-5">
+        ${serverError}
 
-      <div class="text-center">
-        <sl-button type="primary" @click=${this.onAccept}
-          >Accept invitation</sl-button
-        >
-      </div>
+        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+          <h1 class="text-3xl text-center font-semibold mb-5">
+            ${msg("Join archive")}
+          </h1>
+
+          <!-- TODO archive details -->
+
+          <div class="text-center">
+            <sl-button type="primary" @click=${this.onAccept}
+              >${msg("Accept invitation")}</sl-button
+            >
+          </div>
+        </main>
+      </article>
     `;
-  }
-
-  private renderSignUp() {
-    return html`<h1 class="text-3xl font-semibold mb-5">${msg("Join")}</h1>
-
-      <btrix-sign-up-form
-        email=${this.email!}
-        inviteToken=${this.token!}
-        @submit=${this.onSubmit}
-        @authenticated=${this.onAuthenticated}
-      ></btrix-sign-up-form> `;
-  }
-
-  private onSubmit() {
-    //
   }
 
   private async onAccept() {
@@ -94,7 +98,24 @@ export class AcceptInvite extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/invite/accept/${this.token}`, this.authState);
+      await this.apiFetch(
+        `/archives/invite-accept/${this.token}`,
+        this.authState,
+        {
+          method: "POST",
+        }
+      );
+
+      this.dispatchEvent(
+        new CustomEvent("notify", {
+          detail: {
+            // TODO archive details
+            message: msg("You've joined the archive."),
+            type: "success",
+            icon: "check2-circle",
+          },
+        })
+      );
 
       this.navTo(DASHBOARD_ROUTE);
     } catch (err: any) {
@@ -104,15 +125,5 @@ export class AcceptInvite extends LiteElement {
         this.serverError = msg("Something unexpected went wrong");
       }
     }
-  }
-
-  private onAuthenticated(event: LoggedInEvent) {
-    this.dispatchEvent(
-      AuthService.createLoggedInEvent({
-        ...event.detail,
-        // TODO separate logic for confirmation message
-        // firstLogin: true,
-      })
-    );
   }
 }
