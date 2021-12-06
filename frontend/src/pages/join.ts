@@ -110,7 +110,8 @@ export class Join extends LiteElement {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        firstLogin: true,
+        // TODO separate logic for confirmation message
+        // firstLogin: true,
       })
     );
   }
