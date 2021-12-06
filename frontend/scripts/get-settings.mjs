@@ -10,17 +10,21 @@ async function main() {
     const body = await resp.json();
 
     const newEnv = await updateDotenv({
-      REGISTRATION_ENABLED: Boolean(body.enabled).toString(),
+      REGISTRATION_ENABLED: (
+        Boolean(body.registrationEnabled) || false
+      ).toString(),
+      JWT_TOKEN_LIFETIME_SECONDS: (body.jwtTokenLifetime || 3600).toString(),
     });
 
     console.log(
-      ".env file updated:",
-      `REGISTRATION_ENABLED=${newEnv["REGISTRATION_ENABLED"]}`
+      ".env file updated:\n",
+      `REGISTRATION_ENABLED=${newEnv["REGISTRATION_ENABLED"]}\nJWT_TOKEN_LIFETIME_SECONDS=${newEnv["JWT_TOKEN_LIFETIME_SECONDS"]}`
     );
-  } catch {
+  } catch (e) {
+    // console.error(e);
     console.log(
-      "could not update .env file, env is now:",
-      `REGISTRATION_ENABLED=${process.env.REGISTRATION_ENABLED}`
+      "could not update .env file, env is now:\n",
+      `REGISTRATION_ENABLED=${process.env.REGISTRATION_ENABLED}\nJWT_TOKEN_LIFETIME_SECONDS=${process.env.JWT_TOKEN_LIFETIME_SECONDS}`
     );
   }
 }
