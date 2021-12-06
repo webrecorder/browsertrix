@@ -4,7 +4,9 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
+import type { LoggedInEventDetail } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
+import { DASHBOARD_ROUTE } from "../routes";
 
 type FormContext = {
   successMessage?: string;
@@ -125,6 +127,9 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 export class LogInPage extends LiteElement {
   @property({ type: Object })
   viewState!: ViewState;
+
+  @property({ type: String })
+  redirectUrl: string = DASHBOARD_ROUTE;
 
   private formStateService = interpret(machine);
 
@@ -307,6 +312,8 @@ export class LogInPage extends LiteElement {
 
     try {
       const data = await AuthService.login({ email: username, password });
+
+      (data as LoggedInEventDetail).redirectUrl = this.redirectUrl;
 
       this.dispatchEvent(AuthService.createLoggedInEvent(data));
 

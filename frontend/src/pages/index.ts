@@ -26,3 +26,8 @@ import(/* webpackChunkName: "users-invite" */ "./users-invite").then(
     customElements.define("btrix-users-invite", UsersInvite);
   }
 );
+import(/* webpackChunkName: "accept-invite" */ "./accept-invite").then(
+  ({ AcceptInvite }) => {
+    customElements.define("btrix-accept-invite", AcceptInvite);
+  }
+);
