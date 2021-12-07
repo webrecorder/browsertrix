@@ -46,7 +46,7 @@ export class Join extends LiteElement {
 
     const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
     const placeholder = html`<span
-      class="inline-block bg-gray-300 rounded-full"
+      class="inline-block bg-gray-100 rounded-full"
       style="width: 6em"
       >&nbsp;</span
     >`;

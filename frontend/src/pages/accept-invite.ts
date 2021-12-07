@@ -1,9 +1,8 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, str, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import type { AuthState, LoggedInEvent } from "../utils/AuthService";
-import AuthService from "../utils/AuthService";
+import type { AuthState } from "../utils/AuthService";
 import { DASHBOARD_ROUTE } from "../routes";
 
 @localized()
@@ -73,7 +72,7 @@ export class AcceptInvite extends LiteElement {
 
     if (this.serverError) {
       serverError = html`
-        <div class="mb-5">
+        <div>
           <btrix-alert id="formError" type="danger"
             >${this.serverError}</btrix-alert
           >
@@ -81,21 +80,44 @@ export class AcceptInvite extends LiteElement {
       `;
     }
 
+    const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
+    const placeholder = html`<span
+      class="inline-block bg-gray-100 rounded-full"
+      style="width: 6em"
+      >&nbsp;</span
+    >`;
+
+    if (serverError && !hasInviteInfo) {
+      return serverError;
+    }
+
     return html`
-      <article class="w-full max-w-sm grid gap-5">
+      <article class="w-full p-5 grid gap-5 justify-center text-center">
         ${serverError}
 
         <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          <h1 class="text-3xl text-center font-semibold mb-5">
-            ${msg("Join archive")}
-          </h1>
-
-          <!-- TODO archive details -->
+          <div class="mb-3 text-sm text-gray-400">
+            ${msg("Invited by ")}
+            ${this.inviteInfo.inviterName ||
+            this.inviteInfo.inviterEmail ||
+            placeholder}
+          </div>
+          <p class="text-xl font-semibold mb-5">
+            ${msg(
+              html`You've been invited to join
+                <span class="text-primary break-words"
+                  >${hasInviteInfo
+                    ? this.inviteInfo.archiveName || msg("Browsertrix Cloud")
+                    : placeholder}</span
+                >`
+            )}
+          </p>
 
           <div class="text-center">
-            <sl-button type="primary" @click=${this.onAccept}
+            <sl-button class="mr-2" type="primary" @click=${this.onAccept}
               >${msg("Accept invitation")}</sl-button
             >
+            <sl-button @click=${this.onDecline}>${msg("Decline")}</sl-button>
           </div>
         </main>
       </article>
@@ -103,19 +125,20 @@ export class AcceptInvite extends LiteElement {
   }
 
   private async getInviteInfo() {
-    const resp = await fetch(
-      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`
-    );
+    if (!this.authState) return;
 
-    if (resp.status === 200) {
-      const body = await resp.json();
+    try {
+      const data = await this.apiFetch(
+        `/users/me/invite/${this.token}`,
+        this.authState
+      );
 
       this.inviteInfo = {
-        inviterEmail: body.inviterEmail,
-        inviterName: body.inviterName,
-        archiveName: body.archiveName,
+        inviterEmail: data.inviterEmail,
+        inviterName: data.inviterName,
+        archiveName: data.archiveName,
       };
-    } else {
+    } catch {
       this.serverError = msg("This invitation is not valid");
     }
   }
@@ -140,8 +163,7 @@ export class AcceptInvite extends LiteElement {
       this.dispatchEvent(
         new CustomEvent("notify", {
           detail: {
-            // TODO archive details
-            message: msg("You've joined the archive."),
+            message: msg(str`You've joined ${this.inviteInfo.archiveName}.`),
             type: "success",
             icon: "check2-circle",
           },
@@ -151,10 +173,26 @@ export class AcceptInvite extends LiteElement {
       this.navTo(DASHBOARD_ROUTE);
     } catch (err: any) {
       if (err.isApiError && err.message === "Invalid Invite Code") {
-        this.serverError = msg("This invitation is not valid.");
+        this.serverError = msg("This invitation is not valid");
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }
     }
+  }
+
+  private onDecline() {
+    this.dispatchEvent(
+      new CustomEvent("notify", {
+        detail: {
+          message: msg(
+            str`You've declined to join ${this.inviteInfo.archiveName}.`
+          ),
+          type: "info",
+          icon: "info-circle",
+        },
+      })
+    );
+
+    this.navTo(DASHBOARD_ROUTE);
   }
 }
