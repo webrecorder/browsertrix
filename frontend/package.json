@@ -19,15 +19,14 @@
   },
   "scripts": {
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
-    "prebuild": "del-cli ./dist && npm run env:sync",
+    "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,html,css}\"",
     "localize:extract": "lit-localize extract",
-    "localize:build": "lit-localize build",
-    "env:sync": "node ./scripts/get-settings.mjs"
+    "localize:build": "lit-localize build"
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",

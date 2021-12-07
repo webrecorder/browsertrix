@@ -19,8 +19,6 @@ import "./shoelace";
 import "./components";
 import "./pages";
 
-const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED === "true";
-
 type DialogContent = {
   label?: TemplateResult | string;
   body?: TemplateResult | string;
@@ -55,6 +53,12 @@ export class App extends LiteElement {
 
   @query("#globalDialog")
   private globalDialog!: SlDialog;
+
+  @state()
+  private isAppSettingsLoaded: boolean = false;
+
+  @state()
+  private isRegistrationEnabled?: boolean;
 
   constructor() {
     super();
@@ -93,10 +97,18 @@ export class App extends LiteElement {
     });
   }
 
-  firstUpdated() {
+  async firstUpdated() {
     if (this.authService.authState) {
       this.updateUserInfo();
     }
+
+    const settings = await this.getAppSettings();
+
+    if (settings) {
+      this.isRegistrationEnabled = settings.registrationEnabled;
+    }
+
+    this.isAppSettingsLoaded = true;
   }
 
   private async updateUserInfo() {
@@ -115,6 +127,20 @@ export class App extends LiteElement {
         this.authService.logout();
         this.navigate(ROUTES.login);
       }
+    }
+  }
+
+  async getAppSettings(): Promise<{ registrationEnabled: boolean } | void> {
+    const resp = await fetch("/api/settings", {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (resp.status === 200) {
+      const body = await resp.json();
+
+      return body;
+    } else {
+      console.debug(resp);
     }
   }
 
@@ -261,7 +287,12 @@ export class App extends LiteElement {
 
     switch (this.viewState.route) {
       case "signUp": {
-        if (REGISTRATION_ENABLED) {
+        if (!this.isAppSettingsLoaded) {
+          return html`<div
+            class="w-full md:bg-gray-100 flex items-center justify-center"
+          ></div>`;
+        }
+        if (this.isRegistrationEnabled) {
           return html`<btrix-sign-up
             class="w-full md:bg-gray-100 flex items-center justify-center"
             @navigate="${this.onNavigateTo}"
