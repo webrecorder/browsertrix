@@ -6,7 +6,6 @@ COPY yarn.lock .
 RUN yarn --frozen-lockfile
 COPY *.* ./
 COPY src ./src/
-COPY scripts ./scripts/
 RUN yarn build
 
 
