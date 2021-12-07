@@ -5,6 +5,7 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
+  /** Timestamp of when token expires */
   tokenExpiresAt: number;
 };
 
@@ -13,6 +14,12 @@ type Session = {
 };
 
 export type AuthState = (Auth & Session) | null;
+
+type JWT = {
+  user_id: string;
+  aud: string[];
+  exp: number;
+};
 
 export type LoggedInEventDetail = Auth & {
   api?: boolean;
@@ -26,8 +33,6 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
-const ACCESS_TOKEN_LIFETIME =
-  +(process.env.JWT_TOKEN_LIFETIME_SECONDS || 3600) * 1000;
 // Hardcode 24h expiry for now
 const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
@@ -73,15 +78,27 @@ export default class AuthService {
       });
     }
 
-    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
 
     return {
       username: email,
       headers: authHeaders,
-      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
+      tokenExpiresAt: token.exp * 1000,
     };
   }
 
+  /**
+   * Decode JSON web token returned as access token
+   */
+  private static decodeToken(token: string): JWT {
+    return JSON.parse(window.atob(token.split(".")[1]));
+  }
+
+  /**
+   * Build authorization headers from login response
+   */
   private static parseAuthHeaders(data: {
     token_type: string;
     access_token: string;
@@ -190,11 +207,13 @@ export default class AuthService {
       });
     }
 
-    const authHeaders = AuthService.parseAuthHeaders(await resp.json());
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
 
     return {
       headers: authHeaders,
-      tokenExpiresAt: Date.now() + ACCESS_TOKEN_LIFETIME,
+      tokenExpiresAt: token.exp * 1000,
     };
   }
 }
