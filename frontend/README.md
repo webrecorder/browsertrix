@@ -37,7 +37,6 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 | `format`           | formats js, html and css files                                      |
 | `localize:extract` | generate XLIFF file to be translated                                |
 | `localize:build`   | output a localized version of strings/templates                     |
-| `env:sync`         | sync environment variables with API settings                        |
 
 ## Testing
 
