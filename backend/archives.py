@@ -184,7 +184,7 @@ class ArchiveOps:
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user)
+        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return True
