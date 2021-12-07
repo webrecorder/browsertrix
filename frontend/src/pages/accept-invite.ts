@@ -20,6 +20,17 @@ export class AcceptInvite extends LiteElement {
   @state()
   serverError?: string;
 
+  @state()
+  private inviteInfo: {
+    inviterEmail: string;
+    inviterName: string;
+    archiveName: string;
+  } = {
+    inviterEmail: "",
+    inviterName: "",
+    archiveName: "",
+  };
+
   connectedCallback(): void {
     if (this.token && this.email) {
       super.connectedCallback();
@@ -35,7 +46,9 @@ export class AcceptInvite extends LiteElement {
   }
 
   firstUpdated() {
-    if (!this.isLoggedIn) {
+    if (this.isLoggedIn) {
+      this.getInviteInfo();
+    } else {
       this.dispatchEvent(
         new CustomEvent("notify", {
           detail: {
@@ -87,6 +100,24 @@ export class AcceptInvite extends LiteElement {
         </main>
       </article>
     `;
+  }
+
+  private async getInviteInfo() {
+    const resp = await fetch(
+      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`
+    );
+
+    if (resp.status === 200) {
+      const body = await resp.json();
+
+      this.inviteInfo = {
+        inviterEmail: body.inviterEmail,
+        inviterName: body.inviterName,
+        archiveName: body.archiveName,
+      };
+    } else {
+      this.serverError = msg("This invitation is not valid");
+    }
   }
 
   private async onAccept() {
