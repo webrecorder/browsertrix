@@ -1,5 +1,5 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, str, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { LoggedInEvent } from "../utils/AuthService";
@@ -14,7 +14,18 @@ export class Join extends LiteElement {
   email?: string;
 
   @state()
-  serverError?: string;
+  private serverError?: string;
+
+  @state()
+  private inviteInfo: {
+    inviterEmail: string;
+    inviterName: string;
+    archiveName: string;
+  } = {
+    inviterEmail: "",
+    inviterName: "",
+    archiveName: "",
+  };
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -24,16 +35,46 @@ export class Join extends LiteElement {
     }
   }
 
+  firstUpdated() {
+    this.getInviteInfo();
+  }
+
   render() {
+    if (this.serverError) {
+      return html`<btrix-alert type="danger">${this.serverError}</btrix-alert>`;
+    }
+
+    const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
+    const placeholder = html`<span
+      class="inline-block bg-gray-300 rounded-full"
+      style="width: 6em"
+      >&nbsp;</span
+    >`;
+
     return html`
-      <article class="w-full max-w-sm grid gap-5">
-        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          <h1 class="text-3xl font-semibold mb-5">
-            ${msg("Join Browsertrix Cloud")}
-          </h1>
+      <article class="w-full p-5 flex flex-col md:flex-row justify-center">
+        <div class="max-w-sm md:mt-12 md:mr-12">
+          <div class="mb-3 text-sm text-gray-400">
+            ${msg("Invited by ")}
+            ${this.inviteInfo.inviterName ||
+            this.inviteInfo.inviterEmail ||
+            placeholder}
+          </div>
+          <p class="text-xl md:text-3xl font-semibold mb-5">
+            ${msg(
+              html`You've been invited to join
+                <span class="text-primary break-words"
+                  >${hasInviteInfo
+                    ? this.inviteInfo.archiveName || msg("Browsertrix Cloud")
+                    : placeholder}</span
+                >`
+            )}
+          </p>
+        </div>
 
-          <!-- TODO archive details if available -->
-
+        <main
+          class="max-w-md md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12"
+        >
           <btrix-sign-up-form
             email=${this.email!}
             inviteToken=${this.token!}
@@ -42,6 +83,24 @@ export class Join extends LiteElement {
         </main>
       </article>
     `;
+  }
+
+  private async getInviteInfo() {
+    const resp = await fetch(
+      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`
+    );
+
+    if (resp.status === 200) {
+      const body = await resp.json();
+
+      this.inviteInfo = {
+        inviterEmail: body.inviterEmail,
+        inviterName: body.inviterName,
+        archiveName: body.archiveName,
+      };
+    } else {
+      this.serverError = msg("This invitation is not valid");
+    }
   }
 
   private onAuthenticated(event: LoggedInEvent) {
