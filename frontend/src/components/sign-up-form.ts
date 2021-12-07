@@ -50,8 +50,10 @@ export class SignUpForm extends LiteElement {
         <div class="mb-5">
           ${this.email
             ? html`
-                <span class="text-gray-400">${msg("Joining as")}</span>
-                <span class="text-primary font-medium">${this.email}</span>
+                <div style="font-size: var(--sl-input-label-font-size-medium)">
+                  ${msg("Joining as")}
+                </div>
+                <div class="font-medium py-1">${this.email}</div>
                 <input
                   type="hidden"
                   id="email"
