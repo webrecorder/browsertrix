@@ -222,7 +222,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
     async def format_invite(self, invite):
         """ format an InvitePending to return via api, resolve name of inviter """
-        inviter = await self.get_by_email(invite.inviter_email)
+        inviter = await self.get_by_email(invite.inviterEmail)
         result = invite.serialize()
         result["inviterName"] = inviter.name
         if invite.aid:
