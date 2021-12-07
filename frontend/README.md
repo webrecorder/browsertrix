@@ -32,7 +32,7 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 | `start`            | runs app in development server, reloading on file changes           |
 | `test`             | runs tests in chromium with playwright                              |
 | `build-dev`        | bundles app and outputs it in `dist` directory                      |
-| `build`            | bundles app app, optimized for production, and outputs it to `dist` |
+| `build`            | bundles app, optimized for production, and outputs it to `dist`     |
 | `lint`             | find and fix auto-fixable javascript errors                         |
 | `format`           | formats js, html and css files                                      |
 | `localize:extract` | generate XLIFF file to be translated                                |
