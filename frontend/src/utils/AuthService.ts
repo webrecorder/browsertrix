@@ -5,7 +5,7 @@ export type Auth = {
   headers: {
     Authorization: string;
   };
-  /** Timestamp of when token expires */
+  /** Timestamp (milliseconds) when token expires */
   tokenExpiresAt: number;
 };
 
