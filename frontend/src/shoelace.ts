@@ -4,9 +4,7 @@
  */
 import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.js";
 import "@shoelace-style/shoelace/dist/themes/light.css";
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/alert/alert"
-);
+import "@shoelace-style/shoelace/dist/components/alert/alert";
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/button/button"
 );
