@@ -224,7 +224,11 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         """ format an InvitePending to return via api, resolve name of inviter """
         inviter = await self.get_by_email(invite.inviter_email)
         result = invite.serialize()
-        result["inviter_name"] = inviter.name
+        result["inviterName"] = inviter.name
+        if invite.aid:
+            archive = await self.archive_ops.get_archive_for_user_by_id(invite.aid, inviter)
+            result["archiveName"] = archive.name
+
         return result
 
 

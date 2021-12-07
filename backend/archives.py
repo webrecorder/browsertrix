@@ -158,10 +158,10 @@ class ArchiveOps:
         return [Archive.from_dict(res) for res in results]
 
     async def get_archive_for_user_by_id(
-        self, uid: str, user: User, role: UserRole = UserRole.VIEWER
+        self, aid: str, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an archive for user by unique id"""
-        query = {f"users.{user.id}": {"$gte": role.value}, "_id": uid}
+        query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 

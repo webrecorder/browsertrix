@@ -26,7 +26,7 @@ class InvitePending(BaseMongoModel):
     """An invite for a new user, with an email and invite token as id"""
 
     created: datetime
-    inviter_email: str
+    inviterEmail: str
     aid: Optional[str]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]
@@ -72,7 +72,7 @@ class InviteOps:
 
         self.email.send_new_user_invite(
             new_user_invite.email,
-            new_user_invite.inviter_email,
+            new_user_invite.inviterEmail,
             archive_name,
             new_user_invite.id,
             headers,
@@ -130,7 +130,7 @@ class InviteOps:
             created=datetime.utcnow(),
             role=invite.role if hasattr(invite, "role") else None,
             email=invite.email,
-            inviter_email=user.email
+            inviterEmail=user.email
         )
 
         other_user = await user_manager.user_db.get_by_email(invite.email)
