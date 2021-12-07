@@ -183,6 +183,7 @@ export default class AuthService {
         }
       }
     } else {
+      console.info("Session expired, logging out");
       this.logout();
     }
   }
