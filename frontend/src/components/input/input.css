@@ -1,0 +1,12 @@
+.sl-input {
+  color: var(--sl-input-color);
+  transition: var(--sl-transition-fast) color, var(--sl-transition-fast) border,
+    var(--sl-transition-fast) box-shadow,
+    var(--sl-transition-fast) background-color;
+}
+
+.sl-input:focus {
+  border-color: var(--sl-input-border-color-focus);
+  box-shadow: var(--sl-focus-ring);
+  outline: 0;
+}

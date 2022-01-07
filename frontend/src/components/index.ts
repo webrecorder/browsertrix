@@ -1,4 +1,5 @@
 import { Alert } from "./alert";
+import { Input } from "./input/input";
 import("./locale-picker").then(({ LocalePicker }) => {
   customElements.define("btrix-locale-picker", LocalePicker);
 });
@@ -19,3 +20,4 @@ import("./not-found").then(({ NotFound }) => {
 });
 
 customElements.define("btrix-alert", Alert);
+customElements.define("btrix-input", Input);
