@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { property } from "lit/decorators.js";
+import { property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import LiteElement from "../../utils/LiteElement";
@@ -28,23 +28,55 @@ export class Input extends LiteElement {
   @property({ type: String })
   type?: string;
 
+  @property({ type: String })
+  placeholder?: string;
+
   @property()
   autocomplete?: any;
 
   @property()
   required?: any;
 
+  @property({ type: Boolean })
+  togglePassword?: boolean;
+
+  @state()
+  isPasswordVisible: boolean = false;
+
   render() {
     return html`
-      <label class="block mb-1 text-sm" for="password">${this.label}</label>
-      <input
-        class="sl-input block border border-gray-300 rounded-md px-4 w-full h-10"
-        id=${this.id}
-        name=${ifDefined(this.name)}
-        type=${ifDefined(this.type as any)}
-        autocomplete=${ifDefined(this.autocomplete)}
-        ?required=${Boolean(this.required)}
-      />
+      <div class="mb-1">
+        <label for=${this.id} class="text-sm">${this.label}</label>
+      </div>
+      <div
+        class="sl-input flex items-center border border-gray-300 rounded-md h-10"
+      >
+        <input
+          class="flex-1 ${this.togglePassword ? "ml-4" : "mx-4"}"
+          id=${this.id}
+          name=${ifDefined(this.name)}
+          type=${this.type === "password" && this.isPasswordVisible
+            ? "text"
+            : ifDefined(this.type as any)}
+          autocomplete=${ifDefined(this.autocomplete)}
+          placeholder=${ifDefined(this.placeholder)}
+          ?required=${Boolean(this.required)}
+        />
+        ${this.togglePassword
+          ? html`
+              <div class="mr-2">
+                <sl-icon-button
+                  name=${this.isPasswordVisible ? "eye-slash" : "eye"}
+                  @click=${this.onTogglePassword}
+                ></sl-icon-button>
+              </div>
+            `
+          : ""}
+      </div>
     `;
+  }
+
+  private onTogglePassword() {
+    this.isPasswordVisible = !this.isPasswordVisible;
   }
 }

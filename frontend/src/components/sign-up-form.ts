@@ -62,7 +62,7 @@ export class SignUpForm extends LiteElement {
                 />
               `
             : html`
-                <sl-input
+                <btrix-input
                   id="email"
                   name="email"
                   type="email"
@@ -71,23 +71,23 @@ export class SignUpForm extends LiteElement {
                   autocomplete="email"
                   required
                 >
-                </sl-input>
+                </btrix-input>
               `}
         </div>
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="password"
             name="password"
             type="password"
             label=${msg("Create a password")}
             autocomplete="new-password"
-            toggle-password
+            togglePassword
             required
           >
-          </sl-input>
+          </btrix-input>
         </div>
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="name"
             name="name"
             label=${msg("Your name")}
@@ -96,7 +96,7 @@ export class SignUpForm extends LiteElement {
             })}
             autocomplete="nickname"
           >
-          </sl-input>
+          </btrix-input>
           <p class="mt-2 text-sm text-gray-500">
             <span class="text-gray-400">${msg("(optional)")}</span> ${msg(
               "Your name will be visible to archive collaborators."
