@@ -224,28 +224,45 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
+      <style>
+        input {
+          transition: var(--sl-transition-fast) color,
+            var(--sl-transition-fast) border,
+            var(--sl-transition-fast) box-shadow,
+            var(--sl-transition-fast) background-color;
+        }
+
+        input:focus {
+          border-color: var(--sl-input-border-color-focus);
+          box-shadow: var(--sl-focus-ring);
+          outline: 0;
+        }
+      </style>
       <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
         <div class="mb-5">
-          <sl-input
+          <label class="block mb-1 text-sm" for="email">${msg("Email")}</label>
+          <input
+            class="block border border-gray-300 rounded-md px-4 w-full h-10"
             id="email"
             name="username"
             type="email"
-            label="${msg("Email")}"
             autocomplete="username"
+            style="color: var(--sl-input-color);"
             required
-          >
-          </sl-input>
+          />
         </div>
         <div class="mb-5">
-          <sl-input
+          <label class="block mb-1 text-sm" for="password"
+            >${msg("Password")}</label
+          >
+          <input
+            class="block border border-gray-300 rounded-md px-4 w-full h-10"
             id="password"
             name="password"
             type="password"
-            label="${msg("Password")}"
             autocomplete="current-password"
             required
-          >
-          </sl-input>
+          />
         </div>
 
         ${formError}
