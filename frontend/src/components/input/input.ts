@@ -8,7 +8,9 @@ import "./input.css";
 /**
  * Styled input element in the light DOM.
  * Use instead of `sl-input` when disabling shadow DOM is necessary
+ * (e.g. for password manager autocomplete)
  * See https://github.com/ikreymer/browsertrix-cloud/issues/72
+ * and https://github.com/shoelace-style/shoelace/issues/413
  *
  * Usage example:
  * ```ts
@@ -48,9 +50,9 @@ export class Input extends LiteElement {
       <div class="sl-label">
         <label for=${this.id}>${this.label}</label>
       </div>
-      <div class="sl-input">
+      <div class="sl-input-wrapper">
         <input
-          class="sl-input-control"
+          class="sl-input"
           id=${this.id}
           name=${ifDefined(this.name)}
           type=${this.type === "password" && this.isPasswordVisible
