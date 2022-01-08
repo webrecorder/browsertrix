@@ -224,28 +224,43 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
+      <style>
+        input {
+          transition: var(--sl-transition-fast) color,
+            var(--sl-transition-fast) border,
+            var(--sl-transition-fast) box-shadow,
+            var(--sl-transition-fast) background-color;
+        }
+
+        input:focus {
+          border-color: var(--sl-input-border-color-focus);
+          box-shadow: var(--sl-focus-ring);
+          outline: 0;
+        }
+      </style>
       <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="email"
             name="username"
+            label=${msg("Email")}
             type="email"
-            label="${msg("Email")}"
             autocomplete="username"
             required
           >
-          </sl-input>
+          </btrix-input>
         </div>
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="password"
             name="password"
+            label=${msg("Password")}
             type="password"
-            label="${msg("Password")}"
             autocomplete="current-password"
+            togglePassword
             required
           >
-          </sl-input>
+          </btrix-input>
         </div>
 
         ${formError}
@@ -280,14 +295,15 @@ export class LogInPage extends LiteElement {
         aria-describedby="formError"
       >
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="email"
             name="email"
             type="email"
             label="${msg("Your email address")}"
+            autocomplete="username"
             required
           >
-          </sl-input>
+          </btrix-input>
         </div>
 
         ${formError}

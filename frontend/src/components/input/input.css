@@ -1,0 +1,52 @@
+.sl-label {
+  font-size: var(--sl-input-label-font-size-medium);
+  margin-bottom: var(--sl-spacing-3x-small);
+}
+
+.sl-input-wrapper {
+  position: relative;
+  font-size: var(--sl-input-font-size-medium);
+  height: var(--sl-input-height-medium);
+}
+
+.sl-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  min-width: 0;
+  height: calc(
+    var(--sl-input-height-medium) - var(--sl-input-border-width) * 2
+  );
+  color: var(--sl-input-color);
+  background-color: var(--sl-input-background-color);
+  border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+  border-radius: var(--sl-input-border-radius-medium);
+  box-shadow: none;
+  padding: var(--sl-input-spacing-medium);
+  cursor: inherit;
+  -webkit-appearance: none;
+  transition: var(--sl-transition-fast) border,
+    var(--sl-transition-fast) box-shadow,
+    var(--sl-transition-fast) background-color;
+}
+
+.sl-input:hover {
+  border-color: var(--sl-input-border-color-hover);
+}
+
+.sl-input:focus {
+  border-color: var(--sl-input-border-color-focus);
+  box-shadow: var(--sl-focus-ring);
+}
+
+.sl-input:not(:only-child) {
+  padding-right: calc(var(--sl-spacing-x-small) * 2 + 2em);
+}
+
+.sl-input-icon-button {
+  position: absolute;
+  top: calc(var(--sl-input-border-width) + var(--sl-spacing-3x-small));
+  right: 0;
+  margin-right: var(--sl-spacing-x-small);
+}

@@ -33,16 +33,16 @@ export class ResetPassword extends LiteElement {
         <div class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
           <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
             <div class="mb-5">
-              <sl-input
+              <btrix-input
                 id="password"
                 name="password"
                 type="password"
                 label="${msg("New password")}"
                 autocomplete="new-password"
-                toggle-password
+                togglePassword
                 required
               >
-              </sl-input>
+              </btrix-input>
             </div>
 
             ${formError}
