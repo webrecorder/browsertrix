@@ -295,14 +295,15 @@ export class LogInPage extends LiteElement {
         aria-describedby="formError"
       >
         <div class="mb-5">
-          <sl-input
+          <btrix-input
             id="email"
             name="email"
             type="email"
             label="${msg("Your email address")}"
+            autocomplete="username"
             required
           >
-          </sl-input>
+          </btrix-input>
         </div>
 
         ${formError}
