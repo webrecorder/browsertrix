@@ -45,14 +45,12 @@ export class Input extends LiteElement {
 
   render() {
     return html`
-      <div class="mb-1">
-        <label for=${this.id} class="text-sm">${this.label}</label>
+      <div class="sl-label">
+        <label for=${this.id}>${this.label}</label>
       </div>
-      <div
-        class="sl-input flex items-center border border-gray-300 rounded-md h-10"
-      >
+      <div class="sl-input">
         <input
-          class="flex-1 ${this.togglePassword ? "ml-4" : "mx-4"}"
+          class="sl-input-control"
           id=${this.id}
           name=${ifDefined(this.name)}
           type=${this.type === "password" && this.isPasswordVisible
@@ -64,12 +62,11 @@ export class Input extends LiteElement {
         />
         ${this.togglePassword
           ? html`
-              <div class="mr-2">
-                <sl-icon-button
-                  name=${this.isPasswordVisible ? "eye-slash" : "eye"}
-                  @click=${this.onTogglePassword}
-                ></sl-icon-button>
-              </div>
+              <sl-icon-button
+                class="sl-input-icon-button"
+                name=${this.isPasswordVisible ? "eye-slash" : "eye"}
+                @click=${this.onTogglePassword}
+              ></sl-icon-button>
             `
           : ""}
       </div>

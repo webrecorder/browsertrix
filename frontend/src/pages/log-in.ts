@@ -240,10 +240,10 @@ export class LogInPage extends LiteElement {
       </style>
       <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
         <div class="mb-5">
-          <label class="block mb-1 text-sm" for="email">${msg("Email")}</label>
           <btrix-input
             id="email"
             name="username"
+            label=${msg("Email")}
             type="email"
             autocomplete="username"
             required
@@ -251,14 +251,13 @@ export class LogInPage extends LiteElement {
           </btrix-input>
         </div>
         <div class="mb-5">
-          <label class="block mb-1 text-sm" for="password"
-            >${msg("Password")}</label
-          >
           <btrix-input
             id="password"
             name="password"
+            label=${msg("Password")}
             type="password"
             autocomplete="current-password"
+            togglePassword
             required
           >
           </btrix-input>

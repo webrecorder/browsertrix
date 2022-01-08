@@ -1,4 +1,16 @@
+.sl-label {
+  font-size: var(--sl-input-label-font-size-medium);
+  margin-bottom: var(--sl-spacing-3x-small);
+}
+
 .sl-input {
+  display: flex;
+  align-items: center;
+  background-color: var(--sl-input-background-color);
+  border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+  border-radius: var(--sl-input-border-radius-medium);
+  font-size: var(--sl-input-font-size-medium);
+  height: var(--sl-input-height-medium);
   transition: var(--sl-transition-fast) border,
     var(--sl-transition-fast) box-shadow,
     var(--sl-transition-fast) background-color;
@@ -8,12 +20,42 @@
   border-color: var(--sl-input-border-color-hover);
 }
 
-.sl-input:focus {
+.sl-input:focus-within {
   border-color: var(--sl-input-border-color-focus);
   box-shadow: var(--sl-focus-ring);
 }
 
-.sl-input input {
+.sl-input-control {
+  flex: 1;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  min-width: 0;
+  height: calc(
+    var(--sl-input-height-medium) - var(--sl-input-border-width) * 2
+  );
   color: var(--sl-input-color);
-  outline: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  cursor: inherit;
+  -webkit-appearance: none;
+}
+
+.sl-input-control:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.sl-input-control:only-child {
+  margin: 0 var(--sl-input-spacing-medium);
+}
+
+.sl-input-control:not(:only-child) {
+  margin: 0 0 0 var(--sl-input-spacing-medium);
+}
+
+.sl-input-icon-button {
+  margin-right: var(--sl-spacing-x-small);
 }
