@@ -195,49 +195,54 @@ export class App extends LiteElement {
 
   renderNavBar() {
     return html`
-      <nav
-        class="flex items-center justify-between p-2 bg-gray-900 text-gray-50"
-      >
-        <div>
-          <a href="/" @click="${this.navLink}"
-            ><h1 class="text-base px-2">${msg("Browsertrix Cloud")}</h1></a
-          >
-        </div>
-        <div class="grid grid-flow-col gap-5 items-center">
-          ${this.authService.authState
-            ? html` <sl-dropdown>
-                <div class="p-2" role="button" slot="trigger">
-                  ${this.userInfo?.name || this.userInfo?.email}
-                  <span class="text-xs"
-                    ><sl-icon name="chevron-down"></sl-icon
-                  ></span>
-                </div>
-                <sl-menu>
-                  <sl-menu-item
-                    @click=${() => this.navigate(ROUTES.accountSettings)}
+      <div class="bg-gray-900 text-gray-50">
+        <nav
+          class="max-w-screen-xl mx-auto p-2 box-border flex items-center justify-between"
+        >
+          <div>
+            <a href="/archives" @click="${this.navLink}"
+              ><h1 class="text-base">${msg("Browsertrix Cloud")}</h1></a
+            >
+          </div>
+          <div class="grid grid-flow-col gap-5 items-center">
+            ${this.authService.authState
+              ? html` <sl-dropdown>
+                  <div class="p-2" role="button" slot="trigger">
+                    ${this.userInfo?.name || this.userInfo?.email}
+                    <span class="text-xs"
+                      ><sl-icon name="chevron-down"></sl-icon
+                    ></span>
+                  </div>
+                  <sl-menu>
+                    <sl-menu-item
+                      @click=${() => this.navigate(ROUTES.accountSettings)}
+                    >
+                      ${msg("Your account")}
+                    </sl-menu-item>
+                    ${this.userInfo?.isAdmin
+                      ? html` <sl-menu-item
+                          @click=${() => this.navigate(ROUTES.usersInvite)}
+                        >
+                          ${msg("Invite Users")}
+                        </sl-menu-item>`
+                      : ""}
+                    <sl-menu-item @click="${this.onLogOut}"
+                      >${msg("Log Out")}</sl-menu-item
+                    >
+                  </sl-menu>
+                </sl-dropdown>`
+              : html`
+                  <a href="/log-in"> ${msg("Log In")} </a>
+                  <sl-button
+                    outline
+                    @click="${() => this.navigate("/sign-up")}"
                   >
-                    ${msg("Your account")}
-                  </sl-menu-item>
-                  ${this.userInfo?.isAdmin
-                    ? html` <sl-menu-item
-                        @click=${() => this.navigate(ROUTES.usersInvite)}
-                      >
-                        ${msg("Invite Users")}
-                      </sl-menu-item>`
-                    : ""}
-                  <sl-menu-item @click="${this.onLogOut}"
-                    >${msg("Log Out")}</sl-menu-item
-                  >
-                </sl-menu>
-              </sl-dropdown>`
-            : html`
-                <a href="/log-in"> ${msg("Log In")} </a>
-                <sl-button outline @click="${() => this.navigate("/sign-up")}">
-                  <span class="text-white">${msg("Sign up")}</span>
-                </sl-button>
-              `}
-        </div>
-      </nav>
+                    <span class="text-white">${msg("Sign up")}</span>
+                  </sl-button>
+                `}
+          </div>
+        </nav>
+      </div>
     `;
   }
 
@@ -263,17 +268,8 @@ export class App extends LiteElement {
       </li>
     `;
     const appLayout = (template: TemplateResult) => html`
-      <div class="w-full flex flex-col md:flex-row">
-        <nav class="md:w-80 md:p-4 md:border-r">
-          <ul class="flex md:flex-col">
-            ${navLink({
-              activeRoutes: ["archives", "archive"],
-              href: DASHBOARD_ROUTE,
-              label: msg("Archives"),
-            })}
-          </ul>
-        </nav>
-        <div class="p-4 md:p-8 flex-1">${template}</div>
+      <div class="w-full max-w-screen-xl mx-auto p-2 md:py-8 box-border">
+        ${template}
       </div>
     `;
 
