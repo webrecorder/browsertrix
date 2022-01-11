@@ -148,8 +148,10 @@ export class LogInPage extends LiteElement {
     this.formStateService.stop();
   }
 
-  updated(changedProperties: any) {
+  async updated(changedProperties: any) {
     if (changedProperties.get("viewState")) {
+      await this.updateComplete;
+
       this.syncFormStateView();
     }
   }
@@ -204,9 +206,7 @@ export class LogInPage extends LiteElement {
     `;
   }
 
-  private async syncFormStateView() {
-    await this.updateComplete;
-
+  private syncFormStateView() {
     const route = this.viewState.route;
 
     if (route === "login") {
