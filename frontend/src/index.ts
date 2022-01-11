@@ -218,6 +218,13 @@ export class App extends LiteElement {
                   >
                     ${msg("Your account")}
                   </sl-menu-item>
+                  ${this.userInfo?.isAdmin
+                    ? html` <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.usersInvite)}
+                      >
+                        ${msg("Invite Users")}
+                      </sl-menu-item>`
+                    : ""}
                   <sl-menu-item @click="${this.onLogOut}"
                     >${msg("Log Out")}</sl-menu-item
                   >
@@ -265,21 +272,6 @@ export class App extends LiteElement {
               label: msg("Archives"),
             })}
           </ul>
-          ${this.userInfo?.isAdmin
-            ? html` <span class="uppercase text-sm font-medium"
-                  >${msg("Admin", {
-                    desc: "Heading for links to administrative pages",
-                  })}</span
-                >
-                <ul class="flex md:flex-col">
-                  ${navLink({
-                    // activeRoutes: ["users", "usersInvite"],
-                    activeRoutes: ["usersInvite"],
-                    href: ROUTES.usersInvite,
-                    label: msg("Invite Users"),
-                  })}
-                </ul>`
-            : ""}
         </nav>
         <div class="p-4 md:p-8 flex-1">${template}</div>
       </div>
