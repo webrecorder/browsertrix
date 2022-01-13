@@ -148,15 +148,11 @@ export class LogInPage extends LiteElement {
     this.formStateService.stop();
   }
 
-  updated(changedProperties: any) {
-    if (changedProperties.has("viewState")) {
-      const route = this.viewState.route;
+  async updated(changedProperties: any) {
+    if (changedProperties.get("viewState")) {
+      await this.updateComplete;
 
-      if (route === "login") {
-        this.formStateService.send("SHOW_SIGN_IN_WITH_PASSWORD");
-      } else if (route === "forgotPassword") {
-        this.formStateService.send("SHOW_FORGOT_PASSWORD");
-      }
+      this.syncFormStateView();
     }
   }
 
@@ -208,6 +204,16 @@ export class LogInPage extends LiteElement {
         <footer class="text-center">${link}</footer>
       </article>
     `;
+  }
+
+  private syncFormStateView() {
+    const route = this.viewState.route;
+
+    if (route === "login") {
+      this.formStateService.send("SHOW_SIGN_IN_WITH_PASSWORD");
+    } else if (route === "forgotPassword") {
+      this.formStateService.send("SHOW_FORGOT_PASSWORD");
+    }
   }
 
   private renderLoginForm() {
