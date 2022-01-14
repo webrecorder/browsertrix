@@ -34,6 +34,9 @@ export class Input extends LiteElement {
   placeholder?: string;
 
   @property()
+  value?: any;
+
+  @property()
   autocomplete?: any;
 
   @property()
@@ -60,6 +63,7 @@ export class Input extends LiteElement {
             : ifDefined(this.type as any)}
           autocomplete=${ifDefined(this.autocomplete)}
           placeholder=${ifDefined(this.placeholder)}
+          value=${ifDefined(this.value)}
           ?required=${Boolean(this.required)}
         />
         ${this.togglePassword

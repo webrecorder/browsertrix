@@ -7,6 +7,16 @@ import LiteElement, { html } from "../../utils/LiteElement";
 
 type CrawlTemplate = {};
 
+const initialValues = {
+  name: "Example crawl", // TODO remove
+  scheduleFrequency: "weekly",
+  scheduleTime: "12:00",
+  crawlTimeout: 90,
+  seedUrls: "https://webrecorder.net", // TODO remove
+  scopeType: "page",
+  limit: 0,
+};
+
 @localized()
 export class CrawlTemplates extends LiteElement {
   @property({ type: Object })
@@ -31,7 +41,7 @@ export class CrawlTemplates extends LiteElement {
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
 
       <main class="mt-4">
-        <sl-form>
+        <sl-form @sl-submit=${this.onSubmit}>
           <div class="border rounded-lg md:grid grid-cols-4">
             <div class="col-span-1 p-4 md:p-8 md:border-b">
               <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
@@ -45,11 +55,12 @@ export class CrawlTemplates extends LiteElement {
                     desc: "Example crawl template name",
                   })}
                   autocomplete="off"
+                  value=${initialValues.name}
                   required
                 ></sl-input>
               </div>
               <div class="mb-5">
-                <sl-switch name="runNow" required
+                <sl-switch name="runNow" checked
                   >${msg("Run manually")}</sl-switch
                 >
               </div>
@@ -57,7 +68,11 @@ export class CrawlTemplates extends LiteElement {
               <div class="mb-5 flex items-end">
                 <!-- TODO fix input alignment -->
                 <div class="w-60 mr-2">
-                  <sl-select name="scheduleFrequency" label=${msg("Schedule")}>
+                  <sl-select
+                    name="scheduleFrequency"
+                    label=${msg("Schedule")}
+                    value=${initialValues.scheduleFrequency}
+                  >
                     <sl-menu-item value="daily">Daily</sl-menu-item>
                     <sl-menu-item value="weekly">Weekly</sl-menu-item>
                     <sl-menu-item value="monthly">Monthly</sl-menu-item>
@@ -67,9 +82,7 @@ export class CrawlTemplates extends LiteElement {
                   <btrix-input
                     name="scheduleTime"
                     type="time"
-                    placeholder=${msg("12:00 PM", {
-                      desc: "Example crawl template time",
-                    })}
+                    value=${initialValues.scheduleFrequency}
                   ></btrix-input>
                 </div>
               </div>
@@ -79,7 +92,10 @@ export class CrawlTemplates extends LiteElement {
                   name="crawlTimeout"
                   label=${msg("Time limit")}
                   type="number"
-                ></sl-input>
+                  value=${initialValues.crawlTimeout}
+                >
+                  <span slot="suffix">${msg("seconds")}</span>
+                </sl-input>
               </div>
             </section>
 
@@ -102,13 +118,22 @@ export class CrawlTemplates extends LiteElement {
                       }
                     )}
                     rows="3"
+                    value=${initialValues.seedUrls}
+                    required
                   ></sl-textarea>
                 </div>
                 <div class="mb-5">
-                  <sl-select name="scopeType" label=${msg("Scope type")}>
+                  <sl-select
+                    name="scopeType"
+                    label=${msg("Scope type")}
+                    value=${initialValues.scopeType}
+                    required
+                  >
                     <sl-menu-item value="page">Page</sl-menu-item>
                     <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
                     <sl-menu-item value="prefix">Prefix</sl-menu-item>
+                    <sl-menu-item value="host">Host</sl-menu-item>
+                    <sl-menu-item value="any">Any</sl-menu-item>
                   </sl-select>
                 </div>
                 <div class="mb-5">
@@ -116,6 +141,7 @@ export class CrawlTemplates extends LiteElement {
                     name="limit"
                     label=${msg("Page limit")}
                     type="number"
+                    value=${initialValues.limit}
                     required
                   ></sl-input>
                 </div>
@@ -142,5 +168,10 @@ export class CrawlTemplates extends LiteElement {
         </sl-button>
       </div>
     `;
+  }
+
+  private onSubmit(event: { detail: { formData: FormData } }) {
+    const { formData } = event.detail;
+    console.log(formData);
   }
 }
