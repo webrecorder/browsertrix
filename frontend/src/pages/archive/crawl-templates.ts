@@ -164,7 +164,7 @@ export class CrawlTemplates extends LiteElement {
             <div class="col-span-4 p-4 md:p-8 text-center">
               <sl-button type="primary" submit
                 >${this.isRunNow
-                  ? msg("Run Crawl")
+                  ? msg("Save & Run Crawl")
                   : msg("Schedule Crawl")}</sl-button
               >
             </div>
