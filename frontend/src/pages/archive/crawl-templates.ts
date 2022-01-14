@@ -8,12 +8,13 @@ import LiteElement, { html } from "../../utils/LiteElement";
 type CrawlTemplate = {};
 
 const initialValues = {
-  name: "Example crawl", // TODO remove
+  name: "Example crawl", // TODO remove placeholder
+  runNow: true,
   scheduleFrequency: "weekly",
   scheduleTime: "12:00",
-  crawlTimeout: 90,
-  seedUrls: "https://webrecorder.net", // TODO remove
-  scopeType: "page",
+  crawlTimeout: 0,
+  seedUrls: "https://webrecorder.net", // TODO remove placeholder
+  scopeType: "prefix",
   limit: 0,
 };
 
@@ -60,9 +61,13 @@ export class CrawlTemplates extends LiteElement {
                 ></sl-input>
               </div>
               <div class="mb-5">
-                <sl-switch name="runNow" checked
+                <sl-switch
+                  name="runNow"
+                  value="yes"
+                  ?checked=${initialValues.runNow}
                   >${msg("Run manually")}</sl-switch
                 >
+                <input type="hidden" name="runNow" value="no" />
               </div>
 
               <div class="mb-5 flex items-end">
@@ -82,7 +87,7 @@ export class CrawlTemplates extends LiteElement {
                   <btrix-input
                     name="scheduleTime"
                     type="time"
-                    value=${initialValues.scheduleFrequency}
+                    value=${initialValues.scheduleTime}
                   ></btrix-input>
                 </div>
               </div>
@@ -108,7 +113,7 @@ export class CrawlTemplates extends LiteElement {
               <div class="border rounded-lg p-4 md:p-6">
                 <div class="mb-5">
                   <sl-textarea
-                    name="urls"
+                    name="seedUrls"
                     label=${msg("Seed URLs")}
                     helpText=${msg("Separated by a new line, space or comma")}
                     placeholder=${msg(
@@ -170,8 +175,26 @@ export class CrawlTemplates extends LiteElement {
     `;
   }
 
-  private onSubmit(event: { detail: { formData: FormData } }) {
+  private async onSubmit(event: { detail: { formData: FormData } }) {
+    if (!this.authState) return;
+
     const { formData } = event.detail;
-    console.log(formData);
+
+    const params = {
+      schedule: "",
+      runNow: formData.get("runNow") === "yes",
+      config: {
+        seeds: [
+          {
+            url: formData.get("seedUrls"),
+            scopeType: formData.get("scopeType"),
+            limit: formData.get("limit"),
+          },
+        ],
+      },
+      crawlTimeout: formData.get("crawlTimeout"),
+    };
+
+    console.log(params);
   }
 }
