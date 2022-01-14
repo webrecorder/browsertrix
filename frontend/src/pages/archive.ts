@@ -68,9 +68,16 @@ export class Archive extends LiteElement {
     const showMembers = Boolean(this.archive.users);
 
     return html`<article class="grid gap-4">
-      <header>
-        <h1 class="text-2xl font-bold">${this.archive.name}</h1>
-      </header>
+      <nav class="font-medium text-sm text-gray-500">
+        <a
+          class="text-primary hover:underline"
+          href="/archives"
+          @click="${this.navLink}"
+          >${msg("Archives")}</a
+        >
+        <span class="font-mono">/</span>
+        <span>${this.archive.name}</span>
+      </nav>
 
       <main>
         <sl-tab-group @sl-tab-show=${this.updateUrl}>
