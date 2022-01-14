@@ -65,7 +65,7 @@ export class Archive extends LiteElement {
       </div>`;
     }
 
-    const showMembers = Boolean(this.archive.users);
+    const showMembersTab = Boolean(this.archive.users);
 
     return html`<article class="grid gap-4">
       <nav class="font-medium text-sm text-gray-500">
@@ -93,7 +93,7 @@ export class Archive extends LiteElement {
             ?active=${this.archiveTab === "settings"}
             >${msg("Settings")}</sl-tab
           >
-          ${showMembers
+          ${showMembersTab
             ? html`<sl-tab
                 slot="nav"
                 panel="members"
@@ -107,7 +107,12 @@ export class Archive extends LiteElement {
             ?active=${this.archiveTab === "settings"}
             >${this.renderSettings()}</sl-tab-panel
           >
-          ${showMembers
+          <sl-tab-panel
+            name="crawl-templates"
+            ?active=${this.archiveTab === "crawl-templates"}
+            >${this.renderCrawlTemplates()}</sl-tab-panel
+          >
+          ${showMembersTab
             ? html`<sl-tab-panel
                 name="members"
                 ?active=${this.archiveTab === "members"}
@@ -123,6 +128,10 @@ export class Archive extends LiteElement {
   }
 
   private renderSettings() {
+    return html` TODO `;
+  }
+
+  private renderCrawlTemplates() {
     return html` TODO `;
   }
 
