@@ -12,7 +12,7 @@ import { CrawlTemplates } from "./crawl-templates";
 customElements.define("btrix-crawl-templates", CrawlTemplates);
 
 export type ArchiveTab = "crawl-templates" | "settings" | "members";
-type CrawlTemplate = {};
+type CrawlTemplate = any; // TODO
 
 const defaultTab = "settings";
 
@@ -159,6 +159,7 @@ export class Archive extends LiteElement {
 
     return html`<btrix-crawl-templates
       .authState=${this.authState!}
+      .archiveId=${this.archiveId!}
       .crawlTemplates=${this.crawlTemplates}
       .isNew=${this.isNewResourceTab}
     ></btrix-crawl-templates>`;

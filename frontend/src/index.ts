@@ -464,6 +464,8 @@ export class App extends LiteElement {
   }
 
   onNavigateTo(event: NavigateEvent) {
+    event.stopPropagation();
+
     this.navigate(event.detail);
   }
 

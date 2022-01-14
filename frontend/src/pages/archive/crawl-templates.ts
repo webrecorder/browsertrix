@@ -2,13 +2,12 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
-import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 
-type CrawlTemplate = {};
+type CrawlTemplate = any; // TODO
 
 const initialValues = {
-  name: "Example crawl", // TODO remove placeholder
+  name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
   scheduleFrequency: "weekly",
   scheduleTime: "12:00",
@@ -22,6 +21,9 @@ const initialValues = {
 export class CrawlTemplates extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
+
+  @property({ type: String })
+  archiveId!: string;
 
   @property({ type: Boolean })
   isNew!: Boolean;
@@ -167,10 +169,19 @@ export class CrawlTemplates extends LiteElement {
   private renderList() {
     return html`
       <div class="text-center">
-        <sl-button>
+        <sl-button
+          @click=${() =>
+            this.navTo(`/archives/${this.archiveId}/crawl-templates/new`)}
+        >
           <sl-icon slot="prefix" name="plus-square-dotted"></sl-icon>
           ${msg("Create new crawl template")}
         </sl-button>
+      </div>
+
+      <div>
+        ${this.crawlTemplates?.map(
+          (template) => html`<div>${template.id}</div>`
+        )}
       </div>
     `;
   }
@@ -181,6 +192,7 @@ export class CrawlTemplates extends LiteElement {
     const { formData } = event.detail;
 
     const params = {
+      name: formData.get("name"),
       schedule: "",
       runNow: formData.get("runNow") === "yes",
       config: {
@@ -196,5 +208,20 @@ export class CrawlTemplates extends LiteElement {
     };
 
     console.log(params);
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+
+      console.debug("success");
+    } catch (e) {
+      console.error(e);
+    }
   }
 }

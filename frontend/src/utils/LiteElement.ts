@@ -11,7 +11,9 @@ export default class LiteElement extends LitElement {
   }
 
   navTo(url: string) {
-    this.dispatchEvent(new CustomEvent("navigate", { detail: url }));
+    this.dispatchEvent(
+      new CustomEvent("navigate", { detail: url, bubbles: true })
+    );
   }
 
   navLink(event: Event) {
