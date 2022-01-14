@@ -122,7 +122,7 @@ export class CrawlTemplates extends LiteElement {
               </div>
             </section>
 
-            <div class="p-4 md:p-8">
+            <div class="col-span-4 p-4 md:p-8 text-center">
               <sl-button type="primary" submit
                 >${msg("Create Template")}</sl-button
               >
