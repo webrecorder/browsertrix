@@ -9,8 +9,7 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  scheduleFrequency: "weekly",
-  scheduleTime: "12:00",
+  schedule: "@weekly",
   crawlTimeout: 0,
   seedUrls: "https://webrecorder.net", // TODO remove placeholder
   scopeType: "prefix",
@@ -26,10 +25,13 @@ export class CrawlTemplates extends LiteElement {
   archiveId!: string;
 
   @property({ type: Boolean })
-  isNew!: Boolean;
+  isNew!: boolean;
 
   @property({ type: Array })
   crawlTemplates?: CrawlTemplate[];
+
+  @state()
+  isRunNow: boolean = initialValues.runNow;
 
   render() {
     if (this.isNew) {
@@ -42,6 +44,11 @@ export class CrawlTemplates extends LiteElement {
   private renderNew() {
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
+      <p>
+        ${msg(
+          "Configure a new crawl template. You can choose to run a crawl immediately upon template creation."
+        )}
+      </p>
 
       <main class="mt-4">
         <sl-form @sl-submit=${this.onSubmit}>
@@ -65,33 +72,32 @@ export class CrawlTemplates extends LiteElement {
               <div class="mb-5">
                 <sl-switch
                   name="runNow"
-                  value="yes"
                   ?checked=${initialValues.runNow}
-                  >${msg("Run manually")}</sl-switch
+                  @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+                  >${msg("Run immediately")}</sl-switch
                 >
-                <input type="hidden" name="runNow" value="no" />
               </div>
 
               <div class="mb-5 flex items-end">
-                <!-- TODO fix input alignment -->
-                <div class="w-60 mr-2">
+                <!-- TODO schedule time -->
+                <div>
                   <sl-select
-                    name="scheduleFrequency"
+                    name="schedule"
                     label=${msg("Schedule")}
-                    value=${initialValues.scheduleFrequency}
+                    value=${initialValues.schedule}
+                    ?disabled=${this.isRunNow}
                   >
-                    <sl-menu-item value="daily">Daily</sl-menu-item>
-                    <sl-menu-item value="weekly">Weekly</sl-menu-item>
-                    <sl-menu-item value="monthly">Monthly</sl-menu-item>
+                    <sl-menu-item value="@daily">Daily</sl-menu-item>
+                    <sl-menu-item value="@weekly">Weekly</sl-menu-item>
+                    <sl-menu-item value="@monthly">Monthly</sl-menu-item>
                   </sl-select>
                 </div>
-                <div>
+                <!-- <div>
                   <btrix-input
                     name="scheduleTime"
                     type="time"
-                    value=${initialValues.scheduleTime}
                   ></btrix-input>
-                </div>
+                </div> -->
               </div>
 
               <div class="mb-5">
@@ -157,7 +163,9 @@ export class CrawlTemplates extends LiteElement {
 
             <div class="col-span-4 p-4 md:p-8 text-center">
               <sl-button type="primary" submit
-                >${msg("Create Template")}</sl-button
+                >${this.isRunNow
+                  ? msg("Run Crawl")
+                  : msg("Schedule Crawl")}</sl-button
               >
             </div>
           </div>
@@ -193,8 +201,8 @@ export class CrawlTemplates extends LiteElement {
 
     const params = {
       name: formData.get("name"),
-      schedule: "",
-      runNow: formData.get("runNow") === "yes",
+      schedule: this.isRunNow ? formData.get("schedule") : "",
+      runNow: this.isRunNow,
       config: {
         seeds: [
           {
@@ -220,6 +228,8 @@ export class CrawlTemplates extends LiteElement {
       );
 
       console.debug("success");
+
+      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
     } catch (e) {
       console.error(e);
     }
