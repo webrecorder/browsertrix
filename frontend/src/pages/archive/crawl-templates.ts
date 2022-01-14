@@ -36,7 +36,7 @@ export class CrawlTemplates extends LiteElement {
             <div class="col-span-1 p-4 md:p-8 md:border-b">
               <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
             </div>
-            <div class="col-span-3 p-4 md:p-8 border-b">
+            <section class="col-span-3 p-4 md:p-8 border-b">
               <div class="mb-5">
                 <sl-input
                   name="name"
@@ -81,7 +81,46 @@ export class CrawlTemplates extends LiteElement {
                   type="number"
                 ></sl-input>
               </div>
+            </section>
+
+            <div class="col-span-1 p-4 md:p-8 md:border-b">
+              <h3 class="text-lg font-medium">${msg("Pages")}</h3>
             </div>
+            <section class="col-span-3 p-4 md:p-8 border-b">
+              <h4 class="font-medium mb-3">${msg("Add URLs")}</h4>
+
+              <div class="border rounded-lg p-4 md:p-6">
+                <div class="mb-5">
+                  <sl-textarea
+                    name="urls"
+                    label=${msg("Seed URLs")}
+                    helpText=${msg("Separated by a new line, space or comma")}
+                    placeholder=${msg(
+                      `https://webrecorder.net\nhttps://example.com`,
+                      {
+                        desc: "Example seed URLs",
+                      }
+                    )}
+                    rows="3"
+                  ></sl-textarea>
+                </div>
+                <div class="mb-5">
+                  <sl-select name="scopeType" label=${msg("Scope type")}>
+                    <sl-menu-item value="page">Page</sl-menu-item>
+                    <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
+                    <sl-menu-item value="prefix">Prefix</sl-menu-item>
+                  </sl-select>
+                </div>
+                <div class="mb-5">
+                  <sl-input
+                    name="limit"
+                    label=${msg("Page limit")}
+                    type="number"
+                    required
+                  ></sl-input>
+                </div>
+              </div>
+            </section>
 
             <div class="p-4 md:p-8">
               <sl-button type="primary" submit

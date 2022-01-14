@@ -50,5 +50,8 @@ import(
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel"
 );
+import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/textarea/textarea"
+);
 
 setBasePath("/shoelace");
