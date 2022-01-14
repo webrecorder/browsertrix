@@ -197,7 +197,7 @@ export class App extends LiteElement {
     return html`
       <div class="bg-gray-900 text-gray-50">
         <nav
-          class="max-w-screen-xl mx-auto p-2 box-border flex items-center justify-between"
+          class="max-w-screen-lg mx-auto p-2 box-border flex items-center justify-between"
         >
           <div>
             <a href="/archives" @click="${this.navLink}"
@@ -268,7 +268,7 @@ export class App extends LiteElement {
       </li>
     `;
     const appLayout = (template: TemplateResult) => html`
-      <div class="w-full max-w-screen-xl mx-auto p-2 md:py-8 box-border">
+      <div class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border">
         ${template}
       </div>
     `;

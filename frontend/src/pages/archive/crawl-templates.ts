@@ -30,7 +30,7 @@ export class CrawlTemplates extends LiteElement {
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
 
-      <main>
+      <main class="mt-4">
         <sl-form>
           <div class="border rounded-lg md:grid grid-cols-4">
             <div class="col-span-1 p-4 md:p-8 md:border-b">
