@@ -5,7 +5,7 @@ import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
 
-import type { ArchiveTab } from "./pages/archive";
+import type { ArchiveTab } from "./pages/archive/archive";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
@@ -367,6 +367,7 @@ export class App extends LiteElement {
 
       case "archive":
       case "archiveAddMember":
+      case "archiveNewResourceTab":
         return appLayout(html`<btrix-archive
           class="w-full"
           @navigate=${this.onNavigateTo}
@@ -376,6 +377,7 @@ export class App extends LiteElement {
           archiveId=${this.viewState.params.id}
           archiveTab=${this.viewState.params.tab as ArchiveTab}
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
+          ?isNewResourceTab=${this.viewState.route === "archiveNewResourceTab"}
         ></btrix-archive>`);
 
       case "accountSettings":

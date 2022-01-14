@@ -12,6 +12,7 @@ export const ROUTES = {
   accountSettings: "/account/settings",
   archives: "/archives",
   archive: "/archives/:id/:tab",
+  archiveNewResourceTab: "/archives/:id/:tab/new",
   archiveAddMember: "/archives/:id/:tab/add-member",
   users: "/users",
   usersInvite: "/users/invite",

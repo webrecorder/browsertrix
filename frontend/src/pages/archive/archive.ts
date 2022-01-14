@@ -1,14 +1,18 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { AuthState } from "../utils/AuthService";
-import type { CurrentUser } from "../types/user";
-import type { ArchiveData } from "../utils/archives";
-import LiteElement, { html } from "../utils/LiteElement";
-import { needLogin } from "../utils/auth";
-import { isOwner } from "../utils/archives";
+import type { AuthState } from "../../utils/AuthService";
+import type { CurrentUser } from "../../types/user";
+import type { ArchiveData } from "../../utils/archives";
+import LiteElement, { html } from "../../utils/LiteElement";
+import { needLogin } from "../../utils/auth";
+import { isOwner } from "../../utils/archives";
+import { CrawlTemplates } from "./crawl-templates";
+
+customElements.define("btrix-crawl-templates", CrawlTemplates);
 
 export type ArchiveTab = "crawl-templates" | "settings" | "members";
+type CrawlTemplate = {};
 
 const defaultTab = "settings";
 
@@ -30,8 +34,15 @@ export class Archive extends LiteElement {
   @property({ type: Boolean })
   isAddingMember: boolean = false;
 
+  /** Whether new resource is being added in tab */
+  @property({ type: Boolean })
+  isNewResourceTab: boolean = false;
+
   @state()
   private archive?: ArchiveData;
+
+  @state()
+  private crawlTemplates?: CrawlTemplate[];
 
   @state()
   private successfullyInvitedEmail?: string;
@@ -50,8 +61,18 @@ export class Archive extends LiteElement {
     }
   }
 
-  updated(changedProperties: any) {
-    if (changedProperties.has("isAddingMember") && this.isAddingMember) {
+  async updated(changedProperties: any) {
+    if (
+      changedProperties.has("archiveTab") &&
+      this.archiveTab === "crawl-templates" &&
+      !this.isNewResourceTab
+    ) {
+      this.crawlTemplates = await this.getCrawlTemplates();
+
+      if (!this.crawlTemplates.length) {
+        this.navTo(`/archives/${this.archiveId}/crawl-templates/new`);
+      }
+    } else if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.successfullyInvitedEmail = undefined;
     }
   }
@@ -132,7 +153,15 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    return html` TODO `;
+    if (!this.isNewResourceTab && !this.crawlTemplates) {
+      return html` TODO `;
+    }
+
+    return html`<btrix-crawl-templates
+      .authState=${this.authState!}
+      .crawlTemplates=${this.crawlTemplates}
+      .isNew=${this.isNewResourceTab}
+    ></btrix-crawl-templates>`;
   }
 
   private renderMembers() {
@@ -218,6 +247,15 @@ export class Archive extends LiteElement {
     const data = await this.apiFetch(`/archives/${archiveId}`, this.authState!);
 
     return data;
+  }
+
+  async getCrawlTemplates(): Promise<CrawlTemplate[]> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawlconfigs`,
+      this.authState!
+    );
+
+    return data.crawl_configs;
   }
 
   onInviteSuccess(
