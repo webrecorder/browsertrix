@@ -8,7 +8,7 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import { isOwner } from "../utils/archives";
 
-export type ArchiveTab = "settings" | "members";
+export type ArchiveTab = "crawl-templates" | "settings" | "members";
 
 const defaultTab = "settings";
 
@@ -81,6 +81,12 @@ export class Archive extends LiteElement {
 
       <main>
         <sl-tab-group @sl-tab-show=${this.updateUrl}>
+          <sl-tab
+            slot="nav"
+            panel="crawl-templates"
+            ?active=${this.archiveTab === "crawl-templates"}
+            >${msg("Crawl Templates")}</sl-tab
+          >
           <sl-tab
             slot="nav"
             panel="settings"
