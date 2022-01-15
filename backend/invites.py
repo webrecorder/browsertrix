@@ -22,12 +22,14 @@ class UserRole(IntEnum):
 
 
 # ============================================================================
-class InvitePending(BaseModel):
-    """Pending Request to join"""
+class InvitePending(BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
 
     created: datetime
+    inviterEmail: str
     aid: Optional[str]
     role: Optional[UserRole] = UserRole.VIEWER
+    email: Optional[str]
 
 
 # ============================================================================
@@ -45,13 +47,6 @@ class InviteToArchiveRequest(InviteRequest):
 
 
 # ============================================================================
-class NewUserInvite(InvitePending, BaseMongoModel):
-    """An invite for a new user, with an email and invite token as id"""
-
-    email: str
-
-
-# ============================================================================
 class InviteOps:
     """ invite users (optionally to an archive), send emails and delete invites """
 
@@ -61,8 +56,7 @@ class InviteOps:
 
     async def add_new_user_invite(
         self,
-        new_user_invite: NewUserInvite,
-        inviter_email: str,
+        new_user_invite: InvitePending,
         archive_name: Optional[str],
         headers: Optional[dict],
     ):
@@ -78,23 +72,21 @@ class InviteOps:
 
         self.email.send_new_user_invite(
             new_user_invite.email,
-            inviter_email,
+            new_user_invite.inviterEmail,
             archive_name,
             new_user_invite.id,
             headers,
         )
 
-    async def get_valid_invite(self, invite_token: str, user):
+    async def get_valid_invite(self, invite_token: str, email):
         """ Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:
-            print("NO DATA", flush=True)
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
-        new_user_invite = NewUserInvite.from_dict(invite_data)
-        print(new_user_invite, flush=True)
+        new_user_invite = InvitePending.from_dict(invite_data)
 
-        if user.email != new_user_invite.email:
+        if email != new_user_invite.email:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
         return new_user_invite
@@ -133,19 +125,19 @@ class InviteOps:
             archive_name = archive.name
 
         invite_pending = InvitePending(
+            id=invite_code,
             aid=aid,
             created=datetime.utcnow(),
             role=invite.role if hasattr(invite, "role") else None,
+            email=invite.email,
+            inviterEmail=user.email
         )
 
         other_user = await user_manager.user_db.get_by_email(invite.email)
 
         if not other_user:
             await self.add_new_user_invite(
-                NewUserInvite(
-                    id=invite_code, email=invite.email, **invite_pending.dict()
-                ),
-                user.email,
+                invite_pending,
                 archive_name,
                 headers,
             )
@@ -162,6 +154,8 @@ class InviteOps:
                 status_code=400, detail="User already a member of this archive."
             )
 
+        # no need to store our own email as adding invite to user
+        invite_pending.email = None
         other_user.invites[invite_code] = invite_pending
 
         await user_manager.user_db.update(other_user)

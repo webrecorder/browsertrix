@@ -158,10 +158,10 @@ class ArchiveOps:
         return [Archive.from_dict(res) for res in results]
 
     async def get_archive_for_user_by_id(
-        self, uid: str, user: User, role: UserRole = UserRole.VIEWER
+        self, aid: str, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an archive for user by unique id"""
-        query = {f"users.{user.id}": {"$gte": role.value}, "_id": uid}
+        query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 
@@ -184,7 +184,7 @@ class ArchiveOps:
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user)
+        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return True

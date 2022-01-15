@@ -124,7 +124,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             raise HTTPException(status_code=400, detail="Invite Token Required")
 
         if user.inviteToken and not await self.invites.get_valid_invite(
-            user.inviteToken, user
+            user.inviteToken, user.email
         ):
             raise HTTPException(status_code=400, detail="Invalid Invite Token")
 
@@ -153,7 +153,13 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         try:
             res = await self.create(
-                UserCreate(email=email, password=password, is_superuser=True, newArchive=False, is_verified=True)
+                UserCreate(
+                    email=email,
+                    password=password,
+                    is_superuser=True,
+                    newArchive=False,
+                    is_verified=True,
+                )
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
@@ -207,13 +213,25 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             user.email, token, request and request.headers
         )
 
-    ###pylint: disable=no-self-use, unused-argument
     async def on_after_request_verify(
         self, user: UserDB, token: str, request: Optional[Request] = None
     ):
         """callback after verification request"""
 
         self.email.send_user_validation(user.email, token, request and request.headers)
+
+    async def format_invite(self, invite):
+        """ format an InvitePending to return via api, resolve name of inviter """
+        inviter = await self.get_by_email(invite.inviterEmail)
+        result = invite.serialize()
+        result["inviterName"] = inviter.name
+        if invite.aid:
+            archive = await self.archive_ops.get_archive_for_user_by_id(invite.aid, inviter)
+            result["archiveName"] = archive.name
+
+        return result
+
+
 
 
 # ============================================================================
@@ -298,6 +316,24 @@ def init_users_api(app, user_manager):
         )
 
         return {"invited": "new_user"}
+
+    @users_router.get("/invite/{token}", tags=["invites"])
+    async def get_invite_info(token: str, email: str):
+        invite = await user_manager.invites.get_valid_invite(token, email)
+        return await user_manager.format_invite(invite)
+
+    @users_router.get("/me/invite/{token}", tags=["invites"])
+    async def get_existing_user_invite_info(token: str,
+        user: User = Depends(current_active_user)):
+
+        try:
+            invite = user.invites[token]
+        except:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="Invalid Invite Code")
+
+        return await user_manager.format_invite(invite)
+
 
     app.include_router(users_router, prefix="/users", tags=["users"])
 
