@@ -130,7 +130,7 @@ class InviteOps:
             created=datetime.utcnow(),
             role=invite.role if hasattr(invite, "role") else None,
             email=invite.email,
-            inviterEmail=user.email
+            inviterEmail=user.email,
         )
 
         other_user = await user_manager.user_db.get_by_email(invite.email)

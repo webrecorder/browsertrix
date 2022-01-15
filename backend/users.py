@@ -120,7 +120,12 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         user.name = user.name or user.email
 
         # if open registration not enabled, can only register with an invite
-        if not self.registration_enabled and not user.inviteToken:
+        if (
+            not self.registration_enabled
+            and not user.inviteToken
+            and not user.is_verified
+            and not user.is_superuser
+        ):
             raise HTTPException(status_code=400, detail="Invite Token Required")
 
         if user.inviteToken and not await self.invites.get_valid_invite(
@@ -226,12 +231,12 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         result = invite.serialize()
         result["inviterName"] = inviter.name
         if invite.aid:
-            archive = await self.archive_ops.get_archive_for_user_by_id(invite.aid, inviter)
+            archive = await self.archive_ops.get_archive_for_user_by_id(
+                invite.aid, inviter
+            )
             result["archiveName"] = archive.name
 
         return result
-
-
 
 
 # ============================================================================
@@ -323,8 +328,9 @@ def init_users_api(app, user_manager):
         return await user_manager.format_invite(invite)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
-    async def get_existing_user_invite_info(token: str,
-        user: User = Depends(current_active_user)):
+    async def get_existing_user_invite_info(
+        token: str, user: User = Depends(current_active_user)
+    ):
 
         try:
             invite = user.invites[token]
@@ -333,7 +339,6 @@ def init_users_api(app, user_manager):
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
         return await user_manager.format_invite(invite)
-
 
     app.include_router(users_router, prefix="/users", tags=["users"])
 

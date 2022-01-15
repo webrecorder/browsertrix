@@ -78,6 +78,8 @@ class CrawlConfigIn(BaseModel):
 
     config: RawCrawlConfig
 
+    name: Optional[str]
+
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
@@ -91,6 +93,8 @@ class CrawlConfig(BaseMongoModel):
     schedule: Optional[str] = ""
 
     config: RawCrawlConfig
+
+    name: Optional[str]
 
     colls: Optional[List[str]] = []
 
