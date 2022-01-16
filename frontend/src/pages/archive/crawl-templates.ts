@@ -13,7 +13,7 @@ const initialValues = {
   // crawlTimeoutMinutes: 0,
   seedUrls: "https://webrecorder.net", // TODO remove placeholder
   scopeType: "prefix",
-  // pageLimitMinutes: 0,
+  // limit: 0,
 };
 
 @localized()
@@ -103,6 +103,7 @@ export class CrawlTemplates extends LiteElement {
                 <sl-input
                   name="crawlTimeoutMinutes"
                   label=${msg("Time limit")}
+                  placeholder=${msg("unlimited")}
                   type="number"
                 >
                   <span slot="suffix">${msg("minutes")}</span>
@@ -145,11 +146,12 @@ export class CrawlTemplates extends LiteElement {
               </div>
               <div>
                 <sl-input
-                  name="pageLimitMinutes"
+                  name="limit"
                   label=${msg("Page limit")}
                   type="number"
+                  placeholder=${msg("unlimited")}
                 >
-                  <span slot="suffix">${msg("minutes")}</span>
+                  <span slot="suffix">${msg("pages")}</span>
                 </sl-input>
               </div>
             </section>
@@ -198,6 +200,8 @@ export class CrawlTemplates extends LiteElement {
 
     const { formData } = event.detail;
 
+    const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
+    const pageLimit = formData.get("limit");
     const params = {
       name: formData.get("name"),
       schedule: formData.get("schedule"),
@@ -210,8 +214,8 @@ export class CrawlTemplates extends LiteElement {
         ],
       },
       scopeType: formData.get("scopeType"),
-      limit: formData.get("pageLimitMinutes"),
-      crawlTimeout: formData.get("crawlTimeoutMinutes"),
+      limit: pageLimit ? +pageLimit : 0,
+      crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
     };
 
     console.log(params);
