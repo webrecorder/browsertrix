@@ -210,12 +210,12 @@ export class CrawlTemplates extends LiteElement {
       name: formData.get("name"),
       schedule: formData.get("schedule"),
       runNow: this.isRunNow,
+      crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       config: {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
+        scopeType: formData.get("scopeType"),
+        limit: pageLimit ? +pageLimit : 0,
       },
-      scopeType: formData.get("scopeType"),
-      limit: pageLimit ? +pageLimit : 0,
-      crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
     };
 
     console.log(params);
