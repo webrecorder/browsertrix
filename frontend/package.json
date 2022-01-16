@@ -13,7 +13,6 @@
     "axios": "^0.22.0",
     "color": "^4.0.1",
     "lit": "^2.0.0",
-    "lit-element-router": "^2.0.3",
     "path-parser": "^6.1.0",
     "tailwindcss": "^2.2.16"
   },
