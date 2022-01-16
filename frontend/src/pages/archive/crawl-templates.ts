@@ -10,11 +10,20 @@ const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
   schedule: "@weekly",
+  timeHour: "00",
+  timeMinute: "00",
   // crawlTimeoutMinutes: 0,
   seedUrls: "",
   scopeType: "prefix",
   // limit: 0,
 };
+const makeTimeOptions = (length: number) =>
+  Array.from({ length }).map((x, i) => ({
+    value: i,
+    label: `${i}`.padStart(2, "0"),
+  }));
+const hours = makeTimeOptions(24);
+const minutes = makeTimeOptions(60);
 
 @localized()
 export class CrawlTemplates extends LiteElement {
@@ -70,8 +79,7 @@ export class CrawlTemplates extends LiteElement {
                 ></sl-input>
               </div>
               <div class="flex items-end">
-                <!-- TODO schedule time -->
-                <div>
+                <div class="pr-2 flex-1">
                   <sl-select
                     name="schedule"
                     label=${msg("Schedule")}
@@ -83,12 +91,27 @@ export class CrawlTemplates extends LiteElement {
                     <sl-menu-item value="@monthly">Monthly</sl-menu-item>
                   </sl-select>
                 </div>
-                <!-- <div>
-                  <btrix-input
-                    name="scheduleTime"
-                    type="time"
-                  ></btrix-input>
-                </div> -->
+                <div class="grid grid-flow-col gap-2 items-center">
+                  <span class="px-1">${msg("at")}</span>
+                  <sl-select name="scheduleHour" value="0" class="w-24">
+                    ${hours.map(
+                      ({ value, label }) =>
+                        html`<sl-menu-item value=${value}
+                          >${label}</sl-menu-item
+                        >`
+                    )}
+                  </sl-select>
+                  <span>:</span>
+                  <sl-select name="scheduleMinute" value="0" class="w-24">
+                    ${minutes.map(
+                      ({ value, label }) =>
+                        html`<sl-menu-item value=${value}
+                          >${label}</sl-menu-item
+                        >`
+                    )}
+                  </sl-select>
+                  <span class="px-1">${msg("UTC")}</span>
+                </div>
               </div>
               <div>
                 <sl-switch
@@ -220,21 +243,21 @@ export class CrawlTemplates extends LiteElement {
 
     console.log(params);
 
-    try {
-      await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/`,
-        this.authState,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+    // try {
+    //   await this.apiFetch(
+    //     `/archives/${this.archiveId}/crawlconfigs/`,
+    //     this.authState,
+    //     {
+    //       method: "POST",
+    //       body: JSON.stringify(params),
+    //     }
+    //   );
 
-      console.debug("success");
+    //   console.debug("success");
 
-      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
-    } catch (e) {
-      console.error(e);
-    }
+    //   this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+    // } catch (e) {
+    //   console.error(e);
+    // }
   }
 }
