@@ -1,5 +1,5 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -10,10 +10,10 @@ const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
   schedule: "@weekly",
-  crawlTimeout: 0,
+  // crawlTimeoutMinutes: 0,
   seedUrls: "https://webrecorder.net", // TODO remove placeholder
   scopeType: "prefix",
-  limit: 0,
+  // pageLimitMinutes: 0,
 };
 
 @localized()
@@ -101,12 +101,11 @@ export class CrawlTemplates extends LiteElement {
 
               <div>
                 <sl-input
-                  name="crawlTimeout"
+                  name="crawlTimeoutMinutes"
                   label=${msg("Time limit")}
                   type="number"
-                  value=${initialValues.crawlTimeout}
                 >
-                  <span slot="suffix">${msg("seconds")}</span>
+                  <span slot="suffix">${msg("minutes")}</span>
                 </sl-input>
               </div>
             </section>
@@ -114,49 +113,44 @@ export class CrawlTemplates extends LiteElement {
             <div class="col-span-1 p-4 md:p-8 md:border-b">
               <h3 class="text-lg font-medium">${msg("Pages")}</h3>
             </div>
-            <section class="col-span-3 p-4 md:p-8 border-b">
-              <h4 class="font-medium mb-3">${msg("Add URLs")}</h4>
-
-              <div class="border rounded-lg p-4 md:p-6 grid gap-5">
-                <div>
-                  <sl-textarea
-                    name="seedUrls"
-                    label=${msg("Seed URLs")}
-                    helpText=${msg("Separated by a new line, space or comma")}
-                    placeholder=${msg(
-                      `https://webrecorder.net\nhttps://example.com`,
-                      {
-                        desc: "Example seed URLs",
-                      }
-                    )}
-                    rows="3"
-                    value=${initialValues.seedUrls}
-                    required
-                  ></sl-textarea>
-                </div>
-                <div>
-                  <sl-select
-                    name="scopeType"
-                    label=${msg("Scope type")}
-                    value=${initialValues.scopeType}
-                    required
-                  >
-                    <sl-menu-item value="page">Page</sl-menu-item>
-                    <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
-                    <sl-menu-item value="prefix">Prefix</sl-menu-item>
-                    <sl-menu-item value="host">Host</sl-menu-item>
-                    <sl-menu-item value="any">Any</sl-menu-item>
-                  </sl-select>
-                </div>
-                <div>
-                  <sl-input
-                    name="limit"
-                    label=${msg("Page limit")}
-                    type="number"
-                    value=${initialValues.limit}
-                    required
-                  ></sl-input>
-                </div>
+            <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+              <div>
+                <sl-textarea
+                  name="seedUrls"
+                  label=${msg("Seed URLs")}
+                  helpText=${msg("Separated by a new line, space or comma")}
+                  placeholder=${msg(
+                    `https://webrecorder.net\nhttps://example.com`,
+                    {
+                      desc: "Example seed URLs",
+                    }
+                  )}
+                  rows="3"
+                  value=${initialValues.seedUrls}
+                  required
+                ></sl-textarea>
+              </div>
+              <div>
+                <sl-select
+                  name="scopeType"
+                  label=${msg("Scope type")}
+                  value=${initialValues.scopeType}
+                >
+                  <sl-menu-item value="page">Page</sl-menu-item>
+                  <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
+                  <sl-menu-item value="prefix">Prefix</sl-menu-item>
+                  <sl-menu-item value="host">Host</sl-menu-item>
+                  <sl-menu-item value="any">Any</sl-menu-item>
+                </sl-select>
+              </div>
+              <div>
+                <sl-input
+                  name="pageLimitMinutes"
+                  label=${msg("Page limit")}
+                  type="number"
+                >
+                  <span slot="suffix">${msg("minutes")}</span>
+                </sl-input>
               </div>
             </section>
 
@@ -212,12 +206,12 @@ export class CrawlTemplates extends LiteElement {
         seeds: [
           {
             url: formData.get("seedUrls"),
-            scopeType: formData.get("scopeType"),
-            limit: formData.get("limit"),
           },
         ],
       },
-      crawlTimeout: formData.get("crawlTimeout"),
+      scopeType: formData.get("scopeType"),
+      limit: formData.get("pageLimitMinutes"),
+      crawlTimeout: formData.get("crawlTimeoutMinutes"),
     };
 
     console.log(params);
