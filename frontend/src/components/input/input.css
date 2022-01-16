@@ -23,7 +23,7 @@
   border: solid var(--sl-input-border-width) var(--sl-input-border-color);
   border-radius: var(--sl-input-border-radius-medium);
   box-shadow: none;
-  padding: var(--sl-input-spacing-medium);
+  padding: 0 var(--sl-input-spacing-medium);
   cursor: inherit;
   -webkit-appearance: none;
   transition: var(--sl-transition-fast) border,

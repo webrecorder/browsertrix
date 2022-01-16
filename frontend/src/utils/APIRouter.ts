@@ -15,9 +15,7 @@ export type ViewState = {
   // e.g. "/redirect?url"
   params: { [key: string]: string };
 };
-export type NavigateEvent = {
-  detail: string;
-};
+export interface NavigateEvent extends CustomEvent {}
 
 export default class APIRouter {
   routes: Routes;

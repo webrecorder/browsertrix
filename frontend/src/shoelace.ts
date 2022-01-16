@@ -39,6 +39,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/spinner/spinner"
 );
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/switch/switch"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab/tab"
 );
 import(
@@ -46,6 +49,9 @@ import(
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel"
+);
+import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/textarea/textarea"
 );
 
 setBasePath("/shoelace");
