@@ -9,7 +9,7 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  schedule: "@weekly",
+  schedule: "0 0 * * 0",
   timeHour: "00",
   timeMinute: "00",
   // crawlTimeoutMinutes: 0,
@@ -85,10 +85,20 @@ export class CrawlTemplates extends LiteElement {
                     label=${msg("Schedule")}
                     value=${initialValues.schedule}
                   >
-                    <sl-menu-item value="">None</sl-menu-item>
-                    <sl-menu-item value="@daily">Daily</sl-menu-item>
-                    <sl-menu-item value="@weekly">Weekly</sl-menu-item>
-                    <sl-menu-item value="@monthly">Monthly</sl-menu-item>
+                    <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
+                    <sl-menu-item value="">${msg("None")}</sl-menu-item>
+                    <sl-menu-item value="0 * * * *"
+                      >${msg("Hourly")}</sl-menu-item
+                    >
+                    <sl-menu-item value="0 0 * * *"
+                      >${msg("Daily")}</sl-menu-item
+                    >
+                    <sl-menu-item value="0 0 * * ${new Date().getDay()}"
+                      >${msg("Weekly")}</sl-menu-item
+                    >
+                    <sl-menu-item value="0 0 ${new Date().getDate()} * *"
+                      >${msg("Monthly")}</sl-menu-item
+                    >
                   </sl-select>
                 </div>
                 <div class="grid grid-flow-col gap-2 items-center">
