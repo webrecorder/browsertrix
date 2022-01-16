@@ -5,7 +5,7 @@ import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
 
-import type { ArchiveTab } from "./pages/archive/archive";
+import type { ArchiveTab } from "./pages/archive";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";

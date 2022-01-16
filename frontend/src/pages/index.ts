@@ -7,11 +7,9 @@ import(/* webpackChunkName: "log-in" */ "./log-in").then(({ LogInPage }) => {
 import(/* webpackChunkName: "archives" */ "./archives").then(({ Archives }) => {
   customElements.define("btrix-archives", Archives);
 });
-import(/* webpackChunkName: "archive" */ "./archive/archive").then(
-  ({ Archive }) => {
-    customElements.define("btrix-archive", Archive);
-  }
-);
+import(/* webpackChunkName: "archive" */ "./archive").then(({ Archive }) => {
+  customElements.define("btrix-archive", Archive);
+});
 import(/* webpackChunkName: "join" */ "./join").then(({ Join }) => {
   customElements.define("btrix-join", Join);
 });
