@@ -46,7 +46,7 @@ export class CrawlTemplates extends LiteElement {
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
       <p>
         ${msg(
-          "Configure a new crawl template. You can choose to run a crawl immediately upon template creation."
+          "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
         )}
       </p>
 
@@ -56,8 +56,8 @@ export class CrawlTemplates extends LiteElement {
             <div class="col-span-1 p-4 md:p-8 md:border-b">
               <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
             </div>
-            <section class="col-span-3 p-4 md:p-8 border-b">
-              <div class="mb-5">
+            <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+              <div>
                 <sl-input
                   name="name"
                   label=${msg("Name")}
@@ -69,24 +69,15 @@ export class CrawlTemplates extends LiteElement {
                   required
                 ></sl-input>
               </div>
-              <div class="mb-5">
-                <sl-switch
-                  name="runNow"
-                  ?checked=${initialValues.runNow}
-                  @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-                  >${msg("Run immediately")}</sl-switch
-                >
-              </div>
-
-              <div class="mb-5 flex items-end">
+              <div class="flex items-end">
                 <!-- TODO schedule time -->
                 <div>
                   <sl-select
                     name="schedule"
                     label=${msg("Schedule")}
                     value=${initialValues.schedule}
-                    ?disabled=${this.isRunNow}
                   >
+                    <sl-menu-item value="">None</sl-menu-item>
                     <sl-menu-item value="@daily">Daily</sl-menu-item>
                     <sl-menu-item value="@weekly">Weekly</sl-menu-item>
                     <sl-menu-item value="@monthly">Monthly</sl-menu-item>
@@ -99,8 +90,16 @@ export class CrawlTemplates extends LiteElement {
                   ></btrix-input>
                 </div> -->
               </div>
+              <div>
+                <sl-switch
+                  name="runNow"
+                  ?checked=${initialValues.runNow}
+                  @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+                  >${msg("Run immediately")}</sl-switch
+                >
+              </div>
 
-              <div class="mb-5">
+              <div>
                 <sl-input
                   name="crawlTimeout"
                   label=${msg("Time limit")}
@@ -118,8 +117,8 @@ export class CrawlTemplates extends LiteElement {
             <section class="col-span-3 p-4 md:p-8 border-b">
               <h4 class="font-medium mb-3">${msg("Add URLs")}</h4>
 
-              <div class="border rounded-lg p-4 md:p-6">
-                <div class="mb-5">
+              <div class="border rounded-lg p-4 md:p-6 grid gap-5">
+                <div>
                   <sl-textarea
                     name="seedUrls"
                     label=${msg("Seed URLs")}
@@ -135,7 +134,7 @@ export class CrawlTemplates extends LiteElement {
                     required
                   ></sl-textarea>
                 </div>
-                <div class="mb-5">
+                <div>
                   <sl-select
                     name="scopeType"
                     label=${msg("Scope type")}
@@ -149,7 +148,7 @@ export class CrawlTemplates extends LiteElement {
                     <sl-menu-item value="any">Any</sl-menu-item>
                   </sl-select>
                 </div>
-                <div class="mb-5">
+                <div>
                   <sl-input
                     name="limit"
                     label=${msg("Page limit")}
@@ -162,10 +161,16 @@ export class CrawlTemplates extends LiteElement {
             </section>
 
             <div class="col-span-4 p-4 md:p-8 text-center">
+              ${this.isRunNow
+                ? html`
+                    <p class="text-sm mb-3">
+                      ${msg("A crawl will start immediately on save.")}
+                    </p>
+                  `
+                : ""}
+
               <sl-button type="primary" submit
-                >${this.isRunNow
-                  ? msg("Save & Run Crawl")
-                  : msg("Schedule Crawl")}</sl-button
+                >${msg("Save Crawl Template")}</sl-button
               >
             </div>
           </div>
@@ -201,7 +206,7 @@ export class CrawlTemplates extends LiteElement {
 
     const params = {
       name: formData.get("name"),
-      schedule: this.isRunNow ? formData.get("schedule") : "",
+      schedule: formData.get("schedule"),
       runNow: this.isRunNow,
       config: {
         seeds: [
