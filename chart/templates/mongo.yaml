@@ -14,6 +14,41 @@ stringData:
 
 
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mongo-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 2Gi
+
+  {{- if .Values.volume_storage_class }}
+  storageClassName: {{ .Values.volume_storage_class }}
+  {{- end }}
+
+
+{{- if not .Values.volume_storage_class }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: "local-mongo-store-pv"
+spec:
+  capacity:
+    storage: 2Gi
+
+  accessModes:
+    - "ReadWriteOnce"
+
+  hostPath:
+    path: /tmp/btrix-mongo-data
+{{- end }}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,9 +67,8 @@ spec:
     spec:
       volumes:
         - name: data-db
-          hostPath:
-            path: /tmp/browsertrix-mongo-data
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: mongo-storage-pvc
 
       containers:
         - name: mongo
@@ -47,6 +81,7 @@ spec:
           volumeMounts:
             - name: data-db
               mountPath: /data/db
+              subPath: mongo
 
 ---
 apiVersion: v1

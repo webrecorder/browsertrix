@@ -1,6 +1,42 @@
 {{- if .Values.redis_local }}
 
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi
+
+  {{- if .Values.volume_storage_class }}
+  storageClassName: {{ .Values.volume_storage_class }}
+  {{- end }}
+
+
+{{- if not .Values.volume_storage_class }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: "local-redis-store-pv"
+spec:
+  capacity:
+    storage: 1Gi
+
+  accessModes:
+    - "ReadWriteOnce"
+
+  hostPath:
+    path: /tmp/btrix-redis-data
+{{- end }}
+
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,9 +56,8 @@ spec:
     spec:
       volumes:
         - name: data-storage
-          hostPath:
-            path: /tmp/browsertrix-redis-data
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: redis-storage-pvc
 
       containers:
         - name: redis
@@ -33,6 +68,7 @@ spec:
           volumeMounts:
             - name: data-storage
               mountPath: /data
+              subPath: redis
 
 ---
 apiVersion: v1

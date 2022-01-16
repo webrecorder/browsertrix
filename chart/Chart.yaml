@@ -2,6 +2,7 @@ apiVersion: v2
 name: browsertrix-cloud
 description: A chart for running the Webrecorder Browsertrix System
 type: application
+icon: https://webrecorder.net/assets/icon.png
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

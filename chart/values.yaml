@@ -2,6 +2,11 @@
 # =========================================
 name: browsertrix-cloud
 
+# when running in the cloud, set this value to cloud-specific block storage
+# keep empty to use hostPath (eg. on minikube)
+volume_storage_class:
+
+
 registration_enabled: 1
 jwt_token_lifetime_minutes: 60
 
