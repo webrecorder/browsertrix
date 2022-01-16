@@ -11,7 +11,7 @@ const initialValues = {
   runNow: true,
   schedule: "@weekly",
   // crawlTimeoutMinutes: 0,
-  seedUrls: "https://webrecorder.net", // TODO remove placeholder
+  seedUrls: "",
   scopeType: "prefix",
   // limit: 0,
 };
@@ -126,6 +126,9 @@ export class CrawlTemplates extends LiteElement {
                       desc: "Example seed URLs",
                     }
                   )}
+                  help-text=${msg(
+                    "Separate URLs with a new line, space or comma."
+                  )}
                   rows="3"
                   value=${initialValues.seedUrls}
                   required
@@ -202,16 +205,13 @@ export class CrawlTemplates extends LiteElement {
 
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
+    const seedUrlsStr = formData.get("seedUrls");
     const params = {
       name: formData.get("name"),
       schedule: formData.get("schedule"),
       runNow: this.isRunNow,
       config: {
-        seeds: [
-          {
-            url: formData.get("seedUrls"),
-          },
-        ],
+        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
       },
       scopeType: formData.get("scopeType"),
       limit: pageLimit ? +pageLimit : 0,
