@@ -34,9 +34,13 @@ export class CrawlTemplates extends LiteElement {
   isRunNow: boolean = initialValues.runNow;
 
   @state()
-  private jsonTemplate: any = {
-    config: {},
-  };
+  private jsonTemplate: string = JSON.stringify(
+    {
+      config: {},
+    },
+    null,
+    2
+  );
 
   @state()
   private invalidJsonTemplateMessage: string = "";
@@ -245,10 +249,7 @@ export class CrawlTemplates extends LiteElement {
 
             <div class="absolute top-2 right-2">
               <btrix-copy-button
-                .value=${JSON.stringify(this.jsonTemplate, null, 2)}
-                @on-copied=${(e: CustomEvent) => {
-                  this.jsonTemplate = JSON.parse(e.detail);
-                }}
+                .value=${this.jsonTemplate}
               ></btrix-copy-button>
             </div>
           </div>
@@ -268,8 +269,6 @@ export class CrawlTemplates extends LiteElement {
   }
 
   private renderJSON() {
-    const code = JSON.stringify(this.jsonTemplate, null, 2);
-
     return html`
       <textarea
         id="json-editor"
@@ -277,6 +276,7 @@ export class CrawlTemplates extends LiteElement {
         autocomplete="off"
         rows="10"
         spellcheck="false"
+        .value=${this.jsonTemplate}
         @keydown=${(e: any) => {
           // Add indentation when pressing tab key instead of moving focus
           if (e.keyCode === /* tab: */ 9) {
@@ -292,10 +292,9 @@ export class CrawlTemplates extends LiteElement {
             );
           }
         }}
+        @change=${(e: any) => (this.jsonTemplate = e.target.value)}
         @blur=${this.updateJsonTemplate}
-      >
-${code}</textarea
-      >
+      ></textarea>
     `;
   }
 
@@ -305,7 +304,7 @@ ${code}</textarea
     try {
       const json = JSON.parse(text);
 
-      this.jsonTemplate = json;
+      this.jsonTemplate = JSON.stringify(json, null, 2);
       this.invalidJsonTemplateMessage = "";
     } catch (e: any) {
       this.invalidJsonTemplateMessage = e.message
@@ -336,10 +335,14 @@ ${code}</textarea
   private async onSubmit(event: { detail: { formData: FormData } }) {
     if (!this.authState) return;
 
-    const params = {
-      ...this.parseTemplate(event.detail.formData),
-      ...this.jsonTemplate,
-    };
+    let params = this.parseTemplate(event.detail.formData);
+
+    if (!this.invalidJsonTemplateMessage) {
+      params = {
+        ...params,
+        ...JSON.parse(this.jsonTemplate),
+      };
+    }
 
     console.log(params);
 
