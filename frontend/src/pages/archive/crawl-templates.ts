@@ -311,7 +311,7 @@ export class CrawlTemplates extends LiteElement {
     const seedUrlsStr = formData.get("seedUrls");
     const params = {
       name: formData.get("name"),
-      schedule: formData.get("schedule"),
+      schedule: this.cronSchedule,
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       config: {
@@ -323,22 +323,22 @@ export class CrawlTemplates extends LiteElement {
 
     console.log(params);
 
-    // try {
-    //   await this.apiFetch(
-    //     `/archives/${this.archiveId}/crawlconfigs/`,
-    //     this.authState,
-    //     {
-    //       method: "POST",
-    //       body: JSON.stringify(params),
-    //     }
-    //   );
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
 
-    //   console.debug("success");
+      console.debug("success");
 
-    //   this.navTo(`/archives/${this.archiveId}/crawl-templates`);
-    // } catch (e) {
-    //   console.error(e);
-    // }
+      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /** Set day, month or day of week in cron schedule */
