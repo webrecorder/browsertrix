@@ -231,7 +231,8 @@ export class CrawlTemplates extends LiteElement {
                 >${msg("Invalid JSON")}</sl-tag
               >`
             : ""}
-          ${this.jsonTemplate !== initialJsonTemplate
+          ${!this.invalidJsonTemplateMessage &&
+          this.jsonTemplate !== initialJsonTemplate
             ? html`<sl-tag type="success" size="small" class="ml-1"
                 >${msg("Settings changed")}</sl-tag
               >`
@@ -250,25 +251,31 @@ export class CrawlTemplates extends LiteElement {
             </p>
           </div>
 
-          <div class="relative">
-            ${this.renderJSON()}
+          <div class="grid grid-cols-3 gap-4">
+            <div class="relative col-span-2">
+              ${this.renderJSON()}
 
-            <div class="absolute top-2 right-2">
-              <btrix-copy-button
-                .value=${this.jsonTemplate}
-              ></btrix-copy-button>
+              <div class="absolute top-2 right-2">
+                <btrix-copy-button
+                  .value=${this.jsonTemplate}
+                ></btrix-copy-button>
+              </div>
+            </div>
+
+            <div class="col-span-1">
+              ${this.invalidJsonTemplateMessage
+                ? html`<btrix-alert type="danger">
+                    ${this.invalidJsonTemplateMessage}
+
+                    <div class="mt-2">
+                      <sl-button size="small"
+                        >${msg("Validate JSON")}</sl-button
+                      >
+                    </div>
+                  </btrix-alert> `
+                : ""}
             </div>
           </div>
-
-          ${this.invalidJsonTemplateMessage
-            ? html`<btrix-alert type="danger">
-                ${this.invalidJsonTemplateMessage}
-
-                <div class="mt-2">
-                  <sl-button size="small">${msg("Validate JSON")}</sl-button>
-                </div>
-              </btrix-alert> `
-            : ""}
         </div>
       </sl-details>
     `;
@@ -305,13 +312,17 @@ export class CrawlTemplates extends LiteElement {
   }
 
   private updateJsonTemplate(e: any) {
-    const text = e.target.value;
+    const textarea = e.target;
+    const text = textarea.value;
 
     try {
       const json = JSON.parse(text);
 
       this.jsonTemplate = JSON.stringify(json, null, 2);
       this.invalidJsonTemplateMessage = "";
+
+      textarea.setCustomValidity("");
+      textarea.reportValidity();
     } catch (e: any) {
       this.invalidJsonTemplateMessage = e.message
         ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
@@ -338,12 +349,24 @@ export class CrawlTemplates extends LiteElement {
     return template;
   }
 
-  private async onSubmit(event: { detail: { formData: FormData } }) {
+  private async onSubmit(event: {
+    detail: { formData: FormData };
+    target: any;
+  }) {
     if (!this.authState) return;
+
+    // Check JSON validity
+    const jsonEditor = event.target.querySelector("#json-editor");
+
+    if (this.invalidJsonTemplateMessage) {
+      jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
+      jsonEditor.reportValidity();
+      return;
+    }
 
     let params = this.parseTemplate(event.detail.formData);
 
-    if (!this.invalidJsonTemplateMessage) {
+    if (this.jsonTemplate !== initialJsonTemplate) {
       const { config, ...other } = JSON.parse(this.jsonTemplate);
       params = {
         ...params,
@@ -357,21 +380,21 @@ export class CrawlTemplates extends LiteElement {
 
     console.log(params);
 
-    try {
-      await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/`,
-        this.authState,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+    // try {
+    //   await this.apiFetch(
+    //     `/archives/${this.archiveId}/crawlconfigs/`,
+    //     this.authState,
+    //     {
+    //       method: "POST",
+    //       body: JSON.stringify(params),
+    //     }
+    //   );
 
-      console.debug("success");
+    //   console.debug("success");
 
-      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
-    } catch (e) {
-      console.error(e);
-    }
+    //   this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+    // } catch (e) {
+    //   console.error(e);
+    // }
   }
 }
