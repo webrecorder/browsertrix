@@ -142,25 +142,27 @@ export class CrawlTemplates extends LiteElement {
                   </div>
                 </div>
                 <div class="text-sm text-gray-500 mt-1">
-                  ${msg(
-                    html`Next scheduled crawl:
-                      <sl-format-date
-                        date="${cronParser
-                          .parseExpression(this.cronSchedule, {
-                            utc: true,
-                          })
-                          .next()
-                          .toString()}"
-                        weekday="long"
-                        month="long"
-                        day="numeric"
-                        year="numeric"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                        time-zone="utc"
-                      ></sl-format-date>`
-                  )}
+                  ${this.cronSchedule
+                    ? msg(
+                        html`Next scheduled crawl:
+                          <sl-format-date
+                            date="${cronParser
+                              .parseExpression(this.cronSchedule, {
+                                utc: true,
+                              })
+                              .next()
+                              .toString()}"
+                            weekday="long"
+                            month="long"
+                            day="numeric"
+                            year="numeric"
+                            hour="numeric"
+                            minute="numeric"
+                            time-zone-name="short"
+                            time-zone="utc"
+                          ></sl-format-date>`
+                      )
+                    : msg("No crawls scheduled")}
                 </div>
               </div>
 
@@ -238,37 +240,40 @@ export class CrawlTemplates extends LiteElement {
                 >${msg("Save Crawl Template")}</sl-button
               >
 
-              <div class="text-sm text-gray-500 mt-6">
-                ${this.isRunNow
-                  ? html`
-                      <p class="mb-2">
-                        ${msg("A crawl will start immediately on save.")}
-                      </p>
-                    `
-                  : ""}
-
-                <p>
-                  ${msg(
-                    html`Next scheduled crawl:
-                      <sl-format-date
-                        date="${cronParser
-                          .parseExpression(this.cronSchedule, {
-                            utc: true,
-                          })
-                          .next()
-                          .toString()}"
-                        weekday="long"
-                        month="long"
-                        day="numeric"
-                        year="numeric"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                        time-zone="utc"
-                      ></sl-format-date>`
-                  )}
-                </p>
-              </div>
+              ${this.isRunNow || this.cronSchedule
+                ? html`<div class="text-sm text-gray-500 mt-6">
+                    ${this.isRunNow
+                      ? html`
+                          <p class="mb-2">
+                            ${msg("A crawl will start immediately on save.")}
+                          </p>
+                        `
+                      : ""}
+                    ${this.cronSchedule
+                      ? html` <p>
+                          ${msg(
+                            html`Next scheduled crawl:
+                              <sl-format-date
+                                date="${cronParser
+                                  .parseExpression(this.cronSchedule, {
+                                    utc: true,
+                                  })
+                                  .next()
+                                  .toString()}"
+                                weekday="long"
+                                month="long"
+                                day="numeric"
+                                year="numeric"
+                                hour="numeric"
+                                minute="numeric"
+                                time-zone-name="short"
+                                time-zone="utc"
+                              ></sl-format-date>`
+                          )}
+                        </p>`
+                      : ""}
+                  </div>`
+                : ""}
             </div>
           </div>
         </sl-form>
