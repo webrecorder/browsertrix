@@ -224,6 +224,18 @@ export class CrawlTemplates extends LiteElement {
       class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
       contenteditable="true"
       spellcheck="false"
+      @keydown=${(e: any) => {
+        // Add indentation when pressing tab key instead of moving focus
+        if (e.keyCode === /* tab: */ 9) {
+          e.preventDefault();
+
+          const range = window.getSelection()!.getRangeAt(0);
+          const tabNode = document.createTextNode("  ");
+          range.insertNode(tabNode);
+          range.setStartAfter(tabNode);
+          range.setEndAfter(tabNode);
+        }
+      }}
     ><code class="language-json">${code}</code></pre>`;
   }
 
