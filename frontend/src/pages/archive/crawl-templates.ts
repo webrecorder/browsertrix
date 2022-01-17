@@ -159,6 +159,16 @@ export class CrawlTemplates extends LiteElement {
               </div>
             </section>
 
+            <div
+              id="advanced-settings"
+              class="col-span-1 p-4 md:p-8 md:border-b"
+            >
+              <h3 class="text-md font-medium">${msg("Advanced settings")}</h3>
+            </div>
+            <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+              ${this.renderAdvancedSettings()}
+            </section>
+
             <div class="col-span-4 p-4 md:p-8 text-center">
               ${this.isRunNow
                 ? html`
@@ -196,6 +206,10 @@ export class CrawlTemplates extends LiteElement {
         )}
       </div>
     `;
+  }
+
+  private renderAdvancedSettings() {
+    return html`TODO`;
   }
 
   private async onSubmit(event: { detail: { formData: FormData } }) {
