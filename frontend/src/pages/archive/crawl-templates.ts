@@ -15,6 +15,13 @@ const initialValues = {
   scopeType: "prefix",
   // limit: 0,
 };
+const initialJsonTemplate = JSON.stringify(
+  {
+    config: {},
+  },
+  null,
+  2
+);
 
 @localized()
 export class CrawlTemplates extends LiteElement {
@@ -34,13 +41,7 @@ export class CrawlTemplates extends LiteElement {
   isRunNow: boolean = initialValues.runNow;
 
   @state()
-  private jsonTemplate: string = JSON.stringify(
-    {
-      config: {},
-    },
-    null,
-    2
-  );
+  private jsonTemplate: string = initialJsonTemplate;
 
   @state()
   private invalidJsonTemplateMessage: string = "";
@@ -230,6 +231,11 @@ export class CrawlTemplates extends LiteElement {
                 >${msg("Invalid JSON")}</sl-tag
               >`
             : ""}
+          ${this.jsonTemplate !== initialJsonTemplate
+            ? html`<sl-tag type="success" size="small" class="ml-1"
+                >${msg("Settings changed")}</sl-tag
+              >`
+            : ""}
         </label>
 
         <div class="grid gap-4">
@@ -338,9 +344,14 @@ export class CrawlTemplates extends LiteElement {
     let params = this.parseTemplate(event.detail.formData);
 
     if (!this.invalidJsonTemplateMessage) {
+      const { config, ...other } = JSON.parse(this.jsonTemplate);
       params = {
         ...params,
-        ...JSON.parse(this.jsonTemplate),
+        ...other,
+        config: {
+          ...params.config,
+          ...config,
+        },
       };
     }
 
