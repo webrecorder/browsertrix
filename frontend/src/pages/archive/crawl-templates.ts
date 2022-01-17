@@ -1,5 +1,5 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -35,14 +35,8 @@ export class CrawlTemplates extends LiteElement {
 
   @state()
   private jsonTemplate: any = {
-    name: initialValues.name,
-    runNow: initialValues.runNow,
-    schedule: initialValues.schedule,
-    config: {
-      seeds: [],
-      scopeType: initialValues.scopeType,
-    },
-  }; // TODO type
+    config: {},
+  };
 
   @state()
   private invalidJsonTemplateMessage: string = "";
@@ -224,38 +218,47 @@ export class CrawlTemplates extends LiteElement {
 
   private renderAdvancedSettings() {
     return html`
-      <div class="grid gap-3">
-        <h4 class="font-bold">${msg("JSON Configuration")}</h4>
-        <div>
-          <p class="mb-2">
-            ${msg("Edit or paste in an existing JSON crawl template.")}
-          </p>
-          <p>
-            ${msg(
-              "JSON settings will take priority over settings configured through the form."
-            )}
-          </p>
-        </div>
+      <sl-details>
+        <h4 slot="summary" class="font-medium">
+          ${msg("JSON Configuration")}
+          ${this.invalidJsonTemplateMessage
+            ? html`<sl-tag type="danger" size="small" class="ml-1"
+                >${msg("Invalid JSON")}</sl-tag
+              >`
+            : ""}
+        </h4>
 
-        <div class="relative">
-          ${this.renderJSON()}
-
-          <div class="absolute top-2 right-2">
-            <sl-button size="small">${msg("Copy")}</sl-button>
+        <div class="grid gap-4">
+          <div>
+            <p class="mb-2">
+              ${msg("Edit or paste in an existing JSON crawl template.")}
+            </p>
+            <p>
+              ${msg(
+                "JSON settings will take priority over settings configured through the form."
+              )}
+            </p>
           </div>
-        </div>
 
-        ${this.invalidJsonTemplateMessage
-          ? html`<btrix-alert type="danger"
-              >${this.invalidJsonTemplateMessage}</btrix-alert
-            >`
-          : ""}
-        ${this.jsonTemplate.config.seeds?.length
-          ? ""
-          : html`<btrix-alert type="warning"
-              >${msg("No seed URLs configured yet.")}</btrix-alert
-            >`}
-      </div>
+          <div class="relative">
+            ${this.renderJSON()}
+
+            <div class="absolute top-2 right-2">
+              <sl-button size="small">${msg("Copy")}</sl-button>
+            </div>
+          </div>
+
+          ${this.invalidJsonTemplateMessage
+            ? html`<btrix-alert type="danger">
+                ${this.invalidJsonTemplateMessage}
+
+                <div class="mt-2">
+                  <sl-button size="small">${msg("Validate JSON")}</sl-button>
+                </div>
+              </btrix-alert> `
+            : ""}
+        </div>
+      </sl-details>
     `;
   }
 
@@ -293,16 +296,16 @@ export class CrawlTemplates extends LiteElement {
     } catch (e: any) {
       console.log(e.message);
       this.invalidJsonTemplateMessage = e.message
-        ? e.message.replace("JSON.parse: ", "")
+        ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
         : msg("JSON is invalid.");
     }
   }
 
-  private parseConfig(formData: FormData) {
+  private parseTemplate(formData: FormData) {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
-    const params = {
+    const template = {
       name: formData.get("name"),
       schedule: formData.get("schedule"),
       runNow: this.isRunNow,
@@ -314,13 +317,18 @@ export class CrawlTemplates extends LiteElement {
       },
     };
 
-    console.log(params);
+    return template;
   }
 
   private async onSubmit(event: { detail: { formData: FormData } }) {
     if (!this.authState) return;
 
-    const params = this.parseConfig(event.detail.formData);
+    const params = {
+      ...this.parseTemplate(event.detail.formData),
+      ...this.jsonTemplate,
+    };
+
+    console.log(params);
 
     try {
       await this.apiFetch(
