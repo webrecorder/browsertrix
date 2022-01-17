@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
+import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -9,7 +10,7 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  schedule: "0 0 * * 0",
+  schedule: `0 0 * * ${new Date().getDay()}`,
   timeHour: "00",
   timeMinute: "00",
   // crawlTimeoutMinutes: 0,
@@ -41,6 +42,9 @@ export class CrawlTemplates extends LiteElement {
 
   @state()
   isRunNow: boolean = initialValues.runNow;
+
+  @state()
+  cronSchedule: string = initialValues.schedule;
 
   render() {
     if (this.isNew) {
@@ -78,51 +82,76 @@ export class CrawlTemplates extends LiteElement {
                   required
                 ></sl-input>
               </div>
-              <div class="flex items-end">
-                <div class="pr-2 flex-1">
-                  <sl-select
-                    name="schedule"
-                    label=${msg("Schedule")}
-                    value=${initialValues.schedule}
-                  >
-                    <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
-                    <sl-menu-item value="">${msg("None")}</sl-menu-item>
-                    <sl-menu-item value="0 * * * *"
-                      >${msg("Hourly")}</sl-menu-item
+              <div>
+                <div class="flex items-end">
+                  <div class="pr-2 flex-1">
+                    <sl-select
+                      name="schedule"
+                      label=${msg("Schedule")}
+                      value=${initialValues.schedule}
+                      @sl-select=${(e: any) =>
+                        this.setCronSchedule(e.target.value)}
                     >
-                    <sl-menu-item value="0 0 * * *"
-                      >${msg("Daily")}</sl-menu-item
-                    >
-                    <sl-menu-item value="0 0 * * ${new Date().getDay()}"
-                      >${msg("Weekly")}</sl-menu-item
-                    >
-                    <sl-menu-item value="0 0 ${new Date().getDate()} * *"
-                      >${msg("Monthly")}</sl-menu-item
-                    >
-                  </sl-select>
+                      <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
+                      <sl-menu-item value="">${msg("None")}</sl-menu-item>
+                      <sl-menu-item value="0 * * * *"
+                        >${msg("Hourly")}</sl-menu-item
+                      >
+                      <sl-menu-item value="0 0 * * *"
+                        >${msg("Daily")}</sl-menu-item
+                      >
+                      <sl-menu-item value="0 0 * * ${new Date().getDay()}"
+                        >${msg("Weekly")}</sl-menu-item
+                      >
+                      <sl-menu-item value="0 0 ${new Date().getDate()} * *"
+                        >${msg("Monthly")}</sl-menu-item
+                      >
+                    </sl-select>
+                  </div>
+                  <div class="grid grid-flow-col gap-2 items-center">
+                    <span class="px-1">${msg("at")}</span>
+                    <sl-select name="scheduleHour" value="0" class="w-24">
+                      ${hours.map(
+                        ({ value, label }) =>
+                          html`<sl-menu-item value=${value}
+                            >${label}</sl-menu-item
+                          >`
+                      )}
+                    </sl-select>
+                    <span>:</span>
+                    <sl-select name="scheduleMinute" value="0" class="w-24">
+                      ${minutes.map(
+                        ({ value, label }) =>
+                          html`<sl-menu-item value=${value}
+                            >${label}</sl-menu-item
+                          >`
+                      )}
+                    </sl-select>
+                    <span class="px-1">${msg("UTC")}</span>
+                  </div>
                 </div>
-                <div class="grid grid-flow-col gap-2 items-center">
-                  <span class="px-1">${msg("at")}</span>
-                  <sl-select name="scheduleHour" value="0" class="w-24">
-                    ${hours.map(
-                      ({ value, label }) =>
-                        html`<sl-menu-item value=${value}
-                          >${label}</sl-menu-item
-                        >`
-                    )}
-                  </sl-select>
-                  <span>:</span>
-                  <sl-select name="scheduleMinute" value="0" class="w-24">
-                    ${minutes.map(
-                      ({ value, label }) =>
-                        html`<sl-menu-item value=${value}
-                          >${label}</sl-menu-item
-                        >`
-                    )}
-                  </sl-select>
-                  <span class="px-1">${msg("UTC")}</span>
+                <div class="text-sm text-gray-500 mt-1">
+                  (${this.cronSchedule})
+                  ${msg(
+                    html`Next scheduled crawl:
+                      <sl-format-date
+                        date="${cronParser
+                          .parseExpression(this.cronSchedule, {
+                            // utc: true,
+                          })
+                          .next()
+                          .toString()}"
+                        month="long"
+                        day="numeric"
+                        year="numeric"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                      ></sl-format-date>`
+                  )}
                 </div>
               </div>
+
               <div>
                 <sl-switch
                   name="runNow"
@@ -269,5 +298,11 @@ export class CrawlTemplates extends LiteElement {
     // } catch (e) {
     //   console.error(e);
     // }
+  }
+
+  private setCronSchedule(expression: string) {
+    console.log(expression);
+
+    this.cronSchedule = expression;
   }
 }
