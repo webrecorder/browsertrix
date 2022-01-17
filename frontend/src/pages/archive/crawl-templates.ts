@@ -94,9 +94,6 @@ export class CrawlTemplates extends LiteElement {
                     >
                       <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
                       <sl-menu-item value="">${msg("None")}</sl-menu-item>
-                      <sl-menu-item value="0 * * * *"
-                        >${msg("Hourly")}</sl-menu-item
-                      >
                       <sl-menu-item value="0 0 * * *"
                         >${msg("Daily")}</sl-menu-item
                       >
@@ -110,7 +107,13 @@ export class CrawlTemplates extends LiteElement {
                   </div>
                   <div class="grid grid-flow-col gap-2 items-center">
                     <span class="px-1">${msg("at")}</span>
-                    <sl-select name="scheduleHour" value="0" class="w-24">
+                    <sl-select
+                      name="scheduleHour"
+                      value="0"
+                      class="w-24"
+                      @sl-select=${(e: any) =>
+                        this.setCronTime({ hour: e.target.value })}
+                    >
                       ${hours.map(
                         ({ value, label }) =>
                           html`<sl-menu-item value=${value}
@@ -119,7 +122,13 @@ export class CrawlTemplates extends LiteElement {
                       )}
                     </sl-select>
                     <span>:</span>
-                    <sl-select name="scheduleMinute" value="0" class="w-24">
+                    <sl-select
+                      name="scheduleMinute"
+                      value="0"
+                      class="w-24"
+                      @sl-select=${(e: any) =>
+                        this.setCronTime({ minute: e.target.value })}
+                    >
                       ${minutes.map(
                         ({ value, label }) =>
                           html`<sl-menu-item value=${value}
@@ -131,7 +140,6 @@ export class CrawlTemplates extends LiteElement {
                   </div>
                 </div>
                 <div class="text-sm text-gray-500 mt-1">
-                  (${this.cronSchedule})
                   ${msg(
                     html`Next scheduled crawl:
                       <sl-format-date
@@ -224,17 +232,41 @@ export class CrawlTemplates extends LiteElement {
             </section>
 
             <div class="col-span-4 p-4 md:p-8 text-center">
-              ${this.isRunNow
-                ? html`
-                    <p class="text-sm mb-3">
-                      ${msg("A crawl will start immediately on save.")}
-                    </p>
-                  `
-                : ""}
-
               <sl-button type="primary" submit
                 >${msg("Save Crawl Template")}</sl-button
               >
+
+              <div class="text-sm text-gray-500 mt-6">
+                ${this.isRunNow
+                  ? html`
+                      <p class="mb-2">
+                        ${msg("A crawl will start immediately on save.")}
+                      </p>
+                    `
+                  : ""}
+
+                <p>
+                  ${msg(
+                    html`Next scheduled crawl:
+                      <sl-format-date
+                        date="${cronParser
+                          .parseExpression(this.cronSchedule, {
+                            utc: true,
+                          })
+                          .next()
+                          .toString()}"
+                        weekday="long"
+                        month="long"
+                        day="numeric"
+                        year="numeric"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                        time-zone="utc"
+                      ></sl-format-date>`
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         </sl-form>
@@ -302,17 +334,29 @@ export class CrawlTemplates extends LiteElement {
     // }
   }
 
+  /** Set day, month or day of week in cron schedule */
   private setCronInterval(expression: string) {
     if (!expression) {
       this.cronSchedule = "";
       return;
     }
 
-    const [minute = "0", hour = "0"] = this.cronSchedule.split(" ");
-    const [, newHour, dayOfMonth, month, dayOfWeek] = expression.split(" ");
+    const [minute, hour] = (this.cronSchedule || initialValues.schedule).split(
+      " "
+    );
+    const [, , dayOfMonth, month, dayOfWeek] = expression.split(" ");
 
-    this.cronSchedule = `${minute} ${
-      newHour === "*" ? newHour : hour
+    this.cronSchedule = `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
+  }
+
+  /** Set minute or hour in cron schedule */
+  private setCronTime(time: { hour?: string; minute?: string }) {
+    const [minute, hour, dayOfMonth, month, dayOfWeek] = (
+      this.cronSchedule || initialValues.schedule
+    ).split(" ");
+
+    this.cronSchedule = `${time.minute || minute} ${
+      time.hour || hour
     } ${dayOfMonth} ${month} ${dayOfWeek}`;
   }
 }
