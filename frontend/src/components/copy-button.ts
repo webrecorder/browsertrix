@@ -7,8 +7,10 @@ import { msg, localized } from "@lit/localize";
  *
  * Usage example:
  * ```ts
- * <btrix-copy-button .value=${value}></btrix-copy-button>
+ * <btrix-copy-button .value=${value} @on-copied=${console.log}></btrix-copy-button>
  * ```
+ *
+ * @event on-copied
  */
 @localized()
 export class CopyButton extends LitElement {
@@ -36,6 +38,8 @@ export class CopyButton extends LitElement {
     navigator.clipboard.writeText(this.value!);
 
     this.isCopied = true;
+
+    this.dispatchEvent(new CustomEvent("on-copied", { detail: this.value }));
 
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;

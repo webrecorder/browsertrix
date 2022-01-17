@@ -219,14 +219,14 @@ export class CrawlTemplates extends LiteElement {
   private renderAdvancedSettings() {
     return html`
       <sl-details>
-        <h4 slot="summary" class="font-medium">
+        <label slot="summary" class="font-medium" for="json-editor">
           ${msg("JSON Configuration")}
           ${this.invalidJsonTemplateMessage
             ? html`<sl-tag type="danger" size="small" class="ml-1"
                 >${msg("Invalid JSON")}</sl-tag
               >`
             : ""}
-        </h4>
+        </label>
 
         <div class="grid gap-4">
           <div>
@@ -246,6 +246,9 @@ export class CrawlTemplates extends LiteElement {
             <div class="absolute top-2 right-2">
               <btrix-copy-button
                 .value=${JSON.stringify(this.jsonTemplate, null, 2)}
+                @on-copied=${(e: CustomEvent) => {
+                  this.jsonTemplate = JSON.parse(e.detail);
+                }}
               ></btrix-copy-button>
             </div>
           </div>
@@ -267,28 +270,37 @@ export class CrawlTemplates extends LiteElement {
   private renderJSON() {
     const code = JSON.stringify(this.jsonTemplate, null, 2);
 
-    return html`<pre
-      class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
-      contenteditable="true"
-      spellcheck="false"
-      @keydown=${(e: any) => {
-        // Add indentation when pressing tab key instead of moving focus
-        if (e.keyCode === /* tab: */ 9) {
-          e.preventDefault();
+    return html`
+      <textarea
+        id="json-editor"
+        class="language-json block w-full bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
+        autocomplete="off"
+        rows="10"
+        spellcheck="false"
+        @keydown=${(e: any) => {
+          // Add indentation when pressing tab key instead of moving focus
+          if (e.keyCode === /* tab: */ 9) {
+            e.preventDefault();
 
-          const range = window.getSelection()!.getRangeAt(0);
-          const tabNode = document.createTextNode("  ");
-          range.insertNode(tabNode);
-          range.setStartAfter(tabNode);
-          range.setEndAfter(tabNode);
-        }
-      }}
-      @blur=${this.updateJsonTemplate}
-    ><code class="language-json">${code}</code></pre>`;
+            const textarea = e.target;
+
+            textarea.setRangeText(
+              "  ",
+              textarea.selectionStart,
+              textarea.selectionStart,
+              "end"
+            );
+          }
+        }}
+        @blur=${this.updateJsonTemplate}
+      >
+${code}</textarea
+      >
+    `;
   }
 
   private updateJsonTemplate(e: any) {
-    const text = e.target.innerText;
+    const text = e.target.value;
 
     try {
       const json = JSON.parse(text);
@@ -296,7 +308,6 @@ export class CrawlTemplates extends LiteElement {
       this.jsonTemplate = json;
       this.invalidJsonTemplateMessage = "";
     } catch (e: any) {
-      console.log(e.message);
       this.invalidJsonTemplateMessage = e.message
         ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
         : msg("JSON is invalid.");
