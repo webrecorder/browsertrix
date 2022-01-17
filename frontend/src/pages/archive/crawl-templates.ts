@@ -90,7 +90,7 @@ export class CrawlTemplates extends LiteElement {
                       label=${msg("Schedule")}
                       value=${initialValues.schedule}
                       @sl-select=${(e: any) =>
-                        this.setCronSchedule(e.target.value)}
+                        this.setCronInterval(e.target.value)}
                     >
                       <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
                       <sl-menu-item value="">${msg("None")}</sl-menu-item>
@@ -141,6 +141,7 @@ export class CrawlTemplates extends LiteElement {
                           })
                           .next()
                           .toString()}"
+                        weekday="long"
                         month="long"
                         day="numeric"
                         year="numeric"
@@ -301,9 +302,17 @@ export class CrawlTemplates extends LiteElement {
     // }
   }
 
-  private setCronSchedule(expression: string) {
-    console.log(expression);
+  private setCronInterval(expression: string) {
+    if (!expression) {
+      this.cronSchedule = "";
+      return;
+    }
 
-    this.cronSchedule = expression;
+    const [minute = "0", hour = "0"] = this.cronSchedule.split(" ");
+    const [, newHour, dayOfMonth, month, dayOfWeek] = expression.split(" ");
+
+    this.cronSchedule = `${minute} ${
+      newHour === "*" ? newHour : hour
+    } ${dayOfMonth} ${month} ${dayOfWeek}`;
   }
 }
