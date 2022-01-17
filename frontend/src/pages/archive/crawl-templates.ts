@@ -111,6 +111,7 @@ export class CrawlTemplates extends LiteElement {
                       name="scheduleHour"
                       value="0"
                       class="w-24"
+                      ?disabled=${!this.cronSchedule}
                       @sl-select=${(e: any) =>
                         this.setCronTime({ hour: e.target.value })}
                     >
@@ -126,6 +127,7 @@ export class CrawlTemplates extends LiteElement {
                       name="scheduleMinute"
                       value="0"
                       class="w-24"
+                      ?disabled=${!this.cronSchedule}
                       @sl-select=${(e: any) =>
                         this.setCronTime({ minute: e.target.value })}
                     >
@@ -167,7 +169,7 @@ export class CrawlTemplates extends LiteElement {
                   name="runNow"
                   ?checked=${initialValues.runNow}
                   @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-                  >${msg("Run immediately")}</sl-switch
+                  >${msg("Run immediately on save")}</sl-switch
                 >
               </div>
 
