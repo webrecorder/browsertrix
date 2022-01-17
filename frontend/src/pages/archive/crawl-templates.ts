@@ -209,7 +209,22 @@ export class CrawlTemplates extends LiteElement {
   }
 
   private renderAdvancedSettings() {
-    return html`TODO`;
+    return html`
+      <h4>${msg("JSON configuration")}</h4>
+      <p>${msg("Edit or paste in an existing JSON crawl template.")}</p>
+
+      ${this.renderJSON()}
+    `;
+  }
+
+  private renderJSON() {
+    const code = JSON.stringify({ a: "b" }, null, 2);
+
+    return html`<pre
+      class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
+      contenteditable="true"
+      spellcheck="false"
+    ><code class="language-json">${code}</code></pre>`;
   }
 
   private async onSubmit(event: { detail: { formData: FormData } }) {
