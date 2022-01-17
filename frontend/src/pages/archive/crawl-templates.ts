@@ -33,6 +33,20 @@ export class CrawlTemplates extends LiteElement {
   @state()
   isRunNow: boolean = initialValues.runNow;
 
+  @state()
+  private jsonTemplate: any = {
+    name: initialValues.name,
+    runNow: initialValues.runNow,
+    schedule: initialValues.schedule,
+    config: {
+      seeds: [],
+      scopeType: initialValues.scopeType,
+    },
+  }; // TODO type
+
+  @state()
+  private invalidJsonTemplateMessage: string = "";
+
   render() {
     if (this.isNew) {
       return this.renderNew();
@@ -165,7 +179,7 @@ export class CrawlTemplates extends LiteElement {
             >
               <h3 class="text-md font-medium">${msg("Advanced settings")}</h3>
             </div>
-            <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+            <section class="col-span-3 p-4 md:p-8 border-b">
               ${this.renderAdvancedSettings()}
             </section>
 
@@ -210,15 +224,43 @@ export class CrawlTemplates extends LiteElement {
 
   private renderAdvancedSettings() {
     return html`
-      <h4>${msg("JSON configuration")}</h4>
-      <p>${msg("Edit or paste in an existing JSON crawl template.")}</p>
+      <div class="grid gap-3">
+        <h4 class="font-bold">${msg("JSON Configuration")}</h4>
+        <div>
+          <p class="mb-2">
+            ${msg("Edit or paste in an existing JSON crawl template.")}
+          </p>
+          <p>
+            ${msg(
+              "JSON settings will take priority over settings configured through the form."
+            )}
+          </p>
+        </div>
 
-      ${this.renderJSON()}
+        <div class="relative">
+          ${this.renderJSON()}
+
+          <div class="absolute top-2 right-2">
+            <sl-button size="small">${msg("Copy")}</sl-button>
+          </div>
+        </div>
+
+        ${this.invalidJsonTemplateMessage
+          ? html`<btrix-alert type="danger"
+              >${this.invalidJsonTemplateMessage}</btrix-alert
+            >`
+          : ""}
+        ${this.jsonTemplate.config.seeds?.length
+          ? ""
+          : html`<btrix-alert type="warning"
+              >${msg("No seed URLs configured yet.")}</btrix-alert
+            >`}
+      </div>
     `;
   }
 
   private renderJSON() {
-    const code = JSON.stringify({ a: "b" }, null, 2);
+    const code = JSON.stringify(this.jsonTemplate, null, 2);
 
     return html`<pre
       class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
@@ -236,14 +278,27 @@ export class CrawlTemplates extends LiteElement {
           range.setEndAfter(tabNode);
         }
       }}
+      @blur=${this.updateJsonTemplate}
     ><code class="language-json">${code}</code></pre>`;
   }
 
-  private async onSubmit(event: { detail: { formData: FormData } }) {
-    if (!this.authState) return;
+  private updateJsonTemplate(e: any) {
+    const text = e.target.innerText;
 
-    const { formData } = event.detail;
+    try {
+      const json = JSON.parse(text);
 
+      this.jsonTemplate = json;
+      this.invalidJsonTemplateMessage = "";
+    } catch (e: any) {
+      console.log(e.message);
+      this.invalidJsonTemplateMessage = e.message
+        ? e.message.replace("JSON.parse: ", "")
+        : msg("JSON is invalid.");
+    }
+  }
+
+  private parseConfig(formData: FormData) {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
@@ -260,6 +315,12 @@ export class CrawlTemplates extends LiteElement {
     };
 
     console.log(params);
+  }
+
+  private async onSubmit(event: { detail: { formData: FormData } }) {
+    if (!this.authState) return;
+
+    const params = this.parseConfig(event.detail.formData);
 
     try {
       await this.apiFetch(
