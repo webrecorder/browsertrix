@@ -137,7 +137,7 @@ export class CrawlTemplates extends LiteElement {
                       <sl-format-date
                         date="${cronParser
                           .parseExpression(this.cronSchedule, {
-                            // utc: true,
+                            utc: true,
                           })
                           .next()
                           .toString()}"
@@ -147,6 +147,7 @@ export class CrawlTemplates extends LiteElement {
                         hour="numeric"
                         minute="numeric"
                         time-zone-name="short"
+                        time-zone="utc"
                       ></sl-format-date>`
                   )}
                 </div>
