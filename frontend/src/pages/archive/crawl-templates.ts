@@ -10,6 +10,7 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
+  // https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
   schedule: `0 0 * * ${new Date().getDay()}`,
   timeHour: "00",
   timeMinute: "00",
