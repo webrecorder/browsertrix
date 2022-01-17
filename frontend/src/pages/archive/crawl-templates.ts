@@ -244,7 +244,9 @@ export class CrawlTemplates extends LiteElement {
             ${this.renderJSON()}
 
             <div class="absolute top-2 right-2">
-              <sl-button size="small">${msg("Copy")}</sl-button>
+              <btrix-copy-button
+                .value=${JSON.stringify(this.jsonTemplate, null, 2)}
+              ></btrix-copy-button>
             </div>
           </div>
 
