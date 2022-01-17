@@ -41,10 +41,10 @@ export class CrawlTemplates extends LiteElement {
   crawlTemplates?: CrawlTemplate[];
 
   @state()
-  isRunNow: boolean = initialValues.runNow;
+  private isRunNow: boolean = initialValues.runNow;
 
   @state()
-  cronSchedule: string = initialValues.schedule;
+  private cronSchedule: string = initialValues.schedule;
 
   render() {
     if (this.isNew) {
