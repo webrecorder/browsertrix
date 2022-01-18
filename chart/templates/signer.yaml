@@ -37,6 +37,40 @@ stringData:
 # uncomment to override
 # trusted_roots: pkg://authsign.trusted/roots.yaml
 
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: signer-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi
+
+  {{- if .Values.volume_storage_class }}
+  storageClassName: {{ .Values.volume_storage_class }}
+  {{- end }}
+
+
+{{- if not .Values.volume_storage_class }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: "signer-store-pv"
+spec:
+  capacity:
+    storage: 1Gi
+
+  accessModes:
+    - "ReadWriteOnce"
+
+  hostPath:
+    path: /tmp/btrix-signer-data
+{{- end }}
 
 ---
 apiVersion: apps/v1
@@ -55,8 +89,8 @@ spec:
         app: auth-signer
 
       annotations:
-        # force helm to update the deployment each time
-        {{- if not .Values.frontend_only }}
+        # force update if signer_update is set
+        {{- if .Values.signer_update }}
         "helm.update": {{ randAlphaNum 5 | quote }}
         {{- end }}
 
@@ -69,6 +103,10 @@ spec:
               - key: config.yaml
                 path: config.yaml
 
+        - name: signer-storage
+          persistentVolumeClaim:
+            claimName: signer-storage-pvc
+
       containers:
         - name: signer
           image: {{ .Values.signer.image }}
@@ -76,15 +114,19 @@ spec:
           command: ["uvicorn", "authsign.main:app", "--port", "5053", "--host", "0.0.0.0", "--log-config", "/app/log.json"]
           env:
             - name: CONFIG
-              value: "/app-data/config.yaml"
+              value: "/app-config/config.yaml"
 
             - name: AUTH_TOKEN
               value: "{{ .Values.signer.auth_token }}"
 
           volumeMounts:
             - name: signer-config
-              mountPath: /app-data
+              mountPath: /app-config
               readOnly: true
+
+            - name: signer-storage
+              mountPath: /data
+              subPath: signer
 
 ---
 apiVersion: v1
