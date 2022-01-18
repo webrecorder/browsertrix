@@ -11,8 +11,6 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  // https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
-  schedule: `0 0 * * ${new Date().getDay()}`,
   timeHour: "00",
   timeMinute: "00",
   // crawlTimeoutMinutes: 0,
@@ -46,9 +44,20 @@ export class CrawlTemplates extends LiteElement {
   private isRunNow: boolean = initialValues.runNow;
 
   @state()
-  private cronSchedule: string = initialValues.schedule;
+  private scheduleInterval: "" | "daily" | "weekly" | "monthly" = "weekly";
 
-  private get timeZoneName() {
+  /** Schedule local time */
+  @state()
+  private scheduleTime: { hour: string; minute: string } = {
+    hour: "0",
+    minute: "0",
+  };
+
+  private get timeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  private get timeZoneShortName() {
     return getLocaleTimeZone();
   }
 
@@ -61,6 +70,27 @@ export class CrawlTemplates extends LiteElement {
   }
 
   private renderNew() {
+    const utcSchedule = this.getUTCSchedule();
+    const nextScheduledCrawlMessage = this.scheduleInterval
+      ? msg(html`Next scheduled crawl:
+          <sl-format-date
+            date="${cronParser
+              .parseExpression(utcSchedule, {
+                utc: true,
+              })
+              .next()
+              .toString()}"
+            weekday="long"
+            month="long"
+            day="numeric"
+            year="numeric"
+            hour="numeric"
+            minute="numeric"
+            time-zone-name="short"
+            time-zone=${this.timeZone}
+          ></sl-format-date>`)
+      : undefined;
+
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
       <p>
@@ -94,19 +124,16 @@ export class CrawlTemplates extends LiteElement {
                     <sl-select
                       name="schedule"
                       label=${msg("Schedule")}
-                      value=${initialValues.schedule}
+                      value=${this.scheduleInterval}
                       @sl-select=${(e: any) =>
-                        this.setCronInterval(e.target.value)}
+                        (this.scheduleInterval = e.target.value)}
                     >
-                      <!-- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax -->
                       <sl-menu-item value="">${msg("None")}</sl-menu-item>
-                      <sl-menu-item value="0 0 * * *"
-                        >${msg("Daily")}</sl-menu-item
-                      >
-                      <sl-menu-item value="0 0 * * ${new Date().getDay()}"
+                      <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+                      <sl-menu-item value="weekly"
                         >${msg("Weekly")}</sl-menu-item
                       >
-                      <sl-menu-item value="0 0 ${new Date().getDate()} * *"
+                      <sl-menu-item value="monthly"
                         >${msg("Monthly")}</sl-menu-item
                       >
                     </sl-select>
@@ -117,9 +144,12 @@ export class CrawlTemplates extends LiteElement {
                       name="scheduleHour"
                       value="0"
                       class="w-24"
-                      ?disabled=${!this.cronSchedule}
+                      ?disabled=${!this.scheduleInterval}
                       @sl-select=${(e: any) =>
-                        this.setCronTime({ hour: e.target.value })}
+                        (this.scheduleTime = {
+                          minute: this.scheduleTime.minute,
+                          hour: e.target.value,
+                        })}
                     >
                       ${hours.map(
                         ({ value, label }) =>
@@ -133,9 +163,12 @@ export class CrawlTemplates extends LiteElement {
                       name="scheduleMinute"
                       value="0"
                       class="w-24"
-                      ?disabled=${!this.cronSchedule}
+                      ?disabled=${!this.scheduleInterval}
                       @sl-select=${(e: any) =>
-                        this.setCronTime({ minute: e.target.value })}
+                        (this.scheduleTime = {
+                          minute: e.target.value,
+                          hour: this.scheduleTime.hour,
+                        })}
                     >
                       ${minutes.map(
                         ({ value, label }) =>
@@ -144,28 +177,11 @@ export class CrawlTemplates extends LiteElement {
                           >`
                       )}
                     </sl-select>
-                    <span class="px-1">${this.timeZoneName}</span>
+                    <span class="px-1">${this.timeZoneShortName}</span>
                   </div>
                 </div>
                 <div class="text-sm text-gray-500 mt-1">
-                  ${this.cronSchedule
-                    ? msg(
-                        html`Next scheduled crawl:
-                          <sl-format-date
-                            date="${cronParser
-                              .parseExpression(this.cronSchedule)
-                              .next()
-                              .toString()}"
-                            weekday="long"
-                            month="long"
-                            day="numeric"
-                            year="numeric"
-                            hour="numeric"
-                            minute="numeric"
-                            time-zone-name="short"
-                          ></sl-format-date>`
-                      )
-                    : msg("No crawls scheduled")}
+                  ${nextScheduledCrawlMessage || msg("No crawls scheduled")}
                 </div>
               </div>
 
@@ -243,7 +259,7 @@ export class CrawlTemplates extends LiteElement {
                 >${msg("Save Crawl Template")}</sl-button
               >
 
-              ${this.isRunNow || this.cronSchedule
+              ${this.isRunNow || this.scheduleInterval
                 ? html`<div class="text-sm text-gray-500 mt-6">
                     ${this.isRunNow
                       ? html`
@@ -252,29 +268,7 @@ export class CrawlTemplates extends LiteElement {
                           </p>
                         `
                       : ""}
-                    ${this.cronSchedule
-                      ? html` <p>
-                          ${msg(
-                            html`Next scheduled crawl:
-                              <sl-format-date
-                                date="${cronParser
-                                  .parseExpression(this.cronSchedule, {
-                                    utc: true,
-                                  })
-                                  .next()
-                                  .toString()}"
-                                weekday="long"
-                                month="long"
-                                day="numeric"
-                                year="numeric"
-                                hour="numeric"
-                                minute="numeric"
-                                time-zone-name="short"
-                                time-zone="utc"
-                              ></sl-format-date>`
-                          )}
-                        </p>`
-                      : ""}
+                    ${nextScheduledCrawlMessage}
                   </div>`
                 : ""}
             </div>
@@ -314,7 +308,7 @@ export class CrawlTemplates extends LiteElement {
     const seedUrlsStr = formData.get("seedUrls");
     const params = {
       name: formData.get("name"),
-      schedule: this.cronSchedule,
+      schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       config: {
@@ -344,29 +338,28 @@ export class CrawlTemplates extends LiteElement {
     }
   }
 
-  /** Set day, month or day of week in cron schedule */
-  private setCronInterval(expression: string) {
-    if (!expression) {
-      this.cronSchedule = "";
-      return;
+  /**
+   * Get schedule as UTC cron job expression
+   * https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
+   **/
+  private getUTCSchedule(): string {
+    if (!this.scheduleInterval) {
+      return "";
     }
 
-    const [minute, hour] = (this.cronSchedule || initialValues.schedule).split(
-      " "
-    );
-    const [, , dayOfMonth, month, dayOfWeek] = expression.split(" ");
+    const { minute, hour } = this.scheduleTime;
+    const localDate = new Date();
+    localDate.setMinutes(+minute);
+    localDate.setHours(+hour);
+    // let dayOfMonth = '*', month = '*', dayOfWeek = '*'
+    const dayOfMonth =
+      this.scheduleInterval === "monthly" ? localDate.getUTCDate() : "*";
+    const dayOfWeek =
+      this.scheduleInterval === "weekly" ? localDate.getUTCDay() : "*";
+    const month = "*";
 
-    this.cronSchedule = `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
-  }
+    const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${dayOfMonth} ${month} ${dayOfWeek}`;
 
-  /** Set minute or hour in cron schedule */
-  private setCronTime(time: { hour?: string; minute?: string }) {
-    const [minute, hour, dayOfMonth, month, dayOfWeek] = (
-      this.cronSchedule || initialValues.schedule
-    ).split(" ");
-
-    this.cronSchedule = `${time.minute || minute} ${
-      time.hour || hour
-    } ${dayOfMonth} ${month} ${dayOfWeek}`;
+    return schedule;
   }
 }
