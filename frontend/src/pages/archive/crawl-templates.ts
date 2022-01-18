@@ -111,6 +111,29 @@ export class CrawlTemplates extends LiteElement {
     return this.renderList();
   }
 
+  private toggleAdvancedSettingsView(isVisible: boolean) {
+    if (!isVisible && !this.invalidJsonTemplateMessage) {
+      try {
+        const hasChanges =
+          JSON.stringify(JSON.parse(this.jsonTemplate), null, 2) !==
+          initialJsonTemplate;
+
+        if (hasChanges) {
+          if (
+            window.confirm(
+              msg("Are you sure? Your JSON configuration will be overwritten.")
+            )
+          ) {
+            this.isAdvancedSettingsView = isVisible;
+            this.jsonTemplate = initialJsonTemplate;
+          }
+        }
+      } catch {}
+    } else {
+      this.isAdvancedSettingsView = isVisible;
+    }
+  }
+
   private renderNew() {
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
@@ -125,7 +148,7 @@ export class CrawlTemplates extends LiteElement {
           <sl-switch
             ?checked=${this.isAdvancedSettingsView}
             @sl-change=${(e: any) =>
-              (this.isAdvancedSettingsView = e.target.checked)}
+              this.toggleAdvancedSettingsView(e.target.checked)}
           >
             <span class="text-sm">${msg("Advanced custom settings")}</span>
           </sl-switch>
