@@ -4,6 +4,7 @@ import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { getLocaleTimeZone } from "../../utils/localization";
 
 type CrawlTemplate = any; // TODO
 
@@ -46,6 +47,10 @@ export class CrawlTemplates extends LiteElement {
 
   @state()
   private cronSchedule: string = initialValues.schedule;
+
+  private get timeZoneName() {
+    return getLocaleTimeZone();
+  }
 
   render() {
     if (this.isNew) {
@@ -139,7 +144,7 @@ export class CrawlTemplates extends LiteElement {
                           >`
                       )}
                     </sl-select>
-                    <span class="px-1">${msg("UTC")}</span>
+                    <span class="px-1">${this.timeZoneName}</span>
                   </div>
                 </div>
                 <div class="text-sm text-gray-500 mt-1">
@@ -148,9 +153,7 @@ export class CrawlTemplates extends LiteElement {
                         html`Next scheduled crawl:
                           <sl-format-date
                             date="${cronParser
-                              .parseExpression(this.cronSchedule, {
-                                utc: true,
-                              })
+                              .parseExpression(this.cronSchedule)
                               .next()
                               .toString()}"
                             weekday="long"
@@ -160,7 +163,6 @@ export class CrawlTemplates extends LiteElement {
                             hour="numeric"
                             minute="numeric"
                             time-zone-name="short"
-                            time-zone="utc"
                           ></sl-format-date>`
                       )
                     : msg("No crawls scheduled")}
