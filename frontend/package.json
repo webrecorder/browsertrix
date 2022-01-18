@@ -12,6 +12,7 @@
     "@xstate/fsm": "^1.6.2",
     "axios": "^0.22.0",
     "color": "^4.0.1",
+    "cron-parser": "^4.2.1",
     "lit": "^2.0.0",
     "path-parser": "^6.1.0",
     "tailwindcss": "^2.2.16"

@@ -14,3 +14,19 @@ export const setLocaleFromUrl = async () => {
   const locale = url.searchParams.get("locale") || sourceLocale;
   await setLocale(locale);
 };
+
+/**
+ * Get time zone short name from locales
+ * @param locales List of locale codes. Omit for browser default
+ **/
+export const getLocaleTimeZone = (locales?: string[]) => {
+  const date = new Date();
+
+  return date
+    .toLocaleTimeString(locales || [], {
+      timeZoneName: "short",
+      hour: "2-digit",
+    })
+    .replace(date.toLocaleTimeString([], { hour: "2-digit" }), "")
+    .trim();
+};
