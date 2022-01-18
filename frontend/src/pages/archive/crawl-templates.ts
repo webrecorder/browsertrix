@@ -11,8 +11,6 @@ type CrawlTemplate = any; // TODO
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  timeHour: "00",
-  timeMinute: "00",
   // crawlTimeoutMinutes: 0,
   seedUrls: "",
   scopeType: "prefix",
