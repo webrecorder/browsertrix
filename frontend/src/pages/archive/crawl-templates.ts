@@ -145,7 +145,11 @@ export class CrawlTemplates extends LiteElement {
                 : ""}
 
               <div>
-                <sl-button type="primary" submit
+                <sl-button
+                  type="primary"
+                  submit
+                  ?loading=${this.isSubmitting}
+                  ?disabled=${this.isSubmitting}
                   >${msg("Save Crawl Template")}</sl-button
                 >
               </div>
