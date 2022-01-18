@@ -1,0 +1,119 @@
+{{- if .Values.signer.enabled }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-signer-config
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+stringData:
+  config.yaml: |
+    signing:
+      domain: {{ .Values.signer.host }}  # domain to retrieve a cert for (passed to ACME servers, required)
+      email: {{ .Values.signer.cert_email }}  # email for acme auth (passed to ACME servers, required)
+      port: 80  # local port for acme domain check (should be 80, change if running behind a proxy)
+
+      output: /data  # dir to store the keys and certs (for internal use)
+
+      staging: False  # generate staging certs
+
+      # optional: set a 'cross-singing' CA and private key
+      # this will be used along with ACME (Lets Encrypt) to sign the same CSR
+      # csca_cert: <ca-cert.pem>
+      # csca_private_key: <ca-private-key.pem>
+
+      # rfc3161 timestamp authority cert chain + timestamp urls
+      # at least one required, if multiple, one is selected at random
+      timestamping:
+        # time server cert chain (cert + ca cert)
+        # pkg:// url to load from python package data
+        - certfile: pkg://authsign.trusted/ts-chain.pem
+          url: http://freetsa.org/tsr  # timeserver URL
+
+
+# default trusted roots stored in authsign.trusted package
+# uncomment to override
+# trusted_roots: pkg://authsign.trusted/roots.yaml
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-signer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: auth-signer
+  replicas: {{ .Values.api_num_replicas }}
+  template:
+    metadata:
+      labels:
+        app: auth-signer
+
+      annotations:
+        # force helm to update the deployment each time
+        {{- if not .Values.frontend_only }}
+        "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
+
+    spec:
+      volumes:
+        - name: signer-config
+          secret:
+            secretName: auth-signer-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+
+      containers:
+        - name: signer
+          image: {{ .Values.signer.image }}
+          imagePullPolicy: {{ .Values.signer.image_pull_policy }}
+          command: ["uvicorn", "authsign.main:app", "--port", "5053", "--host", "0.0.0.0", "--log-config", "/app/log.json"]
+          env:
+            - name: CONFIG
+              value: "/app-data/config.yaml"
+
+            - name: AUTH_TOKEN
+              value: "{{ .Values.signer.auth_token }}"
+
+          volumeMounts:
+            - name: signer-config
+              mountPath: /app-data
+              readOnly: true
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: auth-signer
+  labels:
+    app: auth-signer
+
+spec:
+  selector:
+    app: auth-signer
+
+{{- if .Values.service }}
+  {{- if .Values.service.type }}
+  type: {{ .Values.service.type | quote }}
+  {{- end }}
+{{- end }}
+
+  ports:
+    - protocol: TCP
+      port: 80
+      name: signer-cert
+
+    - protocol: TCP
+      port: 5053
+      name: signer-api
+
+
+{{- end }}
