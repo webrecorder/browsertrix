@@ -9,20 +9,15 @@ import { getLocaleTimeZone } from "../../utils/localization";
 type CrawlTemplate = any; // TODO
 
 const initialValues = {
-  name: `Example crawl ${Date.now()}`, // TODO remove placeholder
+  name: "",
   runNow: true,
-  // crawlTimeoutMinutes: 0,
-  seedUrls: "",
-  scopeType: "prefix",
-  // limit: 0,
-};
-const initialJsonTemplate = JSON.stringify(
-  {
-    config: {},
+  schedule: "@weekly",
+  config: {
+    seeds: [],
+    scopeType: "prefix",
   },
-  null,
-  2
-);
+};
+const initialJsonTemplate = JSON.stringify(initialValues, null, 2);
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,
   label: `${i + 1}`,
@@ -69,6 +64,12 @@ export class CrawlTemplates extends LiteElement {
 
   @state()
   private invalidJsonTemplateMessage: string = "";
+
+  @state()
+  private isSubmitting: boolean = false;
+
+  @state()
+  private serverError?: string;
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -131,18 +132,27 @@ export class CrawlTemplates extends LiteElement {
         </div>
 
         <div class="border rounded-lg">
-          <sl-form @sl-submit=${this.onSubmit}>
+          <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             ${this.isAdvancedSettingsView
               ? this.renderAdvancedSettings()
               : this.renderBasicSettings()}
 
-            <div class="p-4 md:p-8 text-center">
-              <sl-button type="primary" submit
-                >${msg("Save Crawl Template")}</sl-button
-              >
+            <div class="p-4 md:p-8 text-center grid gap-5">
+              ${this.serverError
+                ? html`<btrix-alert id="formError" type="danger"
+                    >${this.serverError}</btrix-alert
+                  >`
+                : ""}
 
-              ${this.isRunNow || this.scheduleInterval
-                ? html`<div class="text-sm text-gray-500 mt-6">
+              <div>
+                <sl-button type="primary" submit
+                  >${msg("Save Crawl Template")}</sl-button
+                >
+              </div>
+
+              ${!this.isAdvancedSettingsView &&
+              (this.isRunNow || this.scheduleInterval)
+                ? html`<div class="text-sm text-gray-500">
                     ${this.isRunNow
                       ? html`
                           <p class="mb-2">
@@ -313,7 +323,6 @@ export class CrawlTemplates extends LiteElement {
               )}
               help-text=${msg("Separate URLs with a new line, space or comma.")}
               rows="3"
-              value=${initialValues.seedUrls}
               required
             ></sl-textarea>
           </div>
@@ -321,7 +330,7 @@ export class CrawlTemplates extends LiteElement {
             <sl-select
               name="scopeType"
               label=${msg("Scope type")}
-              value=${initialValues.scopeType}
+              value=${initialValues.config.scopeType}
             >
               <sl-menu-item value="page">Page</sl-menu-item>
               <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
@@ -357,11 +366,6 @@ export class CrawlTemplates extends LiteElement {
             <p class="mb-2">
               ${msg("Edit or paste in an existing JSON crawl template.")}
             </p>
-            <p>
-              ${msg(
-                "JSON settings will take priority over settings configured through the form."
-              )}
-            </p>
           </div>
 
           <div class="grid grid-cols-3 gap-4">
@@ -379,14 +383,8 @@ export class CrawlTemplates extends LiteElement {
               ${this.invalidJsonTemplateMessage
                 ? html`<btrix-alert type="danger">
                     ${this.invalidJsonTemplateMessage}
-
-                    <div class="mt-2">
-                      <sl-button size="small"
-                        >${msg("Validate JSON")}</sl-button
-                      >
-                    </div>
                   </btrix-alert> `
-                : ""}
+                : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
             </div>
           </div>
         </div>
@@ -468,47 +466,48 @@ export class CrawlTemplates extends LiteElement {
   }) {
     if (!this.authState) return;
 
-    // Check JSON validity
-    const jsonEditor = event.target.querySelector("#json-editor");
+    let params;
 
-    if (this.invalidJsonTemplateMessage) {
-      jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
-      jsonEditor.reportValidity();
-      return;
-    }
+    if (this.isAdvancedSettingsView) {
+      // Check JSON validity
+      const jsonEditor = event.target.querySelector("#json-editor");
 
-    let params = this.parseTemplate(event.detail.formData);
+      if (this.invalidJsonTemplateMessage) {
+        jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
+        jsonEditor.reportValidity();
+        return;
+      }
 
-    if (this.jsonTemplate !== initialJsonTemplate) {
-      const { config, ...other } = JSON.parse(this.jsonTemplate);
-      params = {
-        ...params,
-        ...other,
-        config: {
-          ...params.config,
-          ...config,
-        },
-      };
+      params = JSON.parse(this.jsonTemplate);
+    } else {
+      params = this.parseTemplate(event.detail.formData);
     }
 
     console.log(params);
 
-    // try {
-    //   await this.apiFetch(
-    //     `/archives/${this.archiveId}/crawlconfigs/`,
-    //     this.authState,
-    //     {
-    //       method: "POST",
-    //       body: JSON.stringify(params),
-    //     }
-    //   );
+    this.serverError = undefined;
+    this.isSubmitting = true;
 
-    //   console.debug("success");
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
 
-    //   this.navTo(`/archives/${this.archiveId}/crawl-templates`);
-    // } catch (e) {
-    //   console.error(e);
-    // }
+      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+    } catch (e: any) {
+      if (e?.isApiError) {
+        this.serverError = e?.message;
+      } else {
+        this.serverError = msg("Something unexpected went wrong");
+      }
+    }
+
+    this.isSubmitting = false;
   }
 
   /**
