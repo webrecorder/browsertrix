@@ -18,13 +18,14 @@ const initialValues = {
   scopeType: "prefix",
   // limit: 0,
 };
-const makeTimeOptions = (length: number) =>
-  Array.from({ length }).map((x, i) => ({
-    value: i,
-    label: `${i}`.padStart(2, "0"),
-  }));
-const hours = makeTimeOptions(24);
-const minutes = makeTimeOptions(60);
+const hours = Array.from({ length: 12 }).map((x, i) => ({
+  value: i + 1,
+  label: `${i + 1}`,
+}));
+const minutes = Array.from({ length: 60 }).map((x, i) => ({
+  value: i,
+  label: `${i}`.padStart(2, "0"),
+}));
 
 @localized()
 export class CrawlTemplates extends LiteElement {
@@ -48,10 +49,12 @@ export class CrawlTemplates extends LiteElement {
 
   /** Schedule local time */
   @state()
-  private scheduleTime: { hour: string; minute: string } = {
-    hour: "0",
-    minute: "0",
-  };
+  private scheduleTime: { hour: number; minute: number; period: "AM" | "PM" } =
+    {
+      hour: 12,
+      minute: 0,
+      period: "AM",
+    };
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -142,13 +145,13 @@ export class CrawlTemplates extends LiteElement {
                     <span class="px-1">${msg("at")}</span>
                     <sl-select
                       name="scheduleHour"
-                      value="0"
+                      value=${this.scheduleTime.hour}
                       class="w-24"
                       ?disabled=${!this.scheduleInterval}
                       @sl-select=${(e: any) =>
                         (this.scheduleTime = {
-                          minute: this.scheduleTime.minute,
-                          hour: e.target.value,
+                          ...this.scheduleTime,
+                          hour: +e.target.value,
                         })}
                     >
                       ${hours.map(
@@ -161,13 +164,13 @@ export class CrawlTemplates extends LiteElement {
                     <span>:</span>
                     <sl-select
                       name="scheduleMinute"
-                      value="0"
+                      value=${this.scheduleTime.minute}
                       class="w-24"
                       ?disabled=${!this.scheduleInterval}
                       @sl-select=${(e: any) =>
                         (this.scheduleTime = {
-                          minute: e.target.value,
-                          hour: this.scheduleTime.hour,
+                          ...this.scheduleTime,
+                          minute: +e.target.value,
                         })}
                     >
                       ${minutes.map(
@@ -176,6 +179,23 @@ export class CrawlTemplates extends LiteElement {
                             >${label}</sl-menu-item
                           >`
                       )}
+                    </sl-select>
+                    <sl-select
+                      value="AM"
+                      class="w-24"
+                      ?disabled=${!this.scheduleInterval}
+                      @sl-select=${(e: any) =>
+                        (this.scheduleTime = {
+                          ...this.scheduleTime,
+                          period: e.target.value,
+                        })}
+                    >
+                      <sl-menu-item value="AM"
+                        >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+                      >
+                      <sl-menu-item value="PM"
+                        >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                      >
                     </sl-select>
                     <span class="px-1">${this.timeZoneShortName}</span>
                   </div>
@@ -347,10 +367,22 @@ export class CrawlTemplates extends LiteElement {
       return "";
     }
 
-    const { minute, hour } = this.scheduleTime;
+    const { minute, hour, period } = this.scheduleTime;
     const localDate = new Date();
+    let periodOffset = 0;
+
+    if (hour === 12) {
+      if (period === "AM") {
+        periodOffset = -12;
+      }
+    } else if (hour === 1) {
+      if (period === "PM") {
+        periodOffset = 12;
+      }
+    }
+
+    localDate.setHours(+hour + periodOffset);
     localDate.setMinutes(+minute);
-    localDate.setHours(+hour);
     // let dayOfMonth = '*', month = '*', dayOfWeek = '*'
     const dayOfMonth =
       this.scheduleInterval === "monthly" ? localDate.getUTCDate() : "*";
