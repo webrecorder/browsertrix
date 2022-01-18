@@ -367,6 +367,8 @@ export class CrawlTemplates extends LiteElement {
 
     const { minute, hour, period } = this.scheduleTime;
     const localDate = new Date();
+
+    // Convert 12-hr to 24-hr time
     let periodOffset = 0;
 
     if (hour === 12) {
@@ -381,7 +383,6 @@ export class CrawlTemplates extends LiteElement {
 
     localDate.setHours(+hour + periodOffset);
     localDate.setMinutes(+minute);
-    // let dayOfMonth = '*', month = '*', dayOfWeek = '*'
     const dayOfMonth =
       this.scheduleInterval === "monthly" ? localDate.getUTCDate() : "*";
     const dayOfWeek =
