@@ -1,20 +1,29 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
+import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { getLocaleTimeZone } from "../../utils/localization";
 
 type CrawlTemplate = any; // TODO
 
 const initialValues = {
   name: `Example crawl ${Date.now()}`, // TODO remove placeholder
   runNow: true,
-  schedule: "@weekly",
   // crawlTimeoutMinutes: 0,
   seedUrls: "",
   scopeType: "prefix",
   // limit: 0,
 };
+const hours = Array.from({ length: 12 }).map((x, i) => ({
+  value: i + 1,
+  label: `${i + 1}`,
+}));
+const minutes = Array.from({ length: 60 }).map((x, i) => ({
+  value: i,
+  label: `${i}`.padStart(2, "0"),
+}));
 
 @localized()
 export class CrawlTemplates extends LiteElement {
@@ -31,7 +40,27 @@ export class CrawlTemplates extends LiteElement {
   crawlTemplates?: CrawlTemplate[];
 
   @state()
-  isRunNow: boolean = initialValues.runNow;
+  private isRunNow: boolean = initialValues.runNow;
+
+  @state()
+  private scheduleInterval: "" | "daily" | "weekly" | "monthly" = "weekly";
+
+  /** Schedule local time */
+  @state()
+  private scheduleTime: { hour: number; minute: number; period: "AM" | "PM" } =
+    {
+      hour: 12,
+      minute: 0,
+      period: "AM",
+    };
+
+  private get timeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  private get timeZoneShortName() {
+    return getLocaleTimeZone();
+  }
 
   render() {
     if (this.isNew) {
@@ -42,6 +71,27 @@ export class CrawlTemplates extends LiteElement {
   }
 
   private renderNew() {
+    const utcSchedule = this.getUTCSchedule();
+    const nextScheduledCrawlMessage = this.scheduleInterval
+      ? msg(html`Next scheduled crawl:
+          <sl-format-date
+            date="${cronParser
+              .parseExpression(utcSchedule, {
+                utc: true,
+              })
+              .next()
+              .toString()}"
+            weekday="long"
+            month="long"
+            day="numeric"
+            year="numeric"
+            hour="numeric"
+            minute="numeric"
+            time-zone-name="short"
+            time-zone=${this.timeZone}
+          ></sl-format-date>`)
+      : undefined;
+
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
       <p>
@@ -69,33 +119,96 @@ export class CrawlTemplates extends LiteElement {
                   required
                 ></sl-input>
               </div>
-              <div class="flex items-end">
-                <!-- TODO schedule time -->
-                <div>
-                  <sl-select
-                    name="schedule"
-                    label=${msg("Schedule")}
-                    value=${initialValues.schedule}
-                  >
-                    <sl-menu-item value="">None</sl-menu-item>
-                    <sl-menu-item value="@daily">Daily</sl-menu-item>
-                    <sl-menu-item value="@weekly">Weekly</sl-menu-item>
-                    <sl-menu-item value="@monthly">Monthly</sl-menu-item>
-                  </sl-select>
+              <div>
+                <div class="flex items-end">
+                  <div class="pr-2 flex-1">
+                    <sl-select
+                      name="schedule"
+                      label=${msg("Schedule")}
+                      value=${this.scheduleInterval}
+                      @sl-select=${(e: any) =>
+                        (this.scheduleInterval = e.target.value)}
+                    >
+                      <sl-menu-item value="">${msg("None")}</sl-menu-item>
+                      <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+                      <sl-menu-item value="weekly"
+                        >${msg("Weekly")}</sl-menu-item
+                      >
+                      <sl-menu-item value="monthly"
+                        >${msg("Monthly")}</sl-menu-item
+                      >
+                    </sl-select>
+                  </div>
+                  <div class="grid grid-flow-col gap-2 items-center">
+                    <span class="px-1">${msg("at")}</span>
+                    <sl-select
+                      name="scheduleHour"
+                      value=${this.scheduleTime.hour}
+                      class="w-24"
+                      ?disabled=${!this.scheduleInterval}
+                      @sl-select=${(e: any) =>
+                        (this.scheduleTime = {
+                          ...this.scheduleTime,
+                          hour: +e.target.value,
+                        })}
+                    >
+                      ${hours.map(
+                        ({ value, label }) =>
+                          html`<sl-menu-item value=${value}
+                            >${label}</sl-menu-item
+                          >`
+                      )}
+                    </sl-select>
+                    <span>:</span>
+                    <sl-select
+                      name="scheduleMinute"
+                      value=${this.scheduleTime.minute}
+                      class="w-24"
+                      ?disabled=${!this.scheduleInterval}
+                      @sl-select=${(e: any) =>
+                        (this.scheduleTime = {
+                          ...this.scheduleTime,
+                          minute: +e.target.value,
+                        })}
+                    >
+                      ${minutes.map(
+                        ({ value, label }) =>
+                          html`<sl-menu-item value=${value}
+                            >${label}</sl-menu-item
+                          >`
+                      )}
+                    </sl-select>
+                    <sl-select
+                      value="AM"
+                      class="w-24"
+                      ?disabled=${!this.scheduleInterval}
+                      @sl-select=${(e: any) =>
+                        (this.scheduleTime = {
+                          ...this.scheduleTime,
+                          period: e.target.value,
+                        })}
+                    >
+                      <sl-menu-item value="AM"
+                        >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+                      >
+                      <sl-menu-item value="PM"
+                        >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                      >
+                    </sl-select>
+                    <span class="px-1">${this.timeZoneShortName}</span>
+                  </div>
                 </div>
-                <!-- <div>
-                  <btrix-input
-                    name="scheduleTime"
-                    type="time"
-                  ></btrix-input>
-                </div> -->
+                <div class="text-sm text-gray-500 mt-1">
+                  ${nextScheduledCrawlMessage || msg("No crawls scheduled")}
+                </div>
               </div>
+
               <div>
                 <sl-switch
                   name="runNow"
                   ?checked=${initialValues.runNow}
                   @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-                  >${msg("Run immediately")}</sl-switch
+                  >${msg("Run immediately on save")}</sl-switch
                 >
               </div>
 
@@ -160,17 +273,22 @@ export class CrawlTemplates extends LiteElement {
             </section>
 
             <div class="col-span-4 p-4 md:p-8 text-center">
-              ${this.isRunNow
-                ? html`
-                    <p class="text-sm mb-3">
-                      ${msg("A crawl will start immediately on save.")}
-                    </p>
-                  `
-                : ""}
-
               <sl-button type="primary" submit
                 >${msg("Save Crawl Template")}</sl-button
               >
+
+              ${this.isRunNow || this.scheduleInterval
+                ? html`<div class="text-sm text-gray-500 mt-6">
+                    ${this.isRunNow
+                      ? html`
+                          <p class="mb-2">
+                            ${msg("A crawl will start immediately on save.")}
+                          </p>
+                        `
+                      : ""}
+                    ${nextScheduledCrawlMessage}
+                  </div>`
+                : ""}
             </div>
           </div>
         </sl-form>
@@ -208,7 +326,7 @@ export class CrawlTemplates extends LiteElement {
     const seedUrlsStr = formData.get("seedUrls");
     const params = {
       name: formData.get("name"),
-      schedule: formData.get("schedule"),
+      schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       config: {
@@ -236,5 +354,43 @@ export class CrawlTemplates extends LiteElement {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  /**
+   * Get schedule as UTC cron job expression
+   * https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
+   **/
+  private getUTCSchedule(): string {
+    if (!this.scheduleInterval) {
+      return "";
+    }
+
+    const { minute, hour, period } = this.scheduleTime;
+    const localDate = new Date();
+
+    // Convert 12-hr to 24-hr time
+    let periodOffset = 0;
+
+    if (hour === 12) {
+      if (period === "AM") {
+        periodOffset = -12;
+      }
+    } else if (hour === 1) {
+      if (period === "PM") {
+        periodOffset = 12;
+      }
+    }
+
+    localDate.setHours(+hour + periodOffset);
+    localDate.setMinutes(+minute);
+    const dayOfMonth =
+      this.scheduleInterval === "monthly" ? localDate.getUTCDate() : "*";
+    const dayOfWeek =
+      this.scheduleInterval === "weekly" ? localDate.getUTCDay() : "*";
+    const month = "*";
+
+    const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${dayOfMonth} ${month} ${dayOfWeek}`;
+
+    return schedule;
   }
 }
