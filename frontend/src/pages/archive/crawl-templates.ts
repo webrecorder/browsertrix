@@ -63,9 +63,9 @@ export class CrawlTemplates extends LiteElement {
   @state()
   private scheduleTime: { hour: number; minute: number; period: "AM" | "PM" } =
     {
-      hour: 12,
+      hour: new Date().getHours() % 12 || 12,
       minute: 0,
-      period: "AM",
+      period: new Date().getHours() > 11 ? "PM" : "AM",
     };
 
   @state()
@@ -91,27 +91,26 @@ export class CrawlTemplates extends LiteElement {
     return getLocaleTimeZone();
   }
 
-  private get nextScheduledCrawlMessage() {
+  private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
 
     return this.scheduleInterval
-      ? msg(html`Next scheduled crawl:
-          <sl-format-date
-            date="${cronParser
-              .parseExpression(utcSchedule, {
-                utc: true,
-              })
-              .next()
-              .toString()}"
-            weekday="long"
-            month="long"
-            day="numeric"
-            year="numeric"
-            hour="numeric"
-            minute="numeric"
-            time-zone-name="short"
-            time-zone=${this.timeZone}
-          ></sl-format-date>`)
+      ? html`<sl-format-date
+          date="${cronParser
+            .parseExpression(utcSchedule, {
+              utc: true,
+            })
+            .next()
+            .toString()}"
+          weekday="long"
+          month="long"
+          day="numeric"
+          year="numeric"
+          hour="numeric"
+          minute="numeric"
+          time-zone-name="short"
+          time-zone=${this.timeZone}
+        ></sl-format-date>`
       : undefined;
   }
 
@@ -136,7 +135,8 @@ export class CrawlTemplates extends LiteElement {
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-4">
-              ${this.renderBasicSettings()} ${this.renderPagesSettings()}
+              ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
+              ${this.renderScheduleSettings()}
             </div>
 
             <div class="p-4 md:p-8 text-center grid gap-5">
@@ -165,7 +165,16 @@ export class CrawlTemplates extends LiteElement {
                           </p>
                         `
                       : ""}
-                    ${this.nextScheduledCrawlMessage}
+                    ${this.scheduleInterval
+                      ? html`
+                          <p class="mb-2">
+                            ${msg(
+                              html`Scheduled crawl will run
+                              ${this.formattededNextCrawlDate}.`
+                            )}
+                          </p>
+                        `
+                      : ""}
                   </div>`
                 : ""}
             </div>
@@ -198,27 +207,38 @@ export class CrawlTemplates extends LiteElement {
   private renderBasicSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
+        <h3 class="font-medium">${msg("Basic settings")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-        <div>
-          <sl-input
-            name="name"
-            label=${msg("Name")}
-            placeholder=${msg("Example (example.com) Weekly Crawl", {
-              desc: "Example crawl template name",
-            })}
-            autocomplete="off"
-            value=${initialValues.name}
-            required
-          ></sl-input>
-        </div>
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          help-text=${msg(
+            "Required. Name your template to easily identify it later."
+          )}
+          placeholder=${msg("Example (example.com) Weekly Crawl", {
+            desc: "Example crawl template name",
+          })}
+          autocomplete="off"
+          value=${initialValues.name}
+          required
+        ></sl-input>
+      </section>
+    `;
+  }
+
+  private renderScheduleSettings() {
+    return html`
+      <div class="col-span-1 p-4 md:p-8 md:border-b">
+        <h3 class="font-medium">${msg("Crawl schedule")}</h3>
+      </div>
+      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
         <div>
           <div class="flex items-end">
             <div class="pr-2 flex-1">
               <sl-select
                 name="schedule"
-                label=${msg("Schedule")}
+                label=${msg("Recurring crawls")}
                 value=${this.scheduleInterval}
                 @sl-select=${(e: any) =>
                   (this.scheduleInterval = e.target.value)}
@@ -265,7 +285,7 @@ export class CrawlTemplates extends LiteElement {
                 )}
               </sl-select>
               <sl-select
-                value="AM"
+                value=${this.scheduleTime.period}
                 class="w-24"
                 ?disabled=${!this.scheduleInterval}
                 @sl-select=${(e: any) =>
@@ -285,37 +305,37 @@ export class CrawlTemplates extends LiteElement {
             </div>
           </div>
           <div class="text-sm text-gray-500 mt-1">
-            ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
+            ${this.formattededNextCrawlDate
+              ? msg(
+                  html`Next scheduled crawl: ${this.formattededNextCrawlDate}`
+                )
+              : msg("No crawls scheduled")}
           </div>
         </div>
 
-        <div>
-          <sl-switch
-            name="runNow"
-            ?checked=${initialValues.runNow}
-            @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-            >${msg("Run immediately on save")}</sl-switch
-          >
-        </div>
+        <sl-switch
+          name="runNow"
+          ?checked=${initialValues.runNow}
+          @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+          >${msg("Run immediately on save")}</sl-switch
+        >
 
-        <div>
-          <sl-input
-            name="crawlTimeoutMinutes"
-            label=${msg("Time limit")}
-            placeholder=${msg("unlimited")}
-            type="number"
-          >
-            <span slot="suffix">${msg("minutes")}</span>
-          </sl-input>
-        </div>
+        <sl-input
+          name="crawlTimeoutMinutes"
+          label=${msg("Time limit")}
+          placeholder=${msg("unlimited")}
+          type="number"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
       </section>
     `;
   }
 
-  private renderPagesSettings() {
+  private renderCrawlConfigSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="text-lg font-medium">${msg("Crawl configuration")}</h3>
+        <h3 class="font-medium">${msg("Crawl configuration")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
         <div class="flex justify-between">
@@ -344,11 +364,12 @@ export class CrawlTemplates extends LiteElement {
       <sl-textarea
         name="seedUrls"
         label=${msg("Seed URLs")}
-        helpText=${msg("Separated by a new line, space or comma")}
         placeholder=${msg(`https://webrecorder.net\nhttps://example.com`, {
           desc: "Example seed URLs",
         })}
-        help-text=${msg("Separate URLs with a new line, space or comma.")}
+        help-text=${msg(
+          "Required. Separate URLs with a new line, space or comma."
+        )}
         rows="3"
         required
       ></sl-textarea>
@@ -511,13 +532,29 @@ export class CrawlTemplates extends LiteElement {
     this.isSubmitting = true;
 
     try {
-      await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/`,
         this.authState,
         {
           method: "POST",
           body: JSON.stringify(params),
         }
+      );
+
+      this.dispatchEvent(
+        new CustomEvent("notify", {
+          bubbles: true,
+          detail: {
+            message: data.run_now_job
+              ? msg(
+                  str`Crawl running with new template. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/${data.run_now_job}">View crawl</a>`
+                )
+              : msg("Crawl template created."),
+            type: "success",
+            icon: "check2-circle",
+            duration: 10000,
+          },
+        })
       );
 
       this.navTo(`/archives/${this.archiveId}/crawl-templates`);
@@ -551,10 +588,8 @@ export class CrawlTemplates extends LiteElement {
       if (period === "AM") {
         periodOffset = -12;
       }
-    } else if (hour === 1) {
-      if (period === "PM") {
-        periodOffset = 12;
-      }
+    } else if (period === "PM") {
+      periodOffset = 12;
     }
 
     localDate.setHours(+hour + periodOffset);

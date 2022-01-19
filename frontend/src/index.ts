@@ -372,6 +372,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
+          @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           archiveId=${this.viewState.params.id}
@@ -480,12 +481,15 @@ export class App extends LiteElement {
   onNotify(
     event: CustomEvent<{
       title?: string;
+      /** Can contain HTML */
       message?: string;
       type?: "success" | "warning" | "danger" | "primary";
       icon?: string;
       duration?: number;
     }>
   ) {
+    event.stopPropagation();
+
     const {
       title,
       message,
@@ -493,12 +497,6 @@ export class App extends LiteElement {
       icon = "info-circle",
       duration = 5000,
     } = event.detail;
-
-    const escapeHtml = (html: any) => {
-      const div = document.createElement("div");
-      div.textContent = html;
-      return div.innerHTML;
-    };
 
     const alert = Object.assign(document.createElement("sl-alert"), {
       type: type,
@@ -513,8 +511,8 @@ export class App extends LiteElement {
       innerHTML: `
         <sl-icon name="${icon}" slot="icon"></sl-icon>
         <span>
-          ${title ? `<strong>${escapeHtml(title)}</strong>` : ""}
-          ${message ? `<div>${escapeHtml(message)}</div>` : ""}
+          ${title ? `<strong>${title}</strong>` : ""}
+          ${message ? `<div>${message}</div>` : ""}
         </span>
 
       `,
