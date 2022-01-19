@@ -6,7 +6,18 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
 
-type CrawlTemplate = any; // TODO
+type CrawlTemplate = {
+  id?: string;
+  name: string;
+  schedule: string;
+  runNow: boolean;
+  crawlTimeout?: number;
+  config: {
+    seeds: string[];
+    scopeType?: string;
+    limit?: number;
+  };
+};
 
 const initialValues = {
   name: "",
@@ -15,9 +26,10 @@ const initialValues = {
   config: {
     seeds: [],
     scopeType: "prefix",
+    limit: 0,
   },
 };
-const initialJsonTemplate = JSON.stringify(initialValues, null, 2);
+const initialSeedsJson = JSON.stringify(initialValues.config, null, 2);
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,
   label: `${i + 1}`,
@@ -42,9 +54,6 @@ export class CrawlTemplates extends LiteElement {
   crawlTemplates?: CrawlTemplate[];
 
   @state()
-  private isAdvancedSettingsView: boolean = false;
-
-  @state()
   private isRunNow: boolean = initialValues.runNow;
 
   @state()
@@ -60,10 +69,13 @@ export class CrawlTemplates extends LiteElement {
     };
 
   @state()
-  private jsonTemplate: string = initialJsonTemplate;
+  private isSeedsJsonView: boolean = false;
 
   @state()
-  private invalidJsonTemplateMessage: string = "";
+  private seedsJson: string = initialSeedsJson;
+
+  @state()
+  private invalidSeedsJsonMessage: string = "";
 
   @state()
   private isSubmitting: boolean = false;
@@ -111,29 +123,6 @@ export class CrawlTemplates extends LiteElement {
     return this.renderList();
   }
 
-  private toggleAdvancedSettingsView(isVisible: boolean) {
-    if (!isVisible && !this.invalidJsonTemplateMessage) {
-      try {
-        const hasChanges =
-          JSON.stringify(JSON.parse(this.jsonTemplate), null, 2) !==
-          initialJsonTemplate;
-
-        if (hasChanges) {
-          if (
-            window.confirm(
-              msg("Are you sure? Your JSON configuration will be overwritten.")
-            )
-          ) {
-            this.isAdvancedSettingsView = isVisible;
-            this.jsonTemplate = initialJsonTemplate;
-          }
-        }
-      } catch {}
-    } else {
-      this.isAdvancedSettingsView = isVisible;
-    }
-  }
-
   private renderNew() {
     return html`
       <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
@@ -144,21 +133,11 @@ export class CrawlTemplates extends LiteElement {
       </p>
 
       <main class="mt-4">
-        <div class="mb-2 text-right">
-          <sl-switch
-            ?checked=${this.isAdvancedSettingsView}
-            @sl-change=${(e: any) =>
-              this.toggleAdvancedSettingsView(e.target.checked)}
-          >
-            <span class="text-sm">${msg("Advanced custom settings")}</span>
-          </sl-switch>
-        </div>
-
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
-            ${this.isAdvancedSettingsView
-              ? this.renderAdvancedSettings()
-              : this.renderBasicSettings()}
+            <div class="md:grid grid-cols-4">
+              ${this.renderBasicSettings()} ${this.renderPagesSettings()}
+            </div>
 
             <div class="p-4 md:p-8 text-center grid gap-5">
               ${this.serverError
@@ -177,8 +156,7 @@ export class CrawlTemplates extends LiteElement {
                 >
               </div>
 
-              ${!this.isAdvancedSettingsView &&
-              (this.isRunNow || this.scheduleInterval)
+              ${this.isRunNow || this.scheduleInterval
                 ? html`<div class="text-sm text-gray-500">
                     ${this.isRunNow
                       ? html`
@@ -219,207 +197,220 @@ export class CrawlTemplates extends LiteElement {
 
   private renderBasicSettings() {
     return html`
-      <div class="md:grid grid-cols-4">
-        <div class="col-span-1 p-4 md:p-8 md:border-b">
-          <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
-        </div>
-        <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-          <div>
-            <sl-input
-              name="name"
-              label=${msg("Name")}
-              placeholder=${msg("Example (example.com) Weekly Crawl", {
-                desc: "Example crawl template name",
-              })}
-              autocomplete="off"
-              value=${initialValues.name}
-              required
-            ></sl-input>
-          </div>
-          <div>
-            <div class="flex items-end">
-              <div class="pr-2 flex-1">
-                <sl-select
-                  name="schedule"
-                  label=${msg("Schedule")}
-                  value=${this.scheduleInterval}
-                  @sl-select=${(e: any) =>
-                    (this.scheduleInterval = e.target.value)}
-                >
-                  <sl-menu-item value="">${msg("None")}</sl-menu-item>
-                  <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
-                  <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
-                  <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
-                </sl-select>
-              </div>
-              <div class="grid grid-flow-col gap-2 items-center">
-                <span class="px-1">${msg("at")}</span>
-                <sl-select
-                  name="scheduleHour"
-                  value=${this.scheduleTime.hour}
-                  class="w-24"
-                  ?disabled=${!this.scheduleInterval}
-                  @sl-select=${(e: any) =>
-                    (this.scheduleTime = {
-                      ...this.scheduleTime,
-                      hour: +e.target.value,
-                    })}
-                >
-                  ${hours.map(
-                    ({ value, label }) =>
-                      html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                  )}
-                </sl-select>
-                <span>:</span>
-                <sl-select
-                  name="scheduleMinute"
-                  value=${this.scheduleTime.minute}
-                  class="w-24"
-                  ?disabled=${!this.scheduleInterval}
-                  @sl-select=${(e: any) =>
-                    (this.scheduleTime = {
-                      ...this.scheduleTime,
-                      minute: +e.target.value,
-                    })}
-                >
-                  ${minutes.map(
-                    ({ value, label }) =>
-                      html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                  )}
-                </sl-select>
-                <sl-select
-                  value="AM"
-                  class="w-24"
-                  ?disabled=${!this.scheduleInterval}
-                  @sl-select=${(e: any) =>
-                    (this.scheduleTime = {
-                      ...this.scheduleTime,
-                      period: e.target.value,
-                    })}
-                >
-                  <sl-menu-item value="AM"
-                    >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
-                  >
-                  <sl-menu-item value="PM"
-                    >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
-                  >
-                </sl-select>
-                <span class="px-1">${this.timeZoneShortName}</span>
-              </div>
-            </div>
-            <div class="text-sm text-gray-500 mt-1">
-              ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
-            </div>
-          </div>
-
-          <div>
-            <sl-switch
-              name="runNow"
-              ?checked=${initialValues.runNow}
-              @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-              >${msg("Run immediately on save")}</sl-switch
-            >
-          </div>
-
-          <div>
-            <sl-input
-              name="crawlTimeoutMinutes"
-              label=${msg("Time limit")}
-              placeholder=${msg("unlimited")}
-              type="number"
-            >
-              <span slot="suffix">${msg("minutes")}</span>
-            </sl-input>
-          </div>
-        </section>
-
-        <div class="col-span-1 p-4 md:p-8 md:border-b">
-          <h3 class="text-lg font-medium">${msg("Pages")}</h3>
-        </div>
-        <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-          <div>
-            <sl-textarea
-              name="seedUrls"
-              label=${msg("Seed URLs")}
-              helpText=${msg("Separated by a new line, space or comma")}
-              placeholder=${msg(
-                `https://webrecorder.net\nhttps://example.com`,
-                {
-                  desc: "Example seed URLs",
-                }
-              )}
-              help-text=${msg("Separate URLs with a new line, space or comma.")}
-              rows="3"
-              required
-            ></sl-textarea>
-          </div>
-          <div>
-            <sl-select
-              name="scopeType"
-              label=${msg("Scope type")}
-              value=${initialValues.config.scopeType}
-            >
-              <sl-menu-item value="page">Page</sl-menu-item>
-              <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
-              <sl-menu-item value="prefix">Prefix</sl-menu-item>
-              <sl-menu-item value="host">Host</sl-menu-item>
-              <sl-menu-item value="any">Any</sl-menu-item>
-            </sl-select>
-          </div>
-          <div>
-            <sl-input
-              name="limit"
-              label=${msg("Page limit")}
-              type="number"
-              placeholder=${msg("unlimited")}
-            >
-              <span slot="suffix">${msg("pages")}</span>
-            </sl-input>
-          </div>
-        </section>
+      <div class="col-span-1 p-4 md:p-8 md:border-b">
+        <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
       </div>
+      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+        <div>
+          <sl-input
+            name="name"
+            label=${msg("Name")}
+            placeholder=${msg("Example (example.com) Weekly Crawl", {
+              desc: "Example crawl template name",
+            })}
+            autocomplete="off"
+            value=${initialValues.name}
+            required
+          ></sl-input>
+        </div>
+        <div>
+          <div class="flex items-end">
+            <div class="pr-2 flex-1">
+              <sl-select
+                name="schedule"
+                label=${msg("Schedule")}
+                value=${this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleInterval = e.target.value)}
+              >
+                <sl-menu-item value="">${msg("None")}</sl-menu-item>
+                <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+                <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
+                <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
+              </sl-select>
+            </div>
+            <div class="grid grid-flow-col gap-2 items-center">
+              <span class="px-1">${msg("at")}</span>
+              <sl-select
+                name="scheduleHour"
+                value=${this.scheduleTime.hour}
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    hour: +e.target.value,
+                  })}
+              >
+                ${hours.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <span>:</span>
+              <sl-select
+                name="scheduleMinute"
+                value=${this.scheduleTime.minute}
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    minute: +e.target.value,
+                  })}
+              >
+                ${minutes.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <sl-select
+                value="AM"
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    period: e.target.value,
+                  })}
+              >
+                <sl-menu-item value="AM"
+                  >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+                >
+                <sl-menu-item value="PM"
+                  >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                >
+              </sl-select>
+              <span class="px-1">${this.timeZoneShortName}</span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-500 mt-1">
+            ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
+          </div>
+        </div>
+
+        <div>
+          <sl-switch
+            name="runNow"
+            ?checked=${initialValues.runNow}
+            @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+            >${msg("Run immediately on save")}</sl-switch
+          >
+        </div>
+
+        <div>
+          <sl-input
+            name="crawlTimeoutMinutes"
+            label=${msg("Time limit")}
+            placeholder=${msg("unlimited")}
+            type="number"
+          >
+            <span slot="suffix">${msg("minutes")}</span>
+          </sl-input>
+        </div>
+      </section>
     `;
   }
 
-  private renderAdvancedSettings() {
+  private renderPagesSettings() {
     return html`
-      <div class="p-4 md:p-8 md:border-b">
-        <label class="text-lg font-medium" for="json-editor">
-          ${msg("JSON Configuration")}
-        </label>
+      <div class="col-span-1 p-4 md:p-8 md:border-b">
+        <h3 class="text-lg font-medium">${msg("Pages")}</h3>
+      </div>
+      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+        <div class="flex justify-between">
+          <h4 class="font-medium">${msg("Configure Seeds")}</h4>
+          <sl-switch
+            ?checked=${this.isSeedsJsonView}
+            @sl-change=${(e: any) => (this.isSeedsJsonView = e.target.checked)}
+          >
+            <span class="text-sm">${msg("Use JSON Editor")}</span>
+          </sl-switch>
+        </div>
 
-        <div class="mt-4 grid gap-4">
-          <div>
-            <p class="mb-2">
-              ${msg("Edit or paste in an existing JSON crawl template.")}
-            </p>
+        ${this.isSeedsJsonView
+          ? this.renderSeedsJson()
+          : this.renderSeedsForm()}
+      </section>
+    `;
+  }
+
+  private renderSeedsForm() {
+    return html`
+      <sl-textarea
+        name="seedUrls"
+        label=${msg("Seed URLs")}
+        helpText=${msg("Separated by a new line, space or comma")}
+        placeholder=${msg(`https://webrecorder.net\nhttps://example.com`, {
+          desc: "Example seed URLs",
+        })}
+        help-text=${msg("Separate URLs with a new line, space or comma.")}
+        rows="3"
+        required
+      ></sl-textarea>
+      <sl-select
+        name="scopeType"
+        label=${msg("Scope type")}
+        value=${initialValues.config.scopeType}
+      >
+        <sl-menu-item value="page">Page</sl-menu-item>
+        <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
+        <sl-menu-item value="prefix">Prefix</sl-menu-item>
+        <sl-menu-item value="host">Host</sl-menu-item>
+        <sl-menu-item value="any">Any</sl-menu-item>
+      </sl-select>
+      <sl-input
+        name="limit"
+        label=${msg("Page limit")}
+        type="number"
+        placeholder=${msg("unlimited")}
+      >
+        <span slot="suffix">${msg("pages")}</span>
+      </sl-input>
+    `;
+  }
+
+  private renderSeedsJson() {
+    return html`
+      <div class="grid gap-4">
+        <div>
+          <p class="mb-2">
+            ${msg(
+              html`See
+                <a
+                  href="https://github.com/webrecorder/browsertrix-crawler#crawling-configuration-options"
+                  class="text-primary hover:underline"
+                  target="_blank"
+                  >Browsertrix Crawler docs
+                  <sl-icon name="box-arrow-up-right"></sl-icon
+                ></a>
+                for all configuration options.`
+            )}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="relative col-span-2">
+            ${this.renderSeedsJsonInput()}
+
+            <div class="absolute top-2 right-2">
+              <btrix-copy-button .value=${this.seedsJson}></btrix-copy-button>
+            </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-4">
-            <div class="relative col-span-2">
-              ${this.renderJSON()}
-
-              <div class="absolute top-2 right-2">
-                <btrix-copy-button
-                  .value=${this.jsonTemplate}
-                ></btrix-copy-button>
-              </div>
-            </div>
-
-            <div class="col-span-1">
-              ${this.invalidJsonTemplateMessage
-                ? html`<btrix-alert type="danger">
-                    ${this.invalidJsonTemplateMessage}
-                  </btrix-alert> `
-                : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
-            </div>
+          <div class="col-span-1">
+            ${this.invalidSeedsJsonMessage
+              ? html`<btrix-alert type="danger">
+                  ${this.invalidSeedsJsonMessage}
+                </btrix-alert> `
+              : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
           </div>
         </div>
       </div>
     `;
   }
 
-  private renderJSON() {
+  private renderSeedsJsonInput() {
     return html`
       <textarea
         id="json-editor"
@@ -427,7 +418,7 @@ export class CrawlTemplates extends LiteElement {
         autocomplete="off"
         rows="10"
         spellcheck="false"
-        .value=${this.jsonTemplate}
+        .value=${this.seedsJson}
         @keydown=${(e: any) => {
           // Add indentation when pressing tab key instead of moving focus
           if (e.keyCode === /* tab: */ 9) {
@@ -443,26 +434,26 @@ export class CrawlTemplates extends LiteElement {
             );
           }
         }}
-        @change=${(e: any) => (this.jsonTemplate = e.target.value)}
-        @blur=${this.updateJsonTemplate}
+        @change=${(e: any) => (this.seedsJson = e.target.value)}
+        @blur=${this.updateSeedsJson}
       ></textarea>
     `;
   }
 
-  private updateJsonTemplate(e: any) {
+  private updateSeedsJson(e: any) {
     const textarea = e.target;
     const text = textarea.value;
 
     try {
       const json = JSON.parse(text);
 
-      this.jsonTemplate = JSON.stringify(json, null, 2);
-      this.invalidJsonTemplateMessage = "";
+      this.seedsJson = JSON.stringify(json, null, 2);
+      this.invalidSeedsJsonMessage = "";
 
       textarea.setCustomValidity("");
       textarea.reportValidity();
     } catch (e: any) {
-      this.invalidJsonTemplateMessage = e.message
+      this.invalidSeedsJsonMessage = e.message
         ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
         : msg("JSON is invalid.");
     }
@@ -472,17 +463,22 @@ export class CrawlTemplates extends LiteElement {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
-    const template = {
-      name: formData.get("name"),
+    const template: Partial<CrawlTemplate> = {
+      name: formData.get("name") as string,
       schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
-      config: {
-        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
-        scopeType: formData.get("scopeType"),
-        limit: pageLimit ? +pageLimit : 0,
-      },
     };
+
+    if (this.isSeedsJsonView) {
+      template.config = JSON.parse(this.seedsJson);
+    } else {
+      template.config = {
+        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
+        scopeType: formData.get("scopeType") as string,
+        limit: pageLimit ? +pageLimit : 0,
+      };
+    }
 
     return template;
   }
@@ -493,22 +489,17 @@ export class CrawlTemplates extends LiteElement {
   }) {
     if (!this.authState) return;
 
-    let params;
-
-    if (this.isAdvancedSettingsView) {
+    if (this.isSeedsJsonView && this.invalidSeedsJsonMessage) {
       // Check JSON validity
       const jsonEditor = event.target.querySelector("#json-editor");
 
-      if (this.invalidJsonTemplateMessage) {
-        jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
-        jsonEditor.reportValidity();
-        return;
-      }
+      jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
+      jsonEditor.reportValidity();
 
-      params = JSON.parse(this.jsonTemplate);
-    } else {
-      params = this.parseTemplate(event.detail.formData);
+      return;
     }
+
+    const params = this.parseTemplate(event.detail.formData);
 
     console.log(params);
 
