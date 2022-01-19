@@ -91,27 +91,26 @@ export class CrawlTemplates extends LiteElement {
     return getLocaleTimeZone();
   }
 
-  private get nextScheduledCrawlMessage() {
+  private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
 
     return this.scheduleInterval
-      ? msg(html`Next scheduled crawl:
-          <sl-format-date
-            date="${cronParser
-              .parseExpression(utcSchedule, {
-                utc: true,
-              })
-              .next()
-              .toString()}"
-            weekday="long"
-            month="long"
-            day="numeric"
-            year="numeric"
-            hour="numeric"
-            minute="numeric"
-            time-zone-name="short"
-            time-zone=${this.timeZone}
-          ></sl-format-date>`)
+      ? html`<sl-format-date
+          date="${cronParser
+            .parseExpression(utcSchedule, {
+              utc: true,
+            })
+            .next()
+            .toString()}"
+          weekday="long"
+          month="long"
+          day="numeric"
+          year="numeric"
+          hour="numeric"
+          minute="numeric"
+          time-zone-name="short"
+          time-zone=${this.timeZone}
+        ></sl-format-date>`
       : undefined;
   }
 
@@ -166,7 +165,16 @@ export class CrawlTemplates extends LiteElement {
                           </p>
                         `
                       : ""}
-                    ${this.nextScheduledCrawlMessage}
+                    ${this.scheduleInterval
+                      ? html`
+                          <p class="mb-2">
+                            ${msg(
+                              html`Scheduled crawl will run
+                              ${this.formattededNextCrawlDate}.`
+                            )}
+                          </p>
+                        `
+                      : ""}
                   </div>`
                 : ""}
             </div>
@@ -222,80 +230,87 @@ export class CrawlTemplates extends LiteElement {
   private renderScheduleSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Schedule")}</h3>
+        <h3 class="font-medium">${msg("Crawl schedule")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-        <div class="flex items-end">
-          <div class="pr-2 flex-1">
-            <sl-select
-              name="schedule"
-              label=${msg("Schedule")}
-              value=${this.scheduleInterval}
-              @sl-select=${(e: any) => (this.scheduleInterval = e.target.value)}
-            >
-              <sl-menu-item value="">${msg("None")}</sl-menu-item>
-              <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
-              <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
-              <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
-            </sl-select>
-          </div>
-          <div class="grid grid-flow-col gap-2 items-center">
-            <span class="px-1">${msg("at")}</span>
-            <sl-select
-              name="scheduleHour"
-              value=${this.scheduleTime.hour}
-              class="w-24"
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  hour: +e.target.value,
-                })}
-            >
-              ${hours.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <span>:</span>
-            <sl-select
-              name="scheduleMinute"
-              value=${this.scheduleTime.minute}
-              class="w-24"
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  minute: +e.target.value,
-                })}
-            >
-              ${minutes.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <sl-select
-              value="AM"
-              class="w-24"
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  period: e.target.value,
-                })}
-            >
-              <sl-menu-item value="AM"
-                >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+        <div>
+          <div class="flex items-end">
+            <div class="pr-2 flex-1">
+              <sl-select
+                name="schedule"
+                label=${msg("Recurring crawls")}
+                value=${this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleInterval = e.target.value)}
               >
-              <sl-menu-item value="PM"
-                >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                <sl-menu-item value="">${msg("None")}</sl-menu-item>
+                <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+                <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
+                <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
+              </sl-select>
+            </div>
+            <div class="grid grid-flow-col gap-2 items-center">
+              <span class="px-1">${msg("at")}</span>
+              <sl-select
+                name="scheduleHour"
+                value=${this.scheduleTime.hour}
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    hour: +e.target.value,
+                  })}
               >
-            </sl-select>
-            <span class="px-1">${this.timeZoneShortName}</span>
+                ${hours.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <span>:</span>
+              <sl-select
+                name="scheduleMinute"
+                value=${this.scheduleTime.minute}
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    minute: +e.target.value,
+                  })}
+              >
+                ${minutes.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <sl-select
+                value="AM"
+                class="w-24"
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    period: e.target.value,
+                  })}
+              >
+                <sl-menu-item value="AM"
+                  >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+                >
+                <sl-menu-item value="PM"
+                  >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                >
+              </sl-select>
+              <span class="px-1">${this.timeZoneShortName}</span>
+            </div>
           </div>
-        </div>
-        <div class="text-sm text-gray-500 mt-1">
-          ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
+          <div class="text-sm text-gray-500 mt-1">
+            ${this.formattededNextCrawlDate
+              ? msg(
+                  html`Next scheduled crawl: ${this.formattededNextCrawlDate}`
+                )
+              : msg("No crawls scheduled")}
+          </div>
         </div>
 
         <sl-switch
