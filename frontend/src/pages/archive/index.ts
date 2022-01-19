@@ -7,12 +7,11 @@ import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner } from "../../utils/archives";
-import { CrawlTemplates } from "./crawl-templates";
-
-customElements.define("btrix-crawl-templates", CrawlTemplates);
+import type { CrawlTemplate } from "./types";
+import "./crawl-templates-list";
+import "./crawl-templates-new";
 
 export type ArchiveTab = "crawl-templates" | "settings" | "members";
-type CrawlTemplate = any; // TODO
 
 const defaultTab = "settings";
 
@@ -153,16 +152,18 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    if (!this.isNewResourceTab && !this.crawlTemplates) {
-      return html` TODO `;
+    if (this.isNewResourceTab) {
+      return html`<btrix-crawl-templates-new
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+      ></btrix-crawl-templates-new>`;
     }
 
-    return html`<btrix-crawl-templates
+    return html`<btrix-crawl-templates-list
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
       .crawlTemplates=${this.crawlTemplates}
-      .isNew=${this.isNewResourceTab}
-    ></btrix-crawl-templates>`;
+    ></btrix-crawl-templates-list>`;
   }
 
   private renderMembers() {
