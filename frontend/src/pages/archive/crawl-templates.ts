@@ -136,7 +136,8 @@ export class CrawlTemplates extends LiteElement {
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-4">
-              ${this.renderBasicSettings()} ${this.renderPagesSettings()}
+              ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
+              ${this.renderScheduleSettings()}
             </div>
 
             <div class="p-4 md:p-8 text-center grid gap-5">
@@ -198,124 +199,128 @@ export class CrawlTemplates extends LiteElement {
   private renderBasicSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="text-lg font-medium">${msg("Basic settings")}</h3>
+        <h3 class="font-medium">${msg("Basic settings")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-        <div>
-          <sl-input
-            name="name"
-            label=${msg("Name")}
-            placeholder=${msg("Example (example.com) Weekly Crawl", {
-              desc: "Example crawl template name",
-            })}
-            autocomplete="off"
-            value=${initialValues.name}
-            required
-          ></sl-input>
-        </div>
-        <div>
-          <div class="flex items-end">
-            <div class="pr-2 flex-1">
-              <sl-select
-                name="schedule"
-                label=${msg("Schedule")}
-                value=${this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleInterval = e.target.value)}
-              >
-                <sl-menu-item value="">${msg("None")}</sl-menu-item>
-                <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
-                <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
-                <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
-              </sl-select>
-            </div>
-            <div class="grid grid-flow-col gap-2 items-center">
-              <span class="px-1">${msg("at")}</span>
-              <sl-select
-                name="scheduleHour"
-                value=${this.scheduleTime.hour}
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    hour: +e.target.value,
-                  })}
-              >
-                ${hours.map(
-                  ({ value, label }) =>
-                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                )}
-              </sl-select>
-              <span>:</span>
-              <sl-select
-                name="scheduleMinute"
-                value=${this.scheduleTime.minute}
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    minute: +e.target.value,
-                  })}
-              >
-                ${minutes.map(
-                  ({ value, label }) =>
-                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                )}
-              </sl-select>
-              <sl-select
-                value="AM"
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    period: e.target.value,
-                  })}
-              >
-                <sl-menu-item value="AM"
-                  >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
-                >
-                <sl-menu-item value="PM"
-                  >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
-                >
-              </sl-select>
-              <span class="px-1">${this.timeZoneShortName}</span>
-            </div>
-          </div>
-          <div class="text-sm text-gray-500 mt-1">
-            ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
-          </div>
-        </div>
-
-        <div>
-          <sl-switch
-            name="runNow"
-            ?checked=${initialValues.runNow}
-            @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-            >${msg("Run immediately on save")}</sl-switch
-          >
-        </div>
-
-        <div>
-          <sl-input
-            name="crawlTimeoutMinutes"
-            label=${msg("Time limit")}
-            placeholder=${msg("unlimited")}
-            type="number"
-          >
-            <span slot="suffix">${msg("minutes")}</span>
-          </sl-input>
-        </div>
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          help-text=${msg(
+            "Required. Name your template to easily identify it later."
+          )}
+          placeholder=${msg("Example (example.com) Weekly Crawl", {
+            desc: "Example crawl template name",
+          })}
+          autocomplete="off"
+          value=${initialValues.name}
+          required
+        ></sl-input>
       </section>
     `;
   }
 
-  private renderPagesSettings() {
+  private renderScheduleSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="text-lg font-medium">${msg("Crawl configuration")}</h3>
+        <h3 class="font-medium">${msg("Schedule")}</h3>
+      </div>
+      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+        <div class="flex items-end">
+          <div class="pr-2 flex-1">
+            <sl-select
+              name="schedule"
+              label=${msg("Schedule")}
+              value=${this.scheduleInterval}
+              @sl-select=${(e: any) => (this.scheduleInterval = e.target.value)}
+            >
+              <sl-menu-item value="">${msg("None")}</sl-menu-item>
+              <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+              <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
+              <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
+            </sl-select>
+          </div>
+          <div class="grid grid-flow-col gap-2 items-center">
+            <span class="px-1">${msg("at")}</span>
+            <sl-select
+              name="scheduleHour"
+              value=${this.scheduleTime.hour}
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  hour: +e.target.value,
+                })}
+            >
+              ${hours.map(
+                ({ value, label }) =>
+                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+              )}
+            </sl-select>
+            <span>:</span>
+            <sl-select
+              name="scheduleMinute"
+              value=${this.scheduleTime.minute}
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  minute: +e.target.value,
+                })}
+            >
+              ${minutes.map(
+                ({ value, label }) =>
+                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+              )}
+            </sl-select>
+            <sl-select
+              value="AM"
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  period: e.target.value,
+                })}
+            >
+              <sl-menu-item value="AM"
+                >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+              >
+              <sl-menu-item value="PM"
+                >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+              >
+            </sl-select>
+            <span class="px-1">${this.timeZoneShortName}</span>
+          </div>
+        </div>
+        <div class="text-sm text-gray-500 mt-1">
+          ${this.nextScheduledCrawlMessage || msg("No crawls scheduled")}
+        </div>
+
+        <sl-switch
+          name="runNow"
+          ?checked=${initialValues.runNow}
+          @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+          >${msg("Run immediately on save")}</sl-switch
+        >
+
+        <sl-input
+          name="crawlTimeoutMinutes"
+          label=${msg("Time limit")}
+          placeholder=${msg("unlimited")}
+          type="number"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      </section>
+    `;
+  }
+
+  private renderCrawlConfigSettings() {
+    return html`
+      <div class="col-span-1 p-4 md:p-8 md:border-b">
+        <h3 class="font-medium">${msg("Crawl configuration")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
         <div class="flex justify-between">
@@ -344,11 +349,12 @@ export class CrawlTemplates extends LiteElement {
       <sl-textarea
         name="seedUrls"
         label=${msg("Seed URLs")}
-        helpText=${msg("Separated by a new line, space or comma")}
         placeholder=${msg(`https://webrecorder.net\nhttps://example.com`, {
           desc: "Example seed URLs",
         })}
-        help-text=${msg("Separate URLs with a new line, space or comma.")}
+        help-text=${msg(
+          "Required. Separate URLs with a new line, space or comma."
+        )}
         rows="3"
         required
       ></sl-textarea>
