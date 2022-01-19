@@ -55,8 +55,11 @@ export default class LiteElement extends LitElement {
         if (typeof detail === "string") {
           errorMessage = detail;
         } else {
-          // TODO client error details
-          errorMessage = "Unknown API error";
+          // TODO return client error details
+          const fieldDetail = detail[0];
+          const { loc, msg } = fieldDetail;
+
+          errorMessage = `${loc[loc.length - 1]} ${msg}`;
         }
       } catch {
         errorMessage = "Unknown API error";
