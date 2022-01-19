@@ -315,11 +315,15 @@ export class CrawlTemplates extends LiteElement {
   private renderPagesSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="text-lg font-medium">${msg("Pages")}</h3>
+        <h3 class="text-lg font-medium">${msg("Crawl configuration")}</h3>
       </div>
       <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
         <div class="flex justify-between">
-          <h4 class="font-medium">${msg("Configure Seeds")}</h4>
+          <h4 class="font-medium">
+            ${this.isSeedsJsonView
+              ? msg("Custom Config")
+              : msg("Configure Seeds")}
+          </h4>
           <sl-switch
             ?checked=${this.isSeedsJsonView}
             @sl-change=${(e: any) => (this.isSeedsJsonView = e.target.checked)}
