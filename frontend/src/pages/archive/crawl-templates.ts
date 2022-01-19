@@ -63,9 +63,9 @@ export class CrawlTemplates extends LiteElement {
   @state()
   private scheduleTime: { hour: number; minute: number; period: "AM" | "PM" } =
     {
-      hour: 12,
+      hour: new Date().getHours() % 12 || 12,
       minute: 0,
-      period: "AM",
+      period: new Date().getHours() > 11 ? "PM" : "AM",
     };
 
   @state()
@@ -285,7 +285,7 @@ export class CrawlTemplates extends LiteElement {
                 )}
               </sl-select>
               <sl-select
-                value="AM"
+                value=${this.scheduleTime.period}
                 class="w-24"
                 ?disabled=${!this.scheduleInterval}
                 @sl-select=${(e: any) =>
@@ -572,10 +572,8 @@ export class CrawlTemplates extends LiteElement {
       if (period === "AM") {
         periodOffset = -12;
       }
-    } else if (hour === 1) {
-      if (period === "PM") {
-        periodOffset = 12;
-      }
+    } else if (period === "PM") {
+      periodOffset = 12;
     }
 
     localDate.setHours(+hour + periodOffset);
