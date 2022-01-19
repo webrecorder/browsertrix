@@ -104,14 +104,14 @@ export class CrawlTemplatesNew extends LiteElement {
 
   render() {
     return html`
-      <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
+      <h2 class="text-xl font-bold mb-3">${msg("New Crawl Template")}</h2>
       <p>
         ${msg(
           "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
         )}
       </p>
 
-      <main class="mt-4">
+      <main class="mt-6">
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-4">

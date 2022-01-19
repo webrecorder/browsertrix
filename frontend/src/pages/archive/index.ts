@@ -153,10 +153,26 @@ export class Archive extends LiteElement {
 
   private renderCrawlTemplates() {
     if (this.isNewResourceTab) {
-      return html`<btrix-crawl-templates-new
-        .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
-      ></btrix-crawl-templates-new>`;
+      return html`
+        <div class="md:grid grid-cols-6 gap-5">
+          <nav class="col-span-1 mb-6">
+            <a
+              class="font-medium text-sm text-primary hover:opacity-80 flex items-center"
+              href=${`/archives/${this.archiveId}/crawl-templates`}
+              @click=${this.navLink}
+              ><sl-icon class="mr-1" name="arrow-left"></sl-icon> ${msg(
+                "Back to list"
+              )}</a
+            >
+          </nav>
+
+          <btrix-crawl-templates-new
+            class="col-span-5 mt-6"
+            .authState=${this.authState!}
+            .archiveId=${this.archiveId!}
+          ></btrix-crawl-templates-new>
+        </div>
+      `;
     }
 
     return html`<btrix-crawl-templates-list
