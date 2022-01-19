@@ -532,13 +532,29 @@ export class CrawlTemplates extends LiteElement {
     this.isSubmitting = true;
 
     try {
-      await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/`,
         this.authState,
         {
           method: "POST",
           body: JSON.stringify(params),
         }
+      );
+
+      this.dispatchEvent(
+        new CustomEvent("notify", {
+          bubbles: true,
+          detail: {
+            message: data.run_now_job
+              ? msg(
+                  str`Crawl running with new template. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/${data.run_now_job}">View crawl</a>`
+                )
+              : msg("Crawl template created."),
+            type: "success",
+            icon: "check2-circle",
+            duration: 10000,
+          },
+        })
       );
 
       this.navTo(`/archives/${this.archiveId}/crawl-templates`);
