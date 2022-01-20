@@ -19,11 +19,28 @@ export class CrawlTemplatesList extends LiteElement {
   @property({ type: String })
   archiveId!: string;
 
-  @property({ type: Array })
+  @state()
   crawlTemplates?: CrawlTemplate[];
 
   @state()
   private serverError?: string;
+
+  async firstUpdated() {
+    try {
+      this.crawlTemplates = await this.getCrawlTemplates();
+
+      if (!this.crawlTemplates.length) {
+        this.navTo(`/archives/${this.archiveId}/crawl-templates/new`);
+      }
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve crawl templates at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+        duration: 10000,
+      });
+    }
+  }
 
   render() {
     return html`
@@ -43,6 +60,15 @@ export class CrawlTemplatesList extends LiteElement {
         )}
       </div>
     `;
+  }
+
+  private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawlconfigs`,
+      this.authState!
+    );
+
+    return data.crawl_configs;
   }
 }
 
