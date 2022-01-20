@@ -6,13 +6,16 @@ import { APIError } from "./api";
 export interface NotifyEvent extends CustomEvent {
   detail: {
     /**
-     * Can contain HTML
+     * Notification message body.
+     * Can contain HTML.
      * HTML is rendered as-is without sanitation
-     * */
+     **/
     message: string;
+    /** Notification title */
     title?: string;
-    type?: "success" | "warning" | "danger" | "primary" | "info";
+    /** Shoelace icon name */
     icon?: string;
+    type?: "success" | "warning" | "danger" | "primary" | "info";
     duration?: number;
   };
 }
