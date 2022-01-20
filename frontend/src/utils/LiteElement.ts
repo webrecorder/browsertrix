@@ -3,6 +3,23 @@ import { LitElement, html } from "lit";
 import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
 
+export interface NotifyEvent extends CustomEvent {
+  detail: {
+    /**
+     * Notification message body.
+     * Can contain HTML.
+     * HTML is rendered as-is without sanitation
+     **/
+    message: string;
+    /** Notification title */
+    title?: string;
+    /** Shoelace icon name */
+    icon?: string;
+    type?: "success" | "warning" | "danger" | "primary" | "info";
+    duration?: number;
+  };
+}
+
 export { html };
 
 export default class LiteElement extends LitElement {
@@ -23,6 +40,18 @@ export default class LiteElement extends LitElement {
         detail: (event.currentTarget as HTMLAnchorElement).href,
         bubbles: true,
         composed: true,
+      })
+    );
+  }
+
+  /**
+   * Emit global notification
+   */
+  notify(detail: NotifyEvent["detail"]) {
+    this.dispatchEvent(
+      new CustomEvent("notify", {
+        bubbles: true,
+        detail,
       })
     );
   }

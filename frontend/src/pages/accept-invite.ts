@@ -48,16 +48,12 @@ export class AcceptInvite extends LiteElement {
     if (this.isLoggedIn) {
       this.getInviteInfo();
     } else {
-      this.dispatchEvent(
-        new CustomEvent("notify", {
-          detail: {
-            message: msg("Log in to continue."),
-            type: "success",
-            icon: "check2-circle",
-            duration: 10000,
-          },
-        })
-      );
+      this.notify({
+        message: msg("Log in to continue."),
+        type: "success",
+        icon: "check2-circle",
+        duration: 10000,
+      });
 
       this.navTo(
         `/log-in?redirectUrl=${encodeURIComponent(
@@ -160,15 +156,11 @@ export class AcceptInvite extends LiteElement {
         }
       );
 
-      this.dispatchEvent(
-        new CustomEvent("notify", {
-          detail: {
-            message: msg(str`You've joined ${this.inviteInfo.archiveName}.`),
-            type: "success",
-            icon: "check2-circle",
-          },
-        })
-      );
+      this.notify({
+        message: msg(str`You've joined ${this.inviteInfo.archiveName}.`),
+        type: "success",
+        icon: "check2-circle",
+      });
 
       this.navTo(DASHBOARD_ROUTE);
     } catch (err: any) {
@@ -181,17 +173,13 @@ export class AcceptInvite extends LiteElement {
   }
 
   private onDecline() {
-    this.dispatchEvent(
-      new CustomEvent("notify", {
-        detail: {
-          message: msg(
-            str`You've declined to join ${this.inviteInfo.archiveName}.`
-          ),
-          type: "info",
-          icon: "info-circle",
-        },
-      })
-    );
+    this.notify({
+      message: msg(
+        str`You've declined to join ${this.inviteInfo.archiveName}.`
+      ),
+      type: "info",
+      icon: "info-circle",
+    });
 
     this.navTo(DASHBOARD_ROUTE);
   }
