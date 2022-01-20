@@ -3,6 +3,15 @@ import { LitElement, html } from "lit";
 import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
 
+export interface NotifyEvent extends CustomEvent {
+  detail: {
+    message: string;
+    type: string;
+    icon: string;
+    duration: number;
+  };
+}
+
 export { html };
 
 export default class LiteElement extends LitElement {
@@ -23,6 +32,18 @@ export default class LiteElement extends LitElement {
         detail: (event.currentTarget as HTMLAnchorElement).href,
         bubbles: true,
         composed: true,
+      })
+    );
+  }
+
+  /**
+   * Emit global notification
+   */
+  notify(detail: NotifyEvent["detail"]) {
+    this.dispatchEvent(
+      new CustomEvent("notify", {
+        bubbles: true,
+        detail,
       })
     );
   }
