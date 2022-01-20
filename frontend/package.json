@@ -15,7 +15,7 @@
     "cron-parser": "^4.2.1",
     "lit": "^2.0.0",
     "path-parser": "^6.1.0",
-    "tailwindcss": "^2.2.16"
+    "tailwindcss": "^3.0.15"
   },
   "scripts": {
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
@@ -40,7 +40,7 @@
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/test-runner": "^0.13.22",
     "@web/test-runner-playwright": "^0.8.8",
-    "autoprefixer": "^10.3.6",
+    "autoprefixer": "^10.4.2",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",
     "del-cli": "^4.0.1",
@@ -54,7 +54,7 @@
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.5.0",
     "node-fetch": "^3.1.0",
-    "postcss": "^8.3.8",
+    "postcss": "^8.4.5",
     "postcss-loader": "^6.1.1",
     "prettier": "^2.4.1",
     "sinon": "^12.0.1",
