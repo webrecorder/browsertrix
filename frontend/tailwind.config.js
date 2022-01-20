@@ -22,6 +22,7 @@ function makeTheme() {
 
   return {
     colors: {
+      current: "currentColor",
       ...colors.map(makeColorPalette),
       primary: `var(--primary)`,
       success: `var(--success)`,
@@ -54,14 +55,7 @@ module.exports = {
     extend: makeTheme(),
   },
 
-  mode: "jit",
-
-  purge: {
-    content: ["./**/*.html", "./src/**/*.{ts,js}"],
-    options: {
-      safelist: [/data-theme$/],
-    },
-  },
+  content: ["./**/*.html", "./src/**/*.{ts,js}"],
 
   extract: {
     include: ["./src/**/*.{ts,js}"],
