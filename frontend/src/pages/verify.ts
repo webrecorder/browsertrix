@@ -65,18 +65,13 @@ export class Verify extends LiteElement {
     const isLoggedIn = Boolean(this.authState);
     const shouldLogOut = isLoggedIn && this.authState?.username !== data.email;
 
-    this.dispatchEvent(
-      new CustomEvent("notify", {
-        detail: {
-          title: msg("Email address verified"),
-          message:
-            isLoggedIn && !shouldLogOut ? "" : msg("Log in to continue."),
-          type: "success",
-          icon: "check2-circle",
-          duration: 10000,
-        },
-      })
-    );
+    this.notify({
+      title: msg("Email address verified"),
+      message: isLoggedIn && !shouldLogOut ? "" : msg("Log in to continue."),
+      type: "success",
+      icon: "check2-circle",
+      duration: 10000,
+    });
 
     if (shouldLogOut) {
       this.dispatchEvent(new CustomEvent("log-out"));

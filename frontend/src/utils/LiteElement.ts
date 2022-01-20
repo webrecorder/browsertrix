@@ -5,10 +5,15 @@ import { APIError } from "./api";
 
 export interface NotifyEvent extends CustomEvent {
   detail: {
+    /**
+     * Can contain HTML
+     * HTML is rendered as-is without sanitation
+     * */
     message: string;
-    type: string;
-    icon: string;
-    duration: number;
+    title?: string;
+    type?: "success" | "warning" | "danger" | "primary" | "info";
+    icon?: string;
+    duration?: number;
   };
 }
 

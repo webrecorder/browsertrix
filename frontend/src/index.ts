@@ -6,6 +6,7 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
+import type { NotifyEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
@@ -478,16 +479,7 @@ export class App extends LiteElement {
     };
   }
 
-  onNotify(
-    event: CustomEvent<{
-      title?: string;
-      /** Can contain HTML */
-      message?: string;
-      type?: "success" | "warning" | "danger" | "primary";
-      icon?: string;
-      duration?: number;
-    }>
-  ) {
+  onNotify(event: NotifyEvent) {
     event.stopPropagation();
 
     const {
