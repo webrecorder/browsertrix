@@ -5,19 +5,7 @@ import cronParser from "cron-parser";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
-
-type CrawlTemplate = {
-  id?: string;
-  name: string;
-  schedule: string;
-  runNow: boolean;
-  crawlTimeout?: number;
-  config: {
-    seeds: string[];
-    scopeType?: string;
-    limit?: number;
-  };
-};
+import type { CrawlTemplate } from "./types";
 
 const initialValues = {
   name: "",
@@ -39,19 +27,19 @@ const minutes = Array.from({ length: 60 }).map((x, i) => ({
   label: `${i}`.padStart(2, "0"),
 }));
 
+/**
+ * Usage:
+ * ```ts
+ * <btrix-crawl-templates-new></btrix-crawl-templates-new>
+ * ```
+ */
 @localized()
-export class CrawlTemplates extends LiteElement {
+export class CrawlTemplatesNew extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
   @property({ type: String })
   archiveId!: string;
-
-  @property({ type: Boolean })
-  isNew!: boolean;
-
-  @property({ type: Array })
-  crawlTemplates?: CrawlTemplate[];
 
   @state()
   private isRunNow: boolean = initialValues.runNow;
@@ -115,23 +103,15 @@ export class CrawlTemplates extends LiteElement {
   }
 
   render() {
-    if (this.isNew) {
-      return this.renderNew();
-    }
-
-    return this.renderList();
-  }
-
-  private renderNew() {
     return html`
-      <h2 class="text-xl font-bold">${msg("New Crawl Template")}</h2>
+      <h2 class="text-xl font-bold mb-3">${msg("New Crawl Template")}</h2>
       <p>
         ${msg(
           "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
         )}
       </p>
 
-      <main class="mt-4">
+      <main class="mt-6">
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-4">
@@ -181,26 +161,6 @@ export class CrawlTemplates extends LiteElement {
           </sl-form>
         </div>
       </main>
-    `;
-  }
-
-  private renderList() {
-    return html`
-      <div class="text-center">
-        <sl-button
-          @click=${() =>
-            this.navTo(`/archives/${this.archiveId}/crawl-templates/new`)}
-        >
-          <sl-icon slot="prefix" name="plus-square-dotted"></sl-icon>
-          ${msg("Create new crawl template")}
-        </sl-button>
-      </div>
-
-      <div>
-        ${this.crawlTemplates?.map(
-          (template) => html`<div>${template.id}</div>`
-        )}
-      </div>
     `;
   }
 
@@ -605,3 +565,5 @@ export class CrawlTemplates extends LiteElement {
     return schedule;
   }
 }
+
+customElements.define("btrix-crawl-templates-new", CrawlTemplatesNew);

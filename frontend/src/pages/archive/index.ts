@@ -7,12 +7,11 @@ import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner } from "../../utils/archives";
-import { CrawlTemplates } from "./crawl-templates";
-
-customElements.define("btrix-crawl-templates", CrawlTemplates);
+import type { CrawlTemplate } from "./types";
+import "./crawl-templates-list";
+import "./crawl-templates-new";
 
 export type ArchiveTab = "crawl-templates" | "settings" | "members";
-type CrawlTemplate = any; // TODO
 
 const defaultTab = "settings";
 
@@ -153,16 +152,34 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    if (!this.isNewResourceTab && !this.crawlTemplates) {
-      return html` TODO `;
+    if (this.isNewResourceTab) {
+      return html`
+        <div class="md:grid grid-cols-6 gap-5">
+          <nav class="col-span-1 mb-6">
+            <a
+              class="font-medium text-sm text-primary hover:opacity-80 flex items-center"
+              href=${`/archives/${this.archiveId}/crawl-templates`}
+              @click=${this.navLink}
+              ><sl-icon class="mr-1" name="arrow-left"></sl-icon> ${msg(
+                "Back to list"
+              )}</a
+            >
+          </nav>
+
+          <btrix-crawl-templates-new
+            class="col-span-5 mt-6"
+            .authState=${this.authState!}
+            .archiveId=${this.archiveId!}
+          ></btrix-crawl-templates-new>
+        </div>
+      `;
     }
 
-    return html`<btrix-crawl-templates
+    return html`<btrix-crawl-templates-list
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
       .crawlTemplates=${this.crawlTemplates}
-      .isNew=${this.isNewResourceTab}
-    ></btrix-crawl-templates>`;
+    ></btrix-crawl-templates-list>`;
   }
 
   private renderMembers() {
