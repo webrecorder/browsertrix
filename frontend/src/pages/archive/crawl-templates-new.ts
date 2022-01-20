@@ -5,7 +5,16 @@ import cronParser from "cron-parser";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
-import type { CrawlTemplate } from "./types";
+import type { CrawlConfig } from "./types";
+
+export type NewCrawlTemplate = {
+  id?: string;
+  name: string;
+  schedule: string;
+  runNow: boolean;
+  crawlTimeout?: number;
+  config: CrawlConfig;
+};
 
 const initialValues = {
   name: "",
@@ -448,7 +457,7 @@ export class CrawlTemplatesNew extends LiteElement {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
-    const template: Partial<CrawlTemplate> = {
+    const template: Partial<NewCrawlTemplate> = {
       name: formData.get("name") as string,
       schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,

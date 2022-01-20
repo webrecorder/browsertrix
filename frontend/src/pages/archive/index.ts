@@ -7,7 +7,6 @@ import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner } from "../../utils/archives";
-import type { CrawlTemplate } from "./types";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
 
