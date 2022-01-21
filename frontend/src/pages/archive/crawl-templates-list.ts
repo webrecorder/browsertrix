@@ -38,16 +38,8 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   runningCrawlsMap: { [configId: string]: string } = {};
 
-  private runCrawlButtonTimerIds: number[] = [];
-
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
-  disconnectedCallback() {
-    this.runCrawlButtonTimerIds.forEach((id) => {
-      window.clearTimeout(id);
-    });
   }
 
   async firstUpdated() {
@@ -103,9 +95,7 @@ export class CrawlTemplatesList extends LiteElement {
         ${this.crawlTemplates.map(
           (t) =>
             html`<div
-              class="${this.runningCrawlsMap[t.id]
-                ? "motion-safe:animate-pulse "
-                : ""}col-span-1 p-1 border hover:border-indigo-200 rounded text-sm transition-colors"
+              class="col-span-1 p-1 border hover:border-indigo-200 rounded text-sm transition-colors"
               aria-label=${t.name}
             >
               <header class="flex">
@@ -196,16 +186,19 @@ export class CrawlTemplatesList extends LiteElement {
                 </div>
                 <div>
                   <button
-                    class="text-xs border rounded-sm px-2 h-7 ${this
-                      .runningCrawlsMap[t.id]
-                      ? "border-purple-50"
-                      : "border-purple-200 hover:border-purple-500"} text-purple-600 transition-colors"
-                    @click=${() => this.runNow(t)}
-                    ?disabled=${Boolean(this.runningCrawlsMap[t.id])}
+                    class="text-xs border rounded-sm px-2 h-7 border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+                    @click=${() =>
+                      this.runningCrawlsMap[t.id]
+                        ? this.navTo(
+                            `/archives/${this.archiveId}/crawls/${
+                              this.runningCrawlsMap[t.id]
+                            }`
+                          )
+                        : this.runNow(t)}
                   >
                     <span>
                       ${this.runningCrawlsMap[t.id]
-                        ? msg("Running...")
+                        ? msg("View crawl")
                         : msg("Run now")}
                     </span>
                   </button>
@@ -279,16 +272,6 @@ export class CrawlTemplatesList extends LiteElement {
         icon: "check2-circle",
         duration: 10000,
       });
-
-      // TODO handle crawl done instead of on timeout
-      this.runCrawlButtonTimerIds.push(
-        window.setTimeout(() => {
-          const { [template.id]: _discard, ...runningCrawlsMap } =
-            this.runningCrawlsMap;
-
-          this.runningCrawlsMap = runningCrawlsMap;
-        }, 8000)
-      );
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
