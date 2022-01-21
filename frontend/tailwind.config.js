@@ -40,13 +40,14 @@ function makeTheme() {
       lg: `var(--sl-border-radius-large)`,
       xl: `var(--sl-border-radius-x-large)`,
     },
-    boxShadow: {
-      sm: `var(--sl-shadow-small)`,
-      DEFAULT: `var(--sl-shadow-medium)`,
-      md: `var(--sl-shadow-medium)`,
-      lg: `var(--sl-shadow-large)`,
-      xl: `var(--sl-shadow-x-large)`,
-    },
+    // FIXME enabling this custom theme disabled colorful box shadows
+    // boxShadow: {
+    //   sm: `var(--sl-shadow-small)`,
+    //   DEFAULT: `var(--sl-shadow-medium)`,
+    //   md: `var(--sl-shadow-medium)`,
+    //   lg: `var(--sl-shadow-large)`,
+    //   xl: `var(--sl-shadow-x-large)`,
+    // },
   };
 }
 
