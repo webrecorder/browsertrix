@@ -34,8 +34,20 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   crawlTemplates?: CrawlTemplate[];
 
+  /** Map of configId: crawlId */
+  @state()
+  runningCrawlsMap: { [configId: string]: string } = {};
+
+  private runCrawlButtonTimerIds: number[] = [];
+
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  disconnectedCallback() {
+    this.runCrawlButtonTimerIds.forEach((id) => {
+      window.clearTimeout(id);
+    });
   }
 
   async firstUpdated() {
@@ -91,7 +103,9 @@ export class CrawlTemplatesList extends LiteElement {
         ${this.crawlTemplates.map(
           (t) =>
             html`<div
-              class="col-span-1 border border-purple-100 hover:border-purple-300 rounded shadow hover:shadow-sm shadow-purple-200 transition-all p-4 text-sm"
+              class="${this.runningCrawlsMap[t.id]
+                ? "motion-safe:animate-pulse "
+                : ""}col-span-1 border border-purple-100 border-b-2 hover:border-purple-300 rounded shadow hover:shadow-sm shadow-purple-200 transition-all p-4 text-sm"
               role="button"
               aria-label=${t.name}
             >
@@ -117,23 +131,36 @@ export class CrawlTemplatesList extends LiteElement {
                         )}
                   </div>
                   <div class="text-gray-500">
+                    ${msg(html`Last run:
+                      <span
+                        ><sl-format-date
+                          date=${t.lastCrawlTime}
+                          month="2-digit"
+                          day="2-digit"
+                          year="2-digit"
+                          hour="numeric"
+                          minute="numeric"
+                          time-zone=${this.timeZone}
+                        ></sl-format-date
+                      ></span>`)}
+                  </div>
+                  <div class="text-gray-500">
                     ${t.schedule
                       ? msg(html`Next run:
-                          <span
-                            ><sl-format-date
-                              date="${cronParser
-                                .parseExpression(t.schedule, {
-                                  utc: true,
-                                })
-                                .next()
-                                .toString()}"
-                              month="2-digit"
-                              day="2-digit"
-                              year="2-digit"
-                              hour="numeric"
-                              time-zone=${this.timeZone}
-                            ></sl-format-date
-                          ></span>`)
+                          <sl-format-date
+                            date="${cronParser
+                              .parseExpression(t.schedule, {
+                                utc: true,
+                              })
+                              .next()
+                              .toString()}"
+                            month="2-digit"
+                            day="2-digit"
+                            year="2-digit"
+                            hour="numeric"
+                            minute="numeric"
+                            time-zone=${this.timeZone}
+                          ></sl-format-date>`)
                       : html`<span class="text-gray-400"
                           >${msg("No schedule")}</span
                         >`}
@@ -141,9 +168,18 @@ export class CrawlTemplatesList extends LiteElement {
                 </div>
                 <div>
                   <button
-                    class="text-xs border rounded-sm px-2 py-1 border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+                    class="text-xs border rounded-sm px-2 h-7 ${this
+                      .runningCrawlsMap[t.id]
+                      ? "border-purple-50"
+                      : "border-purple-200 hover:border-purple-500"} text-purple-600 transition-colors"
+                    @click=${() => this.runNow(t)}
+                    ?disabled=${Boolean(this.runningCrawlsMap[t.id])}
                   >
-                    ${msg("Run now")}
+                    <span>
+                      ${this.runningCrawlsMap[t.id]
+                        ? msg("Running...")
+                        : msg("Run now")}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -160,6 +196,50 @@ export class CrawlTemplatesList extends LiteElement {
     );
 
     return data.crawl_configs;
+  }
+
+  private async runNow(template: CrawlTemplate) {
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${template.id}/run`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      const crawlId = data.started;
+
+      this.runningCrawlsMap = {
+        ...this.runningCrawlsMap,
+        [template.id]: crawlId,
+      };
+
+      this.notify({
+        message: msg(
+          str`Started crawl from <strong>${template.name}</strong>. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/${data.run_now_job}">View crawl</a>`
+        ),
+        type: "success",
+        icon: "check2-circle",
+        duration: 10000,
+      });
+
+      // TODO handle crawl done instead of on timeout
+      this.runCrawlButtonTimerIds.push(
+        window.setTimeout(() => {
+          const { [template.id]: _discard, ...runningCrawlsMap } =
+            this.runningCrawlsMap;
+
+          this.runningCrawlsMap = runningCrawlsMap;
+        }, 8000)
+      );
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 
