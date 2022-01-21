@@ -105,17 +105,45 @@ export class CrawlTemplatesList extends LiteElement {
             html`<div
               class="${this.runningCrawlsMap[t.id]
                 ? "motion-safe:animate-pulse "
-                : ""}col-span-1 border border-purple-100 border-b-2 hover:border-purple-300 rounded shadow hover:shadow-sm shadow-purple-200 transition-all p-4 text-sm"
-              role="button"
+                : ""}col-span-1 p-1 border hover:border-indigo-200 rounded text-sm transition-colors"
               aria-label=${t.name}
             >
-              <div
-                class="font-medium whitespace-nowrap truncate mb-1"
-                title=${t.name}
-              >
-                ${t.name || "?"}
-              </div>
-              <div class="flex justify-between items-end">
+              <header class="flex">
+                <a
+                  href=${`/archives/${this.archiveId}/crawl-templates/${t.id}`}
+                  class="block flex-1 px-3 pt-3 font-medium hover:underline whitespace-nowrap truncate mb-1"
+                  title=${t.name}
+                  @click=${this.navLink}
+                >
+                  ${t.name || "?"}
+                </a>
+
+                <sl-dropdown>
+                  <sl-icon-button
+                    slot="trigger"
+                    name="three-dots-vertical"
+                    label="More"
+                    style="font-size: 1rem"
+                  ></sl-icon-button>
+
+                  <ul role="menu">
+                    <li
+                      class="px-4 py-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                      role="menuitem"
+                      @click=${(e: any) => {
+                        // Close dropdown before deleting template
+                        e.target.closest("sl-dropdown").hide();
+
+                        this.deleteTemplate(t);
+                      }}
+                    >
+                      ${msg("Delete")}
+                    </li>
+                  </ul>
+                </sl-dropdown>
+              </header>
+
+              <div class="px-3 pb-3 flex justify-between items-end">
                 <div class="grid gap-1 text-xs">
                   <div
                     class="font-mono whitespace-nowrap truncate text-gray-500"
@@ -131,7 +159,7 @@ export class CrawlTemplatesList extends LiteElement {
                         )}
                   </div>
                   <div class="text-gray-500">
-                    ${msg(html`Last run:
+                    ${msg(html`Last:
                       <span
                         ><sl-format-date
                           date=${t.lastCrawlTime}
@@ -146,7 +174,7 @@ export class CrawlTemplatesList extends LiteElement {
                   </div>
                   <div class="text-gray-500">
                     ${t.schedule
-                      ? msg(html`Next run:
+                      ? msg(html`Next:
                           <sl-format-date
                             date="${cronParser
                               .parseExpression(t.schedule, {
@@ -198,7 +226,35 @@ export class CrawlTemplatesList extends LiteElement {
     return data.crawl_configs;
   }
 
-  private async runNow(template: CrawlTemplate) {
+  private async deleteTemplate(template: CrawlTemplate): Promise<void> {
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      this.notify({
+        message: msg(str`Deleted <strong>${template.name}</strong>.`),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.crawlTemplates = this.crawlTemplates!.filter(
+        (t) => t.id !== template.id
+      );
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't delete crawl template at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async runNow(template: CrawlTemplate): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${template.id}/run`,
