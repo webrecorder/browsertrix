@@ -211,12 +211,29 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
-    const data = await this.apiFetch(
+    type CrawlConfig = Omit<CrawlTemplate, "config"> & {
+      config: Omit<CrawlTemplate["config"], "seeds"> & {
+        seeds: (string | { url: string })[];
+      };
+    };
+
+    const data: { crawl_configs: CrawlConfig[] } = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs`,
       this.authState!
     );
 
-    return data.crawl_configs;
+    const crawlConfigs = data.crawl_configs.map((data) => ({
+      ...data,
+      config: {
+        ...data.config,
+        // Flatten seeds into array of URL strings
+        seeds: data.config.seeds.map((seed) =>
+          typeof seed === "string" ? seed : seed.url
+        ),
+      },
+    }));
+
+    return crawlConfigs;
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {
