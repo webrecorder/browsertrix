@@ -7,7 +7,6 @@ import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner } from "../../utils/archives";
-import type { CrawlTemplate } from "./types";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
 
@@ -41,9 +40,6 @@ export class Archive extends LiteElement {
   private archive?: ArchiveData;
 
   @state()
-  private crawlTemplates?: CrawlTemplate[];
-
-  @state()
   private successfullyInvitedEmail?: string;
 
   async firstUpdated() {
@@ -61,17 +57,7 @@ export class Archive extends LiteElement {
   }
 
   async updated(changedProperties: any) {
-    if (
-      changedProperties.has("archiveTab") &&
-      this.archiveTab === "crawl-templates" &&
-      !this.isNewResourceTab
-    ) {
-      this.crawlTemplates = await this.getCrawlTemplates();
-
-      if (!this.crawlTemplates.length) {
-        this.navTo(`/archives/${this.archiveId}/crawl-templates/new`);
-      }
-    } else if (changedProperties.has("isAddingMember") && this.isAddingMember) {
+    if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.successfullyInvitedEmail = undefined;
     }
   }
@@ -178,7 +164,6 @@ export class Archive extends LiteElement {
     return html`<btrix-crawl-templates-list
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
-      .crawlTemplates=${this.crawlTemplates}
     ></btrix-crawl-templates-list>`;
   }
 
@@ -265,15 +250,6 @@ export class Archive extends LiteElement {
     const data = await this.apiFetch(`/archives/${archiveId}`, this.authState!);
 
     return data;
-  }
-
-  async getCrawlTemplates(): Promise<CrawlTemplate[]> {
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawlconfigs`,
-      this.authState!
-    );
-
-    return data.crawl_configs;
   }
 
   onInviteSuccess(
