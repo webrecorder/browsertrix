@@ -228,7 +228,7 @@ export class CrawlTemplatesList extends LiteElement {
       };
     };
 
-    const data: { crawl_configs: CrawlConfig[] } = await this.apiFetch(
+    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs`,
       this.authState!
     );
@@ -236,7 +236,7 @@ export class CrawlTemplatesList extends LiteElement {
     const crawlConfigs: CrawlTemplate[] = [];
     const runningCrawlsMap: RunningCrawlsMap = {};
 
-    data.crawl_configs.forEach(({ config, ...configMeta }) => {
+    data.crawlConfigs.forEach(({ config, ...configMeta }) => {
       crawlConfigs.push({
         ...configMeta,
         config: {
