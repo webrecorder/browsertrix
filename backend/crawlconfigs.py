@@ -111,6 +111,19 @@ class CrawlConfig(BaseMongoModel):
 
 
 # ============================================================================
+class CrawlConfigOut(CrawlConfig):
+    """Crawl Config Output, includes currCrawlId of running crawl"""
+
+    currCrawlId: Optional[str]
+
+
+# ============================================================================
+class CrawlConfigsResponse(BaseModel):
+    """ model for crawl configs response """
+    crawl_configs: List[CrawlConfigOut]
+
+
+# ============================================================================
 class UpdateSchedule(BaseModel):
     """ Update the crawl schedule """
 
@@ -187,7 +200,21 @@ class CrawlOps:
         """Get all crawl configs for an archive is a member of"""
         cursor = self.crawl_configs.find({"archive": archive.id})
         results = await cursor.to_list(length=1000)
-        return [CrawlConfig.from_dict(res) for res in results]
+
+        crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
+
+        running = {}
+        for crawl in crawls:
+            running[crawl.cid] = crawl.id
+
+        configs = []
+        for res in results:
+            config = CrawlConfigOut.from_dict(res)
+            # pylint: disable=invalid-name
+            config.currCrawlId = running.get(config.id)
+            configs.append(config)
+
+        return configs
 
     async def get_crawl_config(self, cid: str, archive: Archive):
         """Get an archive for user by unique id"""
@@ -226,12 +253,13 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
         return archive
 
-    @router.get("")
+    @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         results = await ops.get_crawl_configs(archive)
-        return {
-            "crawl_configs": [res.serialize(exclude={"archive"}) for res in results]
-        }
+        return CrawlConfigsResponse(crawl_configs=results)
+        # return {
+        #    "crawl_configs": [res.serialize(exclude={"archive"}) for res in results]
+        # }
 
     @router.get("/{cid}")
     async def get_crawl_config(crawl_config: CrawlConfig = Depends(crawls_dep)):
