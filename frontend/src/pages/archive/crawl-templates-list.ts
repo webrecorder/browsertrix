@@ -14,7 +14,12 @@ type CrawlTemplate = {
   crawlCount: number;
   lastCrawlId: string;
   lastCrawlTime: string;
+  currCrawlId: string;
   config: CrawlConfig;
+};
+type RunningCrawlsMap = {
+  /** Map of configId: crawlId */
+  [configId: string]: string;
 };
 
 /**
@@ -34,9 +39,8 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   crawlTemplates?: CrawlTemplate[];
 
-  /** Map of configId: crawlId */
   @state()
-  runningCrawlsMap: { [configId: string]: string } = {};
+  runningCrawlsMap: RunningCrawlsMap = {};
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -210,6 +214,10 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
+  /**
+   * Fetch crawl templates and record running crawls
+   * associated with the crawl templates
+   **/
   private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
     type CrawlConfig = Omit<CrawlTemplate, "config"> & {
       config: Omit<CrawlTemplate["config"], "seeds"> & {
@@ -222,16 +230,27 @@ export class CrawlTemplatesList extends LiteElement {
       this.authState!
     );
 
-    const crawlConfigs = data.crawl_configs.map((data) => ({
-      ...data,
-      config: {
-        ...data.config,
-        // Flatten seeds into array of URL strings
-        seeds: data.config.seeds.map((seed) =>
-          typeof seed === "string" ? seed : seed.url
-        ),
-      },
-    }));
+    const crawlConfigs: CrawlTemplate[] = [];
+    const runningCrawlsMap: RunningCrawlsMap = {};
+
+    data.crawl_configs.forEach(({ config, ...configMeta }) => {
+      crawlConfigs.push({
+        ...configMeta,
+        config: {
+          ...config,
+          // Flatten seeds into array of URL strings
+          seeds: config.seeds.map((seed) =>
+            typeof seed === "string" ? seed : seed.url
+          ),
+        },
+      });
+
+      if (configMeta.currCrawlId) {
+        runningCrawlsMap[configMeta.id] = configMeta.currCrawlId;
+      }
+    });
+
+    this.runningCrawlsMap = runningCrawlsMap;
 
     return crawlConfigs;
   }
