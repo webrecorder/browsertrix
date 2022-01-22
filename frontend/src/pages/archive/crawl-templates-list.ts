@@ -190,7 +190,10 @@ export class CrawlTemplatesList extends LiteElement {
                 </div>
                 <div>
                   <button
-                    class="text-xs border rounded-sm px-2 h-7 border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+                    class="text-xs border rounded-sm px-2 h-7 ${this
+                      .runningCrawlsMap[t.id]
+                      ? "bg-purple-50"
+                      : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
                     @click=${() =>
                       this.runningCrawlsMap[t.id]
                         ? this.navTo(
