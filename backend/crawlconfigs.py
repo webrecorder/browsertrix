@@ -120,7 +120,7 @@ class CrawlConfigOut(CrawlConfig):
 # ============================================================================
 class CrawlConfigsResponse(BaseModel):
     """ model for crawl configs response """
-    crawl_configs: List[CrawlConfigOut]
+    crawlConfigs: List[CrawlConfigOut]
 
 
 # ============================================================================
@@ -256,7 +256,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         results = await ops.get_crawl_configs(archive)
-        return CrawlConfigsResponse(crawl_configs=results)
+        return CrawlConfigsResponse(crawlConfigs=results)
         # return {
         #    "crawl_configs": [res.serialize(exclude={"archive"}) for res in results]
         # }
