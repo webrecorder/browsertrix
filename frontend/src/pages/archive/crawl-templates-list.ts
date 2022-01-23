@@ -139,11 +139,12 @@ export class CrawlTemplatesList extends LiteElement {
 
               <div class="px-3 pb-3 flex justify-between items-end">
                 <div class="grid gap-2 text-xs leading-none">
-                  <div
-                    class="font-mono whitespace-nowrap truncate text-0-500"
-                    title=${t.config.seeds.join(", ")}
-                  >
-                    ${t.config.seeds.join(", ")}
+                  <div class="font-mono whitespace-nowrap truncate text-0-500">
+                    <sl-tooltip content=${t.config.seeds.join(", ")}>
+                      <span class="underline decoration-dashed"
+                        >${t.config.seeds.join(", ")}</span
+                      >
+                    </sl-tooltip>
                   </div>
                   <div class="font-mono text-purple-500">
                     ${t.crawlCount === 1
