@@ -56,11 +56,22 @@ export class CrawlTemplatesDetail extends LiteElement {
       <h2 class="text-xl font-bold mb-3">${this.crawlTemplate.name}</h2>
 
       <main class="border rounded-lg">
-        <section class="md:grid grid-cols-3">
+        <section class="p-4  border-b text-sm">
+          <dl class="grid grid-cols-2">
+            <div>
+              <dt class="text-xs text-0-600">${msg("Created by")}</dt>
+              <dd>${this.crawlTemplate.user}</dd>
+            </div>
+          </dl>
+
+          <!-- TODO created at? -->
+        </section>
+
+        <section class="md:grid grid-cols-4">
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Configuration")}</h3>
           </div>
-          <div class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("Seed URLs")}</dt>
@@ -91,22 +102,22 @@ export class CrawlTemplatesDetail extends LiteElement {
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Scope type")}</dt>
+                <dt class="text-sm text-0-600">${msg("Scope Type")}</dt>
                 <dd>${this.crawlTemplate.config.scopeType}</dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Page limit")}</dt>
+                <dt class="text-sm text-0-600">${msg("Page Limit")}</dt>
                 <dd>${this.crawlTemplate.config.limit}</dd>
               </div>
             </dl>
           </div>
         </section>
 
-        <section class="md:grid grid-cols-3">
+        <section class="md:grid grid-cols-4">
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Schedule")}</h3>
           </div>
-          <div class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("Schedule")}</dt>
@@ -116,31 +127,65 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
         </section>
 
-        <section class="md:grid grid-cols-3">
-          <div class="col-span-1 p-4 md:p-8 md:border-b">
+        <section class="md:grid grid-cols-4">
+          <div class="col-span-1 p-4 md:p-8">
             <h3 class="font-medium">${msg("Crawls")}</h3>
           </div>
-          <div class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+          <div class="col-span-3 p-4 md:p-8 grid gap-5">
             <dl class="grid gap-5">
               <div>
-                <dt class="text-sm text-0-600">${msg("Last Crawl Time")}</dt>
-                <dd>${this.crawlTemplate.lastCrawlTime}</dd>
+                <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
+                <dd>
+                  ${(this.crawlTemplate.crawlCount || 0).toLocaleString()}
+                </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Last Crawl ID")}</dt>
-                <dd>${this.crawlTemplate.lastCrawlId}</dd>
+                <dt class="text-sm text-0-600">
+                  ${msg("Currently Running Crawl")}
+                </dt>
+                <dd
+                  class="flex items-center justify-between border rounded p-1 mt-1"
+                >
+                  ${this.crawlTemplate.currCrawlId
+                    ? html`<a
+                        class="text-primary font-medium hover:underline text-sm p-1"
+                        href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+                        @click=${this.navLink}
+                        >${msg("View running crawl")}</a
+                      >`
+                    : html` <span class="text-0-400 text-sm p-1"
+                        >${msg("None")}</span
+                      >`}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm text-0-600">
+                  ${msg("Latest Finished Crawl")}
+                </dt>
+                <dd
+                  class="flex items-center justify-between border rounded p-1 mt-1"
+                >
+                  <a
+                    class="text-primary font-medium hover:underline text-sm p-1"
+                    href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.lastCrawlId}`}
+                    @click=${this.navLink}
+                    >${msg("View crawl")}</a
+                  >
+                  <sl-format-date
+                    date=${
+                      `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
+                    }
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                </dd>
               </div>
             </dl>
           </div>
-        </section>
-
-        <section class="p-4 md:p-8 border-b">
-          <dl class="grid grid-cols-2">
-            <div>
-              <dt class="text-sm text-0-600">${msg("Created by")}</dt>
-              <dd>${this.crawlTemplate.user}</dd>
-            </div>
-          </dl>
         </section>
       </main>
     `;
