@@ -129,11 +129,15 @@ export class CrawlTemplatesList extends LiteElement {
 
               <div class="px-3 pb-3 flex justify-between items-end">
                 <div class="grid gap-2 text-xs leading-none">
-                  <div class="font-mono whitespace-nowrap truncate text-0-500">
+                  <div class="overflow-hidden">
                     <sl-tooltip content=${t.config.seeds.join(", ")}>
-                      <span class="underline decoration-dashed"
-                        >${t.config.seeds.join(", ")}</span
+                      <div
+                        class="font-mono whitespace-nowrap truncate text-0-500"
                       >
+                        <span class="underline decoration-dashed"
+                          >${t.config.seeds.join(", ")}</span
+                        >
+                      </div>
                     </sl-tooltip>
                   </div>
                   <div class="font-mono text-purple-500">
@@ -146,20 +150,31 @@ export class CrawlTemplatesList extends LiteElement {
                   <div>
                     <sl-tooltip content=${msg("Last crawl time")}>
                       <span>
-                        <sl-icon
-                          class="inline-block align-middle mr-1 text-purple-400"
-                          name="check-circle-fill"
-                        ></sl-icon
-                        ><sl-format-date
-                          class="inline-block align-middle text-0-600"
-                          date=${t.lastCrawlTime}
-                          month="2-digit"
-                          day="2-digit"
-                          year="2-digit"
-                          hour="numeric"
-                          minute="numeric"
-                          time-zone=${this.timeZone}
-                        ></sl-format-date>
+                        ${t.crawlCount
+                          ? html`<sl-icon
+                                class="inline-block align-middle mr-1 text-purple-400"
+                                name="check-circle-fill"
+                              ></sl-icon
+                              ><sl-format-date
+                                class="inline-block align-middle text-0-600"
+                                date=${t.lastCrawlTime}
+                                month="2-digit"
+                                day="2-digit"
+                                year="2-digit"
+                                hour="numeric"
+                                minute="numeric"
+                                time-zone=${this.timeZone}
+                              ></sl-format-date>`
+                          : html`
+                              <sl-icon
+                                class="inline-block align-middle mr-1 text-0-400"
+                                name="slash-circle"
+                              ></sl-icon
+                              ><span
+                                class="inline-block align-middle text-0-400"
+                                >${msg("No crawls")}</span
+                              >
+                            `}
                       </span>
                     </sl-tooltip>
                   </div>
@@ -214,7 +229,7 @@ export class CrawlTemplatesList extends LiteElement {
                           )
                         : this.runNow(t)}
                   >
-                    <span>
+                    <span class="whitespace-nowrap">
                       ${this.runningCrawlsMap[t.id]
                         ? msg("View crawl")
                         : msg("Run now")}

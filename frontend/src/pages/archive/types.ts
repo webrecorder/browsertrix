@@ -1,8 +1,11 @@
-export type CrawlConfig = {
-  seeds: string[];
+type SeedConfig = {
   scopeType?: string;
   limit?: number;
 };
+
+export type CrawlConfig = {
+  seeds: (string | ({ url: string } & SeedConfig))[];
+} & SeedConfig;
 
 export type CrawlTemplate = {
   id: string;
