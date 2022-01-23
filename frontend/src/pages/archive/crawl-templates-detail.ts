@@ -139,6 +139,22 @@ export class CrawlTemplatesDetail extends LiteElement {
                   </sl-button>`
                 : ""}
             </div>
+
+            <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
+              <span slot="summary" class="text-sm"
+                >${msg("Advanced configuration")}
+                <sl-tag size="small" type="neutral"
+                  >${msg("JSON")}</sl-tag
+                ></span
+              >
+              <pre
+                class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
+              ><code>${JSON.stringify(
+                this.crawlTemplate.config,
+                null,
+                2
+              )}</code></pre>
+            </sl-details>
           </div>
         </section>
 
