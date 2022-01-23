@@ -58,7 +58,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       ${this.crawlTemplate.currCrawlId
         ? html`
             <a
-              class="flex items-center justify-between my-5 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 text-purple-800 transition-colors"
+              class="flex items-center justify-between my-5 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
               href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
               @click=${this.navLink}
             >
@@ -85,55 +85,60 @@ export class CrawlTemplatesDetail extends LiteElement {
             <h3 class="font-medium">${msg("Configuration")}</h3>
           </div>
           <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-            <dl class="grid gap-5">
-              <div>
-                <dt class="text-sm text-0-600">${msg("Seed URLs")}</dt>
-                <dd>
-                  <ul>
-                    ${this.crawlTemplate.config.seeds
-                      .slice(
-                        0,
-                        this.showAllSeedURLs ? undefined : SEED_URLS_MAX
-                      )
-                      .map(
-                        (seed) =>
-                          html`<li class="grid grid-cols-3">
-                            <span>${seed.url}</span>
-                            <span class="uppercase text-0-500 text-xs"
-                              >${seed.scopeType}</span
-                            >
-                            <span class="uppercase text-0-500 text-xs"
-                              >${seed.limit}</span
-                            >
-                          </li>`
-                      )}
-                  </ul>
-
-                  ${this.crawlTemplate.config.seeds.length > SEED_URLS_MAX
-                    ? html`<div
-                        class="inline-block font-medium text-primary text-sm mt-1"
-                        role="button"
-                        @click=${() =>
-                          (this.showAllSeedURLs = !this.showAllSeedURLs)}
+            <div role="table">
+              <div class="grid grid-cols-3" role="row">
+                <span class="text-sm text-0-600" role="columnheader"
+                  >${msg("Seed URL")}</span
+                >
+                <span class="text-sm text-0-600" role="columnheader"
+                  >${msg("Scope Type")}</span
+                >
+                <span class="text-sm text-0-600" role="columnheader"
+                  >${msg("Page Limit")}</span
+                >
+              </div>
+              <ul role="rowgroup">
+                ${this.crawlTemplate.config.seeds
+                  .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
+                  .map(
+                    (seed) =>
+                      html`<li
+                        class="grid grid-cols-3 items-baseline"
+                        role="row"
                       >
-                        ${this.showAllSeedURLs
-                          ? msg("Show less")
-                          : msg(str`Show
+                        <span role="cell">${seed.url}</span>
+                        <span class="uppercase text-0-500 text-xs" role="cell"
+                          >${seed.scopeType ||
+                          this.crawlTemplate?.config.scopeType}</span
+                        >
+                        <span
+                          class="uppercase text-0-500 text-xs font-mono"
+                          role="cell"
+                          >${seed.limit ||
+                          this.crawlTemplate?.config.limit}</span
+                        >
+                      </li>`
+                  )}
+              </ul>
+
+              ${this.crawlTemplate.config.seeds.length > SEED_URLS_MAX
+                ? html`<sl-button
+                    class="mt-2"
+                    type="neutral"
+                    size="small"
+                    @click=${() =>
+                      (this.showAllSeedURLs = !this.showAllSeedURLs)}
+                  >
+                    <span class="text-sm">
+                      ${this.showAllSeedURLs
+                        ? msg("Show less")
+                        : msg(str`Show
                     ${this.crawlTemplate.config.seeds.length - SEED_URLS_MAX}
                     more`)}
-                      </div>`
-                    : ""}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-sm text-0-600">${msg("Scope Type")}</dt>
-                <dd>${this.crawlTemplate.config.scopeType}</dd>
-              </div>
-              <div>
-                <dt class="text-sm text-0-600">${msg("Page Limit")}</dt>
-                <dd class="font-mono">${this.crawlTemplate.config.limit}</dd>
-              </div>
-            </dl>
+                    </span>
+                  </sl-button>`
+                : ""}
+            </div>
           </div>
         </section>
 
@@ -178,7 +183,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                         class="text-primary font-medium hover:underline text-sm p-1"
                         href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
                         @click=${this.navLink}
-                        >${msg("View running crawl")}</a
+                        >${msg("View crawl")}</a
                       >`
                     : html`<span class="text-0-400 text-sm p-1"
                         >${msg("None")}</span
