@@ -55,6 +55,19 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <h2 class="text-xl font-bold mb-3">${this.crawlTemplate.name}</h2>
 
+      ${this.crawlTemplate.currCrawlId
+        ? html`
+            <a
+              class="flex items-center justify-between my-5 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 text-purple-800 transition-colors"
+              href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+              @click=${this.navLink}
+            >
+              <span>${msg("View currently running crawl")}</span>
+              <sl-icon name="arrow-right"></sl-icon>
+            </a>
+          `
+        : ""}
+
       <main class="border rounded-lg">
         <section class="p-4  border-b text-sm">
           <dl class="grid grid-cols-2">
@@ -153,35 +166,37 @@ export class CrawlTemplatesDetail extends LiteElement {
                         @click=${this.navLink}
                         >${msg("View running crawl")}</a
                       >`
-                    : html` <span class="text-0-400 text-sm p-1"
+                    : html`<span class="text-0-400 text-sm p-1"
                         >${msg("None")}</span
                       >`}
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">
-                  ${msg("Latest Finished Crawl")}
-                </dt>
+                <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
                 <dd
                   class="flex items-center justify-between border rounded p-1 mt-1"
                 >
-                  <a
-                    class="text-primary font-medium hover:underline text-sm p-1"
-                    href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.lastCrawlId}`}
-                    @click=${this.navLink}
-                    >${msg("View crawl")}</a
-                  >
-                  <sl-format-date
-                    date=${
-                      `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
-                    }
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
+                  ${this.crawlTemplate.lastCrawlId
+                    ? html`<a
+                          class="text-primary font-medium hover:underline text-sm p-1"
+                          href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.lastCrawlId}`}
+                          @click=${this.navLink}
+                          >${msg("View crawl")}</a
+                        >
+                        <sl-format-date
+                          date=${
+                            `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
+                          }
+                          month="2-digit"
+                          day="2-digit"
+                          year="2-digit"
+                          hour="numeric"
+                          minute="numeric"
+                          time-zone-name="short"
+                        ></sl-format-date>`
+                    : html`<span class="text-0-400 text-sm p-1"
+                        >${msg("None")}</span
+                      >`}
                 </dd>
               </div>
             </dl>
