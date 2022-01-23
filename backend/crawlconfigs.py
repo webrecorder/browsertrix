@@ -215,7 +215,16 @@ class CrawlOps:
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 
-        return configs
+        return CrawlConfigsResponse(crawlConfigs=configs)
+
+    async def get_crawl_config_out(self, crawlconfig):
+        """ Return CrawlConfigOut, including state of currently running crawl"""
+        crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
+        out = CrawlConfigOut(**crawlconfig.serialize())
+        if len(crawls) == 1:
+            out.currCrawlId = crawls[0].id
+
+        return out
 
     async def get_crawl_config(self, cid: str, archive: Archive):
         """Get an archive for user by unique id"""
@@ -256,15 +265,11 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
-        results = await ops.get_crawl_configs(archive)
-        return CrawlConfigsResponse(crawlConfigs=results)
-        # return {
-        #    "crawl_configs": [res.serialize(exclude={"archive"}) for res in results]
-        # }
+        return await ops.get_crawl_configs(archive)
 
-    @router.get("/{cid}")
+    @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config(crawl_config: CrawlConfig = Depends(crawls_dep)):
-        return crawl_config.serialize()
+        return await ops.get_crawl_config_out(crawl_config)
 
     @router.post("/")
     async def add_crawl_config(
