@@ -53,12 +53,12 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     return html`
-      <h2 class="text-xl font-bold mb-3">${this.crawlTemplate.name}</h2>
+      <h2 class="text-xl font-bold mb-4">${this.crawlTemplate.name}</h2>
 
       ${this.crawlTemplate.currCrawlId
         ? html`
             <a
-              class="flex items-center justify-between my-5 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+              class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
               href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
               @click=${this.navLink}
             >
@@ -68,18 +68,18 @@ export class CrawlTemplatesDetail extends LiteElement {
           `
         : ""}
 
+      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
+        <dl class="grid grid-cols-2">
+          <div>
+            <dt class="text-xs text-0-600">${msg("Created by")}</dt>
+            <dd>${this.crawlTemplate.user}</dd>
+          </div>
+        </dl>
+
+        <!-- TODO created at? -->
+      </section>
+
       <main class="border rounded-lg">
-        <section class="p-4  border-b text-sm">
-          <dl class="grid grid-cols-2">
-            <div>
-              <dt class="text-xs text-0-600">${msg("Created by")}</dt>
-              <dd>${this.crawlTemplate.user}</dd>
-            </div>
-          </dl>
-
-          <!-- TODO created at? -->
-        </section>
-
         <section class="md:grid grid-cols-4">
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Configuration")}</h3>
