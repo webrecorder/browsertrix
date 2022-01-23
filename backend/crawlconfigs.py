@@ -120,6 +120,7 @@ class CrawlConfigOut(CrawlConfig):
 # ============================================================================
 class CrawlConfigsResponse(BaseModel):
     """ model for crawl configs response """
+
     crawlConfigs: List[CrawlConfigOut]
 
 
@@ -251,7 +252,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        return archive
+        return crawl_config
 
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
