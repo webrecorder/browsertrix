@@ -4,19 +4,8 @@ import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig } from "./types";
+import type { CrawlTemplate } from "./types";
 
-type CrawlTemplate = {
-  id: string;
-  name: string;
-  schedule: string;
-  user: string;
-  crawlCount: number;
-  lastCrawlId: string;
-  lastCrawlTime: string;
-  currCrawlId: string;
-  config: CrawlConfig;
-};
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
   [configId: string]: string;
@@ -72,27 +61,28 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <div class="text-center"></div>
-
       <div
         class=${this.crawlTemplates.length
           ? "grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4"
           : "flex justify-center"}
       >
-        <div
-          class="col-span-1 bg-slate-50 border border-indigo-200 text-primary rounded px-6 py-4 flex items-center justify-center"
-          @click=${() =>
-            this.navTo(`/archives/${this.archiveId}/crawl-templates/new`)}
+        <a
+          href=${`/archives/${this.archiveId}/crawl-templates/new`}
+          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-indigo-400 text-primary text-center font-medium rounded px-6 py-4 transition-colors"
+          @click=${this.navLink}
           role="button"
         >
-          <sl-icon class="mr-2" name="plus-square"></sl-icon>
-          <span
-            class="mr-2 ${this.crawlTemplates.length
+          <sl-icon
+            class="inline-block align-middle mr-2"
+            name="plus-square"
+          ></sl-icon
+          ><span
+            class="inline-block align-middle mr-2 ${this.crawlTemplates.length
               ? "text-sm"
               : "font-medium"}"
             >${msg("Create New Crawl Template")}</span
           >
-        </div>
+        </a>
       </div>
 
       <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
