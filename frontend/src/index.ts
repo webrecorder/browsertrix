@@ -369,6 +369,7 @@ export class App extends LiteElement {
       case "archive":
       case "archiveAddMember":
       case "archiveNewResourceTab":
+      case "crawlTemplate":
         return appLayout(html`<btrix-archive
           class="w-full"
           @navigate=${this.onNavigateTo}
@@ -377,7 +378,10 @@ export class App extends LiteElement {
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           archiveId=${this.viewState.params.id}
-          archiveTab=${this.viewState.params.tab as ArchiveTab}
+          archiveTab=${this.viewState.params.crawlConfigId
+            ? "crawl-templates"
+            : (this.viewState.params.tab as ArchiveTab)}
+          crawlConfigId=${this.viewState.params.crawlConfigId}
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
           ?isNewResourceTab=${this.viewState.route === "archiveNewResourceTab"}
         ></btrix-archive>`);

@@ -29,6 +29,9 @@ export class Archive extends LiteElement {
   @property({ type: String })
   archiveTab: ArchiveTab = defaultTab;
 
+  @property({ type: String })
+  crawlConfigId?: string;
+
   @property({ type: Boolean })
   isAddingMember: boolean = false;
 
@@ -63,6 +66,8 @@ export class Archive extends LiteElement {
   }
 
   render() {
+    console.log("this.crawlConfigId:", this.crawlConfigId);
+    console.log("this.archiveTab:", this.archiveTab);
     if (!this.archive) {
       return html`<div
         class="w-full flex items-center justify-center my-24 text-4xl"
@@ -138,6 +143,10 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
+    if (this.crawlConfigId) {
+      return html`TODO`;
+    }
+
     if (this.isNewResourceTab) {
       return html`
         <div class="md:grid grid-cols-6 gap-5">
