@@ -468,7 +468,11 @@ export class CrawlTemplatesNew extends LiteElement {
       template.config = JSON.parse(this.seedsJson);
     } else {
       template.config = {
-        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
+        seeds: (seedUrlsStr as string)
+          .trim()
+          .replace(/,/g, " ")
+          .split(/\s+/g)
+          .map((url) => ({ url })),
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
       };

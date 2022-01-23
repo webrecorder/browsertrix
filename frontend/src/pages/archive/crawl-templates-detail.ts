@@ -95,7 +95,18 @@ export class CrawlTemplatesDetail extends LiteElement {
                         0,
                         this.showAllSeedURLs ? undefined : SEED_URLS_MAX
                       )
-                      .map((seed) => html`<li>${seed}</li>`)}
+                      .map(
+                        (seed) =>
+                          html`<li class="grid grid-cols-3">
+                            <span>${seed.url}</span>
+                            <span class="uppercase text-0-500 text-xs"
+                              >${seed.scopeType}</span
+                            >
+                            <span class="uppercase text-0-500 text-xs"
+                              >${seed.limit}</span
+                            >
+                          </li>`
+                      )}
                   </ul>
 
                   ${this.crawlTemplate.config.seeds.length > SEED_URLS_MAX
@@ -120,7 +131,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               </div>
               <div>
                 <dt class="text-sm text-0-600">${msg("Page Limit")}</dt>
-                <dd>${this.crawlTemplate.config.limit}</dd>
+                <dd class="font-mono">${this.crawlTemplate.config.limit}</dd>
               </div>
             </dl>
           </div>
@@ -134,7 +145,10 @@ export class CrawlTemplatesDetail extends LiteElement {
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("Schedule")}</dt>
-                <dd>${this.crawlTemplate.schedule}</dd>
+                <dd>
+                  ${this.crawlTemplate.schedule ||
+                  html`<span class="text-0-400">${msg("None")}</span>`}
+                </dd>
               </div>
             </dl>
           </div>
@@ -148,7 +162,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
-                <dd>
+                <dd class="font-mono">
                   ${(this.crawlTemplate.crawlCount || 0).toLocaleString()}
                 </dd>
               </div>
@@ -207,13 +221,27 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   async getCrawlTemplate(): Promise<CrawlTemplate> {
-    const data = await this.apiFetch(
+    const data: CrawlTemplate = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs/${this.crawlConfigId}`,
       this.authState!
     );
 
-    console.log(data);
-    return data;
+    const { config, ...template } = data;
+
+    return {
+      ...template,
+      config: {
+        ...config,
+        // Normalize seed format
+        seeds: config.seeds.map((seed) =>
+          typeof seed === "string"
+            ? {
+                url: seed,
+              }
+            : seed
+        ),
+      },
+    };
   }
 }
 

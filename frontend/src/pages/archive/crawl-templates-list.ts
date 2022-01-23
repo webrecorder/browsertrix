@@ -130,12 +130,16 @@ export class CrawlTemplatesList extends LiteElement {
               <div class="px-3 pb-3 flex justify-between items-end">
                 <div class="grid gap-2 text-xs leading-none">
                   <div class="overflow-hidden">
-                    <sl-tooltip content=${t.config.seeds.join(", ")}>
+                    <sl-tooltip
+                      content=${t.config.seeds.map(({ url }) => url).join(", ")}
+                    >
                       <div
                         class="font-mono whitespace-nowrap truncate text-0-500"
                       >
                         <span class="underline decoration-dashed"
-                          >${t.config.seeds.join(", ")}</span
+                          >${t.config.seeds
+                            .map(({ url }) => url)
+                            .join(", ")}</span
                         >
                       </div>
                     </sl-tooltip>
@@ -267,9 +271,13 @@ export class CrawlTemplatesList extends LiteElement {
         ...configMeta,
         config: {
           ...config,
-          // Flatten seeds into array of URL strings
+          // Normalize seed format
           seeds: config.seeds.map((seed) =>
-            typeof seed === "string" ? seed : seed.url
+            typeof seed === "string"
+              ? {
+                  url: seed,
+                }
+              : seed
           ),
         },
       });
