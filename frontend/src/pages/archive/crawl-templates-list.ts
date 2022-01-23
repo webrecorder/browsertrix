@@ -80,12 +80,12 @@ export class CrawlTemplatesList extends LiteElement {
           : "flex justify-center"}
       >
         <div
-          class="col-span-1 bg-slate-50 border border-dotted border-primary text-primary rounded px-6 py-4 flex items-center justify-center"
+          class="col-span-1 bg-slate-50 border border-indigo-200 text-primary rounded px-6 py-4 flex items-center justify-center"
           @click=${() =>
             this.navTo(`/archives/${this.archiveId}/crawl-templates/new`)}
           role="button"
         >
-          <sl-icon class="mr-2" name="plus-square-dotted"></sl-icon>
+          <sl-icon class="mr-2" name="plus-square"></sl-icon>
           <span
             class="mr-2 ${this.crawlTemplates.length
               ? "text-sm"
@@ -138,9 +138,9 @@ export class CrawlTemplatesList extends LiteElement {
               </header>
 
               <div class="px-3 pb-3 flex justify-between items-end">
-                <div class="grid gap-1 text-xs">
+                <div class="grid gap-2 text-xs leading-none">
                   <div
-                    class="font-mono whitespace-nowrap truncate text-gray-500"
+                    class="font-mono whitespace-nowrap truncate text-0-500"
                     title=${t.config.seeds.join(", ")}
                   >
                     ${t.config.seeds.join(", ")}
@@ -152,10 +152,15 @@ export class CrawlTemplatesList extends LiteElement {
                           str`${(t.crawlCount || 0).toLocaleString()} crawls`
                         )}
                   </div>
-                  <div class="text-gray-500">
-                    ${msg(html`Last:
-                      <span
+                  <div>
+                    <sl-tooltip content=${msg("Last crawl time")}>
+                      <span>
+                        <sl-icon
+                          class="inline-block align-middle mr-1 text-purple-400"
+                          name="check-circle-fill"
+                        ></sl-icon
                         ><sl-format-date
+                          class="inline-block align-middle text-0-600"
                           date=${t.lastCrawlTime}
                           month="2-digit"
                           day="2-digit"
@@ -163,29 +168,44 @@ export class CrawlTemplatesList extends LiteElement {
                           hour="numeric"
                           minute="numeric"
                           time-zone=${this.timeZone}
-                        ></sl-format-date
-                      ></span>`)}
+                        ></sl-format-date>
+                      </span>
+                    </sl-tooltip>
                   </div>
-                  <div class="text-gray-500">
+                  <div>
                     ${t.schedule
-                      ? msg(html`Next:
-                          <sl-format-date
-                            date="${cronParser
-                              .parseExpression(t.schedule, {
-                                utc: true,
-                              })
-                              .next()
-                              .toString()}"
-                            month="2-digit"
-                            day="2-digit"
-                            year="2-digit"
-                            hour="numeric"
-                            minute="numeric"
-                            time-zone=${this.timeZone}
-                          ></sl-format-date>`)
-                      : html`<span class="text-gray-400"
-                          >${msg("No schedule")}</span
-                        >`}
+                      ? html`
+                          <sl-tooltip content=${msg("Next scheduled crawl")}>
+                            <span>
+                              <sl-icon
+                                class="inline-block align-middle mr-1"
+                                name="clock-history"
+                              ></sl-icon
+                              ><sl-format-date
+                                class="inline-block align-middle text-0-600"
+                                date="${cronParser
+                                  .parseExpression(t.schedule, {
+                                    utc: true,
+                                  })
+                                  .next()
+                                  .toString()}"
+                                month="2-digit"
+                                day="2-digit"
+                                year="2-digit"
+                                hour="numeric"
+                                minute="numeric"
+                                time-zone=${this.timeZone}
+                              ></sl-format-date>
+                            </span>
+                          </sl-tooltip>
+                        `
+                      : html`<sl-icon
+                            class="inline-block align-middle mr-1 text-0-400"
+                            name="slash-circle"
+                          ></sl-icon
+                          ><span class="inline-block align-middle text-0-400"
+                            >${msg("No schedule")}</span
+                          >`}
                   </div>
                 </div>
                 <div>
