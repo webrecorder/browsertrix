@@ -86,14 +86,14 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
           <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
             <div role="table">
-              <div class="grid grid-cols-3" role="row">
-                <span class="text-sm text-0-600" role="columnheader"
+              <div class="grid grid-cols-5 gap-4" role="row">
+                <span class="col-span-3 text-sm text-0-600" role="columnheader"
                   >${msg("Seed URL")}</span
                 >
-                <span class="text-sm text-0-600" role="columnheader"
+                <span class="col-span-1 text-sm text-0-600" role="columnheader"
                   >${msg("Scope Type")}</span
                 >
-                <span class="text-sm text-0-600" role="columnheader"
+                <span class="col-span-1 text-sm text-0-600" role="columnheader"
                   >${msg("Page Limit")}</span
                 >
               </div>
@@ -103,16 +103,24 @@ export class CrawlTemplatesDetail extends LiteElement {
                   .map(
                     (seed) =>
                       html`<li
-                        class="grid grid-cols-3 items-baseline"
+                        class="grid grid-cols-5 gap-4 items-baseline py-1 border-b border-zinc-100 "
                         role="row"
+                        title=${seed.url}
                       >
-                        <span role="cell">${seed.url}</span>
-                        <span class="uppercase text-0-500 text-xs" role="cell"
+                        <div
+                          class="col-span-3 break-all leading-tight"
+                          role="cell"
+                        >
+                          ${seed.url}
+                        </div>
+                        <span
+                          class="col-span-1 uppercase text-0-500 text-xs"
+                          role="cell"
                           >${seed.scopeType ||
                           this.crawlTemplate?.config.scopeType}</span
                         >
                         <span
-                          class="uppercase text-0-500 text-xs font-mono"
+                          class="col-span-1 uppercase text-0-500 text-xs font-mono"
                           role="cell"
                           >${seed.limit ||
                           this.crawlTemplate?.config.limit}</span
@@ -141,19 +149,33 @@ export class CrawlTemplatesDetail extends LiteElement {
             </div>
 
             <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
-              <span slot="summary" class="text-sm"
-                >${msg("Advanced configuration")}
+              <span slot="summary" class="text-sm">
+                <span class="font-medium"
+                  >${msg("Advanced configuration")}</span
+                >
                 <sl-tag size="small" type="neutral"
                   >${msg("JSON")}</sl-tag
                 ></span
               >
-              <pre
-                class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
-              ><code>${JSON.stringify(
-                this.crawlTemplate.config,
-                null,
-                2
-              )}</code></pre>
+              <div class="relative">
+                <pre
+                  class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
+                ><code>${JSON.stringify(
+                  this.crawlTemplate.config,
+                  null,
+                  2
+                )}</code></pre>
+
+                <div class="absolute top-2 right-2">
+                  <btrix-copy-button
+                    .value="${JSON.stringify(
+                      this.crawlTemplate.config,
+                      null,
+                      2
+                    )}"
+                  ></btrix-copy-button>
+                </div>
+              </div>
             </sl-details>
           </div>
         </section>
