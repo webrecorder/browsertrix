@@ -109,24 +109,24 @@ export class CrawlTemplatesDetail extends LiteElement {
                           ? " border-t"
                           : ""}"
                         role="row"
-                        title=${seed.url}
+                        title=${typeof seed === "string" ? seed : seed.url}
                       >
                         <div
                           class="col-span-3 break-all leading-tight"
                           role="cell"
                         >
-                          ${seed.url}
+                          ${typeof seed === "string" ? seed : seed.url}
                         </div>
                         <span
                           class="col-span-1 uppercase text-0-500 text-xs"
                           role="cell"
-                          >${seed.scopeType ||
+                          >${(typeof seed !== "string" && seed.scopeType) ||
                           this.crawlTemplate?.config.scopeType}</span
                         >
                         <span
                           class="col-span-1 uppercase text-0-500 text-xs font-mono"
                           role="cell"
-                          >${seed.limit ||
+                          >${(typeof seed !== "string" && seed.limit) ||
                           this.crawlTemplate?.config.limit}</span
                         >
                       </li>`
@@ -290,22 +290,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.authState!
     );
 
-    const { config, ...template } = data;
-
-    return {
-      ...template,
-      config: {
-        ...config,
-        // Normalize seed format
-        seeds: config.seeds.map((seed) =>
-          typeof seed === "string"
-            ? {
-                url: seed,
-              }
-            : seed
-        ),
-      },
-    };
+    return data;
   }
 
   private async runNow(): Promise<void> {

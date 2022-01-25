@@ -150,14 +150,20 @@ export class CrawlTemplatesList extends LiteElement {
                 <div class="grid gap-2 text-xs leading-none">
                   <div class="overflow-hidden">
                     <sl-tooltip
-                      content=${t.config.seeds.map(({ url }) => url).join(", ")}
+                      content=${t.config.seeds
+                        .map((seed) =>
+                          typeof seed === "string" ? seed : seed.url
+                        )
+                        .join(", ")}
                     >
                       <div
                         class="font-mono whitespace-nowrap truncate text-0-500"
                       >
                         <span class="underline decoration-dashed"
                           >${t.config.seeds
-                            .map(({ url }) => url)
+                            .map((seed) =>
+                              typeof seed === "string" ? seed : seed.url
+                            )
                             .join(", ")}</span
                         >
                       </div>
@@ -270,44 +276,22 @@ export class CrawlTemplatesList extends LiteElement {
    * associated with the crawl templates
    **/
   private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
-    type CrawlConfig = Omit<CrawlTemplate, "config"> & {
-      config: Omit<CrawlTemplate["config"], "seeds"> & {
-        seeds: (string | { url: string })[];
-      };
-    };
-
-    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
+    const data: { crawlConfigs: CrawlTemplate[] } = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs`,
       this.authState!
     );
 
-    const crawlConfigs: CrawlTemplate[] = [];
     const runningCrawlsMap: RunningCrawlsMap = {};
 
-    data.crawlConfigs.forEach(({ config, ...configMeta }) => {
-      crawlConfigs.push({
-        ...configMeta,
-        config: {
-          ...config,
-          // Normalize seed format
-          seeds: config.seeds.map((seed) =>
-            typeof seed === "string"
-              ? {
-                  url: seed,
-                }
-              : seed
-          ),
-        },
-      });
-
-      if (configMeta.currCrawlId) {
-        runningCrawlsMap[configMeta.id] = configMeta.currCrawlId;
+    data.crawlConfigs.forEach(({ id, currCrawlId }) => {
+      if (currCrawlId) {
+        runningCrawlsMap[id] = currCrawlId;
       }
     });
 
     this.runningCrawlsMap = runningCrawlsMap;
 
-    return crawlConfigs;
+    return data.crawlConfigs;
   }
 
   /**
