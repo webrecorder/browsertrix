@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -187,10 +188,20 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
             <dl class="grid gap-5">
               <div>
-                <dt class="text-sm text-0-600">${msg("Schedule")}</dt>
+                <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
                 <dd>
-                  ${this.crawlTemplate.schedule ||
-                  html`<span class="text-0-400">${msg("None")}</span>`}
+                  ${this.crawlTemplate.schedule
+                    ? // TODO localize
+                      // NOTE human-readable string is in UTC, limitation of library
+                      // currently being used.
+                      // https://github.com/bradymholt/cRonstrue/issues/94
+                      html`<span
+                        >${cronstrue.toString(this.crawlTemplate.schedule, {
+                          verbose: true,
+                        })}
+                        (in UTC time zone)</span
+                      >`
+                    : html`<span class="text-0-400">${msg("None")}</span>`}
                 </dd>
               </div>
             </dl>
