@@ -4,19 +4,8 @@ import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig } from "./types";
+import type { CrawlTemplate } from "./types";
 
-type CrawlTemplate = {
-  id: string;
-  name: string;
-  schedule: string;
-  user: string;
-  crawlCount: number;
-  lastCrawlId: string;
-  lastCrawlTime: string;
-  currCrawlId: string;
-  config: CrawlConfig;
-};
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
   [configId: string]: string;
@@ -72,27 +61,28 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <div class="text-center"></div>
-
       <div
         class=${this.crawlTemplates.length
           ? "grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4"
           : "flex justify-center"}
       >
-        <div
-          class="col-span-1 bg-slate-50 border border-dotted border-primary text-primary rounded px-6 py-4 flex items-center justify-center"
-          @click=${() =>
-            this.navTo(`/archives/${this.archiveId}/crawl-templates/new`)}
+        <a
+          href=${`/archives/${this.archiveId}/crawl-templates/new`}
+          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-indigo-400 text-primary text-center font-medium rounded px-6 py-4 transition-colors"
+          @click=${this.navLink}
           role="button"
         >
-          <sl-icon class="mr-2" name="plus-square-dotted"></sl-icon>
-          <span
-            class="mr-2 ${this.crawlTemplates.length
+          <sl-icon
+            class="inline-block align-middle mr-2"
+            name="plus-square"
+          ></sl-icon
+          ><span
+            class="inline-block align-middle mr-2 ${this.crawlTemplates.length
               ? "text-sm"
               : "font-medium"}"
             >${msg("Create New Crawl Template")}</span
           >
-        </div>
+        </a>
       </div>
 
       <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -157,12 +147,21 @@ export class CrawlTemplatesList extends LiteElement {
               </header>
 
               <div class="px-3 pb-3 flex justify-between items-end">
-                <div class="grid gap-1 text-xs">
-                  <div
-                    class="font-mono whitespace-nowrap truncate text-gray-500"
-                    title=${t.config.seeds.join(", ")}
-                  >
-                    ${t.config.seeds.join(", ")}
+                <div class="grid gap-2 text-xs leading-none">
+                  <div class="overflow-hidden">
+                    <sl-tooltip
+                      content=${t.config.seeds.map(({ url }) => url).join(", ")}
+                    >
+                      <div
+                        class="font-mono whitespace-nowrap truncate text-0-500"
+                      >
+                        <span class="underline decoration-dashed"
+                          >${t.config.seeds
+                            .map(({ url }) => url)
+                            .join(", ")}</span
+                        >
+                      </div>
+                    </sl-tooltip>
                   </div>
                   <div class="font-mono text-purple-500">
                     ${t.crawlCount === 1
@@ -171,45 +170,75 @@ export class CrawlTemplatesList extends LiteElement {
                           str`${(t.crawlCount || 0).toLocaleString()} crawls`
                         )}
                   </div>
-                  <div class="text-gray-500">
-                    ${msg(html`Last:
-                      <span
-                        ><sl-format-date
-                          date=${t.lastCrawlTime}
-                          month="2-digit"
-                          day="2-digit"
-                          year="2-digit"
-                          hour="numeric"
-                          minute="numeric"
-                          time-zone=${this.timeZone}
-                        ></sl-format-date
-                      ></span>`)}
+                  <div>
+                    ${t.crawlCount
+                      ? html`<sl-tooltip content=${msg("Last crawl time")}>
+                          <span>
+                            <sl-icon
+                              class="inline-block align-middle mr-1 text-purple-400"
+                              name="check-circle-fill"
+                            ></sl-icon
+                            ><sl-format-date
+                              class="inline-block align-middle text-0-600"
+                              date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
+                              month="2-digit"
+                              day="2-digit"
+                              year="2-digit"
+                              hour="numeric"
+                              minute="numeric"
+                              time-zone=${this.timeZone}
+                            ></sl-format-date>
+                          </span>
+                        </sl-tooltip>`
+                      : html`
+                          <sl-icon
+                            class="inline-block align-middle mr-1 text-0-400"
+                            name="slash-circle"
+                          ></sl-icon
+                          ><span class="inline-block align-middle text-0-400"
+                            >${msg("No crawls")}</span
+                          >
+                        `}
                   </div>
-                  <div class="text-gray-500">
+                  <div>
                     ${t.schedule
-                      ? msg(html`Next:
-                          <sl-format-date
-                            date="${cronParser
-                              .parseExpression(t.schedule, {
-                                utc: true,
-                              })
-                              .next()
-                              .toString()}"
-                            month="2-digit"
-                            day="2-digit"
-                            year="2-digit"
-                            hour="numeric"
-                            minute="numeric"
-                            time-zone=${this.timeZone}
-                          ></sl-format-date>`)
-                      : html`<span class="text-gray-400"
-                          >${msg("No schedule")}</span
-                        >`}
+                      ? html`
+                          <sl-tooltip content=${msg("Next scheduled crawl")}>
+                            <span>
+                              <sl-icon
+                                class="inline-block align-middle mr-1"
+                                name="clock-history"
+                              ></sl-icon
+                              ><sl-format-date
+                                class="inline-block align-middle text-0-600"
+                                date="${cronParser
+                                  .parseExpression(t.schedule, {
+                                    utc: true,
+                                  })
+                                  .next()
+                                  .toString()}"
+                                month="2-digit"
+                                day="2-digit"
+                                year="2-digit"
+                                hour="numeric"
+                                minute="numeric"
+                                time-zone=${this.timeZone}
+                              ></sl-format-date>
+                            </span>
+                          </sl-tooltip>
+                        `
+                      : html`<sl-icon
+                            class="inline-block align-middle mr-1 text-0-400"
+                            name="slash-circle"
+                          ></sl-icon
+                          ><span class="inline-block align-middle text-0-400"
+                            >${msg("No schedule")}</span
+                          >`}
                   </div>
                 </div>
                 <div>
                   <button
-                    class="text-xs border rounded-sm px-2 h-7 ${this
+                    class="text-xs border rounded px-2 h-7 ${this
                       .runningCrawlsMap[t.id]
                       ? "bg-purple-50"
                       : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
@@ -222,7 +251,7 @@ export class CrawlTemplatesList extends LiteElement {
                           )
                         : this.runNow(t)}
                   >
-                    <span>
+                    <span class="whitespace-nowrap">
                       ${this.runningCrawlsMap[t.id]
                         ? msg("View crawl")
                         : msg("Run now")}
@@ -260,9 +289,13 @@ export class CrawlTemplatesList extends LiteElement {
         ...configMeta,
         config: {
           ...config,
-          // Flatten seeds into array of URL strings
+          // Normalize seed format
           seeds: config.seeds.map((seed) =>
-            typeof seed === "string" ? seed : seed.url
+            typeof seed === "string"
+              ? {
+                  url: seed,
+                }
+              : seed
           ),
         },
       });

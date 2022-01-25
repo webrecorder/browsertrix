@@ -13,6 +13,7 @@
     "axios": "^0.22.0",
     "color": "^4.0.1",
     "cron-parser": "^4.2.1",
+    "cronstrue": "^1.123.0",
     "lit": "^2.0.0",
     "path-parser": "^6.1.0",
     "tailwindcss": "^3.0.15"

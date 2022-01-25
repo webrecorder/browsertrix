@@ -143,7 +143,7 @@ export class CrawlTemplatesNew extends LiteElement {
       <main class="mt-6">
         <div class="border rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
-            <div class="md:grid grid-cols-4">
+            <div class="md:grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
               ${this.renderScheduleSettings()}
             </div>
@@ -196,9 +196,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private renderBasicSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Basic settings")}</h3>
+        <h3 class="font-medium">${msg("Basic Settings")}</h3>
       </div>
-      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -219,9 +219,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private renderScheduleSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Crawl schedule")}</h3>
+        <h3 class="font-medium">${msg("Crawl Schedule")}</h3>
       </div>
-      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
         <div>
           <div class="flex items-end">
             <div class="pr-2 flex-1">
@@ -238,62 +238,62 @@ export class CrawlTemplatesNew extends LiteElement {
                 <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
               </sl-select>
             </div>
-            <div class="grid grid-flow-col gap-2 items-center">
-              <span class="px-1">${msg("at")}</span>
-              <sl-select
-                name="scheduleHour"
-                value=${this.scheduleTime.hour}
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    hour: +e.target.value,
-                  })}
-              >
-                ${hours.map(
-                  ({ value, label }) =>
-                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                )}
-              </sl-select>
-              <span>:</span>
-              <sl-select
-                name="scheduleMinute"
-                value=${this.scheduleTime.minute}
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    minute: +e.target.value,
-                  })}
-              >
-                ${minutes.map(
-                  ({ value, label }) =>
-                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-                )}
-              </sl-select>
-              <sl-select
-                value=${this.scheduleTime.period}
-                class="w-24"
-                ?disabled=${!this.scheduleInterval}
-                @sl-select=${(e: any) =>
-                  (this.scheduleTime = {
-                    ...this.scheduleTime,
-                    period: e.target.value,
-                  })}
-              >
-                <sl-menu-item value="AM"
-                  >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
-                >
-                <sl-menu-item value="PM"
-                  >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
-                >
-              </sl-select>
-              <span class="px-1">${this.timeZoneShortName}</span>
-            </div>
           </div>
-          <div class="text-sm text-gray-500 mt-1">
+          <div class="grid grid-flow-col gap-2 items-center mt-2">
+            <span class="px-1">${msg("At")}</span>
+            <sl-select
+              name="scheduleHour"
+              value=${this.scheduleTime.hour}
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  hour: +e.target.value,
+                })}
+            >
+              ${hours.map(
+                ({ value, label }) =>
+                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+              )}
+            </sl-select>
+            <span>:</span>
+            <sl-select
+              name="scheduleMinute"
+              value=${this.scheduleTime.minute}
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  minute: +e.target.value,
+                })}
+            >
+              ${minutes.map(
+                ({ value, label }) =>
+                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+              )}
+            </sl-select>
+            <sl-select
+              value=${this.scheduleTime.period}
+              class="w-24"
+              ?disabled=${!this.scheduleInterval}
+              @sl-select=${(e: any) =>
+                (this.scheduleTime = {
+                  ...this.scheduleTime,
+                  period: e.target.value,
+                })}
+            >
+              <sl-menu-item value="AM"
+                >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+              >
+              <sl-menu-item value="PM"
+                >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+              >
+            </sl-select>
+            <span class="px-1">${this.timeZoneShortName}</span>
+          </div>
+          <div class="text-sm text-gray-500 mt-2">
             ${this.formattededNextCrawlDate
               ? msg(
                   html`Next scheduled crawl: ${this.formattededNextCrawlDate}`
@@ -324,9 +324,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private renderCrawlConfigSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Crawl configuration")}</h3>
+        <h3 class="font-medium">${msg("Crawl Configuration")}</h3>
       </div>
-      <section class="col-span-3 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
         <div class="flex justify-between">
           <h4 class="font-medium">
             ${this.isSeedsJsonView
@@ -490,7 +490,11 @@ export class CrawlTemplatesNew extends LiteElement {
       template.config = JSON.parse(this.seedsJson);
     } else {
       template.config = {
-        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
+        seeds: (seedUrlsStr as string)
+          .trim()
+          .replace(/,/g, " ")
+          .split(/\s+/g)
+          .map((url) => ({ url })),
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
       };
