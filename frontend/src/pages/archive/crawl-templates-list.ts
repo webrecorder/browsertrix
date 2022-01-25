@@ -124,9 +124,7 @@ export class CrawlTemplatesList extends LiteElement {
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
-                      @click=${(e: any) => {
-                        this.duplicate(t);
-                      }}
+                      @click=${() => this.duplicate(t)}
                     >
                       <sl-icon
                         class="inline-block align-middle px-1"
@@ -279,8 +277,14 @@ export class CrawlTemplatesList extends LiteElement {
     return crawlConfigs;
   }
 
+  /**
+   * Create a new template using existing template data
+   */
   private async duplicate(template: CrawlTemplate) {
-    console.log(template);
+    this.navTo(
+      `/archives/${this.archiveId}/crawl-templates/${template.id}`,
+      template
+    );
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {

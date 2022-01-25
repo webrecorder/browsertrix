@@ -14,8 +14,9 @@ export type ViewState = {
   // e.g. "/users/:id"
   // e.g. "/redirect?url"
   params: { [key: string]: string };
+  // arbitrary data to pass between routes
+  data?: object;
 };
-export interface NavigateEvent extends CustomEvent {}
 
 export default class APIRouter {
   routes: Routes;
