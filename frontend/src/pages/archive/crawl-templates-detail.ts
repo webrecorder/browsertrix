@@ -231,15 +231,22 @@ export class CrawlTemplatesDetail extends LiteElement {
                   class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
                 >
                   ${this.crawlTemplate.currCrawlId
-                    ? html`<a
+                    ? html` <a
                         class="text-primary font-medium hover:underline text-sm p-1"
                         href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
                         @click=${this.navLink}
                         >${msg("View crawl")}</a
                       >`
                     : html`<span class="text-0-400 text-sm p-1"
-                        >${msg("None")}</span
-                      >`}
+                          >${msg("None")}</span
+                        ><button
+                          class="text-xs border rounded px-2 h-7 bg-purple-500 hover:bg-purple-400 text-white transition-colors"
+                          @click=${() => this.runNow()}
+                        >
+                          <span class="whitespace-nowrap">
+                            ${msg("Run now")}
+                          </span>
+                        </button>`}
                 </dd>
               </div>
               <div>
@@ -299,6 +306,46 @@ export class CrawlTemplatesDetail extends LiteElement {
         ),
       },
     };
+  }
+
+  private async runNow(): Promise<void> {
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${
+          this.crawlTemplate!.id
+        }/run`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      const crawlId = data.started;
+
+      this.crawlTemplate = {
+        ...this.crawlTemplate,
+        currCrawlId: crawlId,
+      } as CrawlTemplate;
+
+      this.notify({
+        message: msg(
+          str`Started crawl from <strong>${
+            this.crawlTemplate!.name
+          }</strong>. <br /><a class="underline hover:no-underline" href="/archives/${
+            this.archiveId
+          }/crawls/${data.run_now_job}">View crawl</a>`
+        ),
+        type: "success",
+        icon: "check2-circle",
+        duration: 10000,
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 
