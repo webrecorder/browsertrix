@@ -31,6 +31,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private showAllSeedURLs: boolean = false;
 
+  @state()
+  private isEditingSchedule: boolean = false;
+
   async firstUpdated() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
@@ -86,8 +89,8 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Configuration")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-            <div role="table">
+          <div class="col-span-3 p-4 md:p-8 border-b">
+            <div class="mb-5" role="table">
               <div class="grid grid-cols-5 gap-4" role="row">
                 <span class="col-span-3 text-sm text-0-600" role="columnheader"
                   >${msg("Seed URL")}</span
@@ -188,26 +191,37 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Schedule")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-            <dl class="grid gap-5">
-              <div>
-                <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
-                <dd>
-                  ${this.crawlTemplate.schedule
-                    ? // TODO localize
-                      // NOTE human-readable string is in UTC, limitation of library
-                      // currently being used.
-                      // https://github.com/bradymholt/cRonstrue/issues/94
-                      html`<span
-                        >${cronstrue.toString(this.crawlTemplate.schedule, {
-                          verbose: true,
-                        })}
-                        (in UTC time zone)</span
-                      >`
-                    : html`<span class="text-0-400">${msg("None")}</span>`}
-                </dd>
+          <div class="col-span-3 p-4 border-b">
+            <div class="flex justify-between">
+              <dl class="md:p-4 grid gap-5">
+                <div>
+                  <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
+                  <dd>
+                    ${this.crawlTemplate.schedule
+                      ? // TODO localize
+                        // NOTE human-readable string is in UTC, limitation of library
+                        // currently being used.
+                        // https://github.com/bradymholt/cRonstrue/issues/94
+                        html`<span
+                          >${cronstrue.toString(this.crawlTemplate.schedule, {
+                            verbose: true,
+                          })}
+                          (in UTC time zone)</span
+                        >`
+                      : html`<span class="text-0-400">${msg("None")}</span>`}
+                  </dd>
+                </div>
+              </dl>
+
+              <div class="ml-2">
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isEditingSchedule = true)}
+                >
+                  ${msg("Edit")}
+                </sl-button>
               </div>
-            </dl>
+            </div>
           </div>
         </section>
 
@@ -215,7 +229,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8">
             <h3 class="font-medium">${msg("Crawls")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 grid gap-5">
+          <div class="col-span-3 p-4 md:p-8">
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
