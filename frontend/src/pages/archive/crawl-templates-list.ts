@@ -120,9 +120,24 @@ export class CrawlTemplatesList extends LiteElement {
                     style="font-size: 1rem"
                   ></sl-icon-button>
 
-                  <ul role="menu">
+                  <ul class="text-sm whitespace-nowrap" role="menu">
                     <li
-                      class="px-4 py-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                      class="p-2 hover:bg-zinc-100 cursor-pointer"
+                      role="menuitem"
+                      @click=${(e: any) => {
+                        this.duplicate(t);
+                      }}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="files"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Duplicate")}</span
+                      >
+                    </li>
+                    <li
+                      class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                       role="menuitem"
                       @click=${(e: any) => {
                         // Close dropdown before deleting template
@@ -131,7 +146,13 @@ export class CrawlTemplatesList extends LiteElement {
                         this.deleteTemplate(t);
                       }}
                     >
-                      ${msg("Delete")}
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="file-earmark-x"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Delete")}</span
+                      >
                     </li>
                   </ul>
                 </sl-dropdown>
@@ -256,6 +277,10 @@ export class CrawlTemplatesList extends LiteElement {
     this.runningCrawlsMap = runningCrawlsMap;
 
     return crawlConfigs;
+  }
+
+  private async duplicate(template: CrawlTemplate) {
+    console.log(template);
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {
