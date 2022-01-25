@@ -124,14 +124,14 @@ export class CrawlTemplatesList extends LiteElement {
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
-                      @click=${() => this.duplicate(t)}
+                      @click=${() => this.duplicateConfig(t)}
                     >
                       <sl-icon
                         class="inline-block align-middle px-1"
                         name="files"
                       ></sl-icon>
                       <span class="inline-block align-middle pr-2"
-                        >${msg("Duplicate")}</span
+                        >${msg("Duplicate crawl config")}</span
                       >
                     </li>
                     <li
@@ -280,11 +280,22 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicate(template: CrawlTemplate) {
-    this.navTo(
-      `/archives/${this.archiveId}/crawl-templates/${template.id}`,
-      template
-    );
+  private async duplicateConfig(template: CrawlTemplate) {
+    const crawlConfig: CrawlTemplate["config"] = {
+      seeds: template.config.seeds,
+      scopeType: template.config.scopeType,
+      limit: template.config.limit,
+    };
+
+    this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
+      crawlConfig,
+    });
+
+    this.notify({
+      message: msg(str`Copied crawl configuration to new template.`),
+      type: "success",
+      icon: "check2-circle",
+    });
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {

@@ -15,7 +15,7 @@ export type ViewState = {
   // e.g. "/redirect?url"
   params: { [key: string]: string };
   // arbitrary data to pass between routes
-  data?: object;
+  data?: { [key: string]: any };
 };
 
 export default class APIRouter {

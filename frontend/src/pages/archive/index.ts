@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
+import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
 import type { ArchiveData } from "../../utils/archives";
@@ -22,6 +23,9 @@ export class Archive extends LiteElement {
 
   @property({ type: Object })
   userInfo?: CurrentUser;
+
+  @property({ type: Object })
+  viewStateData?: ViewState["data"];
 
   @property({ type: String })
   archiveId?: string;
@@ -138,6 +142,8 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
+    const crawlConfig = this.viewStateData?.crawlConfig;
+
     if (this.isNewResourceTab) {
       return html`
         <div class="md:grid grid-cols-6 gap-5">
@@ -156,6 +162,7 @@ export class Archive extends LiteElement {
             class="col-span-5 mt-6"
             .authState=${this.authState!}
             .archiveId=${this.archiveId!}
+            .initialCrawlConfig=${crawlConfig}
           ></btrix-crawl-templates-new>
         </div>
       `;

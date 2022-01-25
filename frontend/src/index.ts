@@ -378,6 +378,7 @@ export class App extends LiteElement {
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
+          .viewStateData=${this.viewState.data}
           archiveId=${this.viewState.params.id}
           archiveTab=${this.viewState.params.tab as ArchiveTab}
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
