@@ -214,7 +214,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   ${msg("Currently Running Crawl")}
                 </dt>
                 <dd
-                  class="flex items-center justify-between border rounded p-1 mt-1"
+                  class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
                 >
                   ${this.crawlTemplate.currCrawlId
                     ? html`<a
@@ -231,7 +231,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               <div>
                 <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
                 <dd
-                  class="flex items-center justify-between border rounded p-1 mt-1"
+                  class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
                 >
                   ${this.crawlTemplate.lastCrawlId
                     ? html`<a

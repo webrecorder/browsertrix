@@ -85,7 +85,7 @@ export default class LiteElement extends LitElement {
           errorMessage = detail;
         } else {
           // TODO return client error details
-          const fieldDetail = detail[0];
+          const fieldDetail = detail[detail.length - 1];
           const { loc, msg } = fieldDetail;
 
           errorMessage = `${loc[loc.length - 1]} ${msg}`;
