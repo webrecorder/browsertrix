@@ -20,7 +20,6 @@ export type NewCrawlTemplate = {
 const initialValues = {
   name: "",
   runNow: true,
-  schedule: "@weekly",
   config: {
     seeds: [],
     scopeType: "prefix",

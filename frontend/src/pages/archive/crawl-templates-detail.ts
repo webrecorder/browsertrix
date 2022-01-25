@@ -4,6 +4,7 @@ import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlTemplate } from "./types";
 
 const SEED_URLS_MAX = 3;
@@ -25,6 +26,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   @property({ type: String })
   crawlConfigId!: string;
 
+  @property({ type: Boolean })
+  isEditing: boolean = false;
+
   @state()
   private crawlTemplate?: CrawlTemplate;
 
@@ -32,7 +36,15 @@ export class CrawlTemplatesDetail extends LiteElement {
   private showAllSeedURLs: boolean = false;
 
   @state()
-  private isEditingSchedule: boolean = false;
+  private editedSchedule: string = "";
+
+  private get timeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  private get timeZoneShortName() {
+    return getLocaleTimeZone();
+  }
 
   async firstUpdated() {
     try {
@@ -193,32 +205,24 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
           <div class="col-span-3 p-4 border-b">
             <div class="flex justify-between">
-              <dl class="md:p-4 grid gap-5">
-                <div>
-                  <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
-                  <dd>
-                    ${this.crawlTemplate.schedule
-                      ? // TODO localize
-                        // NOTE human-readable string is in UTC, limitation of library
-                        // currently being used.
-                        // https://github.com/bradymholt/cRonstrue/issues/94
-                        html`<span
-                          >${cronstrue.toString(this.crawlTemplate.schedule, {
-                            verbose: true,
-                          })}
-                          (in UTC time zone)</span
-                        >`
-                      : html`<span class="text-0-400">${msg("None")}</span>`}
-                  </dd>
-                </div>
-              </dl>
+              <div class="md:p-4">
+                ${this.isEditing
+                  ? this.renderEditSchedule()
+                  : this.renderReadOnlySchedule()}
+              </div>
 
               <div class="ml-2">
                 <sl-button
                   size="small"
-                  @click=${() => (this.isEditingSchedule = true)}
+                  href=${`/archives/${this.archiveId}/crawl-templates/${
+                    this.crawlTemplate!.id
+                  }${this.isEditing ? "" : "?edit=true"}`}
+                  @click=${(e: any) => {
+                    this.navLink(e);
+                    this.editedSchedule = "";
+                  }}
                 >
-                  ${msg("Edit")}
+                  ${this.isEditing ? msg("Cancel") : msg("Edit")}
                 </sl-button>
               </div>
             </div>
@@ -295,6 +299,138 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
         </section>
       </main>
+    `;
+  }
+
+  private renderReadOnlySchedule() {
+    return html`
+      <dl class="grid gap-5">
+        <div>
+          <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
+          <dd>
+            ${this.crawlTemplate!.schedule
+              ? // TODO localize
+                // NOTE human-readable string is in UTC, limitation of library
+                // currently being used.
+                // https://github.com/bradymholt/cRonstrue/issues/94
+                html`<span
+                  >${cronstrue.toString(this.crawlTemplate!.schedule, {
+                    verbose: true,
+                  })}
+                  (in UTC time zone)</span
+                >`
+              : html`<span class="text-0-400">${msg("None")}</span>`}
+          </dd>
+        </div>
+      </dl>
+    `;
+  }
+
+  private renderEditSchedule() {
+    // TODO consolidate with new
+    const hours = Array.from({ length: 12 }).map((x, i) => ({
+      value: i + 1,
+      label: `${i + 1}`,
+    }));
+    const minutes = Array.from({ length: 60 }).map((x, i) => ({
+      value: i,
+      label: `${i}`.padStart(2, "0"),
+    }));
+    const schedules = {
+      daily: `0 0 * * *`,
+      weekly: `0 0 * * ${new Date().getDay()}`,
+      monthly: `0 0 ${new Date().getDate()} * *`,
+    };
+
+    const getInitialScheduleInterval = (schedule: string) => {
+      const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
+      if (dayofMonth === "*") {
+        if (dayOfWeek === "*") {
+          return schedules.daily;
+        }
+        return schedules.weekly;
+      }
+      return schedules.monthly;
+    };
+
+    const nowHour = new Date().getHours();
+    const initialHours = nowHour % 12 || 12;
+    const initialPeriod = nowHour > 11 ? "PM" : "AM";
+
+    const schedule = this.editedSchedule || this.crawlTemplate!.schedule;
+    const nextSchedule = schedule
+      ? [
+          schedule.split(" ")[0],
+          nowHour,
+          schedule.split(" ").slice(2).join(" "),
+        ].join(" ")
+      : "";
+
+    return html`
+      <form>
+        <div class="flex items-end">
+          <div class="pr-2 flex-1">
+            <sl-select
+              name="schedule"
+              label=${msg("Recurring crawls")}
+              value=${this.crawlTemplate!.schedule
+                ? getInitialScheduleInterval(this.crawlTemplate!.schedule)
+                : ""}
+              @sl-select=${(e: any) => (this.editedSchedule = e.target.value)}
+            >
+              <sl-menu-item value="">${msg("None")}</sl-menu-item>
+              <sl-menu-item value=${schedules.daily}
+                >${msg("Daily")}</sl-menu-item
+              >
+              <sl-menu-item value=${schedules.weekly}
+                >${msg("Weekly")}</sl-menu-item
+              >
+              <sl-menu-item value=${schedules.monthly}
+                >${msg("Monthly")}</sl-menu-item
+              >
+            </sl-select>
+          </div>
+        </div>
+        <div class="grid grid-flow-col gap-2 items-center mt-2">
+          <span class="px-1">${msg("At")}</span>
+          <sl-select name="scheduleHour" class="w-24" value=${initialHours}>
+            ${hours.map(
+              ({ value, label }) =>
+                html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+            )}
+          </sl-select>
+          <span>:</span>
+          <sl-select name="scheduleMinute" class="w-24" value="0">
+            ${minutes.map(
+              ({ value, label }) =>
+                html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+            )}
+          </sl-select>
+          <sl-select class="w-24" value=${initialPeriod}>
+            <sl-menu-item value="AM"
+              >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+            >
+            <sl-menu-item value="PM"
+              >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+            >
+          </sl-select>
+          <span class="px-1">${this.timeZoneShortName}</span>
+        </div>
+      </form>
+
+      ${nextSchedule
+        ? html`<div class="mt-5">
+            ${msg(
+              html`<span class="font-medium">New schedule will be:</span><br />
+                <span class="text-purple-600"
+                  >${cronstrue.toString(nextSchedule, {
+                    verbose: true,
+                  })}
+                  (in ${this.timeZoneShortName} time zone)</span
+                >`
+            )}
+          </div>`
+        : ""}
     `;
   }
 

@@ -40,6 +40,9 @@ export class Archive extends LiteElement {
   @property({ type: Boolean })
   isAddingMember: boolean = false;
 
+  @property({ type: Boolean })
+  isEditing: boolean = false;
+
   /** Whether new resource is being added in tab */
   @property({ type: Boolean })
   isNewResourceTab: boolean = false;
@@ -171,6 +174,7 @@ export class Archive extends LiteElement {
                   .authState=${this.authState!}
                   .archiveId=${this.archiveId!}
                   .crawlConfigId=${this.crawlConfigId}
+                  .isEditing=${this.isEditing}
                 ></btrix-crawl-templates-detail>
               `
             : html` <btrix-crawl-templates-new
