@@ -73,6 +73,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         <dl class="grid grid-cols-2">
           <div>
             <dt class="text-xs text-0-600">${msg("Created by")}</dt>
+            <!-- TODO show name -->
             <dd>${this.crawlTemplate.user}</dd>
           </div>
         </dl>
@@ -102,9 +103,11 @@ export class CrawlTemplatesDetail extends LiteElement {
                 ${this.crawlTemplate.config.seeds
                   .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
                   .map(
-                    (seed) =>
+                    (seed, i) =>
                       html`<li
-                        class="grid grid-cols-5 gap-4 items-baseline py-1 border-b border-zinc-100 "
+                        class="grid grid-cols-5 gap-4 items-baseline py-1 border-zinc-100${i
+                          ? " border-t"
+                          : ""}"
                         role="row"
                         title=${seed.url}
                       >
