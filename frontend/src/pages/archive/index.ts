@@ -7,6 +7,7 @@ import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner } from "../../utils/archives";
+import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
 
@@ -28,6 +29,9 @@ export class Archive extends LiteElement {
 
   @property({ type: String })
   archiveTab: ArchiveTab = defaultTab;
+
+  @property({ type: String })
+  crawlConfigId?: string;
 
   @property({ type: Boolean })
   isAddingMember: boolean = false;
@@ -91,8 +95,10 @@ export class Archive extends LiteElement {
             slot="nav"
             panel="crawl-templates"
             ?active=${this.archiveTab === "crawl-templates"}
-            >${msg("Crawl Templates")}</sl-tab
-          >
+            @click=${() =>
+              this.navTo(`/archives/${this.archiveId}/crawl-templates`)}
+            >${msg("Crawl Templates")}
+          </sl-tab>
           <sl-tab
             slot="nav"
             panel="settings"
@@ -138,25 +144,34 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    if (this.isNewResourceTab) {
+    if (this.isNewResourceTab || this.crawlConfigId) {
       return html`
-        <div class="md:grid grid-cols-6 gap-5">
+        <div class="md:grid grid-cols-6 gap-6">
           <nav class="col-span-1 mb-6">
             <a
               class="font-medium text-sm text-primary hover:opacity-80 flex items-center"
               href=${`/archives/${this.archiveId}/crawl-templates`}
               @click=${this.navLink}
               ><sl-icon class="mr-1" name="arrow-left"></sl-icon> ${msg(
-                "Back to list"
+                "Back to templates"
               )}</a
             >
           </nav>
 
-          <btrix-crawl-templates-new
-            class="col-span-5 mt-6"
-            .authState=${this.authState!}
-            .archiveId=${this.archiveId!}
-          ></btrix-crawl-templates-new>
+          ${this.crawlConfigId
+            ? html`
+                <btrix-crawl-templates-detail
+                  class="col-span-5 mt-6"
+                  .authState=${this.authState!}
+                  .archiveId=${this.archiveId!}
+                  .crawlConfigId=${this.crawlConfigId}
+                ></btrix-crawl-templates-detail>
+              `
+            : html` <btrix-crawl-templates-new
+                class="col-span-5 mt-6"
+                .authState=${this.authState!}
+                .archiveId=${this.archiveId!}
+              ></btrix-crawl-templates-new>`}
         </div>
       `;
     }
