@@ -6,6 +6,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlTemplate } from "./types";
+import { getUTCSchedule } from "./utils";
 
 const SEED_URLS_MAX = 3;
 
@@ -336,7 +337,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       value: i,
       label: `${i}`.padStart(2, "0"),
     }));
-    const schedules = {
+    const scheduleIntervalsMap = {
       daily: `0 0 * * *`,
       weekly: `0 0 * * ${new Date().getDay()}`,
       monthly: `0 0 ${new Date().getDate()} * *`,
@@ -346,18 +347,22 @@ export class CrawlTemplatesDetail extends LiteElement {
       const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
       if (dayofMonth === "*") {
         if (dayOfWeek === "*") {
-          return schedules.daily;
+          return "daily";
         }
-        return schedules.weekly;
+        return "weekly";
       }
-      return schedules.monthly;
+      return "monthly";
     };
 
     const nowHour = new Date().getHours();
     const initialHours = nowHour % 12 || 12;
     const initialPeriod = nowHour > 11 ? "PM" : "AM";
 
-    const schedule = this.editedSchedule || this.crawlTemplate!.schedule;
+    const initialInterval = this.crawlTemplate!.schedule
+      ? getInitialScheduleInterval(this.crawlTemplate!.schedule)
+      : "weekly";
+    const schedule =
+      this.editedSchedule || scheduleIntervalsMap[initialInterval];
     const nextSchedule = schedule
       ? [
           schedule.split(" ")[0],
@@ -367,27 +372,22 @@ export class CrawlTemplatesDetail extends LiteElement {
       : "";
 
     return html`
-      <form>
+      <sl-form @sl-submit=${this.onSubmitSchedule}>
         <div class="flex items-end">
           <div class="pr-2 flex-1">
             <sl-select
-              name="schedule"
+              name="scheduleInterval"
               label=${msg("Recurring crawls")}
-              value=${this.crawlTemplate!.schedule
-                ? getInitialScheduleInterval(this.crawlTemplate!.schedule)
-                : ""}
-              @sl-select=${(e: any) => (this.editedSchedule = e.target.value)}
+              value=${initialInterval}
+              @sl-select=${(e: any) =>
+                (this.editedSchedule = (scheduleIntervalsMap as any)[
+                  e.target.value
+                ])}
             >
               <sl-menu-item value="">${msg("None")}</sl-menu-item>
-              <sl-menu-item value=${schedules.daily}
-                >${msg("Daily")}</sl-menu-item
-              >
-              <sl-menu-item value=${schedules.weekly}
-                >${msg("Weekly")}</sl-menu-item
-              >
-              <sl-menu-item value=${schedules.monthly}
-                >${msg("Monthly")}</sl-menu-item
-              >
+              <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+              <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
+              <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
             </sl-select>
           </div>
         </div>
@@ -406,7 +406,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
             )}
           </sl-select>
-          <sl-select class="w-24" value=${initialPeriod}>
+          <sl-select name="schedulePeriod" class="w-24" value=${initialPeriod}>
             <sl-menu-item value="AM"
               >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
             >
@@ -416,21 +416,31 @@ export class CrawlTemplatesDetail extends LiteElement {
           </sl-select>
           <span class="px-1">${this.timeZoneShortName}</span>
         </div>
-      </form>
 
-      ${nextSchedule
-        ? html`<div class="mt-5">
-            ${msg(
-              html`<span class="font-medium">New schedule will be:</span><br />
-                <span class="text-purple-600"
-                  >${cronstrue.toString(nextSchedule, {
-                    verbose: true,
-                  })}
-                  (in ${this.timeZoneShortName} time zone)</span
-                >`
-            )}
-          </div>`
-        : ""}
+        ${nextSchedule
+          ? html`<div class="mt-5">
+              ${msg(
+                html`<span class="font-medium">New schedule will be:</span
+                  ><br />
+                  <span class="text-0-600"
+                    >${cronstrue.toString(nextSchedule, {
+                      verbose: true,
+                    })}
+                    (in ${this.timeZoneShortName} time zone)</span
+                  >`
+              )}
+            </div>`
+          : ""}
+
+        <div class="mt-5">
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${nextSchedule === this.crawlTemplate!.schedule}
+            >${msg("Save schedule")}</sl-button
+          >
+        </div>
+      </sl-form>
     `;
   }
 
@@ -481,6 +491,21 @@ export class CrawlTemplatesDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async onSubmitSchedule(event: {
+    detail: { formData: FormData };
+    target: any;
+  }): Promise<void> {
+    const { formData } = event.detail;
+    const utcSchedule = getUTCSchedule({
+      interval: formData.get("scheduleInterval") as any,
+      hour: formData.get("scheduleHour") as any,
+      minute: formData.get("scheduleMinute") as any,
+      period: formData.get("schedulePeriod") as any,
+    });
+
+    console.log(utcSchedule);
   }
 }
 
