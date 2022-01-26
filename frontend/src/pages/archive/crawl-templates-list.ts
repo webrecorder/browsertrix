@@ -5,6 +5,7 @@ import cronParser from "cron-parser";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { CrawlTemplate } from "./types";
+import "../../components/crawl-scheduler";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -30,6 +31,9 @@ export class CrawlTemplatesList extends LiteElement {
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
+
+  @state()
+  selectedTemplateForEdit?: CrawlTemplate;
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -114,10 +118,10 @@ export class CrawlTemplatesList extends LiteElement {
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
-                      @click=${() =>
-                        this.navTo(
-                          `/archives/${this.archiveId}/crawl-templates/${t.id}?edit=true`
-                        )}
+                      @click=${(e: any) => {
+                        e.target.closest("sl-dropdown").hide();
+                        this.selectedTemplateForEdit = t;
+                      }}
                     >
                       <sl-icon
                         class="inline-block align-middle px-1"
@@ -285,6 +289,13 @@ export class CrawlTemplatesList extends LiteElement {
             </div>`
         )}
       </div>
+
+      <sl-dialog
+        label=${msg(str`${this.selectedTemplateForEdit?.name} Crawl Schedule`)}
+        ?open=${Boolean(this.selectedTemplateForEdit)}
+      >
+        <btrix-crawl-templates-scheduler></btrix-crawl-templates-scheduler>
+      </sl-dialog>
     `;
   }
 
