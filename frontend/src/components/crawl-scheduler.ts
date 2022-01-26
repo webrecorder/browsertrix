@@ -72,6 +72,8 @@ export class CrawlTemplatesScheduler extends LiteElement {
               label=${msg("Recurring crawls")}
               value=${initialInterval}
               hoist
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
               @sl-select=${(e: any) => {
                 if (e.target.value) {
                   this.isScheduleDisabled = false;
@@ -102,6 +104,8 @@ export class CrawlTemplatesScheduler extends LiteElement {
             value=${initialHours}
             ?disabled=${this.isScheduleDisabled}
             hoist
+            @sl-hide=${this.stopProp}
+            @sl-after-hide=${this.stopProp}
             @sl-select=${(e: any) => {
               const hour = +e.target.value;
               const period = e.target
@@ -123,6 +127,8 @@ export class CrawlTemplatesScheduler extends LiteElement {
             value="0"
             ?disabled=${this.isScheduleDisabled}
             hoist
+            @sl-hide=${this.stopProp}
+            @sl-after-hide=${this.stopProp}
             @sl-select=${(e: any) =>
               (this.editedSchedule = `${e.target.value} ${nextSchedule
                 .split(" ")
@@ -140,6 +146,8 @@ export class CrawlTemplatesScheduler extends LiteElement {
             value=${initialPeriod}
             ?disabled=${this.isScheduleDisabled}
             hoist
+            @sl-hide=${this.stopProp}
+            @sl-after-hide=${this.stopProp}
             @sl-select=${(e: any) => {
               const hour = +e.target
                 .closest("sl-form")
@@ -215,6 +223,15 @@ export class CrawlTemplatesScheduler extends LiteElement {
     this.editedSchedule = `${schedule.split(" ")[0]} ${
       hour + periodOffset
     } ${schedule.split(" ").slice(2).join(" ")}`;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 

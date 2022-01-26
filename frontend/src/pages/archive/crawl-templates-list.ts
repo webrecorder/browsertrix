@@ -1,5 +1,4 @@
 import { state, property } from "lit/decorators.js";
-import { ref, createRef, Ref } from "lit/directives/ref.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
 
@@ -22,8 +21,6 @@ type RunningCrawlsMap = {
  */
 @localized()
 export class CrawlTemplatesList extends LiteElement {
-  private dialogRef: Ref<any> = createRef();
-
   @property({ type: Object })
   authState!: AuthState;
 
@@ -35,6 +32,9 @@ export class CrawlTemplatesList extends LiteElement {
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
+
+  @state()
+  showEditDialog?: boolean = false;
 
   @state()
   selectedTemplateForEdit?: CrawlTemplate;
@@ -120,8 +120,8 @@ export class CrawlTemplatesList extends LiteElement {
                       role="menuitem"
                       @click=${(e: any) => {
                         e.target.closest("sl-dropdown").hide();
+                        this.showEditDialog = true;
                         this.selectedTemplateForEdit = t;
-                        this.dialogRef.value!.show();
                       }}
                     >
                       <sl-icon
@@ -291,16 +291,24 @@ export class CrawlTemplatesList extends LiteElement {
         )}
       </div>
 
-      <!-- NOTE on ref usage: Using a reactive open attribute causes the dialog to close -->
-      <!-- https://github.com/shoelace-style/shoelace/issues/170 -->
-      <sl-dialog ${ref(this.dialogRef)} label=${msg(str`Edit Crawl Schedule`)}>
+      <sl-dialog
+        label=${msg(str`Edit Crawl Schedule`)}
+        ?open=${this.showEditDialog}
+        @sl-request-close=${() => (this.showEditDialog = false)}
+        @sl-after-hide=${() => (this.selectedTemplateForEdit = undefined)}
+      >
         <h2 class="text-lg font-medium mb-4">
           ${this.selectedTemplateForEdit?.name}
         </h2>
-        <btrix-crawl-templates-scheduler
-          .schedule=${this.selectedTemplateForEdit?.schedule}
-          @submit=${this.onSubmitSchedule}
-        ></btrix-crawl-templates-scheduler>
+
+        ${this.selectedTemplateForEdit
+          ? html`
+              <btrix-crawl-templates-scheduler
+                .schedule=${this.selectedTemplateForEdit.schedule}
+                @submit=${this.onSubmitSchedule}
+              ></btrix-crawl-templates-scheduler>
+            `
+          : ""}
       </sl-dialog>
     `;
   }
@@ -446,8 +454,7 @@ export class CrawlTemplatesList extends LiteElement {
             }
           : t
       );
-      this.selectedTemplateForEdit = undefined;
-      this.dialogRef.value!.hide();
+      this.showEditDialog = false;
 
       this.notify({
         message: msg("Successfully saved new schedule."),
