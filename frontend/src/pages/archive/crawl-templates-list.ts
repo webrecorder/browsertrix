@@ -39,10 +39,6 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   selectedTemplateForEdit?: CrawlTemplate;
 
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
   async firstUpdated() {
     try {
       this.crawlTemplates = await this.getCrawlTemplates();
@@ -218,7 +214,7 @@ export class CrawlTemplatesList extends LiteElement {
                               year="2-digit"
                               hour="numeric"
                               minute="numeric"
-                              time-zone=${this.timeZone}
+                              time-zone-name="short"
                             ></sl-format-date>
                           </span>
                         </sl-tooltip>`
@@ -254,7 +250,7 @@ export class CrawlTemplatesList extends LiteElement {
                                 year="2-digit"
                                 hour="numeric"
                                 minute="numeric"
-                                time-zone=${this.timeZone}
+                                time-zone-name="short"
                               ></sl-format-date>
                             </span>
                           </sl-tooltip>
