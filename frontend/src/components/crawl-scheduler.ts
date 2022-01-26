@@ -71,6 +71,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
               name="scheduleInterval"
               label=${msg("Recurring crawls")}
               value=${initialInterval}
+              hoist
               @sl-select=${(e: any) => {
                 if (e.target.value) {
                   this.isScheduleDisabled = false;
@@ -100,6 +101,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
             class="w-24"
             value=${initialHours}
             ?disabled=${this.isScheduleDisabled}
+            hoist
             @sl-select=${(e: any) => {
               const hour = +e.target.value;
               const period = e.target
@@ -120,6 +122,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
             class="w-24"
             value="0"
             ?disabled=${this.isScheduleDisabled}
+            hoist
             @sl-select=${(e: any) =>
               (this.editedSchedule = `${e.target.value} ${nextSchedule
                 .split(" ")
@@ -136,6 +139,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
             class="w-24"
             value=${initialPeriod}
             ?disabled=${this.isScheduleDisabled}
+            hoist
             @sl-select=${(e: any) => {
               const hour = +e.target
                 .closest("sl-form")

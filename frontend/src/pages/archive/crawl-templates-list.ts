@@ -1,10 +1,12 @@
 import { state, property } from "lit/decorators.js";
+import { ref, createRef, Ref } from "lit/directives/ref.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { CrawlTemplate } from "./types";
+import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
 
 type RunningCrawlsMap = {
@@ -20,6 +22,8 @@ type RunningCrawlsMap = {
  */
 @localized()
 export class CrawlTemplatesList extends LiteElement {
+  private dialogRef: Ref<any> = createRef();
+
   @property({ type: Object })
   authState!: AuthState;
 
@@ -121,6 +125,7 @@ export class CrawlTemplatesList extends LiteElement {
                       @click=${(e: any) => {
                         e.target.closest("sl-dropdown").hide();
                         this.selectedTemplateForEdit = t;
+                        this.dialogRef.value!.show();
                       }}
                     >
                       <sl-icon
@@ -290,11 +295,16 @@ export class CrawlTemplatesList extends LiteElement {
         )}
       </div>
 
-      <sl-dialog
-        label=${msg(str`${this.selectedTemplateForEdit?.name} Crawl Schedule`)}
-        ?open=${Boolean(this.selectedTemplateForEdit)}
-      >
-        <btrix-crawl-templates-scheduler></btrix-crawl-templates-scheduler>
+      <!-- NOTE on ref usage: Using a reactive open attribute causes the dialog to close -->
+      <!-- https://github.com/shoelace-style/shoelace/issues/170 -->
+      <sl-dialog ${ref(this.dialogRef)} label=${msg(str`Edit Crawl Schedule`)}>
+        <h2 class="text-lg font-medium mb-4">
+          ${this.selectedTemplateForEdit?.name}
+        </h2>
+        <btrix-crawl-templates-scheduler
+          .schedule=${this.selectedTemplateForEdit?.schedule}
+          @submit=${this.onSubmitSchedule}
+        ></btrix-crawl-templates-scheduler>
       </sl-dialog>
     `;
   }
@@ -399,6 +409,60 @@ export class CrawlTemplatesList extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async onSubmitSchedule(event: {
+    detail: { formData: FormData };
+    target: any;
+  }): Promise<void> {
+    if (!this.selectedTemplateForEdit) return;
+
+    const { formData } = event.detail;
+    const utcSchedule = getUTCSchedule({
+      interval: formData.get("scheduleInterval") as any,
+      hour: formData.get("scheduleHour") as any,
+      minute: formData.get("scheduleMinute") as any,
+      period: formData.get("schedulePeriod") as any,
+    });
+    const editedTemplateId = this.selectedTemplateForEdit.id;
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}/schedule`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            schedule: utcSchedule,
+          }),
+        }
+      );
+
+      this.crawlTemplates = this.crawlTemplates?.map((t) =>
+        t.id === editedTemplateId
+          ? {
+              ...t,
+              schedule: utcSchedule,
+            }
+          : t
+      );
+      this.selectedTemplateForEdit = undefined;
+      this.dialogRef.value!.hide();
+
+      this.notify({
+        message: msg("Successfully saved new schedule."),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update schedule."),
         type: "danger",
         icon: "exclamation-octagon",
       });
