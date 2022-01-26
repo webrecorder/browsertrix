@@ -37,7 +37,10 @@ export class CrawlTemplatesDetail extends LiteElement {
   private showAllSeedURLs: boolean = false;
 
   @state()
-  private editedSchedule: string = "";
+  private editedSchedule?: string;
+
+  @state()
+  private isScheduleDisabled?: boolean;
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -337,11 +340,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       value: i,
       label: `${i}`.padStart(2, "0"),
     }));
-    const scheduleIntervalsMap = {
-      daily: `0 0 * * *`,
-      weekly: `0 0 * * ${new Date().getDay()}`,
-      monthly: `0 0 ${new Date().getDate()} * *`,
-    };
 
     const getInitialScheduleInterval = (schedule: string) => {
       const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
@@ -357,19 +355,16 @@ export class CrawlTemplatesDetail extends LiteElement {
     const nowHour = new Date().getHours();
     const initialHours = nowHour % 12 || 12;
     const initialPeriod = nowHour > 11 ? "PM" : "AM";
-
+    const scheduleIntervalsMap = {
+      daily: `0 ${nowHour} * * *`,
+      weekly: `0 ${nowHour} * * ${new Date().getDay()}`,
+      monthly: `0 ${nowHour} ${new Date().getDate()} * *`,
+    };
     const initialInterval = this.crawlTemplate!.schedule
       ? getInitialScheduleInterval(this.crawlTemplate!.schedule)
       : "weekly";
-    const schedule =
+    const nextSchedule =
       this.editedSchedule || scheduleIntervalsMap[initialInterval];
-    const nextSchedule = schedule
-      ? [
-          schedule.split(" ")[0],
-          nowHour,
-          schedule.split(" ").slice(2).join(" "),
-        ].join(" ")
-      : "";
 
     return html`
       <sl-form @sl-submit=${this.onSubmitSchedule}>
@@ -379,10 +374,20 @@ export class CrawlTemplatesDetail extends LiteElement {
               name="scheduleInterval"
               label=${msg("Recurring crawls")}
               value=${initialInterval}
-              @sl-select=${(e: any) =>
-                (this.editedSchedule = (scheduleIntervalsMap as any)[
-                  e.target.value
-                ])}
+              @sl-select=${(e: any) => {
+                if (e.target.value) {
+                  this.isScheduleDisabled = false;
+                  this.editedSchedule = `${nextSchedule
+                    .split(" ")
+                    .slice(0, 2)
+                    .join(" ")} ${(scheduleIntervalsMap as any)[e.target.value]
+                    .split(" ")
+                    .slice(2)
+                    .join(" ")}`;
+                } else {
+                  this.isScheduleDisabled = true;
+                }
+              }}
             >
               <sl-menu-item value="">${msg("None")}</sl-menu-item>
               <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
@@ -393,20 +398,56 @@ export class CrawlTemplatesDetail extends LiteElement {
         </div>
         <div class="grid grid-flow-col gap-2 items-center mt-2">
           <span class="px-1">${msg("At")}</span>
-          <sl-select name="scheduleHour" class="w-24" value=${initialHours}>
+          <sl-select
+            name="scheduleHour"
+            class="w-24"
+            value=${initialHours}
+            ?disabled=${this.isScheduleDisabled}
+            @sl-select=${(e: any) => {
+              const hour = +e.target.value;
+              const period = e.target
+                .closest("sl-form")
+                .querySelector('sl-select[name="schedulePeriod"]').value;
+
+              this.setScheduleHour({ hour, period, schedule: nextSchedule });
+            }}
+          >
             ${hours.map(
               ({ value, label }) =>
                 html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
             )}
           </sl-select>
           <span>:</span>
-          <sl-select name="scheduleMinute" class="w-24" value="0">
+          <sl-select
+            name="scheduleMinute"
+            class="w-24"
+            value="0"
+            ?disabled=${this.isScheduleDisabled}
+            @sl-select=${(e: any) =>
+              (this.editedSchedule = `${e.target.value} ${nextSchedule
+                .split(" ")
+                .slice(1)
+                .join(" ")}`)}
+          >
             ${minutes.map(
               ({ value, label }) =>
                 html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
             )}
           </sl-select>
-          <sl-select name="schedulePeriod" class="w-24" value=${initialPeriod}>
+          <sl-select
+            name="schedulePeriod"
+            class="w-24"
+            value=${initialPeriod}
+            ?disabled=${this.isScheduleDisabled}
+            @sl-select=${(e: any) => {
+              const hour = +e.target
+                .closest("sl-form")
+                .querySelector('sl-select[name="scheduleHour"]').value;
+              const period = e.target.value;
+
+              this.setScheduleHour({ hour, period, schedule: nextSchedule });
+            }}
+          >
             <sl-menu-item value="AM"
               >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
             >
@@ -417,9 +458,12 @@ export class CrawlTemplatesDetail extends LiteElement {
           <span class="px-1">${this.timeZoneShortName}</span>
         </div>
 
-        ${nextSchedule
-          ? html`<div class="mt-5">
-              ${msg(
+        <div class="mt-5">
+          ${this.isScheduleDisabled
+            ? msg(html`<span class="font-medium"
+                >Crawls will not repeat.</span
+              >`)
+            : msg(
                 html`<span class="font-medium">New schedule will be:</span
                   ><br />
                   <span class="text-0-600"
@@ -429,16 +473,10 @@ export class CrawlTemplatesDetail extends LiteElement {
                     (in ${this.timeZoneShortName} time zone)</span
                   >`
               )}
-            </div>`
-          : ""}
+        </div>
 
         <div class="mt-5">
-          <sl-button
-            type="primary"
-            submit
-            ?disabled=${nextSchedule === this.crawlTemplate!.schedule}
-            >${msg("Save schedule")}</sl-button
-          >
+          <sl-button type="primary" submit>${msg("Save schedule")}</sl-button>
         </div>
       </sl-form>
     `;
@@ -506,6 +544,67 @@ export class CrawlTemplatesDetail extends LiteElement {
     });
 
     console.log(utcSchedule);
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${
+          this.crawlTemplate!.id
+        }/schedule`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            schedule: utcSchedule,
+          }),
+        }
+      );
+
+      console.log("data;", data);
+
+      this.notify({
+        message: msg("Successfully saved new schedule."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update schedule."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  /**
+   * Set correct local hour in schedule in 24-hr format
+   **/
+  private setScheduleHour({
+    hour,
+    period,
+    schedule,
+  }: {
+    hour: number;
+    period: "AM" | "PM";
+    schedule: string;
+  }) {
+    // Convert 12-hr to 24-hr time
+    let periodOffset = 0;
+
+    if (hour === 12) {
+      if (period === "AM") {
+        periodOffset = -12;
+      }
+    } else if (period === "PM") {
+      periodOffset = 12;
+    }
+
+    this.editedSchedule = `${schedule.split(" ")[0]} ${
+      hour + periodOffset
+    } ${schedule.split(" ").slice(2).join(" ")}`;
   }
 }
 
