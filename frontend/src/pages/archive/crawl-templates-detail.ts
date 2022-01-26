@@ -222,8 +222,18 @@ export class CrawlTemplatesDetail extends LiteElement {
                     this.crawlTemplate!.id
                   }${this.isEditing ? "" : "?edit=true"}`}
                   @click=${(e: any) => {
-                    this.navLink(e);
-                    this.editedSchedule = "";
+                    const hasChanges = this.isEditing && this.editedSchedule;
+                    if (
+                      !hasChanges ||
+                      window.confirm(
+                        msg("You have unsaved schedule changes. Are you sure?")
+                      )
+                    ) {
+                      this.navLink(e);
+                      this.editedSchedule = "";
+                    } else {
+                      e.preventDefault();
+                    }
                   }}
                 >
                   ${this.isEditing ? msg("Cancel") : msg("Edit")}
@@ -544,7 +554,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     });
 
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${
           this.crawlTemplate!.id
         }/schedule`,
@@ -563,7 +573,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+      this.navTo(
+        `/archives/${this.archiveId}/crawl-templates/${this.crawlTemplate!.id}`
+      );
     } catch (e: any) {
       console.error(e);
 
