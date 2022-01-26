@@ -9,12 +9,17 @@ import type { CrawlTemplate } from "../pages/archive/types";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-scheduler></btrix-crawl-templates-scheduler>
+ * <btrix-crawl-templates-scheduler
+ *   schedule="0 0 * * *"
+ *   @submit=${this.handleSubmit}
+ * ></btrix-crawl-templates-scheduler>
  * ```
+ *
+ * @event submit
  */
 @localized()
 export class CrawlTemplatesScheduler extends LiteElement {
-  @state()
+  @property({ type: String })
   private schedule?: CrawlTemplate["schedule"];
 
   @state()
