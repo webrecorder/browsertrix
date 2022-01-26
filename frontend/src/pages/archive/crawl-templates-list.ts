@@ -114,6 +114,23 @@ export class CrawlTemplatesList extends LiteElement {
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
+                      @click=${() =>
+                        this.navTo(
+                          `/archives/${this.archiveId}/crawl-templates/${t.id}?edit=true`
+                        )}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="pencil-square"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Edit crawl schedule")}</span
+                      >
+                    </li>
+
+                    <li
+                      class="p-2 hover:bg-zinc-100 cursor-pointer"
+                      role="menuitem"
                       @click=${() => this.duplicateConfig(t)}
                     >
                       <sl-icon
