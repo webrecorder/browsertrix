@@ -486,7 +486,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         </div>
 
         <div class="mt-5">
-          <sl-button type="primary" submit>${msg("Save schedule")}</sl-button>
+          <sl-button type="primary" submit
+            >${msg("Save Crawl Schedule")}</sl-button
+          >
         </div>
       </sl-form>
     `;
