@@ -7,6 +7,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlConfig } from "./types";
+import { getUTCSchedule } from "./utils";
 
 export type NewCrawlTemplate = {
   id?: string;
@@ -558,40 +559,18 @@ export class CrawlTemplatesNew extends LiteElement {
     this.isSubmitting = false;
   }
 
-  /**
-   * Get schedule as UTC cron job expression
-   * https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
-   **/
   private getUTCSchedule(): string {
     if (!this.scheduleInterval) {
       return "";
     }
-
     const { minute, hour, period } = this.scheduleTime;
-    const localDate = new Date();
 
-    // Convert 12-hr to 24-hr time
-    let periodOffset = 0;
-
-    if (hour === 12) {
-      if (period === "AM") {
-        periodOffset = -12;
-      }
-    } else if (period === "PM") {
-      periodOffset = 12;
-    }
-
-    localDate.setHours(+hour + periodOffset);
-    localDate.setMinutes(+minute);
-    const dayOfMonth =
-      this.scheduleInterval === "monthly" ? localDate.getUTCDate() : "*";
-    const dayOfWeek =
-      this.scheduleInterval === "weekly" ? localDate.getUTCDay() : "*";
-    const month = "*";
-
-    const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${dayOfMonth} ${month} ${dayOfWeek}`;
-
-    return schedule;
+    return getUTCSchedule({
+      interval: this.scheduleInterval,
+      hour,
+      minute,
+      period,
+    });
   }
 }
 

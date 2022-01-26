@@ -26,7 +26,7 @@ export function getUTCSchedule({
     periodOffset = 12;
   }
 
-  localDate.setHours(+hour + periodOffset);
+  localDate.setHours(hour + periodOffset);
   localDate.setMinutes(+minute);
   const dayOfMonth = interval === "monthly" ? localDate.getUTCDate() : "*";
   const dayOfWeek = interval === "weekly" ? localDate.getUTCDay() : "*";

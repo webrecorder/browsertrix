@@ -543,8 +543,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       period: formData.get("schedulePeriod") as any,
     });
 
-    console.log(utcSchedule);
-
     try {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${
@@ -558,8 +556,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           }),
         }
       );
-
-      console.log("data;", data);
 
       this.notify({
         message: msg("Successfully saved new schedule."),
