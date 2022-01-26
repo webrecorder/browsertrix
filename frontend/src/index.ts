@@ -6,12 +6,12 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
-import type { NotifyEvent } from "./utils/LiteElement";
+import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
-import type { ViewState, NavigateEvent } from "./utils/APIRouter";
+import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthState } from "./utils/AuthService";
 import theme from "./theme";
@@ -145,7 +145,7 @@ export class App extends LiteElement {
     }
   }
 
-  navigate(newViewPath: string) {
+  navigate(newViewPath: string, state?: object) {
     if (newViewPath.startsWith("http")) {
       const url = new URL(newViewPath);
       newViewPath = `${url.pathname}${url.search}`;
@@ -157,6 +157,8 @@ export class App extends LiteElement {
     } else {
       this.viewState = this.router.match(newViewPath);
     }
+
+    this.viewState.data = state;
 
     window.history.pushState(this.viewState, "", this.viewState.pathname);
   }
@@ -377,6 +379,7 @@ export class App extends LiteElement {
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
+          .viewStateData=${this.viewState.data}
           archiveId=${this.viewState.params.id}
           archiveTab=${this.viewState.params.crawlConfigId
             ? "crawl-templates"
@@ -472,7 +475,7 @@ export class App extends LiteElement {
   onNavigateTo(event: NavigateEvent) {
     event.stopPropagation();
 
-    this.navigate(event.detail);
+    this.navigate(event.detail.url, event.detail.state);
   }
 
   onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {

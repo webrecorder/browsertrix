@@ -3,6 +3,13 @@ import { LitElement, html } from "lit";
 import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
 
+export interface NavigateEvent extends CustomEvent {
+  detail: {
+    url: string;
+    state?: object;
+  };
+}
+
 export interface NotifyEvent extends CustomEvent {
   detail: {
     /**
@@ -27,21 +34,31 @@ export default class LiteElement extends LitElement {
     return this;
   }
 
-  navTo(url: string) {
-    this.dispatchEvent(
-      new CustomEvent("navigate", { detail: url, bubbles: true })
-    );
+  navTo(url: string, state?: object): void {
+    const evt: NavigateEvent = new CustomEvent("navigate", {
+      detail: { url, state },
+      bubbles: true,
+    });
+    this.dispatchEvent(evt);
   }
 
-  navLink(event: Event) {
+  /**
+   * Bind to anchor tag to prevent full page navigation
+   * @example
+   * ```ts
+   * <a href="/" @click=${this.navLink}>go</a>
+   * ```
+   * @param event Click event
+   */
+  navLink(event: Event): void {
     event.preventDefault();
-    this.dispatchEvent(
-      new CustomEvent("navigate", {
-        detail: (event.currentTarget as HTMLAnchorElement).href,
-        bubbles: true,
-        composed: true,
-      })
-    );
+
+    const evt: NavigateEvent = new CustomEvent("navigate", {
+      detail: { url: (event.currentTarget as HTMLAnchorElement).href },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(evt);
   }
 
   /**

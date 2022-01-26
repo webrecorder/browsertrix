@@ -4,7 +4,7 @@ type SeedConfig = {
 };
 
 export type CrawlConfig = {
-  seeds: ({ url: string } & SeedConfig)[];
+  seeds: (string | ({ url: string } & SeedConfig))[];
 } & SeedConfig;
 
 export type CrawlTemplate = {

@@ -110,9 +110,22 @@ export class CrawlTemplatesList extends LiteElement {
                     style="font-size: 1rem"
                   ></sl-icon-button>
 
-                  <ul role="menu">
+                  <ul class="text-sm whitespace-nowrap" role="menu">
                     <li
-                      class="px-4 py-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                      class="p-2 hover:bg-zinc-100 cursor-pointer"
+                      role="menuitem"
+                      @click=${() => this.duplicateConfig(t)}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="files"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Duplicate crawl config")}</span
+                      >
+                    </li>
+                    <li
+                      class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                       role="menuitem"
                       @click=${(e: any) => {
                         // Close dropdown before deleting template
@@ -121,7 +134,13 @@ export class CrawlTemplatesList extends LiteElement {
                         this.deleteTemplate(t);
                       }}
                     >
-                      ${msg("Delete")}
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="file-earmark-x"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Delete")}</span
+                      >
                     </li>
                   </ul>
                 </sl-dropdown>
@@ -131,14 +150,20 @@ export class CrawlTemplatesList extends LiteElement {
                 <div class="grid gap-2 text-xs leading-none">
                   <div class="overflow-hidden">
                     <sl-tooltip
-                      content=${t.config.seeds.map(({ url }) => url).join(", ")}
+                      content=${t.config.seeds
+                        .map((seed) =>
+                          typeof seed === "string" ? seed : seed.url
+                        )
+                        .join(", ")}
                     >
                       <div
                         class="font-mono whitespace-nowrap truncate text-0-500"
                       >
                         <span class="underline decoration-dashed"
                           >${t.config.seeds
-                            .map(({ url }) => url)
+                            .map((seed) =>
+                              typeof seed === "string" ? seed : seed.url
+                            )
                             .join(", ")}</span
                         >
                       </div>
@@ -251,44 +276,43 @@ export class CrawlTemplatesList extends LiteElement {
    * associated with the crawl templates
    **/
   private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
-    type CrawlConfig = Omit<CrawlTemplate, "config"> & {
-      config: Omit<CrawlTemplate["config"], "seeds"> & {
-        seeds: (string | { url: string })[];
-      };
-    };
-
-    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
+    const data: { crawlConfigs: CrawlTemplate[] } = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs`,
       this.authState!
     );
 
-    const crawlConfigs: CrawlTemplate[] = [];
     const runningCrawlsMap: RunningCrawlsMap = {};
 
-    data.crawlConfigs.forEach(({ config, ...configMeta }) => {
-      crawlConfigs.push({
-        ...configMeta,
-        config: {
-          ...config,
-          // Normalize seed format
-          seeds: config.seeds.map((seed) =>
-            typeof seed === "string"
-              ? {
-                  url: seed,
-                }
-              : seed
-          ),
-        },
-      });
-
-      if (configMeta.currCrawlId) {
-        runningCrawlsMap[configMeta.id] = configMeta.currCrawlId;
+    data.crawlConfigs.forEach(({ id, currCrawlId }) => {
+      if (currCrawlId) {
+        runningCrawlsMap[id] = currCrawlId;
       }
     });
 
     this.runningCrawlsMap = runningCrawlsMap;
 
-    return crawlConfigs;
+    return data.crawlConfigs;
+  }
+
+  /**
+   * Create a new template using existing template data
+   */
+  private async duplicateConfig(template: CrawlTemplate) {
+    const crawlConfig: CrawlTemplate["config"] = {
+      seeds: template.config.seeds,
+      scopeType: template.config.scopeType,
+      limit: template.config.limit,
+    };
+
+    this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
+      crawlConfig,
+    });
+
+    this.notify({
+      message: msg(str`Copied crawl configuration to new template.`),
+      type: "success",
+      icon: "check2-circle",
+    });
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {
