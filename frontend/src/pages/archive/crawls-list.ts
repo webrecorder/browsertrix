@@ -106,20 +106,29 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
       <div class="col-span-6 md:col-span-3">
-        <div class="whitespace-nowrap truncate mb-1">
+        <div
+          class="whitespace-nowrap truncate mb-1${crawl.state === "running"
+            ? " motion-safe:animate-pulse"
+            : ""}"
+        >
+          <!-- TODO switch case in lit template? needed for tailwindcss purging -->
           <span
             class="inline-block align-middle ${crawl.state === "failed"
-              ? "text-danger"
-              : "text-success"}"
-            style="font-size: .5rem"
+              ? "text-red-500"
+              : crawl.state === "partial_complete"
+              ? "text-emerald-200"
+              : crawl.state === "running"
+              ? "text-purple-500"
+              : "text-emerald-500"}"
+            style="font-size: 10px"
           >
             &#9679;
           </span>
           <span class="inline-block align-middle capitalize"
-            >${crawl.state === "running" ? msg("Running") : crawl.state}</span
+            >${crawl.state.replace(/_/g, " ")}</span
           >
         </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate ml-3">
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
           ${crawl.finished
             ? html`
                 <sl-format-date
@@ -154,12 +163,20 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
       <div class="col-span-12 md:col-span-1 text-right">
-        <sl-icon-button
-          slot="trigger"
-          name="three-dots"
-          label="More"
-          style="font-size: 1rem"
-        ></sl-icon-button>
+        <sl-dropdown>
+          <sl-icon-button
+            slot="trigger"
+            name="three-dots"
+            label="More"
+            style="font-size: 1rem"
+          ></sl-icon-button>
+
+          <ul class="text-sm whitespace-nowrap" role="menu">
+            <li class="p-2 hover:bg-zinc-100 cursor-pointer" role="menuitem">
+              [item]
+            </li>
+          </ul>
+        </sl-dropdown>
       </div>
     </li>`;
   };
