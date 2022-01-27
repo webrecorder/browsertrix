@@ -90,9 +90,9 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = (crawl: Crawl) => {
     return html`<li
-      class="grid grid-cols-10 gap-5 p-4 leading-none border-t first:border-t-0"
+      class="grid grid-cols-12 gap-4 md:gap-6 p-4 leading-none border-t first:border-t-0"
     >
-      <div class="col-span-10 md:col-span-3">
+      <div class="col-span-12 md:col-span-4">
         <div class="font-medium whitespace-nowrap truncate mb-1">
           ${crawl.id}
         </div>
@@ -105,13 +105,21 @@ export class CrawlsList extends LiteElement {
           >
         </div>
       </div>
-      <div class="col-span-10 md:col-span-3">
+      <div class="col-span-6 md:col-span-3">
         <div class="whitespace-nowrap truncate mb-1">
-          <span class="capitalize"
+          <span
+            class="inline-block align-middle ${crawl.state === "failed"
+              ? "text-danger"
+              : "text-success"}"
+            style="font-size: .5rem"
+          >
+            &#9679;
+          </span>
+          <span class="inline-block align-middle capitalize"
             >${crawl.state === "running" ? msg("Running") : crawl.state}</span
           >
         </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+        <div class="text-0-500 text-sm whitespace-nowrap truncate ml-3">
           ${crawl.finished
             ? html`
                 <sl-format-date
@@ -132,7 +140,7 @@ export class CrawlsList extends LiteElement {
               )}
         </div>
       </div>
-      <div class="col-span-10 md:col-span-3">
+      <div class="col-span-6 md:col-span-4">
         <div class="whitespace-nowrap truncate mb-1">
           <sl-relative-time
             date=${`${crawl.started}Z` /** Z for UTC */}
@@ -145,7 +153,7 @@ export class CrawlsList extends LiteElement {
             : msg(html`Scheduled run`)}
         </div>
       </div>
-      <div class="col-span-10 md:col-span-1 text-right">
+      <div class="col-span-12 md:col-span-1 text-right">
         <sl-icon-button
           slot="trigger"
           name="three-dots"
