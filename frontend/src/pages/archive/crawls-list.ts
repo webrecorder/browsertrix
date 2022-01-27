@@ -105,61 +105,65 @@ export class CrawlsList extends LiteElement {
           >
         </div>
       </div>
-      <div class="col-span-6 md:col-span-3">
-        <div
-          class="whitespace-nowrap truncate mb-1${crawl.state === "running"
-            ? " motion-safe:animate-pulse"
-            : ""}"
-        >
+      <div class="col-span-6 md:col-span-3 flex items-start">
+        <div class="mr-2">
           <!-- TODO switch case in lit template? needed for tailwindcss purging -->
           <span
-            class="inline-block align-middle ${crawl.state === "failed"
+            class="inline-block ${crawl.state === "failed"
               ? "text-red-500"
               : crawl.state === "partial_complete"
               ? "text-emerald-200"
               : crawl.state === "running"
               ? "text-purple-500"
               : "text-emerald-500"}"
-            style="font-size: 10px"
+            style="font-size: 10px; vertical-align: 2px"
           >
             &#9679;
           </span>
-          <span class="inline-block align-middle capitalize"
-            >${crawl.state.replace(/_/g, " ")}</span
-          >
         </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
-          ${crawl.finished
-            ? html`
-                <sl-format-date
-                  class="inline-block align-middle text-0-600"
-                  date=${`${crawl.finished}Z` /** Z for UTC */}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="numeric"
-                  minute="numeric"
-                ></sl-format-date>
-              `
-            : humanizeDuration(
-                Date.now() - new Date(`${crawl.started}Z`).valueOf(),
-                {
-                  secondsDecimalDigits: 0,
-                }
-              )}
+        <div>
+          <div
+            class="whitespace-nowrap truncate mb-1 capitalize${crawl.state ===
+            "running"
+              ? " motion-safe:animate-pulse"
+              : ""}"
+          >
+            ${crawl.state.replace(/_/g, " ")}
+          </div>
+          <div class="text-0-500 text-sm whitespace-nowrap truncate">
+            ${crawl.finished
+              ? html`
+                  <sl-relative-time
+                    date=${`${crawl.finished}Z` /** Z for UTC */}
+                    sync
+                  ></sl-relative-time>
+                `
+              : humanizeDuration(
+                  Date.now() - new Date(`${crawl.started}Z`).valueOf(),
+                  {
+                    secondsDecimalDigits: 0,
+                  }
+                )}
+          </div>
         </div>
       </div>
       <div class="col-span-6 md:col-span-4">
         <div class="whitespace-nowrap truncate mb-1">
-          <sl-relative-time
-            date=${`${crawl.started}Z` /** Z for UTC */}
-            sync
-          ></sl-relative-time>
-        </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
           ${crawl.manual
             ? msg(html`Manual start by <span>${crawl.user}</span>`)
             : msg(html`Scheduled run`)}
+        </div>
+
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+          <sl-format-date
+            class="inline-block align-middle text-0-600"
+            date=${`${crawl.started}Z` /** Z for UTC */}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="numeric"
+            minute="numeric"
+          ></sl-format-date>
         </div>
       </div>
       <div class="col-span-12 md:col-span-1 text-right">
