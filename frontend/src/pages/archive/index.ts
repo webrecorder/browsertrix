@@ -11,10 +11,11 @@ import { isOwner } from "../../utils/archives";
 import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
+import "./crawls";
 
-export type ArchiveTab = "crawl-templates" | "settings" | "members";
+export type ArchiveTab = "crawls" | "crawl-templates" | "settings" | "members";
 
-const defaultTab = "settings";
+const defaultTab = "crawls";
 
 @needLogin
 @localized()
@@ -100,6 +101,13 @@ export class Archive extends LiteElement {
         <sl-tab-group @sl-tab-show=${this.updateUrl}>
           <sl-tab
             slot="nav"
+            panel="crawls"
+            ?active=${this.archiveTab === "crawls"}
+            @click=${() => this.navTo(`/archives/${this.archiveId}/crawls`)}
+            >${msg("Crawls")}
+          </sl-tab>
+          <sl-tab
+            slot="nav"
             panel="crawl-templates"
             ?active=${this.archiveTab === "crawl-templates"}
             @click=${() =>
@@ -121,15 +129,18 @@ export class Archive extends LiteElement {
               >`
             : ""}
 
-          <sl-tab-panel
-            name="settings"
-            ?active=${this.archiveTab === "settings"}
-            >${this.renderSettings()}</sl-tab-panel
+          <sl-tab-panel name="crawls" ?active=${this.archiveTab === "crawls"}
+            >${this.renderCrawls()}</sl-tab-panel
           >
           <sl-tab-panel
             name="crawl-templates"
             ?active=${this.archiveTab === "crawl-templates"}
             >${this.renderCrawlTemplates()}</sl-tab-panel
+          >
+          <sl-tab-panel
+            name="settings"
+            ?active=${this.archiveTab === "settings"}
+            >${this.renderSettings()}</sl-tab-panel
           >
           ${showMembersTab
             ? html`<sl-tab-panel
@@ -148,6 +159,13 @@ export class Archive extends LiteElement {
 
   private renderSettings() {
     return html` TODO `;
+  }
+
+  private renderCrawls() {
+    return html`<btrix-crawls
+      .authState=${this.authState!}
+      .archiveId=${this.archiveId!}
+    ></btrix-crawls>`;
   }
 
   private renderCrawlTemplates() {

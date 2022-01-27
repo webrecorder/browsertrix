@@ -42,9 +42,6 @@ export class CrawlTemplatesList extends LiteElement {
   async firstUpdated() {
     try {
       this.crawlTemplates = await this.getCrawlTemplates();
-      if (!this.crawlTemplates.length) {
-        this.navTo(`/archives/${this.archiveId}/crawl-templates/new`);
-      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl templates at this time."),
