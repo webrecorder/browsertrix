@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import humanizeDuration from "pretty-ms";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -12,12 +13,12 @@ type Crawl = {
   schedule: string;
   manual: boolean;
   started: string; // UTC ISO date
-  finished: string; // UTC ISO date
-  state: string;
+  finished?: string; // UTC ISO date
+  state: string; // "running" | "complete" | "failed" | "partial_complete"
   scale: number;
-  completions: number;
-  stats: null;
-  files: { filename: string; hash: string; size: number }[];
+  stats: { done: number; found: number } | null;
+  files?: { filename: string; hash: string; size: number }[];
+  completions?: number;
 };
 
 /**
@@ -69,16 +70,15 @@ export class CrawlsList extends LiteElement {
     }
 
     return html`
-      <main class="md:grid grid-cols-5 gap-5">
+      <main class="grid grid-cols-5 gap-5">
         <header class="col-span-5 flex justify-between">
           <div><sl-button>${msg("New Crawl")}</sl-button></div>
           <div>[Sort by]</div>
         </header>
 
-        <section class="col-span-1">[Filters]</section>
-
-        <section class="col-span-4 grid gap-5">
-          <ul class="border rounded">
+        <section class="col-span-5 lg:col-span-1">[Filters]</section>
+        <section class="col-span-5 lg:col-span-4 border rounded">
+          <ul>
             ${this.runningCrawls.map(this.renderCrawlItem)}
             ${this.finishedCrawls.map(this.renderCrawlItem)}
           </ul>
@@ -88,21 +88,71 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl, idx: number) => {
-    return html`<li class="grid grid-cols-8${idx ? " border-t" : ""}">
-      <div>
-        <div class="font-medium whitespace-nowrap truncate">${crawl.id}</div>
-        <div class="text-0-500 whitespace-nowrap truncate">
+  private renderCrawlItem = (crawl: Crawl) => {
+    return html`<li
+      class="grid grid-cols-10 gap-5 p-4 leading-none border-t first:border-t-0"
+    >
+      <div class="col-span-10 md:col-span-3">
+        <div class="font-medium whitespace-nowrap truncate mb-1">
+          ${crawl.id}
+        </div>
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
           <a
+            class="hover:underline"
             href=${`/archives/${crawl.aid}/crawl-templates/${crawl.cid}`}
             @click=${this.navLink}
             >${crawl.cid}</a
           >
         </div>
       </div>
-      <div>[start, end]</div>
-      <div>[state]</div>
-      <div>[manual start]</div>
+      <div class="col-span-10 md:col-span-3">
+        <div class="whitespace-nowrap truncate mb-1">
+          <span class="capitalize"
+            >${crawl.state === "running" ? msg("Running") : crawl.state}</span
+          >
+        </div>
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+          ${crawl.finished
+            ? html`
+                <sl-format-date
+                  class="inline-block align-middle text-0-600"
+                  date=${`${crawl.finished}Z` /** Z for UTC */}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                ></sl-format-date>
+              `
+            : humanizeDuration(
+                Date.now() - new Date(`${crawl.started}Z`).valueOf(),
+                {
+                  secondsDecimalDigits: 0,
+                }
+              )}
+        </div>
+      </div>
+      <div class="col-span-10 md:col-span-3">
+        <div class="whitespace-nowrap truncate mb-1">
+          <sl-relative-time
+            date=${`${crawl.started}Z` /** Z for UTC */}
+            sync
+          ></sl-relative-time>
+        </div>
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+          ${crawl.manual
+            ? msg(html`Manual start by <span>${crawl.user}</span>`)
+            : msg(html`Scheduled run`)}
+        </div>
+      </div>
+      <div class="col-span-10 md:col-span-1 text-right">
+        <sl-icon-button
+          slot="trigger"
+          name="three-dots"
+          label="More"
+          style="font-size: 1rem"
+        ></sl-icon-button>
+      </div>
     </li>`;
   };
 

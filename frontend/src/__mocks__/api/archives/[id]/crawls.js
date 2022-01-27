@@ -1,5 +1,19 @@
 export default {
-  running: [],
+  running: [
+    {
+      id: "crawl-now-20220127195336-b7885602-1642-4010-bcd2-76d76e719bce",
+      user: "e676f61c-251f-4d56-a076-53fe35c38ba4",
+      aid: "0146a76e-b4fe-498d-a6df-0e8be8858dd1",
+      cid: "b7885602-1642-4010-bcd2-76d76e719bce",
+      schedule: "",
+      manual: true,
+      started: "2022-01-27T19:53:36",
+      state: "running",
+      scale: 1,
+      stats: { done: 0, found: 0 },
+      colls: [],
+    },
+  ],
   finished: [
     {
       id: "crawl-now-20220116211824-33dd40bc-2b95-42d9-a35d-efab6b7ea155",
