@@ -426,12 +426,17 @@ export class CrawlTemplatesList extends LiteElement {
     if (!this.selectedTemplateForEdit) return;
 
     const { formData } = event.detail;
-    const utcSchedule = getUTCSchedule({
-      interval: formData.get("scheduleInterval") as any,
-      hour: formData.get("scheduleHour") as any,
-      minute: formData.get("scheduleMinute") as any,
-      period: formData.get("schedulePeriod") as any,
-    });
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
     const editedTemplateId = this.selectedTemplateForEdit.id;
 
     try {
@@ -440,9 +445,7 @@ export class CrawlTemplatesList extends LiteElement {
         this.authState!,
         {
           method: "PATCH",
-          body: JSON.stringify({
-            schedule: utcSchedule,
-          }),
+          body: JSON.stringify({ schedule }),
         }
       );
 
@@ -450,7 +453,7 @@ export class CrawlTemplatesList extends LiteElement {
         t.id === editedTemplateId
           ? {
               ...t,
-              schedule: utcSchedule,
+              schedule,
             }
           : t
       );

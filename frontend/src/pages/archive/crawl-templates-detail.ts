@@ -404,12 +404,17 @@ export class CrawlTemplatesDetail extends LiteElement {
     target: any;
   }): Promise<void> {
     const { formData } = event.detail;
-    const utcSchedule = getUTCSchedule({
-      interval: formData.get("scheduleInterval") as any,
-      hour: formData.get("scheduleHour") as any,
-      minute: formData.get("scheduleMinute") as any,
-      period: formData.get("schedulePeriod") as any,
-    });
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
 
     try {
       await this.apiFetch(
@@ -419,13 +424,11 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.authState!,
         {
           method: "PATCH",
-          body: JSON.stringify({
-            schedule: utcSchedule,
-          }),
+          body: JSON.stringify({ schedule }),
         }
       );
 
-      this.crawlTemplate!.schedule = utcSchedule;
+      this.crawlTemplate!.schedule = schedule;
 
       this.notify({
         message: msg("Successfully saved new schedule."),
