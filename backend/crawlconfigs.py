@@ -55,6 +55,7 @@ class RawCrawlConfig(BaseModel):
 
     depth: Optional[int] = -1
     limit: Optional[int] = 0
+    extraHops: Optional[int] = 0
 
     behaviorTimeout: Optional[int] = 90
 

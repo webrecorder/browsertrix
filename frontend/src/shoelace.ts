@@ -9,6 +9,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/button/button"
 );
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/checkbox/checkbox"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/details/details"
 );
 import(

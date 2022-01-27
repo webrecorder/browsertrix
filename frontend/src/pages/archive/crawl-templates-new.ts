@@ -227,7 +227,7 @@ export class CrawlTemplatesNew extends LiteElement {
             <div class="pr-2 flex-1">
               <sl-select
                 name="schedule"
-                label=${msg("Recurring crawls")}
+                label=${msg("Recurring Crawls")}
                 value=${this.scheduleInterval}
                 @sl-select=${(e: any) =>
                   (this.scheduleInterval = e.target.value)}
@@ -311,7 +311,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
         <sl-input
           name="crawlTimeoutMinutes"
-          label=${msg("Time limit")}
+          label=${msg("Time Limit")}
           placeholder=${msg("unlimited")}
           type="number"
         >
@@ -365,7 +365,7 @@ export class CrawlTemplatesNew extends LiteElement {
       ></sl-textarea>
       <sl-select
         name="scopeType"
-        label=${msg("Scope type")}
+        label=${msg("Crawl Scope")}
         value=${this.initialCrawlConfig!.scopeType!}
       >
         <sl-menu-item value="page">Page</sl-menu-item>
@@ -374,9 +374,13 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-menu-item value="host">Host</sl-menu-item>
         <sl-menu-item value="any">Any</sl-menu-item>
       </sl-select>
+      <sl-checkbox
+        name="extraHopsOne"
+      >${msg("Include External Links ('one hop out')")}
+      </sl-checkbox>
       <sl-input
         name="limit"
-        label=${msg("Page limit")}
+        label=${msg("Page Limit")}
         type="number"
         value=${ifDefined(this.initialCrawlConfig!.limit)}
         placeholder=${msg("unlimited")}
@@ -497,6 +501,7 @@ export class CrawlTemplatesNew extends LiteElement {
           .map((url) => ({ url })),
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
+        extraHops: formData.get("extraHopsOne") ? 1 : 0,
       };
     }
 
