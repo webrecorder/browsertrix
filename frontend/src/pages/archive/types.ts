@@ -1,6 +1,7 @@
 type SeedConfig = {
   scopeType?: string;
   limit?: number;
+  extraHops?: number;
 };
 
 export type CrawlConfig = {
