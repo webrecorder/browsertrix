@@ -182,19 +182,19 @@ export class CrawlsList extends LiteElement {
   };
 
   private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
-    // TODO remove mock
-    return import("../../__mocks__/api/archives/[id]/crawls").then(
-      (module) => module.default
-    );
-
-    // const data = await this.apiFetch(
-    //   `/archives/${this.archiveId}/crawls`,
-    //   this.authState!
+    // // Mock to use in dev:
+    // return import("../../__mocks__/api/archives/[id]/crawls").then(
+    //   (module) => module.default
     // );
 
-    // this.lastFetched = Date.now();
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls`,
+      this.authState!
+    );
 
-    // return data;
+    this.lastFetched = Date.now();
+
+    return data;
   }
 }
 
