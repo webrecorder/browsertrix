@@ -35,6 +35,13 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   archiveId!: string;
 
+  /**
+   * Fetch & refetch data when needed,
+   * e.g. when component is visible
+   **/
+  @property({ type: Boolean })
+  shouldFetch?: boolean;
+
   @state()
   private lastFetched?: number;
 
@@ -44,19 +51,21 @@ export class CrawlsList extends LiteElement {
   @state()
   private finishedCrawls?: Crawl[];
 
-  async firstUpdated() {
-    try {
-      const { running, finished } = await this.getCrawls();
+  protected async updated(changedProperties: Map<string, any>) {
+    if (this.shouldFetch && changedProperties.has("shouldFetch")) {
+      try {
+        const { running, finished } = await this.getCrawls();
 
-      this.runningCrawls = running;
-      this.finishedCrawls = finished;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawls at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-        duration: 10000,
-      });
+        this.runningCrawls = running;
+        this.finishedCrawls = finished;
+      } catch (e) {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve crawls at this time."),
+          type: "danger",
+          icon: "exclamation-octagon",
+          duration: 10000,
+        });
+      }
     }
   }
 
