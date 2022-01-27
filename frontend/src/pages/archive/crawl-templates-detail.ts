@@ -4,7 +4,10 @@ import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlTemplate } from "./types";
+import { getUTCSchedule } from "./utils";
+import "../../components/crawl-scheduler";
 
 const SEED_URLS_MAX = 3;
 
@@ -25,11 +28,28 @@ export class CrawlTemplatesDetail extends LiteElement {
   @property({ type: String })
   crawlConfigId!: string;
 
+  @property({ type: Boolean })
+  isEditing: boolean = false;
+
   @state()
   private crawlTemplate?: CrawlTemplate;
 
   @state()
   private showAllSeedURLs: boolean = false;
+
+  @state()
+  private editedSchedule?: string;
+
+  @state()
+  private isScheduleDisabled?: boolean;
+
+  private get timeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  private get timeZoneShortName() {
+    return getLocaleTimeZone();
+  }
 
   async firstUpdated() {
     try {
@@ -86,8 +106,8 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Configuration")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-            <div role="table">
+          <div class="col-span-3 p-4 md:p-8 border-b">
+            <div class="mb-5" role="table">
               <div class="grid grid-cols-5 gap-4" role="row">
                 <span class="col-span-3 text-sm text-0-600" role="columnheader"
                   >${msg("Seed URL")}</span
@@ -188,26 +208,39 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Schedule")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 border-b grid gap-5">
-            <dl class="grid gap-5">
-              <div>
-                <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
-                <dd>
-                  ${this.crawlTemplate.schedule
-                    ? // TODO localize
-                      // NOTE human-readable string is in UTC, limitation of library
-                      // currently being used.
-                      // https://github.com/bradymholt/cRonstrue/issues/94
-                      html`<span
-                        >${cronstrue.toString(this.crawlTemplate.schedule, {
-                          verbose: true,
-                        })}
-                        (in UTC time zone)</span
-                      >`
-                    : html`<span class="text-0-400">${msg("None")}</span>`}
-                </dd>
+          <div class="col-span-3 p-4 border-b">
+            <div class="flex justify-between">
+              <div class="md:p-4">
+                ${this.isEditing
+                  ? this.renderEditSchedule()
+                  : this.renderReadOnlySchedule()}
               </div>
-            </dl>
+
+              <div class="ml-2">
+                <sl-button
+                  size="small"
+                  href=${`/archives/${this.archiveId}/crawl-templates/${
+                    this.crawlTemplate!.id
+                  }${this.isEditing ? "" : "?edit=true"}`}
+                  @click=${(e: any) => {
+                    const hasChanges = this.isEditing && this.editedSchedule;
+                    if (
+                      !hasChanges ||
+                      window.confirm(
+                        msg("You have unsaved schedule changes. Are you sure?")
+                      )
+                    ) {
+                      this.navLink(e);
+                      this.editedSchedule = "";
+                    } else {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  ${this.isEditing ? msg("Cancel") : msg("Edit")}
+                </sl-button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -215,7 +248,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-1 p-4 md:p-8">
             <h3 class="font-medium">${msg("Crawls")}</h3>
           </div>
-          <div class="col-span-3 p-4 md:p-8 grid gap-5">
+          <div class="col-span-3 p-4 md:p-8">
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
@@ -284,6 +317,39 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderReadOnlySchedule() {
+    return html`
+      <dl class="grid gap-5">
+        <div>
+          <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
+          <dd>
+            ${this.crawlTemplate!.schedule
+              ? // TODO localize
+                // NOTE human-readable string is in UTC, limitation of library
+                // currently being used.
+                // https://github.com/bradymholt/cRonstrue/issues/94
+                html`<span
+                  >${cronstrue.toString(this.crawlTemplate!.schedule, {
+                    verbose: true,
+                  })}
+                  (in UTC time zone)</span
+                >`
+              : html`<span class="text-0-400">${msg("None")}</span>`}
+          </dd>
+        </div>
+      </dl>
+    `;
+  }
+
+  private renderEditSchedule() {
+    return html`
+      <btrix-crawl-templates-scheduler
+        schedule=${this.crawlTemplate!.schedule}
+        @submit=${this.onSubmitSchedule}
+      ></btrix-crawl-templates-scheduler>
+    `;
+  }
+
   async getCrawlTemplate(): Promise<CrawlTemplate> {
     const data: CrawlTemplate = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs/${this.crawlConfigId}`,
@@ -331,6 +397,85 @@ export class CrawlTemplatesDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async onSubmitSchedule(event: {
+    detail: { formData: FormData };
+    target: any;
+  }): Promise<void> {
+    const { formData } = event.detail;
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${
+          this.crawlTemplate!.id
+        }/schedule`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ schedule }),
+        }
+      );
+
+      this.crawlTemplate!.schedule = schedule;
+
+      this.notify({
+        message: msg("Successfully saved new schedule."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(
+        `/archives/${this.archiveId}/crawl-templates/${this.crawlTemplate!.id}`
+      );
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update schedule."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  /**
+   * Set correct local hour in schedule in 24-hr format
+   **/
+  private setScheduleHour({
+    hour,
+    period,
+    schedule,
+  }: {
+    hour: number;
+    period: "AM" | "PM";
+    schedule: string;
+  }) {
+    // Convert 12-hr to 24-hr time
+    let periodOffset = 0;
+
+    if (hour === 12) {
+      if (period === "AM") {
+        periodOffset = -12;
+      }
+    } else if (period === "PM") {
+      periodOffset = 12;
+    }
+
+    this.editedSchedule = `${schedule.split(" ")[0]} ${
+      hour + periodOffset
+    } ${schedule.split(" ").slice(2).join(" ")}`;
   }
 }
 

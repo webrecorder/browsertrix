@@ -5,6 +5,8 @@ import cronParser from "cron-parser";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { CrawlTemplate } from "./types";
+import { getUTCSchedule } from "./utils";
+import "../../components/crawl-scheduler";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -31,9 +33,11 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
 
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
+  @state()
+  showEditDialog?: boolean = false;
+
+  @state()
+  selectedTemplateForEdit?: CrawlTemplate;
 
   async firstUpdated() {
     try {
@@ -111,6 +115,24 @@ export class CrawlTemplatesList extends LiteElement {
                   ></sl-icon-button>
 
                   <ul class="text-sm whitespace-nowrap" role="menu">
+                    <li
+                      class="p-2 hover:bg-zinc-100 cursor-pointer"
+                      role="menuitem"
+                      @click=${(e: any) => {
+                        e.target.closest("sl-dropdown").hide();
+                        this.showEditDialog = true;
+                        this.selectedTemplateForEdit = t;
+                      }}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle px-1"
+                        name="pencil-square"
+                      ></sl-icon>
+                      <span class="inline-block align-middle pr-2"
+                        >${msg("Edit crawl schedule")}</span
+                      >
+                    </li>
+
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
@@ -192,7 +214,7 @@ export class CrawlTemplatesList extends LiteElement {
                               year="2-digit"
                               hour="numeric"
                               minute="numeric"
-                              time-zone=${this.timeZone}
+                              time-zone-name="short"
                             ></sl-format-date>
                           </span>
                         </sl-tooltip>`
@@ -228,7 +250,7 @@ export class CrawlTemplatesList extends LiteElement {
                                 year="2-digit"
                                 hour="numeric"
                                 minute="numeric"
-                                time-zone=${this.timeZone}
+                                time-zone-name="short"
                               ></sl-format-date>
                             </span>
                           </sl-tooltip>
@@ -268,6 +290,26 @@ export class CrawlTemplatesList extends LiteElement {
             </div>`
         )}
       </div>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Schedule`)}
+        ?open=${this.showEditDialog}
+        @sl-request-close=${() => (this.showEditDialog = false)}
+        @sl-after-hide=${() => (this.selectedTemplateForEdit = undefined)}
+      >
+        <h2 class="text-lg font-medium mb-4">
+          ${this.selectedTemplateForEdit?.name}
+        </h2>
+
+        ${this.selectedTemplateForEdit
+          ? html`
+              <btrix-crawl-templates-scheduler
+                .schedule=${this.selectedTemplateForEdit.schedule}
+                @submit=${this.onSubmitSchedule}
+              ></btrix-crawl-templates-scheduler>
+            `
+          : ""}
+      </sl-dialog>
     `;
   }
 
@@ -371,6 +413,62 @@ export class CrawlTemplatesList extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async onSubmitSchedule(event: {
+    detail: { formData: FormData };
+    target: any;
+  }): Promise<void> {
+    if (!this.selectedTemplateForEdit) return;
+
+    const { formData } = event.detail;
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
+    const editedTemplateId = this.selectedTemplateForEdit.id;
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}/schedule`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ schedule }),
+        }
+      );
+
+      this.crawlTemplates = this.crawlTemplates?.map((t) =>
+        t.id === editedTemplateId
+          ? {
+              ...t,
+              schedule,
+            }
+          : t
+      );
+      this.showEditDialog = false;
+
+      this.notify({
+        message: msg("Successfully saved new schedule."),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update schedule."),
         type: "danger",
         icon: "exclamation-octagon",
       });
