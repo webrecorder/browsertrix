@@ -6,7 +6,19 @@ import LiteElement, { html } from "../../utils/LiteElement";
 
 type Crawl = {
   id: string;
-}; // TODO
+  user: string;
+  aid: string;
+  cid: string;
+  schedule: string;
+  manual: boolean;
+  started: string; // UTC ISO date
+  finished: string; // UTC ISO date
+  state: string;
+  scale: number;
+  completions: number;
+  stats: null;
+  files: { filename: string; hash: string; size: number }[];
+};
 
 /**
  * Usage:
@@ -58,48 +70,56 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main class="md:grid grid-cols-5 gap-5">
-        <div class="col-span-5 flex justify-between">
+        <header class="col-span-5 flex justify-between">
           <div><sl-button>${msg("New Crawl")}</sl-button></div>
           <div>[Sort by]</div>
-        </div>
+        </header>
 
-        <div class="col-span-1">[Filters]</div>
+        <section class="col-span-1">[Filters]</section>
 
-        <div class="col-span-4 grid gap-5">
-          <section>
-            <h2>${msg("Running Crawls")}</h2>
-            <div>
-              <ul>
-                ${this.runningCrawls.map((crawl) => html`<li>${crawl.id}</li>`)}
-              </ul>
-            </div>
-          </section>
-
-          <section>
-            <h2>${msg("Finished Crawls")}</h2>
-            <div>
-              <ul>
-                ${this.finishedCrawls.map(
-                  (crawl) => html`<li>${crawl.id}</li>`
-                )}
-              </ul>
-            </div>
-          </section>
-        </div>
+        <section class="col-span-4 grid gap-5">
+          <ul class="border rounded">
+            ${this.runningCrawls.map(this.renderCrawlItem)}
+            ${this.finishedCrawls.map(this.renderCrawlItem)}
+          </ul>
+        </section>
       </main>
       <footer>${this.lastFetched}</footer>
     `;
   }
 
+  private renderCrawlItem = (crawl: Crawl, idx: number) => {
+    return html`<li class="grid grid-cols-8${idx ? " border-t" : ""}">
+      <div>
+        <div class="font-medium whitespace-nowrap truncate">${crawl.id}</div>
+        <div class="text-0-500 whitespace-nowrap truncate">
+          <a
+            href=${`/archives/${crawl.aid}/crawl-templates/${crawl.cid}`}
+            @click=${this.navLink}
+            >${crawl.cid}</a
+          >
+        </div>
+      </div>
+      <div>[start, end]</div>
+      <div>[state]</div>
+      <div>[manual start]</div>
+    </li>`;
+  };
+
   private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls`,
-      this.authState!
+    // TODO remove mock
+    return import("../../__mocks__/api/archives/[id]/crawls").then(
+      (module) => module.default
     );
 
-    this.lastFetched = Date.now();
+    // const data = await this.apiFetch(
+    //   `/archives/${this.archiveId}/crawls`,
+    //   this.authState!
+    // );
 
-    return data;
+    // this.lastFetched = Date.now();
+
+    // return data;
   }
 }
 
