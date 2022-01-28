@@ -42,6 +42,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/radio-group/radio-group"
 );
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/select/select"
 );
 import(

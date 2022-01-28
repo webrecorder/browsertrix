@@ -15,7 +15,9 @@
     "cron-parser": "^4.2.1",
     "cronstrue": "^1.123.0",
     "lit": "^2.0.0",
+    "lodash": "^4.17.21",
     "path-parser": "^6.1.0",
+    "pretty-ms": "^7.0.1",
     "tailwindcss": "^3.0.15"
   },
   "scripts": {
@@ -34,6 +36,7 @@
     "@lit/localize-tools": "^0.5.0",
     "@open-wc/testing": "^3.0.3",
     "@types/color": "^3.0.2",
+    "@types/lodash": "^4.14.178",
     "@types/sinon": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
