@@ -73,18 +73,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
       </h2>
 
-      ${this.crawlTemplate?.currCrawlId
-        ? html`
-            <a
-              class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
-              href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
-              @click=${this.navLink}
-            >
-              <span>${msg("View currently running crawl")}</span>
-              <sl-icon name="arrow-right"></sl-icon>
-            </a>
-          `
-        : ""}
+      ${this.renderCurrentlyRunningNotice()}
 
       <section class="px-4 py-3 border-t border-b mb-4 text-sm">
         <dl class="grid grid-cols-2">
@@ -344,6 +333,23 @@ export class CrawlTemplatesDetail extends LiteElement {
         </section>
       </main>
     `;
+  }
+
+  private renderCurrentlyRunningNotice() {
+    if (this.crawlTemplate?.currCrawlId) {
+      return html`
+        <a
+          class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+          href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+          @click=${this.navLink}
+        >
+          <span>${msg("View currently running crawl")}</span>
+          <sl-icon name="arrow-right"></sl-icon>
+        </a>
+      `;
+    }
+
+    return "";
   }
 
   private renderReadOnlySchedule() {
