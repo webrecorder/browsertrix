@@ -71,21 +71,9 @@ export class CrawlsList extends LiteElement {
     ) as Crawl[];
   }
 
-  protected async updated(changedProperties: Map<string, any>) {
+  protected updated(changedProperties: Map<string, any>) {
     if (this.shouldFetch && changedProperties.has("shouldFetch")) {
-      try {
-        const { running, finished } = await this.getCrawls();
-
-        this.runningCrawls = this.sortCrawls(running);
-        this.finishedCrawls = this.sortCrawls(finished);
-      } catch (e) {
-        this.notify({
-          message: msg("Sorry, couldn't retrieve crawls at this time."),
-          type: "danger",
-          icon: "exclamation-octagon",
-          duration: 10000,
-        });
-      }
+      this.fetchCrawls();
     }
   }
 
@@ -100,7 +88,22 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main class="grid grid-cols-5 gap-5">
-        <header class="col-span-5 flex justify-end">
+        <header class="col-span-5 flex justify-between">
+          <div>
+            [Updated]
+            ${this.lastFetched
+              ? html`<sl-format-date
+                  class="inline-block align-middle text-0-600"
+                  date=${new Date(this.lastFetched).toString()}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                  second="numeric"
+                ></sl-format-date>`
+              : ""}
+          </div>
           <div>[Sort by]</div>
         </header>
 
@@ -112,7 +115,6 @@ export class CrawlsList extends LiteElement {
           </ul>
         </section>
       </main>
-      <footer>${this.lastFetched}</footer>
     `;
   }
 
@@ -212,6 +214,7 @@ export class CrawlsList extends LiteElement {
                     @click=${(e: any) => {
                       e.stopPropagation();
                       this.cancel(crawl.id);
+                      e.target.closest("sl-dropdown").hide();
                     }}
                   >
                     ${msg("Cancel immediately")}
@@ -222,6 +225,7 @@ export class CrawlsList extends LiteElement {
                     @click=${(e: any) => {
                       e.stopPropagation();
                       this.stop(crawl.id);
+                      e.target.closest("sl-dropdown").hide();
                     }}
                   >
                     ${msg("Stop gracefully")}
@@ -233,6 +237,21 @@ export class CrawlsList extends LiteElement {
       </div>
     </li>`;
   };
+
+  private async fetchCrawls(): Promise<void> {
+    try {
+      const { running, finished } = await this.getCrawls();
+
+      this.runningCrawls = this.sortCrawls(running);
+      this.finishedCrawls = this.sortCrawls(finished);
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve crawls at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
 
   private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
     // // Mock to use in dev:
@@ -250,7 +269,7 @@ export class CrawlsList extends LiteElement {
     return data;
   }
 
-  async cancel(id: string) {
+  private async cancel(id: string) {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawls/${id}/cancel`,
@@ -261,14 +280,18 @@ export class CrawlsList extends LiteElement {
       );
 
       if (data.canceled === true) {
-        // TODO
+        this.fetchCrawls();
       } else {
-        // TODO
+        this.notify({
+          message: msg("Something went wrong, couldn't cancel crawl."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
   }
 
-  async stop(id: string) {
+  private async stop(id: string) {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawls/${id}/stop`,
@@ -279,9 +302,13 @@ export class CrawlsList extends LiteElement {
       );
 
       if (data.stopped_gracefully === true) {
-        // TODO
+        this.fetchCrawls();
       } else {
-        // TODO
+        this.notify({
+          message: msg("Something went wrong, couldn't stop crawl."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
   }
