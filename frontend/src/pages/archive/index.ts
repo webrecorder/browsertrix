@@ -11,6 +11,7 @@ import { isOwner } from "../../utils/archives";
 import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
+import "./crawl-detail";
 import "./crawls-list";
 
 export type ArchiveTab = "crawls" | "crawl-templates" | "members";
@@ -34,6 +35,9 @@ export class Archive extends LiteElement {
 
   @property({ type: String })
   archiveTab: ArchiveTab = defaultTab;
+
+  @property({ type: String })
+  crawlId?: string;
 
   @property({ type: String })
   crawlConfigId?: string;
@@ -151,6 +155,14 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawls() {
+    if (this.crawlId) {
+      return html`<btrix-crawl-detail
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+        crawlId=${this.crawlId}
+      ></btrix-crawl-detail>`;
+    }
+
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}

@@ -10,26 +10,7 @@ import Fuse from "fuse.js";
 import { CopyButton } from "../../components/copy-button";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-
-type Crawl = {
-  id: string;
-  user: string;
-  username?: string;
-  aid: string;
-  cid: string;
-  configName?: string;
-  schedule: string;
-  manual: boolean;
-  started: string; // UTC ISO date
-  finished?: string; // UTC ISO date
-  state: string; // "running" | "complete" | "failed" | "partial_complete"
-  scale: number;
-  stats: { done: number; found: number } | null;
-  files?: { filename: string; hash: string; size: number }[];
-  fileCount?: number;
-  fileSize?: number;
-  completions?: number;
-};
+import type { Crawl } from "./types";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -255,13 +236,19 @@ export class CrawlsList extends LiteElement {
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
       class="grid grid-cols-12 gap-2 items-center md:gap-6 p-4 leading-none border-t first:border-t-0"
+      role="button"
+      @click=${() =>
+        this.navTo(`/archives/${crawl.aid}/crawls/crawl/${crawl.id}`)}
     >
       <div class="col-span-12 md:col-span-5">
         <div class="font-medium mb-1">
           <a
             class="hover:text-0-600 transition-colors"
             href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
-            @click=${this.navLink}
+            @click=${(e: any) => {
+              e.stopPropagation();
+              this.navLink(e);
+            }}
             >${crawl.configName || crawl.cid}</a
           >
         </div>
