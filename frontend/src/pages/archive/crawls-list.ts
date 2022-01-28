@@ -1,7 +1,12 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
+import debounce from "lodash/fp/debounce";
+import flow from "lodash/fp/flow";
+import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
+import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -22,6 +27,11 @@ type Crawl = {
   completions?: number;
 };
 
+type CrawlSearchResult = {
+  item: Crawl;
+};
+
+const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   started_asc: msg("Oldest"),
   started_desc: msg("Newest"),
@@ -71,10 +81,16 @@ export class CrawlsList extends LiteElement {
     direction: "desc",
   };
 
-  private sortCrawls(crawls: Crawl[]): Crawl[] {
-    return orderBy(this.orderBy.field)(this.orderBy.direction)(
+  @state()
+  private filterBy: string = "";
+
+  // For fuzzy search:
+  private fuse = new Fuse([], { keys: ["cid"], shouldSort: false });
+
+  private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
+    return orderBy(`item.${this.orderBy.field}`)(this.orderBy.direction)(
       crawls
-    ) as Crawl[];
+    ) as CrawlSearchResult[];
   }
 
   protected updated(changedProperties: Map<string, any>) {
@@ -93,69 +109,105 @@ export class CrawlsList extends LiteElement {
     }
 
     return html`
-      <main class="grid grid-cols-5 gap-5">
-        <header class="col-span-5 flex justify-between">
-          <div>
-            [Updated]
-            ${this.lastFetched
-              ? html`<sl-format-date
-                  class="inline-block align-middle text-0-600"
-                  date=${new Date(this.lastFetched).toString()}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="numeric"
-                  minute="numeric"
-                  second="numeric"
-                ></sl-format-date>`
-              : ""}
-          </div>
-          <div class="flex items-center">
-            <div class="mr-1 text-sm">${msg("Sort by")}</div>
-            <sl-dropdown
-              placement="bottom-end"
-              distance="4"
-              @sl-select=${(e: any) => {
-                const [field, direction] = e.detail.item.value.split("_");
-                this.orderBy = {
-                  field: field,
-                  direction: direction,
-                };
-              }}
-            >
-              <sl-button slot="trigger" size="small" caret
-                >${sortableFieldLabels[
-                  `${this.orderBy.field}_${this.orderBy.direction}`
-                ]}</sl-button
-              >
-              <sl-menu>
-                ${Object.entries(sortableFieldLabels)
-                  .filter(
-                    ([value]) =>
-                      value !==
-                      `${this.orderBy.field}_${this.orderBy.direction}`
-                  )
-                  .map(
-                    ([value, label]) => html`
-                      <sl-menu-item value=${value}>${label}</sl-menu-item>
-                    `
-                  )}
-              </sl-menu>
-            </sl-dropdown>
-          </div>
-        </header>
-
-        <section class="col-span-5 lg:col-span-1">[Filters]</section>
-        <section class="col-span-5 lg:col-span-4 border rounded">
-          <ul>
-            ${this.sortCrawls(this.crawls).map(this.renderCrawlItem)}
-          </ul>
-        </section>
+      <main>
+        <header class="pb-4">${this.renderControls()}</header>
+        <section>${this.renderCrawlList()}</section>
+        <footer>
+          [Updated]
+          ${this.lastFetched
+            ? html`<sl-format-date
+                class="inline-block align-middle text-0-600"
+                date=${new Date(this.lastFetched).toString()}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="numeric"
+                minute="numeric"
+                second="numeric"
+              ></sl-format-date>`
+            : ""}
+        </footer>
       </main>
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl) => {
+  private renderControls() {
+    return html`
+      <div class="grid grid-cols-6 gap-3 items-center">
+        <div class="col-span-6 md:col-span-3">
+          <sl-input
+            class="w-full"
+            slot="trigger"
+            placeholder=${msg("Search by Crawl Template ID")}
+            pill
+            @sl-input=${this.onSearchInput}
+          >
+            <sl-icon name="search" slot="prefix"></sl-icon>
+          </sl-input>
+        </div>
+        <div class="col-span-6 md:col-span-1">
+          <span class="text-xs text-0-400"
+            >${this.filterBy.length >= MIN_SEARCH_LENGTH
+              ? msg(str`Viewing filtered results`)
+              : ""}</span
+          >
+        </div>
+        <div class="col-span-6 md:col-span-2 flex items-center justify-end">
+          <div class="mr-2 text-sm text-0-600">${msg("Sort by")}</div>
+          <sl-dropdown
+            placement="bottom-end"
+            distance="4"
+            @sl-select=${(e: any) => {
+              const [field, direction] = e.detail.item.value.split("_");
+              this.orderBy = {
+                field: field,
+                direction: direction,
+              };
+            }}
+          >
+            <sl-button slot="trigger" pill caret
+              >${sortableFieldLabels[
+                `${this.orderBy.field}_${this.orderBy.direction}`
+              ]}</sl-button
+            >
+            <sl-menu>
+              ${Object.entries(sortableFieldLabels).map(
+                ([value, label]) => html`
+                  <sl-menu-item
+                    value=${value}
+                    ?checked=${value ===
+                    `${this.orderBy.field}_${this.orderBy.direction}`}
+                    >${label}</sl-menu-item
+                  >
+                `
+              )}
+            </sl-menu>
+          </sl-dropdown>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderCrawlList() {
+    // Return search results if valid filter string is available,
+    // otherwise format crawls list like search results
+    const filterResults =
+      this.filterBy.length >= MIN_SEARCH_LENGTH
+        ? () => this.fuse.search(this.filterBy)
+        : map((crawl) => ({ item: crawl }));
+
+    return html`
+      <ul class="border rounded">
+        ${flow(
+          this.sortCrawls.bind(this),
+          filterResults,
+          map(this.renderCrawlItem)
+        )(this.crawls as any)}
+      </ul>
+    `;
+  }
+
+  private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
       class="grid grid-cols-12 gap-4 md:gap-6 p-4 leading-none border-t first:border-t-0"
     >
@@ -274,11 +326,20 @@ export class CrawlsList extends LiteElement {
     </li>`;
   };
 
+  private onSearchInput = debounce(200)((e: any) => {
+    this.filterBy = e.target.value;
+  }) as any;
+
+  /**
+   * Fetch crawls and update internal state
+   */
   private async fetchCrawls(): Promise<void> {
     try {
       const { running, finished } = await this.getCrawls();
 
       this.crawls = [...running, ...finished];
+      // Update search/filter collection
+      this.fuse.setCollection(this.crawls as any);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
