@@ -235,7 +235,7 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
-      class="grid grid-cols-12 gap-2 items-center md:gap-6 p-4 leading-none border-t first:border-t-0 hover:bg-zinc-50 transition-colors"
+      class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
       role="button"
       @click=${() =>
         this.navTo(`/archives/${crawl.aid}/crawls/crawl/${crawl.id}`)}
