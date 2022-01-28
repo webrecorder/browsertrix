@@ -172,13 +172,13 @@ export class Archive extends LiteElement {
     }
 
     if (this.isNewResourceTab) {
-      const crawlConfig = this.viewStateData?.crawlConfig;
+      const crawlTemplate = this.viewStateData?.crawlTemplate;
 
       return html` <btrix-crawl-templates-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
         .archiveId=${this.archiveId!}
-        .initialCrawlConfig=${crawlConfig}
+        .initialCrawlTemplate=${crawlTemplate}
       ></btrix-crawl-templates-new>`;
     }
 

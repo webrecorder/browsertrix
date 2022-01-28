@@ -50,7 +50,10 @@ export class CrawlTemplatesNew extends LiteElement {
   archiveId!: string;
 
   @property({ type: Object })
-  initialCrawlConfig?: CrawlConfig;
+  initialCrawlTemplate?: {
+    name: string;
+    config: CrawlConfig;
+  };
 
   @state()
   private isRunNow: boolean = initialValues.runNow;
@@ -117,17 +120,20 @@ export class CrawlTemplatesNew extends LiteElement {
     // Show JSON editor view if complex initial config is specified
     // (e.g. cloning a template) since form UI doesn't support
     // all available fields in the config
-    const isComplexConfig = this.initialCrawlConfig?.seeds.some(
+    const isComplexConfig = this.initialCrawlTemplate?.config.seeds.some(
       (seed: any) => typeof seed !== "string"
     );
     if (isComplexConfig) {
       this.isSeedsJsonView = true;
     }
-    this.initialCrawlConfig = {
-      ...initialValues.config,
-      ...this.initialCrawlConfig,
+    this.initialCrawlTemplate = {
+      name: this.initialCrawlTemplate?.name || initialValues.name,
+      config: {
+        ...initialValues.config,
+        ...this.initialCrawlTemplate?.config,
+      },
     };
-    this.seedsJson = JSON.stringify(this.initialCrawlConfig, null, 2);
+    this.seedsJson = JSON.stringify(this.initialCrawlTemplate.config, null, 2);
     super.connectedCallback();
   }
 
@@ -209,7 +215,7 @@ export class CrawlTemplatesNew extends LiteElement {
             desc: "Example crawl template name",
           })}
           autocomplete="off"
-          value=${initialValues.name}
+          value=${this.initialCrawlTemplate!.name}
           required
         ></sl-input>
       </section>
@@ -358,13 +364,13 @@ export class CrawlTemplatesNew extends LiteElement {
           "Required. Separate URLs with a new line, space or comma."
         )}
         rows="3"
-        value=${this.initialCrawlConfig!.seeds.join("\n")}
+        value=${this.initialCrawlTemplate!.config.seeds.join("\n")}
         required
       ></sl-textarea>
       <sl-select
         name="scopeType"
         label=${msg("Crawl Scope")}
-        value=${this.initialCrawlConfig!.scopeType!}
+        value=${this.initialCrawlTemplate!.config.scopeType!}
       >
         <sl-menu-item value="page">Page</sl-menu-item>
         <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
@@ -379,7 +385,7 @@ export class CrawlTemplatesNew extends LiteElement {
         name="limit"
         label=${msg("Page Limit")}
         type="number"
-        value=${ifDefined(this.initialCrawlConfig!.limit)}
+        value=${ifDefined(this.initialCrawlTemplate!.config.limit)}
         placeholder=${msg("unlimited")}
       >
         <span slot="suffix">${msg("pages")}</span>
@@ -491,11 +497,7 @@ export class CrawlTemplatesNew extends LiteElement {
       template.config = JSON.parse(this.seedsJson);
     } else {
       template.config = {
-        seeds: (seedUrlsStr as string)
-          .trim()
-          .replace(/,/g, " ")
-          .split(/\s+/g)
-          .map((url) => ({ url })),
+        seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,

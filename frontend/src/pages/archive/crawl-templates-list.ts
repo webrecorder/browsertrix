@@ -337,14 +337,17 @@ export class CrawlTemplatesList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(template: CrawlTemplate) {
-    const crawlConfig: CrawlTemplate["config"] = {
+    const config: CrawlTemplate["config"] = {
       seeds: template.config.seeds,
       scopeType: template.config.scopeType,
       limit: template.config.limit,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
-      crawlConfig,
+      crawlTemplate: {
+        name: msg(str`${template.name} Copy`),
+        config,
+      },
     });
 
     this.notify({
