@@ -54,14 +54,14 @@ export class CrawlDetail extends LiteElement {
       <header class="px-4 py-3 border-t border-b mb-4 text-sm">
         <dl class="grid grid-cols-2 gap-10">
           <div>
-            <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
-            <dd>
+            <dt class="text-xs text-0-500">${msg("Crawl ID")}</dt>
+            <dd class="text-0-700">
               <div class="text-sm font-mono truncate">${this.crawl.id}</div>
             </dd>
           </div>
           <div>
-            <dt class="text-xs text-0-600">${msg("Crawl Template")}</dt>
-            <dd>
+            <dt class="text-xs text-0-500">${msg("Crawl Template")}</dt>
+            <dd class="text-0-700">
               <div class="text-sm font-mono truncate">
                 <a
                   class="hover:underline"
@@ -77,14 +77,26 @@ export class CrawlDetail extends LiteElement {
 
       <main class="grid gap-4">
         <section class="grid grid-cols-2 md:grid-cols-8 gap-5">
-          <div class="col-span-8 md:col-span-5">
-            <div class="aspect-video bg-slate-50 rounded">[watch/replay]</div>
+          <div class="col-span-8 md:col-span-5 relative">
+            <div
+              class="aspect-video bg-slate-50 rounded border ${isRunning
+                ? "border-purple-200"
+                : "border-slate-100"}"
+            >
+              [watch/replay]
+            </div>
+            <div class="absolute top-2 right-2 bg-white/90 rounded-full">
+              <sl-icon-button
+                name="arrows-fullscreen"
+                label=${msg("Fullscreen")}
+              ></sl-icon-button>
+            </div>
           </div>
 
           <div class="col-span-8 md:col-span-3 border rounded p-4 md:p-8">
             <dl class="grid gap-5">
               <div>
-                <dt class="text-sm text-0-600">${msg("Status")}</dt>
+                <dt class="text-sm text-0-500">${msg("Status")}</dt>
                 <dd>
                   <div
                     class="whitespace-nowrap capitalize${isRunning
@@ -127,7 +139,7 @@ export class CrawlDetail extends LiteElement {
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">
+                <dt class="text-sm text-0-500">
                   ${this.crawl.finished ? msg("Finished") : msg("Run duration")}
                 </dt>
                 <dd>
@@ -148,7 +160,7 @@ export class CrawlDetail extends LiteElement {
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Started")}</dt>
+                <dt class="text-sm text-0-500">${msg("Started")}</dt>
                 <dd>
                   <sl-format-date
                     date=${`${this.crawl.started}Z` /** Z for UTC */}
@@ -162,7 +174,7 @@ export class CrawlDetail extends LiteElement {
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Reason")}</dt>
+                <dt class="text-sm text-0-500">${msg("Reason")}</dt>
                 <dd>
                   ${this.crawl.manual
                     ? msg(html`Manual start by <span>${this.crawl.user}</span>`)
