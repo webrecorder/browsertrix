@@ -139,11 +139,11 @@ export class CrawlsList extends LiteElement {
           <span
             class="inline-block ${crawl.state === "failed"
               ? "text-red-500"
-              : crawl.state === "partial_complete"
-              ? "text-emerald-200"
+              : crawl.state === "complete"
+              ? "text-emerald-500"
               : isRunning(crawl)
               ? "text-purple-500"
-              : "text-emerald-500"}"
+              : "text-zinc-300"}"
             style="font-size: 10px; vertical-align: 2px"
           >
             &#9679;
