@@ -26,6 +26,9 @@ export class CrawlDetail extends LiteElement {
   @state()
   private crawl?: Crawl;
 
+  @state()
+  private watchUrl?: string;
+
   async firstUpdated() {
     try {
       this.crawl = await this.getCrawl();
@@ -37,17 +40,16 @@ export class CrawlDetail extends LiteElement {
         duration: 10000,
       });
     }
+
+    try {
+      this.watchUrl = await this.watchCrawl();
+      console.log(this.watchUrl);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   render() {
-    // if (!this.crawl) {
-    //   return html`<div
-    //     class="w-full flex items-center justify-center my-24 text-4xl"
-    //   >
-    //     <sl-spinner></sl-spinner>
-    //   </div>`;
-    // }
-
     const isRunning = this.crawl?.state === "running";
 
     return html`
@@ -89,6 +91,7 @@ export class CrawlDetail extends LiteElement {
                 ? "border-purple-200"
                 : "border-slate-100"}"
             >
+              <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
               [watch/replay]
             </div>
             <div class="absolute top-2 right-2 bg-white/90 rounded-full">
@@ -229,7 +232,19 @@ export class CrawlDetail extends LiteElement {
     return data;
   }
 
-  async cancel() {
+  private async watchCrawl(): Promise<string> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls/${this.crawlId}/watch`,
+      this.authState!,
+      {
+        method: "POST",
+      }
+    );
+
+    return data.watch_url;
+  }
+
+  private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawls/${this.crawlId}/cancel`,
@@ -247,7 +262,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  async stop() {
+  private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawls/${this.crawlId}/stop`,
