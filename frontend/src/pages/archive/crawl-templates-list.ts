@@ -90,20 +90,29 @@ export class CrawlTemplatesList extends LiteElement {
         ${this.crawlTemplates.map(
           (t) =>
             html`<div
-              class="col-span-1 p-1 border hover:border-indigo-200 rounded text-sm transition-colors"
+              class="col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
               aria-label=${t.name}
+              role="button"
+              @click=${() => {
+                this.navTo(
+                  `/archives/${this.archiveId}/crawl-templates/${t.id}`
+                );
+              }}
             >
               <header class="flex">
                 <a
                   href=${`/archives/${this.archiveId}/crawl-templates/${t.id}`}
-                  class="block flex-1 px-3 pt-3 font-medium hover:underline whitespace-nowrap truncate mb-1"
+                  class="block flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
                   title=${t.name}
-                  @click=${this.navLink}
+                  @click=${(e: any) => {
+                    e.stopPropagation();
+                    this.navLink(e);
+                  }}
                 >
                   ${t.name || "?"}
                 </a>
 
-                <sl-dropdown>
+                <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
                   <sl-icon-button
                     slot="trigger"
                     name="three-dots-vertical"
@@ -111,7 +120,7 @@ export class CrawlTemplatesList extends LiteElement {
                     style="font-size: 1rem"
                   ></sl-icon-button>
 
-                  <ul class="text-sm whitespace-nowrap" role="menu">
+                  <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
                       role="menuitem"
@@ -165,7 +174,7 @@ export class CrawlTemplatesList extends LiteElement {
                 </sl-dropdown>
               </header>
 
-              <div class="px-3 pb-3 flex justify-between items-end">
+              <div class="px-3 pb-3 flex justify-between items-end text-0-800">
                 <div class="grid gap-2 text-xs leading-none">
                   <div class="overflow-hidden">
                     <sl-tooltip
@@ -267,14 +276,16 @@ export class CrawlTemplatesList extends LiteElement {
                       .runningCrawlsMap[t.id]
                       ? "bg-purple-50"
                       : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-                    @click=${() =>
+                    @click=${(e: any) => {
+                      e.stopPropagation();
                       this.runningCrawlsMap[t.id]
                         ? this.navTo(
                             `/archives/${this.archiveId}/crawls/${
                               this.runningCrawlsMap[t.id]
                             }`
                           )
-                        : this.runNow(t)}
+                        : this.runNow(t);
+                    }}
                   >
                     <span class="whitespace-nowrap">
                       ${this.runningCrawlsMap[t.id]
