@@ -1,4 +1,3 @@
-import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
@@ -8,6 +7,7 @@ import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 
+import { CopyButton } from "../../components/copy-button";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 
@@ -112,7 +112,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="pb-4">${this.renderControls()}</header>
         <section>${this.renderCrawlList()}</section>
-        <footer class="mt-3">
+        <footer class="mt-2">
           <span class="text-0-400 text-sm">
             ${this.lastFetched
               ? msg(html`Last updated:
@@ -316,6 +316,17 @@ export class CrawlsList extends LiteElement {
                   </li>
                 `
               : ""}
+            <li
+              class="p-2 hover:bg-zinc-100 cursor-pointer"
+              role="menuitem"
+              @click=${(e: any) => {
+                e.stopPropagation();
+                CopyButton.copyToClipboard(crawl.cid);
+                e.target.closest("sl-dropdown").hide();
+              }}
+            >
+              ${msg("Copy Crawl Template ID")}
+            </li>
           </ul>
         </sl-dropdown>
       </div>
