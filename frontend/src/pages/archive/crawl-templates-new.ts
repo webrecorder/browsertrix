@@ -306,12 +306,12 @@ export class CrawlTemplatesNew extends LiteElement {
           </div>
         </div>
 
-        <sl-switch
+        <sl-checkbox
           name="runNow"
           ?checked=${initialValues.runNow}
           @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-          >${msg("Run immediately on save")}</sl-switch
-        >
+          >${msg("Run immediately on save")}
+        </sl-checkbox>
 
         <sl-input
           name="crawlTimeoutMinutes"
