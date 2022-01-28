@@ -23,9 +23,12 @@ type Crawl = {
 };
 
 const sortableFieldLabels = {
-  started: msg("Start Time"),
-  state: msg("End State"),
-  cid: msg("Crawl Template"),
+  started_asc: msg("Oldest"),
+  started_desc: msg("Newest"),
+  state_asc: msg("Status"),
+  state_desc: msg("Status (Reverse)"),
+  cid_asc: msg("Crawl Template ID"),
+  cid_desc: msg("Crawl Template ID (Reverse)"),
 };
 
 function isRunning(crawl: Crawl) {
@@ -107,29 +110,36 @@ export class CrawlsList extends LiteElement {
                 ></sl-format-date>`
               : ""}
           </div>
-          <div>
-            <span class="inline-block align-middle mr-1 text-sm"
-              >${msg("Sort by")}</span
-            >
+          <div class="flex items-center">
+            <div class="mr-1 text-sm">${msg("Sort by")}</div>
             <sl-dropdown
               placement="bottom-end"
               distance="4"
               @sl-select=${(e: any) => {
+                const [field, direction] = e.detail.item.value.split("_");
                 this.orderBy = {
-                  ...this.orderBy,
-                  field: e.detail.item.value,
+                  field: field,
+                  direction: direction,
                 };
               }}
             >
               <sl-button slot="trigger" size="small" caret
-                >${sortableFieldLabels[this.orderBy.field]}</sl-button
+                >${sortableFieldLabels[
+                  `${this.orderBy.field}_${this.orderBy.direction}`
+                ]}</sl-button
               >
               <sl-menu>
-                ${Object.entries(sortableFieldLabels).map(
-                  ([value, label]) => html`
-                    <sl-menu-item value=${value}>${label}</sl-menu-item>
-                  `
-                )}
+                ${Object.entries(sortableFieldLabels)
+                  .filter(
+                    ([value]) =>
+                      value !==
+                      `${this.orderBy.field}_${this.orderBy.direction}`
+                  )
+                  .map(
+                    ([value, label]) => html`
+                      <sl-menu-item value=${value}>${label}</sl-menu-item>
+                    `
+                  )}
               </sl-menu>
             </sl-dropdown>
           </div>
