@@ -28,7 +28,7 @@ export class CrawlDetail extends LiteElement {
 
   async firstUpdated() {
     try {
-      this.crawl = await this.getCrawlTemplate();
+      this.crawl = await this.getCrawl();
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
@@ -81,13 +81,19 @@ export class CrawlDetail extends LiteElement {
               class="flex items-center justify-between border rounded-lg bg-purple-50 border-purple-300 text-purple-800 p-4 mb-4"
             >
               <p class="font-medium">${msg("Crawl is currently running.")}</p>
-              <div>
-                <sl-button size="small" class="mr-2"
-                  >${msg("Cancel Crawl")}</sl-button
+              <div class="text-sm leading-none">
+                <button
+                  class="px-3 py-2 bg-white border border-purple-400 hover:border-purple-600 text-purple-600 hover:text-purple-500 rounded-sm font-medium mr-2 transition-colors"
+                  @click=${this.cancel}
                 >
-                <sl-button size="small" type="danger"
-                  >${msg("Stop Crawl")}</sl-button
+                  ${msg("Cancel Crawl")}
+                </button>
+                <button
+                  class="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-500 text-white rounded-sm font-medium transition-colors"
+                  @click=${this.stop}
                 >
+                  ${msg("Stop Crawl")}
+                </button>
               </div>
             </div>
           `
@@ -129,14 +135,6 @@ export class CrawlDetail extends LiteElement {
                 </dd>
               </div>
               <div>
-                <dt class="text-sm text-0-600">${msg("Reason")}</dt>
-                <dd>
-                  ${this.crawl.manual
-                    ? msg(html`Manual start by <span>${this.crawl.user}</span>`)
-                    : msg(html`Scheduled run`)}
-                </dd>
-              </div>
-              <div>
                 <dt class="text-sm text-0-600">${msg("Started")}</dt>
                 <dd>
                   <sl-format-date
@@ -150,6 +148,14 @@ export class CrawlDetail extends LiteElement {
                   ></sl-format-date>
                 </dd>
               </div>
+              <div>
+                <dt class="text-sm text-0-600">${msg("Reason")}</dt>
+                <dd>
+                  ${this.crawl.manual
+                    ? msg(html`Manual start by <span>${this.crawl.user}</span>`)
+                    : msg(html`Scheduled run`)}
+                </dd>
+              </div>
             </dl>
           </div>
         </section>
@@ -157,11 +163,11 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  async getCrawlTemplate(): Promise<Crawl> {
+  async getCrawl(): Promise<Crawl> {
     // Mock to use in dev:
     return import("../../__mocks__/api/archives/[id]/crawls").then(
-      // (module) => module.default.running[0]
-      (module) => module.default.finished[0]
+      (module) => module.default.running[0]
+      // (module) => module.default.finished[0]
     );
 
     // const data: Crawl = await this.apiFetch(
@@ -170,6 +176,42 @@ export class CrawlDetail extends LiteElement {
     // );
 
     // return data;
+  }
+
+  async cancel() {
+    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.canceled === true) {
+        // TODO
+      } else {
+        // TODO
+      }
+    }
+  }
+
+  async stop() {
+    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.stopped_gracefully === true) {
+        // TODO
+      } else {
+        // TODO
+      }
+    }
   }
 }
 
