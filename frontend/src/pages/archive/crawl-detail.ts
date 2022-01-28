@@ -40,15 +40,15 @@ export class CrawlDetail extends LiteElement {
   }
 
   render() {
-    if (!this.crawl) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
+    // if (!this.crawl) {
+    //   return html`<div
+    //     class="w-full flex items-center justify-center my-24 text-4xl"
+    //   >
+    //     <sl-spinner></sl-spinner>
+    //   </div>`;
+    // }
 
-    const isRunning = this.crawl.state === "running";
+    const isRunning = this.crawl?.state === "running";
 
     return html`
       <header class="px-4 py-3 border-t border-b mb-4 text-sm">
@@ -56,19 +56,25 @@ export class CrawlDetail extends LiteElement {
           <div>
             <dt class="text-xs text-0-500">${msg("Crawl ID")}</dt>
             <dd class="text-0-700">
-              <div class="text-sm font-mono truncate">${this.crawl.id}</div>
+              <div class="text-sm font-mono truncate">
+                ${this.crawl?.id || html`<sl-skeleton></sl-skeleton>`}
+              </div>
             </dd>
           </div>
           <div>
             <dt class="text-xs text-0-500">${msg("Crawl Template")}</dt>
             <dd class="text-0-700">
               <div class="text-sm font-mono truncate">
-                <a
-                  class="hover:underline"
-                  href=${`/archives/${this.crawl.aid}/crawl-templates/${this.crawl.cid}`}
-                  @click=${this.navLink}
-                  >${this.crawl.cid}</a
-                >
+                ${this.crawl
+                  ? html`
+                      <a
+                        class="hover:underline"
+                        href=${`/archives/${this.crawl.aid}/crawl-templates/${this.crawl.cid}`}
+                        @click=${this.navLink}
+                        >${this.crawl.cid}</a
+                      >
+                    `
+                  : html`<sl-skeleton></sl-skeleton>`}
               </div>
             </dd>
           </div>
@@ -98,26 +104,29 @@ export class CrawlDetail extends LiteElement {
               <div>
                 <dt class="text-sm text-0-500">${msg("Status")}</dt>
                 <dd>
-                  <div
-                    class="whitespace-nowrap capitalize${isRunning
-                      ? " motion-safe:animate-pulse"
-                      : ""}"
-                  >
-                    <span
-                      class="inline-block ${this.crawl.state === "failed"
-                        ? "text-red-500"
-                        : this.crawl.state === "partial_complete"
-                        ? "text-emerald-200"
-                        : isRunning
-                        ? "text-purple-500"
-                        : "text-emerald-500"}"
-                      style="font-size: 10px; vertical-align: 2px"
-                    >
-                      &#9679;
-                    </span>
-                    ${this.crawl.state.replace(/_/g, " ")}
-                  </div>
-
+                  ${this.crawl
+                    ? html`
+                        <div
+                          class="whitespace-nowrap capitalize${isRunning
+                            ? " motion-safe:animate-pulse"
+                            : ""}"
+                        >
+                          <span
+                            class="inline-block ${this.crawl.state === "failed"
+                              ? "text-red-500"
+                              : this.crawl.state === "partial_complete"
+                              ? "text-emerald-200"
+                              : isRunning
+                              ? "text-purple-500"
+                              : "text-emerald-500"}"
+                            style="font-size: 10px; vertical-align: 2px"
+                          >
+                            &#9679;
+                          </span>
+                          ${this.crawl.state.replace(/_/g, " ")}
+                        </div>
+                      `
+                    : html`<sl-skeleton></sl-skeleton>`}
                   ${isRunning
                     ? html`
                         <div class="mt-2 text-sm leading-none">
@@ -140,45 +149,62 @@ export class CrawlDetail extends LiteElement {
               </div>
               <div>
                 <dt class="text-sm text-0-500">
-                  ${this.crawl.finished ? msg("Finished") : msg("Run duration")}
+                  ${this.crawl?.finished
+                    ? msg("Finished")
+                    : msg("Run duration")}
                 </dt>
                 <dd>
-                  ${this.crawl.finished
-                    ? html`<sl-format-date
-                        date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                      ></sl-format-date>`
-                    : humanizeDuration(
-                        Date.now() -
-                          new Date(`${this.crawl.started}Z`).valueOf()
-                      )}
+                  ${this.crawl
+                    ? html`
+                        ${this.crawl.finished
+                          ? html`<sl-format-date
+                              date=${`${this.crawl.finished}Z` /** Z for UTC */}
+                              month="2-digit"
+                              day="2-digit"
+                              year="2-digit"
+                              hour="numeric"
+                              minute="numeric"
+                              time-zone-name="short"
+                            ></sl-format-date>`
+                          : humanizeDuration(
+                              Date.now() -
+                                new Date(`${this.crawl.started}Z`).valueOf()
+                            )}
+                      `
+                    : html`<sl-skeleton></sl-skeleton>`}
                 </dd>
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Started")}</dt>
                 <dd>
-                  <sl-format-date
-                    date=${`${this.crawl.started}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
+                  ${this.crawl
+                    ? html`
+                        <sl-format-date
+                          date=${`${this.crawl.started}Z` /** Z for UTC */}
+                          month="2-digit"
+                          day="2-digit"
+                          year="2-digit"
+                          hour="numeric"
+                          minute="numeric"
+                          time-zone-name="short"
+                        ></sl-format-date>
+                      `
+                    : html`<sl-skeleton></sl-skeleton>`}
                 </dd>
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Reason")}</dt>
                 <dd>
-                  ${this.crawl.manual
-                    ? msg(html`Manual start by <span>${this.crawl.user}</span>`)
-                    : msg(html`Scheduled run`)}
+                  ${this.crawl
+                    ? html`
+                        ${this.crawl.manual
+                          ? msg(
+                              html`Manual start by
+                                <span>${this.crawl?.user}</span>`
+                            )
+                          : msg(html`Scheduled run`)}
+                      `
+                    : html`<sl-skeleton></sl-skeleton>`}
                 </dd>
               </div>
             </dl>
@@ -190,17 +216,17 @@ export class CrawlDetail extends LiteElement {
 
   async getCrawl(): Promise<Crawl> {
     // Mock to use in dev:
-    return import("../../__mocks__/api/archives/[id]/crawls").then(
-      (module) => module.default.running[0]
-      // (module) => module.default.finished[0]
-    );
-
-    // const data: Crawl = await this.apiFetch(
-    //   `/archives/${this.archiveId}/crawls/${this.crawlId}`,
-    //   this.authState!
+    // return import("../../__mocks__/api/archives/[id]/crawls").then(
+    //   (module) => module.default.running[0]
+    //   // (module) => module.default.finished[0]
     // );
 
-    // return data;
+    const data: Crawl = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls/${this.crawlId}`,
+      this.authState!
+    );
+
+    return data;
   }
 
   async cancel() {
