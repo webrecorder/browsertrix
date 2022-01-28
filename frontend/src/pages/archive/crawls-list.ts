@@ -139,6 +139,7 @@ export class CrawlsList extends LiteElement {
             slot="trigger"
             placeholder=${msg("Search by Crawl Template ID")}
             pill
+            clearable
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
