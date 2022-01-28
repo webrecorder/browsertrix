@@ -22,6 +22,10 @@ type Crawl = {
   completions?: number;
 };
 
+function isRunning(crawl: Crawl) {
+  return crawl.state === "running";
+}
+
 /**
  * Usage:
  * ```ts
@@ -137,7 +141,7 @@ export class CrawlsList extends LiteElement {
               ? "text-red-500"
               : crawl.state === "partial_complete"
               ? "text-emerald-200"
-              : crawl.state === "running"
+              : isRunning(crawl)
               ? "text-purple-500"
               : "text-emerald-500"}"
             style="font-size: 10px; vertical-align: 2px"
@@ -190,7 +194,7 @@ export class CrawlsList extends LiteElement {
           ></sl-format-date>
         </div>
       </div>
-      <div class="col-span-12 md:col-span-1 text-right">
+      <div class="col-span-12 md:col-span-1 flex justify-end">
         <sl-dropdown>
           <sl-icon-button
             slot="trigger"
@@ -200,9 +204,30 @@ export class CrawlsList extends LiteElement {
           ></sl-icon-button>
 
           <ul class="text-sm whitespace-nowrap" role="menu">
-            <li class="p-2 hover:bg-zinc-100 cursor-pointer" role="menuitem">
-              [item]
-            </li>
+            ${isRunning(crawl)
+              ? html`
+                  <li
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      e.stopPropagation();
+                      this.cancel(crawl.id);
+                    }}
+                  >
+                    ${msg("Cancel immediately")}
+                  </li>
+                  <li
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      e.stopPropagation();
+                      this.stop(crawl.id);
+                    }}
+                  >
+                    ${msg("Stop gracefully")}
+                  </li>
+                `
+              : ""}
           </ul>
         </sl-dropdown>
       </div>
@@ -223,6 +248,42 @@ export class CrawlsList extends LiteElement {
     this.lastFetched = Date.now();
 
     return data;
+  }
+
+  async cancel(id: string) {
+    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${id}/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.canceled === true) {
+        // TODO
+      } else {
+        // TODO
+      }
+    }
+  }
+
+  async stop(id: string) {
+    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${id}/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.stopped_gracefully === true) {
+        // TODO
+      } else {
+        // TODO
+      }
+    }
   }
 }
 
