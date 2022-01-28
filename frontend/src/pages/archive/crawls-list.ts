@@ -57,10 +57,7 @@ export class CrawlsList extends LiteElement {
   private lastFetched?: number;
 
   @state()
-  private runningCrawls?: Crawl[];
-
-  @state()
-  private finishedCrawls?: Crawl[];
+  private crawls?: Crawl[];
 
   @state()
   private orderBy: {
@@ -84,7 +81,7 @@ export class CrawlsList extends LiteElement {
   }
 
   render() {
-    if (!this.runningCrawls || !this.finishedCrawls) {
+    if (!this.crawls) {
       return html`<div
         class="w-full flex items-center justify-center my-24 text-4xl"
       >
@@ -118,7 +115,10 @@ export class CrawlsList extends LiteElement {
               placement="bottom-end"
               distance="4"
               @sl-select=${(e: any) => {
-                console.log(e.detail.item.value);
+                this.orderBy = {
+                  ...this.orderBy,
+                  field: e.detail.item.value,
+                };
               }}
             >
               <sl-button slot="trigger" size="small" caret
@@ -138,8 +138,7 @@ export class CrawlsList extends LiteElement {
         <section class="col-span-5 lg:col-span-1">[Filters]</section>
         <section class="col-span-5 lg:col-span-4 border rounded">
           <ul>
-            ${this.runningCrawls.map(this.renderCrawlItem)}
-            ${this.finishedCrawls.map(this.renderCrawlItem)}
+            ${this.sortCrawls(this.crawls).map(this.renderCrawlItem)}
           </ul>
         </section>
       </main>
@@ -269,8 +268,7 @@ export class CrawlsList extends LiteElement {
     try {
       const { running, finished } = await this.getCrawls();
 
-      this.runningCrawls = this.sortCrawls(running);
-      this.finishedCrawls = this.sortCrawls(finished);
+      this.crawls = [...running, ...finished];
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
