@@ -14,6 +14,7 @@
     "color": "^4.0.1",
     "cron-parser": "^4.2.1",
     "cronstrue": "^1.123.0",
+    "fuse.js": "^6.5.3",
     "lit": "^2.0.0",
     "lodash": "^4.17.21",
     "path-parser": "^6.1.0",
