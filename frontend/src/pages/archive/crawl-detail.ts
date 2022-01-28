@@ -52,7 +52,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2 gap-5">
+        <dl class="grid grid-cols-2 gap-10">
           <div>
             <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
             <dd>
@@ -75,30 +75,6 @@ export class CrawlDetail extends LiteElement {
         </dl>
       </header>
 
-      ${isRunning
-        ? html`
-            <div
-              class="flex items-center justify-between border rounded-lg bg-purple-50 border-purple-300 text-purple-800 p-4 mb-4"
-            >
-              <p class="font-medium">${msg("Crawl is currently running.")}</p>
-              <div class="text-sm leading-none">
-                <button
-                  class="px-3 py-2 bg-white border border-purple-400 hover:border-purple-600 text-purple-600 hover:text-purple-500 rounded-sm font-medium mr-2 transition-colors"
-                  @click=${this.cancel}
-                >
-                  ${msg("Cancel Crawl")}
-                </button>
-                <button
-                  class="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-500 text-white rounded-sm font-medium transition-colors"
-                  @click=${this.stop}
-                >
-                  ${msg("Stop Crawl")}
-                </button>
-              </div>
-            </div>
-          `
-        : ""}
-
       <main class="grid gap-4">
         <section class="grid grid-cols-2 md:grid-cols-8 gap-5">
           <div class="col-span-8 md:col-span-5">
@@ -109,8 +85,45 @@ export class CrawlDetail extends LiteElement {
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-600">${msg("Status")}</dt>
-                <dd class="capitalize">
-                  ${this.crawl.state.replace(/_/g, " ")}
+                <dd>
+                  <div
+                    class="whitespace-nowrap capitalize${isRunning
+                      ? " motion-safe:animate-pulse"
+                      : ""}"
+                  >
+                    <span
+                      class="inline-block ${this.crawl.state === "failed"
+                        ? "text-red-500"
+                        : this.crawl.state === "partial_complete"
+                        ? "text-emerald-200"
+                        : isRunning
+                        ? "text-purple-500"
+                        : "text-emerald-500"}"
+                      style="font-size: 10px; vertical-align: 2px"
+                    >
+                      &#9679;
+                    </span>
+                    ${this.crawl.state.replace(/_/g, " ")}
+                  </div>
+
+                  ${isRunning
+                    ? html`
+                        <div class="mt-2 text-sm leading-none">
+                          <button
+                            class="px-3 py-2 bg-white border border-purple-400 hover:border-purple-600 text-purple-600 hover:text-purple-500 rounded-sm font-medium mr-2 transition-colors"
+                            @click=${this.cancel}
+                          >
+                            ${msg("Cancel Crawl")}
+                          </button>
+                          <button
+                            class="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-500 text-white rounded-sm font-medium transition-colors"
+                            @click=${this.stop}
+                          >
+                            ${msg("Stop Crawl")}
+                          </button>
+                        </div>
+                      `
+                    : ""}
                 </dd>
               </div>
               <div>
