@@ -33,8 +33,8 @@ type CrawlSearchResult = {
 
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
-  started_asc: msg("Oldest"),
   started_desc: msg("Newest"),
+  started_asc: msg("Oldest"),
   state_asc: msg("Status"),
   state_desc: msg("Status (Reverse)"),
   cid_asc: msg("Crawl Template ID"),
@@ -88,9 +88,9 @@ export class CrawlsList extends LiteElement {
   private fuse = new Fuse([], { keys: ["cid"], shouldSort: false });
 
   private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
-    return orderBy(`item.${this.orderBy.field}`)(this.orderBy.direction)(
-      crawls
-    ) as CrawlSearchResult[];
+    return orderBy(({ item }) => item[this.orderBy.field])(
+      this.orderBy.direction
+    )(crawls) as CrawlSearchResult[];
   }
 
   protected updated(changedProperties: Map<string, any>) {
@@ -134,8 +134,8 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-6 gap-3 items-center">
-        <div class="col-span-6 md:col-span-3">
+      <div class="grid grid-cols-2 gap-3 items-center">
+        <div class="col-span-2 md:col-span-1">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -146,15 +146,10 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-6 md:col-span-1">
-          <span class="text-xs text-0-400"
-            >${this.filterBy.length >= MIN_SEARCH_LENGTH
-              ? msg(str`Viewing filtered results`)
-              : ""}</span
-          >
-        </div>
-        <div class="col-span-6 md:col-span-2 flex items-center justify-end">
-          <div class="mr-2 text-sm text-0-600">${msg("Sort by")}</div>
+        <div class="col-span-2 md:col-span-1 flex items-center justify-end">
+          <div class="whitespace-nowrap text-sm text-0-600 mr-2">
+            ${msg("Sort by")}
+          </div>
           <sl-dropdown
             placement="bottom-end"
             distance="4"
@@ -200,8 +195,8 @@ export class CrawlsList extends LiteElement {
     return html`
       <ul class="border rounded">
         ${flow(
-          this.sortCrawls.bind(this),
           filterResults,
+          this.sortCrawls.bind(this),
           map(this.renderCrawlItem)
         )(this.crawls as any)}
       </ul>
