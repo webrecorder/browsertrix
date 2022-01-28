@@ -248,8 +248,6 @@ class CrawlOps:
         if config:
             out["configName"] = config.name
 
-        config = await self.users
-
         return out
 
     # pylint: disable=too-many-arguments
