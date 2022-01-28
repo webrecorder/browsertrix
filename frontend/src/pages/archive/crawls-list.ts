@@ -112,20 +112,21 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="pb-4">${this.renderControls()}</header>
         <section>${this.renderCrawlList()}</section>
-        <footer>
-          [Updated]
-          ${this.lastFetched
-            ? html`<sl-format-date
-                class="inline-block align-middle text-0-600"
-                date=${new Date(this.lastFetched).toString()}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="numeric"
-                minute="numeric"
-                second="numeric"
-              ></sl-format-date>`
-            : ""}
+        <footer class="mt-3">
+          <span class="text-0-400 text-sm">
+            ${this.lastFetched
+              ? msg(html`Last updated:
+                  <sl-format-date
+                    date=${new Date(this.lastFetched).toString()}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    second="numeric"
+                  ></sl-format-date>`)
+              : ""}
+          </span>
         </footer>
       </main>
     `;
@@ -351,18 +352,18 @@ export class CrawlsList extends LiteElement {
 
   private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
     // Mock to use in dev:
-    return import("../../__mocks__/api/archives/[id]/crawls").then(
-      (module) => module.default
-    );
-
-    // const data = await this.apiFetch(
-    //   `/archives/${this.archiveId}/crawls`,
-    //   this.authState!
+    // return import("../../__mocks__/api/archives/[id]/crawls").then(
+    //   (module) => module.default
     // );
 
-    // this.lastFetched = Date.now();
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls`,
+      this.authState!
+    );
 
-    // return data;
+    this.lastFetched = Date.now();
+
+    return data;
   }
 
   private async cancel(id: string) {
