@@ -35,10 +35,8 @@ const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   started_desc: msg("Newest"),
   started_asc: msg("Oldest"),
-  state_asc: msg("Status"),
-  state_desc: msg("Status (Reverse)"),
-  cid_asc: msg("Crawl Template ID"),
-  cid_desc: msg("Crawl Template ID (Reverse)"),
+  state: msg("Status"),
+  cid: msg("Crawl Template ID"),
 };
 
 function isRunning(crawl: Crawl) {
@@ -162,7 +160,8 @@ export class CrawlsList extends LiteElement {
             }}
           >
             <sl-button slot="trigger" pill caret
-              >${sortableFieldLabels[
+              >${(sortableFieldLabels as any)[this.orderBy.field] ||
+              sortableFieldLabels[
                 `${this.orderBy.field}_${this.orderBy.direction}`
               ]}</sl-button
             >
@@ -179,6 +178,16 @@ export class CrawlsList extends LiteElement {
               )}
             </sl-menu>
           </sl-dropdown>
+          <sl-icon-button
+            name="arrow-down-up"
+            label=${msg("Reverse sort")}
+            @click=${() => {
+              this.orderBy = {
+                ...this.orderBy,
+                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+              };
+            }}
+          ></sl-icon-button>
         </div>
       </div>
     `;
