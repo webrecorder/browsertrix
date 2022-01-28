@@ -153,8 +153,7 @@ export class CrawlsList extends LiteElement {
         </div>
         <div>
           <div
-            class="whitespace-nowrap truncate mb-1 capitalize${crawl.state ===
-            "running"
+            class="whitespace-nowrap mb-1 capitalize${crawl.state === "running"
               ? " motion-safe:animate-pulse"
               : ""}"
           >
