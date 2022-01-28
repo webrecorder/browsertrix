@@ -22,6 +22,12 @@ type Crawl = {
   completions?: number;
 };
 
+const sortableFieldLabels = {
+  started: msg("Start Time"),
+  state: msg("End State"),
+  cid: msg("Crawl Template"),
+};
+
 function isRunning(crawl: Crawl) {
   return crawl.state === "running";
 }
@@ -104,7 +110,29 @@ export class CrawlsList extends LiteElement {
                 ></sl-format-date>`
               : ""}
           </div>
-          <div>[Sort by]</div>
+          <div>
+            <span class="inline-block align-middle mr-1 text-sm"
+              >${msg("Sort by")}</span
+            >
+            <sl-dropdown
+              placement="bottom-end"
+              distance="4"
+              @sl-select=${(e: any) => {
+                console.log(e.detail.item.value);
+              }}
+            >
+              <sl-button slot="trigger" size="small" caret
+                >${sortableFieldLabels[this.orderBy.field]}</sl-button
+              >
+              <sl-menu>
+                ${Object.entries(sortableFieldLabels).map(
+                  ([value, label]) => html`
+                    <sl-menu-item value=${value}>${label}</sl-menu-item>
+                  `
+                )}
+              </sl-menu>
+            </sl-dropdown>
+          </div>
         </header>
 
         <section class="col-span-5 lg:col-span-1">[Filters]</section>
@@ -253,19 +281,19 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
-    // // Mock to use in dev:
-    // return import("../../__mocks__/api/archives/[id]/crawls").then(
-    //   (module) => module.default
-    // );
-
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls`,
-      this.authState!
+    // Mock to use in dev:
+    return import("../../__mocks__/api/archives/[id]/crawls").then(
+      (module) => module.default
     );
 
-    this.lastFetched = Date.now();
+    // const data = await this.apiFetch(
+    //   `/archives/${this.archiveId}/crawls`,
+    //   this.authState!
+    // );
 
-    return data;
+    // this.lastFetched = Date.now();
+
+    // return data;
   }
 
   private async cancel(id: string) {
