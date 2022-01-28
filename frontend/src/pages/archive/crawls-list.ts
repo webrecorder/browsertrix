@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
+import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -51,13 +52,28 @@ export class CrawlsList extends LiteElement {
   @state()
   private finishedCrawls?: Crawl[];
 
+  @state()
+  private orderBy: {
+    field: "started";
+    direction: "asc" | "desc";
+  } = {
+    field: "started",
+    direction: "desc",
+  };
+
+  private sortCrawls(crawls: Crawl[]): Crawl[] {
+    return orderBy(this.orderBy.field)(this.orderBy.direction)(
+      crawls
+    ) as Crawl[];
+  }
+
   protected async updated(changedProperties: Map<string, any>) {
     if (this.shouldFetch && changedProperties.has("shouldFetch")) {
       try {
         const { running, finished } = await this.getCrawls();
 
-        this.runningCrawls = running;
-        this.finishedCrawls = finished;
+        this.runningCrawls = this.sortCrawls(running);
+        this.finishedCrawls = this.sortCrawls(finished);
       } catch (e) {
         this.notify({
           message: msg("Sorry, couldn't retrieve crawls at this time."),
