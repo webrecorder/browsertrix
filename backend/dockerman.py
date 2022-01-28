@@ -227,7 +227,8 @@ class DockerManager:
         return running
 
     async def stop_crawl(self, crawl_id, aid, graceful=True):
-        """ Stop crawl, if not graceful, issue SIGUSR1 to indicate cancelation """
+        """Stop crawl, if not graceful, issue SIGABRT to indicate immediate
+        cancelation on next SIGTERM"""
 
         result = None
 
@@ -238,7 +239,7 @@ class DockerManager:
                 return None
 
             if not graceful:
-                await container.kill(signal="SIGUSR1")
+                await container.kill(signal="SIGABRT")
                 result = self._make_crawl_for_container(container, "canceled", True)
             else:
                 result = True

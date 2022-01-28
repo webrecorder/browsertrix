@@ -381,7 +381,7 @@ class K8SManager:
         """Attempt to stop crawl, either gracefully by issuing a SIGTERM which
         will attempt to finish current pages
 
-        OR, abruptly by first issueing a SIGINT, followed by SIGTERM, which
+        OR, abruptly by first issueing a SIGABRT, followed by SIGTERM, which
         will terminate immediately"""
 
         job = await self.batch_api.read_namespaced_job(
@@ -531,7 +531,7 @@ class K8SManager:
         return suspend, schedule
 
     async def _send_sig_to_pods(self, pods, aid):
-        command = ["kill", "-s", "SIGUSR1", "1"]
+        command = ["kill", "-s", "SIGABRT", "1"]
         interrupted = False
 
         try:
