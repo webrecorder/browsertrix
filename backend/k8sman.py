@@ -285,6 +285,26 @@ class K8SManager:
             if job.status.active
         ]
 
+    async def get_running_crawl(self, name, aid):
+        """Get running crawl (job) with given name, or none
+        if not found/not running"""
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=name, namespace=self.namespace
+            )
+
+            if not job or job.metadata.labels["btrix.archive"] != aid:
+                return None
+
+            if job.status.active:
+                return self._make_crawl_for_job(job, "running")
+
+        # pylint: disable=broad-except
+        except Exception:
+            pass
+
+        return None
+
     async def init_crawl_screencast(self, crawl_id, aid):
         """ Init service for this job/crawl_id to support screencasting """
         labels = {"btrix.archive": aid}
@@ -475,7 +495,7 @@ class K8SManager:
             user=job.metadata.labels["btrix.user"],
             aid=job.metadata.labels["btrix.archive"],
             cid=job.metadata.labels["btrix.crawlconfig"],
-            schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
+            # schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
             manual=job.metadata.annotations.get("btrix.run.manual") == "1",
             started=job.status.start_time.replace(tzinfo=None),
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None)
