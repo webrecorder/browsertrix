@@ -80,8 +80,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main class="grid grid-cols-5 gap-5">
-        <header class="col-span-5 flex justify-between">
-          <div><sl-button>${msg("New Crawl")}</sl-button></div>
+        <header class="col-span-5 flex justify-end">
           <div>[Sort by]</div>
         </header>
 
