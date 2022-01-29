@@ -14,6 +14,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 type Crawl = {
   id: string;
   user: string;
+  username?: string;
   aid: string;
   cid: string;
   configName?: string;
@@ -313,7 +314,7 @@ export class CrawlsList extends LiteElement {
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
                 <!-- TODO show user name -->
-                ${crawl.user}
+                ${crawl.username || crawl.user}
               </div>
             `
           : html`
