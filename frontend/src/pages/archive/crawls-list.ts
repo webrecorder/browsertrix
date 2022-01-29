@@ -7,6 +7,7 @@ import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 
 import { CopyButton } from "../../components/copy-button";
+import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
@@ -329,12 +330,9 @@ export class CrawlsList extends LiteElement {
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
                 ${msg(
-                  str`in ${humanizeDuration(
+                  str`in ${RelativeDuration.humanize(
                     new Date(`${crawl.finished}Z`).valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf(),
-                    {
-                      secondsDecimalDigits: 0,
-                    }
+                      new Date(`${crawl.started}Z`).valueOf()
                   )}`
                 )}
               </div>

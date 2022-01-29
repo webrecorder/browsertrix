@@ -16,11 +16,17 @@ export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format
 
+  static humanize(duration: number) {
+    return humanizeDuration(duration, {
+      secondsDecimalDigits: 0,
+    });
+  }
+
   render() {
     if (!this.value) return "";
 
-    return humanizeDuration(Date.now() - new Date(this.value).valueOf(), {
-      secondsDecimalDigits: 0,
-    });
+    return RelativeDuration.humanize(
+      Date.now() - new Date(this.value).valueOf()
+    );
   }
 }
