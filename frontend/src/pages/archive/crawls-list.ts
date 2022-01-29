@@ -1,6 +1,5 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import humanizeDuration from "pretty-ms";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -306,12 +305,9 @@ export class CrawlsList extends LiteElement {
                     date=${`${crawl.finished}Z` /** Z for UTC */}
                   ></sl-relative-time>
                 `
-              : humanizeDuration(
-                  Date.now() - new Date(`${crawl.started}Z`).valueOf(),
-                  {
-                    secondsDecimalDigits: 0,
-                  }
-                )}
+              : html`<btrix-relative-duration
+                  value=${`${crawl.started}Z`}
+                ></btrix-relative-duration>`}
           </div>
         </div>
       </div>

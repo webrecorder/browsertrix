@@ -155,10 +155,9 @@ export class CrawlDetail extends LiteElement {
                               minute="numeric"
                               time-zone-name="short"
                             ></sl-format-date>`
-                          : humanizeDuration(
-                              Date.now() -
-                                new Date(`${this.crawl.started}Z`).valueOf()
-                            )}
+                          : html`<btrix-relative-duration
+                              value=${`${this.crawl.started}Z`}
+                            ></btrix-relative-duration>`}
                       `
                     : html`<sl-skeleton></sl-skeleton>`}
                 </dd>
@@ -265,6 +264,8 @@ export class CrawlDetail extends LiteElement {
       }
     }
   }
+
+  private updateDuration() {}
 }
 
 customElements.define("btrix-crawl-detail", CrawlDetail);

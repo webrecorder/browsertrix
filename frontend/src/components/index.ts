@@ -15,6 +15,9 @@ import("./copy-button").then(({ CopyButton }) => {
 import("./invite-form").then(({ InviteForm }) => {
   customElements.define("btrix-invite-form", InviteForm);
 });
+import("./relative-duration").then(({ RelativeDuration }) => {
+  customElements.define("btrix-relative-duration", RelativeDuration);
+});
 import("./sign-up-form").then(({ SignUpForm }) => {
   customElements.define("btrix-sign-up-form", SignUpForm);
 });
