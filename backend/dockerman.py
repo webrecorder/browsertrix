@@ -7,6 +7,7 @@ import os
 import json
 import time
 import asyncio
+import uuid
 
 from datetime import datetime
 from io import BytesIO
@@ -19,7 +20,7 @@ from scheduler import run_scheduler
 
 from archives import S3Storage
 
-from crawls import Crawl, CrawlFile
+from crawls import Crawl, CrawlOut, CrawlFile
 
 
 # ============================================================================
@@ -165,8 +166,8 @@ class DockerManager:
     async def add_crawl_config(self, crawlconfig, storage, run_now):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
-        userid = crawlconfig.user
-        aid = crawlconfig.archive
+        userid = str(crawlconfig.user)
+        aid = str(crawlconfig.archive)
 
         labels = {
             "btrix.user": userid,
@@ -214,15 +215,28 @@ class DockerManager:
         else:
             await self._schedule_update(cid=cid, schedule="")
 
-    async def list_running_crawls(self, aid):
+    async def list_running_crawls(self, cid=None, aid=None, userid=None):
         """ List running containers for this archive """
-        containers = await self._list_running_containers([f"btrix.archive={aid}"])
+
+        labels = []
+
+        if cid:
+            labels.append(f"btrix.crawlconfig={cid}")
+
+        if aid:
+            labels.append(f"btrix.archive={aid}")
+
+        if userid:
+            labels.append(f"btrix.user={userid}")
+
+        containers = await self._list_running_containers(labels)
 
         running = []
 
         for container in containers:
-            full_container = await self.client.containers.get(container["Id"])
-            running.append(self._make_crawl_for_container(full_container, "running"))
+            crawl = await self.get_running_crawl(container["Id"], aid)
+            if crawl:
+                running.append(crawl)
 
         return running
 
@@ -253,7 +267,7 @@ class DockerManager:
 
         return result
 
-    async def run_crawl_config(self, cid, manual=True, schedule=""):
+    async def run_crawl_config(self, cid, manual=True, schedule="", uid=None):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """
 
         if not manual:
@@ -270,17 +284,22 @@ class DockerManager:
         volume_data = await volume_obj.show()
 
         labels = volume_data["Labels"]
+        if uid:
+            labels["btrix.user"] = uid
 
         archive = None
         storage = None
         storage_path = None
 
         try:
-            archive = await self.archive_ops.get_archive_by_id(labels["btrix.archive"])
+            archive = await self.archive_ops.get_archive_by_id(
+                uuid.UUID(labels["btrix.archive"])
+            )
             storage, storage_path = await self.get_storage(archive.storage)
 
         # pylint: disable=broad-except
         except Exception as exc:
+            print("Run Now Failed")
             print(exc, flush=True)
             return None
 
@@ -330,6 +349,24 @@ class DockerManager:
     async def get_default_storage_access_endpoint(self, name):
         """ Return the access endpoint url for default storage """
         return self.storages[name].access_endpoint_url
+
+    async def get_running_crawl(self, crawl_id, aid=None):
+        """ Return a single running crawl as CrawlOut """
+        try:
+            container = await self.client.containers.get(crawl_id)
+
+            if aid and container["Config"]["Labels"]["btrix.archive"] != aid:
+                return None
+
+            return self._make_crawl_for_container(container, "running", False, CrawlOut)
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc, flush=True)
+            return None
+
+    async def is_running(self, crawl_id, aid):
+        """ Return true is crawl with given id is running """
+        return await self.get_running_crawl(crawl_id, aid) is not None
 
     async def scale_crawl(self):  # job_name, aid, parallelism=1):
         """ Scale running crawl, currently only supported in k8s"""
@@ -492,11 +529,13 @@ class DockerManager:
             await container.delete()
 
     # pylint: disable=no-self-use,too-many-arguments
-    def _make_crawl_for_container(self, container, state, finish_now=False):
+    def _make_crawl_for_container(
+        self, container, state, finish_now=False, crawl_cls=Crawl
+    ):
         """ Make a crawl object from a container data"""
         labels = container["Config"]["Labels"]
 
-        return Crawl(
+        return crawl_cls(
             id=container["Id"],
             state=state,
             user=labels["btrix.user"],

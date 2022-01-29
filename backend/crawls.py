@@ -2,12 +2,13 @@
 
 import asyncio
 import json
+import uuid
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 from datetime import datetime
 
 from fastapi import Depends, Request, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 import pymongo
 import aioredis
 
@@ -43,9 +44,11 @@ class CrawlFile(BaseModel):
 class Crawl(BaseMongoModel):
     """ Store State of a Crawl (Finished or Running) """
 
-    user: str
-    aid: str
-    cid: str
+    id: str
+
+    user: UUID4
+    aid: UUID4
+    cid: UUID4
 
     # schedule: Optional[str]
     manual: Optional[bool]
@@ -66,14 +69,23 @@ class Crawl(BaseMongoModel):
 
 
 # ============================================================================
+class CrawlOut(Crawl):
+    """ Output for single crawl, add configName and username"""
+
+    username: Optional[str]
+    configName: Optional[str]
+
+
+# ============================================================================
 class ListCrawlOut(BaseMongoModel):
     """ Crawl output model for list view """
+
     id: str
 
-    user: str
+    user: UUID4
     username: Optional[str]
 
-    cid: str
+    cid: UUID4
     configName: Optional[str]
 
     manual: Optional[bool]
@@ -94,6 +106,7 @@ class ListCrawlOut(BaseMongoModel):
 # ============================================================================
 class ListCrawls(BaseModel):
     """ Response model for list of crawls """
+
     crawls: List[ListCrawlOut]
 
 
@@ -117,10 +130,11 @@ class CrawlOps:
     """ Crawl Ops """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, mdb, redis_url, crawl_manager, crawl_configs, archives):
+    def __init__(self, mdb, redis_url, users, crawl_manager, crawl_configs, archives):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
         self.crawl_configs = crawl_configs
+        self.user_manager = users
         self.archives = archives
         self.crawls_done_key = "crawls-done"
 
@@ -202,7 +216,11 @@ class CrawlOps:
         return True
 
     async def list_finished_crawls(
-        self, aid: str = None, cid: str = None, collid: str = None
+        self,
+        aid: uuid.UUID = None,
+        cid: uuid.UUID = None,
+        collid: uuid.UUID = None,
+        exclude_files=False,
     ):
         """List all finished crawls from the db """
         query = {}
@@ -215,27 +233,44 @@ class CrawlOps:
         if collid:
             query["colls"] = collid
 
-        # cursor = self.crawls.find(query)
-        cursor = self.crawls.aggregate(
-            [
-                {"$match": query},
-                {
-                    "$lookup": {
-                        "from": "crawl_configs",
-                        "localField": "cid",
-                        "foreignField": "_id",
-                        "as": "configName",
-                    },
+        aggregate = [
+            {"$match": query},
+            {
+                "$lookup": {
+                    "from": "crawl_configs",
+                    "localField": "cid",
+                    "foreignField": "_id",
+                    "as": "configName",
                 },
-                {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
-                {"$set": {"fileSize": {"$sum": "$files.size"}}},
-                {"$set": {"fileCount": {"$size": "$files"}}},
-                {"$unset": ["files"]},
-            ]
-        )
+            },
+            {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user",
+                    "foreignField": "id",
+                    "as": "username",
+                },
+            },
+            {"$set": {"username": {"$arrayElemAt": ["$username.name", 0]}}},
+        ]
+
+        if exclude_files:
+            aggregate.extend(
+                [
+                    {"$set": {"fileSize": {"$sum": "$files.size"}}},
+                    {"$set": {"fileCount": {"$size": "$files"}}},
+                    {"$unset": ["files"]},
+                ]
+            )
+            crawl_cls = ListCrawlOut
+        else:
+            crawl_cls = CrawlOut
+
+        cursor = self.crawls.aggregate(aggregate)
 
         results = await cursor.to_list(length=1000)
-        return [ListCrawlOut.from_dict(res) for res in results]
+        return [crawl_cls.from_dict(res) for res in results]
 
     async def list_crawls(self, archive: Archive):
         """ list finished and running crawl data """
@@ -243,7 +278,9 @@ class CrawlOps:
 
         await self.get_redis_stats(running_crawls)
 
-        finished_crawls = await self.list_finished_crawls(aid=archive.id)
+        finished_crawls = await self.list_finished_crawls(
+            aid=archive.id, exclude_files=True
+        )
 
         crawls = []
 
@@ -268,16 +305,20 @@ class CrawlOps:
                     status_code=404, detail=f"Crawl not found: {crawlid}"
                 )
 
-            crawl = Crawl.from_dict(res)
+            crawl = CrawlOut.from_dict(res)
 
         return await self._resolve_crawl(crawl, archive)
 
-    async def _resolve_crawl(self, crawl, archive):
+    async def _resolve_crawl(self, crawl: Union[CrawlOut, ListCrawlOut], archive):
         """ Resolve running crawl data """
         config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
 
         if config:
             crawl.configName = config.name
+
+        user = await self.user_manager.get(crawl.user)
+        if user:
+            crawl.username = user.name
 
         return crawl
 
@@ -301,7 +342,7 @@ class CrawlOps:
         for crawl, (done, total) in zip(crawl_list, pairwise(results)):
             crawl.stats = {"done": done, "found": total}
 
-    async def delete_crawls(self, aid: str, delete_list: DeleteCrawlList):
+    async def delete_crawls(self, aid: uuid.UUID, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
         res = await self.crawls.delete_many(
             {"_id": {"$in": delete_list.crawl_ids}, "aid": aid}
@@ -311,10 +352,12 @@ class CrawlOps:
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals
-def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archives):
+def init_crawls_api(
+    app, mdb, redis_url, users, crawl_manager, crawl_config_ops, archives
+):
     """ API for crawl management, including crawl done callback"""
 
-    ops = CrawlOps(mdb, redis_url, crawl_manager, crawl_config_ops, archives)
+    ops = CrawlOps(mdb, redis_url, users, crawl_manager, crawl_config_ops, archives)
 
     archive_crawl_dep = archives.archive_crawl_dep
 
@@ -385,6 +428,7 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
     @app.get(
         "/archives/{aid}/crawls/{crawl_id}",
         tags=["crawls"],
+        response_model=CrawlOut
     )
     async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl(crawl_id, archive)

@@ -9,7 +9,7 @@ import base64
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
 
-from crawls import Crawl, CrawlFile
+from crawls import Crawl, CrawlOut, CrawlFile
 
 
 # ============================================================================
@@ -148,8 +148,8 @@ class K8SManager:
     async def add_crawl_config(self, crawlconfig, storage, run_now):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
-        userid = crawlconfig.user
-        aid = crawlconfig.archive
+        userid = str(crawlconfig.user)
+        aid = str(crawlconfig.archive)
 
         annotations = {
             "btrix.run.schedule": crawlconfig.schedule,
@@ -249,8 +249,9 @@ class K8SManager:
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
 
-    async def run_crawl_config(self, cid):
-        """ Run crawl job for cron job based on specified crawlconfig id (cid) """
+    async def run_crawl_config(self, cid, uid=None):
+        """ Run crawl job for cron job based on specified crawlconfig id (cid)
+            optionally set different user  """
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
         )
@@ -280,30 +281,10 @@ class K8SManager:
         )
 
         return [
-            self._make_crawl_for_job(job, "running")
+            self._make_crawl_for_job(job, "running", False, CrawlOut)
             for job in jobs.items
             if job.status.active
         ]
-
-    async def get_running_crawl(self, name, aid):
-        """Get running crawl (job) with given name, or none
-        if not found/not running"""
-        try:
-            job = await self.batch_api.read_namespaced_job(
-                name=name, namespace=self.namespace
-            )
-
-            if not job or job.metadata.labels["btrix.archive"] != aid:
-                return None
-
-            if job.status.active:
-                return self._make_crawl_for_job(job, "running")
-
-        # pylint: disable=broad-except
-        except Exception:
-            pass
-
-        return None
 
     async def init_crawl_screencast(self, crawl_id, aid):
         """ Init service for this job/crawl_id to support screencasting """
@@ -381,6 +362,26 @@ class K8SManager:
             ).decode()
 
         return self._default_storage_endpoints[name]
+
+    async def get_running_crawl(self, name, aid):
+        """Get running crawl (job) with given name, or none
+        if not found/not running"""
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=name, namespace=self.namespace
+            )
+
+            if not job or job.metadata.labels["btrix.archive"] != aid:
+                return None
+
+            if job.status.active:
+                return self._make_crawl_for_job(job, "running", False, CrawlOut)
+
+        # pylint: disable=broad-except
+        except Exception:
+            pass
+
+        return None
 
     async def is_running(self, job_name, aid):
         """ Return true if the specified crawl (by job_name) is running """
@@ -486,9 +487,9 @@ class K8SManager:
     # Internal Methods
 
     # pylint: disable=no-self-use
-    def _make_crawl_for_job(self, job, state, finish_now=False):
+    def _make_crawl_for_job(self, job, state, finish_now=False, crawl_cls=Crawl):
         """ Make a crawl object from a job"""
-        return Crawl(
+        return crawl_cls(
             id=job.metadata.name,
             state=state,
             scale=job.spec.parallelism or 1,
@@ -588,7 +589,7 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-    async def _create_run_now_job(self, cron_job):
+    async def _create_run_now_job(self, cron_job, uid=None):
         """Create new job from cron job to run instantly"""
         annotations = cron_job.spec.job_template.metadata.annotations
         annotations["btrix.run.manual"] = "1"
@@ -603,13 +604,17 @@ class K8SManager:
         #    api_version="batch/v1beta1",
         # )
 
+        labels = cron_job.metadata.labels
+        if uid:
+            labels["btrix.user"] = uid
+
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"
 
         object_meta = client.V1ObjectMeta(
             name=name,
             annotations=annotations,
-            labels=cron_job.metadata.labels,
+            labels=labels,
             # owner_references=[owner_ref],
         )
 
