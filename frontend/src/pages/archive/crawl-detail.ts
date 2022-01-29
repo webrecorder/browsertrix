@@ -76,7 +76,7 @@ export class CrawlDetail extends LiteElement {
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-500">${msg("Crawl Template")}</dt>
-                <dd>
+                <dd class="h-6">
                   ${this.crawl
                     ? html`
                         <a
@@ -115,7 +115,7 @@ export class CrawlDetail extends LiteElement {
                           ${this.crawl.state.replace(/_/g, " ")}
                         </div>
                       `
-                    : html`<sl-skeleton></sl-skeleton>`}
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                   ${isRunning
                     ? html`
                         <div class="mt-2 text-sm leading-none">
@@ -142,7 +142,7 @@ export class CrawlDetail extends LiteElement {
                     ? msg("Finished")
                     : msg("Run duration")}
                 </dt>
-                <dd>
+                <dd class="h-6">
                   ${this.crawl
                     ? html`
                         ${this.crawl.finished
@@ -165,7 +165,7 @@ export class CrawlDetail extends LiteElement {
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Started")}</dt>
-                <dd>
+                <dd class="h-6">
                   ${this.crawl
                     ? html`
                         <sl-format-date
@@ -183,7 +183,7 @@ export class CrawlDetail extends LiteElement {
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Reason")}</dt>
-                <dd>
+                <dd class="h-6">
                   ${this.crawl
                     ? html`
                         ${this.crawl.manual
