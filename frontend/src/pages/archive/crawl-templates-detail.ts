@@ -272,7 +272,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                         ${this.crawlTemplate.currCrawlId
                           ? html` <a
                               class="text-primary font-medium hover:underline text-sm p-1"
-                              href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+                              href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
                               @click=${this.navLink}
                               >${msg("View crawl")}</a
                             >`
@@ -298,7 +298,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   ${this.crawlTemplate?.lastCrawlId
                     ? html`<a
                           class="text-primary font-medium hover:underline text-sm p-1"
-                          href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.lastCrawlId}`}
+                          href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.lastCrawlId}`}
                           @click=${this.navLink}
                           >${msg("View crawl")}</a
                         >
@@ -330,7 +330,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       return html`
         <a
           class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
-          href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+          href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
           @click=${this.navLink}
         >
           <span>${msg("View currently running crawl")}</span>
@@ -417,7 +417,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             this.crawlTemplate!.name
           }</strong>. <br /><a class="underline hover:no-underline" href="/archives/${
             this.archiveId
-          }/crawls/${data.run_now_job}">View crawl</a>`
+          }/crawls/crawl/${data.run_now_job}">View crawl</a>`
         ),
         type: "success",
         icon: "check2-circle",
