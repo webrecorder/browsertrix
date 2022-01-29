@@ -13,7 +13,7 @@ import "./crawl-templates-list";
 import "./crawl-templates-new";
 import "./crawls-list";
 
-export type ArchiveTab = "crawls" | "crawl-templates" | "settings" | "members";
+export type ArchiveTab = "crawls" | "crawl-templates" | "members";
 
 const defaultTab = "crawls";
 
@@ -114,12 +114,6 @@ export class Archive extends LiteElement {
               this.navTo(`/archives/${this.archiveId}/crawl-templates`)}
             >${msg("Crawl Templates")}
           </sl-tab>
-          <sl-tab
-            slot="nav"
-            panel="settings"
-            ?active=${this.archiveTab === "settings"}
-            >${msg("Settings")}</sl-tab
-          >
           ${showMembersTab
             ? html`<sl-tab
                 slot="nav"
@@ -136,11 +130,6 @@ export class Archive extends LiteElement {
             name="crawl-templates"
             ?active=${this.archiveTab === "crawl-templates"}
             >${this.renderCrawlTemplates()}</sl-tab-panel
-          >
-          <sl-tab-panel
-            name="settings"
-            ?active=${this.archiveTab === "settings"}
-            >${this.renderSettings()}</sl-tab-panel
           >
           ${showMembersTab
             ? html`<sl-tab-panel
