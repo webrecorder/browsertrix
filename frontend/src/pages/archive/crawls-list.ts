@@ -16,6 +16,7 @@ type Crawl = {
   user: string;
   aid: string;
   cid: string;
+  configName?: string;
   schedule: string;
   manual: boolean;
   started: string; // UTC ISO date
@@ -24,6 +25,8 @@ type Crawl = {
   scale: number;
   stats: { done: number; found: number } | null;
   files?: { filename: string; hash: string; size: number }[];
+  fileCount?: number;
+  fileSize?: number;
   completions?: number;
 };
 
@@ -242,7 +245,7 @@ export class CrawlsList extends LiteElement {
             class="hover:underline"
             href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
             @click=${this.navLink}
-            >${crawl.cid}</a
+            >${crawl.configName || crawl.cid}</a
           >
         </div>
       </div>
@@ -307,19 +310,19 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
       <div class="col-span-6 md:col-span-2">
-        ${crawl.files
+        ${typeof crawl.fileCount !== "undefined"
           ? html`
               <div class="whitespace-nowrap truncate text-sm">
                 <span class="font-mono text-0-800 tracking-tighter">
                   <sl-format-bytes
-                    value=${crawl.files.reduce((v, { size }) => v + size, 0)}
+                    value=${crawl.fileSize || 0}
                     lang=${/* TODO localize: */ "en"}
                   ></sl-format-bytes>
                 </span>
                 <span class="text-0-500">
-                  (${crawl.files.length === 1
-                    ? msg(str`${crawl.files.length} file`)
-                    : msg(str`${crawl.files.length} files`)})
+                  (${crawl.fileCount === 1
+                    ? msg(str`${crawl.fileCount} file`)
+                    : msg(str`${crawl.fileCount} files`)})
                 </span>
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
