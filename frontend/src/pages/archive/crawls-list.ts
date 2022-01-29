@@ -352,9 +352,9 @@ export class CrawlsList extends LiteElement {
    */
   private async fetchCrawls(): Promise<void> {
     try {
-      const { running, finished } = await this.getCrawls();
+      const { crawls } = await this.getCrawls();
 
-      this.crawls = [...running, ...finished];
+      this.crawls = crawls;
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
     } catch (e) {
@@ -366,7 +366,7 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async getCrawls(): Promise<{ running: Crawl[]; finished: Crawl[] }> {
+  private async getCrawls(): Promise<{ crawls: Crawl[] }> {
     // Mock to use in dev:
     // return import("../../__mocks__/api/archives/[id]/crawls").then(
     //   (module) => module.default
