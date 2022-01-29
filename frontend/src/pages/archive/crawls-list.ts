@@ -40,7 +40,10 @@ const sortableFieldLabels = {
   started_desc: msg("Newest"),
   started_asc: msg("Oldest"),
   state: msg("Status"),
+  configName: msg("Crawl Template Name"),
   cid: msg("Crawl Template ID"),
+  fileSize_asc: msg("Smallest Files"),
+  fileSize_desc: msg("Largest Files"),
 };
 
 function isRunning(crawl: Crawl) {
