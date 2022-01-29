@@ -241,10 +241,10 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
-      class="grid grid-cols-12 gap-4 md:gap-6 p-4 leading-none border-t first:border-t-0"
+      class="grid grid-cols-12 gap-2 items-center md:gap-6 p-4 leading-none border-t first:border-t-0"
     >
-      <div class="col-span-12 md:col-span-4">
-        <div class="font-medium whitespace-nowrap truncate mb-1">
+      <div class="col-span-12 md:col-span-5">
+        <div class="font-medium mb-1">
           <a
             class="hover:text-0-600 transition-colors"
             href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
@@ -252,7 +252,7 @@ export class CrawlsList extends LiteElement {
             >${crawl.configName || crawl.cid}</a
           >
         </div>
-        <div class="text-0-800 text-sm whitespace-nowrap truncate">
+        <div class="text-0-700 text-sm whitespace-nowrap truncate">
           <sl-format-date
             date=${`${crawl.started}Z` /** Z for UTC */}
             month="2-digit"
@@ -261,6 +261,17 @@ export class CrawlsList extends LiteElement {
             hour="numeric"
             minute="numeric"
           ></sl-format-date>
+          ${crawl.manual
+            ? html` <span
+                class="bg-fuchsia-50 text-fuchsia-700 text-xs rounded px-1 leading-4"
+                >${msg("Manual Start")}</span
+              >`
+            : html`
+                <span
+                  class="bg-teal-50 text-teal-700 text-xs rounded px-1 leading-4"
+                  >${msg("Scheduled Run")}</span
+                >
+              `}
         </div>
       </div>
       <div class="col-span-6 md:col-span-2 flex items-start">
@@ -303,38 +314,6 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
       </div>
-      <div class="col-span-6 md:col-span-3">
-        ${crawl.manual
-          ? html`
-              <div class="whitespace-nowrap truncate mb-1">
-                <span
-                  class="bg-fuchsia-50 text-fuchsia-800 text-xs rounded px-1 leading-4"
-                  >${msg("Manual Start")}</span
-                >
-              </div>
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                <!-- TODO show user name -->
-                ${crawl.username || crawl.user}
-              </div>
-            `
-          : html`
-              <div class="whitespace-nowrap truncate mb-1">
-                <span
-                  class="bg-teal-50 text-teal-800 text-xs rounded px-1 leading-4"
-                  >${msg("Scheduled Run")}</span
-                >
-              </div>
-
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                <sl-format-date
-                  date=${`${crawl.started}Z` /** Z for UTC */}
-                  weekday="long"
-                  month="short"
-                  day="numeric"
-                ></sl-format-date>
-              </div>
-            `}
-      </div>
       <div class="col-span-6 md:col-span-2">
         ${crawl.finished
           ? html`
@@ -374,6 +353,18 @@ export class CrawlsList extends LiteElement {
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
                 ${msg("pages crawled")}
+              </div>
+            `
+          : ""}
+      </div>
+      <div class="col-span-6 md:col-span-2">
+        ${crawl.manual
+          ? html`
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg("Started by")}
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${crawl.username || crawl.user}
               </div>
             `
           : ""}
