@@ -165,7 +165,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-2 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-600 mr-2">
+          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort by")}
           </div>
           <sl-dropdown
@@ -238,15 +238,23 @@ export class CrawlsList extends LiteElement {
     >
       <div class="col-span-12 md:col-span-4">
         <div class="font-medium whitespace-nowrap truncate mb-1">
-          ${crawl.id}
-        </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
           <a
-            class="hover:underline"
+            class="hover:text-0-600 transition-colors"
             href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
             @click=${this.navLink}
             >${crawl.configName || crawl.cid}</a
           >
+        </div>
+        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+          <sl-format-date
+            class="inline-block align-middle text-0-500"
+            date=${`${crawl.started}Z` /** Z for UTC */}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="numeric"
+            minute="numeric"
+          ></sl-format-date>
         </div>
       </div>
       <div class="col-span-6 md:col-span-2 flex items-start">
@@ -278,7 +286,6 @@ export class CrawlsList extends LiteElement {
               ? html`
                   <sl-relative-time
                     date=${`${crawl.finished}Z` /** Z for UTC */}
-                    sync
                   ></sl-relative-time>
                 `
               : humanizeDuration(
@@ -298,15 +305,9 @@ export class CrawlsList extends LiteElement {
         </div>
 
         <div class="text-0-500 text-sm whitespace-nowrap truncate">
-          <sl-format-date
-            class="inline-block align-middle text-0-600"
+          <sl-relative-time
             date=${`${crawl.started}Z` /** Z for UTC */}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="numeric"
-            minute="numeric"
-          ></sl-format-date>
+          ></sl-relative-time>
         </div>
       </div>
       <div class="col-span-6 md:col-span-2">
