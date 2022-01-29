@@ -14,8 +14,10 @@ import LiteElement, { html } from "../../utils/LiteElement";
 type Crawl = {
   id: string;
   user: string;
+  username?: string;
   aid: string;
   cid: string;
+  configName?: string;
   schedule: string;
   manual: boolean;
   started: string; // UTC ISO date
@@ -24,6 +26,8 @@ type Crawl = {
   scale: number;
   stats: { done: number; found: number } | null;
   files?: { filename: string; hash: string; size: number }[];
+  fileCount?: number;
+  fileSize?: number;
   completions?: number;
 };
 
@@ -31,12 +35,16 @@ type CrawlSearchResult = {
   item: Crawl;
 };
 
+const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   started_desc: msg("Newest"),
   started_asc: msg("Oldest"),
   state: msg("Status"),
+  configName: msg("Crawl Template Name"),
   cid: msg("Crawl Template ID"),
+  fileSize_asc: msg("Smallest Files"),
+  fileSize_desc: msg("Largest Files"),
 };
 
 function isRunning(crawl: Crawl) {
@@ -83,7 +91,16 @@ export class CrawlsList extends LiteElement {
   private filterBy: string = "";
 
   // For fuzzy search:
-  private fuse = new Fuse([], { keys: ["cid"], shouldSort: false });
+  private fuse = new Fuse([], {
+    keys: ["cid", "configName"],
+    shouldSort: false,
+  });
+
+  // For long polling:
+  private timerId?: number;
+
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat();
 
   private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
     return orderBy(({ item }) => item[this.orderBy.field])(
@@ -92,9 +109,18 @@ export class CrawlsList extends LiteElement {
   }
 
   protected updated(changedProperties: Map<string, any>) {
-    if (this.shouldFetch && changedProperties.has("shouldFetch")) {
-      this.fetchCrawls();
+    if (changedProperties.has("shouldFetch")) {
+      if (this.shouldFetch) {
+        this.fetchCrawls();
+      } else {
+        this.stopPollTimer();
+      }
     }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.stopPollTimer();
   }
 
   render() {
@@ -137,7 +163,7 @@ export class CrawlsList extends LiteElement {
           <sl-input
             class="w-full"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Template ID")}
+            placeholder=${msg("Search by Crawl Template name or ID")}
             pill
             clearable
             @sl-input=${this.onSearchInput}
@@ -146,7 +172,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-2 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-600 mr-2">
+          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort by")}
           </div>
           <sl-dropdown
@@ -215,22 +241,40 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
-      class="grid grid-cols-12 gap-4 md:gap-6 p-4 leading-none border-t first:border-t-0"
+      class="grid grid-cols-12 gap-2 items-center md:gap-6 p-4 leading-none border-t first:border-t-0"
     >
-      <div class="col-span-12 md:col-span-4">
-        <div class="font-medium whitespace-nowrap truncate mb-1">
-          ${crawl.id}
-        </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+      <div class="col-span-12 md:col-span-5">
+        <div class="font-medium mb-1">
           <a
-            class="hover:underline"
+            class="hover:text-0-600 transition-colors"
             href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
             @click=${this.navLink}
-            >${crawl.cid}</a
+            >${crawl.configName || crawl.cid}</a
           >
         </div>
+        <div class="text-0-700 text-sm whitespace-nowrap truncate">
+          <sl-format-date
+            date=${`${crawl.started}Z` /** Z for UTC */}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="numeric"
+            minute="numeric"
+          ></sl-format-date>
+          ${crawl.manual
+            ? html` <span
+                class="bg-fuchsia-50 text-fuchsia-700 text-xs rounded px-1 leading-4"
+                >${msg("Manual Start")}</span
+              >`
+            : html`
+                <span
+                  class="bg-teal-50 text-teal-700 text-xs rounded px-1 leading-4"
+                  >${msg("Scheduled Run")}</span
+                >
+              `}
+        </div>
       </div>
-      <div class="col-span-6 md:col-span-3 flex items-start">
+      <div class="col-span-6 md:col-span-2 flex items-start">
         <div class="mr-2">
           <!-- TODO switch case in lit template? needed for tailwindcss purging -->
           <span
@@ -259,7 +303,6 @@ export class CrawlsList extends LiteElement {
               ? html`
                   <sl-relative-time
                     date=${`${crawl.finished}Z` /** Z for UTC */}
-                    sync
                   ></sl-relative-time>
                 `
               : humanizeDuration(
@@ -271,24 +314,60 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
       </div>
-      <div class="col-span-6 md:col-span-4">
-        <div class="whitespace-nowrap truncate mb-1">
-          ${crawl.manual
-            ? msg(html`Manual start by <span>${crawl.user}</span>`)
-            : msg(html`Scheduled run`)}
-        </div>
-
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
-          <sl-format-date
-            class="inline-block align-middle text-0-600"
-            date=${`${crawl.started}Z` /** Z for UTC */}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="numeric"
-            minute="numeric"
-          ></sl-format-date>
-        </div>
+      <div class="col-span-6 md:col-span-2">
+        ${crawl.finished
+          ? html`
+              <div class="whitespace-nowrap truncate text-sm">
+                <span class="font-mono text-0-800 tracking-tighter">
+                  <sl-format-bytes
+                    value=${crawl.fileSize || 0}
+                    lang=${/* TODO localize: */ "en"}
+                  ></sl-format-bytes>
+                </span>
+                <span class="text-0-500">
+                  (${crawl.fileCount === 1
+                    ? msg(str`${crawl.fileCount} file`)
+                    : msg(str`${crawl.fileCount} files`)})
+                </span>
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg(
+                  str`in ${humanizeDuration(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf(),
+                    {
+                      secondsDecimalDigits: 0,
+                    }
+                  )}`
+                )}
+              </div>
+            `
+          : crawl.stats
+          ? html`
+              <div
+                class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
+              >
+                ${this.numberFormatter.format(crawl.stats.done)}
+                <span class="text-0-400">/</span>
+                ${this.numberFormatter.format(crawl.stats.found)}
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg("pages crawled")}
+              </div>
+            `
+          : ""}
+      </div>
+      <div class="col-span-6 md:col-span-2">
+        ${crawl.manual
+          ? html`
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg("Started by")}
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${crawl.username || crawl.user}
+              </div>
+            `
+          : ""}
       </div>
       <div class="col-span-12 md:col-span-1 flex justify-end">
         <sl-dropdown>
@@ -337,6 +416,18 @@ export class CrawlsList extends LiteElement {
             >
               ${msg("Copy Crawl Template ID")}
             </li>
+            <li
+              class="p-2 hover:bg-zinc-100 cursor-pointer"
+              role="menuitem"
+              @click=${(e: any) => {
+                e.stopPropagation();
+                this.navTo(
+                  `/archives/${this.archiveId}/crawl-templates/${crawl.cid}`
+                );
+              }}
+            >
+              ${msg("View Crawl Template")}
+            </li>
           </ul>
         </sl-dropdown>
       </div>
@@ -351,12 +442,19 @@ export class CrawlsList extends LiteElement {
    * Fetch crawls and update internal state
    */
   private async fetchCrawls(): Promise<void> {
+    if (!this.shouldFetch) return;
+
     try {
       const { crawls } = await this.getCrawls();
 
       this.crawls = crawls;
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
+
+      // Start timer for next poll
+      this.timerId = window.setTimeout(() => {
+        this.fetchCrawls();
+      }, 1000 * POLL_INTERVAL_SECONDS);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
@@ -364,6 +462,10 @@ export class CrawlsList extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private stopPollTimer() {
+    window.clearTimeout(this.timerId);
   }
 
   private async getCrawls(): Promise<{ crawls: Crawl[] }> {
