@@ -243,7 +243,7 @@ export class CrawlsList extends LiteElement {
           >
         </div>
       </div>
-      <div class="col-span-6 md:col-span-3 flex items-start">
+      <div class="col-span-6 md:col-span-2 flex items-start">
         <div class="mr-2">
           <!-- TODO switch case in lit template? needed for tailwindcss purging -->
           <span
@@ -302,6 +302,23 @@ export class CrawlsList extends LiteElement {
             minute="numeric"
           ></sl-format-date>
         </div>
+      </div>
+      <div class="col-span-6 md:col-span-1">
+        ${crawl.files
+          ? html`
+              <div class="whitespace-nowrap truncate mb-1 text-sm font-mono">
+                <sl-format-bytes
+                  value=${crawl.files.reduce((v, { size }) => v + size, 0)}
+                  lang=${/* TODO localize: */ "en"}
+                ></sl-format-bytes>
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${crawl.files.length === 1
+                  ? msg(str`${crawl.files.length} file`)
+                  : msg(str`${crawl.files.length} files`)}
+              </div>
+            `
+          : ""}
       </div>
       <div class="col-span-12 md:col-span-1 flex justify-end">
         <sl-dropdown>
