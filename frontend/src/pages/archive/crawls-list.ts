@@ -89,6 +89,9 @@ export class CrawlsList extends LiteElement {
   // For long polling:
   private timerId?: number;
 
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat();
+
   private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
     return orderBy(({ item }) => item[this.orderBy.field])(
       this.orderBy.direction
@@ -284,7 +287,7 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
       </div>
-      <div class="col-span-6 md:col-span-4">
+      <div class="col-span-6 md:col-span-3">
         <div class="whitespace-nowrap truncate mb-1">
           ${crawl.manual
             ? msg(html`Manual start by <span>${crawl.user}</span>`)
@@ -303,19 +306,45 @@ export class CrawlsList extends LiteElement {
           ></sl-format-date>
         </div>
       </div>
-      <div class="col-span-6 md:col-span-1">
+      <div class="col-span-6 md:col-span-2">
         ${crawl.files
           ? html`
-              <div class="whitespace-nowrap truncate mb-1 text-sm font-mono">
-                <sl-format-bytes
-                  value=${crawl.files.reduce((v, { size }) => v + size, 0)}
-                  lang=${/* TODO localize: */ "en"}
-                ></sl-format-bytes>
+              <div class="whitespace-nowrap truncate text-sm">
+                <span class="font-mono text-0-800 tracking-tighter">
+                  <sl-format-bytes
+                    value=${crawl.files.reduce((v, { size }) => v + size, 0)}
+                    lang=${/* TODO localize: */ "en"}
+                  ></sl-format-bytes>
+                </span>
+                <span class="text-0-500">
+                  (${crawl.files.length === 1
+                    ? msg(str`${crawl.files.length} file`)
+                    : msg(str`${crawl.files.length} files`)})
+                </span>
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                ${crawl.files.length === 1
-                  ? msg(str`${crawl.files.length} file`)
-                  : msg(str`${crawl.files.length} files`)}
+                ${msg(
+                  str`in ${humanizeDuration(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf(),
+                    {
+                      secondsDecimalDigits: 0,
+                    }
+                  )}`
+                )}
+              </div>
+            `
+          : crawl.stats
+          ? html`
+              <div
+                class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
+              >
+                ${this.numberFormatter.format(crawl.stats.done)}
+                <span class="text-0-400">/</span>
+                ${this.numberFormatter.format(crawl.stats.found)}
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg("pages crawled")}
               </div>
             `
           : ""}
