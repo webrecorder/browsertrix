@@ -224,7 +224,7 @@ export class CrawlsList extends LiteElement {
         <div class="text-0-500 text-sm whitespace-nowrap truncate">
           <a
             class="hover:underline"
-            href=${`/archives/${crawl.aid}/crawl-templates/${crawl.cid}`}
+            href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
             @click=${this.navLink}
             >${crawl.cid}</a
           >
