@@ -317,7 +317,7 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
       <div class="col-span-6 md:col-span-2">
-        ${typeof crawl.fileCount !== "undefined"
+        ${crawl.finished
           ? html`
               <div class="whitespace-nowrap truncate text-sm">
                 <span class="font-mono text-0-800 tracking-tighter">
