@@ -66,8 +66,35 @@ class Crawl(BaseMongoModel):
 
 
 # ============================================================================
-# class CrawlOut(Crawl):
-#    configName: str
+class ListCrawlOut(BaseMongoModel):
+    """ Crawl output model for list view """
+    id: str
+
+    user: str
+    username: Optional[str]
+
+    cid: str
+    configName: Optional[str]
+
+    manual: Optional[bool]
+
+    started: datetime
+    finished: Optional[datetime]
+
+    state: str
+
+    stats: Optional[Dict[str, str]]
+
+    fileSize: int = 0
+    fileCount: int = 0
+
+    colls: Optional[List[str]] = []
+
+
+# ============================================================================
+class ListCrawls(BaseModel):
+    """ Response model for list of crawls """
+    crawls: List[ListCrawlOut]
 
 
 # ============================================================================
@@ -201,13 +228,14 @@ class CrawlOps:
                     },
                 },
                 {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
-                # {"$unset": ["aid"]},
+                {"$set": {"fileSize": {"$sum": "$files.size"}}},
+                {"$set": {"fileCount": {"$size": "$files"}}},
+                {"$unset": ["files"]},
             ]
         )
 
         results = await cursor.to_list(length=1000)
-        return results
-        # return [Crawl.from_dict(res) for res in results]
+        return [ListCrawlOut.from_dict(res) for res in results]
 
     async def list_crawls(self, archive: Archive):
         """ list finished and running crawl data """
@@ -217,12 +245,15 @@ class CrawlOps:
 
         finished_crawls = await self.list_finished_crawls(aid=archive.id)
 
-        return {
-            "running": [
-                await self._resolve_crawl(crawl, archive) for crawl in running_crawls
-            ],
-            "finished": finished_crawls,
-        }
+        crawls = []
+
+        for crawl in running_crawls:
+            list_crawl = ListCrawlOut(**crawl.dict())
+            crawls.append(await self._resolve_crawl(list_crawl, archive))
+
+        crawls.extend(finished_crawls)
+
+        return ListCrawls(crawls=crawls)
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
@@ -244,11 +275,11 @@ class CrawlOps:
     async def _resolve_crawl(self, crawl, archive):
         """ Resolve running crawl data """
         config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
-        out = crawl.dict(exclude_none=True, exclude_unset=True)
-        if config:
-            out["configName"] = config.name
 
-        return out
+        if config:
+            crawl.configName = config.name
+
+        return crawl
 
     # pylint: disable=too-many-arguments
     async def get_redis_stats(self, crawl_list):
@@ -287,7 +318,7 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
 
     archive_crawl_dep = archives.archive_crawl_dep
 
-    @app.get("/archives/{aid}/crawls", tags=["crawls"])
+    @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
         return await ops.list_crawls(archive)
 
