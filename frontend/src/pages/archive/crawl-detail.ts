@@ -29,6 +29,9 @@ export class CrawlDetail extends LiteElement {
   @state()
   private watchUrl?: string;
 
+  @state()
+  private isWatchExpanded: boolean = false;
+
   async firstUpdated() {
     try {
       this.crawl = await this.getCrawl();
@@ -55,7 +58,11 @@ export class CrawlDetail extends LiteElement {
     return html`
       <main class="grid gap-4">
         <section class="grid grid-cols-2 md:grid-cols-8 gap-5">
-          <div class="col-span-8 md:col-span-5 relative">
+          <div
+            class="col-span-8 ${this.isWatchExpanded
+              ? "md:col-span-8"
+              : "md:col-span-5"} relative"
+          >
             <div
               class="aspect-video bg-slate-50 rounded border ${isRunning
                 ? "border-purple-200"
@@ -64,19 +71,49 @@ export class CrawlDetail extends LiteElement {
               <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
               [watch/replay]
             </div>
-            <div class="absolute top-2 right-2 bg-white/90 rounded-full">
-              <sl-icon-button
-                name="arrows-fullscreen"
-                label=${msg("Fullscreen")}
-              ></sl-icon-button>
+            <div
+              class="absolute top-2 right-2 flex bg-white/90 hover:bg-white rounded-full"
+            >
+              ${this.isWatchExpanded
+                ? html`
+                    <sl-icon-button
+                      class="px-1"
+                      name="arrows-angle-contract"
+                      label=${msg("Contract crawl video")}
+                      @click=${() => (this.isWatchExpanded = false)}
+                    ></sl-icon-button>
+                  `
+                : html`
+                    <sl-icon-button
+                      class="px-1"
+                      name="arrows-angle-expand"
+                      label=${msg("Expand crawl video")}
+                      @click=${() => (this.isWatchExpanded = true)}
+                    ></sl-icon-button>
+                  `}
+              ${this.watchUrl
+                ? html`
+                    <sl-icon-button
+                      class="border-l px-1"
+                      href=${this.watchUrl}
+                      name="box-arrow-up-right"
+                      label=${msg("Open in new window")}
+                      target="_blank"
+                    ></sl-icon-button>
+                  `
+                : ""}
             </div>
           </div>
 
-          <div class="col-span-8 md:col-span-3 border rounded p-4 md:p-8">
+          <div
+            class="col-span-8 ${this.isWatchExpanded
+              ? "md:col-span-8"
+              : "md:col-span-3"} border rounded p-4 md:p-8"
+          >
             <dl class="grid gap-5">
               <div>
                 <dt class="text-sm text-0-500">${msg("Crawl Template")}</dt>
-                <dd class="h-6">
+                <dd>
                   ${this.crawl
                     ? html`
                         <a
@@ -86,7 +123,7 @@ export class CrawlDetail extends LiteElement {
                           >${this.crawl.configName}</a
                         >
                       `
-                    : html`<sl-skeleton></sl-skeleton>`}
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                 </dd>
               </div>
 
@@ -142,7 +179,7 @@ export class CrawlDetail extends LiteElement {
                     ? msg("Finished")
                     : msg("Run duration")}
                 </dt>
-                <dd class="h-6">
+                <dd>
                   ${this.crawl
                     ? html`
                         ${this.crawl.finished
@@ -159,12 +196,12 @@ export class CrawlDetail extends LiteElement {
                               value=${`${this.crawl.started}Z`}
                             ></btrix-relative-duration>`}
                       `
-                    : html`<sl-skeleton></sl-skeleton>`}
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                 </dd>
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Started")}</dt>
-                <dd class="h-6">
+                <dd>
                   ${this.crawl
                     ? html`
                         <sl-format-date
@@ -177,12 +214,12 @@ export class CrawlDetail extends LiteElement {
                           time-zone-name="short"
                         ></sl-format-date>
                       `
-                    : html`<sl-skeleton></sl-skeleton>`}
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                 </dd>
               </div>
               <div>
                 <dt class="text-sm text-0-500">${msg("Reason")}</dt>
-                <dd class="h-6">
+                <dd>
                   ${this.crawl
                     ? html`
                         ${this.crawl.manual
@@ -192,7 +229,7 @@ export class CrawlDetail extends LiteElement {
                             )
                           : msg(html`Scheduled run`)}
                       `
-                    : html`<sl-skeleton></sl-skeleton>`}
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                 </dd>
               </div>
             </dl>
