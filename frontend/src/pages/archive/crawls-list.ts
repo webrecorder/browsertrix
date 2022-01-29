@@ -87,7 +87,10 @@ export class CrawlsList extends LiteElement {
   private filterBy: string = "";
 
   // For fuzzy search:
-  private fuse = new Fuse([], { keys: ["cid"], shouldSort: false });
+  private fuse = new Fuse([], {
+    keys: ["cid", "configName"],
+    shouldSort: false,
+  });
 
   // For long polling:
   private timerId?: number;
@@ -156,7 +159,7 @@ export class CrawlsList extends LiteElement {
           <sl-input
             class="w-full"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Template ID")}
+            placeholder=${msg("Search by Crawl Template name or ID")}
             pill
             clearable
             @sl-input=${this.onSearchInput}
