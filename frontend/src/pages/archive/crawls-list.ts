@@ -31,6 +31,7 @@ type CrawlSearchResult = {
   item: Crawl;
 };
 
+const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   started_desc: msg("Newest"),
@@ -85,6 +86,9 @@ export class CrawlsList extends LiteElement {
   // For fuzzy search:
   private fuse = new Fuse([], { keys: ["cid"], shouldSort: false });
 
+  // For long polling:
+  private timerId?: number;
+
   private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
     return orderBy(({ item }) => item[this.orderBy.field])(
       this.orderBy.direction
@@ -92,9 +96,18 @@ export class CrawlsList extends LiteElement {
   }
 
   protected updated(changedProperties: Map<string, any>) {
-    if (this.shouldFetch && changedProperties.has("shouldFetch")) {
-      this.fetchCrawls();
+    if (changedProperties.has("shouldFetch")) {
+      if (this.shouldFetch) {
+        this.fetchCrawls();
+      } else {
+        this.stopPollTimer();
+      }
     }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.stopPollTimer();
   }
 
   render() {
@@ -351,12 +364,19 @@ export class CrawlsList extends LiteElement {
    * Fetch crawls and update internal state
    */
   private async fetchCrawls(): Promise<void> {
+    if (!this.shouldFetch) return;
+
     try {
       const { crawls } = await this.getCrawls();
 
       this.crawls = crawls;
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
+
+      // Start timer for next poll
+      this.timerId = window.setTimeout(() => {
+        this.fetchCrawls();
+      }, 1000 * POLL_INTERVAL_SECONDS);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
@@ -364,6 +384,10 @@ export class CrawlsList extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private stopPollTimer() {
+    window.clearTimeout(this.timerId);
   }
 
   private async getCrawls(): Promise<{ crawls: Crawl[] }> {
