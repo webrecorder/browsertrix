@@ -400,6 +400,18 @@ export class CrawlsList extends LiteElement {
             >
               ${msg("Copy Crawl Template ID")}
             </li>
+            <li
+              class="p-2 hover:bg-zinc-100 cursor-pointer"
+              role="menuitem"
+              @click=${(e: any) => {
+                e.stopPropagation();
+                this.navTo(
+                  `/archives/${this.archiveId}/crawl-templates/${crawl.cid}`
+                );
+              }}
+            >
+              ${msg("View Crawl Template")}
+            </li>
           </ul>
         </sl-dropdown>
       </div>
