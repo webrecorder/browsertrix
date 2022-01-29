@@ -22,6 +22,10 @@ export class CopyButton extends LitElement {
 
   timeoutId?: number;
 
+  static copyToClipboard(value: string) {
+    navigator.clipboard.writeText(value);
+  }
+
   disconnectedCallback() {
     window.clearTimeout(this.timeoutId);
   }
@@ -35,7 +39,7 @@ export class CopyButton extends LitElement {
   }
 
   private onClick() {
-    navigator.clipboard.writeText(this.value!);
+    CopyButton.copyToClipboard(this.value!);
 
     this.isCopied = true;
 
