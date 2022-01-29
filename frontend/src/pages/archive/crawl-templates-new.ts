@@ -239,12 +239,11 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-select>
             </div>
           </div>
-          <div class="grid grid-flow-col gap-2 items-center mt-2">
-            <span class="px-1">${msg("At")}</span>
+          <div class="flex items-center mt-2">
+            <span class="px-3">${msg("At")}</span>
             <sl-select
               name="scheduleHour"
               value=${this.scheduleTime.hour}
-              class="w-24"
               ?disabled=${!this.scheduleInterval}
               @sl-select=${(e: any) =>
                 (this.scheduleTime = {
@@ -257,11 +256,11 @@ export class CrawlTemplatesNew extends LiteElement {
                   html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
               )}
             </sl-select>
-            <span>:</span>
+            <span class="px-1">:</span>
             <sl-select
               name="scheduleMinute"
+              class="mr-2"
               value=${this.scheduleTime.minute}
-              class="w-24"
               ?disabled=${!this.scheduleInterval}
               @sl-select=${(e: any) =>
                 (this.scheduleTime = {
@@ -276,7 +275,6 @@ export class CrawlTemplatesNew extends LiteElement {
             </sl-select>
             <sl-select
               value=${this.scheduleTime.period}
-              class="w-24"
               ?disabled=${!this.scheduleInterval}
               @sl-select=${(e: any) =>
                 (this.scheduleTime = {
@@ -291,7 +289,7 @@ export class CrawlTemplatesNew extends LiteElement {
                 >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
               >
             </sl-select>
-            <span class="px-1">${this.timeZoneShortName}</span>
+            <span class="px-3">${this.timeZoneShortName}</span>
           </div>
           <div class="text-sm text-gray-500 mt-2">
             ${this.formattededNextCrawlDate
@@ -374,9 +372,8 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-menu-item value="host">Host</sl-menu-item>
         <sl-menu-item value="any">Any</sl-menu-item>
       </sl-select>
-      <sl-checkbox
-        name="extraHopsOne"
-      >${msg("Include External Links ('one hop out')")}
+      <sl-checkbox name="extraHopsOne"
+        >${msg("Include External Links ('one hop out')")}
       </sl-checkbox>
       <sl-input
         name="limit"

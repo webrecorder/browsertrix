@@ -170,40 +170,27 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    const crawlConfig = this.viewStateData?.crawlConfig;
-
-    if (this.isNewResourceTab || this.crawlConfigId) {
+    if (this.crawlConfigId) {
       return html`
-        <div class="md:grid grid-cols-6 gap-6">
-          <nav class="col-span-1 mb-6">
-            <a
-              class="font-medium text-sm text-primary hover:opacity-80 flex items-center"
-              href=${`/archives/${this.archiveId}/crawl-templates`}
-              @click=${this.navLink}
-              ><sl-icon class="mr-1" name="arrow-left"></sl-icon> ${msg(
-                "Back to templates"
-              )}</a
-            >
-          </nav>
-
-          ${this.crawlConfigId
-            ? html`
-                <btrix-crawl-templates-detail
-                  class="col-span-5 mt-6"
-                  .authState=${this.authState!}
-                  .archiveId=${this.archiveId!}
-                  .crawlConfigId=${this.crawlConfigId}
-                  .isEditing=${this.isEditing}
-                ></btrix-crawl-templates-detail>
-              `
-            : html` <btrix-crawl-templates-new
-                class="col-span-5 mt-6"
-                .authState=${this.authState!}
-                .archiveId=${this.archiveId!}
-                .initialCrawlConfig=${crawlConfig}
-              ></btrix-crawl-templates-new>`}
-        </div>
+        <btrix-crawl-templates-detail
+          class="col-span-5 mt-6"
+          .authState=${this.authState!}
+          .archiveId=${this.archiveId!}
+          .crawlConfigId=${this.crawlConfigId}
+          .isEditing=${this.isEditing}
+        ></btrix-crawl-templates-detail>
       `;
+    }
+
+    if (this.isNewResourceTab) {
+      const crawlConfig = this.viewStateData?.crawlConfig;
+
+      return html` <btrix-crawl-templates-new
+        class="col-span-5 mt-6"
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+        .initialCrawlConfig=${crawlConfig}
+      ></btrix-crawl-templates-new>`;
     }
 
     return html`<btrix-crawl-templates-list
