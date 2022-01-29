@@ -251,9 +251,8 @@ export class CrawlsList extends LiteElement {
             >${crawl.configName || crawl.cid}</a
           >
         </div>
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
+        <div class="text-0-800 text-sm whitespace-nowrap truncate">
           <sl-format-date
-            class="inline-block align-middle text-0-500"
             date=${`${crawl.started}Z` /** Z for UTC */}
             month="2-digit"
             day="2-digit"
@@ -304,17 +303,36 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
       <div class="col-span-6 md:col-span-3">
-        <div class="whitespace-nowrap truncate mb-1">
-          ${crawl.manual
-            ? msg(html`Manual start by <span>${crawl.user}</span>`)
-            : msg(html`Scheduled run`)}
-        </div>
+        ${crawl.manual
+          ? html`
+              <div class="whitespace-nowrap truncate mb-1">
+                <span
+                  class="bg-fuchsia-50 text-fuchsia-800 text-xs rounded px-1 leading-4"
+                  >${msg("Manual Start")}</span
+                >
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <!-- TODO show user name -->
+                ${crawl.user}
+              </div>
+            `
+          : html`
+              <div class="whitespace-nowrap truncate mb-1">
+                <span
+                  class="bg-teal-50 text-teal-800 text-xs rounded px-1 leading-4"
+                  >${msg("Scheduled Run")}</span
+                >
+              </div>
 
-        <div class="text-0-500 text-sm whitespace-nowrap truncate">
-          <sl-relative-time
-            date=${`${crawl.started}Z` /** Z for UTC */}
-          ></sl-relative-time>
-        </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <sl-format-date
+                  date=${`${crawl.started}Z` /** Z for UTC */}
+                  weekday="long"
+                  month="short"
+                  day="numeric"
+                ></sl-format-date>
+              </div>
+            `}
       </div>
       <div class="col-span-6 md:col-span-2">
         ${crawl.finished
