@@ -47,8 +47,6 @@ class RawCrawlConfig(BaseModel):
 
     seeds: List[Union[str, Seed]]
 
-    # collection: Optional[str] = "my-web-archive"
-
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
     scope: Union[str, List[str], None] = ""
     exclude: Union[str, List[str], None] = ""
@@ -96,6 +94,8 @@ class CrawlConfig(BaseMongoModel):
     config: RawCrawlConfig
 
     name: Optional[str]
+
+    created: Optional[datetime]
 
     colls: Optional[List[str]] = []
 
@@ -168,6 +168,8 @@ class CrawlOps:
             )
 
         result = await self.crawl_configs.insert_one(data)
+
+        data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         crawlconfig = CrawlConfig.from_dict(data)
 

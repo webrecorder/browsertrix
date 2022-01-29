@@ -47,7 +47,7 @@ class Crawl(BaseMongoModel):
     aid: str
     cid: str
 
-    schedule: Optional[str]
+    # schedule: Optional[str]
     manual: Optional[bool]
 
     started: datetime
@@ -63,6 +63,38 @@ class Crawl(BaseMongoModel):
     files: Optional[List[CrawlFile]] = []
 
     colls: Optional[List[str]] = []
+
+
+# ============================================================================
+class ListCrawlOut(BaseMongoModel):
+    """ Crawl output model for list view """
+    id: str
+
+    user: str
+    username: Optional[str]
+
+    cid: str
+    configName: Optional[str]
+
+    manual: Optional[bool]
+
+    started: datetime
+    finished: Optional[datetime]
+
+    state: str
+
+    stats: Optional[Dict[str, str]]
+
+    fileSize: int = 0
+    fileCount: int = 0
+
+    colls: Optional[List[str]] = []
+
+
+# ============================================================================
+class ListCrawls(BaseModel):
+    """ Response model for list of crawls """
+    crawls: List[ListCrawlOut]
 
 
 # ============================================================================
@@ -183,25 +215,71 @@ class CrawlOps:
         if collid:
             query["colls"] = collid
 
-        cursor = self.crawls.find(query)
-        results = await cursor.to_list(length=1000)
-        return [Crawl.from_dict(res) for res in results]
+        # cursor = self.crawls.find(query)
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": query},
+                {
+                    "$lookup": {
+                        "from": "crawl_configs",
+                        "localField": "cid",
+                        "foreignField": "_id",
+                        "as": "configName",
+                    },
+                },
+                {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
+                {"$set": {"fileSize": {"$sum": "$files.size"}}},
+                {"$set": {"fileCount": {"$size": "$files"}}},
+                {"$unset": ["files"]},
+            ]
+        )
 
-    async def list_crawls(self, aid: str):
+        results = await cursor.to_list(length=1000)
+        return [ListCrawlOut.from_dict(res) for res in results]
+
+    async def list_crawls(self, archive: Archive):
         """ list finished and running crawl data """
-        running_crawls = await self.crawl_manager.list_running_crawls(aid=aid)
+        running_crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
 
         await self.get_redis_stats(running_crawls)
 
-        finished_crawls = await self.list_finished_crawls(aid=aid)
+        finished_crawls = await self.list_finished_crawls(aid=archive.id)
 
-        return {
-            "running": [
-                crawl.dict(exclude_none=True, exclude_unset=True)
-                for crawl in running_crawls
-            ],
-            "finished": finished_crawls,
-        }
+        crawls = []
+
+        for crawl in running_crawls:
+            list_crawl = ListCrawlOut(**crawl.dict())
+            crawls.append(await self._resolve_crawl(list_crawl, archive))
+
+        crawls.extend(finished_crawls)
+
+        return ListCrawls(crawls=crawls)
+
+    async def get_crawl(self, crawlid: str, archive: Archive):
+        """ Get data for single crawl """
+        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id)
+        if crawl:
+            await self.get_redis_stats([crawl])
+
+        else:
+            res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+            if not res:
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl not found: {crawlid}"
+                )
+
+            crawl = Crawl.from_dict(res)
+
+        return await self._resolve_crawl(crawl, archive)
+
+    async def _resolve_crawl(self, crawl, archive):
+        """ Resolve running crawl data """
+        config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
+
+        if config:
+            crawl.configName = config.name
+
+        return crawl
 
     # pylint: disable=too-many-arguments
     async def get_redis_stats(self, crawl_list):
@@ -240,9 +318,9 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
 
     archive_crawl_dep = archives.archive_crawl_dep
 
-    @app.get("/archives/{aid}/crawls", tags=["crawls"])
+    @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
-        return await ops.list_crawls(archive.id)
+        return await ops.list_crawls(archive)
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/cancel",
@@ -303,6 +381,13 @@ def init_crawls_api(app, mdb, redis_url, crawl_manager, crawl_config_ops, archiv
         res = await ops.delete_crawls(archive.id, delete_list)
 
         return {"deleted": res}
+
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}",
+        tags=["crawls"],
+    )
+    async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.get_crawl(crawl_id, archive)
 
     @app.get(
         "/archives/{aid}/crawls/{crawl_id}/running",
