@@ -13,7 +13,7 @@ import "./crawl-templates-list";
 import "./crawl-templates-new";
 import "./crawls-list";
 
-export type ArchiveTab = "crawls" | "crawl-templates" | "settings" | "members";
+export type ArchiveTab = "crawls" | "crawl-templates" | "members";
 
 const defaultTab = "crawls";
 
@@ -114,12 +114,6 @@ export class Archive extends LiteElement {
               this.navTo(`/archives/${this.archiveId}/crawl-templates`)}
             >${msg("Crawl Templates")}
           </sl-tab>
-          <sl-tab
-            slot="nav"
-            panel="settings"
-            ?active=${this.archiveTab === "settings"}
-            >${msg("Settings")}</sl-tab
-          >
           ${showMembersTab
             ? html`<sl-tab
                 slot="nav"
@@ -136,11 +130,6 @@ export class Archive extends LiteElement {
             name="crawl-templates"
             ?active=${this.archiveTab === "crawl-templates"}
             >${this.renderCrawlTemplates()}</sl-tab-panel
-          >
-          <sl-tab-panel
-            name="settings"
-            ?active=${this.archiveTab === "settings"}
-            >${this.renderSettings()}</sl-tab-panel
           >
           ${showMembersTab
             ? html`<sl-tab-panel
@@ -170,40 +159,27 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    const crawlConfig = this.viewStateData?.crawlConfig;
-
-    if (this.isNewResourceTab || this.crawlConfigId) {
+    if (this.crawlConfigId) {
       return html`
-        <div class="md:grid grid-cols-6 gap-6">
-          <nav class="col-span-1 mb-6">
-            <a
-              class="font-medium text-sm text-primary hover:opacity-80 flex items-center"
-              href=${`/archives/${this.archiveId}/crawl-templates`}
-              @click=${this.navLink}
-              ><sl-icon class="mr-1" name="arrow-left"></sl-icon> ${msg(
-                "Back to templates"
-              )}</a
-            >
-          </nav>
-
-          ${this.crawlConfigId
-            ? html`
-                <btrix-crawl-templates-detail
-                  class="col-span-5 mt-6"
-                  .authState=${this.authState!}
-                  .archiveId=${this.archiveId!}
-                  .crawlConfigId=${this.crawlConfigId}
-                  .isEditing=${this.isEditing}
-                ></btrix-crawl-templates-detail>
-              `
-            : html` <btrix-crawl-templates-new
-                class="col-span-5 mt-6"
-                .authState=${this.authState!}
-                .archiveId=${this.archiveId!}
-                .initialCrawlConfig=${crawlConfig}
-              ></btrix-crawl-templates-new>`}
-        </div>
+        <btrix-crawl-templates-detail
+          class="col-span-5 mt-6"
+          .authState=${this.authState!}
+          .archiveId=${this.archiveId!}
+          .crawlConfigId=${this.crawlConfigId}
+          .isEditing=${this.isEditing}
+        ></btrix-crawl-templates-detail>
       `;
+    }
+
+    if (this.isNewResourceTab) {
+      const crawlConfig = this.viewStateData?.crawlConfig;
+
+      return html` <btrix-crawl-templates-new
+        class="col-span-5 mt-6"
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+        .initialCrawlConfig=${crawlConfig}
+      ></btrix-crawl-templates-new>`;
     }
 
     return html`<btrix-crawl-templates-list

@@ -69,7 +69,7 @@ export class Archives extends LiteElement {
   }
 
   makeOnArchiveClick(archive: ArchiveData): Function {
-    const navigate = () => this.navTo(`/archives/${archive.id}/settings`);
+    const navigate = () => this.navTo(`/archives/${archive.id}/crawls`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {

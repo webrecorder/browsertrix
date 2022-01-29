@@ -221,7 +221,7 @@ export class CrawlTemplatesList extends LiteElement {
                             name="slash-circle"
                           ></sl-icon
                           ><span class="inline-block align-middle text-0-400"
-                            >${msg("No crawls")}</span
+                            >${msg("No finished crawls")}</span
                           >
                         `}
                   </div>
