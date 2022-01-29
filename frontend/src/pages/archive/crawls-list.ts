@@ -135,7 +135,15 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="pb-4">${this.renderControls()}</header>
-        <section>${this.renderCrawlList()}</section>
+        <section>
+          ${this.crawls.length
+            ? this.renderCrawlList()
+            : html`
+                <div class="border-t border-b py-5">
+                  <p class="text-center text-0-500">${msg("No crawls yet.")}</p>
+                </div>
+              `}
+        </section>
         <footer class="mt-2">
           <span class="text-0-400 text-sm">
             ${this.lastFetched
@@ -166,6 +174,7 @@ export class CrawlsList extends LiteElement {
             placeholder=${msg("Search by Crawl Template name or ID")}
             pill
             clearable
+            ?disabled=${!this.crawls?.length}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -186,7 +195,11 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            <sl-button slot="trigger" pill caret
+            <sl-button
+              slot="trigger"
+              pill
+              caret
+              ?disabled=${!this.crawls?.length}
               >${(sortableFieldLabels as any)[this.orderBy.field] ||
               sortableFieldLabels[
                 `${this.orderBy.field}_${this.orderBy.direction}`
