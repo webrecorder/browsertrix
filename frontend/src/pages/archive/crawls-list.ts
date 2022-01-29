@@ -237,8 +237,8 @@ export class CrawlsList extends LiteElement {
       class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
       role="button"
       @click=${() =>
-        this.navTo(`/archives/${crawl.aid}/crawls/crawl/${crawl.id}`)}
-      title=${`/archives/${crawl.aid}/crawls/crawl/${crawl.id}`}
+        this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`)}
+      title=${`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`}
     >
       <div class="col-span-12 md:col-span-5">
         <div class="font-medium mb-1">
