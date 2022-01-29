@@ -33,16 +33,7 @@ export class CrawlDetail extends LiteElement {
   private isWatchExpanded: boolean = false;
 
   async firstUpdated() {
-    try {
-      this.crawl = await this.getCrawl();
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawl at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-        duration: 10000,
-      });
-    }
+    this.fetchCrawl();
 
     try {
       this.watchUrl = await this.watchCrawl();
@@ -166,11 +157,11 @@ export class CrawlDetail extends LiteElement {
                     <span
                       class="inline-block ${this.crawl.state === "failed"
                         ? "text-red-500"
-                        : this.crawl.state === "partial_complete"
-                        ? "text-emerald-200"
+                        : this.crawl.state === "complete"
+                        ? "text-emerald-500"
                         : isRunning
                         ? "text-purple-500"
-                        : "text-emerald-500"}"
+                        : "text-zinc-300"}"
                       style="font-size: 10px; vertical-align: 2px"
                     >
                       &#9679;
@@ -275,6 +266,21 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  /**
+   * Fetch crawl and update internal state
+   */
+  private async fetchCrawl(): Promise<void> {
+    try {
+      this.crawl = await this.getCrawl();
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   async getCrawl(): Promise<Crawl> {
     // Mock to use in dev:
     // return import("../../__mocks__/api/archives/[id]/crawls").then(
@@ -313,9 +319,13 @@ export class CrawlDetail extends LiteElement {
       );
 
       if (data.canceled === true) {
-        // TODO
+        this.fetchCrawl();
       } else {
-        // TODO
+        this.notify({
+          message: msg("Sorry, couldn't cancel crawl at this time."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
   }
@@ -331,9 +341,13 @@ export class CrawlDetail extends LiteElement {
       );
 
       if (data.stopped_gracefully === true) {
-        // TODO
+        this.fetchCrawl();
       } else {
-        // TODO
+        this.notify({
+          message: msg("Sorry, couldn't stop crawl at this time."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
   }
