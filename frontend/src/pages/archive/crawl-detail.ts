@@ -53,36 +53,6 @@ export class CrawlDetail extends LiteElement {
     const isRunning = this.crawl?.state === "running";
 
     return html`
-      <header class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2 gap-10">
-          <div>
-            <dt class="text-xs text-0-500">${msg("Crawl ID")}</dt>
-            <dd class="text-0-700">
-              <div class="text-sm font-mono truncate">
-                ${this.crawl?.id || html`<sl-skeleton></sl-skeleton>`}
-              </div>
-            </dd>
-          </div>
-          <div>
-            <dt class="text-xs text-0-500">${msg("Crawl Template")}</dt>
-            <dd class="text-0-700">
-              <div class="text-sm font-mono truncate">
-                ${this.crawl
-                  ? html`
-                      <a
-                        class="hover:underline"
-                        href=${`/archives/${this.crawl.aid}/crawl-templates/${this.crawl.cid}`}
-                        @click=${this.navLink}
-                        >${this.crawl.cid}</a
-                      >
-                    `
-                  : html`<sl-skeleton></sl-skeleton>`}
-              </div>
-            </dd>
-          </div>
-        </dl>
-      </header>
-
       <main class="grid gap-4">
         <section class="grid grid-cols-2 md:grid-cols-8 gap-5">
           <div class="col-span-8 md:col-span-5 relative">
@@ -104,6 +74,22 @@ export class CrawlDetail extends LiteElement {
 
           <div class="col-span-8 md:col-span-3 border rounded p-4 md:p-8">
             <dl class="grid gap-5">
+              <div>
+                <dt class="text-sm text-0-500">${msg("Crawl Template")}</dt>
+                <dd>
+                  ${this.crawl
+                    ? html`
+                        <a
+                          class="font-medium  hover:underline"
+                          href=${`/archives/${this.crawl.aid}/crawl-templates/${this.crawl.cid}`}
+                          @click=${this.navLink}
+                          >${this.crawl.configName}</a
+                        >
+                      `
+                    : html`<sl-skeleton></sl-skeleton>`}
+                </dd>
+              </div>
+
               <div>
                 <dt class="text-sm text-0-500">${msg("Status")}</dt>
                 <dd>

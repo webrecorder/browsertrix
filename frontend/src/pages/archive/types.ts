@@ -1,10 +1,10 @@
 export type Crawl = {
   id: string;
   user: string;
-  username?: string;
+  username: string;
   aid: string;
   cid: string;
-  configName?: string;
+  configName: string;
   schedule: string;
   manual: boolean;
   started: string; // UTC ISO date
