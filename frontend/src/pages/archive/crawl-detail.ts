@@ -43,12 +43,12 @@ export class CrawlDetail extends LiteElement {
   async firstUpdated() {
     this.fetchCrawl();
 
-    try {
-      this.watchUrl = await this.watchCrawl();
-      console.log(this.watchUrl);
-    } catch (e) {
-      console.error(e);
-    }
+    // try {
+    //   this.watchUrl = await this.watchCrawl();
+    //   console.log(this.watchUrl);
+    // } catch (e) {
+    //   console.error(e);
+    // }
   }
 
   disconnectedCallback(): void {
@@ -59,14 +59,16 @@ export class CrawlDetail extends LiteElement {
   render() {
     return html`
       <header class="my-3">
-        <h2 class="font-mono text-sm text-0-400 h-5">
+        <h2 class="font-mono text-xs text-0-400 h-4">
           ${this.crawl?.id ||
           html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
         </h2>
       </header>
 
       <main class="grid gap-4">
-        <section class="grid grid-cols-2 md:grid-cols-8 gap-5">
+        <section
+          class="grid grid-cols-2 md:grid-cols-8 gap-3 rounded-lg md:p-4 md:bg-zinc-100"
+        >
           <div
             class="col-span-8 ${this.isWatchExpanded
               ? "md:col-span-8"
@@ -78,7 +80,7 @@ export class CrawlDetail extends LiteElement {
           <div
             class="col-span-8 ${this.isWatchExpanded
               ? "md:col-span-8"
-              : "md:col-span-3"} border rounded-lg p-4 md:p-8"
+              : "md:col-span-3"} border rounded-lg bg-white p-4 md:p-8"
           >
             ${this.renderDetails()}
           </div>
@@ -94,7 +96,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div
-        class="aspect-video bg-slate-50 rounded border ${isRunning
+        class="aspect-video rounded border ${isRunning
           ? "border-purple-200"
           : "border-slate-100"}"
       >
@@ -219,19 +221,15 @@ export class CrawlDetail extends LiteElement {
           <dd>
             ${this.crawl?.stats
               ? html`
-                  ${isRunning
-                    ? html`
-                        <span
-                          class="text-purple-600 font-mono tracking-tighter"
-                        >
-                          ${this.numberFormatter.format(+this.crawl.stats.done)}
-                          <span class="text-0-400">/</span>
-                          ${this.numberFormatter.format(
-                            +this.crawl.stats.found
-                          )}
-                        </span>
-                      `
-                    : html``}
+                  <span
+                    class="font-mono tracking-tighter${isRunning
+                      ? " text-purple-600"
+                      : ""}"
+                  >
+                    ${this.numberFormatter.format(+this.crawl.stats.done)}
+                    <span class="text-0-400">/</span>
+                    ${this.numberFormatter.format(+this.crawl.stats.found)}
+                  </span>
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
