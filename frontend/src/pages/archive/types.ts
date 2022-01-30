@@ -10,7 +10,7 @@ export type Crawl = {
   finished?: string; // UTC ISO date
   state: string; // "running" | "complete" | "failed" | "partial_complete"
   scale: number;
-  stats: { done: number; found: number } | null;
+  stats: { done: string; found: string } | null;
   files?: { filename: string; hash: string; size: number }[];
   fileCount?: number;
   fileSize?: number;

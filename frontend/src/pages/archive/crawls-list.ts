@@ -321,9 +321,9 @@ export class CrawlsList extends LiteElement {
               <div
                 class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
               >
-                ${this.numberFormatter.format(crawl.stats.done)}
+                ${this.numberFormatter.format(+crawl.stats.done)}
                 <span class="text-0-400">/</span>
-                ${this.numberFormatter.format(crawl.stats.found)}
+                ${this.numberFormatter.format(+crawl.stats.found)}
               </div>
               <div class="text-0-500 text-sm whitespace-nowrap truncate">
                 ${msg("pages crawled")}
