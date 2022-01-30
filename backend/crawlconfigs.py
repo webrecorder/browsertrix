@@ -7,7 +7,7 @@ from enum import Enum
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from fastapi import APIRouter, Depends, HTTPException
 
 from users import User
@@ -102,13 +102,19 @@ class CrawlConfig(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
 
-    archive: str
+    aid: UUID4
 
-    user: str
+    userid: UUID4
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
     lastCrawlTime: Optional[datetime]
+
+    def get_raw_config(self):
+        """ serialize config for browsertrix-crawler """
+        return self.config.dict(
+            exclude_unset=True, exclude_none=True, exclude_defaults=True
+        )
 
 
 # ============================================================================
@@ -116,6 +122,7 @@ class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
     currCrawlId: Optional[str]
+    userName: Optional[str]
 
 
 # ============================================================================
@@ -158,9 +165,9 @@ class CrawlOps:
     ):
         """Add new crawl config"""
         data = config.dict()
-        data["archive"] = archive.id
-        data["user"] = str(user.id)
-        data["_id"] = str(uuid.uuid4())
+        data["aid"] = archive.id
+        data["userid"] = user.id
+        data["_id"] = uuid.uuid4()
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(
@@ -190,7 +197,7 @@ class CrawlOps:
         await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
         return True
 
-    async def inc_crawls(self, cid: str, crawl_id: str, finished: datetime):
+    async def inc_crawls(self, cid: uuid.UUID, crawl_id: str, finished: datetime):
         """ Increment Crawl Counter """
         await self.crawl_configs.find_one_and_update(
             {"_id": cid},
@@ -202,7 +209,21 @@ class CrawlOps:
 
     async def get_crawl_configs(self, archive: Archive):
         """Get all crawl configs for an archive is a member of"""
-        cursor = self.crawl_configs.find({"archive": archive.id})
+        cursor = self.crawl_configs.aggregate(
+            [
+                {"$match": {"aid": archive.id}},
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "userid",
+                        "foreignField": "id",
+                        "as": "userName",
+                    },
+                },
+                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+            ]
+        )
+
         results = await cursor.to_list(length=1000)
 
         crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
@@ -229,22 +250,22 @@ class CrawlOps:
 
         return out
 
-    async def get_crawl_config(self, cid: str, archive: Archive):
+    async def get_crawl_config(self, cid: uuid.UUID, archive: Archive):
         """Get an archive for user by unique id"""
-        res = await self.crawl_configs.find_one({"_id": cid, "archive": archive.id})
+        res = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
         return CrawlConfig.from_dict(res)
 
     async def delete_crawl_config(self, cid: str, archive: Archive):
         """Delete config"""
         await self.crawl_manager.delete_crawl_config_by_id(cid)
 
-        return await self.crawl_configs.delete_one({"_id": cid, "archive": archive.id})
+        return await self.crawl_configs.delete_one({"_id": cid, "aid": archive.id})
 
-    async def delete_crawl_configs(self, archive: Archive):
-        """Delete all crawl configs for user"""
-        await self.crawl_manager.delete_crawl_configs_for_archive(archive.id)
+    # async def delete_crawl_configs(self, archive: Archive):
+    #    """Delete all crawl configs for user"""
+    #    await self.crawl_manager.delete_crawl_configs_for_archive(archive.id_str)
 
-        return await self.crawl_configs.delete_many({"archive": archive.id})
+    #    return await self.crawl_configs.delete_many({"aid": archive.id})
 
 
 # ============================================================================
@@ -258,7 +279,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     archive_crawl_dep = archive_ops.archive_crawl_dep
 
     async def crawls_dep(cid: str, archive: Archive = Depends(archive_crawl_dep)):
-        crawl_config = await ops.get_crawl_config(cid, archive)
+        crawl_config = await ops.get_crawl_config(uuid.UUID(cid), archive)
         if not crawl_config:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
@@ -307,8 +328,12 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         return {"updated": cid}
 
     @router.post("/{cid}/run")
-    async def run_now(cid: str, archive: Archive = Depends(archive_crawl_dep)):
-        crawl_config = await ops.get_crawl_config(cid, archive)
+    async def run_now(
+        cid: str,
+        archive: Archive = Depends(archive_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        crawl_config = await ops.get_crawl_config(uuid.UUID(cid), archive)
 
         if not crawl_config:
             raise HTTPException(
@@ -317,17 +342,17 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
         crawl_id = None
         try:
-            crawl_id = await crawl_manager.run_crawl_config(cid)
+            crawl_id = await crawl_manager.run_crawl_config(cid, str(user.id))
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")
 
         return {"started": crawl_id}
 
-    @router.delete("")
-    async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
-        result = await ops.delete_crawl_configs(archive)
-        return {"deleted": result.deleted_count}
+    # @router.delete("")
+    # async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
+    #    result = await ops.delete_crawl_configs(archive)
+    #    return {"deleted": result.deleted_count}
 
     @router.delete("/{cid}")
     async def delete_crawl_config(

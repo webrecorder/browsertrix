@@ -48,7 +48,7 @@ class UserCreateIn(models.CreateUpdateDictModel):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[str]
+    inviteToken: Optional[UUID4]
 
     newArchive: bool
     newArchiveName: Optional[str] = ""
@@ -62,7 +62,7 @@ class UserCreate(models.BaseUserCreate):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[str]
+    inviteToken: Optional[UUID4]
 
     newArchive: bool
     newArchiveName: Optional[str] = ""
@@ -324,7 +324,7 @@ def init_users_api(app, user_manager):
 
     @users_router.get("/invite/{token}", tags=["invites"])
     async def get_invite_info(token: str, email: str):
-        invite = await user_manager.invites.get_valid_invite(token, email)
+        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
         return await user_manager.format_invite(invite)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])

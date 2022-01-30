@@ -96,7 +96,7 @@ class Archive(BaseMongoModel):
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for archive_user in user_list:
-                id_ = str(archive_user["id"])
+                id_ = archive_user["id"]
                 role = result["users"].get(id_)
                 if not role:
                     continue
@@ -136,9 +136,9 @@ class ArchiveOps:
         # pylint: disable=too-many-arguments
         """Create new archive with default storage for new user"""
 
-        id_ = str(uuid.uuid4())
+        id_ = uuid.uuid4()
 
-        storage_path = id_ + "/"
+        storage_path = str(id_) + "/"
 
         archive = Archive(
             id=id_,
@@ -161,11 +161,11 @@ class ArchiveOps:
         self, aid: str, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an archive for user by unique id"""
-        query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
+        query = {f"users.{user.id}": {"$gte": role.value}, "_id": uuid.UUID(aid)}
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 
-    async def get_archive_by_id(self, aid: str):
+    async def get_archive_by_id(self, aid: uuid.UUID):
         """Get an archive by id"""
         res = await self.archives.find_one({"_id": aid})
         return Archive.from_dict(res)
@@ -206,7 +206,7 @@ class ArchiveOps:
         await self.update(archive)
         return True
 
-    async def inc_usage(self, aid, amount):
+    async def inc_usage(self, aid: uuid.UUID, amount: int):
         """ Increment usage counter by month for this archive """
         yymm = datetime.utcnow().strftime("%Y-%m")
         res = await self.archives.find_one_and_update(

@@ -21,7 +21,7 @@ services:
     build: ./frontend
     image: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend
     ports:
-      - 9870:80
+      - 9871:80
 
     depends_on:
       - backend

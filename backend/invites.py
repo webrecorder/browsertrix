@@ -5,7 +5,7 @@ from enum import IntEnum
 from typing import Optional
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
 
@@ -27,7 +27,7 @@ class InvitePending(BaseMongoModel):
 
     created: datetime
     inviterEmail: str
-    aid: Optional[str]
+    aid: Optional[UUID4]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]
 
@@ -78,7 +78,7 @@ class InviteOps:
             headers,
         )
 
-    async def get_valid_invite(self, invite_token: str, email):
+    async def get_valid_invite(self, invite_token: uuid.UUID, email):
         """ Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:

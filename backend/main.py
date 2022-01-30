@@ -74,6 +74,7 @@ def main():
         app,
         mdb,
         os.environ.get("REDIS_URL"),
+        user_manager,
         crawl_manager,
         crawl_config_ops,
         archive_ops,

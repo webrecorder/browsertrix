@@ -9,7 +9,7 @@ from typing import Optional, List
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 
 from db import BaseMongoModel
 from archives import Archive
@@ -21,7 +21,7 @@ class Collection(BaseMongoModel):
 
     name: str
 
-    archive: str
+    aid: UUID4
 
     description: Optional[str]
 
@@ -49,34 +49,32 @@ class CollectionOps:
     async def init_index(self):
         """ init lookup index """
         await self.collections.create_index(
-            [("archive", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
+            [("aid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
         )
 
-    async def add_collection(self, archive, name, description=None):
+    async def add_collection(self, aid: uuid.UUID, name: str, description=None):
         """ add new collection """
-        coll = Collection(
-            id=str(uuid.uuid4()), archive=archive, name=name, description=description
-        )
+        coll = Collection(id=uuid.uuid4(), aid=aid, name=name, description=description)
         try:
             res = await self.collections.insert_one(coll.to_dict())
             return res.inserted_id
 
         except pymongo.errors.DuplicateKeyError:
             res = await self.collections.find_one_and_update(
-                {"archive": archive, "name": name},
+                {"aid": aid, "name": name},
                 {"$set": {"name": name, "description": description}},
             )
-            return res["_id"]
+            return str(res["_id"])
 
-    async def find_collection(self, archive: str, name: str):
+    async def find_collection(self, aid: uuid.UUID, name: str):
         """ find collection by archive + name """
-        res = await self.collections.find_one({"archive": archive, "name": name})
+        res = await self.collections.find_one({"archive": aid, "name": name})
         return Collection.from_dict(res) if res else None
 
-    async def find_collections(self, aid: str, names: List[str]):
+    async def find_collections(self, aid: uuid.UUID, names: List[str]):
         """ find all collections for archive given a list of names """
         cursor = self.collections.find(
-            {"archive": aid, "name": {"$in": names}}, projection=["_id", "name"]
+            {"aid": aid, "name": {"$in": names}}, projection=["_id", "name"]
         )
         results = await cursor.to_list(length=1000)
         if len(results) != len(names):
@@ -91,24 +89,21 @@ class CollectionOps:
 
         return [result["_id"] for result in results]
 
-    async def list_collections(self, aid: str):
+    async def list_collections(self, aid: uuid.UUID):
         """ list all collections for archive """
         cursor = self.collections.find({"archive": aid}, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
         return {result["name"]: result["_id"] for result in results}
 
-    async def get_collection_crawls(self, archive, name=None):
+    async def get_collection_crawls(self, aid: uuid.UUID, name: str = None):
         """ fidn collection and get all crawls by collection name per archive """
-        aid = None
         collid = None
         if name:
-            coll = await self.find_collection(archive, name)
+            coll = await self.find_collection(aid, name)
             if not coll:
                 return None
 
             collid = coll.id
-        else:
-            aid = archive
 
         crawls = await self.crawls.list_finished_crawls(aid=aid, collid=collid)
         all_files = []
