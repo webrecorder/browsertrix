@@ -298,7 +298,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   ${this.crawl.manual
                     ? msg(
-                        html`Manual start by <span>${this.crawl?.user}</span>`
+                        html`Manual start by <span>${this.crawl?.userid}</span>`
                       )
                     : msg(html`Scheduled run`)}
                 `

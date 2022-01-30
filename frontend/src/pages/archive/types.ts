@@ -1,7 +1,7 @@
 export type Crawl = {
   id: string;
-  user: string;
-  username: string;
+  userid: string;
+  userName: string;
   cid: string;
   configName: string;
   schedule: string;

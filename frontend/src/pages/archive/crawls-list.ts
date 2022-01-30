@@ -334,14 +334,14 @@ export class CrawlsList extends LiteElement {
       <div class="col-span-4 md:col-span-2">
         ${crawl.manual
           ? html`
-              <div class="whitespace-nowrap truncate">
+              <div class="whitespace-nowrap truncate mb-1">
                 <span
                   class="bg-fuchsia-50 text-fuchsia-700 text-sm rounded px-1 leading-4"
                   >${msg("Manual Start")}</span
                 >
               </div>
               <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
-                ${msg(str`by ${crawl.username || crawl.user}`)}
+                ${msg(str`by ${crawl.userName || crawl.userid}`)}
               </div>
             `
           : html`
