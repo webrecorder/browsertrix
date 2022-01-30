@@ -102,7 +102,7 @@ class K8SManager:
 
         return None
 
-    async def update_archive_storage(self, aid, uid, storage):
+    async def update_archive_storage(self, aid, userid, storage):
         """Update storage by either creating a per-archive secret, if using custom storage
         or deleting per-archive secret, if using default storage"""
         archive_storage_name = f"storage-{aid}"
@@ -119,7 +119,7 @@ class K8SManager:
 
             return
 
-        labels = {"btrix.archive": aid, "btrix.user": uid}
+        labels = {"btrix.archive": aid, "btrix.user": userid}
 
         crawl_secret = client.V1Secret(
             metadata={
@@ -148,8 +148,8 @@ class K8SManager:
     async def add_crawl_config(self, crawlconfig, storage, run_now):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
-        userid = str(crawlconfig.user)
-        aid = str(crawlconfig.archive)
+        userid = str(crawlconfig.userid)
+        aid = str(crawlconfig.aid)
 
         annotations = {
             "btrix.run.schedule": crawlconfig.schedule,
@@ -249,9 +249,9 @@ class K8SManager:
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
 
-    async def run_crawl_config(self, cid, uid=None):
-        """ Run crawl job for cron job based on specified crawlconfig id (cid)
-            optionally set different user  """
+    async def run_crawl_config(self, cid, userid=None):
+        """Run crawl job for cron job based on specified crawlconfig id (cid)
+        optionally set different user"""
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
         )
@@ -532,7 +532,7 @@ class K8SManager:
                 "namespace": self.namespace,
                 "labels": labels,
             },
-            data={"crawl-config.json": json.dumps(crawlconfig.config.dict())},
+            data={"crawl-config.json": json.dumps(crawlconfig.get_raw_config())},
         )
 
         return config_map
@@ -589,7 +589,7 @@ class K8SManager:
             propagation_policy="Foreground",
         )
 
-    async def _create_run_now_job(self, cron_job, uid=None):
+    async def _create_run_now_job(self, cron_job, userid=None):
         """Create new job from cron job to run instantly"""
         annotations = cron_job.spec.job_template.metadata.annotations
         annotations["btrix.run.manual"] = "1"
@@ -600,13 +600,13 @@ class K8SManager:
         #    name=cron_job.metadata.name,
         #    block_owner_deletion=True,
         #    controller=True,
-        #    uid=cron_job.metadata.uid,
+        #    userid=cron_job.metadata.userid,
         #    api_version="batch/v1beta1",
         # )
 
         labels = cron_job.metadata.labels
-        if uid:
-            labels["btrix.user"] = uid
+        if userid:
+            labels["btrix.user"] = userid
 
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         name = f"crawl-now-{ts_now}-{cron_job.metadata.labels['btrix.crawlconfig']}"

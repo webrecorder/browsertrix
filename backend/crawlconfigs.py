@@ -102,13 +102,19 @@ class CrawlConfig(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
 
-    archive: UUID4
+    aid: UUID4
 
-    user: UUID4
+    userid: UUID4
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
     lastCrawlTime: Optional[datetime]
+
+    def get_raw_config(self):
+        """ serialize config for browsertrix-crawler """
+        return self.config.dict(
+            exclude_unset=True, exclude_none=True, exclude_defaults=True
+        )
 
 
 # ============================================================================
@@ -116,7 +122,7 @@ class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
     currCrawlId: Optional[str]
-    username: Optional[str]
+    userName: Optional[str]
 
 
 # ============================================================================
@@ -159,8 +165,8 @@ class CrawlOps:
     ):
         """Add new crawl config"""
         data = config.dict()
-        data["archive"] = archive.id
-        data["user"] = user.id
+        data["aid"] = archive.id
+        data["userid"] = user.id
         data["_id"] = uuid.uuid4()
 
         if config.colls:
@@ -205,16 +211,16 @@ class CrawlOps:
         """Get all crawl configs for an archive is a member of"""
         cursor = self.crawl_configs.aggregate(
             [
-                {"$match": {"archive": archive.id}},
+                {"$match": {"aid": archive.id}},
                 {
                     "$lookup": {
                         "from": "users",
                         "localField": "user",
                         "foreignField": "id",
-                        "as": "username",
+                        "as": "userName",
                     },
                 },
-                {"$set": {"username": {"$arrayElemAt": ["$username.name", 0]}}},
+                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
             ]
         )
 
@@ -246,20 +252,20 @@ class CrawlOps:
 
     async def get_crawl_config(self, cid: uuid.UUID, archive: Archive):
         """Get an archive for user by unique id"""
-        res = await self.crawl_configs.find_one({"_id": cid, "archive": archive.id})
+        res = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
         return CrawlConfig.from_dict(res)
 
     async def delete_crawl_config(self, cid: uuid.UUID, archive: Archive):
         """Delete config"""
         await self.crawl_manager.delete_crawl_config_by_id(cid)
 
-        return await self.crawl_configs.delete_one({"_id": cid, "archive": archive.id})
+        return await self.crawl_configs.delete_one({"_id": cid, "aid": archive.id})
 
     async def delete_crawl_configs(self, archive: Archive):
         """Delete all crawl configs for user"""
         await self.crawl_manager.delete_crawl_configs_for_archive(archive.id)
 
-        return await self.crawl_configs.delete_many({"archive": archive.id})
+        return await self.crawl_configs.delete_many({"aid": archive.id})
 
 
 # ============================================================================
@@ -322,8 +328,11 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
         return {"updated": cid}
 
     @router.post("/{cid}/run")
-    async def run_now(cid: str, archive: Archive = Depends(archive_crawl_dep),
-        user: User = Depends(user_dep)):
+    async def run_now(
+        cid: str,
+        archive: Archive = Depends(archive_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
         crawl_config = await ops.get_crawl_config(uuid.UUID(cid), archive)
 
         if not crawl_config:

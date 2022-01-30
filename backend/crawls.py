@@ -46,7 +46,7 @@ class Crawl(BaseMongoModel):
 
     id: str
 
-    user: UUID4
+    userid: UUID4
     aid: UUID4
     cid: UUID4
 
@@ -70,9 +70,9 @@ class Crawl(BaseMongoModel):
 
 # ============================================================================
 class CrawlOut(Crawl):
-    """ Output for single crawl, add configName and username"""
+    """ Output for single crawl, add configName and userName"""
 
-    username: Optional[str]
+    userName: Optional[str]
     configName: Optional[str]
 
 
@@ -82,8 +82,8 @@ class ListCrawlOut(BaseMongoModel):
 
     id: str
 
-    user: UUID4
-    username: Optional[str]
+    userid: UUID4
+    userName: Optional[str]
 
     cid: UUID4
     configName: Optional[str]
@@ -249,10 +249,10 @@ class CrawlOps:
                     "from": "users",
                     "localField": "user",
                     "foreignField": "id",
-                    "as": "username",
+                    "as": "userName",
                 },
             },
-            {"$set": {"username": {"$arrayElemAt": ["$username.name", 0]}}},
+            {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
         ]
 
         if exclude_files:
@@ -294,7 +294,7 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id)
+        crawl = await self.crawl_manager.get_running_crawl(crawlid, str(archive.id))
         if crawl:
             await self.get_redis_stats([crawl])
 
@@ -316,9 +316,9 @@ class CrawlOps:
         if config:
             crawl.configName = config.name
 
-        user = await self.user_manager.get(crawl.user)
+        user = await self.user_manager.get(crawl.userid)
         if user:
-            crawl.username = user.name
+            crawl.userName = user.name
 
         return crawl
 
@@ -426,9 +426,7 @@ def init_crawls_api(
         return {"deleted": res}
 
     @app.get(
-        "/archives/{aid}/crawls/{crawl_id}",
-        tags=["crawls"],
-        response_model=CrawlOut
+        "/archives/{aid}/crawls/{crawl_id}", tags=["crawls"], response_model=CrawlOut
     )
     async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl(crawl_id, archive)
@@ -438,7 +436,7 @@ def init_crawls_api(
         tags=["crawls"],
     )
     async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
-        if not crawl_manager.is_running(crawl_id, archive.id):
+        if not crawl_manager.is_running(crawl_id, str(archive.id)):
             raise HTTPException(status_code=404, detail="No Such Crawl")
 
         return {"running": True}

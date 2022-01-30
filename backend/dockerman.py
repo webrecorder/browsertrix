@@ -160,14 +160,14 @@ class DockerManager:
         # if default, ensure name is in default storages list
         return self.storages[storage_name]
 
-    async def update_archive_storage(self, aid, uid, storage):
+    async def update_archive_storage(self, aid, userid, storage):
         """ No storage kept for docker manager """
 
     async def add_crawl_config(self, crawlconfig, storage, run_now):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
-        userid = str(crawlconfig.user)
-        aid = str(crawlconfig.archive)
+        userid = str(crawlconfig.userid)
+        aid = str(crawlconfig.aid)
 
         labels = {
             "btrix.user": userid,
@@ -267,7 +267,7 @@ class DockerManager:
 
         return result
 
-    async def run_crawl_config(self, cid, manual=True, schedule="", uid=None):
+    async def run_crawl_config(self, cid, manual=True, schedule="", userid=None):
         """ Run crawl job for cron job based on specified crawlconfig id (cid) """
 
         if not manual:
@@ -284,8 +284,8 @@ class DockerManager:
         volume_data = await volume_obj.show()
 
         labels = volume_data["Labels"]
-        if uid:
-            labels["btrix.user"] = uid
+        if userid:
+            labels["btrix.user"] = userid
 
         archive = None
         storage = None
@@ -389,7 +389,7 @@ class DockerManager:
         await self.client.volumes.create({"Name": name, "Labels": labels})
 
         await self._add_config_to_volume(
-            name, "crawl-config.json", crawlconfig.config.dict()
+            name, "crawl-config.json", crawlconfig.get_raw_config()
         )
 
         return name
