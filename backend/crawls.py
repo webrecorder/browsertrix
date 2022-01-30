@@ -205,6 +205,10 @@ class CrawlOps:
                 # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
                 return False
 
+            if crawl.state == "stopping":
+                print("Stopping Crawl...", flush=True)
+                return True
+
         dura = int((crawl.finished - crawl.started).total_seconds())
 
         print(f"Duration: {dura}", flush=True)
@@ -247,7 +251,7 @@ class CrawlOps:
             {
                 "$lookup": {
                     "from": "users",
-                    "localField": "user",
+                    "localField": "userid",
                     "foreignField": "id",
                     "as": "userName",
                 },
@@ -274,7 +278,7 @@ class CrawlOps:
 
     async def list_crawls(self, archive: Archive):
         """ list finished and running crawl data """
-        running_crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
+        running_crawls = await self.crawl_manager.list_running_crawls(aid=archive.id_str)
 
         await self.get_redis_stats(running_crawls)
 
@@ -294,7 +298,7 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        crawl = await self.crawl_manager.get_running_crawl(crawlid, str(archive.id))
+        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
         if crawl:
             await self.get_redis_stats([crawl])
 
@@ -374,7 +378,7 @@ def init_crawls_api(
     ):
         crawl = None
         try:
-            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id, graceful=False)
+            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id_str, graceful=False)
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -394,18 +398,20 @@ def init_crawls_api(
     async def crawl_graceful_stop(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
-        canceled = False
+        crawl = None
         try:
-            canceled = await crawl_manager.stop_crawl(
-                crawl_id, archive.id, graceful=True
+            crawl = await crawl_manager.stop_crawl(
+                crawl_id, archive.id_str, graceful=True
             )
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
 
-        if not canceled:
+        if not crawl:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
+
+        await ops.store_crawl(crawl)
 
         return {"stopped_gracefully": True}
 
@@ -436,7 +442,7 @@ def init_crawls_api(
         tags=["crawls"],
     )
     async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
-        if not crawl_manager.is_running(crawl_id, str(archive.id)):
+        if not crawl_manager.is_running(crawl_id, archive.id_str):
             raise HTTPException(status_code=404, detail="No Such Crawl")
 
         return {"running": True}
@@ -449,7 +455,7 @@ def init_crawls_api(
         scale: CrawlScale, crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
 
-        error = await crawl_manager.scale_crawl(crawl_id, archive.id, scale.scale)
+        error = await crawl_manager.scale_crawl(crawl_id, archive.id_str, scale.scale)
         if error:
             raise HTTPException(status_code=400, detail=error)
 
@@ -459,8 +465,9 @@ def init_crawls_api(
     async def watch_crawl(
         crawl_id, request: Request, archive: Archive = Depends(archive_crawl_dep)
     ):
-        await crawl_manager.init_crawl_screencast(crawl_id, archive.id)
-        watch_url = f"{request.url.scheme}://{request.url.netloc}/watch/{archive.id}/{crawl_id}/ws"
+        aid_str = archive.id_str
+        await crawl_manager.init_crawl_screencast(crawl_id, aid_str)
+        watch_url = f"{request.url.scheme}://{request.url.netloc}/watch/{aid_str}/{crawl_id}/ws"
         return {"watch_url": watch_url}
 
     return ops

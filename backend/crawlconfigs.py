@@ -186,7 +186,7 @@ class CrawlOps:
 
         return result, new_name
 
-    async def update_crawl_schedule(self, cid: uuid.UUID, update: UpdateSchedule):
+    async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):
         """ Update schedule for existing crawl config"""
 
         if not await self.crawl_configs.find_one_and_update(
@@ -215,7 +215,7 @@ class CrawlOps:
                 {
                     "$lookup": {
                         "from": "users",
-                        "localField": "user",
+                        "localField": "userid",
                         "foreignField": "id",
                         "as": "userName",
                     },
@@ -257,13 +257,13 @@ class CrawlOps:
 
     async def delete_crawl_config(self, cid: uuid.UUID, archive: Archive):
         """Delete config"""
-        await self.crawl_manager.delete_crawl_config_by_id(cid)
+        await self.crawl_manager.delete_crawl_config_by_id(str(cid))
 
         return await self.crawl_configs.delete_one({"_id": cid, "aid": archive.id})
 
     async def delete_crawl_configs(self, archive: Archive):
         """Delete all crawl configs for user"""
-        await self.crawl_manager.delete_crawl_configs_for_archive(archive.id)
+        await self.crawl_manager.delete_crawl_configs_for_archive(str(archive.id))
 
         return await self.crawl_configs.delete_many({"aid": archive.id})
 
@@ -312,7 +312,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
         success = False
         try:
-            success = await ops.update_crawl_schedule(uuid.UUID(cid), update)
+            success = await ops.update_crawl_schedule(cid, update)
 
         except Exception as e:
             # pylint: disable=raise-missing-from
@@ -342,7 +342,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
         crawl_id = None
         try:
-            crawl_id = await crawl_manager.run_crawl_config(cid, user.id)
+            crawl_id = await crawl_manager.run_crawl_config(cid, str(user.id))
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")

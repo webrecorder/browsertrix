@@ -33,6 +33,12 @@ class BaseMongoModel(BaseModel):
 
     id: Optional[UUID4]
 
+
+    @property
+    def id_str(self):
+        """ Return id as str """
+        return str(self.id)
+
     @classmethod
     def from_dict(cls, data):
         """convert dict from mongo to an Archive"""

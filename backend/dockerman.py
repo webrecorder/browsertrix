@@ -538,7 +538,7 @@ class DockerManager:
         return crawl_cls(
             id=container["Id"],
             state=state,
-            user=labels["btrix.user"],
+            userid=labels["btrix.user"],
             aid=labels["btrix.archive"],
             cid=labels["btrix.crawlconfig"],
             schedule=labels["btrix.run.schedule"],

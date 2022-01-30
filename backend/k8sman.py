@@ -424,7 +424,7 @@ class K8SManager:
 
             result = self._make_crawl_for_job(job, "canceled", True)
         else:
-            result = True
+            result = self._make_crawl_for_job(job, "stopping", False)
 
         await self._delete_job(job_name)
 
@@ -493,7 +493,7 @@ class K8SManager:
             id=job.metadata.name,
             state=state,
             scale=job.spec.parallelism or 1,
-            user=job.metadata.labels["btrix.user"],
+            userid=job.metadata.labels["btrix.user"],
             aid=job.metadata.labels["btrix.archive"],
             cid=job.metadata.labels["btrix.crawlconfig"],
             # schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
