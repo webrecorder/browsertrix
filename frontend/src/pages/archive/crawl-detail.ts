@@ -1,10 +1,11 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import humanizeDuration from "pretty-ms";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
+
+const POLL_INTERVAL_SECONDS = 10;
 
 /**
  * Usage:
@@ -32,6 +33,9 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isWatchExpanded: boolean = false;
 
+  // For long polling:
+  private timerId?: number;
+
   async firstUpdated() {
     this.fetchCrawl();
 
@@ -41,6 +45,11 @@ export class CrawlDetail extends LiteElement {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  disconnectedCallback(): void {
+    this.stopPollTimer();
+    super.disconnectedCallback();
   }
 
   render() {
@@ -272,6 +281,15 @@ export class CrawlDetail extends LiteElement {
   private async fetchCrawl(): Promise<void> {
     try {
       this.crawl = await this.getCrawl();
+
+      if (this.crawl.state === "running") {
+        // Start timer for next poll
+        this.timerId = window.setTimeout(() => {
+          this.fetchCrawl();
+        }, 1000 * POLL_INTERVAL_SECONDS);
+      } else {
+        this.stopPollTimer();
+      }
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
@@ -352,7 +370,9 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private updateDuration() {}
+  private stopPollTimer() {
+    window.clearTimeout(this.timerId);
+  }
 }
 
 customElements.define("btrix-crawl-detail", CrawlDetail);

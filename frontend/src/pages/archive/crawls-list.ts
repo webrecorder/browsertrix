@@ -100,8 +100,8 @@ export class CrawlsList extends LiteElement {
   }
 
   disconnectedCallback(): void {
-    super.disconnectedCallback();
     this.stopPollTimer();
+    super.disconnectedCallback();
   }
 
   render() {
