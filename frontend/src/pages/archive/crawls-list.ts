@@ -235,24 +235,14 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
-      class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
+      class="grid grid-cols-12 gap-2 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
       role="button"
       @click=${() =>
         this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`)}
-      title=${`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`}
+      title=${crawl.configName || crawl.cid}
     >
       <div class="col-span-12 md:col-span-5">
-        <div class="font-medium mb-1">
-          <a
-            class="hover:text-0-600 transition-colors"
-            href=${`/archives/${this.archiveId}/crawl-templates/${crawl.cid}`}
-            @click=${(e: any) => {
-              e.stopPropagation();
-              this.navLink(e);
-            }}
-            >${crawl.configName || crawl.cid}</a
-          >
-        </div>
+        <div class="font-medium mb-1">${crawl.configName || crawl.cid}</div>
         <div class="text-0-700 text-sm whitespace-nowrap truncate">
           <sl-format-date
             date=${`${crawl.started}Z` /** Z for UTC */}
@@ -262,20 +252,9 @@ export class CrawlsList extends LiteElement {
             hour="numeric"
             minute="numeric"
           ></sl-format-date>
-          ${crawl.manual
-            ? html` <span
-                class="bg-fuchsia-50 text-fuchsia-700 text-xs rounded px-1 leading-4"
-                >${msg("Manual Start")}</span
-              >`
-            : html`
-                <span
-                  class="bg-teal-50 text-teal-700 text-xs rounded px-1 leading-4"
-                  >${msg("Scheduled Run")}</span
-                >
-              `}
         </div>
       </div>
-      <div class="col-span-6 md:col-span-2 flex items-start">
+      <div class="col-span-4 md:col-span-2 flex items-start">
         <div class="mr-2">
           <!-- TODO switch case in lit template? needed for tailwindcss purging -->
           <span
@@ -312,7 +291,7 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
       </div>
-      <div class="col-span-6 md:col-span-2">
+      <div class="col-span-4 md:col-span-2">
         ${crawl.finished
           ? html`
               <div class="whitespace-nowrap truncate text-sm">
@@ -352,17 +331,27 @@ export class CrawlsList extends LiteElement {
             `
           : ""}
       </div>
-      <div class="col-span-6 md:col-span-2">
+      <div class="col-span-4 md:col-span-2">
         ${crawl.manual
           ? html`
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                ${msg("Started by")}
+              <div class="whitespace-nowrap truncate">
+                <span
+                  class="bg-fuchsia-50 text-fuchsia-700 text-sm rounded px-1 leading-4"
+                  >${msg("Manual Start")}</span
+                >
               </div>
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                ${crawl.username || crawl.user}
+              <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg(str`by ${crawl.username || crawl.user}`)}
               </div>
             `
-          : ""}
+          : html`
+              <div class="whitespace-nowrap truncate">
+                <span
+                  class="bg-teal-50 text-teal-700 text-sm rounded px-1 leading-4"
+                  >${msg("Scheduled Run")}</span
+                >
+              </div>
+            `}
       </div>
       <div class="col-span-12 md:col-span-1 flex justify-end">
         <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
@@ -398,6 +387,16 @@ export class CrawlsList extends LiteElement {
                   </li>
                 `
               : ""}
+            <li
+              class="p-2 hover:bg-zinc-100 cursor-pointer"
+              role="menuitem"
+              @click=${(e: any) => {
+                CopyButton.copyToClipboard(crawl.id);
+                e.target.closest("sl-dropdown").hide();
+              }}
+            >
+              ${msg("Copy Crawl ID")}
+            </li>
             <li
               class="p-2 hover:bg-zinc-100 cursor-pointer"
               role="menuitem"
