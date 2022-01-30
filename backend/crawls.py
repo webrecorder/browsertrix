@@ -278,7 +278,9 @@ class CrawlOps:
 
     async def list_crawls(self, archive: Archive):
         """ list finished and running crawl data """
-        running_crawls = await self.crawl_manager.list_running_crawls(aid=archive.id_str)
+        running_crawls = await self.crawl_manager.list_running_crawls(
+            aid=archive.id_str
+        )
 
         await self.get_redis_stats(running_crawls)
 
@@ -298,18 +300,17 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
-        if crawl:
-            await self.get_redis_stats([crawl])
+        res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+        if not res:
+            crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
+            if crawl:
+                await self.get_redis_stats([crawl])
 
         else:
-            res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
-            if not res:
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl not found: {crawlid}"
-                )
-
             crawl = CrawlOut.from_dict(res)
+
+        if not crawl:
+            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
 
         return await self._resolve_crawl(crawl, archive)
 
@@ -378,7 +379,9 @@ def init_crawls_api(
     ):
         crawl = None
         try:
-            crawl = await crawl_manager.stop_crawl(crawl_id, archive.id_str, graceful=False)
+            crawl = await crawl_manager.stop_crawl(
+                crawl_id, archive.id_str, graceful=False
+            )
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -467,7 +470,9 @@ def init_crawls_api(
     ):
         aid_str = archive.id_str
         await crawl_manager.init_crawl_screencast(crawl_id, aid_str)
-        watch_url = f"{request.url.scheme}://{request.url.netloc}/watch/{aid_str}/{crawl_id}/ws"
+        watch_url = (
+            f"{request.url.scheme}://{request.url.netloc}/watch/{aid_str}/{crawl_id}/ws"
+        )
         return {"watch_url": watch_url}
 
     return ops

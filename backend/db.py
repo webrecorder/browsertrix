@@ -33,7 +33,6 @@ class BaseMongoModel(BaseModel):
 
     id: Optional[UUID4]
 
-
     @property
     def id_str(self):
         """ Return id as str """

@@ -255,17 +255,17 @@ class CrawlOps:
         res = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
         return CrawlConfig.from_dict(res)
 
-    async def delete_crawl_config(self, cid: uuid.UUID, archive: Archive):
+    async def delete_crawl_config(self, cid: str, archive: Archive):
         """Delete config"""
-        await self.crawl_manager.delete_crawl_config_by_id(str(cid))
+        await self.crawl_manager.delete_crawl_config_by_id(cid)
 
         return await self.crawl_configs.delete_one({"_id": cid, "aid": archive.id})
 
-    async def delete_crawl_configs(self, archive: Archive):
-        """Delete all crawl configs for user"""
-        await self.crawl_manager.delete_crawl_configs_for_archive(str(archive.id))
+    # async def delete_crawl_configs(self, archive: Archive):
+    #    """Delete all crawl configs for user"""
+    #    await self.crawl_manager.delete_crawl_configs_for_archive(archive.id_str)
 
-        return await self.crawl_configs.delete_many({"aid": archive.id})
+    #    return await self.crawl_configs.delete_many({"aid": archive.id})
 
 
 # ============================================================================
@@ -358,7 +358,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
     async def delete_crawl_config(
         cid: str, archive: Archive = Depends(archive_crawl_dep)
     ):
-        result = await ops.delete_crawl_config(uuid.UUID(cid), archive)
+        result = await ops.delete_crawl_config(cid, archive)
         if not result or not result.deleted_count:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' Not Found"
