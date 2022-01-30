@@ -198,18 +198,16 @@ export class CrawlDetail extends LiteElement {
                     </span>
 
                     <div class="mb-3 text-center text-sm leading-none">
-                      <button
-                        class="px-3 py-2 bg-white border border-purple-400 hover:border-purple-600 text-purple-600 hover:text-purple-500 rounded-sm font-medium mr-2 transition-colors"
+                      <sl-button class="mr-2" size="small" @click=${this.stop}>
+                        ${msg("Stop Crawl")}
+                      </sl-button>
+                      <sl-button
+                        size="small"
+                        type="danger"
                         @click=${this.cancel}
                       >
                         ${msg("Cancel Crawl")}
-                      </button>
-                      <button
-                        class="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-500 text-white rounded-sm font-medium transition-colors"
-                        @click=${this.stop}
-                      >
-                        ${msg("Stop Crawl")}
-                      </button>
+                      </sl-button>
                     </div>
                   </sl-details>
                 `

@@ -366,7 +366,7 @@ export class CrawlsList extends LiteElement {
             ${isRunning(crawl)
               ? html`
                   <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
                       this.cancel(crawl.id);
@@ -376,7 +376,7 @@ export class CrawlsList extends LiteElement {
                     ${msg("Cancel immediately")}
                   </li>
                   <li
-                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
                       this.stop(crawl.id);
