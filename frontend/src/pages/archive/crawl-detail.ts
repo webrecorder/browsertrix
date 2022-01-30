@@ -142,7 +142,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-2">
-          <dt class="text-sm text-0-500">${msg("Crawl Template")}</dt>
+          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -158,7 +158,7 @@ export class CrawlDetail extends LiteElement {
         </div>
 
         <div class="col-span-2">
-          <dt class="text-sm text-0-500">${msg("Status")}</dt>
+          <dt class="text-sm text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -195,7 +195,7 @@ export class CrawlDetail extends LiteElement {
                       ${msg("Manage")}
                     </span>
 
-                    <div class="text-center text-sm leading-none">
+                    <div class="mb-3 text-center text-sm leading-none">
                       <button
                         class="px-3 py-2 bg-white border border-purple-400 hover:border-purple-600 text-purple-600 hover:text-purple-500 rounded-sm font-medium mr-2 transition-colors"
                         @click=${this.cancel}
@@ -215,7 +215,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-1">
-          <dt class="text-sm text-0-500">${msg("Pages")}</dt>
+          <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
           <dd>
             ${this.crawl?.stats
               ? html`
@@ -237,7 +237,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-1">
-          <dt class="text-sm text-0-500">${msg("Run duration")}</dt>
+          <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -246,15 +246,19 @@ export class CrawlDetail extends LiteElement {
                         new Date(`${this.crawl.finished}Z`).valueOf() -
                           new Date(`${this.crawl.started}Z`).valueOf()
                       )}`
-                    : html`<btrix-relative-duration
-                        value=${`${this.crawl.started}Z`}
-                      ></btrix-relative-duration>`}
+                    : html`
+                        <span class="text-purple-600">
+                          <btrix-relative-duration
+                            value=${`${this.crawl.started}Z`}
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-sm text-0-500">${msg("Started")}</dt>
+          <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -272,7 +276,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-sm text-0-500">${msg("Finished")}</dt>
+          <dt class="text-sm text-0-600">${msg("Finished")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -286,19 +290,22 @@ export class CrawlDetail extends LiteElement {
                         minute="numeric"
                         time-zone-name="short"
                       ></sl-format-date>`
-                    : html`<span class="text-0-500">${msg("Pending")}</span>`}
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-sm text-0-500">${msg("Reason")}</dt>
+          <dt class="text-sm text-0-600">${msg("Reason")}</dt>
           <dd>
             ${this.crawl
               ? html`
                   ${this.crawl.manual
                     ? msg(
-                        html`Manual start by <span>${this.crawl?.userid}</span>`
+                        html`Manual start by
+                          <span
+                            >${this.crawl?.userName || this.crawl?.userid}</span
+                          >`
                       )
                     : msg(html`Scheduled run`)}
                 `
