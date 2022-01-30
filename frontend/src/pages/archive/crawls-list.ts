@@ -365,7 +365,7 @@ export class CrawlsList extends LiteElement {
           : ""}
       </div>
       <div class="col-span-12 md:col-span-1 flex justify-end">
-        <sl-dropdown>
+        <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
           <sl-icon-button
             slot="trigger"
             name="three-dots"
@@ -373,14 +373,13 @@ export class CrawlsList extends LiteElement {
             style="font-size: 1rem"
           ></sl-icon-button>
 
-          <ul class="text-sm whitespace-nowrap" role="menu">
+          <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
             ${isRunning(crawl)
               ? html`
                   <li
                     class="p-2 hover:bg-zinc-100 cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      e.stopPropagation();
                       this.cancel(crawl.id);
                       e.target.closest("sl-dropdown").hide();
                     }}
@@ -391,7 +390,6 @@ export class CrawlsList extends LiteElement {
                     class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      e.stopPropagation();
                       this.stop(crawl.id);
                       e.target.closest("sl-dropdown").hide();
                     }}
@@ -404,7 +402,6 @@ export class CrawlsList extends LiteElement {
               class="p-2 hover:bg-zinc-100 cursor-pointer"
               role="menuitem"
               @click=${(e: any) => {
-                e.stopPropagation();
                 CopyButton.copyToClipboard(crawl.cid);
                 e.target.closest("sl-dropdown").hide();
               }}
@@ -415,7 +412,6 @@ export class CrawlsList extends LiteElement {
               class="p-2 hover:bg-zinc-100 cursor-pointer"
               role="menuitem"
               @click=${(e: any) => {
-                e.stopPropagation();
                 this.navTo(
                   `/archives/${this.archiveId}/crawl-templates/${crawl.cid}`
                 );
