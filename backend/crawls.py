@@ -184,7 +184,7 @@ class CrawlOps:
         """Add finished crawl to db, increment archive usage.
         If crawl file provided, update and add file"""
         if crawl_file:
-            await self.get_redis_stats([crawl])
+            await self.get_redis_stats([crawl], False)
 
             crawl_update = {
                 "$set": crawl.to_dict(exclude={"files", "completions"}),
@@ -280,7 +280,7 @@ class CrawlOps:
             aid=archive.id_str
         )
 
-        await self.get_redis_stats(running_crawls)
+        await self.get_redis_stats(running_crawls, True)
 
         finished_crawls = await self.list_finished_crawls(
             aid=archive.id, exclude_files=True
@@ -298,17 +298,20 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
-        if not res:
-            crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
-            if crawl:
-                await self.get_redis_stats([crawl])
+        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
+        if crawl:
+            await self.get_redis_stats([crawl], True)
 
         else:
+            res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+            if not res:
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl not found: {crawlid}"
+                )
+
             crawl = CrawlOut.from_dict(res)
 
-        if not crawl:
-            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
+            await self._resolve_filenames(crawl)
 
         return await self._resolve_crawl(crawl, archive)
 
@@ -325,8 +328,22 @@ class CrawlOps:
 
         return crawl
 
+    async def _resolve_filenames(self, crawl: CrawlOut):
+        """ Resolve absolute filenames for each file """
+        if not crawl.files:
+            return
+
+        for file_ in crawl.files:
+            if file_.def_storage_name:
+                storage_prefix = (
+                    await self.crawl_manager.get_default_storage_access_endpoint(
+                        file_.def_storage_name
+                    )
+                )
+                file_.filename = storage_prefix + file_.filename
+
     # pylint: disable=too-many-arguments
-    async def get_redis_stats(self, crawl_list):
+    async def get_redis_stats(self, crawl_list, set_stopping=False):
         """ Add additional live crawl stats from redis """
         results = None
 
@@ -344,7 +361,7 @@ class CrawlOps:
             results = await pipe.execute()
 
         for crawl, (done, total, stopping) in zip(crawl_list, pairwise(results)):
-            if stopping:
+            if set_stopping and stopping:
                 crawl.state = "stopping"
 
             crawl.stats = {"done": done, "found": total}
