@@ -50,7 +50,7 @@ spec:
 
           env:
             - name: BACKEND_HOST
-              value: {{ .Values.name }}-frontend
+              value: {{ .Values.name }}-backend
 
             - name: BROWSER_SCREENCAST_URL
               value: http://$2.crawlers.svc.cluster.local:9037

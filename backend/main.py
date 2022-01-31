@@ -5,7 +5,7 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 from db import init_db
 
@@ -93,6 +93,13 @@ def main():
     @app.get("/healthz")
     async def healthz():
         return {}
+
+    @app.get("/replay/sw.js")
+    async def replay_sw():
+        return Response(
+            content='importScripts("https://cdn.jsdelivr.net/npm/replaywebpage@1.5.7/sw.js");',
+            media_type="application/javascript",
+        )
 
 
 # ============================================================================
