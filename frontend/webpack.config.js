@@ -6,7 +6,9 @@ const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
 
 const isDevServer = process.env.WEBPACK_SERVE;
-const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
+
+// for testing: for prod, the Dockerfile should have the official prod version used
+const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
 
 const dotEnvPath = path.resolve(
   process.cwd(),

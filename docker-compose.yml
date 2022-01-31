@@ -29,7 +29,6 @@ services:
     environment:
       - BACKEND_HOST=backend
       - BROWSER_SCREENCAST_URL=http://$$2:9037
-      - RWP_BASE_URL=https://replayweb.page/
 
   redis:
     image: redis
