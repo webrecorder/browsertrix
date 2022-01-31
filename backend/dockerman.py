@@ -150,15 +150,6 @@ class DockerManager:
         """ set crawl ops """
         self.crawl_ops = ops
 
-    async def get_storage(self, storage):
-        """ get storage from existing storage object or reference """
-
-        # pylint: disable=no-else-return
-        if storage.type == "default":
-            return self.storages[storage.name], storage.path
-        else:
-            return storage, ""
-
     async def check_storage(self, storage_name, is_default=False):
         """ check if storage_name is valid storage """
         # if not default, don't validate
@@ -167,6 +158,10 @@ class DockerManager:
 
         # if default, ensure name is in default storages list
         return self.storages[storage_name]
+
+    async def get_default_storage(self, name):
+        """ return default storage by name """
+        return self.storages[name]
 
     async def update_archive_storage(self, aid, userid, storage):
         """ No storage kept for docker manager """
@@ -188,7 +183,7 @@ class DockerManager:
         if storage.type == "default":
             labels["btrix.def_storage_path"] = storage.path
 
-        storage, storage_path = await self.get_storage(storage)
+        storage, storage_path = await self._get_storage_and_path(storage)
 
         if crawlconfig.crawlTimeout:
             labels["btrix.timeout"] = str(crawlconfig.crawlTimeout)
@@ -304,7 +299,7 @@ class DockerManager:
             archive = await self.archive_ops.get_archive_by_id(
                 uuid.UUID(labels["btrix.archive"])
             )
-            storage, storage_path = await self.get_storage(archive.storage)
+            storage, storage_path = await self._get_storage_and_path(archive.storage)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -402,6 +397,17 @@ class DockerManager:
         )
 
         return name
+
+    async def _get_storage_and_path(self, storage):
+        """get storage from existing storage object or reference
+        return storage and storage_path (for default storage)
+        """
+
+        # pylint: disable=no-else-return
+        if storage.type == "default":
+            return self.storages[storage.name], storage.path
+        else:
+            return storage, ""
 
     async def _add_config_to_volume(self, volume, path, data):
         """Add crawl config to volume, requires tar'ing the data,

@@ -9,6 +9,7 @@ import base64
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
 
+from archives import S3Storage
 from crawls import Crawl, CrawlOut, CrawlFile
 
 
@@ -35,7 +36,7 @@ class K8SManager:
         self.batch_beta_api = client.BatchV1beta1Api()
 
         self.namespace = namespace
-        self._default_storage_endpoints = {}
+        self._default_storages = {}
 
         self.crawler_image = os.environ["CRAWLER_IMAGE"]
         self.crawler_image_pull_policy = os.environ["CRAWLER_PULL_POLICY"]
@@ -88,19 +89,11 @@ class K8SManager:
                     print(exc)
 
     # pylint: disable=unused-argument
-    async def get_storage(self, storage_name, is_default=False):
-        """Check if storage_name is valid by checking existing secret
-        is_default flag ignored"""
-        try:
-            return await self.core_api.read_namespaced_secret(
-                f"storage-{storage_name}",
-                namespace=self.namespace,
-            )
-        except Exception:
-            # pylint: disable=broad-except,raise-missing-from
-            raise Exception(f"Storage {storage_name} not found")
-
-        return None
+    async def check_storage(self, storage_name, is_default=False):
+        """Check if storage is valid by trying to get the storage secret
+        Will throw if not valid, otherwise return True"""
+        await self._get_storage_secret(storage_name)
+        return True
 
     async def update_archive_storage(self, aid, userid, storage):
         """Update storage by either creating a per-archive secret, if using custom storage
@@ -172,7 +165,7 @@ class K8SManager:
             "btrix.crawlconfig": cid,
         }
 
-        await self.get_storage(storage_name)
+        await self.check_storage(storage_name)
 
         # Create Config Map
         config_map = self._create_config_map(crawlconfig, labels)
@@ -356,13 +349,32 @@ class K8SManager:
 
     async def get_default_storage_access_endpoint(self, name):
         """ Get access_endpoint for default storage """
-        if name not in self._default_storage_endpoints:
-            storage_secret = await self.get_storage(name, is_default=True)
-            self._default_storage_endpoints[name] = base64.standard_b64decode(
-                storage_secret.data["STORE_ACCESS_ENDPOINT_URL"]
-            ).decode()
+        return (await self.get_default_storage(name)).access_endpoint_url
 
-        return self._default_storage_endpoints[name]
+    async def get_default_storage(self, name):
+        """ get default storage """
+        if name not in self._default_storages:
+            storage_secret = await self._get_storage_secret(name)
+
+            access_endpoint_url = self._secret_data(
+                storage_secret, "STORE_ACCESS_ENDPOINT_URL"
+            )
+            endpoint_url = self._secret_data(storage_secret, "STORE_ENDPOINT_URL")
+            access_key = self._secret_data(storage_secret, "STORE_ACCESS_KEY")
+            secret_key = self._secret_data(storage_secret, "STORE_SECRET_KEY")
+
+            self._default_storages[name] = S3Storage(
+                access_key=access_key,
+                secret_key=secret_key,
+                endpoint_url=endpoint_url,
+                access_endpoint_url=access_endpoint_url,
+            )
+
+        return self._default_storages[name]
+
+    async def _secret_data(self, storage, name):
+        """ decode secret storage data """
+        return base64.standard_b64decode(storage.data[name]).decode()
 
     async def get_running_crawl(self, name, aid):
         """Get running crawl (job) with given name, or none
@@ -523,6 +535,20 @@ class K8SManager:
         )
 
         return config_map
+
+    # pylint: disable=unused-argument
+    async def _get_storage_secret(self, storage_name):
+        """ Check if storage_name is valid by checking existing secret """
+        try:
+            return await self.core_api.read_namespaced_secret(
+                f"storage-{storage_name}",
+                namespace=self.namespace,
+            )
+        except Exception:
+            # pylint: disable=broad-except,raise-missing-from
+            raise Exception(f"Storage {storage_name} not found")
+
+        return None
 
     # pylint: disable=no-self-use
     def _get_schedule_suspend_run_now(self, crawlconfig):
