@@ -125,7 +125,7 @@ export class Archive extends LiteElement {
       </nav>
 
       <main>
-        <nav class="flex items-end">
+        <nav class="flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "crawl-templates",
@@ -156,7 +156,7 @@ export class Archive extends LiteElement {
     return html`
       <a
         id="${tabName}-tab"
-        class="block flex-shrink-0 text-sm font-medium px-5 py-3 border-b-2 transition-colors ${isActive
+        class="block flex-shrink-0 text-sm font-medium p-3 md:px-5 border-b-2 transition-colors ${isActive
           ? "border-primary text-primary"
           : "text-0-600"}"
         href=${`/archives/${this.archiveId}/${tabName}`}
