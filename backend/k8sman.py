@@ -424,7 +424,7 @@ class K8SManager:
 
             result = self._make_crawl_for_job(job, "canceled", True)
         else:
-            result = self._make_crawl_for_job(job, "stopping", False)
+            result = True
 
         await self._delete_job(job_name)
 
