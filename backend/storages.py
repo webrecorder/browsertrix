@@ -3,6 +3,7 @@ Storage API
 """
 from typing import Union
 from urllib.parse import urlsplit
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, HTTPException
 from aiobotocore.session import get_session
@@ -52,19 +53,18 @@ def init_storages_api(archive_ops, crawl_manager, user_dep):
 
 
 # ============================================================================
-async def verify_storage_upload(storage, filename):
-    """ Test credentials and storage endpoint by uploading an empty test file """
+@asynccontextmanager
+async def get_s3_client(storage):
+    """ context manager for s3 client"""
     if not storage.endpoint_url.endswith("/"):
         storage.endpoint_url += "/"
 
-    session = get_session()
-
     parts = urlsplit(storage.endpoint_url)
-
     bucket, key = parts.path[1:].split("/", 1)
-    key += filename
 
     endpoint_url = parts.scheme + "://" + parts.netloc
+
+    session = get_session()
 
     async with session.create_client(
         "s3",
@@ -73,6 +73,39 @@ async def verify_storage_upload(storage, filename):
         aws_access_key_id=storage.access_key,
         aws_secret_access_key=storage.secret_key,
     ) as client:
+        yield client, bucket, key
+
+
+# ============================================================================
+async def verify_storage_upload(storage, filename):
+    """ Test credentials and storage endpoint by uploading an empty test file """
+
+    async with get_s3_client(storage) as (client, bucket, key):
+        key += filename
         data = b""
+
         resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
         assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+
+# ============================================================================
+async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
+    """ generate pre-signed url for crawl file """
+    if crawlfile.def_storage_name:
+        s3storage = await crawl_manager.get_default_storage(crawlfile.def_storage_name)
+
+    elif archive.storage.type == "s3":
+        s3storage = archive.storage
+
+    else:
+        raise Exception("No Default Storage Found, Invalid Storage Type")
+
+    async with get_s3_client(s3storage) as (client, bucket, key):
+        key += crawlfile.filename
+
+        presigned_url = await client.generate_presigned_url(
+            "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
+        )
+
+    print("presigned_url", presigned_url)
+    return presigned_url
