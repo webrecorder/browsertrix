@@ -541,7 +541,7 @@ export class CrawlTemplatesNew extends LiteElement {
       );
 
       this.notify({
-        message: data.started
+        message: data.run_now_job
           ? msg(
               str`Crawl running with new template. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/crawl/${data.started}">View crawl</a>`
             )
