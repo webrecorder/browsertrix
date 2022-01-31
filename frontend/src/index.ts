@@ -383,9 +383,7 @@ export class App extends LiteElement {
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
           archiveId=${this.viewState.params.id}
-          archiveTab=${this.viewState.params.crawlConfigId
-            ? "crawl-templates"
-            : (this.viewState.params.tab as ArchiveTab)}
+          archiveTab=${this.viewState.params.tab as ArchiveTab}
           crawlConfigId=${this.viewState.params.crawlConfigId}
           crawlId=${this.viewState.params.crawlId}
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
@@ -480,6 +478,9 @@ export class App extends LiteElement {
     event.stopPropagation();
 
     this.navigate(event.detail.url, event.detail.state);
+
+    // Scroll to top of page
+    window.scrollTo({ top: 0 });
   }
 
   onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {

@@ -89,6 +89,29 @@ export class Archive extends LiteElement {
 
     const showMembersTab = Boolean(this.archive.users);
 
+    let tabPanelContent = "" as any;
+
+    switch (this.archiveTab) {
+      case "crawls":
+        tabPanelContent = this.renderCrawls();
+        break;
+      case "crawl-templates":
+        tabPanelContent = this.renderCrawlTemplates();
+        break;
+      case "members":
+        if (this.isAddingMember) {
+          tabPanelContent = this.renderAddMember();
+        } else {
+          tabPanelContent = this.renderMembers();
+        }
+        break;
+      default:
+        tabPanelContent = html`<btrix-not-found
+          class="flex items-center justify-center"
+        ></btrix-not-found>`;
+        break;
+    }
+
     return html`<article class="grid gap-4">
       <nav class="font-medium text-sm text-gray-500">
         <a
@@ -102,56 +125,47 @@ export class Archive extends LiteElement {
       </nav>
 
       <main>
-        <sl-tab-group @sl-tab-show=${this.updateUrl}>
-          <sl-tab
-            slot="nav"
-            panel="crawls"
-            ?active=${this.archiveTab === "crawls"}
-            @click=${() => this.navTo(`/archives/${this.archiveId}/crawls`)}
-            >${msg("Crawls")}
-          </sl-tab>
-          <sl-tab
-            slot="nav"
-            panel="crawl-templates"
-            ?active=${this.archiveTab === "crawl-templates"}
-            @click=${() =>
-              this.navTo(`/archives/${this.archiveId}/crawl-templates`)}
-            >${msg("Crawl Templates")}
-          </sl-tab>
+        <nav class="flex items-end overflow-x-auto">
+          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
+          ${this.renderNavTab({
+            tabName: "crawl-templates",
+            label: msg("Crawl Templates"),
+          })}
           ${showMembersTab
-            ? html`<sl-tab
-                slot="nav"
-                panel="members"
-                ?active=${this.archiveTab === "members"}
-                >${msg("Members")}</sl-tab
-              >`
+            ? this.renderNavTab({ tabName: "members", label: msg("Members") })
             : ""}
+          <hr class="flex-1 border-t-2" />
+        </nav>
 
-          <sl-tab-panel name="crawls" ?active=${this.archiveTab === "crawls"}
-            >${this.renderCrawls()}</sl-tab-panel
-          >
-          <sl-tab-panel
-            name="crawl-templates"
-            ?active=${this.archiveTab === "crawl-templates"}
-            >${this.renderCrawlTemplates()}</sl-tab-panel
-          >
-          ${showMembersTab
-            ? html`<sl-tab-panel
-                name="members"
-                ?active=${this.archiveTab === "members"}
-              >
-                ${this.isAddingMember
-                  ? this.renderAddMember()
-                  : this.renderMembers()}
-              </sl-tab-panel>`
-            : ""}
-        </sl-tab-group>
+        <div class="my-5" aria-labelledby="${this.archiveTab}-tab">
+          ${tabPanelContent}
+        </div>
       </main>
     </article>`;
   }
 
-  private renderSettings() {
-    return html` TODO `;
+  private renderNavTab({
+    tabName,
+    label,
+  }: {
+    tabName: ArchiveTab;
+    label: string;
+  }) {
+    const isActive = this.archiveTab === tabName;
+
+    return html`
+      <a
+        id="${tabName}-tab"
+        class="block flex-shrink-0 text-sm font-medium p-3 md:px-5 border-b-2 transition-colors ${isActive
+          ? "border-primary text-primary"
+          : "text-0-600"}"
+        href=${`/archives/${this.archiveId}/${tabName}`}
+        aria-selected=${isActive}
+        @click=${this.navLink}
+      >
+        ${label}
+      </a>
+    `;
   }
 
   private renderCrawls() {

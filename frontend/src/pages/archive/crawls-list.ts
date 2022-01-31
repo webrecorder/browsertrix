@@ -412,7 +412,7 @@ export class CrawlsList extends LiteElement {
               role="menuitem"
               @click=${(e: any) => {
                 this.navTo(
-                  `/archives/${this.archiveId}/crawl-templates/${crawl.cid}`
+                  `/archives/${this.archiveId}/crawl-templates/config/${crawl.cid}`
                 );
               }}
             >

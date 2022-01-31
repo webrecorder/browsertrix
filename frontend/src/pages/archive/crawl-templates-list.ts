@@ -95,13 +95,13 @@ export class CrawlTemplatesList extends LiteElement {
               role="button"
               @click=${() => {
                 this.navTo(
-                  `/archives/${this.archiveId}/crawl-templates/${t.id}`
+                  `/archives/${this.archiveId}/crawl-templates/config/${t.id}`
                 );
               }}
             >
               <header class="flex">
                 <a
-                  href=${`/archives/${this.archiveId}/crawl-templates/${t.id}`}
+                  href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
                   class="block flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
                   title=${t.name}
                   @click=${(e: any) => {
