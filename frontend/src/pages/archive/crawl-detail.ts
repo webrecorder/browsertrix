@@ -324,9 +324,7 @@ export class CrawlDetail extends LiteElement {
               <div>
                 <a
                   class="text-primary hover:underline"
-                  href=${file.filename.startsWith("http")
-                    ? file.filename
-                    : `${window.location.protocol}//${window.location.host}/${file.filename}`}
+                  href=${file.filename}
                   download
                   title=${file.filename.slice(
                     file.filename.lastIndexOf("/") + 1
