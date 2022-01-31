@@ -125,48 +125,47 @@ export class Archive extends LiteElement {
       </nav>
 
       <main>
-        <sl-tab-group @sl-tab-show=${this.updateUrl}>
-          <sl-tab
-            id="crawls-tab"
-            slot="nav"
-            panel="crawls"
-            ?active=${this.archiveTab === "crawls"}
-            @click=${() => this.navTo(`/archives/${this.archiveId}/crawls`)}
-            >${msg("Crawls")}
-          </sl-tab>
-          <sl-tab
-            id="crawl-templates-tab"
-            slot="nav"
-            panel="crawl-templates"
-            ?active=${this.archiveTab === "crawl-templates"}
-            @click=${() =>
-              this.navTo(`/archives/${this.archiveId}/crawl-templates`)}
-            >${msg("Crawl Templates")}
-          </sl-tab>
+        <nav class="flex items-end">
+          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
+          ${this.renderNavTab({
+            tabName: "crawl-templates",
+            label: msg("Crawl Templates"),
+          })}
           ${showMembersTab
-            ? html`<sl-tab
-                id="members-tab"
-                slot="nav"
-                panel="members"
-                ?active=${this.archiveTab === "members"}
-                >${msg("Members")}</sl-tab
-              >`
+            ? this.renderNavTab({ tabName: "members", label: msg("Members") })
             : ""}
+          <hr class="flex-1 border-t-2" />
+        </nav>
 
-          <div
-            class="my-5"
-            role="tabpanel"
-            aria-labelledby="${this.archiveTab}-tab"
-          >
-            ${tabPanelContent}
-          </div>
-        </sl-tab-group>
+        <div class="my-5" aria-labelledby="${this.archiveTab}-tab">
+          ${tabPanelContent}
+        </div>
       </main>
     </article>`;
   }
 
-  private renderSettings() {
-    return html` TODO `;
+  private renderNavTab({
+    tabName,
+    label,
+  }: {
+    tabName: ArchiveTab;
+    label: string;
+  }) {
+    const isActive = this.archiveTab === tabName;
+
+    return html`
+      <a
+        id="${tabName}-tab"
+        class="block flex-shrink-0 text-sm font-medium px-5 py-3 border-b-2 transition-colors ${isActive
+          ? "border-primary text-primary"
+          : "text-0-600"}"
+        href=${`/archives/${this.archiveId}/${tabName}`}
+        aria-selected=${isActive}
+        @click=${this.navLink}
+      >
+        ${label}
+      </a>
+    `;
   }
 
   private renderCrawls() {
