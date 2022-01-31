@@ -87,7 +87,7 @@ export class CrawlDetail extends LiteElement {
         </section>
 
         <section>
-          <h3 class="text-lg font-medium mb-2">${msg("Files")}</h3>
+          <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
           ${this.renderFiles()}
         </section>
       </main>
@@ -97,8 +97,8 @@ export class CrawlDetail extends LiteElement {
   private renderWatch() {
     const isRunning = this.crawl?.state === "running";
 
-    //const firstFile = this.crawl?.resources?.length ? this.crawl.resources[0].path : null;
-    const fileJson = `/archives/${this.archiveId}/crawls/${this.crawlId}.json`;
+    const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
+    const fileJson = `/api/archives/${this.archiveId}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
 
     return html`
       <div
@@ -332,10 +332,8 @@ export class CrawlDetail extends LiteElement {
                   href=${file.path}
                   download
                   title=${file.name}
-                  >${msg(
-                    str`Download ${file.name.slice(
+                  >${file.name.slice(
                       file.name.lastIndexOf("/") + 1
-                    )}`
                    )}
                 </a>
               </div>

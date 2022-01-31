@@ -53,10 +53,9 @@ server {
       index  index.html index.htm;
     }
 
-    location /replay/ {
-      proxy_pass http://${BACKEND_HOST}:8000;
-      proxy_set_header Host $http_host;
-      proxy_set_header X-Forwarded-Proto $scheme;
+    location /replay/sw.js {
+      add_header Content-Type application/javascript;
+      return 200 'importScripts("https://cdn.jsdelivr.net/npm/replaywebpage@1.5.7/sw.js");';
     }
 
     # used by docker only: k8s deployment handles /api directly via ingress

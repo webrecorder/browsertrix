@@ -94,13 +94,6 @@ def main():
     async def healthz():
         return {}
 
-    @app.get("/replay/sw.js")
-    async def replay_sw():
-        return Response(
-            content='importScripts("https://cdn.jsdelivr.net/npm/replaywebpage@1.5.7/sw.js");',
-            media_type="application/javascript",
-        )
-
 
 # ============================================================================
 @app.on_event("startup")
