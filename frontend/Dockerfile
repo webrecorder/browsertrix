@@ -1,5 +1,7 @@
 FROM node:16 as build
 
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
+
 WORKDIR /app
 COPY package.json .
 COPY yarn.lock .

@@ -6,6 +6,8 @@ const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
 
 const isDevServer = process.env.WEBPACK_SERVE;
+const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
+
 const dotEnvPath = path.resolve(
   process.cwd(),
   `.env${isDevServer ? `.local` : ""}`
@@ -94,7 +96,10 @@ module.exports = {
     new Dotenv({ path: dotEnvPath }),
 
     new HtmlWebpackPlugin({
-      template: "src/index.html",
+      template: "src/index.ejs",
+      templateParameters: {
+        "rwp_base_url": RWP_BASE_URL
+      },
       // Need to block during local development for HMR:
       inject: isDevServer ? "head" : true,
       scriptLoading: isDevServer ? "blocking" : "defer",

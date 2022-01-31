@@ -55,6 +55,9 @@ spec:
             - name: BROWSER_SCREENCAST_URL
               value: http://$2.crawlers.svc.cluster.local:9037
 
+            - name: RWP_BASE_URL
+              value: {{ .Values.rwp_base_url }}
+
           resources:
             limits:
               cpu: {{ .Values.nginx_limit_cpu }}
