@@ -14,6 +14,7 @@ import aioredis
 
 from db import BaseMongoModel
 from archives import Archive
+from storages import get_presigned_url
 
 
 # ============================================================================
@@ -32,12 +33,22 @@ class CrawlScale(BaseModel):
 
 # ============================================================================
 class CrawlFile(BaseModel):
-    """ output of a crawl """
+    """ file from a crawl """
 
     filename: str
     hash: str
     size: int
     def_storage_name: Optional[str]
+
+
+# ============================================================================
+class CrawlFileOut(BaseModel):
+    """ output for file from a crawl (conformance to Data Resource Spec) """
+
+    name: str
+    path: str
+    hash: str
+    size: int
 
 
 # ============================================================================
@@ -74,6 +85,7 @@ class CrawlOut(Crawl):
 
     userName: Optional[str]
     configName: Optional[str]
+    resources: Optional[List[CrawlFileOut]] = []
 
 
 # ============================================================================
@@ -290,7 +302,7 @@ class CrawlOps:
 
         for crawl in running_crawls:
             list_crawl = ListCrawlOut(**crawl.dict())
-            crawls.append(await self._resolve_crawl(list_crawl, archive))
+            crawls.append(await self._resolve_crawl_refs(list_crawl, archive))
 
         crawls.extend(finished_crawls)
 
@@ -309,13 +321,18 @@ class CrawlOps:
                     status_code=404, detail=f"Crawl not found: {crawlid}"
                 )
 
+            files = [CrawlFile(**data) for data in res["files"]]
+
+            del res["files"]
+
+            res["resources"] = await self._resolve_signed_urls(files, archive)
             crawl = CrawlOut.from_dict(res)
 
-            await self._resolve_filenames(crawl)
+        return await self._resolve_crawl_refs(crawl, archive)
 
-        return await self._resolve_crawl(crawl, archive)
-
-    async def _resolve_crawl(self, crawl: Union[CrawlOut, ListCrawlOut], archive):
+    async def _resolve_crawl_refs(
+        self, crawl: Union[CrawlOut, ListCrawlOut], archive: Archive
+    ):
         """ Resolve running crawl data """
         config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
 
@@ -327,6 +344,39 @@ class CrawlOps:
             crawl.userName = user.name
 
         return crawl
+
+    async def _resolve_signed_urls(self, files, archive: Archive):
+        if not files:
+            return
+
+        # TODO: customize?
+        duration = 3600
+
+        async with self.redis.pipeline(transaction=True) as pipe:
+            for file_ in files:
+                pipe.get(f"{file_.filename}")
+
+            results = await pipe.execute()
+
+        out_files = []
+
+        for file_, presigned_url in zip(files, results):
+            if not presigned_url:
+                presigned_url = await get_presigned_url(
+                    archive, file_, self.crawl_manager, duration
+                )
+                await self.redis.setex(f"f:{file_.filename}", duration, presigned_url)
+
+            out_files.append(
+                CrawlFileOut(
+                    name=file_.filename,
+                    path=presigned_url,
+                    hash=file_.hash,
+                    size=file_.size,
+                )
+            )
+
+        return out_files
 
     async def _resolve_filenames(self, crawl: CrawlOut):
         """ Resolve absolute filenames for each file """
@@ -447,21 +497,12 @@ def init_crawls_api(
 
         return {"deleted": res}
 
-    @app.get(
-        "/archives/{aid}/crawls/{crawl_id}", tags=["crawls"], response_model=CrawlOut
+    @app.get("/archives/{aid}/crawls/{crawl_id}.json",
+        tags=["crawls"],
+        response_model=CrawlOut,
     )
     async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl(crawl_id, archive)
-
-    # @app.get(
-    #    "/archives/{aid}/crawls/{crawl_id}/running",
-    #    tags=["crawls"],
-    # )
-    # async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
-    #    if not crawl_manager.is_running(crawl_id, archive.id_str):
-    #        raise HTTPException(status_code=404, detail="No Such Crawl")
-    #
-    #    return {"running": True}
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/scale",

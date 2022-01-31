@@ -11,7 +11,7 @@ export type Crawl = {
   state: string; // "running" | "complete" | "failed" | "partial_complete"
   scale: number;
   stats: { done: string; found: string } | null;
-  files?: { filename: string; hash: string; size: number }[];
+  resources?: { name: string; path: string, hash: string; size: number }[];
   fileCount?: number;
   fileSize?: number;
   completions?: number;
