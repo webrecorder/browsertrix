@@ -218,9 +218,11 @@ export class CrawlTemplatesDetail extends LiteElement {
                   ? html`
                       <sl-button
                         size="small"
-                        href=${`/archives/${this.archiveId}/crawl-templates/${
-                          this.crawlTemplate.id
-                        }${this.isEditing ? "" : "?edit=true"}`}
+                        href=${`/archives/${
+                          this.archiveId
+                        }/crawl-templates/config/${this.crawlTemplate.id}${
+                          this.isEditing ? "" : "?edit=true"
+                        }`}
                         @click=${(e: any) => {
                           const hasChanges =
                             this.isEditing && this.editedSchedule;
@@ -470,7 +472,9 @@ export class CrawlTemplatesDetail extends LiteElement {
       });
 
       this.navTo(
-        `/archives/${this.archiveId}/crawl-templates/${this.crawlTemplate!.id}`
+        `/archives/${this.archiveId}/crawl-templates/config/${
+          this.crawlTemplate!.id
+        }`
       );
     } catch (e: any) {
       console.error(e);

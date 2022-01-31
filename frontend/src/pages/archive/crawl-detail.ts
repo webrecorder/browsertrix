@@ -153,7 +153,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   <a
                     class="font-medium  hover:underline"
-                    href=${`/archives/${this.archiveId}/crawl-templates/${this.crawl.cid}`}
+                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
                     @click=${this.navLink}
                     >${this.crawl.configName}</a
                   >
