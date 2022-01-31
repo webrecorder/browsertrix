@@ -65,7 +65,7 @@ export class CrawlDetail extends LiteElement {
         </h2>
       </header>
 
-      <main class="grid gap-4">
+      <main class="grid gap-5">
         <section
           class="grid grid-cols-2 md:grid-cols-8 gap-3 rounded-lg md:p-4 md:bg-zinc-100"
         >
@@ -86,7 +86,10 @@ export class CrawlDetail extends LiteElement {
           </div>
         </section>
 
-        <section>${this.renderFiles()}</section>
+        <section>
+          <h3 class="text-lg font-medium mb-2">${msg("Files")}</h3>
+          ${this.renderFiles()}
+        </section>
       </main>
     `;
   }
@@ -314,16 +317,17 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium mb-2">${msg("Files")}</h3>
-      <ul class="border rounded">
-        <li class="flex justify-between p-3 border-t first:border-t-0">
-          <div>[File name]</div>
-          <div>[Download link]</div>
-        </li>
-        <li class="flex justify-between p-3 border-t first:border-t-0">
-          <div>[File name]</div>
-          <div>[Download link]</div>
-        </li>
+      <ul class="border rounded text-sm">
+        ${this.crawl?.files?.map(
+          (file) => html`
+            <li class="flex justify-between p-3 border-t first:border-t-0">
+              <div>
+                ${file.filename.slice(file.filename.lastIndexOf("/") + 1)}
+              </div>
+              <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
+            </li>
+          `
+        )}
       </ul>
     `;
   }
