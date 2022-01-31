@@ -40,17 +40,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private editedSchedule?: string;
 
-  @state()
-  private isScheduleDisabled?: boolean;
-
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
-  private get timeZoneShortName() {
-    return getLocaleTimeZone();
-  }
-
   async firstUpdated() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
@@ -99,7 +88,8 @@ export class CrawlTemplatesDetail extends LiteElement {
             <dt class="text-xs text-0-600">${msg("Created by")}</dt>
             <!-- TODO show name -->
             <dd class="h-5">
-              ${this.crawlTemplate?.user ||
+              ${this.crawlTemplate?.userName ||
+              this.crawlTemplate?.userid ||
               html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
             </dd>
           </div>
