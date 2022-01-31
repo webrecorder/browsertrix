@@ -333,7 +333,9 @@ export class CrawlDetail extends LiteElement {
                   download
                   title=${file.name}
                   >${msg(
-                    str`Download ${file.name}`
+                    str`Download ${file.name.slice(
+                      file.name.lastIndexOf("/") + 1
+                    )}`
                    )}
                 </a>
               </div>
