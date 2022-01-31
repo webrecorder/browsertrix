@@ -234,7 +234,7 @@ class DockerManager:
         running = []
 
         for container in containers:
-            crawl = await self.get_running_crawl(container["Id"], aid)
+            crawl = await self.get_running_crawl(container["Id"][:12], aid)
             if crawl:
                 running.append(crawl)
 
@@ -502,7 +502,7 @@ class DockerManager:
         }
 
         container = await self.client.containers.run(run_config)
-        return container["id"]
+        return container["id"][:12]
 
     async def _list_running_containers(self, labels):
         results = await self.client.containers.list(
@@ -536,7 +536,7 @@ class DockerManager:
         labels = container["Config"]["Labels"]
 
         return crawl_cls(
-            id=container["Id"],
+            id=container["Id"][:12],
             state=state,
             userid=labels["btrix.user"],
             aid=labels["btrix.archive"],

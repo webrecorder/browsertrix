@@ -21,9 +21,9 @@ data:
 
   REDIS_CRAWLS_DONE_KEY: "crawls-done"
 
-  NO_DELETE_JOBS: "{{ .Values.no_delete_jobs | default '0' }}"
+  NO_DELETE_JOBS: "{{ .Values.no_delete_jobs | default 0 }}"
 
-  REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default '0' }}"
+  REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
   JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"
 

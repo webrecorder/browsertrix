@@ -184,6 +184,8 @@ class CrawlOps:
         """Add finished crawl to db, increment archive usage.
         If crawl file provided, update and add file"""
         if crawl_file:
+            await self.get_redis_stats([crawl], False)
+
             crawl_update = {
                 "$set": crawl.to_dict(exclude={"files", "completions"}),
                 "$push": {"files": crawl_file.dict()},
@@ -204,10 +206,6 @@ class CrawlOps:
             except pymongo.errors.DuplicateKeyError:
                 # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
                 return False
-
-            if crawl.state == "stopping":
-                print("Stopping Crawl...", flush=True)
-                return True
 
         dura = int((crawl.finished - crawl.started).total_seconds())
 
@@ -282,7 +280,7 @@ class CrawlOps:
             aid=archive.id_str
         )
 
-        await self.get_redis_stats(running_crawls)
+        await self.get_redis_stats(running_crawls, True)
 
         finished_crawls = await self.list_finished_crawls(
             aid=archive.id, exclude_files=True
@@ -300,17 +298,20 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
-        if not res:
-            crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
-            if crawl:
-                await self.get_redis_stats([crawl])
+        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
+        if crawl:
+            await self.get_redis_stats([crawl], True)
 
         else:
+            res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+            if not res:
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl not found: {crawlid}"
+                )
+
             crawl = CrawlOut.from_dict(res)
 
-        if not crawl:
-            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
+            await self._resolve_filenames(crawl)
 
         return await self._resolve_crawl(crawl, archive)
 
@@ -327,25 +328,47 @@ class CrawlOps:
 
         return crawl
 
+    async def _resolve_filenames(self, crawl: CrawlOut):
+        """ Resolve absolute filenames for each file """
+        if not crawl.files:
+            return
+
+        for file_ in crawl.files:
+            if file_.def_storage_name:
+                storage_prefix = (
+                    await self.crawl_manager.get_default_storage_access_endpoint(
+                        file_.def_storage_name
+                    )
+                )
+                file_.filename = storage_prefix + file_.filename
+
     # pylint: disable=too-many-arguments
-    async def get_redis_stats(self, crawl_list):
+    async def get_redis_stats(self, crawl_list, set_stopping=False):
         """ Add additional live crawl stats from redis """
         results = None
 
         def pairwise(iterable):
             val = iter(iterable)
-            return zip(val, val)
+            return zip(val, val, val)
 
         async with self.redis.pipeline(transaction=True) as pipe:
             for crawl in crawl_list:
                 key = crawl.id
                 pipe.llen(f"{key}:d")
                 pipe.scard(f"{key}:s")
+                pipe.get(f"{key}:stop")
 
             results = await pipe.execute()
 
-        for crawl, (done, total) in zip(crawl_list, pairwise(results)):
+        for crawl, (done, total, stopping) in zip(crawl_list, pairwise(results)):
+            if set_stopping and stopping:
+                crawl.state = "stopping"
+
             crawl.stats = {"done": done, "found": total}
+
+    async def mark_stopping(self, crawl_id):
+        """ Mark crawl as in process of stopping in redis """
+        await self.redis.setex(f"{crawl_id}:stop", 600, 1)
 
     async def delete_crawls(self, aid: uuid.UUID, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
@@ -401,9 +424,9 @@ def init_crawls_api(
     async def crawl_graceful_stop(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
-        crawl = None
+        stopping = False
         try:
-            crawl = await crawl_manager.stop_crawl(
+            stopping = await crawl_manager.stop_crawl(
                 crawl_id, archive.id_str, graceful=True
             )
 
@@ -411,12 +434,12 @@ def init_crawls_api(
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
 
-        if not crawl:
+        if not stopping:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
 
-        await ops.store_crawl(crawl)
+        await ops.mark_stopping(crawl_id)
 
-        return {"stopped_gracefully": True}
+        return {"stopping_gracefully": True}
 
     @app.post("/archives/{aid}/crawls/delete", tags=["crawls"])
     async def delete_crawls(
