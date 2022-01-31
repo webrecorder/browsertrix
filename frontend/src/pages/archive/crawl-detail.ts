@@ -322,7 +322,21 @@ export class CrawlDetail extends LiteElement {
           (file) => html`
             <li class="flex justify-between p-3 border-t first:border-t-0">
               <div>
-                ${file.filename.slice(file.filename.lastIndexOf("/") + 1)}
+                <a
+                  class="text-primary hover:underline"
+                  href=${file.filename.startsWith("http")
+                    ? file.filename
+                    : `${window.location.protocol}//${window.location.host}/${file.filename}`}
+                  download
+                  title=${file.filename.slice(
+                    file.filename.lastIndexOf("/") + 1
+                  )}
+                  >${msg(
+                    str`Download ${file.filename.slice(
+                      file.filename.lastIndexOf(".")
+                    )}`
+                  )}</a
+                >
               </div>
               <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
             </li>
