@@ -1,3 +1,22 @@
+export type Crawl = {
+  id: string;
+  userid: string;
+  userName: string;
+  cid: string;
+  configName: string;
+  schedule: string;
+  manual: boolean;
+  started: string; // UTC ISO date
+  finished?: string; // UTC ISO date
+  state: string; // "running" | "complete" | "failed" | "partial_complete"
+  scale: number;
+  stats: { done: string; found: string } | null;
+  files?: { filename: string; hash: string; size: number }[];
+  fileCount?: number;
+  fileSize?: number;
+  completions?: number;
+};
+
 type SeedConfig = {
   scopeType?: string;
   limit?: number;

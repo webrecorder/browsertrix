@@ -155,7 +155,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Started crawl from <strong>${template.name}</strong>. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/${data.run_now_job}">View crawl</a>`
+          str`Started crawl from <strong>${template.name}</strong>. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/crawl/${data.run_now_job}">View crawl</a>`
         ),
         type: "success",
         icon: "check2-circle",
