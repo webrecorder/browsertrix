@@ -281,9 +281,10 @@ class K8SManager:
         )
 
         return [
-            self._make_crawl_for_job(job, "running", False, CrawlOut)
+            self._make_crawl_for_job(
+                job, "running" if job.status.active else "stopping", False, CrawlOut
+            )
             for job in jobs.items
-            if job.status.active
         ]
 
     async def init_crawl_screencast(self, crawl_id, aid):
@@ -374,29 +375,15 @@ class K8SManager:
             if not job or job.metadata.labels["btrix.archive"] != aid:
                 return None
 
-            if job.status.active:
-                return self._make_crawl_for_job(job, "running", False, CrawlOut)
+            return self._make_crawl_for_job(
+                job, "running" if job.status.active else "stopping", False, CrawlOut
+            )
 
         # pylint: disable=broad-except
         except Exception:
             pass
 
         return None
-
-    async def is_running(self, job_name, aid):
-        """ Return true if the specified crawl (by job_name) is running """
-        try:
-            job = await self.batch_api.read_namespaced_job(
-                name=job_name, namespace=self.namespace
-            )
-
-            if not job or job.metadata.labels["btrix.archive"] != aid:
-                return False
-
-            return True
-        # pylint: disable=broad-except
-        except Exception:
-            return False
 
     async def stop_crawl(self, job_name, aid, graceful=True):
         """Attempt to stop crawl, either gracefully by issuing a SIGTERM which

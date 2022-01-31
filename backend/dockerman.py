@@ -15,6 +15,7 @@ from tempfile import NamedTemporaryFile
 
 import aiodocker
 import aioprocessing
+import aioredis
 
 from scheduler import run_scheduler
 
@@ -62,6 +63,13 @@ class DockerManager:
         self.loop.create_task(self.run_event_loop())
         self.loop.create_task(self.init_trigger_queue())
         self.loop.create_task(self.cleanup_loop())
+        self.loop.create_task(self.init_redis(self.redis_url))
+
+    async def init_redis(self, redis_url):
+        """ init redis async """
+        self.redis = await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
 
     # pylint: disable=no-member
     async def init_trigger_queue(self):
@@ -257,6 +265,7 @@ class DockerManager:
                 result = self._make_crawl_for_container(container, "canceled", True)
             else:
                 result = True
+                await self._mark_is_stopping(crawl_id)
 
             await container.kill(signal="SIGTERM")
         except aiodocker.exceptions.DockerError as exc:
@@ -358,15 +367,15 @@ class DockerManager:
             if aid and container["Config"]["Labels"]["btrix.archive"] != aid:
                 return None
 
-            return self._make_crawl_for_container(container, "running", False, CrawlOut)
+            stopping = await self._get_is_stopping(crawl_id)
+
+            return self._make_crawl_for_container(
+                container, "stopping" if stopping else "running", False, CrawlOut
+            )
         # pylint: disable=broad-except
         except Exception as exc:
             print(exc, flush=True)
             return None
-
-    async def is_running(self, crawl_id, aid):
-        """ Return true is crawl with given id is running """
-        return await self.get_running_crawl(crawl_id, aid) is not None
 
     async def scale_crawl(self):  # job_name, aid, parallelism=1):
         """ Scale running crawl, currently only supported in k8s"""
@@ -509,6 +518,14 @@ class DockerManager:
             filters=json.dumps({"status": ["running"], "label": labels})
         )
         return results
+
+    async def _mark_is_stopping(self, crawl_id):
+        """ mark crawl as stopping in redis """
+        await self.redis.setex(f"{crawl_id}:stop", 600, 1)
+
+    async def _get_is_stopping(self, crawl_id):
+        """ check redis if crawl is marked for stopping """
+        return await self.redis.get(f"{crawl_id}:stop")
 
     async def _is_scheduled_crawl_for_config_running(self, cid):
         results = await self._list_running_containers(

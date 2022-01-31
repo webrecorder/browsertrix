@@ -184,7 +184,7 @@ class CrawlOps:
         """Add finished crawl to db, increment archive usage.
         If crawl file provided, update and add file"""
         if crawl_file:
-            await self.get_redis_stats([crawl], False)
+            await self.get_redis_stats([crawl])
 
             crawl_update = {
                 "$set": crawl.to_dict(exclude={"files", "completions"}),
@@ -280,7 +280,7 @@ class CrawlOps:
             aid=archive.id_str
         )
 
-        await self.get_redis_stats(running_crawls, True)
+        await self.get_redis_stats(running_crawls)
 
         finished_crawls = await self.list_finished_crawls(
             aid=archive.id, exclude_files=True
@@ -300,7 +300,7 @@ class CrawlOps:
         """ Get data for single crawl """
         crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
         if crawl:
-            await self.get_redis_stats([crawl], True)
+            await self.get_redis_stats([crawl])
 
         else:
             res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
@@ -343,32 +343,24 @@ class CrawlOps:
                 file_.filename = storage_prefix + file_.filename
 
     # pylint: disable=too-many-arguments
-    async def get_redis_stats(self, crawl_list, set_stopping=False):
+    async def get_redis_stats(self, crawl_list):
         """ Add additional live crawl stats from redis """
         results = None
 
         def pairwise(iterable):
             val = iter(iterable)
-            return zip(val, val, val)
+            return zip(val, val)
 
         async with self.redis.pipeline(transaction=True) as pipe:
             for crawl in crawl_list:
                 key = crawl.id
                 pipe.llen(f"{key}:d")
                 pipe.scard(f"{key}:s")
-                pipe.get(f"{key}:stop")
 
             results = await pipe.execute()
 
-        for crawl, (done, total, stopping) in zip(crawl_list, pairwise(results)):
-            if set_stopping and stopping:
-                crawl.state = "stopping"
-
+        for crawl, (done, total) in zip(crawl_list, pairwise(results)):
             crawl.stats = {"done": done, "found": total}
-
-    async def mark_stopping(self, crawl_id):
-        """ Mark crawl as in process of stopping in redis """
-        await self.redis.setex(f"{crawl_id}:stop", 600, 1)
 
     async def delete_crawls(self, aid: uuid.UUID, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
@@ -437,8 +429,6 @@ def init_crawls_api(
         if not stopping:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
 
-        await ops.mark_stopping(crawl_id)
-
         return {"stopping_gracefully": True}
 
     @app.post("/archives/{aid}/crawls/delete", tags=["crawls"])
@@ -463,15 +453,15 @@ def init_crawls_api(
     async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl(crawl_id, archive)
 
-    @app.get(
-        "/archives/{aid}/crawls/{crawl_id}/running",
-        tags=["crawls"],
-    )
-    async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
-        if not crawl_manager.is_running(crawl_id, archive.id_str):
-            raise HTTPException(status_code=404, detail="No Such Crawl")
-
-        return {"running": True}
+    # @app.get(
+    #    "/archives/{aid}/crawls/{crawl_id}/running",
+    #    tags=["crawls"],
+    # )
+    # async def get_running(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
+    #    if not crawl_manager.is_running(crawl_id, archive.id_str):
+    #        raise HTTPException(status_code=404, detail="No Such Crawl")
+    #
+    #    return {"running": True}
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/scale",
