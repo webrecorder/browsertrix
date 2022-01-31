@@ -427,7 +427,7 @@ export class CrawlDetail extends LiteElement {
         }
       );
 
-      if (data.stopped_gracefully === true) {
+      if (data.stopping_gracefully === true) {
         this.fetchCrawl();
       } else {
         this.notify({
