@@ -12,7 +12,9 @@ export type CrawlTemplate = {
   id: string;
   name: string;
   schedule: string;
-  user: string;
+  userid: string;
+  userName?: string;
+  created: string;
   crawlCount: number;
   lastCrawlId: string;
   lastCrawlTime: string;

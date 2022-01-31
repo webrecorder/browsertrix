@@ -40,17 +40,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private editedSchedule?: string;
 
-  @state()
-  private isScheduleDisabled?: boolean;
-
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
-  private get timeZoneShortName() {
-    return getLocaleTimeZone();
-  }
-
   async firstUpdated() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
@@ -65,36 +54,44 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   render() {
-    if (!this.crawlTemplate) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
+    const seeds = this.crawlTemplate?.config.seeds || [];
 
     return html`
-      <h2 class="text-xl font-bold mb-4">${this.crawlTemplate.name}</h2>
+      <h2 class="text-xl font-bold mb-4 h-7">
+        ${this.crawlTemplate?.name ||
+        html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
+      </h2>
 
-      ${this.crawlTemplate.currCrawlId
-        ? html`
-            <a
-              class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
-              href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
-              @click=${this.navLink}
-            >
-              <span>${msg("View currently running crawl")}</span>
-              <sl-icon name="arrow-right"></sl-icon>
-            </a>
-          `
-        : ""}
+      ${this.renderCurrentlyRunningNotice()}
 
       <section class="px-4 py-3 border-t border-b mb-4 text-sm">
         <dl class="grid grid-cols-2">
           <div>
+            <dt class="text-xs text-0-600">${msg("Created at")}</dt>
+            <dd class="h-5">
+              ${this.crawlTemplate?.created
+                ? html`
+                    <sl-format-date
+                      date=${`${this.crawlTemplate.created}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
+                  `
+                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div>
             <dt class="text-xs text-0-600">${msg("Created by")}</dt>
             <!-- TODO show name -->
-            <dd>${this.crawlTemplate.user}</dd>
+            <dd class="h-5">
+              ${this.crawlTemplate?.userName ||
+              this.crawlTemplate?.userid ||
+              html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+            </dd>
           </div>
         </dl>
 
@@ -120,7 +117,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 >
               </div>
               <ul role="rowgroup">
-                ${this.crawlTemplate.config.seeds
+                ${seeds
                   .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
                   .map(
                     (seed, i) =>
@@ -153,7 +150,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   )}
               </ul>
 
-              ${this.crawlTemplate.config.seeds.length > SEED_URLS_MAX
+              ${seeds.length > SEED_URLS_MAX
                 ? html`<sl-button
                     class="mt-2"
                     type="neutral"
@@ -165,7 +162,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                       ${this.showAllSeedURLs
                         ? msg("Show less")
                         : msg(str`Show
-                    ${this.crawlTemplate.config.seeds.length - SEED_URLS_MAX}
+                    ${seeds.length - SEED_URLS_MAX}
                     more`)}
                     </span>
                   </sl-button>`
@@ -185,7 +182,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 <pre
                   class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
                 ><code>${JSON.stringify(
-                  this.crawlTemplate.config,
+                  this.crawlTemplate?.config || {},
                   null,
                   2
                 )}</code></pre>
@@ -193,7 +190,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 <div class="absolute top-2 right-2">
                   <btrix-copy-button
                     .value="${JSON.stringify(
-                      this.crawlTemplate.config,
+                      this.crawlTemplate?.config || {},
                       null,
                       2
                     )}"
@@ -217,28 +214,35 @@ export class CrawlTemplatesDetail extends LiteElement {
               </div>
 
               <div class="ml-2">
-                <sl-button
-                  size="small"
-                  href=${`/archives/${this.archiveId}/crawl-templates/${
-                    this.crawlTemplate!.id
-                  }${this.isEditing ? "" : "?edit=true"}`}
-                  @click=${(e: any) => {
-                    const hasChanges = this.isEditing && this.editedSchedule;
-                    if (
-                      !hasChanges ||
-                      window.confirm(
-                        msg("You have unsaved schedule changes. Are you sure?")
-                      )
-                    ) {
-                      this.navLink(e);
-                      this.editedSchedule = "";
-                    } else {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  ${this.isEditing ? msg("Cancel") : msg("Edit")}
-                </sl-button>
+                ${this.crawlTemplate
+                  ? html`
+                      <sl-button
+                        size="small"
+                        href=${`/archives/${this.archiveId}/crawl-templates/${
+                          this.crawlTemplate.id
+                        }${this.isEditing ? "" : "?edit=true"}`}
+                        @click=${(e: any) => {
+                          const hasChanges =
+                            this.isEditing && this.editedSchedule;
+                          if (
+                            !hasChanges ||
+                            window.confirm(
+                              msg(
+                                "You have unsaved schedule changes. Are you sure?"
+                              )
+                            )
+                          ) {
+                            this.navLink(e);
+                            this.editedSchedule = "";
+                          } else {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        ${this.isEditing ? msg("Cancel") : msg("Edit")}
+                      </sl-button>
+                    `
+                  : html`<sl-skeleton></sl-skeleton>`}
               </div>
             </div>
           </div>
@@ -253,7 +257,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               <div>
                 <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
                 <dd class="font-mono">
-                  ${(this.crawlTemplate.crawlCount || 0).toLocaleString()}
+                  ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
                 </dd>
               </div>
               <div>
@@ -263,23 +267,27 @@ export class CrawlTemplatesDetail extends LiteElement {
                 <dd
                   class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
                 >
-                  ${this.crawlTemplate.currCrawlId
-                    ? html` <a
-                        class="text-primary font-medium hover:underline text-sm p-1"
-                        href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
-                        @click=${this.navLink}
-                        >${msg("View crawl")}</a
-                      >`
-                    : html`<span class="text-0-400 text-sm p-1"
-                          >${msg("None")}</span
-                        ><button
-                          class="text-xs border rounded px-2 h-7 bg-purple-500 hover:bg-purple-400 text-white transition-colors"
-                          @click=${() => this.runNow()}
-                        >
-                          <span class="whitespace-nowrap">
-                            ${msg("Run now")}
-                          </span>
-                        </button>`}
+                  ${this.crawlTemplate
+                    ? html`
+                        ${this.crawlTemplate.currCrawlId
+                          ? html` <a
+                              class="text-primary font-medium hover:underline text-sm p-1"
+                              href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+                              @click=${this.navLink}
+                              >${msg("View crawl")}</a
+                            >`
+                          : html`<span class="text-0-400 text-sm p-1"
+                                >${msg("None")}</span
+                              ><button
+                                class="text-xs border rounded px-2 h-7 bg-purple-500 hover:bg-purple-400 text-white transition-colors"
+                                @click=${() => this.runNow()}
+                              >
+                                <span class="whitespace-nowrap">
+                                  ${msg("Run now")}
+                                </span>
+                              </button>`}
+                      `
+                    : html` <sl-skeleton style="width: 6em"></sl-skeleton> `}
                 </dd>
               </div>
               <div>
@@ -287,7 +295,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 <dd
                   class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
                 >
-                  ${this.crawlTemplate.lastCrawlId
+                  ${this.crawlTemplate?.lastCrawlId
                     ? html`<a
                           class="text-primary font-medium hover:underline text-sm p-1"
                           href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.lastCrawlId}`}
@@ -317,24 +325,45 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderCurrentlyRunningNotice() {
+    if (this.crawlTemplate?.currCrawlId) {
+      return html`
+        <a
+          class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+          href=${`/archives/${this.archiveId}/crawls/${this.crawlTemplate.currCrawlId}`}
+          @click=${this.navLink}
+        >
+          <span>${msg("View currently running crawl")}</span>
+          <sl-icon name="arrow-right"></sl-icon>
+        </a>
+      `;
+    }
+
+    return "";
+  }
+
   private renderReadOnlySchedule() {
     return html`
       <dl class="grid gap-5">
         <div>
           <dt class="text-sm text-0-600">${msg("Recurring crawls")}</dt>
           <dd>
-            ${this.crawlTemplate!.schedule
-              ? // TODO localize
-                // NOTE human-readable string is in UTC, limitation of library
-                // currently being used.
-                // https://github.com/bradymholt/cRonstrue/issues/94
-                html`<span
-                  >${cronstrue.toString(this.crawlTemplate!.schedule, {
-                    verbose: true,
-                  })}
-                  (in UTC time zone)</span
-                >`
-              : html`<span class="text-0-400">${msg("None")}</span>`}
+            ${this.crawlTemplate
+              ? html`
+                  ${this.crawlTemplate.schedule
+                    ? // TODO localize
+                      // NOTE human-readable string is in UTC, limitation of library
+                      // currently being used.
+                      // https://github.com/bradymholt/cRonstrue/issues/94
+                      html`<span
+                        >${cronstrue.toString(this.crawlTemplate.schedule, {
+                          verbose: true,
+                        })}
+                        (in UTC time zone)</span
+                      >`
+                    : html`<span class="text-0-400">${msg("None")}</span>`}
+                `
+              : html`<sl-skeleton></sl-skeleton>`}
           </dd>
         </div>
       </dl>
@@ -342,9 +371,13 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderEditSchedule() {
+    if (!this.crawlTemplate) {
+      return "";
+    }
+
     return html`
       <btrix-crawl-templates-scheduler
-        schedule=${this.crawlTemplate!.schedule}
+        schedule=${this.crawlTemplate.schedule}
         @submit=${this.onSubmitSchedule}
       ></btrix-crawl-templates-scheduler>
     `;
