@@ -3,6 +3,7 @@
 import asyncio
 import json
 import uuid
+import os
 
 from typing import Optional, List, Dict, Union
 from datetime import datetime
@@ -141,7 +142,7 @@ class CrawlCompleteIn(BaseModel):
 class CrawlOps:
     """ Crawl Ops """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, mdb, redis_url, users, crawl_manager, crawl_configs, archives):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
