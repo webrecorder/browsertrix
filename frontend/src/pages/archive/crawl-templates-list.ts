@@ -424,7 +424,7 @@ export class CrawlTemplatesList extends LiteElement {
         ),
         type: "success",
         icon: "check2-circle",
-        duration: 10000,
+        duration: 8000,
       });
     } catch {
       this.notify({

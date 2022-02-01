@@ -442,7 +442,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         ),
         type: "success",
         icon: "check2-circle",
-        duration: 10000,
+        duration: 8000,
       });
     } catch {
       this.notify({
