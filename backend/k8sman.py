@@ -273,12 +273,16 @@ class K8SManager:
             field_selector="status.successful=0",
         )
 
-        return [
-            self._make_crawl_for_job(
-                job, "running" if job.status.active else "stopping", False, CrawlOut
-            )
-            for job in jobs.items
-        ]
+        crawls = []
+
+        for job in jobs.items:
+            status = self._get_crawl_state(job)
+            if not status:
+                continue
+
+            crawls.append(self._make_crawl_for_job(job, status, False, CrawlOut))
+
+        return crawls
 
     async def init_crawl_screencast(self, crawl_id, aid):
         """ Init service for this job/crawl_id to support screencasting """
@@ -388,9 +392,11 @@ class K8SManager:
             if not job or job.metadata.labels["btrix.archive"] != aid:
                 return None
 
-            return self._make_crawl_for_job(
-                job, "running" if job.status.active else "stopping", False, CrawlOut
-            )
+            status = self._get_crawl_state(job)
+            if not status:
+                return None
+
+            return self._make_crawl_for_job(job, status, False, CrawlOut)
 
         # pylint: disable=broad-except
         except Exception:
@@ -485,6 +491,18 @@ class K8SManager:
 
     # ========================================================================
     # Internal Methods
+
+    def _get_crawl_state(self, job):
+        if job.status.active:
+            return "running"
+
+        # not all pods have succeeded yet
+        if job.status.succeeded < (job.spec.parallelism or 1):
+            return "stopping"
+
+        # job fully done, do not treat as running or stopping
+        return None
+
 
     # pylint: disable=no-self-use
     def _make_crawl_for_job(self, job, state, finish_now=False, crawl_cls=Crawl):
