@@ -75,10 +75,6 @@ module.exports = {
         publicPath: "/" + shoelaceAssetsPublicPath,
       },
       {
-        directory: path.resolve(__dirname, "public/replay"),
-        publicPath: "/replay",
-      },
-      {
         directory: path.join(__dirname),
         //publicPath: "/",
         watch: true,
@@ -93,6 +89,13 @@ module.exports = {
         },
         pathRewrite: { "^/api": "" },
       },
+    },
+    // Serve replay service worker file
+    onBeforeSetupMiddleware: (server) => {
+      server.app.get("/replay/sw.js", (req, res) => {
+        res.set("Content-Type", "application/javascript");
+        res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
+      });
     },
     port: 9870,
   },
