@@ -48,7 +48,6 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: msg("Sorry, couldn't retrieve crawl template at this time."),
         type: "danger",
         icon: "exclamation-octagon",
-        duration: 10000,
       });
     }
   }
@@ -57,6 +56,22 @@ export class CrawlTemplatesDetail extends LiteElement {
     const seeds = this.crawlTemplate?.config.seeds || [];
 
     return html`
+      <nav class="mb-5">
+        <a
+          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawl-templates`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawl Templates")}</span
+          >
+        </a>
+      </nav>
+
       <h2 class="text-xl font-bold mb-4 h-7">
         ${this.crawlTemplate?.name ||
         html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
@@ -426,7 +441,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         ),
         type: "success",
         icon: "check2-circle",
-        duration: 10000,
+        duration: 8000,
       });
     } catch {
       this.notify({

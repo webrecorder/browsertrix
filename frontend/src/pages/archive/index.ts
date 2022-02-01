@@ -137,7 +137,7 @@ export class Archive extends LiteElement {
           <hr class="flex-1 border-t-2" />
         </nav>
 
-        <div class="my-5" aria-labelledby="${this.archiveTab}-tab">
+        <div class="my-4" aria-labelledby="${this.archiveTab}-tab">
           ${tabPanelContent}
         </div>
       </main>

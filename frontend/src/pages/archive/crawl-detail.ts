@@ -58,12 +58,58 @@ export class CrawlDetail extends LiteElement {
 
   render() {
     return html`
+      <nav class="mb-5">
+        <a
+          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawls`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawls")}</span
+          >
+        </a>
+      </nav>
+
       <header class="my-3">
-        <h2 class="font-mono text-xs text-0-400 h-4">
-          ${this.crawl?.id ||
-          html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
+        <h2 class="text-xl font-medium mb-1 h-7">
+          ${this.crawl
+            ? msg(str`Crawl of ${this.crawl.configName}`)
+            : html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
         </h2>
       </header>
+
+      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
+        <dl class="grid grid-cols-2">
+          <div>
+            <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
+            <dd class="h-5 whitespace-nowrap truncate font-mono text-xs">
+              ${this.crawl?.id ||
+              html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-0-600">${msg("Crawl Template")}</dt>
+            <dd class="h-5 whitespace-nowrap truncate">
+              ${this.crawl
+                ? html`
+                    <a
+                      class="text-primary font-medium hover:underline"
+                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                      @click=${this.navLink}
+                      >${this.crawl.configName}</a
+                    >
+                  `
+                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+            </dd>
+          </div>
+        </dl>
+
+        <!-- TODO created at? -->
+      </section>
 
       <main class="grid gap-5">
         <section
@@ -108,8 +154,14 @@ export class CrawlDetail extends LiteElement {
       >
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
         [watch/replay]
-        ${this.crawl?.resources?.length ? html`<replay-web-page source="${fileJson}" coll="${this.crawl?.id}" replayBase="/replay/" noSandbox="true"></replay-web-page>` : ``}
-
+        ${this.crawl?.resources?.length
+          ? html`<replay-web-page
+              source="${fileJson}"
+              coll="${this.crawl?.id}"
+              replayBase="/replay/"
+              noSandbox="true"
+            ></replay-web-page>`
+          : ``}
       </div>
       <div
         class="absolute top-2 right-2 flex bg-white/90 hover:bg-white rounded-full"
@@ -151,22 +203,6 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <dl class="grid grid-cols-2 gap-5">
-        <div class="col-span-2">
-          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium  hover:underline"
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                    @click=${this.navLink}
-                    >${this.crawl.configName}</a
-                  >
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-
         <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Status")}</dt>
           <dd>
@@ -332,9 +368,7 @@ export class CrawlDetail extends LiteElement {
                   href=${file.path}
                   download
                   title=${file.name}
-                  >${file.name.slice(
-                      file.name.lastIndexOf("/") + 1
-                   )}
+                  >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                 </a>
               </div>
               <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
