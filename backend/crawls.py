@@ -313,23 +313,26 @@ class CrawlOps:
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
-        crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
-        if crawl:
-            await self.get_redis_stats([crawl])
+
+        res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+
+        if not res:
+            crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
+            if crawl:
+                await self.get_redis_stats([crawl])
 
         else:
-            res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
-            if not res:
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl not found: {crawlid}"
-                )
-
             files = [CrawlFile(**data) for data in res["files"]]
 
             del res["files"]
 
             res["resources"] = await self._resolve_signed_urls(files, archive)
             crawl = CrawlOut.from_dict(res)
+
+        if not crawl:
+            raise HTTPException(
+                status_code=404, detail=f"Crawl not found: {crawlid}"
+            )
 
         return await self._resolve_crawl_refs(crawl, archive)
 
