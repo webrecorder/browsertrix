@@ -58,6 +58,22 @@ export class CrawlDetail extends LiteElement {
 
   render() {
     return html`
+      <nav class="mb-5">
+        <a
+          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawls`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawls")}</span
+          >
+        </a>
+      </nav>
+
       <header class="my-3">
         <h2 class="font-mono text-xs text-0-400 h-4">
           ${this.crawl?.id ||
@@ -108,8 +124,14 @@ export class CrawlDetail extends LiteElement {
       >
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
         [watch/replay]
-        ${this.crawl?.resources?.length ? html`<replay-web-page source="${fileJson}" coll="${this.crawl?.id}" replayBase="/replay/" noSandbox="true"></replay-web-page>` : ``}
-
+        ${this.crawl?.resources?.length
+          ? html`<replay-web-page
+              source="${fileJson}"
+              coll="${this.crawl?.id}"
+              replayBase="/replay/"
+              noSandbox="true"
+            ></replay-web-page>`
+          : ``}
       </div>
       <div
         class="absolute top-2 right-2 flex bg-white/90 hover:bg-white rounded-full"
@@ -332,9 +354,7 @@ export class CrawlDetail extends LiteElement {
                   href=${file.path}
                   download
                   title=${file.name}
-                  >${file.name.slice(
-                      file.name.lastIndexOf("/") + 1
-                   )}
+                  >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                 </a>
               </div>
               <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>

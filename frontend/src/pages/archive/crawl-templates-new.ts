@@ -139,6 +139,22 @@ export class CrawlTemplatesNew extends LiteElement {
 
   render() {
     return html`
+      <nav class="mb-5">
+        <a
+          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawl-templates`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawl Templates")}</span
+          >
+        </a>
+      </nav>
+
       <h2 class="text-xl font-bold mb-3">${msg("New Crawl Template")}</h2>
       <p>
         ${msg(
