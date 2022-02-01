@@ -52,6 +52,7 @@ export default class LiteElement extends LitElement {
     const evt: NavigateEvent = new CustomEvent("navigate", {
       detail: { url, state },
       bubbles: true,
+      composed: true,
     });
     this.dispatchEvent(evt);
   }
@@ -92,6 +93,7 @@ export default class LiteElement extends LitElement {
     this.dispatchEvent(
       new CustomEvent("notify", {
         bubbles: true,
+        composed: true,
         detail,
       })
     );
