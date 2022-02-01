@@ -558,26 +558,22 @@ export class CrawlTemplatesNew extends LiteElement {
 
       const crawlId = data.run_now_job;
 
-      // FIXME
-      // Preventing page reload with `@click=${this.navLink.bind(this)}`
-      // on notification anchor tag doesn't work when followed with `navTo`
       this.notify({
         message: crawlId
-          ? msg(
-              html`Crawl running with new template. <br />
-                <a
-                  class="underline hover:no-underline"
-                  href="/archives/${this.archiveId}/crawls/crawl/${crawlId}"
-                  >View crawl</a
-                >`
-            )
+          ? msg("Crawl started with new template.")
           : msg("Crawl template created."),
         type: "success",
         icon: "check2-circle",
         duration: 8000,
       });
 
-      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+      if (crawlId) {
+        this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawlId}`);
+      } else {
+        this.navTo(
+          `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
+        );
+      }
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message;
