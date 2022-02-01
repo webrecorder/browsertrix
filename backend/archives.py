@@ -96,7 +96,7 @@ class Archive(BaseMongoModel):
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for archive_user in user_list:
-                id_ = archive_user["id"]
+                id_ = str(archive_user["id"])
                 role = result["users"].get(id_)
                 if not role:
                     continue
@@ -158,10 +158,10 @@ class ArchiveOps:
         return [Archive.from_dict(res) for res in results]
 
     async def get_archive_for_user_by_id(
-        self, aid: str, user: User, role: UserRole = UserRole.VIEWER
+        self, aid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an archive for user by unique id"""
-        query = {f"users.{user.id}": {"$gte": role.value}, "_id": uuid.UUID(aid)}
+        query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 
@@ -221,7 +221,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
     ops = ArchiveOps(mdb, invites)
 
     async def archive_dep(aid: str, user: User = Depends(user_dep)):
-        archive = await ops.get_archive_for_user_by_id(aid, user)
+        archive = await ops.get_archive_for_user_by_id(uuid.UUID(aid), user)
         if not archive:
             raise HTTPException(status_code=404, detail=f"Archive '{aid}' not found")
 
