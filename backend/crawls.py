@@ -364,7 +364,9 @@ class CrawlOps:
                 presigned_url = await get_presigned_url(
                     archive, file_, self.crawl_manager, self.presign_duration
                 )
-                await self.redis.setex(f"f:{file_.filename}", self.presign_duration - 1, presigned_url)
+                await self.redis.setex(
+                    f"f:{file_.filename}", self.presign_duration - 1, presigned_url
+                )
 
             out_files.append(
                 CrawlFileOut(
