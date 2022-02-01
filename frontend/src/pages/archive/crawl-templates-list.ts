@@ -205,8 +205,15 @@ export class CrawlTemplatesList extends LiteElement {
                   </div>
                   <div>
                     ${t.crawlCount
-                      ? html`<sl-tooltip content=${msg("Last crawl time")}>
-                          <span>
+                      ? html`<sl-tooltip content=${msg("Last complete crawl")}>
+                          <a
+                            class="font-medium hover:underline"
+                            href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
+                            @click=${(e: any) => {
+                              e.stopPropagation();
+                              this.navLink(e);
+                            }}
+                          >
                             <sl-icon
                               class="inline-block align-middle mr-1 text-purple-400"
                               name="check-circle-fill"
@@ -221,7 +228,7 @@ export class CrawlTemplatesList extends LiteElement {
                               minute="numeric"
                               time-zone-name="short"
                             ></sl-format-date>
-                          </span>
+                          </a>
                         </sl-tooltip>`
                       : html`
                           <sl-icon
