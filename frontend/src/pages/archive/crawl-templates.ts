@@ -46,7 +46,6 @@ export class CrawlTemplatesList extends LiteElement {
         message: msg("Sorry, couldn't retrieve crawl templates at this time."),
         type: "danger",
         icon: "exclamation-octagon",
-        duration: 10000,
       });
     }
   }
@@ -119,7 +118,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
 
       this.notify({
-        message: msg(str`Deleted <strong>${template.name}</strong>.`),
+        message: msg(html`Deleted <strong>${template.name}</strong>.`),
         type: "success",
         icon: "check2-circle",
       });
@@ -155,7 +154,13 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Started crawl from <strong>${template.name}</strong>. <br /><a class="underline hover:no-underline" href="/archives/${this.archiveId}/crawls/crawl/${data.started}">View crawl</a>`
+          html`Started crawl from <strong>${template.name}</strong>. <br />
+            <a
+              class="underline hover:no-underline"
+              href="/archives/${this.archiveId}/crawls/crawl/${data.started}"
+              @click=${this.navLink.bind(this)}
+              >View crawl</a
+            >`
         ),
         type: "success",
         icon: "check2-circle",

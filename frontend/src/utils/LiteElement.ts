@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import type { TemplateResult } from "lit";
 
 import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
@@ -14,10 +15,23 @@ export interface NotifyEvent extends CustomEvent {
   detail: {
     /**
      * Notification message body.
-     * Can contain HTML.
-     * HTML is rendered as-is without sanitation
+     * Example:
+     * ```ts
+     * message: html`<strong>Look!</strong>`
+     * ```
+     *
+     * Note: In order for `this` methods to work, you'll
+     * need to bind `this` or use a fat arrow function.
+     * For example:
+     * ```ts
+     * message: html`<button @click=${this.onClick.bind(this)}>Go!</button>`
+     * ```
+     * Or:
+     * ```ts
+     * message: html`<button @click=${(e) => this.onClick(e)}>Go!</button>`
+     * ```
      **/
-    message: string;
+    message: string | TemplateResult;
     /** Notification title */
     title?: string;
     /** Shoelace icon name */
@@ -50,7 +64,17 @@ export default class LiteElement extends LitElement {
    * ```
    * @param event Click event
    */
-  navLink(event: Event): void {
+  navLink(event: MouseEvent, href?: string): void {
+    // Detect keypress for opening in a new tab
+    if (
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.metaKey ||
+      (event.button && event.button == 1)
+    ) {
+      return;
+    }
+
     event.preventDefault();
 
     const evt: NavigateEvent = new CustomEvent("navigate", {

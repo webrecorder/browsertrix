@@ -1,4 +1,5 @@
 import type { TemplateResult } from "lit";
+import { render } from "lit";
 import { state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
@@ -491,6 +492,9 @@ export class App extends LiteElement {
     };
   }
 
+  /**
+   * Show global toast alert
+   */
   onNotify(event: NotifyEvent) {
     event.stopPropagation();
 
@@ -502,7 +506,8 @@ export class App extends LiteElement {
       duration = 5000,
     } = event.detail;
 
-    const alert = Object.assign(document.createElement("sl-alert"), {
+    const container = document.createElement("sl-alert");
+    const alert = Object.assign(container, {
       type: type,
       closable: true,
       duration: duration,
@@ -512,16 +517,16 @@ export class App extends LiteElement {
         // "--sl-panel-border-width: 0px",
         "--sl-spacing-large: var(--sl-spacing-medium)",
       ].join(";"),
-      innerHTML: `
-        <sl-icon name="${icon}" slot="icon"></sl-icon>
-        <span>
-          ${title ? `<strong>${title}</strong>` : ""}
-          ${message ? `<div>${message}</div>` : ""}
-        </span>
-
-      `,
     });
 
+    render(
+      html`
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        ${title ? html`<strong>${title}</strong>` : ""}
+        ${message ? html`<div>${message}</div>` : ""}
+      `,
+      container
+    );
     document.body.append(alert);
     alert.toast();
   }
