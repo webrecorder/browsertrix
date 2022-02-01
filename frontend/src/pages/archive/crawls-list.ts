@@ -21,6 +21,8 @@ const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   started_desc: msg("Newest"),
   started_asc: msg("Oldest"),
+  finished_desc: msg("Recently Updated"),
+  finished_asc: msg("Oldest Finished"),
   state: msg("Status"),
   configName: msg("Crawl Template Name"),
   cid: msg("Crawl Template ID"),
