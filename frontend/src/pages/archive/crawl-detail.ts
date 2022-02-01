@@ -87,7 +87,7 @@ export class CrawlDetail extends LiteElement {
         </section>
 
         <section>
-          <h3 class="text-lg font-medium mb-2">${msg("Files")}</h3>
+          <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
           ${this.renderFiles()}
         </section>
       </main>
@@ -97,6 +97,9 @@ export class CrawlDetail extends LiteElement {
   private renderWatch() {
     const isRunning = this.crawl?.state === "running";
 
+    const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
+    const fileJson = `/api/archives/${this.archiveId}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
+
     return html`
       <div
         class="aspect-video rounded border ${isRunning
@@ -105,6 +108,8 @@ export class CrawlDetail extends LiteElement {
       >
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
         [watch/replay]
+        ${this.crawl?.resources?.length ? html`<replay-web-page source="${fileJson}" coll="${this.crawl?.id}" replayBase="/replay/" noSandbox="true"></replay-web-page>` : ``}
+
       </div>
       <div
         class="absolute top-2 right-2 flex bg-white/90 hover:bg-white rounded-full"
@@ -318,23 +323,19 @@ export class CrawlDetail extends LiteElement {
   private renderFiles() {
     return html`
       <ul class="border rounded text-sm">
-        ${this.crawl?.files?.map(
+        ${this.crawl?.resources?.map(
           (file) => html`
             <li class="flex justify-between p-3 border-t first:border-t-0">
               <div>
                 <a
                   class="text-primary hover:underline"
-                  href=${file.filename}
+                  href=${file.path}
                   download
-                  title=${file.filename.slice(
-                    file.filename.lastIndexOf("/") + 1
-                  )}
-                  >${msg(
-                    str`Download ${file.filename.slice(
-                      file.filename.lastIndexOf(".")
-                    )}`
-                  )}</a
-                >
+                  title=${file.name}
+                  >${file.name.slice(
+                      file.name.lastIndexOf("/") + 1
+                   )}
+                </a>
               </div>
               <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
             </li>
@@ -376,7 +377,7 @@ export class CrawlDetail extends LiteElement {
     // );
 
     const data: Crawl = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}`,
+      `/archives/${this.archiveId}/crawls/${this.crawlId}.json`,
       this.authState!
     );
 

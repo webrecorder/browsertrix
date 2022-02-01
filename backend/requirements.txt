@@ -1,6 +1,6 @@
 uvicorn
-fastapi==0.70.0
-fastapi-users[mongodb]==8.1.2
+fastapi==0.71.0
+fastapi-users[mongodb]==9.2.2
 loguru
 aiofiles
 kubernetes-asyncio

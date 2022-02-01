@@ -372,9 +372,10 @@ class K8SManager:
 
         return self._default_storages[name]
 
-    async def _secret_data(self, storage, name):
-        """ decode secret storage data """
-        return base64.standard_b64decode(storage.data[name]).decode()
+    # pylint: disable=no-self-use
+    def _secret_data(self, secret, name):
+        """ decode secret data """
+        return base64.standard_b64decode(secret.data[name]).decode()
 
     async def get_running_crawl(self, name, aid):
         """Get running crawl (job) with given name, or none

@@ -12,10 +12,15 @@ from pydantic import EmailStr, UUID4
 import passlib.pwd
 
 from fastapi import Request, Response, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.manager import UserAlreadyExists
-from fastapi_users.authentication import JWTAuthentication
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
 from fastapi_users.db import MongoDBUserDatabase
 
 from invites import InvitePending, InviteRequest
@@ -253,30 +258,70 @@ def init_user_manager(mdb, emailsender, invites):
 
 
 # ============================================================================
+class OA2BearerOrQuery(OAuth2PasswordBearer):
+    """ Override bearer check to also test query """
+
+    async def __call__(self, request: Request) -> Optional[str]:
+        param = None
+        exc = None
+        try:
+            param = await super().__call__(request)
+            if param:
+                return param
+
+        # pylint: disable=broad-except
+        except Exception as super_exc:
+            exc = super_exc
+
+        param = request.query_params.get("auth_bearer")
+
+        if not param and exc:
+            raise exc
+
+        return param
+
+
+# ============================================================================
+class BearerOrQueryTransport(BearerTransport):
+    """ Bearer or Query Transport """
+
+    scheme: OA2BearerOrQuery
+
+    def __init__(self, tokenUrl: str):
+        # pylint: disable=super-init-not-called
+        self.scheme = OA2BearerOrQuery(tokenUrl, auto_error=False)
+
+
+# ============================================================================
 def init_users_api(app, user_manager):
     """ init fastapi_users """
-    jwt_authentication = JWTAuthentication(
-        secret=PASSWORD_SECRET,
-        lifetime_seconds=JWT_TOKEN_LIFETIME,
-        tokenUrl="auth/jwt/login",
+    bearer_transport = BearerOrQueryTransport(tokenUrl="auth/jwt/login")
+
+    def get_jwt_strategy() -> JWTStrategy:
+        return JWTStrategy(secret=PASSWORD_SECRET, lifetime_seconds=JWT_TOKEN_LIFETIME)
+
+    auth_backend = AuthenticationBackend(
+        name="jwt",
+        transport=bearer_transport,
+        get_strategy=get_jwt_strategy,
     )
 
     fastapi_users = FastAPIUsers(
         lambda: user_manager,
-        [jwt_authentication],
+        [auth_backend],
         User,
         UserCreateIn,
         UserUpdate,
         UserDB,
     )
 
-    auth_router = fastapi_users.get_auth_router(jwt_authentication)
+    auth_router = fastapi_users.get_auth_router(auth_backend)
 
     current_active_user = fastapi_users.current_user(active=True)
 
     @auth_router.post("/refresh")
     async def refresh_jwt(response: Response, user=Depends(current_active_user)):
-        return await jwt_authentication.get_login_response(user, response, user_manager)
+        return await auth_backend.login(get_jwt_strategy(), user, response)
 
     app.include_router(
         auth_router,

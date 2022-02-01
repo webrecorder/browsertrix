@@ -1,4 +1,8 @@
+# central place to configure the production replayweb.pgae loading prefix
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage@1.5.8/
+
 FROM node:16 as build
+ARG RWP_BASE_URL
 
 WORKDIR /app
 COPY package.json .
@@ -8,8 +12,10 @@ COPY *.* ./
 COPY src ./src/
 RUN yarn build
 
-
 FROM nginx
+
+ARG RWP_BASE_URL
+ENV RWP_BASE_URL=${RWP_BASE_URL}
 
 COPY --from=build /app/dist /usr/share/nginx/html
 

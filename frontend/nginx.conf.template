@@ -53,10 +53,10 @@ server {
       index  index.html index.htm;
     }
 
-    location /replay/ {
-      proxy_pass http://${BACKEND_HOST}:8000;
-      proxy_set_header Host $http_host;
-      proxy_set_header X-Forwarded-Proto $scheme;
+    # used in both k8s and docker: RWP_BASE_URL set in Dockerfile
+    location /replay/sw.js {
+      add_header Content-Type application/javascript;
+      return 200 'importScripts("${RWP_BASE_URL}sw.js");';
     }
 
     # used by docker only: k8s deployment handles /api directly via ingress
