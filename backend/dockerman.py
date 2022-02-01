@@ -258,9 +258,10 @@ class DockerManager:
             if not graceful:
                 await container.kill(signal="SIGABRT")
                 result = self._make_crawl_for_container(container, "canceled", True)
+                await self._mark_is_stopping(crawl_id, "canceled")
             else:
                 result = True
-                await self._mark_is_stopping(crawl_id)
+                await self._mark_is_stopping(crawl_id, "stopping")
 
             await container.kill(signal="SIGTERM")
         except aiodocker.exceptions.DockerError as exc:
@@ -365,10 +366,12 @@ class DockerManager:
             if aid and container["Config"]["Labels"]["btrix.archive"] != aid:
                 return None
 
-            stopping = await self._get_is_stopping(crawl_id)
+            stop_type = await self._get_is_stopping(crawl_id)
+            if stop_type == "canceled":
+                return None
 
             return self._make_crawl_for_container(
-                container, "stopping" if stopping else "running", False, CrawlOut
+                container, "stopping" if stop_type else "running", False, CrawlOut
             )
         # pylint: disable=broad-except
         except Exception as exc:
@@ -528,9 +531,9 @@ class DockerManager:
         )
         return results
 
-    async def _mark_is_stopping(self, crawl_id):
+    async def _mark_is_stopping(self, crawl_id, stop_type):
         """ mark crawl as stopping in redis """
-        await self.redis.setex(f"{crawl_id}:stop", 600, 1)
+        await self.redis.setex(f"{crawl_id}:stop", 600, stop_type)
 
     async def _get_is_stopping(self, crawl_id):
         """ check redis if crawl is marked for stopping """

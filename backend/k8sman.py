@@ -5,6 +5,7 @@ import datetime
 import json
 import asyncio
 import base64
+import aioredis
 
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
@@ -45,8 +46,17 @@ class K8SManager:
 
         self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
 
+        self.redis_url = os.environ["REDIS_URL"]
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
+        self.loop.create_task(self.init_redis(self.redis_url))
+
+    async def init_redis(self, redis_url):
+        """ init redis async """
+        self.redis = await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
 
     def set_crawl_ops(self, ops):
         """ Set crawl ops handler """
@@ -276,7 +286,7 @@ class K8SManager:
         crawls = []
 
         for job in jobs.items:
-            status = self._get_crawl_state(job)
+            status = await self._get_crawl_state(job)
             if not status:
                 continue
 
@@ -392,7 +402,7 @@ class K8SManager:
             if not job or job.metadata.labels["btrix.archive"] != aid:
                 return None
 
-            status = self._get_crawl_state(job)
+            status = await self._get_crawl_state(job)
             if not status:
                 return None
 
@@ -429,6 +439,7 @@ class K8SManager:
             await self._send_sig_to_pods(pods.items, aid)
 
             result = self._make_crawl_for_job(job, "canceled", True)
+            await self.redis.setex(f"{job_name}:stop", 300, "canceled")
         else:
             result = True
 
@@ -492,7 +503,7 @@ class K8SManager:
     # ========================================================================
     # Internal Methods
 
-    def _get_crawl_state(self, job):
+    async def _get_crawl_state(self, job):
         if job.status.active:
             return "running"
 
@@ -500,11 +511,12 @@ class K8SManager:
         finished = (job.status.succeeded or 0) + (job.status.failed or 0)
         total = job.spec.parallelism or 1
         if finished != total:
-            return "stopping"
+            # don't return anything if marked as cancel
+            if await self.redis.get(f"{job.metadata.name}:stop") != "canceled":
+                return "stopping"
 
         # job fully done, do not treat as running or stopping
         return None
-
 
     # pylint: disable=no-self-use
     def _make_crawl_for_job(self, job, state, finish_now=False, crawl_cls=Crawl):

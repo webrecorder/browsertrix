@@ -330,9 +330,7 @@ class CrawlOps:
             crawl = CrawlOut.from_dict(res)
 
         if not crawl:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl not found: {crawlid}"
-            )
+            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
 
         return await self._resolve_crawl_refs(crawl, archive)
 
