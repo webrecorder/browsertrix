@@ -242,7 +242,17 @@ export class CrawlsList extends LiteElement {
       title=${crawl.configName || crawl.cid}
     >
       <div class="col-span-12 md:col-span-5">
-        <div class="font-medium mb-1">${crawl.configName || crawl.cid}</div>
+        <div class="font-medium mb-1">
+          <a
+            href=${`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`}
+            @click=${(e: any) => {
+              e.stopPropagation();
+              this.navLink(e);
+            }}
+          >
+            ${crawl.configName || crawl.cid}
+          </a>
+        </div>
         <div class="text-0-700 text-sm whitespace-nowrap truncate">
           <sl-format-date
             date=${`${crawl.started}Z` /** Z for UTC */}

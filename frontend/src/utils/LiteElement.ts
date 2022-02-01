@@ -64,7 +64,7 @@ export default class LiteElement extends LitElement {
    * ```
    * @param event Click event
    */
-  navLink(event: MouseEvent): void {
+  navLink(event: MouseEvent, href?: string): void {
     // Detect keypress for opening in a new tab
     if (
       event.ctrlKey ||
