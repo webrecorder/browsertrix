@@ -75,11 +75,41 @@ export class CrawlDetail extends LiteElement {
       </nav>
 
       <header class="my-3">
-        <h2 class="font-mono text-xs text-0-400 h-4">
-          ${this.crawl?.id ||
-          html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
+        <h2 class="text-xl font-medium mb-1 h-7">
+          ${this.crawl
+            ? msg(str`Crawl of ${this.crawl.configName}`)
+            : html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
         </h2>
       </header>
+
+      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
+        <dl class="grid grid-cols-2">
+          <div>
+            <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
+            <dd class="h-5 whitespace-nowrap truncate font-mono text-xs">
+              ${this.crawl?.id ||
+              html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-0-600">${msg("Crawl Template")}</dt>
+            <dd class="h-5 whitespace-nowrap truncate">
+              ${this.crawl
+                ? html`
+                    <a
+                      class="text-primary font-medium hover:underline"
+                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                      @click=${this.navLink}
+                      >${this.crawl.configName}</a
+                    >
+                  `
+                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+            </dd>
+          </div>
+        </dl>
+
+        <!-- TODO created at? -->
+      </section>
 
       <main class="grid gap-5">
         <section
@@ -173,22 +203,6 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <dl class="grid grid-cols-2 gap-5">
-        <div class="col-span-2">
-          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium  hover:underline"
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                    @click=${this.navLink}
-                    >${this.crawl.configName}</a
-                  >
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-
         <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Status")}</dt>
           <dd>
