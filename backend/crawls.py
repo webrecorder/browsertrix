@@ -150,6 +150,8 @@ class CrawlOps:
         self.archives = archives
         self.crawls_done_key = "crawls-done"
 
+        self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
+
         self.redis = None
         asyncio.create_task(self.init_redis(redis_url))
         asyncio.create_task(self.init_index())
@@ -349,9 +351,6 @@ class CrawlOps:
         if not files:
             return
 
-        # TODO: customize?
-        duration = 3600
-
         async with self.redis.pipeline(transaction=True) as pipe:
             for file_ in files:
                 pipe.get(f"{file_.filename}")
@@ -363,9 +362,9 @@ class CrawlOps:
         for file_, presigned_url in zip(files, results):
             if not presigned_url:
                 presigned_url = await get_presigned_url(
-                    archive, file_, self.crawl_manager, duration
+                    archive, file_, self.crawl_manager, self.presign_duration
                 )
-                await self.redis.setex(f"f:{file_.filename}", duration, presigned_url)
+                await self.redis.setex(f"f:{file_.filename}", self.presign_duration - 1, presigned_url)
 
             out_files.append(
                 CrawlFileOut(
