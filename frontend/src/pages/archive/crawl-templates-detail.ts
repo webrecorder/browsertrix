@@ -48,7 +48,6 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: msg("Sorry, couldn't retrieve crawl template at this time."),
         type: "danger",
         icon: "exclamation-octagon",
-        duration: 10000,
       });
     }
   }

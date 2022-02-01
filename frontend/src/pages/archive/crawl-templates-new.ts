@@ -574,7 +574,7 @@ export class CrawlTemplatesNew extends LiteElement {
           : msg("Crawl template created."),
         type: "success",
         icon: "check2-circle",
-        duration: 10000,
+        duration: 8000,
       });
 
       this.navTo(`/archives/${this.archiveId}/crawl-templates`);
