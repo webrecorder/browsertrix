@@ -372,6 +372,7 @@ class K8SManager:
 
         return self._default_storages[name]
 
+    # pylint: disable=no-self-use
     def _secret_data(self, secret, name):
         """ decode secret data """
         return base64.standard_b64decode(secret.data[name]).decode()

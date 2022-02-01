@@ -16,7 +16,11 @@ from fastapi.security import OAuth2PasswordBearer
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.manager import UserAlreadyExists
-from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
 from fastapi_users.db import MongoDBUserDatabase
 
 from invites import InvitePending, InviteRequest
@@ -256,6 +260,7 @@ def init_user_manager(mdb, emailsender, invites):
 # ============================================================================
 class OA2BearerOrQuery(OAuth2PasswordBearer):
     """ Override bearer check to also test query """
+
     async def __call__(self, request: Request) -> Optional[str]:
         param = None
         exc = None
@@ -269,7 +274,6 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
             exc = super_exc
 
         param = request.query_params.get("auth_bearer")
-        print("AUTH BEARER", param)
 
         if not param and exc:
             raise exc
@@ -280,10 +284,11 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 # ============================================================================
 class BearerOrQueryTransport(BearerTransport):
     """ Bearer or Query Transport """
+
     scheme: OA2BearerOrQuery
 
     def __init__(self, tokenUrl: str):
-        #pylint: disable=super-init-not-called
+        # pylint: disable=super-init-not-called
         self.scheme = OA2BearerOrQuery(tokenUrl, auto_error=False)
 
 

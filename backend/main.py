@@ -5,7 +5,7 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 
 import os
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 
 from db import init_db
 

@@ -497,7 +497,8 @@ def init_crawls_api(
 
         return {"deleted": res}
 
-    @app.get("/archives/{aid}/crawls/{crawl_id}.json",
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}.json",
         tags=["crawls"],
         response_model=CrawlOut,
     )
