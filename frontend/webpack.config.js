@@ -74,7 +74,6 @@ module.exports = {
         directory: shoelaceAssetsSrcPath,
         publicPath: "/" + shoelaceAssetsPublicPath,
       },
-
       {
         directory: path.join(__dirname),
         //publicPath: "/",
@@ -91,6 +90,13 @@ module.exports = {
         pathRewrite: { "^/api": "" },
       },
     },
+    // Serve replay service worker file
+    onBeforeSetupMiddleware: (server) => {
+      server.app.get("/replay/sw.js", (req, res) => {
+        res.set("Content-Type", "application/javascript");
+        res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
+      });
+    },
     port: 9870,
   },
 
@@ -100,7 +106,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
       templateParameters: {
-        "rwp_base_url": RWP_BASE_URL
+        rwp_base_url: RWP_BASE_URL,
       },
       // Need to block during local development for HMR:
       inject: isDevServer ? "head" : true,
