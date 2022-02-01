@@ -107,5 +107,4 @@ async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
             "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
         )
 
-    print("presigned_url", presigned_url)
     return presigned_url

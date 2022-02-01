@@ -359,6 +359,9 @@ class DockerManager:
         try:
             container = await self.client.containers.get(crawl_id)
 
+            if container["State"]["Status"] != "running":
+                return None
+
             if aid and container["Config"]["Labels"]["btrix.archive"] != aid:
                 return None
 

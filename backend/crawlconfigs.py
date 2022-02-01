@@ -143,8 +143,9 @@ class UpdateSchedule(BaseModel):
 class CrawlOps:
     """Crawl Config Operations"""
 
-    def __init__(self, mdb, archive_ops, crawl_manager):
+    def __init__(self, mdb, user_manager, archive_ops, crawl_manager):
         self.crawl_configs = mdb["crawl_configs"]
+        self.user_manager = user_manager
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
 
@@ -168,6 +169,7 @@ class CrawlOps:
         data["aid"] = archive.id
         data["userid"] = user.id
         data["_id"] = uuid.uuid4()
+        data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(
@@ -175,8 +177,6 @@ class CrawlOps:
             )
 
         result = await self.crawl_configs.insert_one(data)
-
-        data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         crawlconfig = CrawlConfig.from_dict(data)
 
@@ -190,7 +190,7 @@ class CrawlOps:
         """ Update schedule for existing crawl config"""
 
         if not await self.crawl_configs.find_one_and_update(
-            {"_id": cid}, {"$set": {"schedule": update.schedule}}
+            {"_id": uuid.UUID(cid)}, {"$set": {"schedule": update.schedule}}
         ):
             return False
 
@@ -248,6 +248,11 @@ class CrawlOps:
         if len(crawls) == 1:
             out.currCrawlId = crawls[0].id
 
+        user = await self.user_manager.get(crawlconfig.userid)
+        # pylint: disable=invalid-name
+        if user:
+            out.userName = user.name
+
         return out
 
     async def get_crawl_config(self, cid: uuid.UUID, archive: Archive):
@@ -270,9 +275,9 @@ class CrawlOps:
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals
-def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
+def init_crawl_config_api(mdb, user_dep, user_manager, archive_ops, crawl_manager):
     """Init /crawlconfigs api routes"""
-    ops = CrawlOps(mdb, archive_ops, crawl_manager)
+    ops = CrawlOps(mdb, user_manager, archive_ops, crawl_manager)
 
     router = ops.router
 
@@ -342,7 +347,7 @@ def init_crawl_config_api(mdb, user_dep, archive_ops, crawl_manager):
 
         crawl_id = None
         try:
-            crawl_id = await crawl_manager.run_crawl_config(cid, str(user.id))
+            crawl_id = await crawl_manager.run_crawl_config(cid, userid=str(user.id))
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")

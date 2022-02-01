@@ -66,6 +66,7 @@ def main():
     crawl_config_ops = init_crawl_config_api(
         mdb,
         current_active_user,
+        user_manager,
         archive_ops,
         crawl_manager,
     )

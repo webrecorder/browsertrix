@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from pymongo import MongoClient
+from pytz import utc
 
 from db import DATABASE_URL
 
@@ -28,7 +29,7 @@ def run_scheduler(event_q, trigger_q):
 
     print("Initializing Scheduler...", flush=True)
 
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone=utc)
 
     mongoclient = MongoClient(DATABASE_URL)
 
