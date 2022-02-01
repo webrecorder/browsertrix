@@ -497,7 +497,9 @@ class K8SManager:
             return "running"
 
         # not all pods have succeeded yet
-        if job.status.succeeded < (job.spec.parallelism or 1):
+        finished = (job.status.succeeded or 0) + (job.status.failed or 0)
+        total = job.spec.parallelism or 1
+        if finished != total:
             return "stopping"
 
         # job fully done, do not treat as running or stopping
@@ -673,11 +675,11 @@ class K8SManager:
     ):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
-        requests_memory = "256M"
-        limit_memory = "1G"
+        requests_memory = "384M"
+        limit_memory = "2G"
 
-        requests_cpu = "120m"
-        limit_cpu = "1000m"
+        requests_cpu = "240m"
+        limit_cpu = "2000m"
 
         resources = {
             "limits": {
