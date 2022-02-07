@@ -55,7 +55,7 @@ spec:
 
     spec:
       volumes:
-        - name: data-storage
+        - name: data-minio
           persistentVolumeClaim:
             claimName: minio-storage-pvc
 
@@ -69,7 +69,7 @@ spec:
                 name: auth-secrets
 
           volumeMounts:
-            - name: data-storage
+            - name: data-minio
               mountPath: /data
               subPath: minio
 

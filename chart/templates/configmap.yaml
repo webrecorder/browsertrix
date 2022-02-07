@@ -23,6 +23,8 @@ data:
 
   NO_DELETE_JOBS: "{{ .Values.no_delete_jobs | default 0 }}"
 
+  GRACE_PERIOD_SECS: "{{ .Values.grace_period_secs | default 600 }}"
+
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
   JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"

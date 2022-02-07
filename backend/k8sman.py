@@ -46,6 +46,8 @@ class K8SManager:
 
         self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
 
+        self.grace_period = int(os.environ.get("GRACE_PERIOD_SECS", "600"))
+
         self.redis_url = os.environ["REDIS_URL"]
 
         self.loop = asyncio.get_running_loop()
@@ -690,7 +692,7 @@ class K8SManager:
         requests_memory = "384M"
         limit_memory = "2G"
 
-        requests_cpu = "240m"
+        requests_cpu = "500m"
         limit_cpu = "2000m"
 
         resources = {
@@ -728,7 +730,11 @@ class K8SManager:
                                         "mountPath": "/tmp/crawl-config.json",
                                         "subPath": "crawl-config.json",
                                         "readOnly": True,
-                                    }
+                                    },
+                                    {
+                                        "name": "crawl-data",
+                                        "mountPath": "/crawls",
+                                    },
                                 ],
                                 "envFrom": [
                                     {"configMapRef": {"name": "shared-crawler-config"}},
@@ -764,9 +770,11 @@ class K8SManager:
                                         }
                                     ],
                                 },
-                            }
+                            },
+                            {"name": "crawl-data", "emptyDir": {}},
                         ],
                         "restartPolicy": "OnFailure",
+                        "terminationGracePeriodSeconds": self.grace_period,
                     },
                 },
             },
