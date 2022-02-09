@@ -159,11 +159,18 @@ export default class AuthService {
   private async checkFreshness() {
     window.clearTimeout(this.timerId);
 
+    console.debug("checkFreshness authState:", this._authState);
+
     if (!this._authState) return;
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
 
     if (this._authState.sessionExpiresAt > paddedNow) {
       if (this._authState.tokenExpiresAt > paddedNow) {
+        console.debug(
+          "fresh! restart timer tokenExpiresAt:",
+          new Date(this._authState.tokenExpiresAt)
+        );
+        console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
         // Restart timer
         this.timerId = window.setTimeout(() => {
           this.checkFreshness();
@@ -173,6 +180,15 @@ export default class AuthService {
           const auth = await this.refresh();
           this._authState.headers = auth.headers;
           this._authState.tokenExpiresAt = auth.tokenExpiresAt;
+
+          console.debug(
+            "refreshed. restart timer tokenExpiresAt:",
+            new Date(this._authState.tokenExpiresAt)
+          );
+          console.debug(
+            "refreshed. restart timer paddedNow:",
+            new Date(paddedNow)
+          );
 
           // Restart timer
           this.timerId = window.setTimeout(() => {
