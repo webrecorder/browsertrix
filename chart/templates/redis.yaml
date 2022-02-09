@@ -70,6 +70,21 @@ spec:
               mountPath: /data
               subPath: redis
 
+          resources:
+            limits:
+              cpu: {{ .Values.redis_limits_cpu }}
+              memory: {{ .Values.redis_limits_memory }}
+
+            requests:
+              cpu: {{ .Values.redis_requests_cpu }}
+              memory: {{ .Values.redis_requests_memory }}
+
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+
 ---
 apiVersion: v1
 kind: Service

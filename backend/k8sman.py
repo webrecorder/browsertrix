@@ -50,6 +50,11 @@ class K8SManager:
 
         self.redis_url = os.environ["REDIS_URL"]
 
+        self.requests_cpu = os.environ["CRAWLER_REQUESTS_CPU"]
+        self.limits_cpu = os.environ["CRAWLER_LIMITS_CPU"]
+        self.requests_mem = os.environ["CRAWLER_REQUESTS_MEM"]
+        self.limits_mem = os.environ["CRAWLER_LIMITS_MEM"]
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
         self.loop.create_task(self.init_redis(self.redis_url))
@@ -689,20 +694,14 @@ class K8SManager:
     ):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
-        requests_memory = "384M"
-        limit_memory = "2G"
-
-        requests_cpu = "500m"
-        limit_cpu = "2000m"
-
         resources = {
             "limits": {
-                "cpu": limit_cpu,
-                "memory": limit_memory,
+                "cpu": self.limits_cpu,
+                "memory": self.limits_mem,
             },
             "requests": {
-                "cpu": requests_cpu,
-                "memory": requests_memory,
+                "cpu": self.requests_cpu,
+                "memory": self.requests_mem,
             },
         }
 

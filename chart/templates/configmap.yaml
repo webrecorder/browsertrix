@@ -17,6 +17,12 @@ data:
   CRAWL_TIMEOUT: "{{ .Values.crawl_timeout }}"
   CRAWL_RETRIES: "{{ .Values.crawl_retries }}"
 
+  CRAWLER_REQUESTS_CPU: "{{ .Values.crawler_requests_cpu }}"
+  CRAWLER_LIMITS_CPU: "{{ .Values.crawler_limits_cpu }}"
+
+  CRAWLER_REQUESTS_MEM: "{{ .Values.crawler_requests_memory }}"
+  CRAWLER_LIMITS_MEM: "{{ .Values.crawler_limits_memory }}"
+
   REDIS_URL: "{{ .Values.redis_url }}"
 
   REDIS_CRAWLS_DONE_KEY: "crawls-done"

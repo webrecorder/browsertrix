@@ -57,10 +57,12 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.nginx_limit_cpu }}
+              cpu: {{ .Values.nginx_limits_cpu }}
+              memory: {{ .Values.nginx_limits_memory }}
 
             requests:
               cpu: {{ .Values.nginx_requests_cpu }}
+              memory: {{ .Values.nginx_requests_memory }}
 
           readinessProbe:
             httpGet:

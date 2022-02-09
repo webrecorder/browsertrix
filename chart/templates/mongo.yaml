@@ -73,6 +73,11 @@ spec:
       containers:
         - name: mongo
           image: {{ .Values.mongo_image }}
+
+          {{- if .Values.mongo_run_repair }}
+          command:  ["mongod", "--repair"]
+          {{- end }}
+
           imagePullPolicy: {{ .Values.mongo_pull_policy }}
           envFrom:
             - secretRef:
@@ -83,6 +88,21 @@ spec:
               mountPath: /data/db
               subPath: mongo
 
+          resources:
+            limits:
+              cpu: {{ .Values.mongo_limits_cpu }}
+              memory: {{ .Values.mongo_limits_memory }}
+
+            requests:
+              cpu: {{ .Values.mongo_requests_cpu }}
+              memory: {{ .Values.mongo_requests_memory }}
+
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - db.adminCommand('ping')
 ---
 apiVersion: v1
 kind: Service
