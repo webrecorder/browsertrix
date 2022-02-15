@@ -24,7 +24,8 @@
         Sentry.init({
           dsn: dsn,
           release: "<%= commit_hash %>",
-          environment: "<%= environment %>"
+          environment: "<%= environment %>",
+          autoSessionTracking: false
         });
       }
     </script>
