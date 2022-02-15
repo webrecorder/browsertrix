@@ -144,7 +144,10 @@ export class CrawlDetail extends LiteElement {
     const isRunning = this.crawl?.state === "running";
 
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
-    const fileJson = `/api/archives/${this.archiveId}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
+
+    // for now, just use the first file until multi-wacz support is fully implemented
+    //const replaySource = `/api/archives/${this.archiveId}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
+    const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
       <div
@@ -153,10 +156,9 @@ export class CrawlDetail extends LiteElement {
           : "border-slate-100"}"
       >
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-        [watch/replay]
-        ${this.crawl?.resources?.length
+        ${replaySource
           ? html`<replay-web-page
-              source="${fileJson}"
+              source="${replaySource}"
               coll="${this.crawl?.id}"
               replayBase="/replay/"
               noSandbox="true"
