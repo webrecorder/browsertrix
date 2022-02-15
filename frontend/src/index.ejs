@@ -25,7 +25,8 @@
           dsn: dsn,
           release: "<%= commit_hash %>",
           environment: "<%= environment %>",
-          autoSessionTracking: false
+          debug: "<%= environment %>" === "development",
+          autoSessionTracking: false, // Turn off unsupported page/session tracking
         });
       }
     </script>
