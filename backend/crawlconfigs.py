@@ -48,23 +48,24 @@ class RawCrawlConfig(BaseModel):
     seeds: List[Union[str, Seed]]
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
-    scope: Union[str, List[str], None] = ""
-    exclude: Union[str, List[str], None] = ""
+
+    include: Union[str, List[str], None]
+    exclude: Union[str, List[str], None]
 
     depth: Optional[int] = -1
     limit: Optional[int] = 0
     extraHops: Optional[int] = 0
 
-    behaviorTimeout: Optional[int] = 90
+    behaviorTimeout: Optional[int]
 
-    workers: Optional[int] = 1
+    workers: Optional[int]
 
-    headless: Optional[bool] = False
+    headless: Optional[bool]
 
-    generateWACZ: Optional[bool] = False
-    combineWARC: Optional[bool] = False
+    generateWACZ: Optional[bool]
+    combineWARC: Optional[bool]
 
-    logging: Optional[str] = ""
+    logging: Optional[str]
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
 
@@ -113,7 +114,7 @@ class CrawlConfig(BaseMongoModel):
     def get_raw_config(self):
         """ serialize config for browsertrix-crawler """
         return self.config.dict(
-            exclude_unset=True, exclude_none=True, exclude_defaults=True
+            exclude_unset=True, exclude_none=True
         )
 
 
