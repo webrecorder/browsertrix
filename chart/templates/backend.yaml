@@ -71,6 +71,16 @@ spec:
             httpGet:
               path: /healthz
               port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 30
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+
 ---
 
 apiVersion: v1
