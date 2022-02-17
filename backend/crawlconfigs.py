@@ -142,10 +142,11 @@ class CrawlConfigsResponse(BaseModel):
 
 
 # ============================================================================
-class UpdateSchedule(BaseModel):
-    """ Update the crawl schedule """
+class UpdateScheduleOrName(BaseModel):
+    """ Update crawl config name or crawl schedule """
 
-    schedule: str
+    name: Optional[str]
+    schedule: Optional[str]
 
 
 # ============================================================================
@@ -215,17 +216,41 @@ class CrawlConfigOps:
 
         return result, new_name
 
-    async def update_crawl_schedule(self, cid: str, update: UpdateSchedule):
-        """ Update schedule for existing crawl config"""
+    async def update_crawl_config(self, cid: uuid.UUID, update: UpdateScheduleOrName):
+        """ Update name and/or schedule for an existing crawl config """
+        if update.schedule is None and update.name is None:
+            raise HTTPException(status_code=400, detail="no_update_data")
 
+        # update schedule in crawl manager first
+        if update.schedule is not None:
+            try:
+                await self.crawl_manager.update_crawl_schedule(
+                    str(cid), update.schedule
+                )
+            except Exception:
+                # pylint: disable=raise-missing-from
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl Config '{cid}' not found"
+                )
+
+        # set update query
+        query = {}
+
+        if update.schedule is not None:
+            query["schedule"] = update.schedule
+
+        if update.name is not None:
+            query["name"] = update.name
+
+        # update in db
         if not await self.crawl_configs.find_one_and_update(
-            {"_id": uuid.UUID(cid), "inactive": {"$ne": True}},
-            {"$set": {"schedule": update.schedule}},
+            {"_id": cid, "inactive": {"$ne": True}}, {"$set": query}
         ):
-            return False
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' not found"
+            )
 
-        await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
-        return True
+        return {"success": True}
 
     async def inc_crawls(
         self, cid: uuid.UUID, crawl_id: str, finished: datetime, state: str
@@ -399,28 +424,20 @@ def init_crawl_config_api(
         res, new_job_name = await ops.add_crawl_config(config, archive, user)
         return {"added": str(res.inserted_id), "run_now_job": new_job_name}
 
-    @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
-    async def update_crawl_schedule(
-        update: UpdateSchedule,
+    @router.patch("/{cid}", dependencies=[Depends(archive_crawl_dep)])
+    async def update_crawl_config(
+        update: UpdateScheduleOrName,
         cid: str,
     ):
+        return await ops.update_crawl_config(uuid.UUID(cid), update)
 
-        success = False
-        try:
-            success = await ops.update_crawl_schedule(cid, update)
-
-        except Exception as e:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=403, detail=f"Error updating crawl config: {e}"
-            )
-
-        if not success:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
-
-        return {"updated": cid}
+    # depcreated: to remove in favor of general patch
+    @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
+    async def update_crawl_schedule(
+        update: UpdateScheduleOrName,
+        cid: str,
+    ):
+        return await ops.update_crawl_config(uuid.UUID(cid), update)
 
     @router.post("/{cid}/run")
     async def run_now(
