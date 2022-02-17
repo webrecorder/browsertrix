@@ -87,7 +87,7 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
 
-    oldId: Optional[str] = ""
+    oldId: Optional[UUID4]
 
 
 # ============================================================================
@@ -199,7 +199,7 @@ class CrawlConfigOps:
         old_id = data.get("oldId")
 
         if old_id:
-            old_config = await self.get_crawl_config(uuid.UUID(old_id), archive)
+            old_config = await self.get_crawl_config(old_id, archive)
             async with await self.dbclient.start_session() as sesh:
                 async with sesh.start_transaction():
                     await self.make_inactive(old_config, data["_id"])
