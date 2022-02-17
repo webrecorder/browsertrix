@@ -340,7 +340,9 @@ class CrawlOps:
         self, crawl: Union[CrawlOut, ListCrawlOut], archive: Archive
     ):
         """ Resolve running crawl data """
-        config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
+        config = await self.crawl_configs.get_crawl_config(
+            crawl.cid, archive, active_only=False
+        )
 
         if config:
             crawl.configName = config.name

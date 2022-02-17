@@ -5,8 +5,10 @@ Crawl Config API handling
 from typing import List, Union, Optional
 from enum import Enum
 import uuid
+import asyncio
 from datetime import datetime
 
+import pymongo
 from pydantic import BaseModel, UUID4
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -117,6 +119,7 @@ class CrawlConfig(BaseMongoModel):
 
     newId: Optional[UUID4]
     oldId: Optional[UUID4]
+    inactive: Optional[bool] = False
 
     def get_raw_config(self):
         """ serialize config for browsertrix-crawler """
@@ -129,7 +132,6 @@ class CrawlConfigOut(CrawlConfig):
 
     currCrawlId: Optional[str]
     userName: Optional[str]
-    inactive: Optional[bool] = False
 
 
 # ============================================================================
@@ -154,7 +156,6 @@ class CrawlConfigOps:
     def __init__(self, dbclient, mdb, user_manager, archive_ops, crawl_manager):
         self.dbclient = dbclient
         self.crawl_configs = mdb["crawl_configs"]
-        self.inactive_configs = mdb["inactive_crawl_configs"]
         self.user_manager = user_manager
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
@@ -166,6 +167,14 @@ class CrawlConfigOps:
         )
 
         self.coll_ops = None
+
+        asyncio.create_task(self.init_index())
+
+    async def init_index(self):
+        """ init index for crawls db """
+        await self.crawl_configs.create_index(
+            [("aid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
+        )
 
     def set_coll_ops(self, coll_ops):
         """ set collection ops """
@@ -210,7 +219,8 @@ class CrawlConfigOps:
         """ Update schedule for existing crawl config"""
 
         if not await self.crawl_configs.find_one_and_update(
-            {"_id": uuid.UUID(cid)}, {"$set": {"schedule": update.schedule}}
+            {"_id": uuid.UUID(cid), "inactive": {"$ne": True}},
+            {"$set": {"schedule": update.schedule}},
         ):
             return False
 
@@ -222,7 +232,7 @@ class CrawlConfigOps:
     ):
         """ Increment Crawl Counter """
         await self.crawl_configs.find_one_and_update(
-            {"_id": cid},
+            {"_id": cid, "inactive": {"$ne": True}},
             {
                 "$inc": {"crawlCount": 1},
                 "$set": {
@@ -237,7 +247,7 @@ class CrawlConfigOps:
         """Get all crawl configs for an archive is a member of"""
         cursor = self.crawl_configs.aggregate(
             [
-                {"$match": {"aid": archive.id}},
+                {"$match": {"aid": archive.id, "inactive": {"$ne": True}}},
                 {
                     "$lookup": {
                         "from": "users",
@@ -279,21 +289,13 @@ class CrawlConfigOps:
         """Return CrawlConfigOut, including state of currently running crawl, if active
         also include inactive crawl configs"""
 
-        # first, check active crawl configs
-        result = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
-        if not result:
-            result = await self.inactive_configs.find_one(
-                {"_id": cid, "aid": archive.id}
-            )
-            if result:
-                result["inactive"] = True
-
-        if not result:
+        crawlconfig = await self.get_crawl_config(
+            cid, archive, active_only=False, config_cls=CrawlConfigOut
+        )
+        if not crawlconfig:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
-
-        crawlconfig = CrawlConfigOut.from_dict(result)
 
         if not crawlconfig.inactive:
             crawlconfig.currCrawlId = await self.get_running_crawl(crawlconfig)
@@ -305,10 +307,20 @@ class CrawlConfigOps:
 
         return crawlconfig
 
-    async def get_crawl_config(self, cid: uuid.UUID, archive: Archive):
+    async def get_crawl_config(
+        self,
+        cid: uuid.UUID,
+        archive: Archive,
+        active_only: bool = True,
+        config_cls=CrawlConfig,
+    ):
         """Get an archive for user by unique id"""
-        res = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
-        return CrawlConfig.from_dict(res)
+        query = {"_id": cid, "aid": archive.id}
+        if active_only:
+            query["inactive"] = {"$ne": True}
+
+        res = await self.crawl_configs.find_one(query)
+        return config_cls.from_dict(res)
 
     async def make_inactive(self, crawlconfig: CrawlConfig, new_id: uuid.UUID = None):
         """Delete config, if no crawls ran yet. Otherwise, move to inactive list"""
@@ -319,31 +331,43 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
 
-        result = await self.inactive_configs.insert_one(crawlconfig.to_dict())
+        # set to either "deleted" or "deactivated"
+        status = None
 
-        if result.inserted_id != crawlconfig.id:
-            raise HTTPException(status_code=500, detail="failed_to_add_inactive")
+        # if no crawls have been run, actually delete
+        if not crawlconfig.crawlCount:
+            result = await self.crawl_configs.delete_one(
+                {"_id": crawlconfig.id, "aid": crawlconfig.aid}
+            )
 
-        result = await self.crawl_configs.delete_one(
-            {"_id": crawlconfig.id, "aid": crawlconfig.aid}
-        )
+            if result.deleted_count != 1:
+                raise HTTPException(status_code=404, detail="failed_to_delete")
 
-        if result.deleted_count != 1:
-            raise HTTPException(status_code=404, detail="failed_to_deactivate")
+            status = "deleted"
+
+        else:
+
+            if not await self.crawl_configs.find_one_and_update(
+                {"_id": crawlconfig.id, "inactive": {"$ne": True}},
+                {"$set": {"inactive": True}},
+            ):
+                raise HTTPException(status_code=404, detail="failed_to_deactivate")
+
+            status = "deactivated"
 
         # delete from crawl manager, but not from db
         await self.crawl_manager.delete_crawl_config_by_id(crawlconfig.id)
 
-        return True
+        return status
 
     async def do_make_inactive(self, crawlconfig: CrawlConfig):
         """ perform make_inactive in a transaction """
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():
-                await self.make_inactive(crawlconfig)
+                status = await self.make_inactive(crawlconfig)
 
-        return {"success": True}
+        return {"success": True, "status": status}
 
 
 # ============================================================================
