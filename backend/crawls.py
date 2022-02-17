@@ -228,7 +228,9 @@ class CrawlOps:
 
         await self.archives.inc_usage(crawl.aid, dura)
 
-        await self.crawl_configs.inc_crawls(crawl.cid, crawl.id, crawl.finished)
+        await self.crawl_configs.inc_crawls(
+            crawl.cid, crawl.id, crawl.finished, crawl.state
+        )
 
         return True
 

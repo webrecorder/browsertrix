@@ -30,7 +30,7 @@ def main():
     email = EmailSender()
     crawl_manager = None
 
-    mdb = init_db()
+    dbclient, mdb = init_db()
 
     settings = {
         "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
@@ -64,6 +64,7 @@ def main():
     init_storages_api(archive_ops, crawl_manager, current_active_user)
 
     crawl_config_ops = init_crawl_config_api(
+        dbclient,
         mdb,
         current_active_user,
         user_manager,

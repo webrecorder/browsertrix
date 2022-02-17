@@ -24,7 +24,7 @@ def init_db():
 
     mdb = client["browsertrixcloud"]
 
-    return mdb
+    return client, mdb
 
 
 # ============================================================================

@@ -85,6 +85,8 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: Optional[int] = 0
     parallel: Optional[int] = 1
 
+    oldId: Optional[str] = ""
+
 
 # ============================================================================
 class CrawlConfig(BaseMongoModel):
@@ -108,14 +110,17 @@ class CrawlConfig(BaseMongoModel):
     userid: UUID4
 
     crawlCount: Optional[int] = 0
+
     lastCrawlId: Optional[str]
     lastCrawlTime: Optional[datetime]
+    lastCrawlState: Optional[str]
+
+    newId: Optional[UUID4]
+    oldId: Optional[UUID4]
 
     def get_raw_config(self):
         """ serialize config for browsertrix-crawler """
-        return self.config.dict(
-            exclude_unset=True, exclude_none=True
-        )
+        return self.config.dict(exclude_unset=True, exclude_none=True)
 
 
 # ============================================================================
@@ -124,6 +129,7 @@ class CrawlConfigOut(CrawlConfig):
 
     currCrawlId: Optional[str]
     userName: Optional[str]
+    inactive: Optional[bool] = False
 
 
 # ============================================================================
@@ -141,11 +147,14 @@ class UpdateSchedule(BaseModel):
 
 
 # ============================================================================
-class CrawlOps:
+# pylint: disable=too-many-instance-attributes,too-many-arguments
+class CrawlConfigOps:
     """Crawl Config Operations"""
 
-    def __init__(self, mdb, user_manager, archive_ops, crawl_manager):
+    def __init__(self, dbclient, mdb, user_manager, archive_ops, crawl_manager):
+        self.dbclient = dbclient
         self.crawl_configs = mdb["crawl_configs"]
+        self.inactive_configs = mdb["inactive_crawl_configs"]
         self.user_manager = user_manager
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
@@ -177,7 +186,17 @@ class CrawlOps:
                 archive.id, config.colls
             )
 
-        result = await self.crawl_configs.insert_one(data)
+        old_id = data.get("oldId")
+
+        if old_id:
+            old_config = await self.get_crawl_config(uuid.UUID(old_id), archive)
+            async with await self.dbclient.start_session() as sesh:
+                async with sesh.start_transaction():
+                    await self.make_inactive(old_config, data["_id"])
+                    result = await self.crawl_configs.insert_one(data)
+
+        else:
+            result = await self.crawl_configs.insert_one(data)
 
         crawlconfig = CrawlConfig.from_dict(data)
 
@@ -198,13 +217,19 @@ class CrawlOps:
         await self.crawl_manager.update_crawl_schedule(cid, update.schedule)
         return True
 
-    async def inc_crawls(self, cid: uuid.UUID, crawl_id: str, finished: datetime):
+    async def inc_crawls(
+        self, cid: uuid.UUID, crawl_id: str, finished: datetime, state: str
+    ):
         """ Increment Crawl Counter """
         await self.crawl_configs.find_one_and_update(
             {"_id": cid},
             {
                 "$inc": {"crawlCount": 1},
-                "$set": {"lastCrawlId": crawl_id, "lastCrawlTime": finished},
+                "$set": {
+                    "lastCrawlId": crawl_id,
+                    "lastCrawlTime": finished,
+                    "lastCrawlState": state,
+                },
             },
         )
 
@@ -242,64 +267,104 @@ class CrawlOps:
 
         return CrawlConfigsResponse(crawlConfigs=configs)
 
-    async def get_crawl_config_out(self, crawlconfig):
-        """ Return CrawlConfigOut, including state of currently running crawl"""
+    async def get_running_crawl(self, crawlconfig: CrawlConfig):
+        """ Return the id of currently running crawl for this config, if any """
         crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        out = CrawlConfigOut(**crawlconfig.serialize())
         if len(crawls) == 1:
-            out.currCrawlId = crawls[0].id
+            return crawls[0].id
+
+        return None
+
+    async def get_crawl_config_out(self, cid: uuid.UUID, archive: Archive):
+        """Return CrawlConfigOut, including state of currently running crawl, if active
+        also include inactive crawl configs"""
+
+        # first, check active crawl configs
+        result = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
+        if not result:
+            result = await self.inactive_configs.find_one(
+                {"_id": cid, "aid": archive.id}
+            )
+            if result:
+                result["inactive"] = True
+
+        if not result:
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' not found"
+            )
+
+        crawlconfig = CrawlConfigOut.from_dict(result)
+
+        if not crawlconfig.inactive:
+            crawlconfig.currCrawlId = await self.get_running_crawl(crawlconfig)
 
         user = await self.user_manager.get(crawlconfig.userid)
         # pylint: disable=invalid-name
         if user:
-            out.userName = user.name
+            crawlconfig.userName = user.name
 
-        return out
+        return crawlconfig
 
     async def get_crawl_config(self, cid: uuid.UUID, archive: Archive):
         """Get an archive for user by unique id"""
         res = await self.crawl_configs.find_one({"_id": cid, "aid": archive.id})
         return CrawlConfig.from_dict(res)
 
-    async def delete_crawl_config(self, cid: str, archive: Archive):
-        """Delete config"""
-        await self.crawl_manager.delete_crawl_config_by_id(cid)
+    async def make_inactive(self, crawlconfig: CrawlConfig, new_id: uuid.UUID = None):
+        """Delete config, if no crawls ran yet. Otherwise, move to inactive list"""
 
-        return await self.crawl_configs.delete_one({"_id": cid, "aid": archive.id})
+        if new_id:
+            crawlconfig.newId = new_id
 
-    # async def delete_crawl_configs(self, archive: Archive):
-    #    """Delete all crawl configs for user"""
-    #    await self.crawl_manager.delete_crawl_configs_for_archive(archive.id_str)
+        if await self.get_running_crawl(crawlconfig):
+            raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
 
-    #    return await self.crawl_configs.delete_many({"aid": archive.id})
+        result = await self.inactive_configs.insert_one(crawlconfig.to_dict())
+
+        if result.inserted_id != crawlconfig.id:
+            raise HTTPException(status_code=500, detail="failed_to_add_inactive")
+
+        result = await self.crawl_configs.delete_one(
+            {"_id": crawlconfig.id, "aid": crawlconfig.aid}
+        )
+
+        if result.deleted_count != 1:
+            raise HTTPException(status_code=404, detail="failed_to_deactivate")
+
+        # delete from crawl manager, but not from db
+        await self.crawl_manager.delete_crawl_config_by_id(crawlconfig.id)
+
+        return True
+
+    async def do_make_inactive(self, crawlconfig: CrawlConfig):
+        """ perform make_inactive in a transaction """
+
+        async with await self.dbclient.start_session() as sesh:
+            async with sesh.start_transaction():
+                await self.make_inactive(crawlconfig)
+
+        return {"success": True}
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name,too-many-locals
-def init_crawl_config_api(mdb, user_dep, user_manager, archive_ops, crawl_manager):
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
+def init_crawl_config_api(
+    dbclient, mdb, user_dep, user_manager, archive_ops, crawl_manager
+):
     """Init /crawlconfigs api routes"""
-    ops = CrawlOps(mdb, user_manager, archive_ops, crawl_manager)
+    ops = CrawlConfigOps(dbclient, mdb, user_manager, archive_ops, crawl_manager)
 
     router = ops.router
 
     archive_crawl_dep = archive_ops.archive_crawl_dep
-
-    async def crawls_dep(cid: str, archive: Archive = Depends(archive_crawl_dep)):
-        crawl_config = await ops.get_crawl_config(uuid.UUID(cid), archive)
-        if not crawl_config:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
-
-        return crawl_config
 
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl_configs(archive)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
-    async def get_crawl_config(crawl_config: CrawlConfig = Depends(crawls_dep)):
-        return await ops.get_crawl_config_out(crawl_config)
+    async def get_crawl_config(cid: str, archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.get_crawl_config_out(uuid.UUID(cid), archive)
 
     @router.post("/")
     async def add_crawl_config(
@@ -339,9 +404,9 @@ def init_crawl_config_api(mdb, user_dep, user_manager, archive_ops, crawl_manage
         archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        crawl_config = await ops.get_crawl_config(uuid.UUID(cid), archive)
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), archive)
 
-        if not crawl_config:
+        if not crawlconfig:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
@@ -355,22 +420,17 @@ def init_crawl_config_api(mdb, user_dep, user_manager, archive_ops, crawl_manage
 
         return {"started": crawl_id}
 
-    # @router.delete("")
-    # async def delete_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
-    #    result = await ops.delete_crawl_configs(archive)
-    #    return {"deleted": result.deleted_count}
-
     @router.delete("/{cid}")
-    async def delete_crawl_config(
-        cid: str, archive: Archive = Depends(archive_crawl_dep)
-    ):
-        result = await ops.delete_crawl_config(cid, archive)
-        if not result or not result.deleted_count:
+    async def make_inactive(cid: str, archive: Archive = Depends(archive_crawl_dep)):
+
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), archive)
+
+        if not crawlconfig:
             raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' Not Found"
+                status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        return {"deleted": 1}
+        return await ops.do_make_inactive(crawlconfig)
 
     archive_ops.router.include_router(router)
 
