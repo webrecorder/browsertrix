@@ -9,8 +9,26 @@
     <title>Browsertrix Cloud</title>
     <base href="/" />
     <script defer src="<%= rwp_base_url %>ui.js"></script>
+    <script
+      src="https://unpkg.com/@sentry/browser@latest/build/bundle.min.js"
+      crossorigin="anonymous"
+    ></script>
   </head>
   <body>
     <browsertrix-app></browsertrix-app>
+
+    <script>
+      const dsn = "<%= glitchtip_dsn %>"
+
+      if (dsn) {
+        Sentry.init({
+          dsn: dsn,
+          release: "<%= commit_hash %>",
+          environment: "<%= environment %>",
+          debug: "<%= environment %>" === "development",
+          autoSessionTracking: false, // Turn off unsupported page/session tracking
+        });
+      }
+    </script>
   </body>
 </html>
