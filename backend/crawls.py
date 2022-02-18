@@ -228,7 +228,9 @@ class CrawlOps:
 
         await self.archives.inc_usage(crawl.aid, dura)
 
-        await self.crawl_configs.inc_crawls(crawl.cid, crawl.id, crawl.finished)
+        await self.crawl_configs.inc_crawls(
+            crawl.cid, crawl.id, crawl.finished, crawl.state
+        )
 
         return True
 
@@ -338,7 +340,9 @@ class CrawlOps:
         self, crawl: Union[CrawlOut, ListCrawlOut], archive: Archive
     ):
         """ Resolve running crawl data """
-        config = await self.crawl_configs.get_crawl_config(crawl.cid, archive)
+        config = await self.crawl_configs.get_crawl_config(
+            crawl.cid, archive, active_only=False
+        )
 
         if config:
             crawl.configName = config.name
