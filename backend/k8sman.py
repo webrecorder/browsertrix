@@ -201,7 +201,7 @@ class K8SManager:
             labels,
             annotations,
             crawlconfig.crawlTimeout,
-            crawlconfig.parallel,
+            crawlconfig.scale,
         )
 
         spec = client.V1beta1CronJobSpec(

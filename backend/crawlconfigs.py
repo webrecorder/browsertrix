@@ -85,7 +85,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    parallel: Optional[int] = 1
+    scale: Optional[int] = 1
 
     oldId: Optional[UUID4]
 
@@ -105,7 +105,7 @@ class CrawlConfig(BaseMongoModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    parallel: Optional[int] = 1
+    scale: Optional[int] = 1
 
     aid: UUID4
 
@@ -142,11 +142,12 @@ class CrawlConfigsResponse(BaseModel):
 
 
 # ============================================================================
-class UpdateScheduleOrName(BaseModel):
+class UpdateCrawlConfig(BaseModel):
     """ Update crawl config name or crawl schedule """
 
     name: Optional[str]
     schedule: Optional[str]
+    scale: Optional[int]
 
 
 # ============================================================================
@@ -216,9 +217,13 @@ class CrawlConfigOps:
 
         return result, new_name
 
-    async def update_crawl_config(self, cid: uuid.UUID, update: UpdateScheduleOrName):
-        """ Update name and/or schedule for an existing crawl config """
-        if update.schedule is None and update.name is None:
+    async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
+        """ Update name, scale and/or schedule for an existing crawl config """
+
+        # set update query
+        query = update.dict(exclude_unset=True, exclude_default=True, exclude_none=True)
+
+        if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
         # update schedule in crawl manager first
@@ -232,15 +237,6 @@ class CrawlConfigOps:
                 raise HTTPException(
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
-
-        # set update query
-        query = {}
-
-        if update.schedule is not None:
-            query["schedule"] = update.schedule
-
-        if update.name is not None:
-            query["name"] = update.name
 
         # update in db
         if not await self.crawl_configs.find_one_and_update(
@@ -426,7 +422,7 @@ def init_crawl_config_api(
 
     @router.patch("/{cid}", dependencies=[Depends(archive_crawl_dep)])
     async def update_crawl_config(
-        update: UpdateScheduleOrName,
+        update: UpdateCrawlConfig,
         cid: str,
     ):
         return await ops.update_crawl_config(uuid.UUID(cid), update)
@@ -434,7 +430,7 @@ def init_crawl_config_api(
     # depcreated: to remove in favor of general patch
     @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
     async def update_crawl_schedule(
-        update: UpdateScheduleOrName,
+        update: UpdateCrawlConfig,
         cid: str,
     ):
         return await ops.update_crawl_config(uuid.UUID(cid), update)
