@@ -4,7 +4,6 @@ import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlTemplate } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
@@ -72,6 +71,8 @@ export class CrawlTemplatesDetail extends LiteElement {
         </a>
       </nav>
 
+      ${this.renderInactiveNotice()}
+
       <h2 class="text-xl font-bold mb-4 h-7">
         ${this.crawlTemplate?.name ||
         html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
@@ -80,7 +81,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       ${this.renderCurrentlyRunningNotice()}
 
       <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-3">
+        <dl class="grid grid-cols-2">
           <div>
             <dt class="text-xs text-0-600">${msg("Created at")}</dt>
             <dd class="h-5">
@@ -346,6 +347,26 @@ export class CrawlTemplatesDetail extends LiteElement {
         </section>
       </main>
     `;
+  }
+
+  private renderInactiveNotice() {
+    if (this.crawlTemplate?.inactive) {
+      return html`
+        <div class="mb-5">
+          <btrix-alert type="warning">
+            <sl-icon
+              name="exclamation-octagon"
+              class="inline-block align-middle mr-2"
+            ></sl-icon>
+            <span class="inline-block align-middle">
+              ${msg("This crawl template is inactive.")}
+            </span>
+          </btrix-alert>
+        </div>
+      `;
+    }
+
+    return "";
   }
 
   private renderCurrentlyRunningNotice() {
