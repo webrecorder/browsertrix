@@ -80,7 +80,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       ${this.renderCurrentlyRunningNotice()}
 
       <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2">
+        <dl class="grid grid-cols-3">
           <div>
             <dt class="text-xs text-0-600">${msg("Created at")}</dt>
             <dd class="h-5">
@@ -228,39 +228,43 @@ export class CrawlTemplatesDetail extends LiteElement {
                   : this.renderReadOnlySchedule()}
               </div>
 
-              <div class="ml-2">
-                ${this.crawlTemplate
-                  ? html`
-                      <sl-button
-                        size="small"
-                        href=${`/archives/${
-                          this.archiveId
-                        }/crawl-templates/config/${this.crawlTemplate.id}${
-                          this.isEditing ? "" : "?edit=true"
-                        }`}
-                        @click=${(e: any) => {
-                          const hasChanges =
-                            this.isEditing && this.editedSchedule;
-                          if (
-                            !hasChanges ||
-                            window.confirm(
-                              msg(
-                                "You have unsaved schedule changes. Are you sure?"
-                              )
-                            )
-                          ) {
-                            this.navLink(e);
-                            this.editedSchedule = "";
-                          } else {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        ${this.isEditing ? msg("Cancel") : msg("Edit")}
-                      </sl-button>
-                    `
-                  : html`<sl-skeleton></sl-skeleton>`}
-              </div>
+              ${this.crawlTemplate?.inactive
+                ? ""
+                : html`
+                    <div class="ml-2">
+                      ${this.crawlTemplate
+                        ? html`
+                            <sl-button
+                              size="small"
+                              href=${`/archives/${
+                                this.archiveId
+                              }/crawl-templates/config/${
+                                this.crawlTemplate.id
+                              }${this.isEditing ? "" : "?edit=true"}`}
+                              @click=${(e: any) => {
+                                const hasChanges =
+                                  this.isEditing && this.editedSchedule;
+                                if (
+                                  !hasChanges ||
+                                  window.confirm(
+                                    msg(
+                                      "You have unsaved schedule changes. Are you sure?"
+                                    )
+                                  )
+                                ) {
+                                  this.navLink(e);
+                                  this.editedSchedule = "";
+                                } else {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                              ${this.isEditing ? msg("Cancel") : msg("Edit")}
+                            </sl-button>
+                          `
+                        : html`<sl-skeleton></sl-skeleton>`}
+                    </div>
+                  `}
             </div>
           </div>
         </section>
@@ -293,6 +297,8 @@ export class CrawlTemplatesDetail extends LiteElement {
                               @click=${this.navLink}
                               >${msg("View crawl")}</a
                             >`
+                          : this.crawlTemplate.inactive
+                          ? ""
                           : html`<span class="text-0-400 text-sm p-1"
                                 >${msg("None")}</span
                               ><button
