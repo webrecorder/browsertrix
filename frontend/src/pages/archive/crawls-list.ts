@@ -370,7 +370,7 @@ export class CrawlsList extends LiteElement {
           <sl-icon-button
             slot="trigger"
             name="three-dots"
-            label="More"
+            label=${msg("More")}
             style="font-size: 1rem"
           ></sl-icon-button>
 

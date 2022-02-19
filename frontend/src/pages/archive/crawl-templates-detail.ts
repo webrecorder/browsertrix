@@ -1,3 +1,4 @@
+import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
@@ -73,10 +74,14 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       ${this.renderInactiveNotice()}
 
-      <h2 class="text-xl font-bold mb-4 h-7">
-        ${this.crawlTemplate?.name ||
-        html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
-      </h2>
+      <header class="flex justify-between">
+        <h2 class="text-xl font-bold mb-4 md:h-7">
+          ${this.crawlTemplate?.name ||
+          html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
+        </h2>
+
+        <div class="flex-0">${this.renderMenu()}</div>
+      </header>
 
       ${this.renderCurrentlyRunningNotice()}
 
@@ -349,6 +354,87 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderMenu() {
+    if (!this.crawlTemplate) return;
+
+    const menuItems: HTMLTemplateResult[] = [
+      html`
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${() => this.duplicateConfig()}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="files"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Duplicate crawl config")}</span
+          >
+        </li>
+      `,
+    ];
+
+    if (this.crawlTemplate.crawlCount && !this.crawlTemplate.inactive) {
+      menuItems.push(html`
+        <li
+          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            // Close dropdown before deleting template
+            e.target.closest("sl-dropdown").hide();
+
+            this.deactivateTemplate();
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="file-earmark-minus"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Deactivate")}</span
+          >
+        </li>
+      `);
+    }
+
+    if (!this.crawlTemplate.crawlCount) {
+      menuItems.push(html`
+        <li
+          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            // Close dropdown before deleting template
+            e.target.closest("sl-dropdown").hide();
+
+            this.deleteTemplate();
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="file-earmark-x"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
+        </li>
+      `);
+    }
+
+    return html`
+      <sl-dropdown placement="bottom-end">
+        <sl-icon-button
+          slot="trigger"
+          name="three-dots-vertical"
+          label=${msg("More")}
+          style="font-size: 1rem"
+        ></sl-icon-button>
+
+        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          ${menuItems.map((item: HTMLTemplateResult) => item)}
+        </ul>
+      </sl-dropdown>
+    `;
+  }
+
   private renderInactiveNotice() {
     if (this.crawlTemplate?.inactive) {
       return html`
@@ -434,6 +520,94 @@ export class CrawlTemplatesDetail extends LiteElement {
     );
 
     return data;
+  }
+
+  /**
+   * Create a new template using existing template data
+   */
+  private async duplicateConfig() {
+    if (!this.crawlTemplate) return;
+
+    const config: CrawlTemplate["config"] = {
+      seeds: this.crawlTemplate.config.seeds,
+      scopeType: this.crawlTemplate.config.scopeType,
+      limit: this.crawlTemplate.config.limit,
+    };
+
+    this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
+      crawlTemplate: {
+        name: msg(str`${this.crawlTemplate.name} Copy`),
+        config,
+      },
+    });
+
+    this.notify({
+      message: msg(str`Copied crawl configuration to new template.`),
+      type: "success",
+      icon: "check2-circle",
+    });
+  }
+
+  private async deactivateTemplate(): Promise<void> {
+    if (!this.crawlTemplate) return;
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      this.notify({
+        message: msg(
+          html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`
+        ),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteTemplate(): Promise<void> {
+    if (!this.crawlTemplate) return;
+
+    const isDeactivating = this.crawlTemplate.crawlCount > 0;
+
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      this.navTo(`/archives/${this.archiveId}/crawl-templates`);
+
+      this.notify({
+        message: isDeactivating
+          ? msg(html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`)
+          : msg(html`Deleted <strong>${this.crawlTemplate.name}</strong>.`),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch {
+      this.notify({
+        message: isDeactivating
+          ? msg("Sorry, couldn't deactivate crawl template at this time.")
+          : msg("Sorry, couldn't delete crawl template at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async runNow(): Promise<void> {

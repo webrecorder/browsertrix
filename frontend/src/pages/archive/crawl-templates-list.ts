@@ -296,7 +296,7 @@ export class CrawlTemplatesList extends LiteElement {
             // Close dropdown before deleting template
             e.target.closest("sl-dropdown").hide();
 
-            this.deleteTemplate(t);
+            this.deactivateTemplate(t);
           }}
         >
           <sl-icon
@@ -336,7 +336,7 @@ export class CrawlTemplatesList extends LiteElement {
         <sl-icon-button
           slot="trigger"
           name="three-dots-vertical"
-          label="More"
+          label=${msg("More")}
           style="font-size: 1rem"
         ></sl-icon-button>
 
@@ -422,6 +422,34 @@ export class CrawlTemplatesList extends LiteElement {
       type: "success",
       icon: "check2-circle",
     });
+  }
+
+  private async deactivateTemplate(template: CrawlTemplate): Promise<void> {
+    try {
+      await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      this.notify({
+        message: msg(html`Deactivated <strong>${template.name}</strong>.`),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.crawlTemplates = this.crawlTemplates!.filter(
+        (t) => t.id !== template.id
+      );
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async deleteTemplate(template: CrawlTemplate): Promise<void> {
