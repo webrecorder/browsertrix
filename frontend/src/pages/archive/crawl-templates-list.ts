@@ -1,3 +1,4 @@
+import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
@@ -111,66 +112,7 @@ export class CrawlTemplatesList extends LiteElement {
                   ${t.name || "?"}
                 </a>
 
-                <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
-                  <sl-icon-button
-                    slot="trigger"
-                    name="three-dots-vertical"
-                    label="More"
-                    style="font-size: 1rem"
-                  ></sl-icon-button>
-
-                  <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
-                    <li
-                      class="p-2 hover:bg-zinc-100 cursor-pointer"
-                      role="menuitem"
-                      @click=${(e: any) => {
-                        e.target.closest("sl-dropdown").hide();
-                        this.showEditDialog = true;
-                        this.selectedTemplateForEdit = t;
-                      }}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle px-1"
-                        name="pencil-square"
-                      ></sl-icon>
-                      <span class="inline-block align-middle pr-2"
-                        >${msg("Edit crawl schedule")}</span
-                      >
-                    </li>
-
-                    <li
-                      class="p-2 hover:bg-zinc-100 cursor-pointer"
-                      role="menuitem"
-                      @click=${() => this.duplicateConfig(t)}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle px-1"
-                        name="files"
-                      ></sl-icon>
-                      <span class="inline-block align-middle pr-2"
-                        >${msg("Duplicate crawl config")}</span
-                      >
-                    </li>
-                    <li
-                      class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                      role="menuitem"
-                      @click=${(e: any) => {
-                        // Close dropdown before deleting template
-                        e.target.closest("sl-dropdown").hide();
-
-                        this.deleteTemplate(t);
-                      }}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle px-1"
-                        name="file-earmark-x"
-                      ></sl-icon>
-                      <span class="inline-block align-middle pr-2"
-                        >${msg("Delete")}</span
-                      >
-                    </li>
-                  </ul>
-                </sl-dropdown>
+                ${this.renderCardMenu(t)}
               </header>
 
               <div class="px-3 pb-3 flex justify-between items-end text-0-800">
@@ -276,30 +218,7 @@ export class CrawlTemplatesList extends LiteElement {
                           >`}
                   </div>
                 </div>
-                <div>
-                  <button
-                    class="text-xs border rounded px-2 h-7 ${this
-                      .runningCrawlsMap[t.id]
-                      ? "bg-purple-50"
-                      : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-                    @click=${(e: any) => {
-                      e.stopPropagation();
-                      this.runningCrawlsMap[t.id]
-                        ? this.navTo(
-                            `/archives/${this.archiveId}/crawls/crawl/${
-                              this.runningCrawlsMap[t.id]
-                            }`
-                          )
-                        : this.runNow(t);
-                    }}
-                  >
-                    <span class="whitespace-nowrap">
-                      ${this.runningCrawlsMap[t.id]
-                        ? msg("View crawl")
-                        : msg("Run now")}
-                    </span>
-                  </button>
-                </div>
+                ${this.renderCardFooter(t)}
               </div>
             </div>`
         )}
@@ -324,6 +243,137 @@ export class CrawlTemplatesList extends LiteElement {
             `
           : ""}
       </sl-dialog>
+    `;
+  }
+
+  renderCardMenu(t: CrawlTemplate) {
+    const menuItems: HTMLTemplateResult[] = [
+      html`
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${() => this.duplicateConfig(t)}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="files"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Duplicate crawl config")}</span
+          >
+        </li>
+      `,
+    ];
+
+    if (!t.inactive) {
+      menuItems.unshift(html`
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            e.target.closest("sl-dropdown").hide();
+            this.showEditDialog = true;
+            this.selectedTemplateForEdit = t;
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="pencil-square"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Edit crawl schedule")}</span
+          >
+        </li>
+      `);
+    }
+
+    if (t.crawlCount && !t.inactive) {
+      menuItems.push(html`
+        <li
+          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            // Close dropdown before deleting template
+            e.target.closest("sl-dropdown").hide();
+
+            this.deleteTemplate(t);
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="file-earmark-minus"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Deactivate")}</span
+          >
+        </li>
+      `);
+    }
+
+    if (!t.crawlCount) {
+      menuItems.push(html`
+        <li
+          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            // Close dropdown before deleting template
+            e.target.closest("sl-dropdown").hide();
+
+            this.deleteTemplate(t);
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="file-earmark-x"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
+        </li>
+      `);
+    }
+
+    return html`
+      <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
+        <sl-icon-button
+          slot="trigger"
+          name="three-dots-vertical"
+          label="More"
+          style="font-size: 1rem"
+        ></sl-icon-button>
+
+        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          ${menuItems.map((item: HTMLTemplateResult) => item)}
+        </ul>
+      </sl-dropdown>
+    `;
+  }
+
+  renderCardFooter(t: CrawlTemplate) {
+    if (t.inactive) {
+      return "";
+    }
+
+    return html`
+      <div>
+        <button
+          class="text-xs border rounded px-2 h-7 ${this.runningCrawlsMap[t.id]
+            ? "bg-purple-50"
+            : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+          @click=${(e: any) => {
+            e.stopPropagation();
+            this.runningCrawlsMap[t.id]
+              ? this.navTo(
+                  `/archives/${this.archiveId}/crawls/crawl/${
+                    this.runningCrawlsMap[t.id]
+                  }`
+                )
+              : this.runNow(t);
+          }}
+        >
+          <span class="whitespace-nowrap">
+            ${this.runningCrawlsMap[t.id] ? msg("View crawl") : msg("Run now")}
+          </span>
+        </button>
+      </div>
     `;
   }
 
