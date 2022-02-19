@@ -246,7 +246,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  renderCardMenu(t: CrawlTemplate) {
+  private renderCardMenu(t: CrawlTemplate) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -347,7 +347,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  renderCardFooter(t: CrawlTemplate) {
+  private renderCardFooter(t: CrawlTemplate) {
     if (t.inactive) {
       return "";
     }
