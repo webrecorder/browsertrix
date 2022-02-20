@@ -29,7 +29,7 @@ class DeleteCrawlList(BaseModel):
 class CrawlScale(BaseModel):
     """ scale the crawl to N parallel containers """
 
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
 
 
 # ============================================================================
@@ -70,7 +70,7 @@ class Crawl(BaseMongoModel):
 
     state: str
 
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
     completions: Optional[int] = 0
 
     stats: Optional[Dict[str, str]]

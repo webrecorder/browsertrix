@@ -85,7 +85,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     oldId: Optional[UUID4]
 
@@ -105,7 +105,7 @@ class CrawlConfig(BaseMongoModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     aid: UUID4
 
