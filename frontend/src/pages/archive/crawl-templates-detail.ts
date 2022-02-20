@@ -147,6 +147,8 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="col-span-3 p-4 md:p-8">${this.renderCrawls()}</div>
         </section>
       </main>
+
+      ${this.renderDialogs()}
     `;
   }
 
@@ -176,7 +178,8 @@ export class CrawlTemplatesDetail extends LiteElement {
         <li
           class="p-2 hover:bg-zinc-100 cursor-pointer"
           role="menuitem"
-          @click=${() => {
+          @click=${(e: any) => {
+            e.target.closest("sl-dropdown").hide();
             this.showEditName = true;
           }}
         >
@@ -185,7 +188,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             name="pencil-square"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit name")}</span
+            >${msg("Change name")}</span
           >
         </li>
         <hr />
@@ -198,7 +201,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            // Close dropdown before deleting template
             e.target.closest("sl-dropdown").hide();
 
             this.deactivateTemplate();
@@ -221,9 +223,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
             this.deleteTemplate();
           }}
         >
@@ -316,6 +315,29 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
       </dl>
+    `;
+  }
+
+  private renderEditName() {
+    if (!this.crawlTemplate) return;
+
+    return html`
+      <sl-form>
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          placeholder=${msg("Example (example.com) Weekly Crawl", {
+            desc: "Example crawl template name",
+          })}
+          autocomplete="off"
+          value=${this.crawlTemplate.name}
+          required
+        ></sl-input>
+
+        <div class="mt-5">
+          <sl-button type="primary" submit>${msg("Save Name")}</sl-button>
+        </div>
+      </sl-form>
     `;
   }
 
@@ -412,6 +434,12 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderEditConfiguration() {
+    if (!this.crawlTemplate) return;
+
+    return html` <sl-form> TODO </sl-form> `;
+  }
+
   private renderSchedule() {
     return html`
       <dl class="grid gap-5">
@@ -437,6 +465,17 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
       </dl>
+    `;
+  }
+
+  private renderEditSchedule() {
+    if (!this.crawlTemplate) return;
+
+    return html`
+      <btrix-crawl-templates-scheduler
+        .schedule=${this.crawlTemplate.schedule}
+        @submit=${this.onSubmitSchedule}
+      ></btrix-crawl-templates-scheduler>
     `;
   }
 
@@ -508,6 +547,34 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
       </dl>
+    `;
+  }
+
+  private renderDialogs() {
+    return html`
+      <sl-dialog
+        label=${msg(str`Edit Crawl Template Name`)}
+        ?open=${this.showEditName}
+        @sl-request-close=${() => (this.showEditName = false)}
+      >
+        ${this.renderEditName()}
+      </sl-dialog>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Configuration`)}
+        ?open=${this.showEditConfiguration}
+        @sl-request-close=${() => (this.showEditConfiguration = false)}
+      >
+        ${this.renderEditConfiguration()}
+      </sl-dialog>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Schedule`)}
+        ?open=${this.showEditSchedule}
+        @sl-request-close=${() => (this.showEditSchedule = false)}
+      >
+        ${this.renderEditSchedule()}
+      </sl-dialog>
     `;
   }
 
