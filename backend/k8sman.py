@@ -468,9 +468,6 @@ class K8SManager:
         if not job or job.metadata.labels["btrix.archive"] != aid:
             return "Invalid Crawled"
 
-        if parallelism < 1 or parallelism > 10:
-            return "Invalid Scale: Must be between 1 and 10"
-
         job.spec.parallelism = parallelism
 
         await self.batch_api.patch_namespaced_job(

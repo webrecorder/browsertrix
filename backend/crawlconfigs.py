@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime
 
 import pymongo
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, conint
 from fastapi import APIRouter, Depends, HTTPException
 
 from users import User
@@ -17,6 +17,9 @@ from archives import Archive
 
 from db import BaseMongoModel
 
+
+# max crawl scale schema constraint
+MAX_SCALE = 3
 
 # ============================================================================
 class ScopeType(str, Enum):
@@ -85,7 +88,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[int] = 1
+    scale: Optional[conint(ge=1, le=MAX_SCALE)]
 
     oldId: Optional[UUID4]
 
@@ -105,7 +108,7 @@ class CrawlConfig(BaseMongoModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[int] = 1
+    scale: Optional[conint(ge=1, le=MAX_SCALE)]
 
     aid: UUID4
 
@@ -147,7 +150,7 @@ class UpdateCrawlConfig(BaseModel):
 
     name: Optional[str]
     schedule: Optional[str]
-    scale: Optional[int]
+    scale: Optional[conint(ge=1, le=MAX_SCALE)]
 
 
 # ============================================================================
@@ -221,7 +224,7 @@ class CrawlConfigOps:
         """ Update name, scale and/or schedule for an existing crawl config """
 
         # set update query
-        query = update.dict(exclude_unset=True, exclude_default=True, exclude_none=True)
+        query = update.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
