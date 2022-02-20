@@ -189,7 +189,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
               )}
         </div>
 
-        <div class="mt-5">
+        <div class="mt-5 text-right">
           <sl-button type="primary" submit
             >${msg("Save Crawl Schedule")}</sl-button
           >

@@ -1,11 +1,12 @@
 import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlTemplate } from "./types";
+import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
 
@@ -43,9 +44,29 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private showEditSchedule: boolean = false;
 
+  @state()
+  private isSeedsJsonView: boolean = false;
+
+  @state()
+  private seedsJson: string = "";
+
+  @state()
+  private invalidSeedsJsonMessage: string = "";
+
   async firstUpdated() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
+
+      // Show JSON editor view if complex initial config is specified
+      // (e.g. cloning a template) since form UI doesn't support
+      // all available fields in the config
+      const isComplexConfig = this.crawlTemplate.config.seeds.some(
+        (seed: any) => typeof seed !== "string"
+      );
+      if (isComplexConfig) {
+        this.isSeedsJsonView = true;
+      }
+      this.seedsJson = JSON.stringify(this.crawlTemplate.config, null, 2);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl template at this time."),
@@ -322,7 +343,16 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form>
+      <sl-form
+        @sl-submit=${async (e: { detail: { formData: FormData } }) => {
+          const { formData } = e.detail;
+          const name = formData.get("name") as string;
+
+          await this.onSubmitChanges({ name });
+
+          this.showEditName = false;
+        }}
+      >
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -334,8 +364,8 @@ export class CrawlTemplatesDetail extends LiteElement {
           required
         ></sl-input>
 
-        <div class="mt-5">
-          <sl-button type="primary" submit>${msg("Save Name")}</sl-button>
+        <div class="mt-5 text-right">
+          <sl-button type="primary" submit>${msg("Save")}</sl-button>
         </div>
       </sl-form>
     `;
@@ -437,7 +467,69 @@ export class CrawlTemplatesDetail extends LiteElement {
   private renderEditConfiguration() {
     if (!this.crawlTemplate) return;
 
-    return html` <sl-form> TODO </sl-form> `;
+    return html`
+      <sl-form
+        @sl-submit=${async (e: { detail: { formData: FormData } }) => {
+          const { formData } = e.detail;
+          const configValue = formData.get("config") as string;
+          let config: CrawlConfig;
+
+          if (configValue) {
+            if (this.invalidSeedsJsonMessage) return;
+
+            config = JSON.parse(configValue) as CrawlConfig;
+          } else {
+            const pageLimit = formData.get("limit") as string;
+            const seedUrlsStr = formData.get("seedUrls") as string;
+
+            config = {
+              seeds: seedUrlsStr.trim().replace(/,/g, " ").split(/\s+/g),
+              scopeType: formData.get("scopeType") as string,
+              limit: pageLimit ? +pageLimit : 0,
+              extraHops: formData.get("extraHopsOne") ? 1 : 0,
+            };
+          }
+
+          if (config) {
+            await this.onSubmitChanges({
+              config,
+            });
+          }
+
+          this.showEditConfiguration = false;
+        }}
+      >
+        <div class="grid gap-5">
+          <div class="flex justify-between">
+            <h4 class="font-medium">
+              ${this.isSeedsJsonView
+                ? msg("Custom Config")
+                : msg("Configure Seeds")}
+            </h4>
+            <sl-switch
+              ?checked=${this.isSeedsJsonView}
+              @sl-change=${(e: any) =>
+                (this.isSeedsJsonView = e.target.checked)}
+            >
+              <span class="text-sm">${msg("Use JSON Editor")}</span>
+            </sl-switch>
+          </div>
+
+          ${this.isSeedsJsonView
+            ? this.renderSeedsJson()
+            : this.renderSeedsForm()}
+
+          <div class="text-right">
+            <sl-button
+              type="primary"
+              submit
+              ?disabled=${Boolean(this.invalidSeedsJsonMessage)}
+              >${msg("Save Changes")}</sl-button
+            >
+          </div>
+        </div>
+      </sl-form>
+    `;
   }
 
   private renderSchedule() {
@@ -474,7 +566,24 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <btrix-crawl-templates-scheduler
         .schedule=${this.crawlTemplate.schedule}
-        @submit=${this.onSubmitSchedule}
+        @submit=${async (e: { detail: { formData: FormData } }) => {
+          const { formData } = e.detail;
+          const interval = formData.get("scheduleInterval");
+          let schedule = "";
+
+          if (interval) {
+            schedule = getUTCSchedule({
+              interval: formData.get("scheduleInterval") as any,
+              hour: formData.get("scheduleHour") as any,
+              minute: formData.get("scheduleMinute") as any,
+              period: formData.get("schedulePeriod") as any,
+            });
+          }
+
+          await this.onSubmitChanges({ schedule });
+
+          this.showEditSchedule = false;
+        }}
       ></btrix-crawl-templates-scheduler>
     `;
   }
@@ -556,6 +665,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         label=${msg(str`Edit Crawl Template Name`)}
         ?open=${this.showEditName}
         @sl-request-close=${() => (this.showEditName = false)}
+        @sl-after-hide=${() => {
+          // TODO reset form
+        }}
       >
         ${this.renderEditName()}
       </sl-dialog>
@@ -564,6 +676,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         label=${msg(str`Edit Crawl Configuration`)}
         ?open=${this.showEditConfiguration}
         @sl-request-close=${() => (this.showEditConfiguration = false)}
+        @sl-after-hide=${() => {
+          // TODO reset form
+        }}
       >
         ${this.renderEditConfiguration()}
       </sl-dialog>
@@ -572,10 +687,144 @@ export class CrawlTemplatesDetail extends LiteElement {
         label=${msg(str`Edit Crawl Schedule`)}
         ?open=${this.showEditSchedule}
         @sl-request-close=${() => (this.showEditSchedule = false)}
+        @sl-after-hide=${() => {
+          // TODO reset form
+        }}
       >
         ${this.renderEditSchedule()}
       </sl-dialog>
     `;
+  }
+
+  private renderSeedsForm() {
+    return html`
+      <sl-textarea
+        name="seedUrls"
+        label=${msg("Seed URLs")}
+        placeholder=${msg(`https://webrecorder.net\nhttps://example.com`, {
+          desc: "Example seed URLs",
+        })}
+        help-text=${msg(
+          "Required. Separate URLs with a new line, space or comma."
+        )}
+        rows="3"
+        value=${this.crawlTemplate!.config.seeds.join("\n")}
+        required
+      ></sl-textarea>
+      <sl-select
+        name="scopeType"
+        label=${msg("Crawl Scope")}
+        value=${this.crawlTemplate!.config.scopeType!}
+      >
+        <sl-menu-item value="page">Page</sl-menu-item>
+        <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
+        <sl-menu-item value="prefix">Prefix</sl-menu-item>
+        <sl-menu-item value="host">Host</sl-menu-item>
+        <sl-menu-item value="any">Any</sl-menu-item>
+      </sl-select>
+      <sl-checkbox name="extraHopsOne"
+        >${msg("Include External Links ('one hop out')")}
+      </sl-checkbox>
+      <sl-input
+        name="limit"
+        label=${msg("Page Limit")}
+        type="number"
+        value=${ifDefined(this.crawlTemplate!.config.limit)}
+        placeholder=${msg("unlimited")}
+      >
+        <span slot="suffix">${msg("pages")}</span>
+      </sl-input>
+    `;
+  }
+
+  private renderSeedsJson() {
+    return html`
+      <div class="grid gap-4">
+        <div>
+          <p class="mb-2">
+            ${msg(
+              html`See
+                <a
+                  href="https://github.com/webrecorder/browsertrix-crawler#crawling-configuration-options"
+                  class="text-primary hover:underline"
+                  target="_blank"
+                  >Browsertrix Crawler docs
+                  <sl-icon name="box-arrow-up-right"></sl-icon
+                ></a>
+                for all configuration options.`
+            )}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="relative col-span-2">
+            ${this.renderSeedsJsonInput()}
+
+            <div class="absolute top-2 right-2">
+              <btrix-copy-button .value=${this.seedsJson}></btrix-copy-button>
+            </div>
+          </div>
+
+          <div class="col-span-1">
+            ${this.invalidSeedsJsonMessage
+              ? html`<btrix-alert type="danger">
+                  ${this.invalidSeedsJsonMessage}
+                </btrix-alert> `
+              : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSeedsJsonInput() {
+    return html`
+      <textarea
+        id="json-editor"
+        name="config"
+        class="language-json block w-full bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
+        autocomplete="off"
+        rows="10"
+        spellcheck="false"
+        .value=${this.seedsJson}
+        @keydown=${(e: any) => {
+          // Add indentation when pressing tab key instead of moving focus
+          if (e.keyCode === /* tab: */ 9) {
+            e.preventDefault();
+
+            const textarea = e.target;
+
+            textarea.setRangeText(
+              "  ",
+              textarea.selectionStart,
+              textarea.selectionStart,
+              "end"
+            );
+          }
+        }}
+        @change=${(e: any) => (this.seedsJson = e.target.value)}
+        @blur=${this.updateSeedsJson}
+      ></textarea>
+    `;
+  }
+
+  private updateSeedsJson(e: any) {
+    const textarea = e.target;
+    const text = textarea.value;
+
+    try {
+      const json = JSON.parse(text);
+
+      this.seedsJson = JSON.stringify(json, null, 2);
+      this.invalidSeedsJsonMessage = "";
+
+      textarea.setCustomValidity("");
+      textarea.reportValidity();
+    } catch (e: any) {
+      this.invalidSeedsJsonMessage = e.message
+        ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
+        : msg("JSON is invalid.");
+    }
   }
 
   async getCrawlTemplate(): Promise<CrawlTemplate> {
@@ -718,53 +967,30 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
   }
 
-  private async onSubmitSchedule(event: {
-    detail: { formData: FormData };
-    target: any;
-  }): Promise<void> {
-    const { formData } = event.detail;
-    const interval = formData.get("scheduleInterval");
-    let schedule = "";
-
-    if (interval) {
-      schedule = getUTCSchedule({
-        interval: formData.get("scheduleInterval") as any,
-        hour: formData.get("scheduleHour") as any,
-        minute: formData.get("scheduleMinute") as any,
-        period: formData.get("schedulePeriod") as any,
-      });
-    }
+  private async onSubmitChanges(params: Partial<CrawlTemplate>): Promise<void> {
+    console.log(params);
 
     try {
-      await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${
-          this.crawlTemplate!.id
-        }/schedule`,
+      const resp = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate!.id}`,
         this.authState!,
         {
           method: "PATCH",
-          body: JSON.stringify({ schedule }),
+          body: JSON.stringify(params),
         }
       );
-
-      this.crawlTemplate!.schedule = schedule;
+      console.log(resp);
 
       this.notify({
-        message: msg("Successfully saved new schedule."),
+        message: msg("Successfully saved changes."),
         type: "success",
         icon: "check2-circle",
       });
-
-      this.navTo(
-        `/archives/${this.archiveId}/crawl-templates/config/${
-          this.crawlTemplate!.id
-        }`
-      );
     } catch (e: any) {
       console.error(e);
 
       this.notify({
-        message: msg("Something went wrong, couldn't update schedule."),
+        message: msg("Something went wrong, couldn't update crawl template."),
         type: "danger",
         icon: "exclamation-octagon",
       });
