@@ -201,7 +201,7 @@ class K8SManager:
             labels,
             annotations,
             crawlconfig.crawlTimeout,
-            crawlconfig.parallel,
+            crawlconfig.scale,
         )
 
         spec = client.V1beta1CronJobSpec(
@@ -467,9 +467,6 @@ class K8SManager:
 
         if not job or job.metadata.labels["btrix.archive"] != aid:
             return "Invalid Crawled"
-
-        if parallelism < 1 or parallelism > 10:
-            return "Invalid Scale: Must be between 1 and 10"
 
         job.spec.parallelism = parallelism
 
