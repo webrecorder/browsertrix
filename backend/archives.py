@@ -16,6 +16,10 @@ from users import User
 from invites import InvitePending, InviteToArchiveRequest, UserRole
 
 
+# crawl scale for constraint
+MAX_CRAWL_SCALE = 3
+
+
 # ============================================================================
 class UpdateRole(InviteToArchiveRequest):
     """Update existing role for user"""

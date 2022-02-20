@@ -13,13 +13,10 @@ from pydantic import BaseModel, UUID4, conint
 from fastapi import APIRouter, Depends, HTTPException
 
 from users import User
-from archives import Archive
+from archives import Archive, MAX_CRAWL_SCALE
 
 from db import BaseMongoModel
 
-
-# max crawl scale schema constraint
-MAX_SCALE = 3
 
 # ============================================================================
 class ScopeType(str, Enum):
@@ -88,7 +85,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
 
     oldId: Optional[UUID4]
 
@@ -108,7 +105,7 @@ class CrawlConfig(BaseMongoModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
 
     aid: UUID4
 
@@ -150,7 +147,7 @@ class UpdateCrawlConfig(BaseModel):
 
     name: Optional[str]
     schedule: Optional[str]
-    scale: Optional[conint(ge=1, le=MAX_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
 
 
 # ============================================================================

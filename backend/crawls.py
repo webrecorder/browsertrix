@@ -9,12 +9,12 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime
 
 from fastapi import Depends, Request, HTTPException
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, conint
 import pymongo
 import aioredis
 
 from db import BaseMongoModel
-from archives import Archive
+from archives import Archive, MAX_CRAWL_SCALE
 from storages import get_presigned_url
 
 
@@ -29,7 +29,7 @@ class DeleteCrawlList(BaseModel):
 class CrawlScale(BaseModel):
     """ scale the crawl to N parallel containers """
 
-    scale: int = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
 
 
 # ============================================================================
@@ -70,7 +70,7 @@ class Crawl(BaseMongoModel):
 
     state: str
 
-    scale: int = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     completions: Optional[int] = 0
 
     stats: Optional[Dict[str, str]]
