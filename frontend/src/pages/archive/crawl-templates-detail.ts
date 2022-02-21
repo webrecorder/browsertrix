@@ -53,7 +53,17 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  async firstUpdated() {
+  firstUpdated() {
+    this.initializeCrawlTemplate();
+  }
+
+  async updated(changedProperties: any) {
+    if (changedProperties.has("crawlConfigId")) {
+      this.initializeCrawlTemplate();
+    }
+  }
+
+  async initializeCrawlTemplate() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
 
@@ -120,6 +130,32 @@ export class CrawlTemplatesDetail extends LiteElement {
         <section class="md:grid grid-cols-4">
           <div class="col-span-1 p-4 md:p-8 md:border-b">
             <h3 class="font-medium">${msg("Configuration")}</h3>
+            ${this.crawlTemplate?.oldId
+              ? html`
+                  <aside>
+                    <a
+                      class="text-sm font-medium text-neutral-400 hover:text-neutral-500"
+                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.oldId}`}
+                      @click=${this.navLink}
+                    >
+                      ${msg("see previous version")}
+                    </a>
+                  </aside>
+                `
+              : ""}
+            ${this.crawlTemplate?.newId
+              ? html`
+                  <aside>
+                    <a
+                      class="text-sm font-medium text-indigo-500 hover:text-indigo-600"
+                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                      @click=${this.navLink}
+                    >
+                      ${msg("see newer version")}
+                    </a>
+                  </aside>
+                `
+              : ""}
           </div>
           <div class="col-span-3 p-4 border-b flex">
             <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
