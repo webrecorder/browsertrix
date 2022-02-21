@@ -1,4 +1,5 @@
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "../../components/relative-duration";
@@ -75,7 +76,7 @@ export class CrawlDetail extends LiteElement {
       </nav>
 
       <header class="my-3">
-        <h2 class="text-xl font-medium mb-1 h-7">
+        <h2 class="text-xl font-medium mb-1 md:h-7">
           ${this.crawl
             ? msg(str`Crawl of ${this.crawl.configName}`)
             : html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
@@ -159,7 +160,7 @@ export class CrawlDetail extends LiteElement {
         ${replaySource
           ? html`<replay-web-page
               source="${replaySource}"
-              coll="${this.crawl?.id}"
+              coll="${ifDefined(this.crawl?.id)}"
               replayBase="/replay/"
               noSandbox="true"
             ></replay-web-page>`

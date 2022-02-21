@@ -87,125 +87,130 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   render() {
     return html`
-      <nav class="mb-5">
-        <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawl-templates`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawl Templates")}</span
+      <div class="grid gap-5">
+        <nav>
+          <a
+            class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+            href=${`/archives/${this.archiveId}/crawl-templates`}
+            @click=${this.navLink}
           >
-        </a>
-      </nav>
+            <sl-icon
+              name="arrow-left"
+              class="inline-block align-middle"
+            ></sl-icon>
+            <span class="inline-block align-middle"
+              >${msg("Back to Crawl Templates")}</span
+            >
+          </a>
+        </nav>
 
-      ${this.renderInactiveNotice()}
+        ${this.renderInactiveNotice()}
 
-      <header class="flex justify-between items-end mb-4">
-        <div>
-          <h2 class="text-2xl font-bold md:h-7 md:truncate leading-tight mb-1">
-            ${this.crawlTemplate?.name ||
-            html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
-          </h2>
-          <div class="text-xs text-neutral-400 h-4">
-            ${msg("ID")} <code>${this.crawlTemplate?.id}</code>
-          </div>
-        </div>
-
-        <div class="flex-0">${this.renderMenu()}</div>
-      </header>
-
-      ${this.renderCurrentlyRunningNotice()}
-
-      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        ${this.renderDetails()}
-      </section>
-
-      <main class="border rounded-lg">
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8 md:border-b">
-            <h3 class="font-medium">${msg("Configuration")}</h3>
-            ${this.crawlTemplate?.oldId
-              ? html`
-                  <aside>
-                    <a
-                      class="text-sm font-medium text-neutral-400 hover:text-neutral-500"
-                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.oldId}`}
-                      @click=${(e: any) => {
-                        this.crawlTemplate = undefined;
-                        this.navLink(e);
-                      }}
-                    >
-                      ${msg("see previous version")}
-                    </a>
-                  </aside>
-                `
-              : ""}
-            ${this.crawlTemplate?.newId
-              ? html`
-                  <aside>
-                    <a
-                      class="text-sm font-medium text-indigo-500 hover:text-indigo-600"
-                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
-                      @click=${this.navLink}
-                    >
-                      ${msg("see newer version")}
-                    </a>
-                  </aside>
-                `
-              : ""}
-          </div>
-          <div class="col-span-3 p-4 border-b flex">
-            <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
-            <div class="flex-0 md:ml-4">
-              ${this.crawlTemplate?.inactive || !this.crawlTemplate
-                ? ""
-                : html`
-                    <sl-button
-                      size="small"
-                      type="text"
-                      @click=${() => (this.openDialogName = "config")}
-                    >
-                      ${msg("Edit")}
-                    </sl-button>
-                  `}
+        <header class="px-4 pt-4 flex justify-between">
+          <div>
+            <h2 class="text-3xl font-bold md:h-9 leading-tight mb-1">
+              ${this.crawlTemplate?.name ||
+              html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
+            </h2>
+            <div class="text-sm text-neutral-400 h-5">
+              ${msg("Crawl Template")}
+              <code class="bg-neutral-50 text-xs ml-3"
+                >${this.crawlTemplate?.id}</code
+              >
             </div>
           </div>
+
+          <div class="flex-0">${this.renderMenu()}</div>
+        </header>
+
+        <section class="px-4 text-sm text-neutral-500">
+          ${this.renderDetails()}
         </section>
 
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8 md:border-b">
-            <h3 class="font-medium">${msg("Schedule")}</h3>
-          </div>
-          <div class="col-span-3 p-4 border-b flex">
-            <div class="flex-1 md:p-4">${this.renderSchedule()}</div>
-            <div class="flex-0 md:ml-4">
-              ${this.crawlTemplate?.inactive || !this.crawlTemplate
-                ? ""
-                : html`
-                    <sl-button
-                      size="small"
-                      type="text"
-                      @click=${() => (this.openDialogName = "schedule")}
-                    >
-                      ${msg("Edit")}
-                    </sl-button>
-                  `}
+        ${this.renderCurrentlyRunningNotice()}
+
+        <main class="border rounded-lg">
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8 md:border-b">
+              <h3 class="font-medium">${msg("Configuration")}</h3>
+              ${this.crawlTemplate?.oldId
+                ? html`
+                    <aside>
+                      <a
+                        class="text-sm font-medium text-neutral-400 hover:text-neutral-500"
+                        href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.oldId}`}
+                        @click=${(e: any) => {
+                          this.crawlTemplate = undefined;
+                          this.navLink(e);
+                        }}
+                      >
+                        ${msg("see previous version")}
+                      </a>
+                    </aside>
+                  `
+                : ""}
+              ${this.crawlTemplate?.newId
+                ? html`
+                    <aside>
+                      <a
+                        class="text-sm font-medium text-indigo-500 hover:text-indigo-600"
+                        href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                        @click=${this.navLink}
+                      >
+                        ${msg("see newer version")}
+                      </a>
+                    </aside>
+                  `
+                : ""}
             </div>
-          </div>
-        </section>
+            <div class="col-span-3 p-4 border-b flex">
+              <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
+              <div class="flex-0 md:ml-4">
+                ${this.crawlTemplate?.inactive || !this.crawlTemplate
+                  ? ""
+                  : html`
+                      <sl-button
+                        size="small"
+                        type="text"
+                        @click=${() => (this.openDialogName = "config")}
+                      >
+                        ${msg("Edit")}
+                      </sl-button>
+                    `}
+              </div>
+            </div>
+          </section>
 
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8">
-            <h3 class="font-medium">${msg("Crawls")}</h3>
-          </div>
-          <div class="col-span-3 p-4 md:p-8">${this.renderCrawls()}</div>
-        </section>
-      </main>
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8 md:border-b">
+              <h3 class="font-medium">${msg("Schedule")}</h3>
+            </div>
+            <div class="col-span-3 p-4 border-b flex">
+              <div class="flex-1 md:p-4">${this.renderSchedule()}</div>
+              <div class="flex-0 md:ml-4">
+                ${this.crawlTemplate?.inactive || !this.crawlTemplate
+                  ? ""
+                  : html`
+                      <sl-button
+                        size="small"
+                        type="text"
+                        @click=${() => (this.openDialogName = "schedule")}
+                      >
+                        ${msg("Edit")}
+                      </sl-button>
+                    `}
+              </div>
+            </div>
+          </section>
+
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8">
+              <h3 class="font-medium">${msg("Crawls")}</h3>
+            </div>
+            <div class="col-span-3 p-4 md:p-8">${this.renderCrawls()}</div>
+          </section>
+        </main>
+      </div>
 
       ${this.renderDialogs()}
     `;
@@ -344,38 +349,34 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlTemplate?.inactive) {
       if (this.crawlTemplate?.newId) {
         return html`
-          <div class="mb-5">
-            <btrix-alert type="info">
-              <sl-icon
-                name="exclamation-octagon"
-                class="inline-block align-middle mr-2"
-              ></sl-icon>
-              <span class="inline-block align-middle">
-                ${msg("This crawl template is inactive.")}
-                <a
-                  class="font-medium underline hover:no-underline"
-                  href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
-                  @click=${this.navLink}
-                  >${msg("Go to newer version")}</a
-                >
-              </span>
-            </btrix-alert>
-          </div>
-        `;
-      }
-
-      return html`
-        <div class="mb-5">
-          <btrix-alert type="warning">
+          <btrix-alert type="info">
             <sl-icon
               name="exclamation-octagon"
               class="inline-block align-middle mr-2"
             ></sl-icon>
             <span class="inline-block align-middle">
               ${msg("This crawl template is inactive.")}
+              <a
+                class="font-medium underline hover:no-underline"
+                href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                @click=${this.navLink}
+                >${msg("Go to newer version")}</a
+              >
             </span>
           </btrix-alert>
-        </div>
+        `;
+      }
+
+      return html`
+        <btrix-alert type="warning">
+          <sl-icon
+            name="exclamation-octagon"
+            class="inline-block align-middle mr-2"
+          ></sl-icon>
+          <span class="inline-block align-middle">
+            ${msg("This crawl template is inactive.")}
+          </span>
+        </btrix-alert>
       `;
     }
 
@@ -386,7 +387,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlTemplate?.currCrawlId) {
       return html`
         <a
-          class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+          class="flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
           href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
           @click=${this.navLink}
         >
@@ -668,7 +669,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <span class="inline-block align-middle">${msg("# of Crawls")}</span>
             <sl-tooltip
               content=${msg(
-                "Number of completed crawls using current version of the crawl configuration."
+                "Number of completed crawls using current version of the crawl configuration"
               )}
               ><sl-icon
                 class="inline-block align-middle"
