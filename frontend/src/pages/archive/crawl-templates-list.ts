@@ -542,7 +542,7 @@ export class CrawlTemplatesList extends LiteElement {
 
     try {
       await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}/schedule`,
+        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}`,
         this.authState!,
         {
           method: "PATCH",
