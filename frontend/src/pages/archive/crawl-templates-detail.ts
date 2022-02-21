@@ -342,6 +342,28 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderInactiveNotice() {
     if (this.crawlTemplate?.inactive) {
+      if (this.crawlTemplate?.newId) {
+        return html`
+          <div class="mb-5">
+            <btrix-alert type="info">
+              <sl-icon
+                name="exclamation-octagon"
+                class="inline-block align-middle mr-2"
+              ></sl-icon>
+              <span class="inline-block align-middle">
+                ${msg("This crawl template is inactive.")}
+                <a
+                  class="font-medium underline hover:no-underline"
+                  href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                  @click=${this.navLink}
+                  >${msg("Go to newer version")}</a
+                >
+              </span>
+            </btrix-alert>
+          </div>
+        `;
+      }
+
       return html`
         <div class="mb-5">
           <btrix-alert type="warning">
@@ -540,16 +562,22 @@ export class CrawlTemplatesDetail extends LiteElement {
   private renderEditConfiguration() {
     if (!this.crawlTemplate) return;
 
+    const shouldReplacingTemplate = this.crawlTemplate.crawlCount > 0;
+
     return html`
       <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
         <div class="grid gap-5">
-          <btrix-alert>
-            <p>
-              ${msg(
-                "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
-              )}
-            </p>
-          </btrix-alert>
+          ${shouldReplacingTemplate
+            ? html`
+                <btrix-alert>
+                  <p>
+                    ${msg(
+                      "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
+                    )}
+                  </p>
+                </btrix-alert>
+              `
+            : ""}
 
           <div class="flex justify-between">
             <h4 class="font-medium">
@@ -636,7 +664,18 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <dl class="grid gap-5">
         <div>
-          <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
+          <dt class="text-sm text-0-600">
+            <span class="inline-block align-middle">${msg("# of Crawls")}</span>
+            <sl-tooltip
+              content=${msg(
+                "Number of completed crawls using current version of the crawl configuration."
+              )}
+              ><sl-icon
+                class="inline-block align-middle"
+                name="info-circle"
+              ></sl-icon
+            ></sl-tooltip>
+          </dt>
           <dd class="font-mono">
             ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
           </dd>
