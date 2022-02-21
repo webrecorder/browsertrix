@@ -53,17 +53,13 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  firstUpdated() {
-    this.initializeCrawlTemplate();
-  }
-
-  async updated(changedProperties: any) {
-    if (changedProperties.get("crawlConfigId")) {
+  updated(changedProperties: any) {
+    if (changedProperties.has("crawlConfigId")) {
       this.initializeCrawlTemplate();
     }
   }
 
-  async initializeCrawlTemplate() {
+  private async initializeCrawlTemplate() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
 
@@ -77,9 +73,12 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.isSeedsJsonView = true;
       }
       this.seedsJson = JSON.stringify(this.crawlTemplate.config, null, 2);
-    } catch {
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't retrieve crawl template at this time."),
+        message:
+          e.statusCode === 404
+            ? msg("Crawl template not found.")
+            : msg("Sorry, couldn't retrieve crawl template at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
