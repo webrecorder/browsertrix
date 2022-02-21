@@ -971,7 +971,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     console.log(params);
 
     try {
-      const resp = await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate!.id}`,
         this.authState!,
         {
@@ -979,13 +979,21 @@ export class CrawlTemplatesDetail extends LiteElement {
           body: JSON.stringify(params),
         }
       );
-      console.log(resp);
 
-      this.notify({
-        message: msg("Successfully saved changes."),
-        type: "success",
-        icon: "check2-circle",
-      });
+      if (data.success === true) {
+        this.crawlTemplate = {
+          ...this.crawlTemplate!,
+          ...params,
+        };
+
+        this.notify({
+          message: msg("Successfully saved changes."),
+          type: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw data;
+      }
     } catch (e: any) {
       console.error(e);
 
