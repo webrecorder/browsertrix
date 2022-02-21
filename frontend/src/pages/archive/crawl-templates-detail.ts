@@ -53,6 +53,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private invalidSeedsJsonMessage: string = "";
 
+  @state()
+  private isSubmittingUpdate: boolean = false;
+
   async firstUpdated() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
@@ -365,7 +368,13 @@ export class CrawlTemplatesDetail extends LiteElement {
         ></sl-input>
 
         <div class="mt-5 text-right">
-          <sl-button type="primary" submit>${msg("Save")}</sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmittingUpdate}
+            ?loading=${this.isSubmittingUpdate}
+            >${msg("Save")}</sl-button
+          >
         </div>
       </sl-form>
     `;
@@ -523,7 +532,9 @@ export class CrawlTemplatesDetail extends LiteElement {
             <sl-button
               type="primary"
               submit
-              ?disabled=${Boolean(this.invalidSeedsJsonMessage)}
+              ?disabled=${Boolean(this.invalidSeedsJsonMessage) ||
+              this.isSubmittingUpdate}
+              ?loading=${this.isSubmittingUpdate}
               >${msg("Save Changes")}</sl-button
             >
           </div>
@@ -564,8 +575,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <btrix-crawl-templates-scheduler
+      <btrix-crawl-scheduler
         .schedule=${this.crawlTemplate.schedule}
+        .isSubmitting=${this.isSubmittingUpdate}
         @submit=${async (e: { detail: { formData: FormData } }) => {
           const { formData } = e.detail;
           const interval = formData.get("scheduleInterval");
@@ -584,7 +596,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           this.showEditSchedule = false;
         }}
-      ></btrix-crawl-templates-scheduler>
+      ></btrix-crawl-scheduler>
     `;
   }
 
@@ -970,6 +982,8 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async onSubmitChanges(params: Partial<CrawlTemplate>): Promise<void> {
     console.log(params);
 
+    this.isSubmittingUpdate = true;
+
     try {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate!.id}`,
@@ -1003,6 +1017,8 @@ export class CrawlTemplatesDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    this.isSubmittingUpdate = false;
   }
 }
 

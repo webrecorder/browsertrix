@@ -9,10 +9,10 @@ import type { CrawlTemplate } from "../pages/archive/types";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-scheduler
+ * <btrix-crawl-scheduler
  *   schedule="0 0 * * *"
  *   @submit=${this.handleSubmit}
- * ></btrix-crawl-templates-scheduler>
+ * ></btrix-crawl-scheduler>
  * ```
  *
  * @event submit
@@ -20,7 +20,10 @@ import type { CrawlTemplate } from "../pages/archive/types";
 @localized()
 export class CrawlTemplatesScheduler extends LiteElement {
   @property({ type: String })
-  private schedule?: CrawlTemplate["schedule"];
+  schedule?: CrawlTemplate["schedule"];
+
+  @property({ type: Boolean })
+  isSubmitting: boolean = false;
 
   @state()
   private editedSchedule?: string;
@@ -190,7 +193,11 @@ export class CrawlTemplatesScheduler extends LiteElement {
         </div>
 
         <div class="mt-5 text-right">
-          <sl-button type="primary" submit
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
             >${msg("Save Crawl Schedule")}</sl-button
           >
         </div>
@@ -240,7 +247,4 @@ export class CrawlTemplatesScheduler extends LiteElement {
   }
 }
 
-customElements.define(
-  "btrix-crawl-templates-scheduler",
-  CrawlTemplatesScheduler
-);
+customElements.define("btrix-crawl-scheduler", CrawlTemplatesScheduler);

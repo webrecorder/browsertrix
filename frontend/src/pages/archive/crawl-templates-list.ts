@@ -236,10 +236,10 @@ export class CrawlTemplatesList extends LiteElement {
 
         ${this.selectedTemplateForEdit
           ? html`
-              <btrix-crawl-templates-scheduler
+              <btrix-crawl-scheduler
                 .schedule=${this.selectedTemplateForEdit.schedule}
                 @submit=${this.onSubmitSchedule}
-              ></btrix-crawl-templates-scheduler>
+              ></btrix-crawl-scheduler>
             `
           : ""}
       </sl-dialog>
