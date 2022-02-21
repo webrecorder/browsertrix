@@ -473,15 +473,13 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
         <div class="grid gap-5">
-          <div>
-            <btrix-alert>
-              <p>
-                ${msg(
-                  "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
-                )}
-              </p>
-            </btrix-alert>
-          </div>
+          <btrix-alert>
+            <p>
+              ${msg(
+                "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
+              )}
+            </p>
+          </btrix-alert>
 
           <div class="flex justify-between">
             <h4 class="font-medium">
@@ -514,7 +512,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               ?disabled=${Boolean(this.invalidSeedsJsonMessage) ||
               this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
-              >${msg("Save New Version")}</sl-button
+              >${msg("Save Changes")}</sl-button
             >
           </div>
         </div>
@@ -652,7 +650,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       </sl-dialog>
 
       <sl-dialog
-        label=${msg(str`Change Crawl Configuration`)}
+        label=${msg(str`Edit Crawl Configuration`)}
         style="--width: ${dialogWidth}"
         ?open=${this.showEditConfiguration}
         @sl-request-close=${() => (this.showEditConfiguration = false)}
@@ -847,7 +845,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     const { formData } = e.detail;
     const name = formData.get("name") as string;
 
-    await this.onSubmitChanges({ name });
+    await this.updateTemplate({ name });
 
     this.showEditName = false;
   }
@@ -876,9 +874,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     if (config) {
-      await this.onSubmitChanges({
-        config,
-      });
+      await this.createRevisedTemplate(config);
     }
 
     this.showEditConfiguration = false;
@@ -900,7 +896,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       });
     }
 
-    await this.onSubmitChanges({ schedule });
+    await this.updateTemplate({ schedule });
 
     this.showEditSchedule = false;
   }
@@ -1010,7 +1006,61 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
   }
 
-  private async onSubmitChanges(params: Partial<CrawlTemplate>): Promise<void> {
+  /**
+   * Create new crawl template with revised crawl configuration
+   * @param config Crawl config object
+   */
+  private async createRevisedTemplate(config: CrawlConfig) {
+    this.isSubmittingUpdate = true;
+
+    const params = {
+      oldId: this.crawlTemplate!.id,
+      name: this.crawlTemplate!.name,
+      schedule: this.crawlTemplate!.schedule,
+      // runNow: this.crawlTemplate!.runNow,
+      // crawlTimeout: this.crawlTemplate!.crawlTimeout,
+      config,
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+
+      console.log(data);
+
+      this.navTo(
+        `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
+      );
+
+      this.notify({
+        message: msg("Crawl template updated."),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update crawl template."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
+  }
+
+  /**
+   * Update crawl template properties
+   * @param params Crawl template properties to update
+   */
+  private async updateTemplate(params: Partial<CrawlTemplate>): Promise<void> {
     console.log(params);
 
     this.isSubmittingUpdate = true;
