@@ -346,16 +346,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form
-        @sl-submit=${async (e: { detail: { formData: FormData } }) => {
-          const { formData } = e.detail;
-          const name = formData.get("name") as string;
-
-          await this.onSubmitChanges({ name });
-
-          this.showEditName = false;
-        }}
-      >
+      <sl-form @sl-submit=${this.handleSubmitEditName}>
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -480,37 +471,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form
-        @sl-submit=${async (e: { detail: { formData: FormData } }) => {
-          const { formData } = e.detail;
-          const configValue = formData.get("config") as string;
-          let config: CrawlConfig;
-
-          if (configValue) {
-            if (this.invalidSeedsJsonMessage) return;
-
-            config = JSON.parse(configValue) as CrawlConfig;
-          } else {
-            const pageLimit = formData.get("limit") as string;
-            const seedUrlsStr = formData.get("seedUrls") as string;
-
-            config = {
-              seeds: seedUrlsStr.trim().replace(/,/g, " ").split(/\s+/g),
-              scopeType: formData.get("scopeType") as string,
-              limit: pageLimit ? +pageLimit : 0,
-              extraHops: formData.get("extraHopsOne") ? 1 : 0,
-            };
-          }
-
-          if (config) {
-            await this.onSubmitChanges({
-              config,
-            });
-          }
-
-          this.showEditConfiguration = false;
-        }}
-      >
+      <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
         <div class="grid gap-5">
           <div>
             <btrix-alert>
@@ -598,24 +559,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         .isSubmitting=${this.isSubmittingUpdate}
         cancelable
         @cancel=${() => (this.showEditSchedule = false)}
-        @submit=${async (e: { detail: { formData: FormData } }) => {
-          const { formData } = e.detail;
-          const interval = formData.get("scheduleInterval");
-          let schedule = "";
-
-          if (interval) {
-            schedule = getUTCSchedule({
-              interval: formData.get("scheduleInterval") as any,
-              hour: formData.get("scheduleHour") as any,
-              minute: formData.get("scheduleMinute") as any,
-              period: formData.get("schedulePeriod") as any,
-            });
-          }
-
-          await this.onSubmitChanges({ schedule });
-
-          this.showEditSchedule = false;
-        }}
+        @submit=${this.handleSubmitEditSchedule}
       ></btrix-crawl-scheduler>
     `;
   }
@@ -897,6 +841,68 @@ export class CrawlTemplatesDetail extends LiteElement {
       type: "success",
       icon: "check2-circle",
     });
+  }
+
+  private async handleSubmitEditName(e: { detail: { formData: FormData } }) {
+    const { formData } = e.detail;
+    const name = formData.get("name") as string;
+
+    await this.onSubmitChanges({ name });
+
+    this.showEditName = false;
+  }
+
+  private async handleSubmitEditConfiguration(e: {
+    detail: { formData: FormData };
+  }) {
+    const { formData } = e.detail;
+    const configValue = formData.get("config") as string;
+    let config: CrawlConfig;
+
+    if (configValue) {
+      if (this.invalidSeedsJsonMessage) return;
+
+      config = JSON.parse(configValue) as CrawlConfig;
+    } else {
+      const pageLimit = formData.get("limit") as string;
+      const seedUrlsStr = formData.get("seedUrls") as string;
+
+      config = {
+        seeds: seedUrlsStr.trim().replace(/,/g, " ").split(/\s+/g),
+        scopeType: formData.get("scopeType") as string,
+        limit: pageLimit ? +pageLimit : 0,
+        extraHops: formData.get("extraHopsOne") ? 1 : 0,
+      };
+    }
+
+    if (config) {
+      await this.onSubmitChanges({
+        config,
+      });
+    }
+
+    this.showEditConfiguration = false;
+  }
+
+  private async handleSubmitEditSchedule(e: {
+    detail: { formData: FormData };
+  }) {
+    const { formData } = e.detail;
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
+
+    await this.onSubmitChanges({ schedule });
+
+    this.showEditSchedule = false;
   }
 
   private async deactivateTemplate(): Promise<void> {
