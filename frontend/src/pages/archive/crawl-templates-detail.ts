@@ -176,6 +176,10 @@ export class CrawlTemplatesDetail extends LiteElement {
   private renderMenu() {
     if (!this.crawlTemplate) return;
 
+    const closeDropdown = (e: any) => {
+      e.target.closest("sl-dropdown").hide();
+    };
+
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -200,7 +204,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           class="p-2 hover:bg-zinc-100 cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            e.target.closest("sl-dropdown").hide();
+            closeDropdown(e);
             this.openDialogName = "name";
           }}
         >
@@ -210,6 +214,35 @@ export class CrawlTemplatesDetail extends LiteElement {
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
             >${msg("Change name")}</span
+          >
+        </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "config";
+          }}
+        >
+          <sl-icon class="inline-block align-middle px-1" name="gear"></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Edit crawl configuration")}</span
+          >
+        </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "schedule";
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="clock-history"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Edit schedule")}</span
           >
         </li>
         <hr />
@@ -222,7 +255,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            e.target.closest("sl-dropdown").hide();
+            closeDropdown(e);
 
             this.deactivateTemplate();
           }}
@@ -647,8 +680,6 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       if (dialogBody) {
         dialogBody.scrollTop = 0;
-      } else {
-        console.debug("no dialog body");
       }
     };
 
