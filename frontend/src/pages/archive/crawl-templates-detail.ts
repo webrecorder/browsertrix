@@ -58,7 +58,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   async updated(changedProperties: any) {
-    if (changedProperties.has("crawlConfigId")) {
+    if (changedProperties.get("crawlConfigId")) {
       this.initializeCrawlTemplate();
     }
   }
@@ -136,7 +136,10 @@ export class CrawlTemplatesDetail extends LiteElement {
                     <a
                       class="text-sm font-medium text-neutral-400 hover:text-neutral-500"
                       href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.oldId}`}
-                      @click=${this.navLink}
+                      @click=${(e: any) => {
+                        this.crawlTemplate = undefined;
+                        this.navLink(e);
+                      }}
                     >
                       ${msg("see previous version")}
                     </a>
