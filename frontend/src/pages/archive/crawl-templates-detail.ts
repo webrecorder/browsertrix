@@ -36,15 +36,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   private showAllSeedURLs: boolean = false;
 
   @state()
-  private showEditName: boolean = false;
-
-  @state()
-  private showEditConfiguration: boolean = false;
-
-  @state()
-  private showEditSchedule: boolean = false;
-
-  @state()
   private isSeedsJsonView: boolean = false;
 
   @state()
@@ -55,6 +46,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   @state()
   private isSubmittingUpdate: boolean = false;
+
+  @state()
+  private openDialogName?: "name" | "config" | "schedule";
+
+  @state()
+  private isDialogVisible: boolean = false;
 
   async firstUpdated() {
     try {
@@ -133,7 +130,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                     <sl-button
                       size="small"
                       type="text"
-                      @click=${() => (this.showEditConfiguration = true)}
+                      @click=${() => (this.openDialogName = "config")}
                     >
                       ${msg("Edit")}
                     </sl-button>
@@ -155,7 +152,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                     <sl-button
                       size="small"
                       type="text"
-                      @click=${() => (this.showEditSchedule = true)}
+                      @click=${() => (this.openDialogName = "schedule")}
                     >
                       ${msg("Edit")}
                     </sl-button>
@@ -204,7 +201,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.showEditName = true;
+            this.openDialogName = "name";
           }}
         >
           <sl-icon
@@ -359,7 +356,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         ></sl-input>
 
         <div class="mt-5 text-right">
-          <sl-button type="text" @click=${() => (this.showEditName = false)}
+          <sl-button
+            type="text"
+            @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
@@ -503,7 +502,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="text-right">
             <sl-button
               type="text"
-              @click=${() => (this.showEditConfiguration = false)}
+              @click=${() => (this.openDialogName = undefined)}
               >${msg("Cancel")}</sl-button
             >
             <sl-button
@@ -556,7 +555,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         .schedule=${this.crawlTemplate.schedule}
         .isSubmitting=${this.isSubmittingUpdate}
         cancelable
-        @cancel=${() => (this.showEditSchedule = false)}
+        @cancel=${() => (this.openDialogName = undefined)}
         @submit=${this.handleSubmitEditSchedule}
       ></btrix-crawl-scheduler>
     `;
@@ -633,44 +632,59 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  /**
+   * Render dialog for edit forms
+   *
+   * `openDialogName` shows/hides a specific dialog, while `isDialogVisible`
+   * renders/prevents rendering a dialog's content unless the dialog is visible
+   * in order to reset the dialog content on close.
+   */
   private renderDialogs() {
     const dialogWidth = "36rem";
+
+    const resetScroll = (e: any) => {
+      const dialogBody = e.target.shadowRoot.querySelector('[part="body"]');
+
+      if (dialogBody) {
+        dialogBody.scrollTop = 0;
+      } else {
+        console.debug("no dialog body");
+      }
+    };
 
     return html`
       <sl-dialog
         label=${msg(str`Edit Crawl Template Name`)}
         style="--width: ${dialogWidth}"
-        ?open=${this.showEditName}
-        @sl-request-close=${() => (this.showEditName = false)}
-        @sl-after-hide=${() => {
-          // TODO reset form
-        }}
+        ?open=${this.openDialogName === "name"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${this.renderEditName()}
+        ${this.isDialogVisible ? this.renderEditName() : ""}
       </sl-dialog>
 
       <sl-dialog
         label=${msg(str`Edit Crawl Configuration`)}
         style="--width: ${dialogWidth}"
-        ?open=${this.showEditConfiguration}
-        @sl-request-close=${() => (this.showEditConfiguration = false)}
-        @sl-after-hide=${() => {
-          // TODO reset form
-        }}
+        ?open=${this.openDialogName === "config"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @sl-after-show=${resetScroll}
       >
-        ${this.renderEditConfiguration()}
+        ${this.isDialogVisible ? this.renderEditConfiguration() : ""}
       </sl-dialog>
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
         style="--width: ${dialogWidth}"
-        ?open=${this.showEditSchedule}
-        @sl-request-close=${() => (this.showEditSchedule = false)}
-        @sl-after-hide=${() => {
-          // TODO reset form
-        }}
+        ?open=${this.openDialogName === "schedule"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${this.renderEditSchedule()}
+        ${this.isDialogVisible ? this.renderEditSchedule() : ""}
       </sl-dialog>
     `;
   }
@@ -694,6 +708,8 @@ export class CrawlTemplatesDetail extends LiteElement {
         name="scopeType"
         label=${msg("Crawl Scope")}
         value=${this.crawlTemplate!.config.scopeType!}
+        @sl-hide=${this.stopProp}
+        @sl-after-hide=${this.stopProp}
       >
         <sl-menu-item value="page">Page</sl-menu-item>
         <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
@@ -847,7 +863,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     await this.updateTemplate({ name });
 
-    this.showEditName = false;
+    this.openDialogName = undefined;
   }
 
   private async handleSubmitEditConfiguration(e: {
@@ -877,7 +893,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       await this.createRevisedTemplate(config);
     }
 
-    this.showEditConfiguration = false;
+    this.openDialogName = undefined;
   }
 
   private async handleSubmitEditSchedule(e: {
@@ -898,7 +914,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     await this.updateTemplate({ schedule });
 
-    this.showEditSchedule = false;
+    this.openDialogName = undefined;
   }
 
   private async deactivateTemplate(): Promise<void> {
@@ -1100,6 +1116,15 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     this.isSubmittingUpdate = false;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 
