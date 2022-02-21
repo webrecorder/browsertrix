@@ -368,12 +368,15 @@ export class CrawlTemplatesDetail extends LiteElement {
         ></sl-input>
 
         <div class="mt-5 text-right">
+          <sl-button type="text" @click=${() => (this.showEditName = false)}
+            >${msg("Cancel")}</sl-button
+          >
           <sl-button
             type="primary"
             submit
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
-            >${msg("Save")}</sl-button
+            >${msg("Save Changes")}</sl-button
           >
         </div>
       </sl-form>
@@ -509,6 +512,16 @@ export class CrawlTemplatesDetail extends LiteElement {
         }}
       >
         <div class="grid gap-5">
+          <div>
+            <btrix-alert>
+              <p>
+                ${msg(
+                  "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
+                )}
+              </p>
+            </btrix-alert>
+          </div>
+
           <div class="flex justify-between">
             <h4 class="font-medium">
               ${this.isSeedsJsonView
@@ -530,12 +543,17 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           <div class="text-right">
             <sl-button
+              type="text"
+              @click=${() => (this.showEditConfiguration = false)}
+              >${msg("Cancel")}</sl-button
+            >
+            <sl-button
               type="primary"
               submit
               ?disabled=${Boolean(this.invalidSeedsJsonMessage) ||
               this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
-              >${msg("Save Changes")}</sl-button
+              >${msg("Save New Version")}</sl-button
             >
           </div>
         </div>
@@ -578,6 +596,8 @@ export class CrawlTemplatesDetail extends LiteElement {
       <btrix-crawl-scheduler
         .schedule=${this.crawlTemplate.schedule}
         .isSubmitting=${this.isSubmittingUpdate}
+        cancelable
+        @cancel=${() => (this.showEditSchedule = false)}
         @submit=${async (e: { detail: { formData: FormData } }) => {
           const { formData } = e.detail;
           const interval = formData.get("scheduleInterval");
@@ -672,9 +692,12 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderDialogs() {
+    const dialogWidth = "36rem";
+
     return html`
       <sl-dialog
         label=${msg(str`Edit Crawl Template Name`)}
+        style="--width: ${dialogWidth}"
         ?open=${this.showEditName}
         @sl-request-close=${() => (this.showEditName = false)}
         @sl-after-hide=${() => {
@@ -685,7 +708,8 @@ export class CrawlTemplatesDetail extends LiteElement {
       </sl-dialog>
 
       <sl-dialog
-        label=${msg(str`Edit Crawl Configuration`)}
+        label=${msg(str`Change Crawl Configuration`)}
+        style="--width: ${dialogWidth}"
         ?open=${this.showEditConfiguration}
         @sl-request-close=${() => (this.showEditConfiguration = false)}
         @sl-after-hide=${() => {
@@ -697,6 +721,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
+        style="--width: ${dialogWidth}"
         ?open=${this.showEditSchedule}
         @sl-request-close=${() => (this.showEditSchedule = false)}
         @sl-after-hide=${() => {
