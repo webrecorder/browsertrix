@@ -44,11 +44,7 @@ export class App extends LiteElement {
   userInfo?: CurrentUser;
 
   @state()
-  private viewState!: ViewState & {
-    aid?: string;
-    // TODO common tab type
-    tab?: "running" | "finished" | "configs";
-  };
+  private viewState!: ViewState;
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -203,7 +199,7 @@ export class App extends LiteElement {
 
   renderNavBar() {
     return html`
-      <div class="bg-gray-900 text-gray-50">
+      <div class="border-b">
         <nav
           class="max-w-screen-lg mx-auto p-2 box-border flex items-center justify-between"
         >
@@ -214,7 +210,7 @@ export class App extends LiteElement {
           </div>
           <div class="grid grid-flow-col gap-5 items-center">
             ${this.authService.authState
-              ? html` <sl-dropdown>
+              ? html` <sl-dropdown placement="bottom-end">
                   <div class="p-2" role="button" slot="trigger">
                     ${this.userInfo?.name || this.userInfo?.email}
                     <span class="text-xs"
@@ -255,32 +251,6 @@ export class App extends LiteElement {
   }
 
   renderPage() {
-    const navLink = ({
-      activeRoutes,
-      href,
-      label,
-    }: {
-      activeRoutes: string[];
-      href: string;
-      label: string;
-    }) => html`
-      <li>
-        <a
-          class="block p-2 ${activeRoutes.includes(this.viewState.route!)
-            ? "text-primary"
-            : ""}"
-          href="${href}"
-          @click="${this.navLink}"
-          >${label}</a
-        >
-      </li>
-    `;
-    const appLayout = (template: TemplateResult) => html`
-      <div class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border">
-        ${template}
-      </div>
-    `;
-
     switch (this.viewState.route) {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
@@ -365,13 +335,13 @@ export class App extends LiteElement {
         </div>`;
 
       case "archives":
-        return appLayout(html`<btrix-archives
-          class="w-full"
+        return html`<btrix-archives
+          class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
-        ></btrix-archives>`);
+        ></btrix-archives>`;
 
       case "archive":
       case "archiveAddMember":
@@ -379,7 +349,7 @@ export class App extends LiteElement {
       case "crawl":
       case "crawlTemplate":
       case "crawlTemplateEdit":
-        return appLayout(html`<btrix-archive
+        return html`<btrix-archive
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
@@ -394,37 +364,26 @@ export class App extends LiteElement {
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
           ?isNewResourceTab=${this.viewState.route === "archiveNewResourceTab"}
           ?isEditing=${Boolean(this.viewState.params.edit)}
-        ></btrix-archive>`);
+        ></btrix-archive>`;
 
       case "accountSettings":
-        return appLayout(html`<btrix-account-settings
-          class="w-full"
+        return html`<btrix-account-settings
+          class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
-        ></btrix-account-settings>`);
-
-      case "archive-info":
-      case "archive-info-tab":
-        return appLayout(html`<btrix-archive
-          class="w-full"
-          @navigate="${this.onNavigateTo}"
-          .authState="${this.authService.authState}"
-          .viewState="${this.viewState}"
-          aid="${this.viewState.params.aid}"
-          tab="${this.viewState.tab || "running"}"
-        ></btrix-archive>`);
+        ></btrix-account-settings>`;
 
       case "usersInvite": {
         if (this.userInfo?.isAdmin) {
-          return appLayout(html`<btrix-users-invite
-            class="w-full"
+          return html`<btrix-users-invite
+            class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
             @navigate="${this.onNavigateTo}"
             @need-login="${this.onNeedLogin}"
             .authState="${this.authService.authState}"
             .userInfo="${this.userInfo}"
-          ></btrix-users-invite>`);
+          ></btrix-users-invite>`;
         } else {
           return this.renderNotFoundPage();
         }
@@ -554,20 +513,24 @@ export class App extends LiteElement {
       noHeader: true,
       body: html`
         <div class="grid gap-4 text-center">
-          <p class="mt-8 text-2xl font-medium">Welcome to Browsertrix Cloud!</p>
+          <p class="mt-8 text-2xl font-medium">
+            ${msg("Welcome to Browsertrix Cloud!")}
+          </p>
 
           <p>
-            A confirmation email was sent to: <br />
-            <strong>${email}</strong>.
+            ${msg(html`A confirmation email was sent to: <br />
+              <strong>${email}</strong>.`)}
           </p>
           <p class="max-w-xs mx-auto">
-            Click the link in your email to confirm your email address.
+            ${msg(
+              "Click the link in your email to confirm your email address."
+            )}
           </p>
         </div>
 
         <div class="mb-4 mt-8 text-center">
           <sl-button type="primary" @click=${() => this.closeDialog()}
-            >Got it, go to dashboard</sl-button
+            >${msg("Got it, go to dashboard")}</sl-button
           >
         </div>
       `,

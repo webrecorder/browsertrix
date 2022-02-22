@@ -112,20 +112,22 @@ export class Archive extends LiteElement {
         break;
     }
 
-    return html`<article class="grid gap-4">
-      <nav class="font-medium text-sm text-gray-500">
-        <a
-          class="text-primary hover:underline"
-          href="/archives"
-          @click="${this.navLink}"
-          >${msg("Archives")}</a
-        >
-        <span class="font-mono">/</span>
-        <span>${this.archive.name}</span>
-      </nav>
+    return html`<article>
+      <header class="w-full max-w-screen-lg mx-auto box-border py-4">
+        <nav class="text-sm text-neutral-400">
+          <a
+            class="font-medium hover:underline"
+            href="/archives"
+            @click="${this.navLink}"
+            >${msg("Archives")}</a
+          >
+          <span class="font-mono">/</span>
+          <span>${this.archive.name}</span>
+        </nav>
+      </header>
 
-      <main>
-        <nav class="flex items-end overflow-x-auto">
+      <div class="w-full max-w-screen-lg mx-auto">
+        <nav class="mx-auto flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "crawl-templates",
@@ -134,10 +136,16 @@ export class Archive extends LiteElement {
           ${showMembersTab
             ? this.renderNavTab({ tabName: "members", label: msg("Members") })
             : ""}
-          <hr class="flex-1 border-t-2" />
         </nav>
+      </div>
 
-        <div class="my-4" aria-labelledby="${this.archiveTab}-tab">
+      <hr />
+
+      <main>
+        <div
+          class="w-full max-w-screen-lg mx-auto box-border py-5"
+          aria-labelledby="${this.archiveTab}-tab"
+        >
           ${tabPanelContent}
         </div>
       </main>
@@ -156,14 +164,18 @@ export class Archive extends LiteElement {
     return html`
       <a
         id="${tabName}-tab"
-        class="block flex-shrink-0 text-sm font-medium p-3 md:px-5 border-b-2 transition-colors ${isActive
-          ? "border-primary text-primary"
-          : "text-0-600"}"
+        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
         href=${`/archives/${this.archiveId}/${tabName}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
-        ${label}
+        <div
+          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
+            ? "border-primary text-primary"
+            : "border-transparent text-neutral-500 hover:border-neutral-100"}"
+        >
+          ${label}
+        </div>
       </a>
     `;
   }
