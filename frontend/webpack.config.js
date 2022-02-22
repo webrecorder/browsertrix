@@ -17,14 +17,21 @@ const dotEnvPath = path.resolve(
 );
 // Get git info to use as Glitchtip release version
 
-const gitBranch = childProcess
-  .execSync("git rev-parse --abbrev-ref HEAD")
-  .toString()
-  .trim();
-const commitHash = childProcess
-  .execSync("git rev-parse --short HEAD")
-  .toString()
-  .trim();
+const execCommand = (cmd, defValue) => {
+  try {
+    return childProcess.execSync(cmd).toString().trim();
+  } catch (e) {
+    return defValue;
+  }
+}
+
+// Local dev only
+// Git branch and commit hash is used to add build info to error reporter when running locally
+const gitBranch = process.env.GIT_BRANCH_NAME ||
+  execCommand("git rev-parse --abbrev-ref HEAD", "unknown");
+
+const commitHash = process.env.GIT_COMMIT_HASH ||
+  execCommand("git rev-parse --short HEAD", "unknown");
 
 require("dotenv").config({
   path: dotEnvPath,
