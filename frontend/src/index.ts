@@ -201,7 +201,7 @@ export class App extends LiteElement {
     return html`
       <div class="border-b">
         <nav
-          class="max-w-screen-lg mx-auto box-border h-12 flex items-center justify-between"
+          class="max-w-screen-lg mx-auto px-3 box-border h-12 flex items-center justify-between"
         >
           <div>
             <a href="/archives" @click="${this.navLink}"

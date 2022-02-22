@@ -116,7 +116,7 @@ export class Archive extends LiteElement {
     }
 
     return html`<article>
-      <header class="w-full max-w-screen-lg mx-auto box-border py-4">
+      <header class="w-full max-w-screen-lg mx-auto px-3 box-border py-4">
         <nav class="text-sm text-neutral-400">
           <a
             class="font-medium hover:underline"
@@ -129,7 +129,7 @@ export class Archive extends LiteElement {
         </nav>
       </header>
 
-      <div class="w-full max-w-screen-lg mx-auto">
+      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
@@ -146,7 +146,7 @@ export class Archive extends LiteElement {
 
       <main>
         <div
-          class="w-full max-w-screen-lg mx-auto box-border py-5"
+          class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
           aria-labelledby="${this.archiveTab}-tab"
         >
           ${tabPanelContent}

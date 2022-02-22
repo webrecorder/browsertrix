@@ -109,12 +109,14 @@ export class CrawlDetail extends LiteElement {
         </div>
         <header class="col-span-5 md:col-span-4 flex justify-between">
           <h2 class="text-xl font-medium mb-1 md:h-7">
-            ${this.crawl
-              ? msg(
-                  html`<span class="text-neutral-500">Crawl of</span> ${this
-                      .crawl.configName}`
-                )
-              : html`<sl-skeleton style="width: 30em"></sl-skeleton>`}
+            ${msg(
+              html`<span class="text-neutral-500">Crawl of</span> ${this.crawl
+                  ? this.crawl.configName
+                  : html`<sl-skeleton
+                      class="inline-block"
+                      style="width: 15em"
+                    ></sl-skeleton>`}`
+            )}
           </h2>
 
           <div>
@@ -163,8 +165,8 @@ export class CrawlDetail extends LiteElement {
       </li>
     `;
     return html`
-      <nav>
-        <ul>
+      <nav class="border-b md:border-b-0">
+        <ul class="flex flex-row md:flex-col">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
           ${renderNavItem({ section: "preview", label: msg("Preview") })}
           ${renderNavItem({ section: "download", label: msg("Download") })}
