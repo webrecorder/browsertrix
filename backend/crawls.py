@@ -8,7 +8,7 @@ import os
 from typing import Optional, List, Dict, Union
 from datetime import datetime
 
-from fastapi import Depends, Request, HTTPException
+from fastapi import Depends, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, UUID4, conint
 import pymongo
 import aioredis
@@ -168,6 +168,7 @@ class CrawlOps:
         self.redis = await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
         )
+        self.pubsub = self.redis.pubsub()
 
         loop = asyncio.get_running_loop()
         loop.create_task(self.run_crawl_complete_loop())
@@ -426,6 +427,32 @@ class CrawlOps:
         )
         return res.deleted_count
 
+    async def handle_watch_ws(self, crawl_id: str, websocket: WebSocket):
+        """ Handle watch WS by proxying screencast data via redis pubsub """
+        # ensure websocket connected
+        await websocket.accept()
+
+        ctrl_channel = f"c:{crawl_id}:ctrl"
+        cast_channel = f"c:{crawl_id}:cast"
+
+        await self.redis.publish(ctrl_channel, "connect")
+
+        async with self.pubsub as chan:
+            await chan.subscribe(cast_channel)
+
+            try:
+                while True:
+                    message = await chan.get_message(ignore_subscribe_messages=True)
+                    if not message:
+                        continue
+
+                    await websocket.send_text(message["data"])
+            except WebSocketDisconnect:
+                pass
+
+            finally:
+                await self.redis.publish(ctrl_channel, "disconnect")
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals
@@ -526,15 +553,13 @@ def init_crawls_api(
 
         return {"scaled": scale.scale}
 
-    @app.post("/archives/{aid}/crawls/{crawl_id}/watch", tags=["crawls"])
-    async def watch_crawl(
-        crawl_id, request: Request, archive: Archive = Depends(archive_crawl_dep)
+    @app.websocket("/archives/{aid}/crawls/{crawl_id}/watch/ws")
+    async def watch_ws(
+        crawl_id, websocket: WebSocket, archive: Archive = Depends(archive_crawl_dep)
     ):
-        aid_str = archive.id_str
-        await crawl_manager.init_crawl_screencast(crawl_id, aid_str)
-        watch_url = (
-            f"{request.url.scheme}://{request.url.netloc}/watch/{aid_str}/{crawl_id}/ws"
-        )
-        return {"watch_url": watch_url}
+        # ensure crawl exists
+        await ops.get_crawl(crawl_id, archive)
+
+        await ops.handle_watch_ws(crawl_id, websocket)
 
     return ops
