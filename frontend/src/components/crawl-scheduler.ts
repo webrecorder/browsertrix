@@ -9,18 +9,27 @@ import type { CrawlTemplate } from "../pages/archive/types";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-scheduler
+ * <btrix-crawl-scheduler
  *   schedule="0 0 * * *"
+ *   cancelable=${true}
  *   @submit=${this.handleSubmit}
- * ></btrix-crawl-templates-scheduler>
+ *   @cancel=${this.handleCancel}
+ * ></btrix-crawl-scheduler>
  * ```
  *
  * @event submit
+ * @event cancel
  */
 @localized()
 export class CrawlTemplatesScheduler extends LiteElement {
   @property({ type: String })
-  private schedule?: CrawlTemplate["schedule"];
+  schedule?: CrawlTemplate["schedule"];
+
+  @property({ type: Boolean })
+  isSubmitting: boolean = false;
+
+  @property({ type: Boolean })
+  cancelable?: boolean = false;
 
   @state()
   private editedSchedule?: string;
@@ -189,13 +198,29 @@ export class CrawlTemplatesScheduler extends LiteElement {
               )}
         </div>
 
-        <div class="mt-5">
-          <sl-button type="primary" submit
-            >${msg("Save Crawl Schedule")}</sl-button
+        <div class="mt-5${this.cancelable ? " text-right" : ""}">
+          ${this.cancelable
+            ? html`
+                <sl-button type="text" @click=${this.onCancel}
+                  >${msg("Cancel")}</sl-button
+                >
+              `
+            : ""}
+
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+            >${msg("Save Changes")}</sl-button
           >
         </div>
       </sl-form>
     `;
+  }
+
+  private onCancel(event: any) {
+    this.dispatchEvent(new CustomEvent("cancel", event));
   }
 
   private onSubmit(event: any) {
@@ -240,7 +265,4 @@ export class CrawlTemplatesScheduler extends LiteElement {
   }
 }
 
-customElements.define(
-  "btrix-crawl-templates-scheduler",
-  CrawlTemplatesScheduler
-);
+customElements.define("btrix-crawl-scheduler", CrawlTemplatesScheduler);

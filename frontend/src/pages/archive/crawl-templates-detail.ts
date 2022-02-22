@@ -1,11 +1,12 @@
 import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlTemplate } from "./types";
+import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
 
@@ -28,9 +29,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   @property({ type: String })
   crawlConfigId!: string;
 
-  @property({ type: Boolean })
-  isEditing: boolean = false;
-
   @state()
   private crawlTemplate?: CrawlTemplate;
 
@@ -38,14 +36,49 @@ export class CrawlTemplatesDetail extends LiteElement {
   private showAllSeedURLs: boolean = false;
 
   @state()
-  private editedSchedule?: string;
+  private isSeedsJsonView: boolean = false;
 
-  async firstUpdated() {
+  @state()
+  private seedsJson: string = "";
+
+  @state()
+  private invalidSeedsJsonMessage: string = "";
+
+  @state()
+  private isSubmittingUpdate: boolean = false;
+
+  @state()
+  private openDialogName?: "name" | "config" | "schedule";
+
+  @state()
+  private isDialogVisible: boolean = false;
+
+  updated(changedProperties: any) {
+    if (changedProperties.has("crawlConfigId")) {
+      this.initializeCrawlTemplate();
+    }
+  }
+
+  private async initializeCrawlTemplate() {
     try {
       this.crawlTemplate = await this.getCrawlTemplate();
-    } catch {
+
+      // Show JSON editor view if complex initial config is specified
+      // (e.g. cloning a template) since form UI doesn't support
+      // all available fields in the config
+      const isComplexConfig = this.crawlTemplate.config.seeds.some(
+        (seed: any) => typeof seed !== "string"
+      );
+      if (isComplexConfig) {
+        this.isSeedsJsonView = true;
+      }
+      this.seedsJson = JSON.stringify(this.crawlTemplate.config, null, 2);
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't retrieve crawl template at this time."),
+        message:
+          e.statusCode === 404
+            ? msg("Crawl template not found.")
+            : msg("Sorry, couldn't retrieve crawl template at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
@@ -53,309 +86,159 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   render() {
-    const seeds = this.crawlTemplate?.config.seeds || [];
-
     return html`
-      <nav class="mb-5">
-        <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawl-templates`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawl Templates")}</span
+      <div class="grid gap-5">
+        <nav>
+          <a
+            class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+            href=${`/archives/${this.archiveId}/crawl-templates`}
+            @click=${this.navLink}
           >
-        </a>
-      </nav>
+            <sl-icon
+              name="arrow-left"
+              class="inline-block align-middle"
+            ></sl-icon>
+            <span class="inline-block align-middle"
+              >${msg("Back to Crawl Templates")}</span
+            >
+          </a>
+        </nav>
 
-      ${this.renderInactiveNotice()}
+        ${this.renderInactiveNotice()}
 
-      <header class="flex justify-between">
-        <h2 class="text-xl font-bold mb-4 md:h-7">
-          ${this.crawlTemplate?.name ||
-          html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
-        </h2>
-
-        <div class="flex-0">${this.renderMenu()}</div>
-      </header>
-
-      ${this.renderCurrentlyRunningNotice()}
-
-      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2">
+        <header class="px-4 pt-4 flex justify-between">
           <div>
-            <dt class="text-xs text-0-600">${msg("Created at")}</dt>
-            <dd class="h-5">
-              ${this.crawlTemplate?.created
+            <h2 class="text-3xl font-bold md:h-9 leading-tight mb-1">
+              ${this.crawlTemplate?.name
                 ? html`
-                    <sl-format-date
-                      date=${`${this.crawlTemplate.created}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                      time-zone-name="short"
-                    ></sl-format-date>
+                    <span>${this.crawlTemplate.name}</span>
+                    ${this.crawlTemplate.inactive
+                      ? ""
+                      : html`
+                          <sl-button
+                            size="small"
+                            type="text"
+                            @click=${() => (this.openDialogName = "config")}
+                          >
+                            ${msg("Edit")}
+                          </sl-button>
+                        `}
                   `
-                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
-            </dd>
+                : html`<sl-skeleton
+                    class="h-7"
+                    style="width: 20em"
+                  ></sl-skeleton>`}
+            </h2>
+            <div class="text-sm text-neutral-400 h-5">
+              ${msg("Crawl Template")}
+              <code class="bg-neutral-50 text-xs ml-3"
+                >${this.crawlTemplate?.id}</code
+              >
+            </div>
           </div>
-          <div>
-            <dt class="text-xs text-0-600">${msg("Created by")}</dt>
-            <!-- TODO show name -->
-            <dd class="h-5">
-              ${this.crawlTemplate?.userName ||
-              this.crawlTemplate?.userid ||
-              html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
-            </dd>
-          </div>
-        </dl>
 
-        <!-- TODO created at? -->
-      </section>
+          <div class="flex-0">${this.renderMenu()}</div>
+        </header>
 
-      <main class="border rounded-lg">
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8 md:border-b">
-            <h3 class="font-medium">${msg("Configuration")}</h3>
-          </div>
-          <div class="col-span-3 p-4 md:p-8 border-b">
-            <div class="mb-5" role="table">
-              <div class="grid grid-cols-5 gap-4" role="row">
-                <span class="col-span-3 text-sm text-0-600" role="columnheader"
-                  >${msg("Seed URL")}</span
-                >
-                <span class="col-span-1 text-sm text-0-600" role="columnheader"
-                  >${msg("Scope Type")}</span
-                >
-                <span class="col-span-1 text-sm text-0-600" role="columnheader"
-                  >${msg("Page Limit")}</span
-                >
-              </div>
-              <ul role="rowgroup">
-                ${seeds
-                  .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
-                  .map(
-                    (seed, i) =>
-                      html`<li
-                        class="grid grid-cols-5 gap-4 items-baseline py-1 border-zinc-100${i
-                          ? " border-t"
-                          : ""}"
-                        role="row"
-                        title=${typeof seed === "string" ? seed : seed.url}
+        <section class="px-4 text-sm text-neutral-500">
+          ${this.renderDetails()}
+        </section>
+
+        ${this.renderCurrentlyRunningNotice()}
+
+        <main class="border rounded-lg">
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8 md:border-b">
+              <h3 class="font-medium">${msg("Configuration")}</h3>
+              ${this.crawlTemplate?.oldId
+                ? html`
+                    <aside>
+                      <a
+                        class="text-sm font-medium text-neutral-400 hover:text-neutral-500"
+                        href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.oldId}`}
+                        @click=${(e: any) => {
+                          this.crawlTemplate = undefined;
+                          this.navLink(e);
+                        }}
                       >
-                        <div
-                          class="col-span-3 break-all leading-tight"
-                          role="cell"
-                        >
-                          ${typeof seed === "string" ? seed : seed.url}
-                        </div>
-                        <span
-                          class="col-span-1 uppercase text-0-500 text-xs"
-                          role="cell"
-                          >${(typeof seed !== "string" && seed.scopeType) ||
-                          this.crawlTemplate?.config.scopeType}</span
-                        >
-                        <span
-                          class="col-span-1 uppercase text-0-500 text-xs font-mono"
-                          role="cell"
-                          >${(typeof seed !== "string" && seed.limit) ||
-                          this.crawlTemplate?.config.limit}</span
-                        >
-                      </li>`
-                  )}
-              </ul>
-
-              ${seeds.length > SEED_URLS_MAX
-                ? html`<sl-button
-                    class="mt-2"
-                    type="neutral"
-                    size="small"
-                    @click=${() =>
-                      (this.showAllSeedURLs = !this.showAllSeedURLs)}
-                  >
-                    <span class="text-sm">
-                      ${this.showAllSeedURLs
-                        ? msg("Show less")
-                        : msg(str`Show
-                    ${seeds.length - SEED_URLS_MAX}
-                    more`)}
-                    </span>
-                  </sl-button>`
+                        ${msg("see previous version")}
+                      </a>
+                    </aside>
+                  `
+                : ""}
+              ${this.crawlTemplate?.newId
+                ? html`
+                    <aside>
+                      <a
+                        class="text-sm font-medium text-indigo-500 hover:text-indigo-600"
+                        href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                        @click=${this.navLink}
+                      >
+                        ${msg("see newer version")}
+                      </a>
+                    </aside>
+                  `
                 : ""}
             </div>
-
-            <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
-              <span slot="summary" class="text-sm">
-                <span class="font-medium"
-                  >${msg("Advanced configuration")}</span
-                >
-                <sl-tag size="small" type="neutral"
-                  >${msg("JSON")}</sl-tag
-                ></span
-              >
-              <div class="relative">
-                <pre
-                  class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
-                ><code>${JSON.stringify(
-                  this.crawlTemplate?.config || {},
-                  null,
-                  2
-                )}</code></pre>
-
-                <div class="absolute top-2 right-2">
-                  <btrix-copy-button
-                    .value="${JSON.stringify(
-                      this.crawlTemplate?.config || {},
-                      null,
-                      2
-                    )}"
-                  ></btrix-copy-button>
-                </div>
+            <div class="col-span-3 p-4 border-b flex">
+              <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
+              <div class="flex-0 md:ml-4">
+                ${this.crawlTemplate?.inactive || !this.crawlTemplate
+                  ? ""
+                  : html`
+                      <sl-button
+                        size="small"
+                        type="text"
+                        @click=${() => (this.openDialogName = "config")}
+                      >
+                        ${msg("Edit")}
+                      </sl-button>
+                    `}
               </div>
-            </sl-details>
-          </div>
-        </section>
-
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8 md:border-b">
-            <h3 class="font-medium">${msg("Schedule")}</h3>
-          </div>
-          <div class="col-span-3 p-4 border-b">
-            <div class="flex justify-between">
-              <div class="md:p-4">
-                ${this.isEditing
-                  ? this.renderEditSchedule()
-                  : this.renderReadOnlySchedule()}
-              </div>
-
-              ${this.crawlTemplate?.inactive
-                ? ""
-                : html`
-                    <div class="ml-2">
-                      ${this.crawlTemplate
-                        ? html`
-                            <sl-button
-                              size="small"
-                              href=${`/archives/${
-                                this.archiveId
-                              }/crawl-templates/config/${
-                                this.crawlTemplate.id
-                              }${this.isEditing ? "" : "?edit=true"}`}
-                              @click=${(e: any) => {
-                                const hasChanges =
-                                  this.isEditing && this.editedSchedule;
-                                if (
-                                  !hasChanges ||
-                                  window.confirm(
-                                    msg(
-                                      "You have unsaved schedule changes. Are you sure?"
-                                    )
-                                  )
-                                ) {
-                                  this.navLink(e);
-                                  this.editedSchedule = "";
-                                } else {
-                                  e.preventDefault();
-                                }
-                              }}
-                            >
-                              ${this.isEditing ? msg("Cancel") : msg("Edit")}
-                            </sl-button>
-                          `
-                        : html`<sl-skeleton></sl-skeleton>`}
-                    </div>
-                  `}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="md:grid grid-cols-4">
-          <div class="col-span-1 p-4 md:p-8">
-            <h3 class="font-medium">${msg("Crawls")}</h3>
-          </div>
-          <div class="col-span-3 p-4 md:p-8">
-            <dl class="grid gap-5">
-              <div>
-                <dt class="text-sm text-0-600">${msg("# of Crawls")}</dt>
-                <dd class="font-mono">
-                  ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
-                </dd>
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8 md:border-b">
+              <h3 class="font-medium">${msg("Schedule")}</h3>
+            </div>
+            <div class="col-span-3 p-4 border-b flex">
+              <div class="flex-1 md:p-4">${this.renderSchedule()}</div>
+              <div class="flex-0 md:ml-4">
+                ${this.crawlTemplate?.inactive || !this.crawlTemplate
+                  ? ""
+                  : html`
+                      <sl-button
+                        size="small"
+                        type="text"
+                        @click=${() => (this.openDialogName = "schedule")}
+                      >
+                        ${msg("Edit")}
+                      </sl-button>
+                    `}
               </div>
-              <div>
-                <dt class="text-sm text-0-600">
-                  ${msg("Currently Running Crawl")}
-                </dt>
-                <dd
-                  class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
-                >
-                  ${this.crawlTemplate
-                    ? html`
-                        ${this.crawlTemplate.currCrawlId
-                          ? html` <a
-                              class="text-primary font-medium hover:underline text-sm p-1"
-                              href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
-                              @click=${this.navLink}
-                              >${msg("View crawl")}</a
-                            >`
-                          : this.crawlTemplate.inactive
-                          ? ""
-                          : html`<span class="text-0-400 text-sm p-1"
-                                >${msg("None")}</span
-                              ><button
-                                class="text-xs border rounded px-2 h-7 bg-purple-500 hover:bg-purple-400 text-white transition-colors"
-                                @click=${() => this.runNow()}
-                              >
-                                <span class="whitespace-nowrap">
-                                  ${msg("Run now")}
-                                </span>
-                              </button>`}
-                      `
-                    : html` <sl-skeleton style="width: 6em"></sl-skeleton> `}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
-                <dd
-                  class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
-                >
-                  ${this.crawlTemplate?.lastCrawlId
-                    ? html`<a
-                          class="text-primary font-medium hover:underline text-sm p-1"
-                          href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.lastCrawlId}`}
-                          @click=${this.navLink}
-                          >${msg("View crawl")}</a
-                        >
-                        <sl-format-date
-                          date=${
-                            `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
-                          }
-                          month="2-digit"
-                          day="2-digit"
-                          year="2-digit"
-                          hour="numeric"
-                          minute="numeric"
-                          time-zone-name="short"
-                        ></sl-format-date>`
-                    : html`<span class="text-0-400 text-sm p-1"
-                        >${msg("None")}</span
-                      >`}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-      </main>
+            </div>
+          </section>
+
+          <section class="md:grid grid-cols-4">
+            <div class="col-span-1 p-4 md:p-8">
+              <h3 class="font-medium">${msg("Crawls")}</h3>
+            </div>
+            <div class="col-span-3 p-4 md:p-8">${this.renderCrawls()}</div>
+          </section>
+        </main>
+      </div>
+
+      ${this.renderDialogs()}
     `;
   }
 
   private renderMenu() {
     if (!this.crawlTemplate) return;
+
+    const closeDropdown = (e: any) => {
+      e.target.closest("sl-dropdown").hide();
+    };
 
     const menuItems: HTMLTemplateResult[] = [
       html`
@@ -375,14 +258,79 @@ export class CrawlTemplatesDetail extends LiteElement {
       `,
     ];
 
+    if (!this.crawlTemplate.inactive) {
+      menuItems.unshift(html`
+        <li
+          class="p-2 hover:bg-purple-50 cursor-pointer text-purple-600"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.runNow();
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="arrow-right-circle"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2">${msg("Run now")}</span>
+        </li>
+        <hr />
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "name";
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="pencil-square"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Change name")}</span
+          >
+        </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "config";
+          }}
+        >
+          <sl-icon class="inline-block align-middle px-1" name="gear"></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Change crawl configuration")}</span
+          >
+        </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "schedule";
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="clock-history"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Change schedule")}</span
+          >
+        </li>
+        <hr />
+      `);
+    }
+
     if (this.crawlTemplate.crawlCount && !this.crawlTemplate.inactive) {
       menuItems.push(html`
         <li
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
+            closeDropdown(e);
 
             this.deactivateTemplate();
           }}
@@ -404,9 +352,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
             this.deleteTemplate();
           }}
         >
@@ -420,13 +365,10 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     return html`
-      <sl-dropdown placement="bottom-end">
-        <sl-icon-button
-          slot="trigger"
-          name="three-dots-vertical"
-          label=${msg("More")}
-          style="font-size: 1rem"
-        ></sl-icon-button>
+      <sl-dropdown placement="bottom-end" distance="4">
+        <sl-button slot="trigger" type="primary" size="small" caret
+          >${msg("Actions")}</sl-button
+        >
 
         <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
           ${menuItems.map((item: HTMLTemplateResult) => item)}
@@ -437,18 +379,36 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderInactiveNotice() {
     if (this.crawlTemplate?.inactive) {
-      return html`
-        <div class="mb-5">
-          <btrix-alert type="warning">
+      if (this.crawlTemplate?.newId) {
+        return html`
+          <btrix-alert type="info">
             <sl-icon
               name="exclamation-octagon"
               class="inline-block align-middle mr-2"
             ></sl-icon>
             <span class="inline-block align-middle">
               ${msg("This crawl template is inactive.")}
+              <a
+                class="font-medium underline hover:no-underline"
+                href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
+                @click=${this.navLink}
+                >${msg("Go to newer version")}</a
+              >
             </span>
           </btrix-alert>
-        </div>
+        `;
+      }
+
+      return html`
+        <btrix-alert type="warning">
+          <sl-icon
+            name="exclamation-octagon"
+            class="inline-block align-middle mr-2"
+          ></sl-icon>
+          <span class="inline-block align-middle">
+            ${msg("This crawl template is inactive.")}
+          </span>
+        </btrix-alert>
       `;
     }
 
@@ -459,7 +419,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlTemplate?.currCrawlId) {
       return html`
         <a
-          class="flex items-center justify-between mb-4 px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+          class="flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
           href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
           @click=${this.navLink}
         >
@@ -472,7 +432,226 @@ export class CrawlTemplatesDetail extends LiteElement {
     return "";
   }
 
-  private renderReadOnlySchedule() {
+  private renderDetails() {
+    return html`
+      <dl class="grid grid-cols-2">
+        <div>
+          <dt class="text-xs text-0-600">${msg("Created at")}</dt>
+          <dd class="h-5">
+            ${this.crawlTemplate?.created
+              ? html`
+                  <sl-format-date
+                    date=${`${this.crawlTemplate.created}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                `
+              : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-0-600">${msg("Created by")}</dt>
+          <dd class="h-5">
+            ${this.crawlTemplate?.userName ||
+            this.crawlTemplate?.userid ||
+            html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+          </dd>
+        </div>
+      </dl>
+    `;
+  }
+
+  private renderEditName() {
+    if (!this.crawlTemplate) return;
+
+    return html`
+      <sl-form @sl-submit=${this.handleSubmitEditName}>
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          placeholder=${msg("Example (example.com) Weekly Crawl", {
+            desc: "Example crawl template name",
+          })}
+          autocomplete="off"
+          value=${this.crawlTemplate.name}
+          required
+        ></sl-input>
+
+        <div class="mt-5 text-right">
+          <sl-button
+            type="text"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmittingUpdate}
+            ?loading=${this.isSubmittingUpdate}
+            >${msg("Save Changes")}</sl-button
+          >
+        </div>
+      </sl-form>
+    `;
+  }
+
+  private renderConfiguration() {
+    const seeds = this.crawlTemplate?.config.seeds || [];
+
+    return html`
+      <div class="mb-5" role="table">
+        <div class="grid grid-cols-5 gap-4" role="row">
+          <span class="col-span-3 text-sm text-0-600" role="columnheader"
+            >${msg("Seed URL")}</span
+          >
+          <span class="col-span-1 text-sm text-0-600" role="columnheader"
+            >${msg("Scope Type")}</span
+          >
+          <span class="col-span-1 text-sm text-0-600" role="columnheader"
+            >${msg("Page Limit")}</span
+          >
+        </div>
+        <ul role="rowgroup">
+          ${seeds
+            .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
+            .map(
+              (seed, i) =>
+                html`<li
+                  class="grid grid-cols-5 gap-4 items-baseline py-1 border-zinc-100${i
+                    ? " border-t"
+                    : ""}"
+                  role="row"
+                  title=${typeof seed === "string" ? seed : seed.url}
+                >
+                  <div class="col-span-3 break-all leading-tight" role="cell">
+                    ${typeof seed === "string" ? seed : seed.url}
+                  </div>
+                  <span
+                    class="col-span-1 uppercase text-0-500 text-xs"
+                    role="cell"
+                    >${(typeof seed !== "string" && seed.scopeType) ||
+                    this.crawlTemplate?.config.scopeType}</span
+                  >
+                  <span
+                    class="col-span-1 uppercase text-0-500 text-xs font-mono"
+                    role="cell"
+                    >${(typeof seed !== "string" && seed.limit) ||
+                    this.crawlTemplate?.config.limit}</span
+                  >
+                </li>`
+            )}
+        </ul>
+
+        ${seeds.length > SEED_URLS_MAX
+          ? html`<sl-button
+              class="mt-2"
+              type="neutral"
+              size="small"
+              @click=${() => (this.showAllSeedURLs = !this.showAllSeedURLs)}
+            >
+              <span class="text-sm">
+                ${this.showAllSeedURLs
+                  ? msg("Show less")
+                  : msg(str`Show
+                    ${seeds.length - SEED_URLS_MAX}
+                    more`)}
+              </span>
+            </sl-button>`
+          : ""}
+      </div>
+
+      <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
+        <span slot="summary" class="text-sm">
+          <span class="font-medium">${msg("Advanced configuration")}</span>
+          <sl-tag size="small" type="neutral">${msg("JSON")}</sl-tag></span
+        >
+        <div class="relative">
+          <pre
+            class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
+          ><code>${JSON.stringify(
+            this.crawlTemplate?.config || {},
+            null,
+            2
+          )}</code></pre>
+
+          <div class="absolute top-2 right-2">
+            <btrix-copy-button
+              .value="${JSON.stringify(
+                this.crawlTemplate?.config || {},
+                null,
+                2
+              )}"
+            ></btrix-copy-button>
+          </div>
+        </div>
+      </sl-details>
+    `;
+  }
+
+  private renderEditConfiguration() {
+    if (!this.crawlTemplate) return;
+
+    const shouldReplacingTemplate = this.crawlTemplate.crawlCount > 0;
+
+    return html`
+      <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
+        <div class="grid gap-5">
+          ${shouldReplacingTemplate
+            ? html`
+                <btrix-alert>
+                  <p>
+                    ${msg(
+                      "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
+                    )}
+                  </p>
+                </btrix-alert>
+              `
+            : ""}
+
+          <div class="flex justify-between">
+            <h4 class="font-medium">
+              ${this.isSeedsJsonView
+                ? msg("Custom Config")
+                : msg("Configure Seeds")}
+            </h4>
+            <sl-switch
+              ?checked=${this.isSeedsJsonView}
+              @sl-change=${(e: any) =>
+                (this.isSeedsJsonView = e.target.checked)}
+            >
+              <span class="text-sm">${msg("Use JSON Editor")}</span>
+            </sl-switch>
+          </div>
+
+          ${this.isSeedsJsonView
+            ? this.renderSeedsJson()
+            : this.renderSeedsForm()}
+
+          <div class="text-right">
+            <sl-button
+              type="text"
+              @click=${() => (this.openDialogName = undefined)}
+              >${msg("Cancel")}</sl-button
+            >
+            <sl-button
+              type="primary"
+              submit
+              ?disabled=${Boolean(this.invalidSeedsJsonMessage) ||
+              this.isSubmittingUpdate}
+              ?loading=${this.isSubmittingUpdate}
+              >${msg("Save Changes")}</sl-button
+            >
+          </div>
+        </div>
+      </sl-form>
+    `;
+  }
+
+  private renderSchedule() {
     return html`
       <dl class="grid gap-5">
         <div>
@@ -501,16 +680,289 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderEditSchedule() {
-    if (!this.crawlTemplate) {
-      return "";
-    }
+    if (!this.crawlTemplate) return;
 
     return html`
-      <btrix-crawl-templates-scheduler
-        schedule=${this.crawlTemplate.schedule}
-        @submit=${this.onSubmitSchedule}
-      ></btrix-crawl-templates-scheduler>
+      <btrix-crawl-scheduler
+        .schedule=${this.crawlTemplate.schedule}
+        .isSubmitting=${this.isSubmittingUpdate}
+        cancelable
+        @cancel=${() => (this.openDialogName = undefined)}
+        @submit=${this.handleSubmitEditSchedule}
+      ></btrix-crawl-scheduler>
     `;
+  }
+
+  private renderCrawls() {
+    return html`
+      <dl class="grid gap-5">
+        <div>
+          <dt class="text-sm text-0-600">
+            <span class="inline-block align-middle">${msg("# of Crawls")}</span>
+            <sl-tooltip
+              content=${msg(
+                "Number of completed crawls using current version of the crawl configuration"
+              )}
+              ><sl-icon
+                class="inline-block align-middle"
+                name="info-circle"
+              ></sl-icon
+            ></sl-tooltip>
+          </dt>
+          <dd class="font-mono">
+            ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm text-0-600">${msg("Currently Running Crawl")}</dt>
+          <dd
+            class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
+          >
+            ${this.crawlTemplate
+              ? html`
+                  ${this.crawlTemplate.currCrawlId
+                    ? html` <a
+                        class="text-primary font-medium hover:underline text-sm p-1"
+                        href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
+                        @click=${this.navLink}
+                        >${msg("View crawl")}</a
+                      >`
+                    : this.crawlTemplate.inactive
+                    ? ""
+                    : html`<span class="text-0-400 text-sm p-1"
+                          >${msg("None")}</span
+                        ><button
+                          class="text-xs border rounded px-2 h-7 bg-purple-500 hover:bg-purple-400 text-white transition-colors"
+                          @click=${() => this.runNow()}
+                        >
+                          <span class="whitespace-nowrap">
+                            ${msg("Run now")}
+                          </span>
+                        </button>`}
+                `
+              : html` <sl-skeleton style="width: 6em"></sl-skeleton> `}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
+          <dd
+            class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
+          >
+            ${this.crawlTemplate?.lastCrawlId
+              ? html`<a
+                    class="text-primary font-medium hover:underline text-sm p-1"
+                    href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.lastCrawlId}`}
+                    @click=${this.navLink}
+                    >${msg("View crawl")}</a
+                  >
+                  <sl-format-date
+                    date=${
+                      `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
+                    }
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>`
+              : html`<span class="text-0-400 text-sm p-1"
+                  >${msg("None")}</span
+                >`}
+          </dd>
+        </div>
+      </dl>
+    `;
+  }
+
+  /**
+   * Render dialog for edit forms
+   *
+   * `openDialogName` shows/hides a specific dialog, while `isDialogVisible`
+   * renders/prevents rendering a dialog's content unless the dialog is visible
+   * in order to reset the dialog content on close.
+   */
+  private renderDialogs() {
+    const dialogWidth = "36rem";
+
+    const resetScroll = (e: any) => {
+      const dialogBody = e.target.shadowRoot.querySelector('[part="body"]');
+
+      if (dialogBody) {
+        dialogBody.scrollTop = 0;
+      }
+    };
+
+    return html`
+      <sl-dialog
+        label=${msg(str`Edit Crawl Template Name`)}
+        style="--width: ${dialogWidth}"
+        ?open=${this.openDialogName === "name"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditName() : ""}
+      </sl-dialog>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Configuration`)}
+        style="--width: ${dialogWidth}"
+        ?open=${this.openDialogName === "config"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @sl-after-show=${resetScroll}
+      >
+        ${this.isDialogVisible ? this.renderEditConfiguration() : ""}
+      </sl-dialog>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Schedule`)}
+        style="--width: ${dialogWidth}"
+        ?open=${this.openDialogName === "schedule"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditSchedule() : ""}
+      </sl-dialog>
+    `;
+  }
+
+  private renderSeedsForm() {
+    return html`
+      <sl-textarea
+        name="seedUrls"
+        label=${msg("Seed URLs")}
+        placeholder=${msg(`https://webrecorder.net\nhttps://example.com`, {
+          desc: "Example seed URLs",
+        })}
+        help-text=${msg(
+          "Required. Separate URLs with a new line, space or comma."
+        )}
+        rows="3"
+        value=${this.crawlTemplate!.config.seeds.join("\n")}
+        required
+      ></sl-textarea>
+      <sl-select
+        name="scopeType"
+        label=${msg("Crawl Scope")}
+        value=${this.crawlTemplate!.config.scopeType!}
+        @sl-hide=${this.stopProp}
+        @sl-after-hide=${this.stopProp}
+      >
+        <sl-menu-item value="page">Page</sl-menu-item>
+        <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
+        <sl-menu-item value="prefix">Prefix</sl-menu-item>
+        <sl-menu-item value="host">Host</sl-menu-item>
+        <sl-menu-item value="any">Any</sl-menu-item>
+      </sl-select>
+      <sl-checkbox
+        name="extraHopsOne"
+        ?checked=${Boolean(this.crawlTemplate!.config.extraHops)}
+        >${msg("Include External Links ('one hop out')")}
+      </sl-checkbox>
+      <sl-input
+        name="limit"
+        label=${msg("Page Limit")}
+        type="number"
+        value=${ifDefined(this.crawlTemplate!.config.limit)}
+        placeholder=${msg("unlimited")}
+      >
+        <span slot="suffix">${msg("pages")}</span>
+      </sl-input>
+    `;
+  }
+
+  private renderSeedsJson() {
+    return html`
+      <div class="grid gap-4">
+        <div>
+          <p class="mb-2">
+            ${msg(
+              html`See
+                <a
+                  href="https://github.com/webrecorder/browsertrix-crawler#crawling-configuration-options"
+                  class="text-primary hover:underline"
+                  target="_blank"
+                  >Browsertrix Crawler docs
+                  <sl-icon name="box-arrow-up-right"></sl-icon
+                ></a>
+                for all configuration options.`
+            )}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="relative col-span-2">
+            ${this.renderSeedsJsonInput()}
+
+            <div class="absolute top-2 right-2">
+              <btrix-copy-button .value=${this.seedsJson}></btrix-copy-button>
+            </div>
+          </div>
+
+          <div class="col-span-1">
+            ${this.invalidSeedsJsonMessage
+              ? html`<btrix-alert type="danger">
+                  ${this.invalidSeedsJsonMessage}
+                </btrix-alert> `
+              : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSeedsJsonInput() {
+    return html`
+      <textarea
+        id="json-editor"
+        name="config"
+        class="language-json block w-full bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
+        autocomplete="off"
+        rows="10"
+        spellcheck="false"
+        .value=${this.seedsJson}
+        @keydown=${(e: any) => {
+          // Add indentation when pressing tab key instead of moving focus
+          if (e.keyCode === /* tab: */ 9) {
+            e.preventDefault();
+
+            const textarea = e.target;
+
+            textarea.setRangeText(
+              "  ",
+              textarea.selectionStart,
+              textarea.selectionStart,
+              "end"
+            );
+          }
+        }}
+        @change=${(e: any) => (this.seedsJson = e.target.value)}
+        @blur=${this.updateSeedsJson}
+      ></textarea>
+    `;
+  }
+
+  private updateSeedsJson(e: any) {
+    const textarea = e.target;
+    const text = textarea.value;
+
+    try {
+      const json = JSON.parse(text);
+
+      this.seedsJson = JSON.stringify(json, null, 2);
+      this.invalidSeedsJsonMessage = "";
+
+      textarea.setCustomValidity("");
+      textarea.reportValidity();
+    } catch (e: any) {
+      this.invalidSeedsJsonMessage = e.message
+        ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
+        : msg("JSON is invalid.");
+    }
   }
 
   async getCrawlTemplate(): Promise<CrawlTemplate> {
@@ -546,6 +998,66 @@ export class CrawlTemplatesDetail extends LiteElement {
       type: "success",
       icon: "check2-circle",
     });
+  }
+
+  private async handleSubmitEditName(e: { detail: { formData: FormData } }) {
+    const { formData } = e.detail;
+    const name = formData.get("name") as string;
+
+    await this.updateTemplate({ name });
+
+    this.openDialogName = undefined;
+  }
+
+  private async handleSubmitEditConfiguration(e: {
+    detail: { formData: FormData };
+  }) {
+    const { formData } = e.detail;
+    const configValue = formData.get("config") as string;
+    let config: CrawlConfig;
+
+    if (configValue) {
+      if (this.invalidSeedsJsonMessage) return;
+
+      config = JSON.parse(configValue) as CrawlConfig;
+    } else {
+      const pageLimit = formData.get("limit") as string;
+      const seedUrlsStr = formData.get("seedUrls") as string;
+
+      config = {
+        seeds: seedUrlsStr.trim().replace(/,/g, " ").split(/\s+/g),
+        scopeType: formData.get("scopeType") as string,
+        limit: pageLimit ? +pageLimit : 0,
+        extraHops: formData.get("extraHopsOne") ? 1 : 0,
+      };
+    }
+
+    if (config) {
+      await this.createRevisedTemplate(config);
+    }
+
+    this.openDialogName = undefined;
+  }
+
+  private async handleSubmitEditSchedule(e: {
+    detail: { formData: FormData };
+  }) {
+    const { formData } = e.detail;
+    const interval = formData.get("scheduleInterval");
+    let schedule = "";
+
+    if (interval) {
+      schedule = getUTCSchedule({
+        interval: formData.get("scheduleInterval") as any,
+        hour: formData.get("scheduleHour") as any,
+        minute: formData.get("scheduleMinute") as any,
+        period: formData.get("schedulePeriod") as any,
+      });
+    }
+
+    await this.updateTemplate({ schedule });
+
+    this.openDialogName = undefined;
   }
 
   private async deactivateTemplate(): Promise<void> {
@@ -653,85 +1165,109 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
   }
 
-  private async onSubmitSchedule(event: {
-    detail: { formData: FormData };
-    target: any;
-  }): Promise<void> {
-    const { formData } = event.detail;
-    const interval = formData.get("scheduleInterval");
-    let schedule = "";
+  /**
+   * Create new crawl template with revised crawl configuration
+   * @param config Crawl config object
+   */
+  private async createRevisedTemplate(config: CrawlConfig) {
+    this.isSubmittingUpdate = true;
 
-    if (interval) {
-      schedule = getUTCSchedule({
-        interval: formData.get("scheduleInterval") as any,
-        hour: formData.get("scheduleHour") as any,
-        minute: formData.get("scheduleMinute") as any,
-        period: formData.get("schedulePeriod") as any,
-      });
-    }
+    const params = {
+      oldId: this.crawlTemplate!.id,
+      name: this.crawlTemplate!.name,
+      schedule: this.crawlTemplate!.schedule,
+      // runNow: this.crawlTemplate!.runNow,
+      // crawlTimeout: this.crawlTemplate!.crawlTimeout,
+      config,
+    };
 
     try {
-      await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${
-          this.crawlTemplate!.id
-        }/schedule`,
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
         this.authState!,
         {
-          method: "PATCH",
-          body: JSON.stringify({ schedule }),
+          method: "POST",
+          body: JSON.stringify(params),
         }
       );
 
-      this.crawlTemplate!.schedule = schedule;
+      console.log(data);
+
+      this.navTo(
+        `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
+      );
 
       this.notify({
-        message: msg("Successfully saved new schedule."),
+        message: msg("Crawl template updated."),
         type: "success",
         icon: "check2-circle",
       });
-
-      this.navTo(
-        `/archives/${this.archiveId}/crawl-templates/config/${
-          this.crawlTemplate!.id
-        }`
-      );
     } catch (e: any) {
       console.error(e);
 
       this.notify({
-        message: msg("Something went wrong, couldn't update schedule."),
+        message: msg("Something went wrong, couldn't update crawl template."),
         type: "danger",
         icon: "exclamation-octagon",
       });
     }
+
+    this.isSubmittingUpdate = false;
   }
 
   /**
-   * Set correct local hour in schedule in 24-hr format
-   **/
-  private setScheduleHour({
-    hour,
-    period,
-    schedule,
-  }: {
-    hour: number;
-    period: "AM" | "PM";
-    schedule: string;
-  }) {
-    // Convert 12-hr to 24-hr time
-    let periodOffset = 0;
+   * Update crawl template properties
+   * @param params Crawl template properties to update
+   */
+  private async updateTemplate(params: Partial<CrawlTemplate>): Promise<void> {
+    console.log(params);
 
-    if (hour === 12) {
-      if (period === "AM") {
-        periodOffset = -12;
+    this.isSubmittingUpdate = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/${this.crawlTemplate!.id}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        }
+      );
+
+      if (data.success === true) {
+        this.crawlTemplate = {
+          ...this.crawlTemplate!,
+          ...params,
+        };
+
+        this.notify({
+          message: msg("Successfully saved changes."),
+          type: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw data;
       }
-    } else if (period === "PM") {
-      periodOffset = 12;
+    } catch (e: any) {
+      console.error(e);
+
+      this.notify({
+        message: msg("Something went wrong, couldn't update crawl template."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
     }
 
-    this.editedSchedule = `${schedule.split(" ")[0]} ${
-      hour + periodOffset
-    } ${schedule.split(" ").slice(2).join(" ")}`;
+    this.isSubmittingUpdate = false;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 

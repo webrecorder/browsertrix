@@ -126,6 +126,10 @@ export class App extends LiteElement {
       };
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
+        console.debug(
+          "Unauthorized with authState:",
+          this.authService.authState
+        );
         this.authService.logout();
         this.navigate(ROUTES.login);
       }

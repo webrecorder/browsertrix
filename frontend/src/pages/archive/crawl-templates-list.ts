@@ -236,10 +236,10 @@ export class CrawlTemplatesList extends LiteElement {
 
         ${this.selectedTemplateForEdit
           ? html`
-              <btrix-crawl-templates-scheduler
+              <btrix-crawl-scheduler
                 .schedule=${this.selectedTemplateForEdit.schedule}
                 @submit=${this.onSubmitSchedule}
-              ></btrix-crawl-templates-scheduler>
+              ></btrix-crawl-scheduler>
             `
           : ""}
       </sl-dialog>
@@ -542,7 +542,7 @@ export class CrawlTemplatesList extends LiteElement {
 
     try {
       await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}/schedule`,
+        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}`,
         this.authState!,
         {
           method: "PATCH",
