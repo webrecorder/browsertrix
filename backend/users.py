@@ -266,18 +266,16 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
     ) -> Optional[str]:
         param = None
         exc = None
-        if request:
-            try:
-                param = await super().__call__(request)
-                if param:
-                    return param
+        # use websocket as request if no request
+        request = request or websocket
+        try:
+            param = await super().__call__(request)
+            if param:
+                return param
 
-            # pylint: disable=broad-except
-            except Exception as super_exc:
-                exc = super_exc
-        else:
-            # use websocket as query param
-            request = websocket
+        # pylint: disable=broad-except
+        except Exception as super_exc:
+            exc = super_exc
 
         param = request.query_params.get("auth_bearer")
 
