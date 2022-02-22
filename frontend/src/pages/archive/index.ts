@@ -80,11 +80,14 @@ export class Archive extends LiteElement {
 
   render() {
     if (!this.archive) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
+      return html`
+        <div
+          class="absolute top-1/2 left-1/2 -mt-4 -ml-4"
+          style="font-size: 2rem"
+        >
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
     }
 
     const showMembersTab = Boolean(this.archive.users);
@@ -127,7 +130,7 @@ export class Archive extends LiteElement {
       </header>
 
       <div class="w-full max-w-screen-lg mx-auto">
-        <nav class="mx-auto flex items-end overflow-x-auto">
+        <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "crawl-templates",
