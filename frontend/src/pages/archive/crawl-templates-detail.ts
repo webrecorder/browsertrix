@@ -261,6 +261,21 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate.inactive) {
       menuItems.unshift(html`
         <li
+          class="p-2 hover:bg-purple-50 cursor-pointer text-purple-600"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.runNow();
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="arrow-right-circle"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2">${msg("Run now")}</span>
+        </li>
+        <hr />
+        <li
           class="p-2 hover:bg-zinc-100 cursor-pointer"
           role="menuitem"
           @click=${(e: any) => {
