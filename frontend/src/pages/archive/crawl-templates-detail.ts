@@ -109,8 +109,25 @@ export class CrawlTemplatesDetail extends LiteElement {
         <header class="px-4 pt-4 flex justify-between">
           <div>
             <h2 class="text-3xl font-bold md:h-9 leading-tight mb-1">
-              ${this.crawlTemplate?.name ||
-              html`<sl-skeleton class="h-7" style="width: 20em"></sl-skeleton>`}
+              ${this.crawlTemplate?.name
+                ? html`
+                    <span>${this.crawlTemplate.name}</span>
+                    ${this.crawlTemplate.inactive
+                      ? ""
+                      : html`
+                          <sl-button
+                            size="small"
+                            type="text"
+                            @click=${() => (this.openDialogName = "config")}
+                          >
+                            ${msg("Edit")}
+                          </sl-button>
+                        `}
+                  `
+                : html`<sl-skeleton
+                    class="h-7"
+                    style="width: 20em"
+                  ></sl-skeleton>`}
             </h2>
             <div class="text-sm text-neutral-400 h-5">
               ${msg("Crawl Template")}
@@ -269,7 +286,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         >
           <sl-icon class="inline-block align-middle px-1" name="gear"></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit crawl configuration")}</span
+            >${msg("Change crawl configuration")}</span
           >
         </li>
         <li
@@ -285,7 +302,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             name="clock-history"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit schedule")}</span
+            >${msg("Change schedule")}</span
           >
         </li>
         <hr />
