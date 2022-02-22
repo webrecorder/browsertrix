@@ -10,6 +10,13 @@ COPY yarn.lock .
 RUN yarn --frozen-lockfile
 COPY *.* ./
 COPY src ./src/
+
+ARG GIT_COMMIT_HASH
+ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH}
+
+ARG GIT_BRANCH_NAME
+ENV GIT_BRANCH_NAME=${GIT_BRANCH_NAME}
+
 RUN yarn build
 
 FROM nginx

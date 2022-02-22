@@ -17,11 +17,11 @@ const dotEnvPath = path.resolve(
 );
 // Get git info to use as Glitchtip release version
 
-const gitBranch = childProcess
+const gitBranch = process.env.GIT_BRANCH_NAME || childProcess
   .execSync("git rev-parse --abbrev-ref HEAD")
   .toString()
   .trim();
-const commitHash = childProcess
+const commitHash = process.env.GIT_COMMIT_HASH || childProcess
   .execSync("git rev-parse --short HEAD")
   .toString()
   .trim();
