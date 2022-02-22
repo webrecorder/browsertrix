@@ -25,6 +25,8 @@ const execCommand = (cmd, defValue) => {
   }
 }
 
+// Local dev only
+// Git branch and commit hash is used to add build info to error reporter when running locally
 const gitBranch = process.env.GIT_BRANCH_NAME ||
   execCommand("git rev-parse --abbrev-ref HEAD", "unknown");
 
