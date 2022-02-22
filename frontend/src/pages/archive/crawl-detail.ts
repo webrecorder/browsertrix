@@ -171,9 +171,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header>
-        <h2 class="text-xl font-medium mb-3 md:h-7">
+        <h2 class="text-lg font-medium mb-3 md:h-6">
           ${msg(
-            html`<span class="text-neutral-500">Crawl of</span> ${this.crawl
+            html`<span class="font-normal">Crawl of</span> ${this.crawl
                 ? this.crawl.configName
                 : html`<sl-skeleton
                     class="inline-block"
@@ -371,7 +371,7 @@ export class CrawlDetail extends LiteElement {
             ${this.crawl
               ? html`
                   <a
-                    class="font-medium text-neutral-600 hover:text-neutral-900"
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
                     href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
                     @click=${this.navLink}
                   >
