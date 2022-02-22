@@ -47,6 +47,9 @@ function makeTheme() {
       lg: `var(--sl-shadow-large)`,
       xl: `var(--sl-shadow-x-large)`,
     },
+    aspectRatio: {
+      "4/3": "4 / 3", // For Browsertrix watch/replay
+    },
   };
 }
 
