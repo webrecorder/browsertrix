@@ -151,22 +151,36 @@ export class CrawlDetail extends LiteElement {
     }: {
       section: SectionName;
       label: any;
-    }) => html`
-      <li>
-        <a
-          class="block p-2 font-medium ${section === this.sectionName
-            ? "text-neutral-900"
-            : "text-neutral-500 hover:text-neutral-900"}"
-          href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
-          @click=${() => (this.sectionName = section)}
+    }) => {
+      const isActive = section === this.sectionName;
+      return html`
+        <li
+          class="relative"
+          role="menuitem"
+          aria-selected=${isActive ? "true" : "false"}
         >
-          ${label}
-        </a>
-      </li>
-    `;
+          <div
+            class="absolute left-0 top-4 h-2 w-2 rounded-full transition-colors ${section ===
+            this.sectionName
+              ? "bg-primary"
+              : "bg-transparent"}"
+            role="presentation"
+          ></div>
+          <a
+            class="block ml-2 p-2 font-medium ${isActive
+              ? "text-neutral-900"
+              : "text-neutral-500 hover:text-neutral-900"}"
+            href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
+            @click=${() => (this.sectionName = section)}
+          >
+            ${label}
+          </a>
+        </li>
+      `;
+    };
     return html`
       <nav class="border-b md:border-b-0">
-        <ul class="flex flex-row md:flex-col">
+        <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
           ${renderNavItem({ section: "recording", label: msg("Recording") })}
           ${renderNavItem({ section: "download", label: msg("Download") })}
