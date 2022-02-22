@@ -301,31 +301,6 @@ class K8SManager:
 
         return crawls
 
-    async def init_crawl_screencast(self, crawl_id, aid):
-        """ Init service for this job/crawl_id to support screencasting """
-        labels = {"btrix.archive": aid}
-
-        service = client.V1Service(
-            kind="Service",
-            api_version="v1",
-            metadata={
-                "name": crawl_id,
-                "labels": labels,
-            },
-            spec={
-                "selector": {"job-name": crawl_id},
-                "ports": [{"protocol": "TCP", "port": 9037, "name": "screencast"}],
-            },
-        )
-
-        try:
-            await self.core_api.create_namespaced_service(
-                body=service, namespace=self.namespace
-            )
-        except client.exceptions.ApiException as api_exc:
-            if api_exc.status != 409:
-                raise api_exc
-
     async def process_crawl_complete(self, crawlcomplete):
         """Ensure the crawlcomplete data is valid (job exists and user matches)
         Fill in additional details about the crawl"""
@@ -548,17 +523,6 @@ class K8SManager:
             grace_period_seconds=60,
             propagation_policy="Foreground",
         )
-
-        try:
-            await self.core_api.delete_namespaced_service(
-                name=name,
-                namespace=self.namespace,
-                grace_period_seconds=60,
-                propagation_policy="Foreground",
-            )
-        # pylint: disable=bare-except
-        except:
-            pass
 
     def _create_config_map(self, crawlconfig, labels):
         """ Create Config Map based on CrawlConfig + labels """

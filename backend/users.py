@@ -11,7 +11,7 @@ from typing import Dict, Optional
 from pydantic import EmailStr, UUID4
 import passlib.pwd
 
-from fastapi import Request, Response, HTTPException, Depends
+from fastapi import Request, Response, HTTPException, Depends, WebSocket
 from fastapi.security import OAuth2PasswordBearer
 
 from fastapi_users import FastAPIUsers, models, BaseUserManager
@@ -261,9 +261,13 @@ def init_user_manager(mdb, emailsender, invites):
 class OA2BearerOrQuery(OAuth2PasswordBearer):
     """ Override bearer check to also test query """
 
-    async def __call__(self, request: Request) -> Optional[str]:
+    async def __call__(
+        self, request: Request = None, websocket: WebSocket = None
+    ) -> Optional[str]:
         param = None
         exc = None
+        # use websocket as request if no request
+        request = request or websocket
         try:
             param = await super().__call__(request)
             if param:
@@ -275,10 +279,13 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
         param = request.query_params.get("auth_bearer")
 
-        if not param and exc:
+        if param:
+            return param
+
+        if exc:
             raise exc
 
-        return param
+        raise HTTPException(status_code=404, detail="Not Found")
 
 
 # ============================================================================
