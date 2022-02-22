@@ -203,7 +203,12 @@ class CrawlConfigOps:
             old_config = await self.get_crawl_config(old_id, archive)
             async with await self.dbclient.start_session() as sesh:
                 async with sesh.start_transaction():
-                    await self.make_inactive(old_config, data["_id"])
+                    if (
+                        await self.make_inactive_or_delete(old_config, data["_id"])
+                        == "deleted"
+                    ):
+                        data["oldId"] = old_config.oldId
+
                     result = await self.crawl_configs.insert_one(data)
 
         else:
@@ -221,7 +226,9 @@ class CrawlConfigOps:
         """ Update name, scale and/or schedule for an existing crawl config """
 
         # set update query
-        query = update.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+        query = update.dict(
+            exclude_unset=True, exclude_defaults=True, exclude_none=True
+        )
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
@@ -343,11 +350,15 @@ class CrawlConfigOps:
         res = await self.crawl_configs.find_one(query)
         return config_cls.from_dict(res)
 
-    async def make_inactive(self, crawlconfig: CrawlConfig, new_id: uuid.UUID = None):
-        """Delete config, if no crawls ran yet. Otherwise, move to inactive list"""
+    async def make_inactive_or_delete(
+        self, crawlconfig: CrawlConfig, new_id: uuid.UUID = None
+    ):
+        """Make config inactive if crawls exist, otherwise move to inactive list"""
+
+        query = {"inactive": True}
 
         if new_id:
-            crawlconfig.newId = new_id
+            crawlconfig.newId = query["newId"] = new_id
 
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
@@ -364,13 +375,18 @@ class CrawlConfigOps:
             if result.deleted_count != 1:
                 raise HTTPException(status_code=404, detail="failed_to_delete")
 
+            if crawlconfig.oldId:
+                await self.crawl_configs.find_one_and_update(
+                    {"_id": crawlconfig.oldId}, {"$set": query}
+                )
+
             status = "deleted"
 
         else:
 
             if not await self.crawl_configs.find_one_and_update(
                 {"_id": crawlconfig.id, "inactive": {"$ne": True}},
-                {"$set": {"inactive": True}},
+                {"$set": query},
             ):
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
 
@@ -386,7 +402,7 @@ class CrawlConfigOps:
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():
-                status = await self.make_inactive(crawlconfig)
+                status = await self.make_inactive_or_delete(crawlconfig)
 
         return {"success": True, "status": status}
 
