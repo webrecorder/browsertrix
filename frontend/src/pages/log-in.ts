@@ -146,6 +146,7 @@ export class LogInPage extends LiteElement {
 
   disconnectedCallback() {
     this.formStateService.stop();
+    super.disconnectedCallback();
   }
 
   async updated(changedProperties: any) {

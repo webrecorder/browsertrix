@@ -28,6 +28,7 @@ export class CopyButton extends LitElement {
 
   disconnectedCallback() {
     window.clearTimeout(this.timeoutId);
+    super.disconnectedCallback();
   }
 
   render() {

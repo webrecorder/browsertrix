@@ -188,6 +188,7 @@ export class AccountSettings extends LiteElement {
 
   disconnectedCallback() {
     this.formStateService.stop();
+    super.disconnectedCallback();
   }
 
   render() {
