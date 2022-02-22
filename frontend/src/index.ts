@@ -201,7 +201,7 @@ export class App extends LiteElement {
     return html`
       <div class="border-b">
         <nav
-          class="max-w-screen-lg mx-auto p-2 box-border flex items-center justify-between"
+          class="max-w-screen-lg mx-auto box-border h-12 flex items-center justify-between"
         >
           <div>
             <a href="/archives" @click="${this.navLink}"
@@ -237,12 +237,16 @@ export class App extends LiteElement {
                 </sl-dropdown>`
               : html`
                   <a href="/log-in"> ${msg("Log In")} </a>
-                  <sl-button
-                    outline
-                    @click="${() => this.navigate("/sign-up")}"
-                  >
-                    <span class="text-white">${msg("Sign up")}</span>
-                  </sl-button>
+                  ${this.isRegistrationEnabled
+                    ? html`
+                        <sl-button
+                          type="text"
+                          @click="${() => this.navigate("/sign-up")}"
+                        >
+                          ${msg("Sign up")}
+                        </sl-button>
+                      `
+                    : html``}
                 `}
           </div>
         </nav>

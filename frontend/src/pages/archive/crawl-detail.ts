@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -6,6 +7,8 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
+
+type SectionName = "overview" | "preview" | "download" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -35,6 +38,9 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isWatchExpanded: boolean = false;
 
+  @state()
+  private sectionName: SectionName = "overview";
+
   // For long polling:
   private timerId?: number;
 
@@ -52,92 +58,119 @@ export class CrawlDetail extends LiteElement {
     // }
   }
 
+  connectedCallback(): void {
+    // Set initial active section based on URL #hash value
+    const hash = window.location.hash.slice(1);
+    if (["overview", "preview", "download", "logs"].includes(hash)) {
+      this.sectionName = hash as SectionName;
+    }
+    super.connectedCallback();
+  }
+
   disconnectedCallback(): void {
     this.stopPollTimer();
     super.disconnectedCallback();
   }
 
   render() {
+    let sectionContent: string | TemplateResult = "";
+
+    switch (this.sectionName) {
+      case "preview":
+        sectionContent = this.renderWatch();
+        break;
+      case "download":
+        sectionContent = this.renderFiles();
+        break;
+      case "logs":
+        sectionContent = this.renderLogs();
+        break;
+      default:
+        sectionContent = this.renderOverview();
+        break;
+    }
+
     return html`
-      <nav class="mb-5">
+      <div class="grid grid-cols-5 gap-5 pb-3 border-b mb-2 items-start">
+        <div class="col-span-5 md:col-span-1">
+          <a
+            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+            href=${`/archives/${this.archiveId}/crawls`}
+            @click=${this.navLink}
+          >
+            <sl-icon
+              name="arrow-left"
+              class="inline-block align-middle"
+            ></sl-icon>
+            <span class="inline-block align-middle"
+              >${msg("Back to Crawls")}</span
+            >
+          </a>
+        </div>
+        <header class="col-span-5 md:col-span-4 flex justify-between">
+          <h2 class="text-xl font-medium mb-1 md:h-7">
+            ${this.crawl
+              ? msg(
+                  html`<span class="text-neutral-500">Crawl of</span> ${this
+                      .crawl.configName}`
+                )
+              : html`<sl-skeleton style="width: 30em"></sl-skeleton>`}
+          </h2>
+
+          <div>
+            ${this.crawl
+              ? html`
+                  <sl-button
+                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                    size="small"
+                    @click=${this.navLink}
+                  >
+                    View crawl template
+                  </sl-button>
+                `
+              : ""}
+          </div>
+        </header>
+      </div>
+
+      <div class="grid grid-cols-5 gap-5">
+        <div class="col-span-5 md:col-span-1">${this.renderNav()}</div>
+        <div class="col-span-5 md:col-span-4 md:py-5">
+          <main>${sectionContent}</main>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderNav() {
+    const renderNavItem = ({
+      section,
+      label,
+    }: {
+      section: SectionName;
+      label: any;
+    }) => html`
+      <li>
         <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawls`}
-          @click=${this.navLink}
+          class="block p-2 font-medium ${section === this.sectionName
+            ? "text-neutral-900"
+            : "text-neutral-500 hover:text-neutral-900"}"
+          href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
+          @click=${() => (this.sectionName = section)}
         >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
-          >
+          ${label}
         </a>
+      </li>
+    `;
+    return html`
+      <nav>
+        <ul>
+          ${renderNavItem({ section: "overview", label: msg("Overview") })}
+          ${renderNavItem({ section: "preview", label: msg("Preview") })}
+          ${renderNavItem({ section: "download", label: msg("Download") })}
+          ${renderNavItem({ section: "logs", label: msg("Logs") })}
+        </ul>
       </nav>
-
-      <header class="my-3">
-        <h2 class="text-xl font-medium mb-1 md:h-7">
-          ${this.crawl
-            ? msg(str`Crawl of ${this.crawl.configName}`)
-            : html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
-        </h2>
-      </header>
-
-      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2">
-          <div>
-            <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
-            <dd class="h-5 whitespace-nowrap truncate font-mono text-xs">
-              ${this.crawl?.id ||
-              html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-xs text-0-600">${msg("Crawl Template")}</dt>
-            <dd class="h-5 whitespace-nowrap truncate">
-              ${this.crawl
-                ? html`
-                    <a
-                      class="text-primary font-medium hover:underline"
-                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                      @click=${this.navLink}
-                      >${this.crawl.configName}</a
-                    >
-                  `
-                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
-            </dd>
-          </div>
-        </dl>
-
-        <!-- TODO created at? -->
-      </section>
-
-      <main class="grid gap-5">
-        <section
-          class="grid grid-cols-2 md:grid-cols-8 gap-3 rounded-lg md:p-4 md:bg-zinc-100"
-        >
-          <div
-            class="col-span-8 ${this.isWatchExpanded
-              ? "md:col-span-8"
-              : "md:col-span-5"} relative"
-          >
-            ${this.renderWatch()}
-          </div>
-
-          <div
-            class="col-span-8 ${this.isWatchExpanded
-              ? "md:col-span-8"
-              : "md:col-span-3"} border rounded-lg bg-white p-4 md:p-8"
-          >
-            ${this.renderDetails()}
-          </div>
-        </section>
-
-        <section>
-          <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
-          ${this.renderFiles()}
-        </section>
-      </main>
     `;
   }
 
@@ -151,6 +184,8 @@ export class CrawlDetail extends LiteElement {
     const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
+      <h3 class="text-lg font-medium mb-2">${msg("Watch or Replay Crawl")}</h3>
+
       <div
         class="aspect-video rounded border ${isRunning
           ? "border-purple-200"
@@ -201,11 +236,11 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderDetails() {
+  private renderOverview() {
     const isRunning = this.crawl?.state === "running";
 
     return html`
-      <dl class="grid grid-cols-2 gap-5">
+      <dl class="grid grid-cols-4 gap-5">
         <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Status")}</dt>
           <dd>
@@ -361,6 +396,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
+      <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
       <ul class="border rounded text-sm">
         ${this.crawl?.resources?.map(
           (file) => html`
@@ -380,6 +416,10 @@ export class CrawlDetail extends LiteElement {
         )}
       </ul>
     `;
+  }
+
+  private renderLogs() {
+    return html`TODO`;
   }
 
   /**
