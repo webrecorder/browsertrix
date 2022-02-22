@@ -52,9 +52,6 @@ spec:
             - name: BACKEND_HOST
               value: {{ .Values.name }}-backend
 
-            - name: BROWSER_SCREENCAST_URL
-              value: http://$2.crawlers.svc.cluster.local:9037
-
           resources:
             limits:
               cpu: {{ .Values.nginx_limits_cpu }}
