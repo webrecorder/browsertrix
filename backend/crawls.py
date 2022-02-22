@@ -8,7 +8,8 @@ import os
 from typing import Optional, List, Dict, Union
 from datetime import datetime
 
-from fastapi import Depends, HTTPException, WebSocket, WebSocketDisconnect
+import websockets
+from fastapi import Depends, HTTPException, WebSocket
 from pydantic import BaseModel, UUID4, conint
 import pymongo
 import aioredis
@@ -440,6 +441,7 @@ class CrawlOps:
         async with self.pubsub as chan:
             await chan.subscribe(cast_channel)
 
+            # pylint: disable=broad-except
             try:
                 while True:
                     message = await chan.get_message(ignore_subscribe_messages=True)
@@ -447,8 +449,12 @@ class CrawlOps:
                         continue
 
                     await websocket.send_text(message["data"])
-            except WebSocketDisconnect:
+
+            except websockets.exceptions.ConnectionClosedOK:
                 pass
+
+            except Exception as exc:
+                print(exc, flush=True)
 
             finally:
                 await self.redis.publish(ctrl_channel, "disconnect")
