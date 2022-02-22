@@ -8,7 +8,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
 
-type SectionName = "overview" | "preview" | "download" | "logs";
+type SectionName = "overview" | "recording" | "download" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -61,7 +61,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "preview", "download", "logs"].includes(hash)) {
+    if (["overview", "recording", "download", "logs"].includes(hash)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -76,7 +76,7 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
-      case "preview":
+      case "recording":
         sectionContent = this.renderWatch();
         break;
       case "download":
@@ -137,7 +137,7 @@ export class CrawlDetail extends LiteElement {
 
       <div class="grid grid-cols-5 gap-5">
         <div class="col-span-5 md:col-span-1">${this.renderNav()}</div>
-        <div class="col-span-5 md:col-span-4 md:py-5">
+        <div class="col-span-5 md:col-span-4 md:py-2">
           <main>${sectionContent}</main>
         </div>
       </div>
@@ -168,7 +168,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "preview", label: msg("Preview") })}
+          ${renderNavItem({ section: "recording", label: msg("Recording") })}
           ${renderNavItem({ section: "download", label: msg("Download") })}
           ${renderNavItem({ section: "logs", label: msg("Logs") })}
         </ul>
@@ -242,8 +242,8 @@ export class CrawlDetail extends LiteElement {
     const isRunning = this.crawl?.state === "running";
 
     return html`
-      <dl class="grid grid-cols-4 gap-5">
-        <div class="col-span-2">
+      <dl class="grid grid-cols-3 gap-5">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
@@ -337,7 +337,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
             ${this.crawl
@@ -355,7 +355,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Finished")}</dt>
           <dd>
             ${this.crawl
@@ -375,7 +375,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Reason")}</dt>
           <dd>
             ${this.crawl
