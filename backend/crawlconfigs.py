@@ -203,7 +203,12 @@ class CrawlConfigOps:
             old_config = await self.get_crawl_config(old_id, archive)
             async with await self.dbclient.start_session() as sesh:
                 async with sesh.start_transaction():
-                    await self.make_inactive_or_delete(old_config, data["_id"])
+                    if (
+                        await self.make_inactive_or_delete(old_config, data["_id"])
+                        == "deleted"
+                    ):
+                        data["oldId"] = old_config.oldId
+
                     result = await self.crawl_configs.insert_one(data)
 
         else:
