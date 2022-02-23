@@ -48,7 +48,5 @@ export class RelativeDuration extends LitElement {
 
   private updateValue() {
     this.now = Date.now();
-
-    this.update;
   }
 }
