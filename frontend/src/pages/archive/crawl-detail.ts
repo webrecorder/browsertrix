@@ -171,107 +171,28 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header>
-        <h2 class="text-lg font-medium mb-3 md:h-6">
-          ${msg(
-            html`<span class="font-normal">Crawl of</span> ${this.crawl
-                ? this.crawl.configName
-                : html`<sl-skeleton
-                    class="inline-block"
-                    style="width: 15em"
-                  ></sl-skeleton>`}`
-          )}
-        </h2>
-        <div class="grid grid-cols-4 gap-3">
-          <dl class="col-span-4 md:col-span-3 grid grid-cols-3 gap-5">
-            <div class="col-span-1">
-              <dt class="text-sm text-0-600">${msg("Status")}</dt>
-              <dd>
-                ${this.crawl
-                  ? html`
-                      <div class="flex items-baseline justify-between">
-                        <div
-                          class="whitespace-nowrap capitalize${isRunning
-                            ? " motion-safe:animate-pulse"
-                            : ""}"
-                        >
-                          ${this.crawl.state.replace(/_/g, " ")}
-                        </div>
-                      </div>
-                    `
-                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-                ${isRunning
-                  ? html`
-                      <sl-details
-                        class="mt-2"
-                        style="--sl-spacing-medium: var(--sl-spacing-x-small)"
-                      >
-                        <span slot="summary" class="text-sm text-0-700">
-                          ${msg("Manage")}
-                        </span>
-
-                        <div class="mb-3 text-center text-sm leading-none">
-                          <sl-button
-                            class="mr-2"
-                            size="small"
-                            @click=${this.stop}
-                          >
-                            ${msg("Stop Crawl")}
-                          </sl-button>
-                          <sl-button
-                            size="small"
-                            type="danger"
-                            @click=${this.cancel}
-                          >
-                            ${msg("Cancel Crawl")}
-                          </sl-button>
-                        </div>
-                      </sl-details>
-                    `
-                  : ""}
-              </dd>
-            </div>
-            <div class="col-span-1">
-              <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
-              <dd>
-                ${this.crawl?.stats
-                  ? html`
-                      <span
-                        class="font-mono tracking-tighter${isRunning
-                          ? " text-purple-600"
-                          : ""}"
-                      >
-                        ${this.numberFormatter.format(+this.crawl.stats.done)}
-                        <span class="text-0-400">/</span>
-                        ${this.numberFormatter.format(+this.crawl.stats.found)}
-                      </span>
-                    `
-                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-              </dd>
-            </div>
-            <div class="col-span-1">
-              <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
-              <dd>
-                ${this.crawl
-                  ? html`
-                      ${this.crawl.finished
-                        ? html`${RelativeDuration.humanize(
-                            new Date(`${this.crawl.finished}Z`).valueOf() -
-                              new Date(`${this.crawl.started}Z`).valueOf()
-                          )}`
-                        : html`
-                            <span class="text-purple-600">
-                              <btrix-relative-duration
-                                value=${`${this.crawl.started}Z`}
-                              ></btrix-relative-duration>
-                            </span>
-                          `}
-                    `
-                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-              </dd>
-            </div>
-          </dl>
-          <div class="col-span-1">
-            ${this.crawl
+        <div class="flex justify-between">
+          <h2 class="text-lg font-medium mb-3 md:h-6">
+            ${msg(
+              html`<span class="font-normal">Crawl of</span> ${this.crawl
+                  ? this.crawl.configName
+                  : html`<sl-skeleton
+                      class="inline-block"
+                      style="width: 15em"
+                    ></sl-skeleton>`}`
+            )}
+          </h2>
+          <div>
+            ${isRunning
+              ? html`
+                  <sl-button class="mr-2" size="small" @click=${this.stop}>
+                    ${msg("Stop Crawl")}
+                  </sl-button>
+                  <sl-button size="small" type="danger" @click=${this.cancel}>
+                    ${msg("Cancel Crawl")}
+                  </sl-button>
+                `
+              : this.crawl
               ? html`
                   <sl-button
                     href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
@@ -281,9 +202,68 @@ export class CrawlDetail extends LiteElement {
                     ${msg("View Config")}
                   </sl-button>
                 `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+              : ""}
           </div>
         </div>
+        <dl class="grid grid-cols-4 gap-5">
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Status")}</dt>
+            <dd>
+              ${this.crawl
+                ? html`
+                    <div class="flex items-baseline justify-between">
+                      <div
+                        class="whitespace-nowrap capitalize${isRunning
+                          ? " motion-safe:animate-pulse"
+                          : ""}"
+                      >
+                        ${this.crawl.state.replace(/_/g, " ")}
+                      </div>
+                    </div>
+                  `
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
+            <dd>
+              ${this.crawl?.stats
+                ? html`
+                    <span
+                      class="font-mono tracking-tighter${isRunning
+                        ? " text-purple-600"
+                        : ""}"
+                    >
+                      ${this.numberFormatter.format(+this.crawl.stats.done)}
+                      <span class="text-0-400">/</span>
+                      ${this.numberFormatter.format(+this.crawl.stats.found)}
+                    </span>
+                  `
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
+            <dd>
+              ${this.crawl
+                ? html`
+                    ${this.crawl.finished
+                      ? html`${RelativeDuration.humanize(
+                          new Date(`${this.crawl.finished}Z`).valueOf() -
+                            new Date(`${this.crawl.started}Z`).valueOf()
+                        )}`
+                      : html`
+                          <span class="text-purple-600">
+                            <btrix-relative-duration
+                              value=${`${this.crawl.started}Z`}
+                            ></btrix-relative-duration>
+                          </span>
+                        `}
+                  `
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
+        </dl>
       </header>
     `;
   }
@@ -354,28 +334,6 @@ export class CrawlDetail extends LiteElement {
     return html`
       <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${this.crawl.configName}
-                    </span>
-                  </a>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
             ${this.crawl
@@ -389,6 +347,26 @@ export class CrawlDetail extends LiteElement {
                     minute="numeric"
                     time-zone-name="short"
                   ></sl-format-date>
+                `
+              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">${msg("Finished")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  ${this.crawl.finished
+                    ? html`<sl-format-date
+                        date=${`${this.crawl.finished}Z` /** Z for UTC */}
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                      ></sl-format-date>`
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
@@ -411,22 +389,37 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-1">
-          <dt class="text-sm text-0-600">${msg("Finished")}</dt>
+          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
               ? html`
-                  ${this.crawl.finished
-                    ? html`<sl-format-date
-                        date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                      ></sl-format-date>`
-                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
+                  <a
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
+                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${this.crawl.configName}
+                    </span>
+                  </a>
                 `
+              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
+          <dd class="truncate">
+            ${this.crawl
+              ? html`<btrix-copy-button
+                    value=${this.crawl.id}
+                  ></btrix-copy-button>
+                  <code class="text-xs" title=${this.crawl.id}
+                    >${this.crawl.id}</code
+                  > `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
