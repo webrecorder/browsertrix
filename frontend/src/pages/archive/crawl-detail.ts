@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -6,6 +7,8 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
+
+type SectionName = "overview" | "watch" | "download" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -35,6 +38,9 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isWatchExpanded: boolean = false;
 
+  @state()
+  private sectionName: SectionName = "overview";
+
   // For long polling:
   private timerId?: number;
 
@@ -52,92 +58,225 @@ export class CrawlDetail extends LiteElement {
     // }
   }
 
+  connectedCallback(): void {
+    // Set initial active section based on URL #hash value
+    const hash = window.location.hash.slice(1);
+    if (["overview", "watch", "download", "logs"].includes(hash)) {
+      this.sectionName = hash as SectionName;
+    }
+    super.connectedCallback();
+  }
+
   disconnectedCallback(): void {
     this.stopPollTimer();
     super.disconnectedCallback();
   }
 
   render() {
+    let sectionContent: string | TemplateResult = "";
+
+    switch (this.sectionName) {
+      case "watch":
+        sectionContent = this.renderWatch();
+        break;
+      case "download":
+        sectionContent = this.renderFiles();
+        break;
+      case "logs":
+        sectionContent = this.renderLogs();
+        break;
+      default:
+        sectionContent = this.renderOverview();
+        break;
+    }
+
     return html`
-      <nav class="mb-5">
-        <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawls`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
+      <div class="grid grid-cols-6 gap-4 items-start pb-3 mb-2 border-b">
+        <div class="col-span-6 md:col-span-1">
+          <a
+            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+            href=${`/archives/${this.archiveId}/crawls`}
+            @click=${this.navLink}
           >
-        </a>
+            <sl-icon
+              name="arrow-left"
+              class="inline-block align-middle"
+            ></sl-icon>
+            <span class="inline-block align-middle"
+              >${msg("Back to Crawls")}</span
+            >
+          </a>
+        </div>
+
+        <div class="col-span-6 md:col-span-5">${this.renderHeader()}</div>
+      </div>
+
+      <div class="grid grid-cols-6 gap-4">
+        <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
+        <div class="col-span-6 md:col-span-5 md:py-2">
+          <main>${sectionContent}</main>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderNav() {
+    const renderNavItem = ({
+      section,
+      label,
+    }: {
+      section: SectionName;
+      label: any;
+    }) => {
+      const isActive = section === this.sectionName;
+      return html`
+        <li
+          class="relative"
+          role="menuitem"
+          aria-selected=${isActive ? "true" : "false"}
+        >
+          <div
+            class="absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
+            this.sectionName
+              ? "border-l-primary"
+              : "border-l-transparent"}"
+            role="presentation"
+          ></div>
+          <a
+            class="block ml-2 p-2 font-medium rounded hover:bg-neutral-50 ${isActive
+              ? "text-primary"
+              : "text-neutral-500 hover:text-neutral-900"}"
+            href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
+            @click=${() => (this.sectionName = section)}
+          >
+            ${label}
+          </a>
+        </li>
+      `;
+    };
+    return html`
+      <nav class="border-b md:border-b-0">
+        <ul class="flex flex-row md:flex-col" role="menu">
+          ${renderNavItem({ section: "overview", label: msg("Overview") })}
+          ${renderNavItem({ section: "watch", label: msg("View Crawl") })}
+          ${renderNavItem({ section: "download", label: msg("Download") })}
+          ${renderNavItem({ section: "logs", label: msg("Logs") })}
+        </ul>
       </nav>
+    `;
+  }
 
-      <header class="my-3">
-        <h2 class="text-xl font-medium mb-1 md:h-7">
-          ${this.crawl
-            ? msg(str`Crawl of ${this.crawl.configName}`)
-            : html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
-        </h2>
-      </header>
+  private renderHeader() {
+    const isRunning = this.crawl?.state === "running";
 
-      <section class="px-4 py-3 border-t border-b mb-4 text-sm">
-        <dl class="grid grid-cols-2">
+    return html`
+      <header>
+        <div class="flex justify-between">
+          <h2 class="text-lg font-medium mb-3 md:h-6">
+            ${msg(
+              html`<span class="font-normal">Crawl of</span> ${this.crawl
+                  ? this.crawl.configName
+                  : html`<sl-skeleton
+                      class="inline-block"
+                      style="width: 15em"
+                    ></sl-skeleton>`}`
+            )}
+          </h2>
           <div>
-            <dt class="text-xs text-0-600">${msg("Crawl ID")}</dt>
-            <dd class="h-5 whitespace-nowrap truncate font-mono text-xs">
-              ${this.crawl?.id ||
-              html`<sl-skeleton style="width: 37em"></sl-skeleton>`}
-            </dd>
+            ${isRunning
+              ? html`
+                  <sl-button class="mr-2" size="small" @click=${this.stop}>
+                    ${msg("Stop Crawl")}
+                  </sl-button>
+                  <sl-button size="small" type="danger" @click=${this.cancel}>
+                    ${msg("Cancel Crawl")}
+                  </sl-button>
+                `
+              : this.crawl
+              ? html`
+                  <sl-button
+                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                    size="small"
+                    @click=${this.navLink}
+                  >
+                    ${msg("View Config")}
+                  </sl-button>
+                `
+              : ""}
           </div>
-          <div>
-            <dt class="text-xs text-0-600">${msg("Crawl Template")}</dt>
-            <dd class="h-5 whitespace-nowrap truncate">
+        </div>
+        <dl class="grid grid-cols-4 gap-5">
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Status")}</dt>
+            <dd>
               ${this.crawl
                 ? html`
-                    <a
-                      class="text-primary font-medium hover:underline"
-                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                      @click=${this.navLink}
-                      >${this.crawl.configName}</a
-                    >
+                    <div class="flex items-baseline justify-between">
+                      <div
+                        class="whitespace-nowrap capitalize${isRunning
+                          ? " motion-safe:animate-pulse"
+                          : ""}"
+                      >
+                        <span
+                          class="inline-block ${this.crawl.state === "failed"
+                            ? "text-red-500"
+                            : this.crawl.state === "complete"
+                            ? "text-emerald-500"
+                            : isRunning
+                            ? "text-purple-500"
+                            : "text-zinc-300"}"
+                          style="font-size: 10px; vertical-align: 2px"
+                        >
+                          &#9679;
+                        </span>
+                        ${this.crawl.state.replace(/_/g, " ")}
+                      </div>
+                    </div>
                   `
-                : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
+            <dd>
+              ${this.crawl?.stats
+                ? html`
+                    <span
+                      class="font-mono tracking-tighter${isRunning
+                        ? " text-purple-600"
+                        : ""}"
+                    >
+                      ${this.numberFormatter.format(+this.crawl.stats.done)}
+                      <span class="text-0-400">/</span>
+                      ${this.numberFormatter.format(+this.crawl.stats.found)}
+                    </span>
+                  `
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
+          <div class="col-span-1">
+            <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
+            <dd>
+              ${this.crawl
+                ? html`
+                    ${this.crawl.finished
+                      ? html`${RelativeDuration.humanize(
+                          new Date(`${this.crawl.finished}Z`).valueOf() -
+                            new Date(`${this.crawl.started}Z`).valueOf()
+                        )}`
+                      : html`
+                          <span class="text-purple-600">
+                            <btrix-relative-duration
+                              value=${`${this.crawl.started}Z`}
+                            ></btrix-relative-duration>
+                          </span>
+                        `}
+                  `
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
             </dd>
           </div>
         </dl>
-
-        <!-- TODO created at? -->
-      </section>
-
-      <main class="grid gap-5">
-        <section
-          class="grid grid-cols-2 md:grid-cols-8 gap-3 rounded-lg md:p-4 md:bg-zinc-100"
-        >
-          <div
-            class="col-span-8 ${this.isWatchExpanded
-              ? "md:col-span-8"
-              : "md:col-span-5"} relative"
-          >
-            ${this.renderWatch()}
-          </div>
-
-          <div
-            class="col-span-8 ${this.isWatchExpanded
-              ? "md:col-span-8"
-              : "md:col-span-3"} border rounded-lg bg-white p-4 md:p-8"
-          >
-            ${this.renderDetails()}
-          </div>
-        </section>
-
-        <section>
-          <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
-          ${this.renderFiles()}
-        </section>
-      </main>
+      </header>
     `;
   }
 
@@ -151,6 +290,8 @@ export class CrawlDetail extends LiteElement {
     const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
+      <h3 class="text-lg font-medium mb-2">${msg("Watch or Replay Crawl")}</h3>
+
       <div
         class="aspect-video rounded border ${isRunning
           ? "border-purple-200"
@@ -201,106 +342,10 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderDetails() {
-    const isRunning = this.crawl?.state === "running";
-
+  private renderOverview() {
     return html`
       <dl class="grid grid-cols-2 gap-5">
-        <div class="col-span-2">
-          <dt class="text-sm text-0-600">${msg("Status")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <div class="flex items-baseline justify-between">
-                    <div
-                      class="whitespace-nowrap capitalize${isRunning
-                        ? " motion-safe:animate-pulse"
-                        : ""}"
-                    >
-                      <span
-                        class="inline-block ${this.crawl.state === "failed"
-                          ? "text-red-500"
-                          : this.crawl.state === "complete"
-                          ? "text-emerald-500"
-                          : isRunning
-                          ? "text-purple-500"
-                          : "text-zinc-300"}"
-                        style="font-size: 10px; vertical-align: 2px"
-                      >
-                        &#9679;
-                      </span>
-                      ${this.crawl.state.replace(/_/g, " ")}
-                    </div>
-                  </div>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            ${isRunning
-              ? html`
-                  <sl-details
-                    class="mt-2"
-                    style="--sl-spacing-medium: var(--sl-spacing-x-small)"
-                  >
-                    <span slot="summary" class="text-sm text-0-700">
-                      ${msg("Manage")}
-                    </span>
-
-                    <div class="mb-3 text-center text-sm leading-none">
-                      <sl-button class="mr-2" size="small" @click=${this.stop}>
-                        ${msg("Stop Crawl")}
-                      </sl-button>
-                      <sl-button
-                        size="small"
-                        type="danger"
-                        @click=${this.cancel}
-                      >
-                        ${msg("Cancel Crawl")}
-                      </sl-button>
-                    </div>
-                  </sl-details>
-                `
-              : ""}
-          </dd>
-        </div>
         <div class="col-span-1">
-          <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
-          <dd>
-            ${this.crawl?.stats
-              ? html`
-                  <span
-                    class="font-mono tracking-tighter${isRunning
-                      ? " text-purple-600"
-                      : ""}"
-                  >
-                    ${this.numberFormatter.format(+this.crawl.stats.done)}
-                    <span class="text-0-400">/</span>
-                    ${this.numberFormatter.format(+this.crawl.stats.found)}
-                  </span>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-1">
-          <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.finished
-                    ? html`${RelativeDuration.humanize(
-                        new Date(`${this.crawl.finished}Z`).valueOf() -
-                          new Date(`${this.crawl.started}Z`).valueOf()
-                      )}`
-                    : html`
-                        <span class="text-purple-600">
-                          <btrix-relative-duration
-                            value=${`${this.crawl.started}Z`}
-                          ></btrix-relative-duration>
-                        </span>
-                      `}
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
             ${this.crawl
@@ -318,7 +363,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Finished")}</dt>
           <dd>
             ${this.crawl
@@ -338,7 +383,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Reason")}</dt>
           <dd>
             ${this.crawl
@@ -355,12 +400,48 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  <a
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
+                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${this.crawl.configName}
+                    </span>
+                  </a>
+                `
+              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
+          <dd class="truncate">
+            ${this.crawl
+              ? html`<btrix-copy-button
+                    value=${this.crawl.id}
+                  ></btrix-copy-button>
+                  <code class="text-xs" title=${this.crawl.id}
+                    >${this.crawl.id}</code
+                  > `
+              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+          </dd>
+        </div>
       </dl>
     `;
   }
 
   private renderFiles() {
     return html`
+      <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
       <ul class="border rounded text-sm">
         ${this.crawl?.resources?.map(
           (file) => html`
@@ -380,6 +461,10 @@ export class CrawlDetail extends LiteElement {
         )}
       </ul>
     `;
+  }
+
+  private renderLogs() {
+    return html`TODO`;
   }
 
   /**
