@@ -24,6 +24,9 @@ import("./sign-up-form").then(({ SignUpForm }) => {
 import("./not-found").then(({ NotFound }) => {
   customElements.define("btrix-not-found", NotFound);
 });
+import("./watch-crawl").then(({ WatchCrawl }) => {
+  customElements.define("btrix-watch-crawl", WatchCrawl);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
