@@ -759,7 +759,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   ${this.crawlTemplate.currCrawlId
                     ? html` <a
                         class="text-primary font-medium hover:underline text-sm p-1"
-                        href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}`}
+                        href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}#watch`}
                         @click=${this.navLink}
                         >${msg("View crawl")}</a
                       >`

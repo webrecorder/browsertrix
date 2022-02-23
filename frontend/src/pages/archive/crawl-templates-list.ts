@@ -364,7 +364,7 @@ export class CrawlTemplatesList extends LiteElement {
               ? this.navTo(
                   `/archives/${this.archiveId}/crawls/crawl/${
                     this.runningCrawlsMap[t.id]
-                  }`
+                  }#watch`
                 )
               : this.runNow(t);
           }}
