@@ -53,7 +53,7 @@ export class Archive extends LiteElement {
   isNewResourceTab: boolean = false;
 
   @state()
-  private archive?: ArchiveData;
+  private archive?: ArchiveData | null;
 
   @state()
   private successfullyInvitedEmail?: string;
@@ -61,14 +61,22 @@ export class Archive extends LiteElement {
   async firstUpdated() {
     if (!this.archiveId) return;
 
-    const archive = await this.getArchive(this.archiveId);
+    try {
+      const archive = await this.getArchive(this.archiveId);
 
-    if (!archive) {
-      this.navTo("/archives");
-    } else {
-      this.archive = archive;
+      if (!archive) {
+        this.navTo("/archives");
+      } else {
+        this.archive = archive;
+      }
+    } catch {
+      this.archive = null;
 
-      // TODO get archive members
+      this.notify({
+        message: msg("Sorry, couldn't retrieve archive at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 
@@ -79,6 +87,11 @@ export class Archive extends LiteElement {
   }
 
   render() {
+    if (this.archive === null) {
+      // TODO handle 404 and 500s
+      return "";
+    }
+
     if (!this.archive) {
       return html`
         <div
