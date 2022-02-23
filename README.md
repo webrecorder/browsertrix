@@ -1,21 +1,23 @@
 # Browsertrix Cloud
 
-Browsertrix Cloud is a cloud-native crawling system, which supports a multi-user, multi-archive crawling system to run natively in the cloud via Kubernetes or locally via Docker.
+<p align="center"><img src="/frontend/assets/btrix-cloud.svg" width="128" height="128"></p>
 
-The system currently includes support for the following:
+Browsertrix Cloud is an open-source cloud-native high-fidelity browser-based crawling service designed
+to make web archiving easier and more accessible for everyone.
 
-- Fully API-driven, with OpenAPI specification for all APIs.
-- Multiple users, registered via email and/or invited to join Archives.
-- Crawling centered around Archives which are associated with an S3-compatible storage bucket.
-- Users may be part of multiple archives and have different roles in different archives
-- Archives contain crawler configs, which are passed to the crawler.
-- Crawls launched via a crontab-based schedule or manually on-demand
-- Crawls performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler).
-- Crawl config includes an optional timeout, after which crawl is stopped gracefully.
-- Crawl status is tracked in the DB (possible crawl states include: Completed, Partially-Complete (due to timeout or cancelation), Cancelation, Failure)
+The service provides an API and UI for scheduling crawls and viewing results,
+and managing all aspects of crawling process. This system provides the orchestration and management around crawling,
+while the actual crawling is performed using
+[Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
+
+The system is designed to run equally in Kubernetes and Docker.
+
+See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
 
 
 ## Deploying to Docker
+
+For testing out Browsertrix Cloud on a single, local machine, the Docker Compose-based deployment is recommended.
 
 To deploy via local Docker instance, copy the `config.sample.env` to `config.env`.
 
@@ -34,6 +36,7 @@ Note: When deployed in local Docker, failed crawls are not retried currently. Sc
 
 ## Deploying to Kubernetes
 
+For deploying in the cloud and across multiple machines, the Kubernetes (k8s) deployment is recommended.
 
 To deploy to K8s, `helm` is required. Browsertrix Cloud comes with a helm chart, which can be installed as follows:
 
@@ -48,8 +51,16 @@ For a quick update, the following is recommended:
 
 Note: When deployed in Kubernetes, failed crawls are automatically retried. Scheduling is handled via Kubernetes Cronjobs, and crawl jobs are run in the `crawlers` namespace.
 
+## Status
 
+Browsertrix Cloud is currently in pre-alpha stages and not ready for production. This is an ambitious project and there's a lot to be done!
 
+If you would like to help in a particular way, please open an issue or reach out to us in other ways.
 
-Browsertrix Cloud is currently in pre-alpha stages and not ready for production.
+## License
+
+Browsertrix Cloud is made available under the AGPLv3 License.
+
+If you would like to use it under a different license or have a question, please reach out as that may be a possibility.
+
 
