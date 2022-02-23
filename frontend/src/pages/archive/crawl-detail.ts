@@ -217,6 +217,18 @@ export class CrawlDetail extends LiteElement {
                           ? " motion-safe:animate-pulse"
                           : ""}"
                       >
+                        <span
+                          class="inline-block ${this.crawl.state === "failed"
+                            ? "text-red-500"
+                            : this.crawl.state === "complete"
+                            ? "text-emerald-500"
+                            : isRunning
+                            ? "text-purple-500"
+                            : "text-zinc-300"}"
+                          style="font-size: 10px; vertical-align: 2px"
+                        >
+                          &#9679;
+                        </span>
                         ${this.crawl.state.replace(/_/g, " ")}
                       </div>
                     </div>
