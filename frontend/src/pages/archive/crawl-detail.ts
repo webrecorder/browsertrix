@@ -82,16 +82,21 @@ export class CrawlDetail extends LiteElement {
   }
 
   render() {
-    const isRunning = this.crawl?.state === "running";
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
       case "watch": {
-        if (isRunning) {
-          sectionContent = this.renderWatch();
+        if (this.crawl) {
+          if (this.crawl.state === "running") {
+            sectionContent = this.renderWatch();
+          } else {
+            sectionContent = this.renderReplay();
+          }
         } else {
-          sectionContent = this.renderReplay();
+          // TODO loading indicator?
+          return "";
         }
+
         break;
       }
 
@@ -680,6 +685,18 @@ export class CrawlDetail extends LiteElement {
     );
 
     return data;
+  }
+
+  private async watchCrawl(): Promise<string> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls/${this.crawlId}/watch`,
+      this.authState!,
+      {
+        method: "POST",
+      }
+    );
+
+    return data.watch_url;
   }
 
   private async cancel() {

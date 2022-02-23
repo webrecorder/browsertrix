@@ -149,7 +149,7 @@ export class App extends LiteElement {
   navigate(newViewPath: string, state?: object) {
     if (newViewPath.startsWith("http")) {
       const url = new URL(newViewPath);
-      newViewPath = `${url.pathname}${url.search}`;
+      newViewPath = `${url.pathname}${url.hash}${url.search}`;
     }
 
     if (newViewPath === "/log-in" && this.authService.authState) {
