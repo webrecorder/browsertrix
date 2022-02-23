@@ -8,7 +8,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl } from "./types";
 
-type SectionName = "overview" | "recording" | "download" | "logs";
+type SectionName = "overview" | "watch" | "download" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -61,7 +61,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "recording", "download", "logs"].includes(hash)) {
+    if (["overview", "watch", "download", "logs"].includes(hash)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -76,7 +76,7 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
-      case "recording":
+      case "watch":
         sectionContent = this.renderWatch();
         break;
       case "download":
@@ -158,7 +158,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "recording", label: msg("Recording") })}
+          ${renderNavItem({ section: "watch", label: msg("View Crawl") })}
           ${renderNavItem({ section: "download", label: msg("Download") })}
           ${renderNavItem({ section: "logs", label: msg("Logs") })}
         </ul>
