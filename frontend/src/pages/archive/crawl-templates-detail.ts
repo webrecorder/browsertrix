@@ -118,7 +118,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                           <sl-button
                             size="small"
                             type="text"
-                            @click=${() => (this.openDialogName = "config")}
+                            @click=${() => (this.openDialogName = "name")}
                           >
                             ${msg("Edit")}
                           </sl-button>
