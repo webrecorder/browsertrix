@@ -1,6 +1,6 @@
 # Browsertrix Cloud
 
-<p align="center"><img src="/frontend/assets/logo.svg" width="128" height="128"></p>
+<p align="center"><img src="/frontend/assets/btrix-cloud.svg" width="128" height="128"></p>
 
 Browsertrix Cloud is an open-source cloud-native high-fidelity browser-based crawling system designed
 to make web archiving easier and more accessible for everyone.
