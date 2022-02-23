@@ -2,21 +2,17 @@
 
 <p align="center"><img src="/frontend/assets/btrix-cloud.svg" width="128" height="128"></p>
 
-Browsertrix Cloud is an open-source cloud-native high-fidelity browser-based crawling system designed
+Browsertrix Cloud is an open-source cloud-native high-fidelity browser-based crawling service designed
 to make web archiving easier and more accessible for everyone.
 
-The system currently includes support for the following:
+The service provides an API and UI for scheduling crawls and viewing results,
+and managing all aspects of crawling process.
 
-- Fully API-driven, with OpenAPI specification for all APIs.
-- Support for Kubernetes in the cloud and locally via Docker.
-- Multiple users, registered via email and/or invited to join Archives.
-- Crawling centered around Archives which are associated with an S3-compatible storage bucket.
-- Users may be part of multiple archives and have different roles in different archives
-- Archives contain crawler configs, which are passed to the crawler.
-- Crawls launched via a crontab-based schedule or manually on-demand
-- Crawls performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler).
-- Crawl config includes an optional timeout, after which crawl is stopped gracefully.
-- Crawl status is tracked in the DB (possible crawl states include: Completed, Partially-Complete (due to timeout or cancelation), Cancelation, Failure)
+The actual crawls are performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler).
+
+The system is designed to run equally in Kubernetes and Docker.
+
+See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
 
 
 ## Deploying to Docker
