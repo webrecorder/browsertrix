@@ -175,7 +175,7 @@ export class Archive extends LiteElement {
         <div
           class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
             ? "border-primary text-primary"
-            : "border-transparent text-neutral-500 hover:border-neutral-100"}"
+            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
         >
           ${label}
         </div>

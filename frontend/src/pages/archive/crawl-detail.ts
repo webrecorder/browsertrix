@@ -136,15 +136,15 @@ export class CrawlDetail extends LiteElement {
           aria-selected=${isActive ? "true" : "false"}
         >
           <div
-            class="absolute left-0 top-4 h-2 w-2 rounded-full transition-colors ${section ===
+            class="absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
             this.sectionName
-              ? "bg-primary"
-              : "bg-transparent"}"
+              ? "border-l-primary"
+              : "border-l-transparent"}"
             role="presentation"
           ></div>
           <a
-            class="block ml-2 p-2 font-medium ${isActive
-              ? "text-neutral-900"
+            class="block ml-2 p-2 font-medium rounded hover:bg-neutral-50 ${isActive
+              ? "text-primary"
               : "text-neutral-500 hover:text-neutral-900"}"
             href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
