@@ -6,9 +6,9 @@ Browsertrix Cloud is an open-source cloud-native high-fidelity browser-based cra
 to make web archiving easier and more accessible for everyone.
 
 The service provides an API and UI for scheduling crawls and viewing results,
-and managing all aspects of crawling process.
-
-The actual crawls are performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler).
+and managing all aspects of crawling process. This system provides the orchestration and management around crawling,
+while the actual crawling is performed using
+[Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
 
 The system is designed to run equally in Kubernetes and Docker.
 
