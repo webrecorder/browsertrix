@@ -24,8 +24,8 @@ import("./sign-up-form").then(({ SignUpForm }) => {
 import("./not-found").then(({ NotFound }) => {
   customElements.define("btrix-not-found", NotFound);
 });
-import("./watch-crawl").then(({ WatchCrawl }) => {
-  customElements.define("btrix-watch-crawl", WatchCrawl);
+import("./screencast").then(({ Screencast: Screencast }) => {
+  customElements.define("btrix-screencast", Screencast);
 });
 
 customElements.define("btrix-alert", Alert);

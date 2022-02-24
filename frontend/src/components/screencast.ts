@@ -29,14 +29,14 @@ const SCREEN_HEIGHT = 480;
  *
  * Usage example:
  * ```ts
- * <btrix-watch-crawl
+ * <btrix-screencast
  *   archiveId=${archiveId}
  *   crawlId=${crawlId}
- * ></btrix-watch-crawl>
+ * ></btrix-screencast>
  * ```
  */
 @localized()
-export class WatchCrawl extends LiteElement {
+export class Screencast extends LiteElement {
   @property({ type: String })
   authToken?: string;
 
@@ -102,9 +102,9 @@ export class WatchCrawl extends LiteElement {
             `
           : ""}
 
-        <header class="h-8 text-sm p-2 border-b bg-neutral-50">
+        <figcaption class="h-8 text-sm p-2 border-b bg-neutral-50">
           ${this.currentPageUrl}
-        </header>
+        </figcaption>
 
         ${guard(
           [this.archiveId, this.crawlId, this.authToken],
