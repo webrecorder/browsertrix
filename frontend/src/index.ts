@@ -147,10 +147,18 @@ export class App extends LiteElement {
   }
 
   navigate(newViewPath: string, state?: object) {
+    let url;
+
     if (newViewPath.startsWith("http")) {
-      const url = new URL(newViewPath);
-      newViewPath = `${url.pathname}${url.hash}${url.search}`;
+      url = new URL(newViewPath);
+    } else {
+      url = new URL(
+        `${window.location.origin}/${newViewPath.replace(/^\//, "")}`
+      );
     }
+
+    // Remove hash from path for matching
+    newViewPath = `${url.pathname}${url.search}`;
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
@@ -161,7 +169,11 @@ export class App extends LiteElement {
 
     this.viewState.data = state;
 
-    window.history.pushState(this.viewState, "", this.viewState.pathname);
+    window.history.pushState(
+      this.viewState,
+      "",
+      `${this.viewState.pathname}${url.hash}${url.search}`
+    );
   }
 
   navLink(event: Event) {
