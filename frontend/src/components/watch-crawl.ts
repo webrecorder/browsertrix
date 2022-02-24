@@ -20,7 +20,8 @@ type CloseMessage = Message & {
   msg: "close";
 };
 
-const SCREEN_WIDTH = 640;
+// TODO don't hardcode
+const SCREEN_WIDTH = 573;
 const SCREEN_HEIGHT = 480;
 
 /**
@@ -47,6 +48,9 @@ export class WatchCrawl extends LiteElement {
 
   @state()
   private isConnecting: boolean = false;
+
+  @state()
+  private currentPageUrl: string | null = null;
 
   // Websocket connection
   private ws: WebSocket | null = null;
@@ -98,7 +102,16 @@ export class WatchCrawl extends LiteElement {
             `
           : ""}
 
-        <canvas ${ref(this.setCanvasRef)}> </canvas>
+        <header class="h-8 text-sm p-2 border-b bg-neutral-50">
+          ${this.currentPageUrl}
+        </header>
+
+        ${guard(
+          [this.archiveId, this.crawlId, this.authToken],
+          () => html`
+            <canvas ${ref(this.setCanvasRef)} style="width: 100%;"> </canvas>
+          `
+        )}
       </figure>
     `;
   }
@@ -110,13 +123,19 @@ export class WatchCrawl extends LiteElement {
       // Set resolution
       const ratio = window.devicePixelRatio;
       this.canvasEl.width = SCREEN_WIDTH * ratio;
-      this.canvasEl.height = (SCREEN_HEIGHT + 20) * ratio;
-      // Set CSS size
-      this.canvasEl.style.width = `${SCREEN_WIDTH}px`;
-      this.canvasEl.style.height = `${SCREEN_HEIGHT + 20}px`;
+      this.canvasEl.height = SCREEN_HEIGHT * ratio;
 
-      this.canvasContext = this.canvasEl.getContext("2d");
-      this.canvasContext?.scale(ratio, ratio);
+      this.canvasContext = this.canvasEl.getContext("2d")!;
+      this.canvasContext.scale(ratio, ratio);
+
+      // Set CSS size
+      window.requestAnimationFrame(() => {
+        const { width } = this.canvasEl!.getBoundingClientRect();
+        console.log(width);
+        this.canvasEl!.style.height = `${
+          width * (SCREEN_HEIGHT / SCREEN_WIDTH)
+        }px`;
+      });
     }
   }
 
@@ -167,17 +186,18 @@ export class WatchCrawl extends LiteElement {
         this.isConnecting = false;
       }
 
+      this.currentPageUrl = message.url;
       this.canvasImage.src = `data:image/png;base64,${message.data}`;
+
+      console.log(this.canvasImage);
 
       this.canvasContext?.drawImage(
         this.canvasImage,
         0,
-        20,
+        0,
         SCREEN_WIDTH,
-        SCREEN_HEIGHT + 20
+        SCREEN_HEIGHT
       );
-      this.canvasContext?.clearRect(0, 0, SCREEN_WIDTH, 20);
-      this.canvasContext?.fillText(message.url, 0, 0 + 10);
     } else if (message.msg === "close") {
       // TODO
     }
