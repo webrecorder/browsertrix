@@ -106,9 +106,17 @@ export class WatchCrawl extends LiteElement {
   private setCanvasRef(el: Element | undefined) {
     if (el) {
       this.canvasEl = el as HTMLCanvasElement;
-      this.canvasEl.width = SCREEN_WIDTH;
-      this.canvasEl.height = SCREEN_HEIGHT + 20;
+
+      // Set resolution
+      const ratio = window.devicePixelRatio;
+      this.canvasEl.width = SCREEN_WIDTH * ratio;
+      this.canvasEl.height = (SCREEN_HEIGHT + 20) * ratio;
+      // Set CSS size
+      this.canvasEl.style.width = `${SCREEN_WIDTH}px`;
+      this.canvasEl.style.height = `${SCREEN_HEIGHT + 20}px`;
+
       this.canvasContext = this.canvasEl.getContext("2d");
+      this.canvasContext?.scale(ratio, ratio);
     }
   }
 
