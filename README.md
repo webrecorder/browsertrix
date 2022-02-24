@@ -16,7 +16,7 @@ See [Features](https://browsertrix.cloud/features) for a high-level list of plan
 
 ## Deployment
 
-See the [Deployment](Deployment.md) for info on how to deploy Browsertrix Cloud.
+See the [Deployment](Deployment.md) page for information on how to deploy Browsertrix Cloud.
 
 
 ## Development Status
