@@ -516,11 +516,13 @@ export class CrawlTemplatesNew extends LiteElement {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
+    const scale = formData.get("scale") as string;
     const template: Partial<NewCrawlTemplate> = {
       name: formData.get("name") as string,
       schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
+      scale: +scale,
     };
 
     if (this.isSeedsJsonView) {
