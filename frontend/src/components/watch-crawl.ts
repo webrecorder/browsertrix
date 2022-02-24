@@ -131,7 +131,7 @@ export class WatchCrawl extends LiteElement {
       // Set CSS size
       window.requestAnimationFrame(() => {
         const { width } = this.canvasEl!.getBoundingClientRect();
-        console.log(width);
+
         this.canvasEl!.style.height = `${
           width * (SCREEN_HEIGHT / SCREEN_WIDTH)
         }px`;
@@ -188,8 +188,6 @@ export class WatchCrawl extends LiteElement {
 
       this.currentPageUrl = message.url;
       this.canvasImage.src = `data:image/png;base64,${message.data}`;
-
-      console.log(this.canvasImage);
 
       this.canvasContext?.drawImage(
         this.canvasImage,
