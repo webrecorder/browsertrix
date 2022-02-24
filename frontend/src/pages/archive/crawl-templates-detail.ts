@@ -616,7 +616,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <h4 class="font-medium">
               ${this.isSeedsJsonView
                 ? msg("Custom Config")
-                : msg("Configure Seeds")}
+                : msg("Crawl Configuration")}
             </h4>
             <sl-switch
               ?checked=${this.isSeedsJsonView}
@@ -695,8 +695,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderCrawls() {
     return html`
-      <dl class="grid gap-5">
-        <div>
+      <dl class="grid grid-cols-2 gap-5">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">
             <span class="inline-block align-middle">${msg("# of Crawls")}</span>
             <sl-tooltip
@@ -713,7 +713,13 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
           </dd>
         </div>
-        <div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">
+            <span class="inline-block align-middle">${msg("Crawl Scale")}</span>
+          </dt>
+          <dd class="font-mono">${this.crawlTemplate?.scale}</dd>
+        </div>
+        <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Currently Running Crawl")}</dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
@@ -743,7 +749,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               : html` <sl-skeleton style="width: 6em"></sl-skeleton> `}
           </dd>
         </div>
-        <div>
+        <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
@@ -847,7 +853,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       ></sl-textarea>
       <sl-select
         name="scopeType"
-        label=${msg("Crawl Scope")}
+        label=${msg("Scope Type")}
         value=${this.crawlTemplate!.config.scopeType!}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -861,7 +867,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <sl-checkbox
         name="extraHopsOne"
         ?checked=${Boolean(this.crawlTemplate!.config.extraHops)}
-        >${msg("Include External Links ('one hop out')")}
+        >${msg("Include External Links (“one hop out”)")}
       </sl-checkbox>
       <sl-input
         name="limit"
