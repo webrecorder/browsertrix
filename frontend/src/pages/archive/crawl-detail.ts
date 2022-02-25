@@ -275,6 +275,14 @@ export class CrawlDetail extends LiteElement {
                 : html`<sl-skeleton class="h-6"></sl-skeleton>`}
             </dd>
           </div>
+          <div class="col-span-1">
+            <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
+            <dd>
+              ${this.crawl
+                ? html`<span class="font-mono">${this.crawl.scale}</span>`
+                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            </dd>
+          </div>
         </dl>
       </header>
     `;
