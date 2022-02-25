@@ -455,24 +455,37 @@ export class CrawlDetail extends LiteElement {
   private renderFiles() {
     return html`
       <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
-      <ul class="border rounded text-sm">
-        ${this.crawl?.resources?.map(
-          (file) => html`
-            <li class="flex justify-between p-3 border-t first:border-t-0">
-              <div>
-                <a
-                  class="text-primary hover:underline"
-                  href=${file.path}
-                  download
-                  title=${file.name}
-                  >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                </a>
-              </div>
-              <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
-            </li>
-          `
-        )}
-      </ul>
+
+      ${this.crawl
+        ? this.crawl.resources && this.crawl.resources.length
+          ? html`
+              <ul class="border rounded text-sm">
+                ${this.crawl.resources.map(
+                  (file) => html`
+                    <li
+                      class="flex justify-between p-3 border-t first:border-t-0"
+                    >
+                      <div>
+                        <a
+                          class="text-primary hover:underline"
+                          href=${file.path}
+                          download
+                          title=${file.name}
+                          >${file.name.slice(file.name.lastIndexOf("/") + 1)}
+                        </a>
+                      </div>
+                      <div>
+                        <sl-format-bytes value=${file.size}></sl-format-bytes>
+                      </div>
+                    </li>
+                  `
+                )}
+              </ul>
+            `
+          : html`
+              <p class="text-neutral-400">${msg("No files to download.")}</p>
+            `
+        : ""}
     `;
   }
 
