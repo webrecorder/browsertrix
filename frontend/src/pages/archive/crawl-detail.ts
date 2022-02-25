@@ -140,7 +140,7 @@ export class CrawlDetail extends LiteElement {
       </main>
 
       <sl-dialog
-        label=${msg(str`Scale Crawl`)}
+        label=${msg(str`Change Crawl Scale`)}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -207,10 +207,6 @@ export class CrawlDetail extends LiteElement {
           ${this.isRunning
             ? html`
                 <sl-button-group>
-                  <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
-                    <span> ${msg("Stop")} </span>
-                  </sl-button>
                   <sl-button
                     size="small"
                     @click=${() => {
@@ -221,9 +217,13 @@ export class CrawlDetail extends LiteElement {
                     <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
                     <span> ${msg("Scale")} </span>
                   </sl-button>
+                  <sl-button size="small" @click=${this.stop}>
+                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
+                    <span> ${msg("Stop")} </span>
+                  </sl-button>
                   <sl-button size="small" @click=${this.cancel}>
                     <sl-icon
-                      class="text-danger hover:text-white"
+                      class="text-danger"
                       name="trash"
                       slot="prefix"
                     ></sl-icon>
