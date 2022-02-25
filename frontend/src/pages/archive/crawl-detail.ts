@@ -91,25 +91,23 @@ export class CrawlDetail extends LiteElement {
     }
 
     return html`
-      <div class="grid grid-cols-6 gap-4 items-start pb-3 mb-2 border-b">
-        <div class="col-span-6 md:col-span-1">
-          <a
-            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-            href=${`/archives/${this.archiveId}/crawls`}
-            @click=${this.navLink}
+      <div class="mb-5">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawls`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawls")}</span
           >
-            <sl-icon
-              name="arrow-left"
-              class="inline-block align-middle"
-            ></sl-icon>
-            <span class="inline-block align-middle"
-              >${msg("Back to Crawls")}</span
-            >
-          </a>
-        </div>
-
-        <div class="col-span-6 md:col-span-5">${this.renderHeader()}</div>
+        </a>
       </div>
+
+      <div class="mb-5">${this.renderHeader()}</div>
 
       <div class="grid grid-cols-6 gap-4">
         <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
@@ -136,7 +134,7 @@ export class CrawlDetail extends LiteElement {
           aria-selected=${isActive ? "true" : "false"}
         >
           <div
-            class="absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
+            class="hidden md:block absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
             this.sectionName
               ? "border-l-primary"
               : "border-l-transparent"}"
@@ -171,8 +169,8 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header>
-        <div class="flex justify-between">
-          <h2 class="text-lg font-medium mb-3 md:h-6">
+        <div class="flex justify-between mb-2">
+          <h2 class="text-2xl font-medium mb-3 md:h-8">
             ${msg(
               html`<span class="font-normal">Crawl of</span> ${this.crawl
                   ? this.crawl.configName
@@ -205,9 +203,9 @@ export class CrawlDetail extends LiteElement {
               : ""}
           </div>
         </div>
-        <dl class="grid grid-cols-4 gap-5">
+        <dl class="grid grid-cols-4 gap-5 rounded border py-3 px-4">
           <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Status")}</dt>
+            <dt class="text-xs text-0-600">${msg("Status")}</dt>
             <dd>
               ${this.crawl
                 ? html`
@@ -237,7 +235,7 @@ export class CrawlDetail extends LiteElement {
             </dd>
           </div>
           <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
+            <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
             <dd>
               ${this.crawl?.stats
                 ? html`
@@ -257,7 +255,7 @@ export class CrawlDetail extends LiteElement {
             </dd>
           </div>
           <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
+            <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
             <dd>
               ${this.crawl
                 ? html`
