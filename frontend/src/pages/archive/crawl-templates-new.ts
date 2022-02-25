@@ -355,9 +355,9 @@ export class CrawlTemplatesNew extends LiteElement {
             label=${msg("Crawl Scale")}
             value=${initialValues.scale}
           >
-            <sl-menu-item value="1">Standard</sl-menu-item>
-            <sl-menu-item value="2">Big (2x)</sl-menu-item>
-            <sl-menu-item value="4">Bigger (4x)</sl-menu-item>
+            <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
+            <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
+            <sl-menu-item value="3">${msg("Bigger (4x)")}</sl-menu-item>
           </sl-select>
         </div>
         <div class="flex justify-between">
