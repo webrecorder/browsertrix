@@ -251,6 +251,8 @@ export class CrawlDetail extends LiteElement {
                       ${this.numberFormatter.format(+this.crawl.stats.found)}
                     </span>
                   `
+                : this.crawl
+                ? html` <span class="text-0-400">${msg("Unknown")}</span> `
                 : html`<sl-skeleton class="h-6"></sl-skeleton>`}
             </dd>
           </div>
