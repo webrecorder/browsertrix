@@ -826,7 +826,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         >
           <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
           <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
-          <sl-menu-item value="3">${msg("Bigger (4x)")}</sl-menu-item>
+          <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
         </sl-select>
 
         <div class="mt-5 text-right">
