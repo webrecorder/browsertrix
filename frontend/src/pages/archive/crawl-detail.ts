@@ -91,7 +91,7 @@ export class CrawlDetail extends LiteElement {
     }
 
     return html`
-      <div class="mb-5">
+      <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
           href=${`/archives/${this.archiveId}/crawls`}
@@ -107,14 +107,21 @@ export class CrawlDetail extends LiteElement {
         </a>
       </div>
 
-      <div class="mb-5">${this.renderHeader()}</div>
+      <div class="mb-2">${this.renderHeader()}</div>
 
-      <div class="grid grid-cols-6 gap-4">
-        <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-        <div class="col-span-6 md:col-span-5 md:py-2">
-          <main>${sectionContent}</main>
-        </div>
-      </div>
+      <main>
+        <section class="grid grid-cols-6 gap-4 mb-4">
+          <div class="col-span-6 md:col-span-1">
+            <h3 class="font-medium p-2">${msg("Summary")}</h3>
+          </div>
+          <div class="col-span-6 md:col-span-5">${this.renderSummary()}</div>
+        </section>
+
+        <section class="grid grid-cols-6 gap-4">
+          <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
+          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+        </section>
+      </main>
     `;
   }
 
@@ -133,16 +140,9 @@ export class CrawlDetail extends LiteElement {
           role="menuitem"
           aria-selected=${isActive ? "true" : "false"}
         >
-          <div
-            class="hidden md:block absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
-            this.sectionName
-              ? "border-l-primary"
-              : "border-l-transparent"}"
-            role="presentation"
-          ></div>
           <a
-            class="block ml-2 p-2 font-medium rounded hover:bg-neutral-50 ${isActive
-              ? "text-primary"
+            class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
+              ? "text-primary bg-slate-50"
               : "text-neutral-500 hover:text-neutral-900"}"
             href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
@@ -168,123 +168,128 @@ export class CrawlDetail extends LiteElement {
     const isRunning = this.crawl?.state === "running";
 
     return html`
-      <header>
-        <div class="flex justify-between mb-2">
-          <h2 class="text-2xl font-medium mb-3 md:h-8">
-            ${msg(
-              html`<span class="font-normal">Crawl of</span> ${this.crawl
-                  ? this.crawl.configName
-                  : html`<sl-skeleton
-                      class="inline-block"
-                      style="width: 15em"
-                    ></sl-skeleton>`}`
-            )}
-          </h2>
-          <div>
-            ${isRunning
-              ? html`
-                  <sl-button class="mr-2" size="small" @click=${this.stop}>
-                    ${msg("Stop Crawl")}
-                  </sl-button>
-                  <sl-button size="small" type="danger" @click=${this.cancel}>
-                    ${msg("Cancel Crawl")}
-                  </sl-button>
-                `
-              : this.crawl
-              ? html`
-                  <sl-button
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                    size="small"
-                    @click=${this.navLink}
-                  >
-                    ${msg("View Config")}
-                  </sl-button>
-                `
-              : ""}
-          </div>
+      <header class="flex justify-between">
+        <h2 class="text-2xl font-medium mb-3 md:h-8">
+          ${msg(
+            html`<span class="font-normal">Crawl of</span> ${this.crawl
+                ? this.crawl.configName
+                : html`<sl-skeleton
+                    class="inline-block"
+                    style="width: 15em"
+                  ></sl-skeleton>`}`
+          )}
+        </h2>
+        <div>
+          ${isRunning
+            ? html`
+                <sl-button class="mr-2" size="small" @click=${this.stop}>
+                  ${msg("Stop Crawl")}
+                </sl-button>
+                <sl-button size="small" type="danger" @click=${this.cancel}>
+                  ${msg("Cancel Crawl")}
+                </sl-button>
+              `
+            : this.crawl
+            ? html`
+                <sl-button
+                  href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                  size="small"
+                  @click=${this.navLink}
+                >
+                  ${msg("View Config")}
+                </sl-button>
+              `
+            : ""}
         </div>
-        <dl class="grid grid-cols-4 gap-5 rounded border py-3 px-4">
-          <div class="col-span-1">
-            <dt class="text-xs text-0-600">${msg("Status")}</dt>
-            <dd>
-              ${this.crawl
-                ? html`
-                    <div class="flex items-baseline justify-between">
-                      <div
-                        class="whitespace-nowrap capitalize${isRunning
-                          ? " motion-safe:animate-pulse"
-                          : ""}"
-                      >
-                        <span
-                          class="inline-block ${this.crawl.state === "failed"
-                            ? "text-red-500"
-                            : this.crawl.state === "complete"
-                            ? "text-emerald-500"
-                            : isRunning
-                            ? "text-purple-500"
-                            : "text-zinc-300"}"
-                          style="font-size: 10px; vertical-align: 2px"
-                        >
-                          &#9679;
-                        </span>
-                        ${this.crawl.state.replace(/_/g, " ")}
-                      </div>
-                    </div>
-                  `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div class="col-span-1">
-            <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
-            <dd>
-              ${this.crawl?.stats
-                ? html`
-                    <span
-                      class="font-mono tracking-tighter${isRunning
-                        ? " text-purple-600"
+      </header>
+    `;
+  }
+
+  private renderSummary() {
+    const isRunning = this.crawl?.state === "running";
+
+    return html`
+      <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Status")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  <div class="flex items-baseline justify-between">
+                    <div
+                      class="whitespace-nowrap capitalize${isRunning
+                        ? " motion-safe:animate-pulse"
                         : ""}"
                     >
-                      ${this.numberFormatter.format(+this.crawl.stats.done)}
-                      <span class="text-0-400">/</span>
-                      ${this.numberFormatter.format(+this.crawl.stats.found)}
-                    </span>
-                  `
-                : this.crawl
-                ? html` <span class="text-0-400">${msg("Unknown")}</span> `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div class="col-span-1">
-            <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
-            <dd>
-              ${this.crawl
-                ? html`
-                    ${this.crawl.finished
-                      ? html`${RelativeDuration.humanize(
-                          new Date(`${this.crawl.finished}Z`).valueOf() -
-                            new Date(`${this.crawl.started}Z`).valueOf()
-                        )}`
-                      : html`
-                          <span class="text-purple-600">
-                            <btrix-relative-duration
-                              value=${`${this.crawl.started}Z`}
-                            ></btrix-relative-duration>
-                          </span>
-                        `}
-                  `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div class="col-span-1">
-            <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
-            <dd>
-              ${this.crawl
-                ? html`<span class="font-mono">${this.crawl.scale}</span>`
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-        </dl>
-      </header>
+                      <span
+                        class="inline-block ${this.crawl.state === "failed"
+                          ? "text-red-500"
+                          : this.crawl.state === "complete"
+                          ? "text-emerald-500"
+                          : isRunning
+                          ? "text-purple-500"
+                          : "text-zinc-300"}"
+                        style="font-size: 10px; vertical-align: 2px"
+                      >
+                        &#9679;
+                      </span>
+                      ${this.crawl.state.replace(/_/g, " ")}
+                    </div>
+                  </div>
+                `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
+          <dd>
+            ${this.crawl?.stats
+              ? html`
+                  <span
+                    class="font-mono tracking-tighter${isRunning
+                      ? " text-purple-600"
+                      : ""}"
+                  >
+                    ${this.numberFormatter.format(+this.crawl.stats.done)}
+                    <span class="text-0-400">/</span>
+                    ${this.numberFormatter.format(+this.crawl.stats.found)}
+                  </span>
+                `
+              : this.crawl
+              ? html` <span class="text-0-400">${msg("Unknown")}</span> `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  ${this.crawl.finished
+                    ? html`${RelativeDuration.humanize(
+                        new Date(`${this.crawl.finished}Z`).valueOf() -
+                          new Date(`${this.crawl.started}Z`).valueOf()
+                      )}`
+                    : html`
+                        <span class="text-purple-600">
+                          <btrix-relative-duration
+                            value=${`${this.crawl.started}Z`}
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
+                `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`<span class="font-mono">${this.crawl.scale}</span>`
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+      </dl>
     `;
   }
 
@@ -298,7 +303,7 @@ export class CrawlDetail extends LiteElement {
     const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
-      <h3 class="text-lg font-medium mb-2">${msg("Watch or Replay Crawl")}</h3>
+      <h3 class="text-lg font-medium my-2">${msg("Watch or Replay Crawl")}</h3>
 
       <div
         class="aspect-video rounded border ${isRunning
@@ -352,7 +357,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5">
+      <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
         <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
@@ -449,7 +454,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
+      <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
       <ul class="border rounded text-sm">
         ${this.crawl?.resources?.map(
           (file) => html`
