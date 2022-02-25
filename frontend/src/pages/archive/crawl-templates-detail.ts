@@ -320,6 +320,22 @@ export class CrawlTemplatesDetail extends LiteElement {
             >${msg("Change schedule")}</span
           >
         </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "scale";
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="plus-slash-minus"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Change scale")}</span
+          >
+        </li>
         <hr />
       `);
     }
