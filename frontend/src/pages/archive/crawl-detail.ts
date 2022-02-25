@@ -206,36 +206,30 @@ export class CrawlDetail extends LiteElement {
         <div class="grid gap-2 grid-flow-col">
           ${this.isRunning
             ? html`
-                <sl-button
-                  type="warning"
-                  size="small"
-                  outline
-                  @click=${this.stop}
-                >
-                  <sl-icon name="slash-circle" slot="prefix"></sl-icon>
-                  ${msg("Stop")}
-                </sl-button>
-                <sl-button
-                  type="primary"
-                  size="small"
-                  outline
-                  @click=${() => {
-                    this.openDialogName = "scale";
-                    this.isDialogVisible = true;
-                  }}
-                >
-                  <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                  ${msg("Scale")}
-                </sl-button>
-                <sl-button
-                  type="danger"
-                  size="small"
-                  outline
-                  @click=${this.cancel}
-                >
-                  <sl-icon name="trash" slot="prefix"></sl-icon>
-                  ${msg("Cancel")}
-                </sl-button>
+                <sl-button-group>
+                  <sl-button size="small" @click=${this.stop}>
+                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
+                    <span> ${msg("Stop")} </span>
+                  </sl-button>
+                  <sl-button
+                    size="small"
+                    @click=${() => {
+                      this.openDialogName = "scale";
+                      this.isDialogVisible = true;
+                    }}
+                  >
+                    <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+                    <span> ${msg("Scale")} </span>
+                  </sl-button>
+                  <sl-button size="small" @click=${this.cancel}>
+                    <sl-icon
+                      class="text-danger hover:text-white"
+                      name="trash"
+                      slot="prefix"
+                    ></sl-icon>
+                    <span class="text-danger"> ${msg("Cancel")} </span>
+                  </sl-button>
+                </sl-button-group>
               `
             : ""}
           ${this.crawl
@@ -590,36 +584,44 @@ export class CrawlDetail extends LiteElement {
   private renderEditScale() {
     if (!this.crawl) return;
 
-    return html`
-      <sl-form @sl-submit=${console.log}>
-        <sl-select
-          name="scale"
-          label=${msg("Crawl Scale")}
-          value=${this.crawl.scale}
-          hoist
-          @sl-hide=${this.stopProp}
-          @sl-after-hide=${this.stopProp}
-        >
-          <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
-          <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
-          <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
-        </sl-select>
+    const scaleOptions = [
+      {
+        value: 1,
+        label: msg("Standard"),
+      },
+      {
+        value: 2,
+        label: msg("Big (2x)"),
+      },
+      {
+        value: 3,
+        label: msg("Bigger (3x)"),
+      },
+    ];
 
-        <div class="mt-5 text-right">
-          <sl-button
-            type="text"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            type="primary"
-            submit
-            ?disabled=${this.isSubmittingUpdate}
-            ?loading=${this.isSubmittingUpdate}
-            >${msg("Apply")}</sl-button
-          >
-        </div>
-      </sl-form>
+    return html`
+      <div class="text-center">
+        <sl-button-group>
+          ${scaleOptions.map(
+            ({ value, label }) => html`
+              <sl-button
+                type=${value === this.crawl?.scale ? "neutral" : "default"}
+                aria-selected=${value === this.crawl?.scale}
+                pill
+                @click=${() => this.scale(value)}
+                ?disabled=${this.isSubmittingUpdate}
+                >${label}</sl-button
+              >
+            `
+          )}
+        </sl-button-group>
+      </div>
+
+      <div class="mt-5 text-right">
+        <sl-button type="text" @click=${() => (this.openDialogName = undefined)}
+          >${msg("Cancel")}</sl-button
+        >
+      </div>
     `;
   }
 
@@ -718,17 +720,46 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private stopPollTimer() {
-    window.clearTimeout(this.timerId);
+  private async scale(value: Crawl["scale"]) {
+    this.isSubmittingUpdate = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/scale`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ scale: +value }),
+        }
+      );
+
+      if (data.scaled) {
+        this.crawl!.scale = data.scaled;
+
+        this.notify({
+          message: msg("Updated crawl scale."),
+          type: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw new Error("unhandled API response");
+      }
+
+      this.openDialogName = undefined;
+      this.isDialogVisible = false;
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't change crawl scale at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
   }
 
-  /**
-   * Stop propgation of sl-select events.
-   * Prevents bug where sl-dialog closes when dropdown closes
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
+  private stopPollTimer() {
+    window.clearTimeout(this.timerId);
   }
 }
 
