@@ -42,4 +42,5 @@ export type CrawlTemplate = {
   oldId: string | null;
   inactive: boolean;
   config: CrawlConfig;
+  scale: number;
 };

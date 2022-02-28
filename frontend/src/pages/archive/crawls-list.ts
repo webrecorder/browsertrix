@@ -378,16 +378,6 @@ export class CrawlsList extends LiteElement {
             ${isRunning(crawl)
               ? html`
                   <li
-                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      this.cancel(crawl.id);
-                      e.target.closest("sl-dropdown").hide();
-                    }}
-                  >
-                    ${msg("Cancel immediately")}
-                  </li>
-                  <li
                     class="p-2 hover:bg-zinc-100 cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
@@ -395,8 +385,31 @@ export class CrawlsList extends LiteElement {
                       e.target.closest("sl-dropdown").hide();
                     }}
                   >
-                    ${msg("Stop gracefully")}
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="slash-circle"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${msg("Stop gracefully")}
+                    </span>
                   </li>
+                  <li
+                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      this.cancel(crawl.id);
+                      e.target.closest("sl-dropdown").hide();
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="trash"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${msg("Cancel immediately")}
+                    </span>
+                  </li>
+                  <hr />
                 `
               : ""}
             <li

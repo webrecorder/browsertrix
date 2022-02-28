@@ -48,7 +48,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "name" | "config" | "schedule";
+  private openDialogName?: "name" | "config" | "schedule" | "scale";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -318,6 +318,22 @@ export class CrawlTemplatesDetail extends LiteElement {
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
             >${msg("Change schedule")}</span
+          >
+        </li>
+        <li
+          class="p-2 hover:bg-zinc-100 cursor-pointer"
+          role="menuitem"
+          @click=${(e: any) => {
+            closeDropdown(e);
+            this.openDialogName = "scale";
+          }}
+        >
+          <sl-icon
+            class="inline-block align-middle px-1"
+            name="plus-slash-minus"
+          ></sl-icon>
+          <span class="inline-block align-middle pr-2"
+            >${msg("Change scale")}</span
           >
         </li>
         <hr />
@@ -616,7 +632,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <h4 class="font-medium">
               ${this.isSeedsJsonView
                 ? msg("Custom Config")
-                : msg("Configure Seeds")}
+                : msg("Crawl Configuration")}
             </h4>
             <sl-switch
               ?checked=${this.isSeedsJsonView}
@@ -695,8 +711,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderCrawls() {
     return html`
-      <dl class="grid gap-5">
-        <div>
+      <dl class="grid grid-cols-2 gap-5">
+        <div class="col-span-1">
           <dt class="text-sm text-0-600">
             <span class="inline-block align-middle">${msg("# of Crawls")}</span>
             <sl-tooltip
@@ -713,7 +729,27 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${(this.crawlTemplate?.crawlCount || 0).toLocaleString()}
           </dd>
         </div>
-        <div>
+        <div class="col-span-1">
+          <dt class="text-sm text-0-600">
+            <span class="inline-block align-middle">${msg("Crawl Scale")}</span>
+          </dt>
+          <dd>
+            <span class="inline-block font-mono mr-2"
+              >${this.crawlTemplate?.scale}</span
+            >
+            ${!this.crawlTemplate || this.crawlTemplate.inactive
+              ? ""
+              : html`
+                  <button
+                    class="text-primary font-medium text-sm hover:opacity-95"
+                    @click=${() => (this.openDialogName = "scale")}
+                  >
+                    ${msg("Edit")}
+                  </button>
+                `}
+          </dd>
+        </div>
+        <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Currently Running Crawl")}</dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
@@ -743,7 +779,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               : html` <sl-skeleton style="width: 6em"></sl-skeleton> `}
           </dd>
         </div>
-        <div>
+        <div class="col-span-2">
           <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
@@ -772,6 +808,42 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
       </dl>
+    `;
+  }
+
+  private renderEditScale() {
+    if (!this.crawlTemplate) return;
+
+    return html`
+      <sl-form @sl-submit=${this.handleSubmitEditScale}>
+        <sl-select
+          name="scale"
+          label=${msg("Crawl Scale")}
+          value=${this.crawlTemplate.scale}
+          hoist
+          @sl-hide=${this.stopProp}
+          @sl-after-hide=${this.stopProp}
+        >
+          <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
+          <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
+          <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
+        </sl-select>
+
+        <div class="mt-5 text-right">
+          <sl-button
+            type="text"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmittingUpdate}
+            ?loading=${this.isSubmittingUpdate}
+            >${msg("Save Changes")}</sl-button
+          >
+        </div>
+      </sl-form>
     `;
   }
 
@@ -827,6 +899,17 @@ export class CrawlTemplatesDetail extends LiteElement {
       >
         ${this.isDialogVisible ? this.renderEditSchedule() : ""}
       </sl-dialog>
+
+      <sl-dialog
+        label=${msg(str`Edit Crawl Scale`)}
+        style="--width: ${dialogWidth}"
+        ?open=${this.openDialogName === "scale"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </sl-dialog>
     `;
   }
 
@@ -847,8 +930,9 @@ export class CrawlTemplatesDetail extends LiteElement {
       ></sl-textarea>
       <sl-select
         name="scopeType"
-        label=${msg("Crawl Scope")}
+        label=${msg("Scope Type")}
         value=${this.crawlTemplate!.config.scopeType!}
+        hoist
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
@@ -861,7 +945,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <sl-checkbox
         name="extraHopsOne"
         ?checked=${Boolean(this.crawlTemplate!.config.extraHops)}
-        >${msg("Include External Links ('one hop out')")}
+        >${msg("Include External Links (“one hop out”)")}
       </sl-checkbox>
       <sl-input
         name="limit"
@@ -1005,6 +1089,15 @@ export class CrawlTemplatesDetail extends LiteElement {
     const name = formData.get("name") as string;
 
     await this.updateTemplate({ name });
+
+    this.openDialogName = undefined;
+  }
+
+  private async handleSubmitEditScale(e: { detail: { formData: FormData } }) {
+    const { formData } = e.detail;
+    const scale = formData.get("scale") as string;
+
+    await this.updateTemplate({ scale: +scale });
 
     this.openDialogName = undefined;
   }

@@ -15,12 +15,14 @@ export type NewCrawlTemplate = {
   schedule: string;
   runNow: boolean;
   crawlTimeout?: number;
+  scale: number;
   config: CrawlConfig;
 };
 
 const initialValues = {
   name: "",
   runNow: true,
+  scale: "1",
   config: {
     seeds: [],
     scopeType: "prefix",
@@ -344,14 +346,25 @@ export class CrawlTemplatesNew extends LiteElement {
   private renderCrawlConfigSettings() {
     return html`
       <div class="col-span-1 p-4 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Crawl Configuration")}</h3>
+        <h3 class="font-medium">${msg("Crawl Settings")}</h3>
       </div>
       <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+        <div>
+          <sl-select
+            name="scale"
+            label=${msg("Crawl Scale")}
+            value=${initialValues.scale}
+          >
+            <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
+            <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
+            <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
+          </sl-select>
+        </div>
         <div class="flex justify-between">
           <h4 class="font-medium">
             ${this.isSeedsJsonView
               ? msg("Custom Config")
-              : msg("Configure Seeds")}
+              : msg("Crawl Configuration")}
           </h4>
           <sl-switch
             ?checked=${this.isSeedsJsonView}
@@ -385,7 +398,7 @@ export class CrawlTemplatesNew extends LiteElement {
       ></sl-textarea>
       <sl-select
         name="scopeType"
-        label=${msg("Crawl Scope")}
+        label=${msg("Scope Type")}
         value=${this.initialCrawlTemplate!.config.scopeType!}
       >
         <sl-menu-item value="page">Page</sl-menu-item>
@@ -394,8 +407,9 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-menu-item value="host">Host</sl-menu-item>
         <sl-menu-item value="any">Any</sl-menu-item>
       </sl-select>
+
       <sl-checkbox name="extraHopsOne"
-        >${msg("Include External Links ('one hop out')")}
+        >${msg("Include External Links (“one hop out”)")}
       </sl-checkbox>
       <sl-input
         name="limit"
@@ -502,11 +516,13 @@ export class CrawlTemplatesNew extends LiteElement {
     const crawlTimeoutMinutes = formData.get("crawlTimeoutMinutes");
     const pageLimit = formData.get("limit");
     const seedUrlsStr = formData.get("seedUrls");
+    const scale = formData.get("scale") as string;
     const template: Partial<NewCrawlTemplate> = {
       name: formData.get("name") as string,
       schedule: this.getUTCSchedule(),
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
+      scale: +scale,
     };
 
     if (this.isSeedsJsonView) {
