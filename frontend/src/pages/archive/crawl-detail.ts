@@ -1,4 +1,4 @@
-import type { TemplateResult } from "lit";
+import type { TemplateResult, HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -6,6 +6,7 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { CopyButton } from "../../components/copy-button";
 import type { Crawl } from "./types";
 
 type SectionName = "overview" | "watch" | "download" | "logs";
@@ -41,11 +42,26 @@ export class CrawlDetail extends LiteElement {
   @state()
   private sectionName: SectionName = "overview";
 
+  @state()
+  private isSubmittingUpdate: boolean = false;
+
+  @state()
+  private openDialogName?: "scale";
+
+  @state()
+  private isDialogVisible: boolean = false;
+
   // For long polling:
   private timerId?: number;
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
+
+  private get isRunning(): boolean | null {
+    if (!this.crawl) return null;
+
+    return this.crawl.state === "running";
+  }
 
   async firstUpdated() {
     this.fetchCrawl();
@@ -91,32 +107,47 @@ export class CrawlDetail extends LiteElement {
     }
 
     return html`
-      <div class="grid grid-cols-6 gap-4 items-start pb-3 mb-2 border-b">
-        <div class="col-span-6 md:col-span-1">
-          <a
-            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-            href=${`/archives/${this.archiveId}/crawls`}
-            @click=${this.navLink}
+      <div class="mb-7">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/crawls`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Crawls")}</span
           >
-            <sl-icon
-              name="arrow-left"
-              class="inline-block align-middle"
-            ></sl-icon>
-            <span class="inline-block align-middle"
-              >${msg("Back to Crawls")}</span
-            >
-          </a>
-        </div>
-
-        <div class="col-span-6 md:col-span-5">${this.renderHeader()}</div>
+        </a>
       </div>
 
-      <div class="grid grid-cols-6 gap-4">
-        <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-        <div class="col-span-6 md:col-span-5 md:py-2">
-          <main>${sectionContent}</main>
-        </div>
-      </div>
+      <div class="mb-2">${this.renderHeader()}</div>
+
+      <main>
+        <section class="grid grid-cols-6 gap-4 mb-4">
+          <div class="col-span-6 md:col-span-1">
+            <h3 class="font-medium p-2">${msg("Summary")}</h3>
+          </div>
+          <div class="col-span-6 md:col-span-5">${this.renderSummary()}</div>
+        </section>
+
+        <section class="grid grid-cols-6 gap-4">
+          <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
+          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+        </section>
+      </main>
+
+      <sl-dialog
+        label=${msg(str`Change Crawl Scale`)}
+        ?open=${this.openDialogName === "scale"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </sl-dialog>
     `;
   }
 
@@ -135,16 +166,9 @@ export class CrawlDetail extends LiteElement {
           role="menuitem"
           aria-selected=${isActive ? "true" : "false"}
         >
-          <div
-            class="absolute left-0 top-2 h-6 border-l-2 rounded-full transition-colors ${section ===
-            this.sectionName
-              ? "border-l-primary"
-              : "border-l-transparent"}"
-            role="presentation"
-          ></div>
           <a
-            class="block ml-2 p-2 font-medium rounded hover:bg-neutral-50 ${isActive
-              ? "text-primary"
+            class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
+              ? "text-primary bg-slate-50"
               : "text-neutral-500 hover:text-neutral-900"}"
             href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
@@ -167,122 +191,199 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderHeader() {
-    const isRunning = this.crawl?.state === "running";
-
     return html`
-      <header>
-        <div class="flex justify-between">
-          <h2 class="text-lg font-medium mb-3 md:h-6">
-            ${msg(
-              html`<span class="font-normal">Crawl of</span> ${this.crawl
-                  ? this.crawl.configName
-                  : html`<sl-skeleton
-                      class="inline-block"
-                      style="width: 15em"
-                    ></sl-skeleton>`}`
-            )}
-          </h2>
-          <div>
-            ${isRunning
-              ? html`
-                  <sl-button class="mr-2" size="small" @click=${this.stop}>
-                    ${msg("Stop Crawl")}
-                  </sl-button>
-                  <sl-button size="small" type="danger" @click=${this.cancel}>
-                    ${msg("Cancel Crawl")}
-                  </sl-button>
-                `
-              : this.crawl
-              ? html`
+      <header class="flex justify-between">
+        <h2 class="text-2xl font-medium mb-3 md:h-8">
+          ${msg(
+            html`<span class="font-normal">Crawl of</span> ${this.crawl
+                ? this.crawl.configName
+                : html`<sl-skeleton
+                    class="inline-block"
+                    style="width: 15em"
+                  ></sl-skeleton>`}`
+          )}
+        </h2>
+        <div class="grid gap-2 grid-flow-col">
+          ${this.isRunning
+            ? html`
+                <sl-button-group>
                   <sl-button
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
                     size="small"
-                    @click=${this.navLink}
+                    @click=${() => {
+                      this.openDialogName = "scale";
+                      this.isDialogVisible = true;
+                    }}
                   >
-                    ${msg("View Config")}
+                    <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+                    <span> ${msg("Scale")} </span>
                   </sl-button>
-                `
-              : ""}
-          </div>
+                  <sl-button size="small" @click=${this.stop}>
+                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
+                    <span> ${msg("Stop")} </span>
+                  </sl-button>
+                  <sl-button size="small" @click=${this.cancel}>
+                    <sl-icon
+                      class="text-danger"
+                      name="trash"
+                      slot="prefix"
+                    ></sl-icon>
+                    <span class="text-danger"> ${msg("Cancel")} </span>
+                  </sl-button>
+                </sl-button-group>
+              `
+            : ""}
+          ${this.crawl
+            ? html` ${this.renderMenu()} `
+            : html`<sl-skeleton
+                style="width: 6em; height: 2em;"
+              ></sl-skeleton>`}
         </div>
-        <dl class="grid grid-cols-4 gap-5">
-          <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Status")}</dt>
-            <dd>
-              ${this.crawl
-                ? html`
-                    <div class="flex items-baseline justify-between">
-                      <div
-                        class="whitespace-nowrap capitalize${isRunning
-                          ? " motion-safe:animate-pulse"
-                          : ""}"
-                      >
-                        <span
-                          class="inline-block ${this.crawl.state === "failed"
-                            ? "text-red-500"
-                            : this.crawl.state === "complete"
-                            ? "text-emerald-500"
-                            : isRunning
-                            ? "text-purple-500"
-                            : "text-zinc-300"}"
-                          style="font-size: 10px; vertical-align: 2px"
-                        >
-                          &#9679;
-                        </span>
-                        ${this.crawl.state.replace(/_/g, " ")}
-                      </div>
-                    </div>
-                  `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Pages Crawled")}</dt>
-            <dd>
-              ${this.crawl?.stats
-                ? html`
-                    <span
-                      class="font-mono tracking-tighter${isRunning
-                        ? " text-purple-600"
-                        : ""}"
-                    >
-                      ${this.numberFormatter.format(+this.crawl.stats.done)}
-                      <span class="text-0-400">/</span>
-                      ${this.numberFormatter.format(+this.crawl.stats.found)}
-                    </span>
-                  `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-          <div class="col-span-1">
-            <dt class="text-sm text-0-600">${msg("Run Duration")}</dt>
-            <dd>
-              ${this.crawl
-                ? html`
-                    ${this.crawl.finished
-                      ? html`${RelativeDuration.humanize(
-                          new Date(`${this.crawl.finished}Z`).valueOf() -
-                            new Date(`${this.crawl.started}Z`).valueOf()
-                        )}`
-                      : html`
-                          <span class="text-purple-600">
-                            <btrix-relative-duration
-                              value=${`${this.crawl.started}Z`}
-                            ></btrix-relative-duration>
-                          </span>
-                        `}
-                  `
-                : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-            </dd>
-          </div>
-        </dl>
       </header>
     `;
   }
 
-  private renderWatch() {
-    const isRunning = this.crawl?.state === "running";
+  private renderMenu() {
+    if (!this.crawl) return;
 
+    const crawlId = this.crawl.id;
+    const crawlTemplateId = this.crawl.cid;
+
+    const closeDropdown = (e: any) => {
+      e.target.closest("sl-dropdown").hide();
+    };
+
+    return html`
+      <sl-dropdown placement="bottom-end" distance="4">
+        <sl-button slot="trigger" size="small" caret
+          >${this.isRunning
+            ? html`<sl-icon name="three-dots"></sl-icon>`
+            : msg("Actions")}</sl-button
+        >
+
+        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              CopyButton.copyToClipboard(crawlId);
+              closeDropdown(e);
+            }}
+          >
+            ${msg("Copy Crawl ID")}
+          </li>
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              CopyButton.copyToClipboard(crawlId);
+              closeDropdown(e);
+            }}
+          >
+            ${msg("Copy Crawl Template ID")}
+          </li>
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              this.navTo(
+                `/archives/${this.archiveId}/crawl-templates/config/${crawlTemplateId}`
+              );
+            }}
+          >
+            ${msg("View Crawl Template")}
+          </li>
+        </ul>
+      </sl-dropdown>
+    `;
+  }
+
+  private renderSummary() {
+    return html`
+      <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Status")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  <div class="flex items-baseline justify-between">
+                    <div
+                      class="whitespace-nowrap capitalize${this.isRunning
+                        ? " motion-safe:animate-pulse"
+                        : ""}"
+                    >
+                      <span
+                        class="inline-block ${this.crawl.state === "failed"
+                          ? "text-red-500"
+                          : this.crawl.state === "complete"
+                          ? "text-emerald-500"
+                          : this.isRunning
+                          ? "text-purple-500"
+                          : "text-zinc-300"}"
+                        style="font-size: 10px; vertical-align: 2px"
+                      >
+                        &#9679;
+                      </span>
+                      ${this.crawl.state.replace(/_/g, " ")}
+                    </div>
+                  </div>
+                `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
+          <dd>
+            ${this.crawl?.stats
+              ? html`
+                  <span
+                    class="font-mono tracking-tighter${this.isRunning
+                      ? " text-purple-600"
+                      : ""}"
+                  >
+                    ${this.numberFormatter.format(+this.crawl.stats.done)}
+                    <span class="text-0-400">/</span>
+                    ${this.numberFormatter.format(+this.crawl.stats.found)}
+                  </span>
+                `
+              : this.crawl
+              ? html` <span class="text-0-400">${msg("Unknown")}</span> `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`
+                  ${this.crawl.finished
+                    ? html`${RelativeDuration.humanize(
+                        new Date(`${this.crawl.finished}Z`).valueOf() -
+                          new Date(`${this.crawl.started}Z`).valueOf()
+                      )}`
+                    : html`
+                        <span class="text-purple-600">
+                          <btrix-relative-duration
+                            value=${`${this.crawl.started}Z`}
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
+                `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+        <div class="col-span-1">
+          <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
+          <dd>
+            ${this.crawl
+              ? html`<span class="font-mono">${this.crawl.scale}</span>`
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+          </dd>
+        </div>
+      </dl>
+    `;
+  }
+
+  private renderWatch() {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
@@ -290,10 +391,10 @@ export class CrawlDetail extends LiteElement {
     const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
-      <h3 class="text-lg font-medium mb-2">${msg("Watch or Replay Crawl")}</h3>
+      <h3 class="text-lg font-medium my-2">${msg("Watch or Replay Crawl")}</h3>
 
       <div
-        class="aspect-video rounded border ${isRunning
+        class="aspect-video rounded border ${this.isRunning
           ? "border-purple-200"
           : "border-slate-100"}"
       >
@@ -344,7 +445,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5">
+      <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
         <div class="col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
@@ -441,30 +542,87 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium mb-2">${msg("Download Files")}</h3>
-      <ul class="border rounded text-sm">
-        ${this.crawl?.resources?.map(
-          (file) => html`
-            <li class="flex justify-between p-3 border-t first:border-t-0">
-              <div>
-                <a
-                  class="text-primary hover:underline"
-                  href=${file.path}
-                  download
-                  title=${file.name}
-                  >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                </a>
-              </div>
-              <div><sl-format-bytes value=${file.size}></sl-format-bytes></div>
-            </li>
-          `
-        )}
-      </ul>
+      <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
+
+      ${this.crawl
+        ? this.crawl.resources && this.crawl.resources.length
+          ? html`
+              <ul class="border rounded text-sm">
+                ${this.crawl.resources.map(
+                  (file) => html`
+                    <li
+                      class="flex justify-between p-3 border-t first:border-t-0"
+                    >
+                      <div>
+                        <a
+                          class="text-primary hover:underline"
+                          href=${file.path}
+                          download
+                          title=${file.name}
+                          >${file.name.slice(file.name.lastIndexOf("/") + 1)}
+                        </a>
+                      </div>
+                      <div>
+                        <sl-format-bytes value=${file.size}></sl-format-bytes>
+                      </div>
+                    </li>
+                  `
+                )}
+              </ul>
+            `
+          : html`
+              <p class="text-neutral-400">${msg("No files to download.")}</p>
+            `
+        : ""}
     `;
   }
 
   private renderLogs() {
     return html`TODO`;
+  }
+
+  private renderEditScale() {
+    if (!this.crawl) return;
+
+    const scaleOptions = [
+      {
+        value: 1,
+        label: msg("Standard"),
+      },
+      {
+        value: 2,
+        label: msg("Big (2x)"),
+      },
+      {
+        value: 3,
+        label: msg("Bigger (3x)"),
+      },
+    ];
+
+    return html`
+      <div class="text-center">
+        <sl-button-group>
+          ${scaleOptions.map(
+            ({ value, label }) => html`
+              <sl-button
+                type=${value === this.crawl?.scale ? "neutral" : "default"}
+                aria-selected=${value === this.crawl?.scale}
+                pill
+                @click=${() => this.scale(value)}
+                ?disabled=${this.isSubmittingUpdate}
+                >${label}</sl-button
+              >
+            `
+          )}
+        </sl-button-group>
+      </div>
+
+      <div class="mt-5 text-right">
+        <sl-button type="text" @click=${() => (this.openDialogName = undefined)}
+          >${msg("Cancel")}</sl-button
+        >
+      </div>
+    `;
   }
 
   /**
@@ -560,6 +718,44 @@ export class CrawlDetail extends LiteElement {
         });
       }
     }
+  }
+
+  private async scale(value: Crawl["scale"]) {
+    this.isSubmittingUpdate = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/scale`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ scale: +value }),
+        }
+      );
+
+      if (data.scaled) {
+        this.crawl!.scale = data.scaled;
+
+        this.notify({
+          message: msg("Updated crawl scale."),
+          type: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw new Error("unhandled API response");
+      }
+
+      this.openDialogName = undefined;
+      this.isDialogVisible = false;
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't change crawl scale at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
   }
 
   private stopPollTimer() {

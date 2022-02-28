@@ -811,7 +811,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  renderEditScale() {
+  private renderEditScale() {
     if (!this.crawlTemplate) return;
 
     return html`
