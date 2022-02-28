@@ -1,0 +1,21 @@
+signing:
+  domain: example.com  # domain to retrieve a cert for (passed to ACME servers, required)
+  email: test@example.com  # email for acme auth (passed to ACME servers, required)
+  port: 80  # local port for acme domain check (should be 80, change if running behind a proxy)
+
+  output: /data  # dir to store the keys and certs (for internal use)
+
+  staging: False  # generate staging certs
+
+  # optional: set a 'cross-singing' CA and private key
+  # this will be used along with ACME (Lets Encrypt) to sign the same CSR
+  # csca_cert: <ca-cert.pem>
+  # csca_private_key: <ca-private-key.pem>
+
+  # rfc3161 timestamp authority cert chain + timestamp urls
+  # at least one required, if multiple, one is selected at random
+  timestamping:
+    # time server cert chain (cert + ca cert)
+    # pkg:// url to load from python package data
+    - certfile: pkg://authsign.trusted/ts-chain.pem
+      url: http://freetsa.org/tsr  # timeserver URL

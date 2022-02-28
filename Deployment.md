@@ -18,9 +18,26 @@ To update/relaunch, use `./docker-restart.sh`.
 
 The API should be available at: `http://localhost:8000/docs`
 
+To allow downloading of WACZ files via the UI from a remote host, set the `STORE_ACCESS_ENDPOINT_URL` to use the domain of the host.
+Otherwise, the files are accesible only through the default Minio service running on port 9000.
+
 
 Note: When deployed in local Docker, failed crawls are not retried currently. Scheduling is handled by a subprocess, which stores active schedule in the DB.
 
+
+### Enabling Signing
+
+Browsertrix Cloud can optionally sign WACZ files with the same key used to generate an SSL cert.
+To use this functionality, the machine running Browsertrix Cloud must be associated with a domain and must have port 80 available on that domain.
+
+To enable signing in the Docker-based deployment:
+
+1) Copy `configs/signing.sample.yaml` to `configs/signing.yaml` and set the domain and email fields in the config. Set `staging` to false to generate real certificates.
+
+2) In `configs.config.env`, also uncomment `WACZ_SIGN_URL`.
+
+
+WACZ files created on minio should now be signed! Be sure to also set `STORE_ACCESS_ENDPOINT_URL` to get downloadable links from the UI downloads view.
 
 
 ## Deploying to Kubernetes

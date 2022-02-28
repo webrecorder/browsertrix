@@ -3,7 +3,7 @@ version: '3.5'
 services:
   backend:
     build: ./backend
-    image: registry.digitalocean.com/btrix/webrecorder/browsertrix-api
+    image: webrecorder/browsertrix-backend
     volumes:
         - /var/run/docker.sock:/var/run/docker.sock
 
@@ -20,7 +20,7 @@ services:
 
   frontend:
     build: ./frontend
-    image: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend
+    image: webrecorder/browsertrix-frontend
     ports:
       - 9871:80
 
@@ -50,7 +50,7 @@ services:
 
   minio:
     image: minio/minio
-    command: server /data --console-address :9001
+    command: ["server", "/data", "--console-address", ":9001"]
     ports:
       - 9000:9000
       - 9001:9001
@@ -77,10 +77,29 @@ services:
     image: tianon/true
     container_name: volume_placeholder
 
+# enable to support signing of wacz files
+# port 80 must be open to automatically generate cert via LetsEncrypt
+  authsign:
+    image: webrecorder/authsign:0.3.1
+
+    volumes:
+      - btrix-sign-data:/data
+      - ./configs/signing.yaml:/app-config/signing.yaml
+
+    environment:
+      - CONFIG=/app-config/signing.yaml
+
+    env_file:
+      - ./configs/config.env
+
+    ports:
+      - 80:80
+
 volumes:
   btrix-redis-data:
   btrix-mongo-data:
   btrix-minio-data:
+  btrix-sign-data:
 
 
 networks:

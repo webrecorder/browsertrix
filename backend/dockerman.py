@@ -40,6 +40,9 @@ class DockerManager:
 
         self.crawl_args = os.environ["CRAWL_ARGS"]
 
+        self.wacz_sign_url = os.environ.get("WACZ_SIGN_URL", "")
+        self.wacz_sign_token = os.environ.get("WACZ_SIGN_TOKEN", "")
+
         self.archive_ops = archive_ops
         self.crawl_ops = None
 
@@ -505,6 +508,8 @@ class DockerManager:
             f"STORE_PATH={storage_path}",
             f"WEBHOOK_URL={self.redis_url}/{self.crawls_done_key}",
             f"CRAWL_ARGS={self.crawl_args}",
+            f"WACZ_SIGN_URL={self.wacz_sign_url}",
+            f"WACZ_SIGN_TOKEN={self.wacz_sign_token}",
         ]
 
         labels["btrix.run.schedule"] = schedule

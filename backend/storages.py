@@ -54,12 +54,15 @@ def init_storages_api(archive_ops, crawl_manager, user_dep):
 
 # ============================================================================
 @asynccontextmanager
-async def get_s3_client(storage):
+async def get_s3_client(storage, use_access=False):
     """ context manager for s3 client"""
-    if not storage.endpoint_url.endswith("/"):
-        storage.endpoint_url += "/"
+    endpoint_url = (
+        storage.endpoint_url if not use_access else storage.access_endpoint_url
+    )
+    if not endpoint_url.endswith("/"):
+        endpoint_url += "/"
 
-    parts = urlsplit(storage.endpoint_url)
+    parts = urlsplit(endpoint_url)
     bucket, key = parts.path[1:].split("/", 1)
 
     endpoint_url = parts.scheme + "://" + parts.netloc
@@ -100,7 +103,7 @@ async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
     else:
         raise Exception("No Default Storage Found, Invalid Storage Type")
 
-    async with get_s3_client(s3storage) as (client, bucket, key):
+    async with get_s3_client(s3storage, True) as (client, bucket, key):
         key += crawlfile.filename
 
         presigned_url = await client.generate_presigned_url(
