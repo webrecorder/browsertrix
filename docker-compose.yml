@@ -13,6 +13,7 @@ services:
     depends_on:
       - minio
       - mongo
+      - volume_placeholder_image
 
     ports:
       - 8000:8000
@@ -71,6 +72,10 @@ services:
     depends_on:
       - minio
 
+  # adding here to ensure "tianon/true" is pulled, it's used to create volumes with configs
+  volume_placeholder_image:
+    image: tianon/true
+    container_name: volume_placeholder
 
 volumes:
   btrix-redis-data:
