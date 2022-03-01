@@ -173,16 +173,13 @@ export class Screencast extends LitElement {
 
       this.imageDataMap.set(id, message);
     } else if (message.msg === "close") {
-      //this.unuseImage(id);
       this.imageDataMap.delete(id);
     }
 
-    const newDataList = Array.from(this.imageDataMap.values());
-
     // keep same number of data entries (probably should only decrease if scale is reduced)
     this.dataList = [
-      ...newDataList,
-      ...this.dataList.slice(newDataList.length),
+      ...this.imageDataMap.values(),
+      ...this.dataList.slice(this.imageDataMap.size),
     ];
   }
 }
