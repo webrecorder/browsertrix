@@ -91,6 +91,9 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Array })
+  watchIPs?: Array<String> = [];
+
   @state()
   private dataList: Array<ScreencastMessage> = [];
 
@@ -106,6 +109,7 @@ export class Screencast extends LitElement {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
+      changedProperties.get("watchIPs") ||
       changedProperties.get("authToken")
     ) {
       // Reconnect
@@ -144,16 +148,18 @@ export class Screencast extends LitElement {
   }
 
   private connectWs() {
-    if (!this.archiveId || !this.crawlId) return;
+    if (!this.archiveId || !this.crawlId || !this.watchIPs || !this.watchIPs.length) return;
 
     this.isConnecting = true;
+
+    const watchIP = this.watchIPs[0];
 
     this.ws = new WebSocket(
       `${window.location.protocol === "https:" ? "wss" : "ws"}:${
         process.env.API_HOST
-      }/api/archives/${this.archiveId}/crawls/${
+      }/watch/${this.archiveId}/${
         this.crawlId
-      }/watch/ws?auth_bearer=${this.authToken || ""}`
+      }/${watchIP}/ws?auth_bearer=${this.authToken || ""}`
     );
 
     this.ws.addEventListener("error", () => {

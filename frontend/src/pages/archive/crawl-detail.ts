@@ -400,6 +400,7 @@ export class CrawlDetail extends LiteElement {
         authToken=${authToken}
         archiveId=${this.archiveId!}
         crawlId=${this.crawlId!}
+        .watchIPs=${this.crawl?.watchIPs || []}
       ></btrix-screencast>
     `;
   }
