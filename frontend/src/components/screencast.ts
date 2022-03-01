@@ -1,10 +1,7 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
-import { ref, createRef } from "lit/directives/ref.js";
-import { guard } from "lit/directives/guard.js";
+import { ref } from "lit/directives/ref.js";
 import { msg, localized } from "@lit/localize";
-
-import LiteElement from "../utils/LiteElement";
 
 type Message = {
   id: string; // page ID
@@ -36,7 +33,22 @@ const SCREEN_HEIGHT = 480;
  * ```
  */
 @localized()
-export class Screencast extends LiteElement {
+export class Screencast extends LitElement {
+  static styles = css`
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 0;
+      outline: 1px solid red;
+    }
+  `;
+
   @property({ type: String })
   authToken?: string;
 
@@ -49,27 +61,17 @@ export class Screencast extends LiteElement {
   @state()
   private isConnecting: boolean = false;
 
-  @state()
-  private currentPageUrl: string | null = null;
-
   // Websocket connection
   private ws: WebSocket | null = null;
 
-  private canvasEl: HTMLCanvasElement | null = null;
+  // Image container element
+  private containerElement?: HTMLElement;
 
-  // Canvas 2D context used to draw images
-  private canvasContext: CanvasRenderingContext2D | null = null;
+  // Map page ID to HTML img element
+  private imageElementMap: Map<string, HTMLImageElement> = new Map();
 
-  // Image to load into canvas
-  private canvasImage = new Image();
-
-  connectedCallback() {
-    super.connectedCallback();
-
-    if (this.archiveId && this.crawlId && this.authToken) {
-      this.connectWs();
-    }
-  }
+  // Cache unused image elements
+  private unusedImageElements: HTMLImageElement[] = [];
 
   async updated(changedProperties: any) {
     if (
@@ -89,58 +91,30 @@ export class Screencast extends LiteElement {
   }
 
   render() {
-    return html`
-      <figure class="relative border rounded">
-        ${this.isConnecting
-          ? html`
-              <div
-                class="absolute top-1/2 left-1/2 -mt-4 -ml-4"
-                style="font-size: 2rem"
-              >
-                <sl-spinner></sl-spinner>
-              </div>
-            `
-          : ""}
-
-        <figcaption class="h-8 text-sm p-2 border-b bg-neutral-50">
-          ${this.currentPageUrl}
-        </figcaption>
-
-        ${guard(
-          [this.archiveId, this.crawlId, this.authToken],
-          () => html`
-            <canvas ${ref(this.setCanvasRef)} style="width: 100%;"> </canvas>
-          `
-        )}
-      </figure>
-    `;
+    return html` <div ${ref(this.onContainerRender)} class="container"></div> `;
   }
 
-  private setCanvasRef(el: Element | undefined) {
-    if (el) {
-      this.canvasEl = el as HTMLCanvasElement;
+  private onContainerRender(el?: Element) {
+    if (!el) return;
 
-      // Set resolution
-      const ratio = window.devicePixelRatio;
-      this.canvasEl.width = SCREEN_WIDTH * ratio;
-      this.canvasEl.height = SCREEN_HEIGHT * ratio;
+    this.containerElement = el as HTMLElement;
 
-      this.canvasContext = this.canvasEl.getContext("2d")!;
-      this.canvasContext.scale(ratio, ratio);
+    // window.setInterval(() => {
+    //   this.handleMessage(
+    //     JSON.stringify({
+    //       id: Math.random() + "",
+    //       msg: "screencast",
+    //       url: "foo",
+    //       data: "foo",
+    //     })
+    //   );
+    // }, 4000);
 
-      // Set CSS size
-      window.requestAnimationFrame(() => {
-        const { width } = this.canvasEl!.getBoundingClientRect();
-
-        this.canvasEl!.style.height = `${
-          width * (SCREEN_HEIGHT / SCREEN_WIDTH)
-        }px`;
-      });
-    }
+    // Connect to websocket server
+    this.connectWs();
   }
 
   private connectWs() {
-    console.log("open");
     if (!this.archiveId || !this.crawlId) return;
 
     this.isConnecting = true;
@@ -167,8 +141,6 @@ export class Screencast extends LiteElement {
   private disconnectWs() {
     this.isConnecting = false;
 
-    console.log("close");
-
     if (this.ws) {
       this.ws.close();
     }
@@ -179,25 +151,50 @@ export class Screencast extends LiteElement {
   private handleMessage(data: string) {
     const message: ScreencastMessage | CloseMessage = JSON.parse(data);
 
-    // TODO multiple pages
+    const { id } = message;
 
     if (message.msg === "screencast") {
       if (this.isConnecting) {
         this.isConnecting = false;
       }
 
-      this.currentPageUrl = message.url;
-      this.canvasImage.src = `data:image/png;base64,${message.data}`;
+      if (this.imageElementMap.has(id)) {
+        this.updateImage(id, message.data);
+      } else {
+        this.addPage(id, message.data);
+      }
 
-      this.canvasContext?.drawImage(
-        this.canvasImage,
-        0,
-        0,
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT
-      );
+      this.imageElementMap.get(id)!.title = message.url;
     } else if (message.msg === "close") {
-      // TODO
+      this.unuseImage(id);
+    }
+  }
+
+  private addPage(id: string, data: string) {
+    let imgEl = this.unusedImageElements.shift();
+
+    if (!imgEl) {
+      imgEl = new Image(SCREEN_WIDTH, SCREEN_HEIGHT);
+      this.containerElement!.appendChild(imgEl);
+    }
+
+    imgEl.src = `data:image/png;base64,${data}`;
+    this.imageElementMap.set(id, imgEl);
+  }
+
+  private updateImage(id: string, data: string) {
+    const imgEl = this.imageElementMap.get(id);
+
+    imgEl!.src = `data:image/png;base64,${data}`;
+  }
+
+  private unuseImage(id: string) {
+    const img = this.imageElementMap.get(id);
+
+    if (img) {
+      img.src = "";
+      this.unusedImageElements.push(img);
+      this.imageElementMap.delete(id);
     }
   }
 }

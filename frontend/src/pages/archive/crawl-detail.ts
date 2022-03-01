@@ -687,18 +687,6 @@ export class CrawlDetail extends LiteElement {
     return data;
   }
 
-  private async watchCrawl(): Promise<string> {
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/watch`,
-      this.authState!,
-      {
-        method: "POST",
-      }
-    );
-
-    return data.watch_url;
-  }
-
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
