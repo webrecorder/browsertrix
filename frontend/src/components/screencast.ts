@@ -191,7 +191,6 @@ export class Screencast extends LitElement {
       //}
       //this.imageDataMap[id] = message;
       this.imageDataMap.set(id, message);
-      this.requestUpdate();
 
       // Update URL that shows as image alt text
       //this.imageElementMap.get(id)!.title = message.url;
