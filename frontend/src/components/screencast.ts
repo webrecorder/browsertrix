@@ -5,6 +5,13 @@ type Message = {
   id: string; // page ID
 };
 
+type InitMessage = Message & {
+  msg: "init";
+  browsers: number;
+  width: number;
+  height: number;
+};
+
 type ScreencastMessage = Message & {
   msg: "screencast";
   url: string; // page URL
@@ -14,10 +21,6 @@ type ScreencastMessage = Message & {
 type CloseMessage = Message & {
   msg: "close";
 };
-
-// TODO don't hardcode
-const SCREEN_WIDTH = 573;
-const SCREEN_HEIGHT = 480;
 
 /**
  * Watch page crawl
@@ -34,27 +37,16 @@ export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
       position: relative;
-      border-radius: var(--sl-border-radius-large);
     }
 
-    .wrapper.loading {
-      background-color: var(--sl-color-neutral-50);
-    }
-
-    sl-spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .spinner {
+      text-align: center;
       font-size: 2rem;
     }
 
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(calc(33.33% - 1rem), 1fr));
       gap: 0.5rem;
-      min-height: ${SCREEN_HEIGHT}px;
-      min-width: ${SCREEN_WIDTH}px;
     }
 
     figure {
@@ -91,32 +83,53 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Array })
+  watchIPs: string[] = [];
+
   @state()
   private dataList: Array<ScreencastMessage> = [];
 
   @state()
   private isConnecting: boolean = false;
 
-  // Websocket connection
-  private ws: WebSocket | null = null;
+  // Websocket connections
+  private wsMap: Map<string, WebSocket> = new Map();
 
+  // Page image data
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
-  async updated(changedProperties: any) {
+  private screenCount = 1;
+
+  shouldUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
+      // Check stringified value of IP list
+      return (
+        this.watchIPs.toString() !==
+        changedProperties.get("watchIPs").toString()
+      );
+    }
+
+    return true;
+  }
+
+  protected firstUpdated() {
+    this.isConnecting = true;
+
+    // Connect to websocket server
+    this.connectWs();
+  }
+
+  async updated(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
+      changedProperties.get("watchIPs") ||
       changedProperties.get("authToken")
     ) {
       // Reconnect
       this.disconnectWs();
       this.connectWs();
     }
-  }
-
-  protected firstUpdated() {
-    // Connect to websocket server
-    this.connectWs();
   }
 
   disconnectedCallback() {
@@ -126,16 +139,20 @@ export class Screencast extends LitElement {
 
   render() {
     return html`
-      <div class="wrapper${this.isConnecting ? " loading" : ""}">
-        ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
-        <div class="container">
+      <div class="wrapper">
+        ${this.isConnecting
+          ? html`<div class="spinner">
+              <sl-spinner></sl-spinner>
+            </div> `
+          : ""}
+        <div
+          class="container"
+          style="grid-template-columns: repeat(${this.screenCount}, 1fr) "
+        >
           ${this.dataList.map(
-            (data) => html` <figure>
-              <figcaption>${data.url}</figcaption>
-              <img
-                src="data:image/png;base64,${data.data}"
-                title="${data.url}"
-              />
+            ({ url, data }) => html` <figure>
+              <figcaption>${url}</figcaption>
+              <img src="data:image/png;base64,${data}" title="${url}" />
             </figure>`
           )}
         </div>
@@ -144,60 +161,79 @@ export class Screencast extends LitElement {
   }
 
   private connectWs() {
-    if (!this.archiveId || !this.crawlId) return;
+    if (!this.archiveId || !this.crawlId) {
+      return;
+    }
 
-    this.isConnecting = true;
+    if (!this.watchIPs?.length) {
+      console.warn("No watch IPs to connect to");
+      return;
+    }
 
-    this.ws = new WebSocket(
-      `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-        process.env.API_HOST
-      }/api/archives/${this.archiveId}/crawls/${
-        this.crawlId
-      }/watch/ws?auth_bearer=${this.authToken || ""}`
-    );
+    this.watchIPs.forEach((ip: string) => {
+      const ws = new WebSocket(
+        `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+          process.env.API_HOST
+        }/watch/${this.archiveId}/${this.crawlId}/${ip}/ws?auth_bearer=${
+          this.authToken || ""
+        }`
+      );
 
-    this.ws.addEventListener("error", () => {
-      this.isConnecting = false;
-    });
-    this.ws.addEventListener("message", ({ data }) => {
-      this.handleMessage(data);
+      ws.addEventListener("open", () => {
+        if (this.wsMap.size === this.watchIPs.length) {
+          this.isConnecting = false;
+        }
+      });
+      ws.addEventListener("close", () => {
+        this.wsMap.delete(ip);
+      });
+      ws.addEventListener("error", () => {
+        this.isConnecting = false;
+      });
+      ws.addEventListener("message", ({ data }) => {
+        this.handleMessage(JSON.parse(data));
+      });
+
+      this.wsMap.set(ip, ws);
     });
   }
 
   private disconnectWs() {
     this.isConnecting = false;
 
-    if (this.ws) {
-      this.ws.close();
-    }
-
-    this.ws = null;
+    this.wsMap.forEach((ws) => {
+      ws.close();
+    });
   }
 
-  private handleMessage(data: string) {
-    const message: ScreencastMessage | CloseMessage = JSON.parse(data);
+  private handleMessage(
+    message: InitMessage | ScreencastMessage | CloseMessage
+  ) {
+    if (message.msg === "init") {
+      this.screenCount = message.browsers;
+    } else {
+      const { id } = message;
 
-    const { id } = message;
+      if (message.msg === "screencast") {
+        if (message.url === "about:blank") {
+          // Skip blank pages
+          return;
+        }
 
-    if (message.msg === "screencast") {
-      if (message.url === "about:blank") {
-        // Skip blank pages
-        return;
+        if (this.isConnecting) {
+          this.isConnecting = false;
+        }
+
+        this.imageDataMap.set(id, message);
+      } else if (message.msg === "close") {
+        this.imageDataMap.delete(id);
       }
 
-      if (this.isConnecting) {
-        this.isConnecting = false;
-      }
-
-      this.imageDataMap.set(id, message);
-    } else if (message.msg === "close") {
-      this.imageDataMap.delete(id);
+      // keep same number of data entries (probably should only decrease if scale is reduced)
+      this.dataList = [
+        ...this.imageDataMap.values(),
+        ...this.dataList.slice(this.imageDataMap.size),
+      ];
     }
-
-    // keep same number of data entries (probably should only decrease if scale is reduced)
-    this.dataList = [
-      ...this.imageDataMap.values(),
-      ...this.dataList.slice(this.imageDataMap.size),
-    ];
   }
 }

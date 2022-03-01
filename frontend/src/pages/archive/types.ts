@@ -15,6 +15,7 @@ export type Crawl = {
   fileCount?: number;
   fileSize?: number;
   completions?: number;
+  watchIPs?: Array<string>;
 };
 
 type SeedConfig = {
