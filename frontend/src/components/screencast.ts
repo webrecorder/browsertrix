@@ -170,13 +170,13 @@ export class Screencast extends LitElement {
       return;
     }
 
+    const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+      process.env.API_HOST
+    }/watch/${this.archiveId}/${this.crawlId}`;
+
     this.watchIPs.forEach((ip: string) => {
       const ws = new WebSocket(
-        `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-          process.env.API_HOST
-        }/watch/${this.archiveId}/${this.crawlId}/${ip}/ws?auth_bearer=${
-          this.authToken || ""
-        }`
+        `${baseURL}/${ip}/ws?auth_bearer=${this.authToken || ""}`
       );
 
       ws.addEventListener("open", () => {
