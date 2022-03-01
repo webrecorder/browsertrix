@@ -1,7 +1,5 @@
 import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
-import { ref, createRef, Ref } from "lit/directives/ref.js";
-import { msg, localized } from "@lit/localize";
 
 type Message = {
   id: string; // page ID
@@ -32,7 +30,6 @@ const SCREEN_HEIGHT = 480;
  * ></btrix-screencast>
  * ```
  */
-@localized()
 export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
@@ -85,16 +82,6 @@ export class Screencast extends LitElement {
   // Websocket connection
   private ws: WebSocket | null = null;
 
-  // Image container element
-  private containerElementRef: Ref<HTMLElement> = createRef();
-
-  // Map page ID to HTML img element
-  //private imageElementMap: Map<string, HTMLImageElement> = new Map();
-
-  // Cache unused image elements
-  //private unusedImageElements: HTMLImageElement[] = [];
-
-  //private imageDataMap: any = {};
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
   async updated(changedProperties: any) {
@@ -124,11 +111,14 @@ export class Screencast extends LitElement {
       <div class="wrapper">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
         <div class="container">
-          ${this.dataList.map((data) => html`
-          <figure>
-            <figcaption>${data.url}</figcaption>
-            <img src="data:image/png;base64,${data.data}" title="${data.url}" />
-          </figure>`
+          ${this.dataList.map(
+            (data) => html` <figure>
+              <figcaption>${data.url}</figcaption>
+              <img
+                src="data:image/png;base64,${data.data}"
+                title="${data.url}"
+              />
+            </figure>`
           )}
         </div>
       </div>
@@ -148,9 +138,6 @@ export class Screencast extends LitElement {
       }/watch/ws?auth_bearer=${this.authToken || ""}`
     );
 
-    // this.ws.addEventListener("open", () => {
-    //   this.isConnecting = false;
-    // });
     this.ws.addEventListener("error", () => {
       this.isConnecting = false;
     });
@@ -184,16 +171,7 @@ export class Screencast extends LitElement {
         this.isConnecting = false;
       }
 
-      //if (this.imageDataMap.has(id)) {
-      //  this.updateImage(id, message.data);
-      //} else {
-      //  this.addPage(id, message.data);
-      //}
-      //this.imageDataMap[id] = message;
       this.imageDataMap.set(id, message);
-
-      // Update URL that shows as image alt text
-      //this.imageElementMap.get(id)!.title = message.url;
     } else if (message.msg === "close") {
       //this.unuseImage(id);
       this.imageDataMap.delete(id);
@@ -202,37 +180,9 @@ export class Screencast extends LitElement {
     const newDataList = Array.from(this.imageDataMap.values());
 
     // keep same number of data entries (probably should only decrease if scale is reduced)
-    this.dataList = [...newDataList, ...this.dataList.slice(newDataList.length)];
+    this.dataList = [
+      ...newDataList,
+      ...this.dataList.slice(newDataList.length),
+    ];
   }
-/*
-  private addPage(id: string, data: string) {
-    let imgEl = this.unusedImageElements.shift();
-
-    if (!imgEl) {
-      imgEl = new Image(SCREEN_WIDTH, SCREEN_HEIGHT);
-      this.containerElementRef.value?.appendChild(imgEl);
-    }
-
-    imgEl.src = `data:image/png;base64,${data}`;
-    this.imageElementMap.set(id, imgEl);
-  }
-
-  private updateImage(id: string, data: string) {
-    const imgEl = this.imageElementMap.get(id);
-
-    imgEl!.src = `data:image/png;base64,${data}`;
-  }
-
-  private unuseImage(id: string) {
-    const img = this.imageElementMap.get(id);
-
-    if (img) {
-      // Reset and move image to unused queue
-      img.title = "";
-      img.src = "";
-      this.unusedImageElements.push(img);
-      this.imageElementMap.delete(id);
-    }
-  }
-*/
 }
