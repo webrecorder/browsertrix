@@ -361,6 +361,7 @@ class DockerManager:
 
     async def get_running_crawl(self, crawl_id, aid=None):
         """ Return a single running crawl as CrawlOut """
+        # pylint: disable=broad-except,bare-except
         try:
             container = await self.client.containers.get(crawl_id)
 
@@ -374,10 +375,17 @@ class DockerManager:
             if stop_type == "canceled":
                 return None
 
-            return self._make_crawl_for_container(
+            crawl = self._make_crawl_for_container(
                 container, "stopping" if stop_type else "running", False, CrawlOut
             )
-        # pylint: disable=broad-except
+
+            try:
+                crawl.watchIPs = [container.attrs["NetworkSettings"]["IPAddress"]]
+            except:
+                crawl.watchIPs = []
+
+            return crawl
+
         except Exception as exc:
             print(exc, flush=True)
             return None

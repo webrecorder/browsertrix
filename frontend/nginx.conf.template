@@ -36,5 +36,27 @@ server {
       proxy_set_header Host $http_host;
       proxy_set_header X-Forwarded-Proto $scheme;
     }
+
+    location ~* /watch/([^/]+)/([^/]+)/([^/]+)/ws {
+      set $archive $1;
+      set $crawl $2;
+      set $crawlerip $3;
+      #auth_request  /authcheck;
+
+      proxy_pass http://$crawlerip:9037/ws;
+      proxy_set_header Host "localhost";
+
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+    }
+
+    location = /authcheck {
+      internal;
+      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/crawls/$crawl/$crawlerip?$args;
+      proxy_pass_request_body off;
+      proxy_set_header Content-Length "";
+    }
+
 }
 
