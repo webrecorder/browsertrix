@@ -124,8 +124,11 @@ export class Screencast extends LitElement {
       <div class="wrapper">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
         <div class="container">
-          ${this.dataList.map((data) =>
-            html`<img src="data:image/png;base64,${data.data}" title="${data.url}"></img>`
+          ${this.dataList.map((data) => html`
+          <figure>
+            <figcaption>${data.url}</figcaption>
+            <img src="data:image/png;base64,${data.data}" title="${data.url}"></img>
+          </figure>`
           )}
         </div>
       </div>
