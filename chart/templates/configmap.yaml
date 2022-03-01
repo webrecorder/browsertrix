@@ -35,6 +35,8 @@ data:
 
   JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"
 
+  WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
+
 
 ---
 apiVersion: v1
