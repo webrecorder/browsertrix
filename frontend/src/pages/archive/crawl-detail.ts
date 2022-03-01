@@ -396,12 +396,16 @@ export class CrawlDetail extends LiteElement {
     return html`
       <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
 
-      <btrix-screencast
-        authToken=${authToken}
-        archiveId=${this.archiveId!}
-        crawlId=${this.crawlId!}
-        .watchIPs=${this.crawl?.watchIPs || []}
-      ></btrix-screencast>
+      ${this.crawl
+        ? html`
+            <btrix-screencast
+              authToken=${authToken}
+              archiveId=${this.archiveId!}
+              crawlId=${this.crawlId!}
+              .watchIPs=${this.crawl.watchIPs || []}
+            ></btrix-screencast>
+          `
+        : ""}
     `;
   }
 

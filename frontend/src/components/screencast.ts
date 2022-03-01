@@ -5,6 +5,13 @@ type Message = {
   id: string; // page ID
 };
 
+type InitMessage = Message & {
+  msg: "init";
+  browsers: number;
+  width: number;
+  height: number;
+};
+
 type ScreencastMessage = Message & {
   msg: "screencast";
   url: string; // page URL
@@ -14,10 +21,6 @@ type ScreencastMessage = Message & {
 type CloseMessage = Message & {
   msg: "close";
 };
-
-// TODO don't hardcode
-const SCREEN_WIDTH = 573;
-const SCREEN_HEIGHT = 480;
 
 /**
  * Watch page crawl
@@ -53,8 +56,6 @@ export class Screencast extends LitElement {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(calc(33.33% - 1rem), 1fr));
       gap: 0.5rem;
-      min-height: ${SCREEN_HEIGHT}px;
-      min-width: ${SCREEN_WIDTH}px;
     }
 
     figure {
@@ -92,7 +93,7 @@ export class Screencast extends LitElement {
   crawlId?: string;
 
   @property({ type: Array })
-  watchIPs?: Array<String> = [];
+  watchIPs: string[] = [];
 
   @state()
   private dataList: Array<ScreencastMessage> = [];
@@ -100,12 +101,30 @@ export class Screencast extends LitElement {
   @state()
   private isConnecting: boolean = false;
 
-  // Websocket connection
-  private ws: WebSocket | null = null;
+  // Websocket connections
+  private wsMap: Map<string, WebSocket> = new Map();
 
+  // Page image data
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
-  async updated(changedProperties: any) {
+  shouldUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
+      // Check stringified value of IP list
+      return (
+        this.watchIPs.toString() !==
+        changedProperties.get("watchIPs").toString()
+      );
+    }
+
+    return true;
+  }
+
+  protected firstUpdated() {
+    // Connect to websocket server
+    this.connectWs();
+  }
+
+  async updated(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
@@ -116,11 +135,6 @@ export class Screencast extends LitElement {
       this.disconnectWs();
       this.connectWs();
     }
-  }
-
-  protected firstUpdated() {
-    // Connect to websocket server
-    this.connectWs();
   }
 
   disconnectedCallback() {
@@ -148,56 +162,78 @@ export class Screencast extends LitElement {
   }
 
   private connectWs() {
-    if (!this.archiveId || !this.crawlId || !this.watchIPs || !this.watchIPs.length) return;
+    if (!this.archiveId || !this.crawlId) {
+      return;
+    }
+
+    if (!this.watchIPs?.length) {
+      console.warn("No watch IPs to connect to");
+      return;
+    }
 
     this.isConnecting = true;
 
-    const watchIP = this.watchIPs[0];
+    this.watchIPs.forEach((ip: string) => {
+      const ws = new WebSocket(
+        `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+          process.env.API_HOST
+        }/watch/${this.archiveId}/${this.crawlId}/${ip}/ws?auth_bearer=${
+          this.authToken || ""
+        }`
+      );
 
-    this.ws = new WebSocket(
-      `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-        process.env.API_HOST
-      }/watch/${this.archiveId}/${
-        this.crawlId
-      }/${watchIP}/ws?auth_bearer=${this.authToken || ""}`
-    );
+      ws.addEventListener("open", () => {
+        if (this.wsMap.size === this.watchIPs.length) {
+          this.isConnecting = false;
+        }
+      });
+      ws.addEventListener("close", () => {
+        this.wsMap.delete(ip);
+      });
+      ws.addEventListener("error", () => {
+        this.isConnecting = false;
+      });
+      ws.addEventListener("message", ({ data }) => {
+        this.handleMessage(JSON.parse(data));
+      });
 
-    this.ws.addEventListener("error", () => {
-      this.isConnecting = false;
-    });
-    this.ws.addEventListener("message", ({ data }) => {
-      this.handleMessage(data);
+      this.wsMap.set(ip, ws);
     });
   }
 
   private disconnectWs() {
     this.isConnecting = false;
 
-    if (this.ws) {
-      this.ws.close();
-    }
-
-    this.ws = null;
+    this.wsMap.forEach((ws) => {
+      ws.close();
+    });
   }
 
-  private handleMessage(data: string) {
-    const message: ScreencastMessage | CloseMessage = JSON.parse(data);
-
+  private handleMessage(
+    message: InitMessage | ScreencastMessage | CloseMessage
+  ) {
     const { id } = message;
 
-    if (message.msg === "screencast") {
-      if (message.url === "about:blank") {
-        // Skip blank pages
-        return;
+    switch (message.msg) {
+      case "init": {
+        break;
       }
+      case "screencast": {
+        if (message.url === "about:blank") {
+          // Skip blank pages
+          return;
+        }
 
-      if (this.isConnecting) {
-        this.isConnecting = false;
+        this.imageDataMap.set(id, message);
+        break;
       }
+      case "close": {
+        this.imageDataMap.delete(id);
 
-      this.imageDataMap.set(id, message);
-    } else if (message.msg === "close") {
-      this.imageDataMap.delete(id);
+        break;
+      }
+      default:
+        break;
     }
 
     // keep same number of data entries (probably should only decrease if scale is reduced)
