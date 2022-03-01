@@ -34,6 +34,11 @@ export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
       position: relative;
+      border-radius: var(--sl-border-radius-large);
+    }
+
+    .wrapper.loading {
+      background-color: var(--sl-color-neutral-50);
     }
 
     sl-spinner {
@@ -52,15 +57,28 @@ export class Screencast extends LitElement {
       min-width: ${SCREEN_WIDTH}px;
     }
 
+    figure {
+      margin: 0;
+      border: 1px solid var(--sl-color-neutral-100);
+      border-radius: var(--sl-border-radius-medium);
+    }
+
+    figcaption {
+      border-bottom-width: 1px;
+      border-bottom-color: var(--sl-panel-border-color);
+      color: var(--sl-color-neutral-600);
+      font-size: var(--sl-font-size-small);
+      line-height: 1;
+      padding: var(--sl-spacing-x-small);
+    }
+
     img {
       display: block;
       width: 100%;
       height: auto;
       box-shadow: 0;
       outline: 0;
-      border: 1px solid var(--sl-color-neutral-100);
-      background-color: var(--sl-color-neutral-50);
-      border-radius: var(--sl-border-radius-medium);
+      border: 0;
     }
   `;
 
@@ -108,7 +126,7 @@ export class Screencast extends LitElement {
 
   render() {
     return html`
-      <div class="wrapper">
+      <div class="wrapper${this.isConnecting ? " loading" : ""}">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
         <div class="container">
           ${this.dataList.map(
