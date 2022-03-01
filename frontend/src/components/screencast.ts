@@ -49,7 +49,7 @@ export class Screencast extends LitElement {
 
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(33.33%, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(calc(33.33% - 1rem), 1fr));
       gap: 0.5rem;
       min-height: ${SCREEN_HEIGHT}px;
       min-width: ${SCREEN_WIDTH}px;
