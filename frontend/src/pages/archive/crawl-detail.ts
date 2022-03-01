@@ -772,7 +772,8 @@ export class CrawlDetail extends LiteElement {
    */
   private async enterFullscreen(id: string) {
     try {
-      document.getElementById(id)?.requestFullscreen({
+      document.getElementById(id)!.requestFullscreen({
+        // Show browser navigation controls
         navigationUI: "show",
       });
     } catch (err) {
