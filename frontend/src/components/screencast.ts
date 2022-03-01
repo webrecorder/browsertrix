@@ -76,8 +76,8 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
-  @property({ type: Array })
-  dataList: Array<ScreencastMessage> = [];
+  @state()
+  private dataList: Array<ScreencastMessage> = [];
 
   @state()
   private isConnecting: boolean = false;
@@ -127,7 +127,7 @@ export class Screencast extends LitElement {
           ${this.dataList.map((data) => html`
           <figure>
             <figcaption>${data.url}</figcaption>
-            <img src="data:image/png;base64,${data.data}" title="${data.url}"></img>
+            <img src="data:image/png;base64,${data.data}" title="${data.url}" />
           </figure>`
           )}
         </div>
