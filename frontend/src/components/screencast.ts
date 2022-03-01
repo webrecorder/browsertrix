@@ -37,18 +37,10 @@ export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
       position: relative;
-      border-radius: var(--sl-border-radius-large);
     }
 
-    .wrapper.loading {
-      background-color: var(--sl-color-neutral-50);
-    }
-
-    sl-spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .spinner {
+      text-align: center;
       font-size: 2rem;
     }
 
@@ -147,8 +139,12 @@ export class Screencast extends LitElement {
 
   render() {
     return html`
-      <div class="wrapper${this.isConnecting ? " loading" : ""}">
-        ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
+      <div class="wrapper">
+        ${this.isConnecting
+          ? html`<div class="spinner">
+              <sl-spinner></sl-spinner>
+            </div> `
+          : ""}
         <div
           class="container"
           style="grid-template-columns: repeat(${this.screenCount}, 1fr) "
