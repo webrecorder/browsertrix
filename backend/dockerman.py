@@ -15,7 +15,8 @@ from tempfile import NamedTemporaryFile
 
 import aiodocker
 import aioprocessing
-import aioredis
+from redis import asyncio as aioredis
+
 
 from scheduler import run_scheduler
 

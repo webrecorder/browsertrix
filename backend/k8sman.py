@@ -5,7 +5,8 @@ import datetime
 import json
 import asyncio
 import base64
-import aioredis
+from redis import asyncio as aioredis
+
 
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient

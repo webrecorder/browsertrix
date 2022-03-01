@@ -4,6 +4,7 @@ import asyncio
 import json
 import uuid
 import os
+import traceback
 
 from typing import Optional, List, Dict, Union
 from datetime import datetime
@@ -12,7 +13,8 @@ import websockets
 from fastapi import Depends, HTTPException, WebSocket
 from pydantic import BaseModel, UUID4, conint
 import pymongo
-import aioredis
+from redis import asyncio as aioredis
+
 
 from db import BaseMongoModel
 from archives import Archive, MAX_CRAWL_SCALE
@@ -169,7 +171,10 @@ class CrawlOps:
         self.redis = await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
         )
-        self.pubsub = self.redis.pubsub()
+        self.pubsub_redis = await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
+        self.pubsub = self.pubsub_redis.pubsub()
 
         loop = asyncio.get_running_loop()
         loop.create_task(self.run_crawl_complete_loop())
@@ -438,11 +443,11 @@ class CrawlOps:
 
         await self.redis.publish(ctrl_channel, "connect")
 
-        async with self.pubsub as chan:
-            await chan.subscribe(cast_channel)
+        # pylint: disable=broad-except
+        try:
+            async with self.pubsub as chan:
+                await chan.subscribe(cast_channel)
 
-            # pylint: disable=broad-except
-            try:
                 while True:
                     message = await chan.get_message(ignore_subscribe_messages=True)
                     if not message:
@@ -450,14 +455,31 @@ class CrawlOps:
 
                     await websocket.send_text(message["data"])
 
-            except websockets.exceptions.ConnectionClosedOK:
-                pass
+            #last_casts = None
+            #casts = None
 
-            except Exception as exc:
-                print(exc, flush=True)
+            #while True:
+            #    last_casts = casts
+            #    casts = await self.redis.hvals(f"{crawl_id}:cast")
+            #    if casts != last_casts:
+            #        for cast in casts:
+            #            await websocket.send_text(cast)
 
-            finally:
+            #    await asyncio.sleep(1)
+
+        except websockets.exceptions.ConnectionClosedOK:
+            pass
+
+        except Exception:
+            traceback.print_exc()
+            print("ws exc", flush=True)
+
+        finally:
+            try:
                 await self.redis.publish(ctrl_channel, "disconnect")
+            except Exception:
+                traceback.print_exc()
+                print("ws exc", flush=True)
 
 
 # ============================================================================
