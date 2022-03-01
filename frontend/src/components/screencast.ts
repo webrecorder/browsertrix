@@ -163,6 +163,7 @@ export class Screencast extends LitElement {
 
     if (message.msg === "screencast") {
       if (message.url === "about:blank") {
+        // Skip blank pages
         return;
       }
 
@@ -176,6 +177,7 @@ export class Screencast extends LitElement {
         this.addPage(id, message.data);
       }
 
+      // Update URL that shows as image alt text
       this.imageElementMap.get(id)!.title = message.url;
     } else if (message.msg === "close") {
       this.unuseImage(id);
@@ -204,6 +206,7 @@ export class Screencast extends LitElement {
     const img = this.imageElementMap.get(id);
 
     if (img) {
+      // Reset and move image to unused queue
       img.title = "";
       img.src = "";
       this.unusedImageElements.push(img);
