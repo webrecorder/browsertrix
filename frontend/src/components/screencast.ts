@@ -35,17 +35,33 @@ const SCREEN_HEIGHT = 480;
 @localized()
 export class Screencast extends LitElement {
   static styles = css`
+    .wrapper {
+      position: relative;
+    }
+
+    sl-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+    }
+
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(33.33%, 1fr));
+      gap: 0.5rem;
     }
 
     img {
       display: block;
       width: 100%;
       height: auto;
-      border: 0;
-      outline: 1px solid red;
+      box-shadow: 0;
+      outline: 0;
+      border: 1px solid var(--sl-color-neutral-100);
+      background-color: var(--sl-color-neutral-50);
+      border-radius: var(--sl-border-radius-medium);
     }
   `;
 
@@ -91,24 +107,18 @@ export class Screencast extends LitElement {
   }
 
   render() {
-    return html` <div ${ref(this.onContainerRender)} class="container"></div> `;
+    return html`
+      <div class="wrapper">
+        ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
+        <div ${ref(this.onContainerRender)} class="container"></div>
+      </div>
+    `;
   }
 
   private onContainerRender(el?: Element) {
     if (!el) return;
 
     this.containerElement = el as HTMLElement;
-
-    // window.setInterval(() => {
-    //   this.handleMessage(
-    //     JSON.stringify({
-    //       id: Math.random() + "",
-    //       msg: "screencast",
-    //       url: "foo",
-    //       data: "foo",
-    //     })
-    //   );
-    // }, 4000);
 
     // Connect to websocket server
     this.connectWs();
@@ -154,6 +164,10 @@ export class Screencast extends LitElement {
     const { id } = message;
 
     if (message.msg === "screencast") {
+      if (message.url === "about:blank") {
+        return;
+      }
+
       if (this.isConnecting) {
         this.isConnecting = false;
       }
@@ -192,6 +206,7 @@ export class Screencast extends LitElement {
     const img = this.imageElementMap.get(id);
 
     if (img) {
+      img.title = "";
       img.src = "";
       this.unusedImageElements.push(img);
       this.imageElementMap.delete(id);
