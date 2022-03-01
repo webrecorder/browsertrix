@@ -7,7 +7,7 @@ import type { CurrentUser } from "../../types/user";
 import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
-import { isOwner } from "../../utils/archives";
+import { isOwner, AccessCode } from "../../utils/archives";
 import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
@@ -276,7 +276,11 @@ export class Archive extends LiteElement {
                   html`<span class="text-gray-400">${msg("Member")}</span>`}
                 </div>
                 <div class="p-3" role="cell">
-                  ${isOwner(role) ? msg("Admin") : msg("Viewer")}
+                  ${isOwner(role)
+                    ? msg("Admin")
+                    : role === AccessCode.crawler
+                    ? msg("Crawler")
+                    : msg("Viewer")}
                 </div>
               </div>
             `
