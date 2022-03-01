@@ -77,6 +77,9 @@ export class Screencast extends LitElement {
   crawlId?: string;
 
   @state()
+  private dataList: Array<ScreencastMessage> = [];
+
+  @state()
   private isConnecting: boolean = false;
 
   // Websocket connection
@@ -86,10 +89,13 @@ export class Screencast extends LitElement {
   private containerElementRef: Ref<HTMLElement> = createRef();
 
   // Map page ID to HTML img element
-  private imageElementMap: Map<string, HTMLImageElement> = new Map();
+  //private imageElementMap: Map<string, HTMLImageElement> = new Map();
 
   // Cache unused image elements
-  private unusedImageElements: HTMLImageElement[] = [];
+  //private unusedImageElements: HTMLImageElement[] = [];
+
+  //private imageDataMap: any = {};
+  private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
   async updated(changedProperties: any) {
     if (
@@ -117,7 +123,14 @@ export class Screencast extends LitElement {
     return html`
       <div class="wrapper">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
-        <div ${ref(this.containerElementRef)} class="container"></div>
+        <div class="container">
+          ${this.dataList.map((data) => html`
+          <figure>
+            <figcaption>${data.url}</figcaption>
+            <img src="data:image/png;base64,${data.data}" title="${data.url}" />
+          </figure>`
+          )}
+        </div>
       </div>
     `;
   }
@@ -171,19 +184,27 @@ export class Screencast extends LitElement {
         this.isConnecting = false;
       }
 
-      if (this.imageElementMap.has(id)) {
-        this.updateImage(id, message.data);
-      } else {
-        this.addPage(id, message.data);
-      }
+      //if (this.imageDataMap.has(id)) {
+      //  this.updateImage(id, message.data);
+      //} else {
+      //  this.addPage(id, message.data);
+      //}
+      //this.imageDataMap[id] = message;
+      this.imageDataMap.set(id, message);
 
       // Update URL that shows as image alt text
-      this.imageElementMap.get(id)!.title = message.url;
+      //this.imageElementMap.get(id)!.title = message.url;
     } else if (message.msg === "close") {
-      this.unuseImage(id);
+      //this.unuseImage(id);
+      this.imageDataMap.delete(id);
     }
-  }
 
+    const newDataList = Array.from(this.imageDataMap.values());
+
+    // keep same number of data entries (probably should only decrease if scale is reduced)
+    this.dataList = [...newDataList, ...this.dataList.slice(newDataList.length)];
+  }
+/*
   private addPage(id: string, data: string) {
     let imgEl = this.unusedImageElements.shift();
 
@@ -213,4 +234,5 @@ export class Screencast extends LitElement {
       this.imageElementMap.delete(id);
     }
   }
+*/
 }
