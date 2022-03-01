@@ -59,9 +59,13 @@ export class Screencast extends LitElement {
       border-bottom-width: 1px;
       border-bottom-color: var(--sl-panel-border-color);
       color: var(--sl-color-neutral-600);
-      font-size: var(--sl-font-size-small);
+      font-size: var(--sl-font-size-x-small);
       line-height: 1;
       padding: var(--sl-spacing-x-small);
+      /* Truncate: */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     img {
@@ -147,12 +151,13 @@ export class Screencast extends LitElement {
           : ""}
         <div
           class="container"
-          style="grid-template-columns: repeat(${this.screenCount}, 1fr) "
+          style="grid-template-columns: repeat(${this
+            .screenCount}, minmax(0, 1fr))"
         >
           ${this.dataList.map(
-            ({ url, data }) => html` <figure>
+            ({ url, data }) => html` <figure title="${url}">
               <figcaption>${url}</figcaption>
-              <img src="data:image/png;base64,${data}" title="${url}" />
+              <img src="data:image/png;base64,${data}" />
             </figure>`
           )}
         </div>
