@@ -54,7 +54,6 @@ export class Screencast extends LitElement {
 
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(calc(33.33% - 1rem), 1fr));
       gap: 0.5rem;
     }
 
@@ -107,6 +106,8 @@ export class Screencast extends LitElement {
   // Page image data
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
+  private screenCount = 1;
+
   shouldUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
       // Check stringified value of IP list
@@ -120,6 +121,8 @@ export class Screencast extends LitElement {
   }
 
   protected firstUpdated() {
+    this.isConnecting = true;
+
     // Connect to websocket server
     this.connectWs();
   }
@@ -146,14 +149,14 @@ export class Screencast extends LitElement {
     return html`
       <div class="wrapper${this.isConnecting ? " loading" : ""}">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
-        <div class="container">
+        <div
+          class="container"
+          style="grid-template-columns: repeat(${this.screenCount}, 1fr) "
+        >
           ${this.dataList.map(
-            (data) => html` <figure>
-              <figcaption>${data.url}</figcaption>
-              <img
-                src="data:image/png;base64,${data.data}"
-                title="${data.url}"
-              />
+            ({ url, data }) => html` <figure>
+              <figcaption>${url}</figcaption>
+              <img src="data:image/png;base64,${data}" title="${url}" />
             </figure>`
           )}
         </div>
@@ -170,8 +173,6 @@ export class Screencast extends LitElement {
       console.warn("No watch IPs to connect to");
       return;
     }
-
-    this.isConnecting = true;
 
     this.watchIPs.forEach((ip: string) => {
       const ws = new WebSocket(
@@ -212,34 +213,31 @@ export class Screencast extends LitElement {
   private handleMessage(
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
-    const { id } = message;
+    if (message.msg === "init") {
+      this.screenCount = message.browsers;
+    } else {
+      const { id } = message;
 
-    switch (message.msg) {
-      case "init": {
-        break;
-      }
-      case "screencast": {
+      if (message.msg === "screencast") {
         if (message.url === "about:blank") {
           // Skip blank pages
           return;
         }
 
+        if (this.isConnecting) {
+          this.isConnecting = false;
+        }
+
         this.imageDataMap.set(id, message);
-        break;
-      }
-      case "close": {
+      } else if (message.msg === "close") {
         this.imageDataMap.delete(id);
-
-        break;
       }
-      default:
-        break;
-    }
 
-    // keep same number of data entries (probably should only decrease if scale is reduced)
-    this.dataList = [
-      ...this.imageDataMap.values(),
-      ...this.dataList.slice(this.imageDataMap.size),
-    ];
+      // keep same number of data entries (probably should only decrease if scale is reduced)
+      this.dataList = [
+        ...this.imageDataMap.values(),
+        ...this.dataList.slice(this.imageDataMap.size),
+      ];
+    }
   }
 }
