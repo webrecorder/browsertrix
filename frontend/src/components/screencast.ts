@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
-import { ref } from "lit/directives/ref.js";
+import { ref, createRef, Ref } from "lit/directives/ref.js";
 import { msg, localized } from "@lit/localize";
 
 type Message = {
@@ -44,13 +44,15 @@ export class Screencast extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 4rem;
+      font-size: 2rem;
     }
 
     .container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(33.33%, 1fr));
       gap: 0.5rem;
+      min-height: ${SCREEN_HEIGHT}px;
+      min-width: ${SCREEN_WIDTH}px;
     }
 
     img {
@@ -81,7 +83,7 @@ export class Screencast extends LitElement {
   private ws: WebSocket | null = null;
 
   // Image container element
-  private containerElement?: HTMLElement;
+  private containerElementRef: Ref<HTMLElement> = createRef();
 
   // Map page ID to HTML img element
   private imageElementMap: Map<string, HTMLImageElement> = new Map();
@@ -101,6 +103,11 @@ export class Screencast extends LitElement {
     }
   }
 
+  protected firstUpdated() {
+    // Connect to websocket server
+    this.connectWs();
+  }
+
   disconnectedCallback() {
     this.disconnectWs();
     super.disconnectedCallback();
@@ -110,18 +117,9 @@ export class Screencast extends LitElement {
     return html`
       <div class="wrapper">
         ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
-        <div ${ref(this.onContainerRender)} class="container"></div>
+        <div ${ref(this.containerElementRef)} class="container"></div>
       </div>
     `;
-  }
-
-  private onContainerRender(el?: Element) {
-    if (!el) return;
-
-    this.containerElement = el as HTMLElement;
-
-    // Connect to websocket server
-    this.connectWs();
   }
 
   private connectWs() {
@@ -189,7 +187,7 @@ export class Screencast extends LitElement {
 
     if (!imgEl) {
       imgEl = new Image(SCREEN_WIDTH, SCREEN_HEIGHT);
-      this.containerElement!.appendChild(imgEl);
+      this.containerElementRef.value?.appendChild(imgEl);
     }
 
     imgEl.src = `data:image/png;base64,${data}`;
