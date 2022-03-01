@@ -291,16 +291,23 @@ export class Archive extends LiteElement {
 
   private renderAddMember() {
     return html`
-      <sl-button
-        type="text"
-        href=${`/archives/${this.archiveId}/members`}
-        @click=${this.navLink}
-        ><sl-icon name="arrow-left"></sl-icon> ${msg(
-          "Back to members list"
-        )}</sl-button
-      >
+      <div class="mb-5">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/members`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Members")}</span
+          >
+        </a>
+      </div>
 
-      <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
+      <div class="border rounded-lg p-4 md:p-8 md:pt-6">
         <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
         <btrix-archive-invite-form
           @success=${this.onInviteSuccess}
