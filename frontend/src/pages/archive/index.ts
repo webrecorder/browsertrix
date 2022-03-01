@@ -263,7 +263,7 @@ export class Archive extends LiteElement {
               ${msg("Name", { desc: "Team member's name" })}
             </div>
             <div class="px-3 py-2" role="columnheader" aria-sort="none">
-              ${msg("Roles", { desc: "Team member's roles" })}
+              ${msg("Role", { desc: "Team member's role" })}
             </div>
           </div>
         </div>
