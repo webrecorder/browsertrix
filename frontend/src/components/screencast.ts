@@ -71,6 +71,7 @@ export class Screencast extends LitElement {
 
     figcaption,
     .dialog-label {
+      display: block;
       font-size: var(--sl-font-size-small);
       line-height: 1;
       /* Truncate: */
@@ -192,9 +193,13 @@ export class Screencast extends LitElement {
           --header-spacing: var(--sl-spacing-small);
           --body-spacing: 0;
           "
-        @sl-after-hide=${() => (this.focusedScreenData = undefined)}
+        @sl-after-hide=${this.unfocusScreen}
       >
-        <span class="dialog-label" slot="label">
+        <span
+          class="dialog-label"
+          slot="label"
+          title=${this.focusedScreenData?.url || ""}
+        >
           ${this.focusedScreenData?.url}
         </span>
 
@@ -275,20 +280,34 @@ export class Screencast extends LitElement {
           this.isConnecting = false;
         }
 
-        if (this.focusedScreenData?.id === id) {
-          this.focusedScreenData = message;
-        }
-
         this.imageDataMap.set(id, message);
+
+        if (this.focusedScreenData) {
+          if (this.focusedScreenData.id === id) {
+            this.focusedScreenData = message;
+          }
+
+          // Only re-render focused screen
+          return;
+        }
       } else if (message.msg === "close") {
         this.imageDataMap.delete(id);
       }
 
-      // keep same number of data entries (probably should only decrease if scale is reduced)
-      this.dataList = [
-        ...this.imageDataMap.values(),
-        ...this.dataList.slice(this.imageDataMap.size),
-      ];
+      this.updateDataList();
     }
+  }
+
+  updateDataList() {
+    // keep same number of data entries (probably should only decrease if scale is reduced)
+    this.dataList = [
+      ...this.imageDataMap.values(),
+      ...this.dataList.slice(this.imageDataMap.size),
+    ];
+  }
+
+  unfocusScreen() {
+    this.updateDataList();
+    this.focusedScreenData = undefined;
   }
 }
