@@ -211,28 +211,41 @@ export class App extends LiteElement {
           <div class="grid grid-flow-col gap-5 items-center">
             ${this.authService.authState
               ? html` <sl-dropdown placement="bottom-end">
-                  <div class="p-2" role="button" slot="trigger">
-                    ${this.userInfo?.name || this.userInfo?.email}
-                    <span class="text-xs"
-                      ><sl-icon name="chevron-down"></sl-icon
-                    ></span>
-                  </div>
-                  <sl-menu>
+                  <sl-icon-button
+                    slot="trigger"
+                    name="person-circle"
+                    style="font-size: 1.5rem;"
+                  ></sl-icon-button>
+
+                  <sl-menu class="w-60 min-w-min max-w-full">
+                    <div class="px-7 py-2">
+                      <div class="font-medium text-neutral-700">
+                        ${this.userInfo?.name}
+                      </div>
+                      <div class="text-smtext-neutral-500">
+                        ${this.userInfo?.email}
+                      </div>
+                    </div>
+                    <sl-divider></sl-divider>
                     <sl-menu-item
                       @click=${() => this.navigate(ROUTES.accountSettings)}
                     >
+                      <sl-icon slot="prefix" name="gear"></sl-icon>
                       ${msg("Your account")}
                     </sl-menu-item>
                     ${this.userInfo?.isAdmin
                       ? html` <sl-menu-item
                           @click=${() => this.navigate(ROUTES.usersInvite)}
                         >
+                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
                           ${msg("Invite Users")}
                         </sl-menu-item>`
                       : ""}
-                    <sl-menu-item @click="${this.onLogOut}"
-                      >${msg("Log Out")}</sl-menu-item
-                    >
+                    <sl-divider></sl-divider>
+                    <sl-menu-item @click="${this.onLogOut}">
+                      <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                      ${msg("Log Out")}
+                    </sl-menu-item>
                   </sl-menu>
                 </sl-dropdown>`
               : html`
