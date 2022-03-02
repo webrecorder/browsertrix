@@ -25,48 +25,117 @@ export class Archives extends LiteElement {
   }
 
   render() {
+    if (!this.archiveList || !this.userInfo) {
+      return html`
+        <div class="flex items-center justify-center my-24 text-4xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
+
+    if (this.userInfo.isAdmin && !this.archiveList.length) {
+      return html`
+        <div class="bg-white">
+          <header
+            class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
+          >
+            <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
+            <p class="mt-4 text-neutral-600">
+              ${msg(
+                "Invite users to start archiving or create an archive of your own."
+              )}
+            </p>
+          </header>
+          <hr />
+        </div>
+        <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
+          ${this.renderAdminOnboarding()}
+        </main>
+      `;
+    }
+
     return html`
       <div class="bg-white">
         <header
-          class="w-full max-w-screen-lg mx-auto px-3 box-border py-4 md:py-8"
+          class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
           <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
         </header>
         <hr />
       </div>
-      <main class="w-full max-w-screen-lg mx-auto px-3 box-border py-4">
-        ${this.archiveList
-          ? html`
-              <ul class="border rounded-lg overflow-hidden">
-                ${this.archiveList.map(
-                  (archive, i) =>
-                    html`
-                      <li
-                        class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
-                        role="button"
-                        @click=${this.makeOnArchiveClick(archive)}
-                      >
-                        <span class="font-medium mr-2 transition-colors"
-                          >${archive.name}</span
-                        >
-                        ${this.userInfo &&
-                        archive.users &&
-                        isOwner(archive.users[this.userInfo.id].role)
-                          ? html`<sl-tag size="small" type="primary"
-                              >${msg("Owner")}</sl-tag
-                            >`
-                          : ""}
-                      </li>
-                    `
-                )}
-              </ul>
-            `
-          : html`
-              <div class="flex items-center justify-center my-24 text-4xl">
-                <sl-spinner></sl-spinner>
-              </div>
-            `}
+      <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
+        ${this.renderArchives()}
       </main>
+    `;
+  }
+
+  private renderArchives() {
+    if (!this.archiveList?.length) {
+      return html`<div class="border rounded-lg bg-white p-4 md:p-8">
+        <p class="text-neutral-400 text-center">
+          ${msg("You don't have any archives.")}
+        </p>
+      </div>`;
+    }
+
+    return html`
+      <ul class="border rounded-lg overflow-hidden">
+        ${this.archiveList.map(
+          (archive) =>
+            html`
+              <li
+                class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
+                role="button"
+                @click=${this.makeOnArchiveClick(archive)}
+              >
+                <span class="font-medium mr-2 transition-colors"
+                  >${archive.name}</span
+                >
+                ${this.userInfo &&
+                archive.users &&
+                isOwner(archive.users[this.userInfo.id].role)
+                  ? html`<sl-tag size="small" type="primary"
+                      >${msg("Owner")}</sl-tag
+                    >`
+                  : ""}
+              </li>
+            `
+        )}
+      </ul>
+    `;
+  }
+
+  private renderAdminOnboarding() {
+    return html`
+      <div class="grid grid-cols-2 gap-5">
+        <div
+          class="col-span-2 md:col-span-1 border rounded-lg bg-white p-4 md:p-8"
+        >
+          <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
+          <p class="mb-4 text-neutral-600 text-sm">
+            ${msg("Each user will manage their own archive.")}
+          </p>
+
+          <btrix-invite-form
+            .authState=${this.authState}
+            @success=${console.log}
+          ></btrix-invite-form>
+        </div>
+        <div
+          class="col-span-2 md:col-span-1 border rounded-lg bg-white p-4 md:p-8"
+        >
+          <h2 class="text-2xl font-medium mb-4">${msg("Create an Archive")}</h2>
+          <p class="mb-4 text-neutral-600 text-sm">
+            ${msg(
+              "Start by creating your own archive and then add collaborators."
+            )}
+          </p>
+
+          <div>
+            <sl-button>${msg("Add New Archive")}</sl-button>
+          </div>
+        </div>
+      </div>
     `;
   }
 
