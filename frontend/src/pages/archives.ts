@@ -25,41 +25,49 @@ export class Archives extends LiteElement {
   }
 
   render() {
-    if (!this.archiveList) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
-    return html`<div class="grid gap-4">
-      <h1 class="text-xl font-bold">${msg("Archives")}</h1>
-
-      <ul class="border rounded-lg overflow-hidden">
-        ${this.archiveList.map(
-          (archive, i) =>
-            html`
-              <li
-                class="p-3 md:p-6 hover:bg-gray-50${i > 0 ? " border-t" : ""}"
-                role="button"
-                @click=${this.makeOnArchiveClick(archive)}
-              >
-                <span class="text-primary font-medium mr-2"
-                  >${archive.name}</span
-                >
-                ${this.userInfo &&
-                archive.users &&
-                isOwner(archive.users[this.userInfo.id].role)
-                  ? html`<sl-tag size="small" type="primary"
-                      >${msg("Owner")}</sl-tag
-                    >`
-                  : ""}
-              </li>
+    return html`
+      <div class="bg-white">
+        <header
+          class="w-full max-w-screen-lg mx-auto px-3 box-border py-4 md:py-8"
+        >
+          <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
+        </header>
+        <hr />
+      </div>
+      <main class="w-full max-w-screen-lg mx-auto px-3 box-border py-4">
+        ${this.archiveList
+          ? html`
+              <ul class="border rounded-lg overflow-hidden">
+                ${this.archiveList.map(
+                  (archive, i) =>
+                    html`
+                      <li
+                        class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
+                        role="button"
+                        @click=${this.makeOnArchiveClick(archive)}
+                      >
+                        <span class="font-medium mr-2 transition-colors"
+                          >${archive.name}</span
+                        >
+                        ${this.userInfo &&
+                        archive.users &&
+                        isOwner(archive.users[this.userInfo.id].role)
+                          ? html`<sl-tag size="small" type="primary"
+                              >${msg("Owner")}</sl-tag
+                            >`
+                          : ""}
+                      </li>
+                    `
+                )}
+              </ul>
             `
-        )}
-      </ul>
-    </div>`;
+          : html`
+              <div class="flex items-center justify-center my-24 text-4xl">
+                <sl-spinner></sl-spinner>
+              </div>
+            `}
+      </main>
+    `;
   }
 
   async getArchives(): Promise<ArchiveData[]> {

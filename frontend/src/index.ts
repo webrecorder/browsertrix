@@ -272,12 +272,12 @@ export class App extends LiteElement {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
           return html`<div
-            class="w-full md:bg-gray-50 flex items-center justify-center"
+            class="w-full md:bg-neutral-50 flex items-center justify-center"
           ></div>`;
         }
         if (this.isRegistrationEnabled) {
           return html`<btrix-sign-up
-            class="w-full md:bg-gray-50 flex items-center justify-center"
+            class="w-full md:bg-neutral-50 flex items-center justify-center"
             @navigate="${this.onNavigateTo}"
             @logged-in="${this.onLoggedIn}"
             @log-out="${this.onLogOut}"
@@ -290,7 +290,7 @@ export class App extends LiteElement {
 
       case "verify":
         return html`<btrix-verify
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
           @notify="${this.onNotify}"
@@ -301,7 +301,7 @@ export class App extends LiteElement {
 
       case "join":
         return html`<btrix-join
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           token="${this.viewState.params.token}"
@@ -310,7 +310,7 @@ export class App extends LiteElement {
 
       case "acceptInvite":
         return html`<btrix-accept-invite
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           @notify="${this.onNotify}"
@@ -323,7 +323,7 @@ export class App extends LiteElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
@@ -333,7 +333,7 @@ export class App extends LiteElement {
 
       case "resetPassword":
         return html`<btrix-reset-password
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
@@ -353,7 +353,7 @@ export class App extends LiteElement {
 
       case "archives":
         return html`<btrix-archives
-          class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+          class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
@@ -413,7 +413,7 @@ export class App extends LiteElement {
 
   renderNotFoundPage() {
     return html`<btrix-not-found
-      class="w-full md:bg-gray-50 flex items-center justify-center"
+      class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
   }
 
