@@ -55,13 +55,24 @@ export class Screencast extends LitElement {
       border-radius: var(--sl-border-radius-medium);
     }
 
+    .figure-header {
+      display: flex;
+      align-items: center;
+    }
+
     figcaption {
+      flex: 1;
       border-bottom-width: 1px;
       border-bottom-color: var(--sl-panel-border-color);
       color: var(--sl-color-neutral-600);
-      font-size: var(--sl-font-size-x-small);
-      line-height: 1;
+      font-size: var(--sl-font-size-small);
       padding: var(--sl-spacing-x-small);
+    }
+
+    figcaption,
+    .dialog-label {
+      font-size: var(--sl-font-size-small);
+      line-height: 1;
       /* Truncate: */
       overflow: hidden;
       text-overflow: ellipsis;
@@ -96,6 +107,9 @@ export class Screencast extends LitElement {
   @state()
   private isConnecting: boolean = false;
 
+  @state()
+  private focusedScreenData?: ScreencastMessage;
+
   // Websocket connections
   private wsMap: Map<string, WebSocket> = new Map();
 
@@ -103,6 +117,7 @@ export class Screencast extends LitElement {
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
   private screenCount = 1;
+  private screenWidth = 640;
 
   shouldUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
@@ -155,13 +170,43 @@ export class Screencast extends LitElement {
             .screenCount}, minmax(0, 1fr))"
         >
           ${this.dataList.map(
-            ({ url, data }) => html` <figure title="${url}">
-              <figcaption>${url}</figcaption>
-              <img src="data:image/png;base64,${data}" />
+            (pageData) => html` <figure title="${pageData.url}">
+              <div class="figure-header">
+                <figcaption>${pageData.url}</figcaption>
+                <div>
+                  <sl-icon-button
+                    name="arrows-angle-expand"
+                    @click=${() => (this.focusedScreenData = pageData)}
+                  ></sl-icon-button>
+                </div>
+              </div>
+              <img src="data:image/png;base64,${pageData.data}" />
             </figure>`
           )}
         </div>
       </div>
+
+      <sl-dialog
+        ?open=${Boolean(this.focusedScreenData)}
+        style="--width: ${this.screenWidth}px;
+          --header-spacing: var(--sl-spacing-small);
+          --body-spacing: 0;
+          "
+        @sl-after-hide=${() => (this.focusedScreenData = undefined)}
+      >
+        <span class="dialog-label" slot="label">
+          ${this.focusedScreenData?.url}
+        </span>
+
+        ${this.focusedScreenData
+          ? html`
+              <img
+                src="data:image/png;base64,${this.focusedScreenData.data}"
+                title="${this.focusedScreenData.url}"
+              />
+            `
+          : ""}
+      </sl-dialog>
     `;
   }
 
@@ -216,6 +261,7 @@ export class Screencast extends LitElement {
   ) {
     if (message.msg === "init") {
       this.screenCount = message.browsers;
+      this.screenWidth = message.width;
     } else {
       const { id } = message;
 
@@ -227,6 +273,10 @@ export class Screencast extends LitElement {
 
         if (this.isConnecting) {
           this.isConnecting = false;
+        }
+
+        if (this.focusedScreenData?.id === id) {
+          this.focusedScreenData = message;
         }
 
         this.imageDataMap.set(id, message);
