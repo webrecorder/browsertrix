@@ -219,10 +219,22 @@ export class App extends LiteElement {
 
                   <sl-menu class="w-60 min-w-min max-w-full">
                     <div class="px-7 py-2">
+                      ${this.userInfo?.isAdmin
+                        ? html`
+                            <div class="mb-2">
+                              <sl-tag
+                                class="uppercase"
+                                type="primary"
+                                size="small"
+                                >${msg("admin")}</sl-tag
+                              >
+                            </div>
+                          `
+                        : ""}
                       <div class="font-medium text-neutral-700">
                         ${this.userInfo?.name}
                       </div>
-                      <div class="text-smtext-neutral-500">
+                      <div class="text-sm text-neutral-500">
                         ${this.userInfo?.email}
                       </div>
                     </div>
