@@ -44,7 +44,9 @@ export class Archives extends LiteElement {
           >
             <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
             <p class="mt-4 text-neutral-600">
-              ${msg("Invite users to start archiving.")}
+              ${msg(
+                "Invite users to start archiving or create an archive of your own."
+              )}
             </p>
           </header>
           <hr />
@@ -117,17 +119,70 @@ export class Archives extends LiteElement {
         </div>
       `;
     }
-    return html`
-      <div class="border rounded-lg bg-white p-4 md:p-8">
-        <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
-        <p class="mb-4 text-neutral-600 text-sm">
-          ${msg("Each user will manage their own archive.")}
-        </p>
 
-        <btrix-invite-form
-          .authState=${this.authState}
-          @success=${() => (this.isInviteComplete = true)}
-        ></btrix-invite-form>
+    return html`
+      <div class="grid grid-cols-2 gap-5">
+        <div
+          class="col-span-2 md:col-span-1 border rounded-lg bg-white p-4 md:p-8"
+        >
+          <h2 class="text-2xl font-medium mb-4">${msg("Add Users")}</h2>
+          <p class="mb-4 text-neutral-600 text-sm">
+            ${msg("Each user will manage their own archive.")}
+          </p>
+
+          <sl-form @sl-submit=${console.log}>
+            <div class="grid gap-2 mb-5">
+              <sl-input
+                name="inviteEmail1"
+                type="email"
+                placeholder=${msg("alice@email.com", {
+                  desc: "Placeholder text for email to invite",
+                })}
+              >
+              </sl-input>
+              <sl-input
+                name="inviteEmail2"
+                type="email"
+                placeholder=${msg("bob@email.com", {
+                  desc: "Placeholder text for email to invite",
+                })}
+              >
+              </sl-input>
+              <sl-input
+                name="inviteEmail3"
+                type="email"
+                placeholder=${msg("carol@email.com", {
+                  desc: "Placeholder text for email to invite",
+                })}
+              >
+              </sl-input>
+            </div>
+
+            <div>
+              <sl-button
+                type="primary"
+                submit
+                ?loading=${false}
+                ?disabled=${false}
+                >${msg("Send Invites")}</sl-button
+              >
+            </div>
+          </sl-form>
+        </div>
+        <div
+          class="col-span-2 md:col-span-1 border rounded-lg bg-white p-4 md:p-8"
+        >
+          <h2 class="text-2xl font-medium mb-4">${msg("Create an Archive")}</h2>
+          <p class="mb-4 text-neutral-600 text-sm">
+            ${msg(
+              "Start by creating your own archive and then add collaborators."
+            )}
+          </p>
+
+          <div>
+            <sl-button>${msg("Add New Archive")}</sl-button>
+          </div>
+        </div>
       </div>
     `;
   }
