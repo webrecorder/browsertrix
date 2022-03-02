@@ -14,12 +14,12 @@ type LocaleNames = {
 @localized()
 export class LocalePicker extends LitElement {
   @state()
-  private localeNames?: LocaleNames;
+  private localeNames: LocaleNames = {} as LocaleNames;
 
   private setLocaleName = (locale: LocaleCode) => {
-    this.localeNames![locale] = new Intl.DisplayNames([locale], {
+    this.localeNames[locale] = new Intl.DisplayNames([locale], {
       type: "language",
-    }).of(locale);
+    }).of(locale)!;
   };
 
   async firstUpdated() {
@@ -63,26 +63,33 @@ export class LocalePicker extends LitElement {
     const selectedLocale = getLocale();
 
     return html`
-      <sl-select
-        size="small"
+      <sl-dropdown
         value=${selectedLocale}
-        @sl-change=${this.localeChanged}
+        @sl-select=${this.localeChanged}
+        placement="top-end"
+        distance="4"
+        hoist
       >
-        ${allLocales.map(
-          (locale) =>
-            html`<sl-menu-item
-              value=${locale}
-              ?selected=${locale === selectedLocale}
-            >
-              ${this.localeNames![locale]}
-            </sl-menu-item>`
-        )}
-      </sl-select>
+        <sl-button slot="trigger" size="small" caret
+          >${this.localeNames[selectedLocale as LocaleCode]}</sl-button
+        >
+        <sl-menu>
+          ${allLocales.map(
+            (locale) =>
+              html`<sl-menu-item
+                value=${locale}
+                ?checked=${locale === selectedLocale}
+              >
+                ${this.localeNames[locale]}
+              </sl-menu-item>`
+          )}
+        </sl-menu>
+      </sl-dropdown>
     `;
   }
 
-  async localeChanged(event: Event) {
-    const newLocale = (event.target as HTMLSelectElement).value as LocaleCode;
+  async localeChanged(event: CustomEvent) {
+    const newLocale = event.detail.item.value as LocaleCode;
 
     if (newLocale !== getLocale()) {
       const url = new URL(window.location.href);
