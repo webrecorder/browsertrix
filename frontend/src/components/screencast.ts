@@ -286,15 +286,14 @@ export class Screencast extends LitElement {
           if (this.focusedScreenData.id === id) {
             this.focusedScreenData = message;
           }
-
+        } else {
           // Only re-render focused screen
-          return;
+          this.updateDataList();
         }
       } else if (message.msg === "close") {
         this.imageDataMap.delete(id);
+        this.updateDataList();
       }
-
-      this.updateDataList();
     }
   }
 
