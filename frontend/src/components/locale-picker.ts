@@ -63,7 +63,11 @@ export class LocalePicker extends LitElement {
     const selectedLocale = getLocale();
 
     return html`
-      <sl-select value=${selectedLocale} @sl-change=${this.localeChanged}>
+      <sl-select
+        size="small"
+        value=${selectedLocale}
+        @sl-change=${this.localeChanged}
+      >
         ${allLocales.map(
           (locale) =>
             html`<sl-menu-item

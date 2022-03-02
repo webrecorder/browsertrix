@@ -182,9 +182,7 @@ export class App extends LiteElement {
       <div class="min-w-screen min-h-screen flex flex-col">
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
-        <footer class="flex justify-center p-4 border-t">
-          <btrix-locale-picker></btrix-locale-picker>
-        </footer>
+        <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
       <sl-dialog
@@ -205,7 +203,9 @@ export class App extends LiteElement {
         >
           <div>
             <a href="/archives" @click="${this.navLink}"
-              ><h1 class="text-base">${msg("Browsertrix Cloud")}</h1></a
+              ><h1 class="text-sm font-medium">
+                ${msg("Browsertrix Cloud")}
+              </h1></a
             >
           </div>
           <div class="grid grid-flow-col gap-5 items-center">
@@ -264,6 +264,25 @@ export class App extends LiteElement {
           </div>
         </nav>
       </div>
+    `;
+  }
+
+  renderFooter() {
+    return html`
+      <footer
+        class="w-full max-w-screen-lg mx-auto p-3 box-border flex justify-between"
+      >
+        <div>
+          <sl-icon-button
+            name="github"
+            href="https://github.com/webrecorder/browsertrix-cloud"
+            target="_blank"
+          ></sl-icon-button>
+        </div>
+        <div>
+          <btrix-locale-picker></btrix-locale-picker>
+        </div>
+      </footer>
     `;
   }
 
