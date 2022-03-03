@@ -643,9 +643,12 @@ export class CrawlTemplatesDetail extends LiteElement {
             </sl-switch>
           </div>
 
-          ${this.isSeedsJsonView
-            ? this.renderSeedsJson()
-            : this.renderSeedsForm()}
+          <div class="${this.isSeedsJsonView ? "" : "hidden"}">
+            ${this.renderSeedsJson()}
+          </div>
+          <div class="grid gap-5${this.isSeedsJsonView ? " hidden" : ""}">
+            ${this.renderSeedsForm()}
+          </div>
 
           <div class="text-right">
             <sl-button
