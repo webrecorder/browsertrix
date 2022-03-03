@@ -86,6 +86,10 @@ export class Screencast extends LitElement {
       white-space: nowrap;
     }
 
+    .dialog-label {
+      max-width: 40em;
+    }
+
     img {
       display: block;
       width: 100%;
