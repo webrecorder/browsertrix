@@ -7,7 +7,7 @@ import type { CurrentUser } from "../../types/user";
 import type { ArchiveData } from "../../utils/archives";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
-import { isOwner } from "../../utils/archives";
+import { isOwner, AccessCode } from "../../utils/archives";
 import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
@@ -276,7 +276,7 @@ export class Archive extends LiteElement {
               ${msg("Name", { desc: "Team member's name" })}
             </div>
             <div class="px-3 py-2" role="columnheader" aria-sort="none">
-              ${msg("Roles", { desc: "Team member's roles" })}
+              ${msg("Role", { desc: "Team member's role" })}
             </div>
           </div>
         </div>
@@ -289,7 +289,11 @@ export class Archive extends LiteElement {
                   html`<span class="text-gray-400">${msg("Member")}</span>`}
                 </div>
                 <div class="p-3" role="cell">
-                  ${isOwner(role) ? msg("Admin") : msg("Viewer")}
+                  ${isOwner(role)
+                    ? msg("Admin")
+                    : role === AccessCode.crawler
+                    ? msg("Crawler")
+                    : msg("Viewer")}
                 </div>
               </div>
             `
@@ -300,16 +304,23 @@ export class Archive extends LiteElement {
 
   private renderAddMember() {
     return html`
-      <sl-button
-        type="text"
-        href=${`/archives/${this.archiveId}/members`}
-        @click=${this.navLink}
-        ><sl-icon name="arrow-left"></sl-icon> ${msg(
-          "Back to members list"
-        )}</sl-button
-      >
+      <div class="mb-5">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${`/archives/${this.archiveId}/members`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${msg("Back to Members")}</span
+          >
+        </a>
+      </div>
 
-      <div class="mt-3 border rounded-lg p-4 md:p-8 md:pt-6">
+      <div class="border rounded-lg p-4 md:p-8 md:pt-6">
         <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
         <btrix-archive-invite-form
           @success=${this.onInviteSuccess}
