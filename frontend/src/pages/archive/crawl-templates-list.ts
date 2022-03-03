@@ -364,7 +364,7 @@ export class CrawlTemplatesList extends LiteElement {
               ? this.navTo(
                   `/archives/${this.archiveId}/crawls/crawl/${
                     this.runningCrawlsMap[t.id]
-                  }`
+                  }#watch`
                 )
               : this.runNow(t);
           }}
@@ -502,7 +502,8 @@ export class CrawlTemplatesList extends LiteElement {
           html`Started crawl from <strong>${template.name}</strong>. <br />
             <a
               class="underline hover:no-underline"
-              href="/archives/${this.archiveId}/crawls/crawl/${data.started}"
+              href="/archives/${this
+                .archiveId}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >View crawl</a
             >`

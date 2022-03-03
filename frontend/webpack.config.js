@@ -1,9 +1,9 @@
 // webpack.config.js
 const path = require("path");
+const webpack = require("webpack");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
-const Dotenv = require("dotenv-webpack");
 const childProcess = require("child_process");
 
 const isDevServer = process.env.WEBPACK_SERVE;
@@ -23,14 +23,16 @@ const execCommand = (cmd, defValue) => {
   } catch (e) {
     return defValue;
   }
-}
+};
 
 // Local dev only
 // Git branch and commit hash is used to add build info to error reporter when running locally
-const gitBranch = process.env.GIT_BRANCH_NAME ||
+const gitBranch =
+  process.env.GIT_BRANCH_NAME ||
   execCommand("git rev-parse --abbrev-ref HEAD", "unknown");
 
-const commitHash = process.env.GIT_COMMIT_HASH ||
+const commitHash =
+  process.env.GIT_COMMIT_HASH ||
   execCommand("git rev-parse --short HEAD", "unknown");
 
 require("dotenv").config({
@@ -106,6 +108,7 @@ module.exports = {
           Host: backendUrl.host,
         },
         pathRewrite: { "^/api": "" },
+        ws: true,
       },
     },
     // Serve replay service worker file
@@ -119,7 +122,9 @@ module.exports = {
   },
 
   plugins: [
-    new Dotenv({ path: dotEnvPath }),
+    new webpack.DefinePlugin({
+      "process.env.API_HOST": JSON.stringify(backendUrl.host),
+    }),
 
     new HtmlWebpackPlugin({
       template: "src/index.ejs",

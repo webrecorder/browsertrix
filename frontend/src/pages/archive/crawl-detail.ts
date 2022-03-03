@@ -65,13 +65,6 @@ export class CrawlDetail extends LiteElement {
 
   async firstUpdated() {
     this.fetchCrawl();
-
-    // try {
-    //   this.watchUrl = await this.watchCrawl();
-    //   console.log(this.watchUrl);
-    // } catch (e) {
-    //   console.error(e);
-    // }
   }
 
   connectedCallback(): void {
@@ -92,9 +85,21 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
-      case "watch":
-        sectionContent = this.renderWatch();
+      case "watch": {
+        if (this.crawl) {
+          if (this.crawl.state === "running") {
+            sectionContent = this.renderWatch();
+          } else {
+            sectionContent = this.renderReplay();
+          }
+        } else {
+          // TODO loading indicator?
+          return "";
+        }
+
         break;
+      }
+
       case "download":
         sectionContent = this.renderFiles();
         break;
@@ -384,6 +389,41 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderWatch() {
+    if (!this.authState) return "";
+
+    const authToken = this.authState.headers.Authorization.split(" ")[1];
+
+    return html`
+      <header class="flex justify-between">
+        <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
+        ${document.fullscreenEnabled
+          ? html`
+              <sl-icon-button
+                name="arrows-fullscreen"
+                label=${msg("Fullscreen")}
+                @click=${() => this.enterFullscreen("screencast-crawl")}
+              ></sl-icon-button>
+            `
+          : ""}
+      </header>
+
+      ${this.crawl
+        ? html`
+          <div id="screencast-crawl">
+            <btrix-screencast
+              authToken=${authToken}
+              archiveId=${this.archiveId!}
+              crawlId=${this.crawlId!}
+              .watchIPs=${this.crawl.watchIPs || []}
+            ></btrix-screencast>
+          </div>`
+        : ""}
+    `;
+  }
+
+  private renderReplay() {
+    const isRunning = this.crawl?.state === "running";
+
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
@@ -391,10 +431,22 @@ export class CrawlDetail extends LiteElement {
     const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
-      <h3 class="text-lg font-medium my-2">${msg("Watch or Replay Crawl")}</h3>
+      <header class="flex justify-between">
+        <h3 class="text-lg font-medium mb-2">${msg("Replay Crawl")}</h3>
+        ${document.fullscreenEnabled
+          ? html`
+              <sl-icon-button
+                name="arrows-fullscreen"
+                label=${msg("Fullscreen")}
+                @click=${() => this.enterFullscreen("replay-crawl")}
+              ></sl-icon-button>
+            `
+          : ""}
+      </header>
 
       <div
-        class="aspect-video rounded border ${this.isRunning
+        id="replay-crawl"
+        class="aspect-4/3 rounded border ${isRunning
           ? "border-purple-200"
           : "border-slate-100"}"
       >
@@ -407,38 +459,6 @@ export class CrawlDetail extends LiteElement {
               noSandbox="true"
             ></replay-web-page>`
           : ``}
-      </div>
-      <div
-        class="absolute top-2 right-2 flex bg-white/90 hover:bg-white rounded-full"
-      >
-        ${this.isWatchExpanded
-          ? html`
-              <sl-icon-button
-                class="px-1"
-                name="arrows-angle-contract"
-                label=${msg("Contract crawl video")}
-                @click=${() => (this.isWatchExpanded = false)}
-              ></sl-icon-button>
-            `
-          : html`
-              <sl-icon-button
-                class="px-1"
-                name="arrows-angle-expand"
-                label=${msg("Expand crawl video")}
-                @click=${() => (this.isWatchExpanded = true)}
-              ></sl-icon-button>
-            `}
-        ${this.watchUrl
-          ? html`
-              <sl-icon-button
-                class="border-l px-1"
-                href=${this.watchUrl}
-                name="box-arrow-up-right"
-                label=${msg("Open in new window")}
-                target="_blank"
-              ></sl-icon-button>
-            `
-          : ""}
       </div>
     `;
   }
@@ -664,18 +684,6 @@ export class CrawlDetail extends LiteElement {
     return data;
   }
 
-  private async watchCrawl(): Promise<string> {
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/watch`,
-      this.authState!,
-      {
-        method: "POST",
-      }
-    );
-
-    return data.watch_url;
-  }
-
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
@@ -760,6 +768,21 @@ export class CrawlDetail extends LiteElement {
 
   private stopPollTimer() {
     window.clearTimeout(this.timerId);
+  }
+
+  /**
+   * Enter fullscreen mode
+   * @param id ID of element to fullscreen
+   */
+  private async enterFullscreen(id: string) {
+    try {
+      document.getElementById(id)!.requestFullscreen({
+        // Show browser navigation controls
+        navigationUI: "show",
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
