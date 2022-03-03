@@ -407,13 +407,17 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      <div id="screencast-crawl">
-        <btrix-screencast
-          authToken=${authToken}
-          archiveId=${this.archiveId!}
-          crawlId=${this.crawlId!}
-        ></btrix-screencast>
-      </div>
+      ${this.crawl
+        ? html`
+          <div id="screencast-crawl">
+            <btrix-screencast
+              authToken=${authToken}
+              archiveId=${this.archiveId!}
+              crawlId=${this.crawlId!}
+              .watchIPs=${this.crawl.watchIPs || []}
+            ></btrix-screencast>
+          </div>`
+        : ""}
     `;
   }
 

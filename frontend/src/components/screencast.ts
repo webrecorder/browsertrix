@@ -1,10 +1,15 @@
 import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
-import { ref, createRef, Ref } from "lit/directives/ref.js";
-import { msg, localized } from "@lit/localize";
 
 type Message = {
   id: string; // page ID
+};
+
+type InitMessage = Message & {
+  msg: "init";
+  browsers: number;
+  width: number;
+  height: number;
 };
 
 type ScreencastMessage = Message & {
@@ -17,10 +22,6 @@ type CloseMessage = Message & {
   msg: "close";
 };
 
-// TODO don't hardcode
-const SCREEN_WIDTH = 573;
-const SCREEN_HEIGHT = 480;
-
 /**
  * Watch page crawl
  *
@@ -32,27 +33,39 @@ const SCREEN_HEIGHT = 480;
  * ></btrix-screencast>
  * ```
  */
-@localized()
 export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
       position: relative;
     }
 
-    sl-spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .spinner {
+      text-align: center;
       font-size: 2rem;
     }
 
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(33.33%, 1fr));
       gap: 0.5rem;
-      min-height: ${SCREEN_HEIGHT}px;
-      min-width: ${SCREEN_WIDTH}px;
+    }
+
+    figure {
+      margin: 0;
+      border: 1px solid var(--sl-color-neutral-100);
+      border-radius: var(--sl-border-radius-medium);
+    }
+
+    figcaption {
+      border-bottom-width: 1px;
+      border-bottom-color: var(--sl-panel-border-color);
+      color: var(--sl-color-neutral-600);
+      font-size: var(--sl-font-size-x-small);
+      line-height: 1;
+      padding: var(--sl-spacing-x-small);
+      /* Truncate: */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     img {
@@ -61,9 +74,7 @@ export class Screencast extends LitElement {
       height: auto;
       box-shadow: 0;
       outline: 0;
-      border: 1px solid var(--sl-color-neutral-100);
-      background-color: var(--sl-color-neutral-50);
-      border-radius: var(--sl-border-radius-medium);
+      border: 0;
     }
   `;
 
@@ -76,36 +87,53 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Array })
+  watchIPs: string[] = [];
+
+  @state()
+  private dataList: Array<ScreencastMessage> = [];
+
   @state()
   private isConnecting: boolean = false;
 
-  // Websocket connection
-  private ws: WebSocket | null = null;
+  // Websocket connections
+  private wsMap: Map<string, WebSocket> = new Map();
 
-  // Image container element
-  private containerElementRef: Ref<HTMLElement> = createRef();
+  // Page image data
+  private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
-  // Map page ID to HTML img element
-  private imageElementMap: Map<string, HTMLImageElement> = new Map();
+  private screenCount = 1;
 
-  // Cache unused image elements
-  private unusedImageElements: HTMLImageElement[] = [];
+  shouldUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
+      // Check stringified value of IP list
+      return (
+        this.watchIPs.toString() !==
+        changedProperties.get("watchIPs").toString()
+      );
+    }
 
-  async updated(changedProperties: any) {
+    return true;
+  }
+
+  protected firstUpdated() {
+    this.isConnecting = true;
+
+    // Connect to websocket server
+    this.connectWs();
+  }
+
+  async updated(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
+      changedProperties.get("watchIPs") ||
       changedProperties.get("authToken")
     ) {
       // Reconnect
       this.disconnectWs();
       this.connectWs();
     }
-  }
-
-  protected firstUpdated() {
-    // Connect to websocket server
-    this.connectWs();
   }
 
   disconnectedCallback() {
@@ -116,101 +144,101 @@ export class Screencast extends LitElement {
   render() {
     return html`
       <div class="wrapper">
-        ${this.isConnecting ? html`<sl-spinner></sl-spinner>` : ""}
-        <div ${ref(this.containerElementRef)} class="container"></div>
+        ${this.isConnecting
+          ? html`<div class="spinner">
+              <sl-spinner></sl-spinner>
+            </div> `
+          : ""}
+        <div
+          class="container"
+          style="grid-template-columns: repeat(${this
+            .screenCount}, minmax(0, 1fr))"
+        >
+          ${this.dataList.map(
+            ({ url, data }) => html` <figure title="${url}">
+              <figcaption>${url}</figcaption>
+              <img src="data:image/png;base64,${data}" />
+            </figure>`
+          )}
+        </div>
       </div>
     `;
   }
 
   private connectWs() {
-    if (!this.archiveId || !this.crawlId) return;
+    if (!this.archiveId || !this.crawlId) {
+      return;
+    }
 
-    this.isConnecting = true;
+    if (!this.watchIPs?.length) {
+      console.warn("No watch IPs to connect to");
+      return;
+    }
 
-    this.ws = new WebSocket(
-      `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-        process.env.API_HOST
-      }/api/archives/${this.archiveId}/crawls/${
-        this.crawlId
-      }/watch/ws?auth_bearer=${this.authToken || ""}`
-    );
+    const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+      process.env.API_HOST
+    }/watch/${this.archiveId}/${this.crawlId}`;
 
-    // this.ws.addEventListener("open", () => {
-    //   this.isConnecting = false;
-    // });
-    this.ws.addEventListener("error", () => {
-      this.isConnecting = false;
-    });
-    this.ws.addEventListener("message", ({ data }) => {
-      this.handleMessage(data);
+    this.watchIPs.forEach((ip: string) => {
+      const ws = new WebSocket(
+        `${baseURL}/${ip}/ws?auth_bearer=${this.authToken || ""}`
+      );
+
+      ws.addEventListener("open", () => {
+        if (this.wsMap.size === this.watchIPs.length) {
+          this.isConnecting = false;
+        }
+      });
+      ws.addEventListener("close", () => {
+        this.wsMap.delete(ip);
+      });
+      ws.addEventListener("error", () => {
+        this.isConnecting = false;
+      });
+      ws.addEventListener("message", ({ data }) => {
+        this.handleMessage(JSON.parse(data));
+      });
+
+      this.wsMap.set(ip, ws);
     });
   }
 
   private disconnectWs() {
     this.isConnecting = false;
 
-    if (this.ws) {
-      this.ws.close();
-    }
-
-    this.ws = null;
+    this.wsMap.forEach((ws) => {
+      ws.close();
+    });
   }
 
-  private handleMessage(data: string) {
-    const message: ScreencastMessage | CloseMessage = JSON.parse(data);
+  private handleMessage(
+    message: InitMessage | ScreencastMessage | CloseMessage
+  ) {
+    if (message.msg === "init") {
+      this.screenCount = message.browsers;
+    } else {
+      const { id } = message;
 
-    const { id } = message;
+      if (message.msg === "screencast") {
+        if (message.url === "about:blank") {
+          // Skip blank pages
+          return;
+        }
 
-    if (message.msg === "screencast") {
-      if (message.url === "about:blank") {
-        // Skip blank pages
-        return;
+        if (this.isConnecting) {
+          this.isConnecting = false;
+        }
+
+        this.imageDataMap.set(id, message);
+      } else if (message.msg === "close") {
+        this.imageDataMap.delete(id);
       }
 
-      if (this.isConnecting) {
-        this.isConnecting = false;
-      }
-
-      if (this.imageElementMap.has(id)) {
-        this.updateImage(id, message.data);
-      } else {
-        this.addPage(id, message.data);
-      }
-
-      // Update URL that shows as image alt text
-      this.imageElementMap.get(id)!.title = message.url;
-    } else if (message.msg === "close") {
-      this.unuseImage(id);
-    }
-  }
-
-  private addPage(id: string, data: string) {
-    let imgEl = this.unusedImageElements.shift();
-
-    if (!imgEl) {
-      imgEl = new Image(SCREEN_WIDTH, SCREEN_HEIGHT);
-      this.containerElementRef.value?.appendChild(imgEl);
-    }
-
-    imgEl.src = `data:image/png;base64,${data}`;
-    this.imageElementMap.set(id, imgEl);
-  }
-
-  private updateImage(id: string, data: string) {
-    const imgEl = this.imageElementMap.get(id);
-
-    imgEl!.src = `data:image/png;base64,${data}`;
-  }
-
-  private unuseImage(id: string) {
-    const img = this.imageElementMap.get(id);
-
-    if (img) {
-      // Reset and move image to unused queue
-      img.title = "";
-      img.src = "";
-      this.unusedImageElements.push(img);
-      this.imageElementMap.delete(id);
+      // keep same number of data entries (probably should only decrease if scale is reduced)
+      this.dataList = [
+        ...this.imageDataMap.values(),
+        ...this.dataList.slice(this.imageDataMap.size),
+      ];
     }
   }
 }
