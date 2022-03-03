@@ -49,23 +49,45 @@ export class Screencast extends LitElement {
       gap: 0.5rem;
     }
 
-    figure {
-      margin: 0;
+    .screen {
       border: 1px solid var(--sl-color-neutral-100);
       border-radius: var(--sl-border-radius-medium);
+      cursor: pointer;
+      transition: opacity 0.1s border-color 0.1s;
+      overflow: hidden;
+    }
+
+    .screen:hover {
+      opacity: 0.8;
+      border-color: var(--sl-color-neutral-300);
+    }
+
+    figure {
+      margin: 0;
     }
 
     figcaption {
+      flex: 1;
       border-bottom-width: 1px;
       border-bottom-color: var(--sl-panel-border-color);
       color: var(--sl-color-neutral-600);
-      font-size: var(--sl-font-size-x-small);
-      line-height: 1;
+      font-size: var(--sl-font-size-small);
       padding: var(--sl-spacing-x-small);
+    }
+
+    figcaption,
+    .dialog-label {
+      display: block;
+      font-size: var(--sl-font-size-small);
+      line-height: 1;
       /* Truncate: */
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .dialog-label {
+      max-width: 40em;
     }
 
     img {
@@ -96,6 +118,9 @@ export class Screencast extends LitElement {
   @state()
   private isConnecting: boolean = false;
 
+  @state()
+  private focusedScreenData?: ScreencastMessage;
+
   // Websocket connections
   private wsMap: Map<string, WebSocket> = new Map();
 
@@ -103,6 +128,7 @@ export class Screencast extends LitElement {
   private imageDataMap: Map<string, ScreencastMessage> = new Map();
 
   private screenCount = 1;
+  private screenWidth = 640;
 
   shouldUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
@@ -155,13 +181,44 @@ export class Screencast extends LitElement {
             .screenCount}, minmax(0, 1fr))"
         >
           ${this.dataList.map(
-            ({ url, data }) => html` <figure title="${url}">
-              <figcaption>${url}</figcaption>
-              <img src="data:image/png;base64,${data}" />
+            (pageData) => html` <figure
+              class="screen"
+              title="${pageData.url}"
+              role="button"
+              @click=${() => (this.focusedScreenData = pageData)}
+            >
+              <figcaption>${pageData.url}</figcaption>
+              <img src="data:image/png;base64,${pageData.data}" />
             </figure>`
           )}
         </div>
       </div>
+
+      <sl-dialog
+        ?open=${Boolean(this.focusedScreenData)}
+        style="--width: ${this.screenWidth}px;
+          --header-spacing: var(--sl-spacing-small);
+          --body-spacing: 0;
+          "
+        @sl-after-hide=${this.unfocusScreen}
+      >
+        <span
+          class="dialog-label"
+          slot="label"
+          title=${this.focusedScreenData?.url || ""}
+        >
+          ${this.focusedScreenData?.url}
+        </span>
+
+        ${this.focusedScreenData
+          ? html`
+              <img
+                src="data:image/png;base64,${this.focusedScreenData.data}"
+                title="${this.focusedScreenData.url}"
+              />
+            `
+          : ""}
+      </sl-dialog>
     `;
   }
 
@@ -216,6 +273,7 @@ export class Screencast extends LitElement {
   ) {
     if (message.msg === "init") {
       this.screenCount = message.browsers;
+      this.screenWidth = message.width;
     } else {
       const { id } = message;
 
@@ -230,15 +288,29 @@ export class Screencast extends LitElement {
         }
 
         this.imageDataMap.set(id, message);
+
+        if (this.focusedScreenData?.id === id) {
+          this.focusedScreenData = message;
+        }
+
+        this.updateDataList();
       } else if (message.msg === "close") {
         this.imageDataMap.delete(id);
+        this.updateDataList();
       }
-
-      // keep same number of data entries (probably should only decrease if scale is reduced)
-      this.dataList = [
-        ...this.imageDataMap.values(),
-        ...this.dataList.slice(this.imageDataMap.size),
-      ];
     }
+  }
+
+  updateDataList() {
+    // keep same number of data entries (probably should only decrease if scale is reduced)
+    this.dataList = [
+      ...this.imageDataMap.values(),
+      ...this.dataList.slice(this.imageDataMap.size),
+    ];
+  }
+
+  unfocusScreen() {
+    this.updateDataList();
+    this.focusedScreenData = undefined;
   }
 }
