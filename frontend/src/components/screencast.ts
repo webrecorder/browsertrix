@@ -49,15 +49,21 @@ export class Screencast extends LitElement {
       gap: 0.5rem;
     }
 
-    figure {
-      margin: 0;
+    .screen {
       border: 1px solid var(--sl-color-neutral-100);
       border-radius: var(--sl-border-radius-medium);
+      cursor: pointer;
+      transition: opacity 0.1s border-color 0.1s;
+      overflow: hidden;
     }
 
-    .figure-header {
-      display: flex;
-      align-items: center;
+    .screen:hover {
+      opacity: 0.8;
+      border-color: var(--sl-color-neutral-300);
+    }
+
+    figure {
+      margin: 0;
     }
 
     figcaption {
@@ -171,16 +177,13 @@ export class Screencast extends LitElement {
             .screenCount}, minmax(0, 1fr))"
         >
           ${this.dataList.map(
-            (pageData) => html` <figure title="${pageData.url}">
-              <div class="figure-header">
-                <figcaption>${pageData.url}</figcaption>
-                <div>
-                  <sl-icon-button
-                    name="arrows-angle-expand"
-                    @click=${() => (this.focusedScreenData = pageData)}
-                  ></sl-icon-button>
-                </div>
-              </div>
+            (pageData) => html` <figure
+              class="screen"
+              title="${pageData.url}"
+              role="button"
+              @click=${() => (this.focusedScreenData = pageData)}
+            >
+              <figcaption>${pageData.url}</figcaption>
               <img src="data:image/png;base64,${pageData.data}" />
             </figure>`
           )}
@@ -282,14 +285,11 @@ export class Screencast extends LitElement {
 
         this.imageDataMap.set(id, message);
 
-        if (this.focusedScreenData) {
-          if (this.focusedScreenData.id === id) {
-            this.focusedScreenData = message;
-          }
-        } else {
-          // Only re-render focused screen
-          this.updateDataList();
+        if (this.focusedScreenData?.id === id) {
+          this.focusedScreenData = message;
         }
+
+        this.updateDataList();
       } else if (message.msg === "close") {
         this.imageDataMap.delete(id);
         this.updateDataList();
