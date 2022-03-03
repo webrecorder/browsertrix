@@ -18,34 +18,78 @@ export class Archives extends LiteElement {
   userInfo?: CurrentUser;
 
   @state()
-  archiveList?: ArchiveData[];
+  private archiveList?: ArchiveData[];
+
+  @state()
+  private isInviteComplete?: boolean;
 
   async firstUpdated() {
     this.archiveList = await this.getArchives();
   }
 
   render() {
-    if (!this.archiveList) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
+    if (!this.archiveList || !this.userInfo) {
+      return html`
+        <div class="flex items-center justify-center my-24 text-4xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
+
+    if (this.userInfo.isAdmin && !this.archiveList.length) {
+      return html`
+        <div class="bg-white">
+          <header
+            class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
+          >
+            <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
+            <p class="mt-4 text-neutral-600">
+              ${msg("Invite users to start archiving.")}
+            </p>
+          </header>
+          <hr />
+        </div>
+        <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
+          ${this.renderAdminOnboarding()}
+        </main>
+      `;
+    }
+
+    return html`
+      <div class="bg-white">
+        <header
+          class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
+        >
+          <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
+        </header>
+        <hr />
+      </div>
+      <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
+        ${this.renderArchives()}
+      </main>
+    `;
+  }
+
+  private renderArchives() {
+    if (!this.archiveList?.length) {
+      return html`<div class="border rounded-lg bg-white p-4 md:p-8">
+        <p class="text-neutral-400 text-center">
+          ${msg("You don't have any archives.")}
+        </p>
       </div>`;
     }
 
-    return html`<div class="grid gap-4">
-      <h1 class="text-xl font-bold">${msg("Archives")}</h1>
-
+    return html`
       <ul class="border rounded-lg overflow-hidden">
         ${this.archiveList.map(
-          (archive, i) =>
+          (archive) =>
             html`
               <li
-                class="p-3 md:p-6 hover:bg-gray-50${i > 0 ? " border-t" : ""}"
+                class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
                 role="button"
                 @click=${this.makeOnArchiveClick(archive)}
               >
-                <span class="text-primary font-medium mr-2"
+                <span class="font-medium mr-2 transition-colors"
                   >${archive.name}</span
                 >
                 ${this.userInfo &&
@@ -59,7 +103,33 @@ export class Archives extends LiteElement {
             `
         )}
       </ul>
-    </div>`;
+    `;
+  }
+
+  private renderAdminOnboarding() {
+    if (this.isInviteComplete) {
+      return html`
+        <div class="border rounded-lg bg-white p-4 md:p-8">
+          <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
+          <sl-button @click=${() => (this.isInviteComplete = false)}
+            >${msg("Send another invite")}</sl-button
+          >
+        </div>
+      `;
+    }
+    return html`
+      <div class="border rounded-lg bg-white p-4 md:p-8">
+        <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
+        <p class="mb-4 text-neutral-600 text-sm">
+          ${msg("Each user will manage their own archive.")}
+        </p>
+
+        <btrix-invite-form
+          .authState=${this.authState}
+          @success=${() => (this.isInviteComplete = true)}
+        ></btrix-invite-form>
+      </div>
+    `;
   }
 
   async getArchives(): Promise<ArchiveData[]> {

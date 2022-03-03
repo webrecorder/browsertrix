@@ -194,9 +194,7 @@ export class App extends LiteElement {
       <div class="min-w-screen min-h-screen flex flex-col">
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
-        <footer class="flex justify-center p-4 border-t">
-          <btrix-locale-picker></btrix-locale-picker>
-        </footer>
+        <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
       <sl-dialog
@@ -217,34 +215,61 @@ export class App extends LiteElement {
         >
           <div>
             <a href="/archives" @click="${this.navLink}"
-              ><h1 class="text-base">${msg("Browsertrix Cloud")}</h1></a
+              ><h1 class="text-sm font-medium">
+                ${msg("Browsertrix Cloud")}
+              </h1></a
             >
           </div>
           <div class="grid grid-flow-col gap-5 items-center">
             ${this.authService.authState
               ? html` <sl-dropdown placement="bottom-end">
-                  <div class="p-2" role="button" slot="trigger">
-                    ${this.userInfo?.name || this.userInfo?.email}
-                    <span class="text-xs"
-                      ><sl-icon name="chevron-down"></sl-icon
-                    ></span>
-                  </div>
-                  <sl-menu>
+                  <sl-icon-button
+                    slot="trigger"
+                    name="person-circle"
+                    style="font-size: 1.5rem;"
+                  ></sl-icon-button>
+
+                  <sl-menu class="w-60 min-w-min max-w-full">
+                    <div class="px-7 py-2">
+                      ${this.userInfo?.isAdmin
+                        ? html`
+                            <div class="mb-2">
+                              <sl-tag
+                                class="uppercase"
+                                type="primary"
+                                size="small"
+                                >${msg("admin")}</sl-tag
+                              >
+                            </div>
+                          `
+                        : ""}
+                      <div class="font-medium text-neutral-700">
+                        ${this.userInfo?.name}
+                      </div>
+                      <div class="text-sm text-neutral-500">
+                        ${this.userInfo?.email}
+                      </div>
+                    </div>
+                    <sl-divider></sl-divider>
                     <sl-menu-item
                       @click=${() => this.navigate(ROUTES.accountSettings)}
                     >
+                      <sl-icon slot="prefix" name="gear"></sl-icon>
                       ${msg("Your account")}
                     </sl-menu-item>
                     ${this.userInfo?.isAdmin
                       ? html` <sl-menu-item
                           @click=${() => this.navigate(ROUTES.usersInvite)}
                         >
+                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
                           ${msg("Invite Users")}
                         </sl-menu-item>`
                       : ""}
-                    <sl-menu-item @click="${this.onLogOut}"
-                      >${msg("Log Out")}</sl-menu-item
-                    >
+                    <sl-divider></sl-divider>
+                    <sl-menu-item @click="${this.onLogOut}">
+                      <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                      ${msg("Log Out")}
+                    </sl-menu-item>
                   </sl-menu>
                 </sl-dropdown>`
               : html`
@@ -266,17 +291,36 @@ export class App extends LiteElement {
     `;
   }
 
+  renderFooter() {
+    return html`
+      <footer
+        class="w-full max-w-screen-lg mx-auto p-3 box-border flex justify-between"
+      >
+        <div>
+          <sl-icon-button
+            name="github"
+            href="https://github.com/webrecorder/browsertrix-cloud"
+            target="_blank"
+          ></sl-icon-button>
+        </div>
+        <div>
+          <btrix-locale-picker></btrix-locale-picker>
+        </div>
+      </footer>
+    `;
+  }
+
   renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
           return html`<div
-            class="w-full md:bg-gray-50 flex items-center justify-center"
+            class="w-full md:bg-neutral-50 flex items-center justify-center"
           ></div>`;
         }
         if (this.isRegistrationEnabled) {
           return html`<btrix-sign-up
-            class="w-full md:bg-gray-50 flex items-center justify-center"
+            class="w-full md:bg-neutral-50 flex items-center justify-center"
             @navigate="${this.onNavigateTo}"
             @logged-in="${this.onLoggedIn}"
             @log-out="${this.onLogOut}"
@@ -289,7 +333,7 @@ export class App extends LiteElement {
 
       case "verify":
         return html`<btrix-verify
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           token="${this.viewState.params.token}"
           @navigate="${this.onNavigateTo}"
           @notify="${this.onNotify}"
@@ -300,7 +344,7 @@ export class App extends LiteElement {
 
       case "join":
         return html`<btrix-join
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           token="${this.viewState.params.token}"
@@ -309,7 +353,7 @@ export class App extends LiteElement {
 
       case "acceptInvite":
         return html`<btrix-accept-invite
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
           @notify="${this.onNotify}"
@@ -322,7 +366,7 @@ export class App extends LiteElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
@@ -332,7 +376,7 @@ export class App extends LiteElement {
 
       case "resetPassword":
         return html`<btrix-reset-password
-          class="w-full md:bg-gray-50 flex items-center justify-center"
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
@@ -352,7 +396,7 @@ export class App extends LiteElement {
 
       case "archives":
         return html`<btrix-archives
-          class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+          class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
@@ -412,7 +456,7 @@ export class App extends LiteElement {
 
   renderNotFoundPage() {
     return html`<btrix-not-found
-      class="w-full md:bg-gray-50 flex items-center justify-center"
+      class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
   }
 
