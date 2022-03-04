@@ -548,9 +548,10 @@ def init_crawls_api(
         tags=["crawls"],
     )
 
-    #pylint: disable=unused-argument
-    async def ip_access_check(crawl_id, crawler_ip, archive: Archive = Depends(archive_crawl_dep)):
+    # pylint: disable=unused-argument
+    async def ip_access_check(
+        crawl_id, crawler_ip, archive: Archive = Depends(archive_crawl_dep)
+    ):
         return await ops.ip_access_check(crawl_id, crawler_ip)
-
 
     return ops
