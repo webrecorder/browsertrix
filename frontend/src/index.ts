@@ -386,6 +386,8 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home
           class="w-full"
+          @navigate=${this.onNavigateTo}
+          @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .isAdmin=${this.userInfo ? this.userInfo.isAdmin : null}
         ></btrix-home>`;

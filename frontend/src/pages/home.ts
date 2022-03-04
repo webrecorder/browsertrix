@@ -15,11 +15,15 @@ export class Home extends LiteElement {
   @state()
   private isInviteComplete?: boolean;
 
-  render() {
-    if (!this.authState) {
-      return this.renderLoggedOut();
+  connectedCallback() {
+    if (this.authState) {
+      super.connectedCallback();
+    } else {
+      this.navTo("/log-in");
     }
+  }
 
+  render() {
     if (this.isAdmin === true) {
       return this.renderLoggedInAdmin();
     }
@@ -71,9 +75,5 @@ export class Home extends LiteElement {
 
   private renderLoggedInNonAdmin() {
     return html`renderLoggedInNonAdmin`;
-  }
-
-  private renderLoggedOut() {
-    return html`renderLoggedOut`;
   }
 }
