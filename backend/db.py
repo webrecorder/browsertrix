@@ -9,13 +9,11 @@ import motor.motor_asyncio
 
 from pydantic import BaseModel, UUID4
 
-MONGO_USER = os.environ['MONGO_INITDB_ROOT_USERNAME']
-MONGO_PASS = os.environ['MONGO_INITDB_ROOT_PASSWORD']
-MONGO_HOST = os.environ['MONGO_HOST']
+MONGO_USER = os.environ["MONGO_INITDB_ROOT_USERNAME"]
+MONGO_PASS = os.environ["MONGO_INITDB_ROOT_PASSWORD"]
+MONGO_HOST = os.environ["MONGO_HOST"]
 
-DATABASE_URL = (
-    f"mongodb://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}:27017"
-)
+DATABASE_URL = f"mongodb://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}:27017"
 
 
 # ============================================================================
