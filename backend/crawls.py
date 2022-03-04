@@ -429,6 +429,13 @@ class CrawlOps:
             await self.redis.sadd(f"{crawl.id}:ips", *crawl.watchIPs)
             await self.redis.expire(f"{crawl.id}:ips", 300)
 
+    async def ip_access_check(self, crawl_id, crawler_ip):
+        """ check if ip has access to this crawl based on redis cached ip """
+        if await self.redis.sismember(f"{crawl_id}:ips", crawler_ip):
+            return {}
+
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
     async def delete_crawls(self, aid: uuid.UUID, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
         res = await self.crawls.delete_many(
@@ -535,5 +542,15 @@ def init_crawls_api(
             raise HTTPException(status_code=400, detail=error)
 
         return {"scaled": scale.scale}
+
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}/ipaccess/{crawler_ip}",
+        tags=["crawls"],
+    )
+
+    #pylint: disable=unused-argument
+    async def ip_access_check(crawl_id, crawler_ip, archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.ip_access_check(crawl_id, crawler_ip)
+
 
     return ops

@@ -41,7 +41,8 @@ server {
       set $archive $1;
       set $crawl $2;
       set $crawlerip $3;
-      #auth_request  /authcheck;
+      set $auth_bearer $arg_auth_bearer;
+      auth_request  /ipaccess;
 
       proxy_pass http://$crawlerip:9037/ws;
       proxy_set_header Host "localhost";
@@ -51,9 +52,9 @@ server {
       proxy_set_header Connection $http_connection;
     }
 
-    location = /authcheck {
+    location = /ipaccess {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/crawls/$crawl/$crawlerip?$args;
+      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/crawls/$crawl/ipaccess/$crawlerip?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
