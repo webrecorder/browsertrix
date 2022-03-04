@@ -580,11 +580,15 @@ export class CrawlTemplatesDetail extends LiteElement {
           : ""}
       </div>
 
+      <div class="mb-5">
+        <div class="text-sm text-0-600">${msg("Include External Links")}</div>
+        ${this.crawlTemplate?.config.extraHops ? msg("Yes") : msg("No")}
+      </div>
+
       <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
         <span slot="summary" class="text-sm">
-          <span class="font-medium">${msg("Advanced configuration")}</span>
-          <sl-tag size="small" type="neutral">${msg("JSON")}</sl-tag></span
-        >
+          <span class="font-medium">${msg("JSON Configuration")}</span>
+        </span>
         <div class="relative">
           <pre
             class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
