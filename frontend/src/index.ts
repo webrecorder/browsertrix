@@ -464,9 +464,10 @@ export class App extends LiteElement {
 
     this.authService.logout();
     this.authService = new AuthService();
+    this.userInfo = undefined;
 
     if (redirect) {
-      this.navigate("/");
+      this.navigate("/log-in");
     }
   }
 

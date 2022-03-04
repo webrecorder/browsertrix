@@ -32,9 +32,11 @@ export class Home extends LiteElement {
       return this.renderLoggedInNonAdmin();
     }
 
-    return html`<div class="flex items-center justify-center my-24 text-4xl">
-      <sl-spinner></sl-spinner>
-    </div>`;
+    return "";
+
+    // return html`<div class="flex items-center justify-center my-24 text-4xl">
+    //   <sl-spinner></sl-spinner>
+    // </div>`;
   }
 
   private renderLoggedInAdmin() {
