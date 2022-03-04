@@ -6,8 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 
 data:
-  MONGO_HOST: {{ .Values.mongo_host }}
-
   APP_ORIGIN: {{.Values.ingress.scheme }}://{{ .Values.ingress.host | default "localhost:9870" }}
 
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}

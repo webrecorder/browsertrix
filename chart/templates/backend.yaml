@@ -50,6 +50,8 @@ spec:
                 name: {{ .Values.name }}-env-config
             - secretRef:
                 name: auth-secrets
+            - secretRef:
+                name: mongo-auth
 
           resources:
             limits:
