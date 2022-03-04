@@ -5,7 +5,8 @@ import datetime
 import json
 import asyncio
 import base64
-import aioredis
+from redis import asyncio as aioredis
+
 
 from kubernetes_asyncio import client, config, watch
 from kubernetes_asyncio.stream import WsApiClient
@@ -388,7 +389,17 @@ class K8SManager:
             if not status:
                 return None
 
-            return self._make_crawl_for_job(job, status, False, CrawlOut)
+            crawl = self._make_crawl_for_job(job, status, False, CrawlOut)
+
+            pods = await self.core_api.list_namespaced_pod(
+                namespace=self.namespace,
+                label_selector=f"job-name={name},btrix.archive={aid}",
+            )
+
+            crawl.watchIPs = [
+                pod.status.pod_ip for pod in pods.items if pod.status.pod_ip
+            ]
+            return crawl
 
         # pylint: disable=broad-except
         except Exception:

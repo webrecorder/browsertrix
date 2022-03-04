@@ -8,11 +8,11 @@ import os
 from typing import Optional, List, Dict, Union
 from datetime import datetime
 
-import websockets
-from fastapi import Depends, HTTPException, WebSocket
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel, UUID4, conint
 import pymongo
-import aioredis
+from redis import asyncio as aioredis
+
 
 from db import BaseMongoModel
 from archives import Archive, MAX_CRAWL_SCALE
@@ -88,6 +88,8 @@ class CrawlOut(Crawl):
     userName: Optional[str]
     configName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
+
+    watchIPs: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -169,7 +171,6 @@ class CrawlOps:
         self.redis = await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
         )
-        self.pubsub = self.redis.pubsub()
 
         loop = asyncio.get_running_loop()
         loop.create_task(self.run_crawl_complete_loop())
@@ -324,6 +325,7 @@ class CrawlOps:
             crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
             if crawl:
                 await self.get_redis_stats([crawl])
+                await self.cache_ips(crawl)
 
         else:
             files = [CrawlFile(**data) for data in res["files"]]
@@ -421,43 +423,25 @@ class CrawlOps:
         for crawl, (done, total) in zip(crawl_list, pairwise(results)):
             crawl.stats = {"done": done, "found": total}
 
+    async def cache_ips(self, crawl: CrawlOut):
+        """ cache ips for ws auth check """
+        if crawl.watchIPs:
+            await self.redis.sadd(f"{crawl.id}:ips", *crawl.watchIPs)
+            await self.redis.expire(f"{crawl.id}:ips", 300)
+
+    async def ip_access_check(self, crawl_id, crawler_ip):
+        """ check if ip has access to this crawl based on redis cached ip """
+        if await self.redis.sismember(f"{crawl_id}:ips", crawler_ip):
+            return {}
+
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
     async def delete_crawls(self, aid: uuid.UUID, delete_list: DeleteCrawlList):
         """ Delete a list of crawls by id for given archive """
         res = await self.crawls.delete_many(
             {"_id": {"$in": delete_list.crawl_ids}, "aid": aid}
         )
         return res.deleted_count
-
-    async def handle_watch_ws(self, crawl_id: str, websocket: WebSocket):
-        """ Handle watch WS by proxying screencast data via redis pubsub """
-        # ensure websocket connected
-        await websocket.accept()
-
-        ctrl_channel = f"c:{crawl_id}:ctrl"
-        cast_channel = f"c:{crawl_id}:cast"
-
-        await self.redis.publish(ctrl_channel, "connect")
-
-        async with self.pubsub as chan:
-            await chan.subscribe(cast_channel)
-
-            # pylint: disable=broad-except
-            try:
-                while True:
-                    message = await chan.get_message(ignore_subscribe_messages=True)
-                    if not message:
-                        continue
-
-                    await websocket.send_text(message["data"])
-
-            except websockets.exceptions.ConnectionClosedOK:
-                pass
-
-            except Exception as exc:
-                print(exc, flush=True)
-
-            finally:
-                await self.redis.publish(ctrl_channel, "disconnect")
 
 
 # ============================================================================
@@ -559,13 +543,15 @@ def init_crawls_api(
 
         return {"scaled": scale.scale}
 
-    @app.websocket("/archives/{aid}/crawls/{crawl_id}/watch/ws")
-    async def watch_ws(
-        crawl_id, websocket: WebSocket, archive: Archive = Depends(archive_crawl_dep)
-    ):
-        # ensure crawl exists
-        await ops.get_crawl(crawl_id, archive)
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}/ipaccess/{crawler_ip}",
+        tags=["crawls"],
+    )
 
-        await ops.handle_watch_ws(crawl_id, websocket)
+    # pylint: disable=unused-argument
+    async def ip_access_check(
+        crawl_id, crawler_ip, archive: Archive = Depends(archive_crawl_dep)
+    ):
+        return await ops.ip_access_check(crawl_id, crawler_ip)
 
     return ops

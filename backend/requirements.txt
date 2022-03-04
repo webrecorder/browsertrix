@@ -8,5 +8,4 @@ aiodocker
 apscheduler
 aioprocessing
 aiobotocore
-aioredis
-websockets
+redis>=4.2.0rc1
