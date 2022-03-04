@@ -1072,9 +1072,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     const config: CrawlTemplate["config"] = {
-      seeds: this.crawlTemplate.config.seeds,
-      scopeType: this.crawlTemplate.config.scopeType,
-      limit: this.crawlTemplate.config.limit,
+      ...this.crawlTemplate.config,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {

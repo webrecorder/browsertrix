@@ -405,9 +405,7 @@ export class CrawlTemplatesList extends LiteElement {
    */
   private async duplicateConfig(template: CrawlTemplate) {
     const config: CrawlTemplate["config"] = {
-      seeds: template.config.seeds,
-      scopeType: template.config.scopeType,
-      limit: template.config.limit,
+      ...template.config,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
