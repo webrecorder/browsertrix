@@ -214,7 +214,7 @@ export class App extends LiteElement {
           class="max-w-screen-lg mx-auto px-3 box-border h-12 flex items-center justify-between"
         >
           <div>
-            <a href="/archives" @click="${this.navLink}"
+            <a href="/" @click="${this.navLink}"
               ><h1 class="text-sm font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
@@ -384,15 +384,11 @@ export class App extends LiteElement {
         ></btrix-reset-password>`;
 
       case "home":
-        return html`<div class="w-full flex items-center justify-center">
-          <sl-button
-            type="primary"
-            size="large"
-            @click="${() => this.navigate("/log-in")}"
-          >
-            ${msg("Log In")}
-          </sl-button>
-        </div>`;
+        return html`<btrix-home
+          class="w-full"
+          .authState=${this.authService.authState}
+          .isAdmin=${this.userInfo ? this.userInfo.isAdmin : null}
+        ></btrix-home>`;
 
       case "archives":
         return html`<btrix-archives
