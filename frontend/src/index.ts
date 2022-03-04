@@ -385,11 +385,11 @@ export class App extends LiteElement {
 
       case "home":
         return html`<btrix-home
-          class="w-full"
+          class="w-full md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
-          .isAdmin=${this.userInfo ? this.userInfo.isAdmin : null}
+          .userInfo="${this.userInfo}"
         ></btrix-home>`;
 
       case "archives":

@@ -1,7 +1,8 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import { AuthState } from "../utils/AuthService";
+import type { AuthState } from "../utils/AuthService";
+import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()
@@ -9,8 +10,8 @@ export class Home extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Boolean })
-  isAdmin: boolean | null = null;
+  @property({ type: Object })
+  userInfo?: CurrentUser;
 
   @state()
   private isInviteComplete?: boolean;
@@ -24,24 +25,22 @@ export class Home extends LiteElement {
   }
 
   render() {
-    if (this.isAdmin === true) {
-      return this.renderLoggedInAdmin();
-    }
+    if (this.userInfo) {
+      if (this.userInfo.isAdmin === true) {
+        return this.renderLoggedInAdmin();
+      }
 
-    if (this.isAdmin === false) {
-      return this.renderLoggedInNonAdmin();
+      if (this.userInfo.isAdmin === false) {
+        return this.renderLoggedInNonAdmin();
+      }
     }
 
     return "";
-
-    // return html`<div class="flex items-center justify-center my-24 text-4xl">
-    //   <sl-spinner></sl-spinner>
-    // </div>`;
   }
 
   private renderLoggedInAdmin() {
     return html`
-      <div>
+      <div class="bg-white">
         <header
           class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
@@ -76,6 +75,12 @@ export class Home extends LiteElement {
   }
 
   private renderLoggedInNonAdmin() {
-    return html`renderLoggedInNonAdmin`;
+    return html`
+      <btrix-archives
+        class="w-full md:bg-neutral-50"
+        .authState="${this.authState}"
+        .userInfo="${this.userInfo}"
+      ></btrix-archives>
+    `;
   }
 }
