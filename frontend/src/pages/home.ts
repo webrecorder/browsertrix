@@ -35,7 +35,16 @@ export class Home extends LiteElement {
       }
     }
 
-    return "";
+    return html`
+      <div class="bg-white" role="presentation">
+        <header
+          class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
+        >
+          <h1 class="text-2xl font-medium h-8"></h1>
+        </header>
+        <hr />
+      </div>
+    `;
   }
 
   private renderLoggedInAdmin() {
@@ -45,15 +54,12 @@ export class Home extends LiteElement {
           class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
           <h1 class="text-2xl font-medium">${msg("Welcome")}</h1>
-          <p class="mt-4 text-neutral-600">
-            ${msg("Invite users to start archiving.")}
-          </p>
         </header>
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
         <div class="border rounded-lg bg-white p-4 md:p-8">
-          <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
+          <h2 class="text-xl font-medium mb-4">${msg("Invite a User")}</h2>
 
           ${this.isInviteComplete
             ? html`
@@ -62,6 +68,9 @@ export class Home extends LiteElement {
                 >
               `
             : html`
+                <p class="mb-2 text-neutral-600 text-sm">
+                  ${msg("Invite users to start archiving.")}
+                </p>
                 <p class="mb-4 text-neutral-600 text-sm">
                   ${msg("Each user will manage their own archive.")}
                 </p>
@@ -79,7 +88,6 @@ export class Home extends LiteElement {
   private renderLoggedInNonAdmin() {
     return html`
       <btrix-archives
-        class="w-full md:bg-neutral-50"
         .authState="${this.authState}"
         .userInfo="${this.userInfo}"
       ></btrix-archives>

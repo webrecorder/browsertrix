@@ -25,14 +25,6 @@ export class Archives extends LiteElement {
   }
 
   render() {
-    if (!this.archiveList || !this.userInfo) {
-      return html`
-        <div class="flex items-center justify-center my-24 text-4xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
-    }
-
     return html`
       <div class="bg-white">
         <header
@@ -43,7 +35,13 @@ export class Archives extends LiteElement {
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-        ${this.renderArchives()}
+        ${this.archiveList
+          ? this.renderArchives()
+          : html`
+              <div class="flex items-center justify-center my-24 text-4xl">
+                <sl-spinner></sl-spinner>
+              </div>
+            `}
       </main>
     `;
   }
