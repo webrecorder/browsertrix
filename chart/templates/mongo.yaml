@@ -1,4 +1,5 @@
-{{- if .Values.mongo_local }}
+
+# mongo secrets used with backend and with local mongo, if any
 
 ---
 apiVersion: v1
@@ -11,7 +12,10 @@ type: Opaque
 stringData:
   MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongo_auth.username | quote }}
   MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongo_auth.password | quote }}
+  MONGO_HOST: {{ .Values.mongo_host }}
 
+
+{{- if .Values.mongo_local }}
 
 ---
 kind: PersistentVolumeClaim
