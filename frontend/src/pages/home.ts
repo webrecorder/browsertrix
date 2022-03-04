@@ -52,24 +52,26 @@ export class Home extends LiteElement {
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-        <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
+        <div class="border rounded-lg bg-white p-4 md:p-8">
+          <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
 
-        ${this.isInviteComplete
-          ? html`
-              <sl-button @click=${() => (this.isInviteComplete = false)}
-                >${msg("Send another invite")}</sl-button
-              >
-            `
-          : html`
-              <p class="mb-4 text-neutral-600 text-sm">
-                ${msg("Each user will manage their own archive.")}
-              </p>
+          ${this.isInviteComplete
+            ? html`
+                <sl-button @click=${() => (this.isInviteComplete = false)}
+                  >${msg("Send another invite")}</sl-button
+                >
+              `
+            : html`
+                <p class="mb-4 text-neutral-600 text-sm">
+                  ${msg("Each user will manage their own archive.")}
+                </p>
 
-              <btrix-invite-form
-                .authState=${this.authState}
-                @success=${() => (this.isInviteComplete = true)}
-              ></btrix-invite-form>
-            `}
+                <btrix-invite-form
+                  .authState=${this.authState}
+                  @success=${() => (this.isInviteComplete = true)}
+                ></btrix-invite-form>
+              `}
+        </div>
       </main>
     `;
   }
