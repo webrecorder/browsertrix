@@ -26,7 +26,7 @@
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
-    "start": "webpack serve --mode=development",
+    "start": "webpack serve --mode=development --config webpack.dev.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,html,css}\"",
     "localize:extract": "lit-localize extract",

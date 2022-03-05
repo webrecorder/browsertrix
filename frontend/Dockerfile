@@ -9,6 +9,7 @@ COPY package.json .
 COPY yarn.lock .
 RUN yarn --frozen-lockfile
 
+COPY .env ./
 COPY lit-localize.json ./
 COPY postcss.config.js ./
 COPY tailwind.config.js ./
