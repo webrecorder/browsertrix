@@ -411,7 +411,9 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-menu-item value="any">Any</sl-menu-item>
       </sl-select>
 
-      <sl-checkbox name="extraHopsOne"
+      <sl-checkbox
+        name="extraHopsOne"
+        ?checked=${this.initialCrawlTemplate!.config.extraHops === 1}
         >${msg("Include External Links (“one hop out”)")}
       </sl-checkbox>
       <sl-input
