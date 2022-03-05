@@ -21,4 +21,4 @@ export const ROUTES = {
   usersInvite: "/users/invite",
 } as const;
 
-export const DASHBOARD_ROUTE = ROUTES.archives;
+export const DASHBOARD_ROUTE = ROUTES.home;

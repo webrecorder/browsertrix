@@ -20,41 +20,11 @@ export class Archives extends LiteElement {
   @state()
   private archiveList?: ArchiveData[];
 
-  @state()
-  private isInviteComplete?: boolean;
-
   async firstUpdated() {
     this.archiveList = await this.getArchives();
   }
 
   render() {
-    if (!this.archiveList || !this.userInfo) {
-      return html`
-        <div class="flex items-center justify-center my-24 text-4xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
-    }
-
-    if (this.userInfo.isAdmin && !this.archiveList.length) {
-      return html`
-        <div class="bg-white">
-          <header
-            class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
-          >
-            <h1 class="text-2xl font-medium">${msg("Archives")}</h1>
-            <p class="mt-4 text-neutral-600">
-              ${msg("Invite users to start archiving.")}
-            </p>
-          </header>
-          <hr />
-        </div>
-        <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-          ${this.renderAdminOnboarding()}
-        </main>
-      `;
-    }
-
     return html`
       <div class="bg-white">
         <header
@@ -65,7 +35,13 @@ export class Archives extends LiteElement {
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-        ${this.renderArchives()}
+        ${this.archiveList
+          ? this.renderArchives()
+          : html`
+              <div class="flex items-center justify-center my-24 text-4xl">
+                <sl-spinner></sl-spinner>
+              </div>
+            `}
       </main>
     `;
   }
@@ -103,32 +79,6 @@ export class Archives extends LiteElement {
             `
         )}
       </ul>
-    `;
-  }
-
-  private renderAdminOnboarding() {
-    if (this.isInviteComplete) {
-      return html`
-        <div class="border rounded-lg bg-white p-4 md:p-8">
-          <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
-          <sl-button @click=${() => (this.isInviteComplete = false)}
-            >${msg("Send another invite")}</sl-button
-          >
-        </div>
-      `;
-    }
-    return html`
-      <div class="border rounded-lg bg-white p-4 md:p-8">
-        <h2 class="text-2xl font-medium mb-4">${msg("Invite a User")}</h2>
-        <p class="mb-4 text-neutral-600 text-sm">
-          ${msg("Each user will manage their own archive.")}
-        </p>
-
-        <btrix-invite-form
-          .authState=${this.authState}
-          @success=${() => (this.isInviteComplete = true)}
-        ></btrix-invite-form>
-      </div>
     `;
   }
 
