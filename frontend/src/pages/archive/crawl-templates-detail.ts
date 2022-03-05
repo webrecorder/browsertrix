@@ -1114,8 +1114,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     const configValue = formData.get("config") as string;
     let config: CrawlConfig;
 
-    if (configValue) {
-      if (this.invalidSeedsJsonMessage) return;
+    if (this.isSeedsJsonView) {
+      if (!configValue || this.invalidSeedsJsonMessage) return;
 
       config = JSON.parse(configValue) as CrawlConfig;
     } else {
