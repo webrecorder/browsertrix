@@ -380,7 +380,11 @@ class DockerManager:
             )
 
             try:
-                crawl.watchIPs = [container.attrs["NetworkSettings"]["IPAddress"]]
+                crawl.watchIPs = [
+                    container["NetworkSettings"]["Networks"][self.default_network][
+                        "IPAddress"
+                    ]
+                ]
             except:
                 crawl.watchIPs = []
 
