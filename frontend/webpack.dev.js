@@ -6,12 +6,12 @@ const common = require("./webpack.config.js");
 
 // for testing: for prod, the Dockerfile should have the official prod version used
 const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
-  process.env.API_BASE_URL || "https://btrix.webrecorder.net/api/"
-  if (!process.env.API_BASE_URL) {
-     throw new Error("To run a dev frontend server, llease set the API_BASE_URL pointing to your backend api server in '.env.local'")
-  }
-  const devBackendUrl = new URL(process.env.API_BASE_URL);
-);
+
+if (!process.env.API_BASE_URL) {
+  throw new Error("To run a dev frontend server, please set the API_BASE_URL pointing to your backend api server in '.env.local'")
+}
+
+const devBackendUrl = new URL(process.env.API_BASE_URL);
 const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
   "node_modules/@shoelace-style/shoelace/dist/assets"
