@@ -1,3 +1,10 @@
+type CrawlState =
+  | "running"
+  | "complete"
+  | "failed"
+  | "partial_complete"
+  | "timed_out";
+
 export type Crawl = {
   id: string;
   userid: string;
@@ -8,7 +15,7 @@ export type Crawl = {
   manual: boolean;
   started: string; // UTC ISO date
   finished?: string; // UTC ISO date
-  state: string; // "running" | "complete" | "failed" | "partial_complete"
+  state: CrawlState;
   scale: number;
   stats: { done: string; found: string } | null;
   resources?: { name: string; path: string; hash: string; size: number }[];
@@ -38,6 +45,7 @@ export type CrawlTemplate = {
   crawlCount: number;
   lastCrawlId: string;
   lastCrawlTime: string;
+  lastCrawlState: CrawlState;
   currCrawlId: string;
   newId: string | null;
   oldId: string | null;
