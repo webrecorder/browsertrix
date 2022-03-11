@@ -147,7 +147,15 @@ export class CrawlTemplatesList extends LiteElement {
                   </div>
                   <div>
                     ${t.crawlCount
-                      ? html`<sl-tooltip content=${msg("Last complete crawl")}>
+                      ? html`<sl-tooltip>
+                          <span slot="content" class="capitalize">
+                            ${msg(
+                              str`Last Crawl: ${t.lastCrawlState.replace(
+                                /_/g,
+                                " "
+                              )}`
+                            )}
+                          </span>
                           <a
                             class="font-medium hover:underline"
                             href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
@@ -157,11 +165,18 @@ export class CrawlTemplatesList extends LiteElement {
                             }}
                           >
                             <sl-icon
-                              class="inline-block align-middle mr-1 text-purple-400"
-                              name="check-circle-fill"
+                              class="inline-block align-middle mr-1 ${t.lastCrawlState ===
+                              "failed"
+                                ? "text-neutral-400"
+                                : "text-purple-400"}"
+                              name=${t.lastCrawlState === "complete"
+                                ? "check-circle-fill"
+                                : t.lastCrawlState === "failed"
+                                ? "x-circle-fill"
+                                : "exclamation-circle-fill"}
                             ></sl-icon
                             ><sl-format-date
-                              class="inline-block align-middle text-0-600"
+                              class="inline-block align-middle text-neutral-600"
                               date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
                               month="2-digit"
                               day="2-digit"

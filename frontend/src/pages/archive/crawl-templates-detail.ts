@@ -792,23 +792,39 @@ export class CrawlTemplatesDetail extends LiteElement {
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
           >
             ${this.crawlTemplate?.lastCrawlId
-              ? html`<a
+              ? html`
+                  <span>
+                    <sl-icon
+                      class="inline-block align-middle mr-1"
+                      name=${this.crawlTemplate.lastCrawlState === "complete"
+                        ? "check-circle-fill"
+                        : this.crawlTemplate.lastCrawlState === "failed"
+                        ? "x-circle-fill"
+                        : "exclamation-circle-fill"}
+                    ></sl-icon>
+                    <span class="inline-block align-middle capitalize">
+                      ${this.crawlTemplate.lastCrawlState.replace(/_/g, " ")}
+                    </span>
+                    <sl-format-date
+                      class="inline-block align-middle text-sm text-neutral-500"
+                      date=${
+                        `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
+                      }
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
+                  </span>
+                  <a
                     class="text-primary font-medium hover:underline text-sm p-1"
                     href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.lastCrawlId}#watch`}
                     @click=${this.navLink}
                     >${msg("View crawl")}</a
                   >
-                  <sl-format-date
-                    date=${
-                      `${this.crawlTemplate.lastCrawlTime}Z` /** Z for UTC */
-                    }
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>`
+                `
               : html`<span class="text-0-400 text-sm p-1"
                   >${msg("None")}</span
                 >`}
