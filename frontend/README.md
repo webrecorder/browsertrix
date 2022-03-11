@@ -2,16 +2,22 @@
 
 ## Quickstart
 
+Install dependencies:
+
+```sh
+yarn
+```
+
 Copy environment variables from the sample file:
 
 ```sh
 cp sample.env.local .env.local
 ```
 
-Install dependencies:
+Update `API_BASE_URL` in `.env.local` to point to your dev backend API. For example:
 
-```sh
-yarn
+```
+API_BASE_URL=http://dev.example.com/api
 ```
 
 Start the dev server:
@@ -27,16 +33,16 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 
 ## Scripts
 
-| `yarn <name>`      |                                                                     |
-| ------------------ | ------------------------------------------------------------------- |
-| `start`            | runs app in development server, reloading on file changes           |
-| `test`             | runs tests in chromium with playwright                              |
-| `build-dev`        | bundles app and outputs it in `dist` directory                      |
-| `build`            | bundles app, optimized for production, and outputs it to `dist`     |
-| `lint`             | find and fix auto-fixable javascript errors                         |
-| `format`           | formats js, html and css files                                      |
-| `localize:extract` | generate XLIFF file to be translated                                |
-| `localize:build`   | output a localized version of strings/templates                     |
+| `yarn <name>`      |                                                                 |
+| ------------------ | --------------------------------------------------------------- |
+| `start`            | runs app in development server, reloading on file changes       |
+| `test`             | runs tests in chromium with playwright                          |
+| `build-dev`        | bundles app and outputs it in `dist` directory                  |
+| `build`            | bundles app, optimized for production, and outputs it to `dist` |
+| `lint`             | find and fix auto-fixable javascript errors                     |
+| `format`           | formats js, html and css files                                  |
+| `localize:extract` | generate XLIFF file to be translated                            |
+| `localize:build`   | output a localized version of strings/templates                 |
 
 ## Testing
 

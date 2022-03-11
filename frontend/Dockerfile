@@ -8,7 +8,13 @@ WORKDIR /app
 COPY package.json .
 COPY yarn.lock .
 RUN yarn --frozen-lockfile
-COPY *.* ./
+
+COPY lit-localize.json ./
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+COPY tsconfig.json ./
+COPY webpack.config.js ./
+COPY webpack.prod.js ./
 COPY src ./src/
 
 ARG GIT_COMMIT_HASH
