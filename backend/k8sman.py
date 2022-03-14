@@ -744,7 +744,7 @@ class K8SManager:
                             },
                             {"name": "crawl-data", "emptyDir": {}},
                         ],
-                        "restartPolicy": "OnFailure",
+                        "restartPolicy": "Never",
                         "terminationGracePeriodSeconds": self.grace_period,
                     },
                 },
