@@ -233,7 +233,7 @@ export class Screencast extends LitElement {
     }
 
     const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-      process.env.WEBSOCKET_HOST || window.location.host
+      window.location.host
     }/watch/${this.archiveId}/${this.crawlId}`;
 
     this.watchIPs.forEach((ip: string) => {
