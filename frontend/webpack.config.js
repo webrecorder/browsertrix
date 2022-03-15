@@ -1,5 +1,6 @@
 // webpack.config.js
 const path = require("path");
+const webpack = require("webpack");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -7,8 +8,21 @@ const childProcess = require("child_process");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
+const dotEnvPath = path.resolve(
+  process.cwd(),
+  `.env${isDevServer ? `.local` : ""}`
+);
+require("dotenv").config({
+  path: dotEnvPath,
+});
+
 // for testing: for prod, the Dockerfile should have the official prod version used
 const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
+
+const WEBSOCKET_HOST =
+  isDevServer && process.env.API_BASE_URL
+    ? new URL(process.env.API_BASE_URL).host
+    : process.env.WEBSOCKET_HOST || "";
 
 // Get git info to use as Glitchtip release version
 
@@ -29,14 +43,6 @@ const gitBranch =
 const commitHash =
   process.env.GIT_COMMIT_HASH ||
   execCommand("git rev-parse --short HEAD", "unknown");
-
-const dotEnvPath = path.resolve(
-  process.cwd(),
-  `.env${isDevServer ? `.local` : ""}`
-);
-require("dotenv").config({
-  path: dotEnvPath,
-});
 
 const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
@@ -81,6 +87,10 @@ module.exports = {
   },
 
   plugins: [
+    new webpack.DefinePlugin({
+      "process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+    }),
+
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
       templateParameters: {
