@@ -21,6 +21,10 @@ data:
   CRAWLER_REQUESTS_MEM: "{{ .Values.crawler_requests_memory }}"
   CRAWLER_LIMITS_MEM: "{{ .Values.crawler_limits_memory }}"
 
+  {{- if .Values.crawler_pv_claim }}
+  CRAWLER_PV_CLAIM: "{{ .Values.crawler_pv_claim }}"
+  {{- end }}
+
   REDIS_URL: "{{ .Values.redis_url }}"
 
   REDIS_CRAWLS_DONE_KEY: "crawls-done"

@@ -56,6 +56,14 @@ class K8SManager:
         self.requests_mem = os.environ["CRAWLER_REQUESTS_MEM"]
         self.limits_mem = os.environ["CRAWLER_LIMITS_MEM"]
 
+        self.crawl_volume = {"name": "crawl-data"}
+        # if set, use persist volume claim for crawls
+        crawl_pv_claim = os.environ.get("CRAWLER_PV_CLAIM")
+        if crawl_pv_claim:
+            self.crawl_volume["persistentVolumeClaim"] = {"claimName": crawl_pv_claim}
+        else:
+            self.crawl_volume["emptyDir"] = {}
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
         self.loop.create_task(self.init_redis(self.redis_url))
@@ -742,7 +750,7 @@ class K8SManager:
                                     ],
                                 },
                             },
-                            {"name": "crawl-data", "emptyDir": {}},
+                            self.crawl_volume,
                         ],
                         "restartPolicy": "Never",
                         "terminationGracePeriodSeconds": self.grace_period,

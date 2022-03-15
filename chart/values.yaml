@@ -45,6 +45,8 @@ api_limits_memory: "192Mi"
 nginx_image: "nginx"
 nginx_pull_policy: "IfNotPresent"
 
+nginx_num_replicas: 1
+
 nginx_requests_cpu: "3m"
 nginx_limits_cpu: "10m"
 
@@ -97,6 +99,10 @@ crawler_image: "webrecorder/browsertrix-crawler:latest"
 crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
+
+# optional: enable to use a persist volume claim for all crawls
+# can be enabled to use a multi-write shared filesystem
+# crawler_pv_claim: "nfs-shared-crawls"
 
 # num retries
 crawl_retries: 3

@@ -10,7 +10,7 @@ spec:
     matchLabels:
       app: {{ .Values.name }}
       role: frontend
-  replicas: 1
+  replicas: {{ .Values.nginx_num_replicas | default 1 }}
   template:
     metadata:
       labels:
