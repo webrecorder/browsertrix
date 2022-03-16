@@ -31,7 +31,7 @@ const sortableFieldLabels = {
 };
 
 function isRunning(crawl: Crawl) {
-  return crawl.state === "running";
+  return crawl.state === "running" || crawl.state === "starting";
 }
 
 /**
@@ -284,7 +284,7 @@ export class CrawlsList extends LiteElement {
         </div>
         <div>
           <div
-            class="whitespace-nowrap mb-1 capitalize${crawl.state === "running"
+            class="whitespace-nowrap mb-1 capitalize${isRunning(crawl)
               ? " motion-safe:animate-pulse"
               : ""}"
           >
