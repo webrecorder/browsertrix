@@ -1,5 +1,4 @@
 const path = require("path");
-const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 
 const common = require("./webpack.config.js");
@@ -8,7 +7,9 @@ const common = require("./webpack.config.js");
 const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
 
 if (!process.env.API_BASE_URL) {
-  throw new Error("To run a dev frontend server, please set the API_BASE_URL pointing to your backend api server in '.env.local'")
+  throw new Error(
+    "To run a dev frontend server, please set the API_BASE_URL pointing to your backend api server in '.env.local'"
+  );
 }
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
@@ -55,10 +56,4 @@ module.exports = merge(common, {
     },
     port: 9870,
   },
-
-  plugins: [
-    new webpack.DefinePlugin({
-      "process.env.WEBSOCKET_HOST": JSON.stringify(devBackendUrl.host),
-    }),
-  ],
 });
