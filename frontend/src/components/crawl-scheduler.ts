@@ -73,7 +73,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
     };
     const initialInterval = this.schedule
       ? getInitialScheduleInterval(this.schedule)
-      : "";
+      : "weekly";
     const nextSchedule =
       this.editedSchedule || scheduleIntervalsMap[initialInterval];
 

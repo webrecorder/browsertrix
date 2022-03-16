@@ -27,6 +27,7 @@ class ScopeType(str, Enum):
     PAGE_SPA = "page-spa"
     PREFIX = "prefix"
     HOST = "host"
+    DOMAIN = "domain"
     ANY = "any"
 
 
