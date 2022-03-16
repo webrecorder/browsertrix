@@ -170,7 +170,8 @@ class DockerManager:
     async def update_archive_storage(self, aid, userid, storage):
         """ No storage kept for docker manager """
 
-    async def add_crawl_config(self, crawlconfig, storage, run_now):
+    # pylint: disable=unused-argument
+    async def add_crawl_config(self, crawlconfig, storage, run_now, out_filename):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
         userid = str(crawlconfig.userid)
@@ -212,7 +213,7 @@ class DockerManager:
 
         return ""
 
-    async def update_crawl_schedule(self, cid, schedule):
+    async def update_crawl_schedule_or_scale(self, cid, schedule=None, scale=None):
         """ Update the schedule for existing crawl config """
 
         if schedule:

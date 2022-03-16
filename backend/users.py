@@ -14,6 +14,8 @@ import passlib.pwd
 from fastapi import Request, Response, HTTPException, Depends, WebSocket
 from fastapi.security import OAuth2PasswordBearer
 
+from pymongo.errors import DuplicateKeyError
+
 from fastapi_users import FastAPIUsers, models, BaseUserManager
 from fastapi_users.manager import UserAlreadyExists
 from fastapi_users.authentication import (
@@ -174,7 +176,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
 
-        except UserAlreadyExists:
+        except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
 
     async def on_after_register_custom(

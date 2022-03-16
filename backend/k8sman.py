@@ -164,7 +164,7 @@ class K8SManager:
                 name=archive_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
-    async def add_crawl_config(self, crawlconfig, storage, run_now):
+    async def add_crawl_config(self, crawlconfig, storage, run_now, out_filename):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
         userid = str(crawlconfig.userid)
@@ -209,6 +209,7 @@ class K8SManager:
             storage_path,
             labels,
             annotations,
+            out_filename,
             crawlconfig.crawlTimeout,
             crawlconfig.scale,
         )
@@ -242,8 +243,8 @@ class K8SManager:
 
         return ""
 
-    async def update_crawl_schedule(self, cid, schedule):
-        """ Update the schedule for existing crawl config """
+    async def update_crawl_schedule_or_scale(self, cid, schedule=None, scale=None):
+        """ Update the schedule or scale for existing crawl config """
 
         cron_jobs = await self.batch_beta_api.list_namespaced_cron_job(
             namespace=self.namespace, label_selector=f"btrix.crawlconfig={cid}"
@@ -254,16 +255,25 @@ class K8SManager:
 
         cron_job = cron_jobs.items[0]
 
-        real_schedule = schedule or DEFAULT_NO_SCHEDULE
+        updated = False
 
-        if real_schedule != cron_job.spec.schedule:
-            cron_job.spec.schedule = real_schedule
-            cron_job.spec.suspend = not schedule
+        if schedule is not None:
+            real_schedule = schedule or DEFAULT_NO_SCHEDULE
 
-            cron_job.spec.job_template.metadata.annotations[
-                "btrix.run.schedule"
-            ] = schedule
+            if real_schedule != cron_job.spec.schedule:
+                cron_job.spec.schedule = real_schedule
+                cron_job.spec.suspend = not schedule
 
+                cron_job.spec.job_template.metadata.annotations[
+                    "btrix.run.schedule"
+                ] = schedule
+            updated = True
+
+        if scale is not None:
+            cron_job.spec.job_template.spec.parallelism = scale
+            updated = True
+
+        if updated:
             await self.batch_beta_api.patch_namespaced_cron_job(
                 name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
             )
@@ -397,17 +407,17 @@ class K8SManager:
             if not status:
                 return None
 
-            crawl = self._make_crawl_for_job(job, status, False, CrawlOut)
-
             pods = await self.core_api.list_namespaced_pod(
                 namespace=self.namespace,
                 label_selector=f"job-name={name},btrix.archive={aid}",
             )
 
-            crawl.watchIPs = [
-                pod.status.pod_ip for pod in pods.items if pod.status.pod_ip
-            ]
-            return crawl
+            watch_ips = [pod.status.pod_ip for pod in pods.items if pod.status.pod_ip]
+
+            if status == "running" and not watch_ips:
+                status = "starting"
+
+            return self._make_crawl_for_job(job, status, False, CrawlOut, watch_ips)
 
         # pylint: disable=broad-except
         except Exception:
@@ -517,7 +527,9 @@ class K8SManager:
         return None
 
     # pylint: disable=no-self-use
-    def _make_crawl_for_job(self, job, state, finish_now=False, crawl_cls=Crawl):
+    def _make_crawl_for_job(
+        self, job, state, finish_now=False, crawl_cls=Crawl, watch_ips=None
+    ):
         """ Make a crawl object from a job"""
         return crawl_cls(
             id=job.metadata.name,
@@ -529,10 +541,11 @@ class K8SManager:
             # schedule=job.metadata.annotations.get("btrix.run.schedule", ""),
             manual=job.metadata.annotations.get("btrix.run.manual") == "1",
             started=job.status.start_time.replace(tzinfo=None),
+            watchIPs=watch_ips or [],
+            colls=json.loads(job.metadata.annotations.get("btrix.colls", [])),
             finished=datetime.datetime.utcnow().replace(microsecond=0, tzinfo=None)
             if finish_now
             else None,
-            colls=json.loads(job.metadata.annotations.get("btrix.colls", [])),
         )
 
     async def _delete_job(self, name):
@@ -669,6 +682,7 @@ class K8SManager:
         storage_path,
         labels,
         annotations,
+        out_filename,
         crawl_timeout,
         parallel,
     ):
@@ -731,7 +745,7 @@ class K8SManager:
                                     {"name": "STORE_PATH", "value": storage_path},
                                     {
                                         "name": "STORE_FILENAME",
-                                        "value": "@ts-@hostname.wacz",
+                                        "value": out_filename,
                                     },
                                 ],
                                 "resources": resources,

@@ -422,6 +422,8 @@ class CrawlOps:
 
         for crawl, (done, total) in zip(crawl_list, pairwise(results)):
             crawl.stats = {"done": done, "found": total}
+            if total == 0 and done == 0 and crawl.state == "running":
+                crawl.state = "starting"
 
     async def cache_ips(self, crawl: CrawlOut):
         """ cache ips for ws auth check """

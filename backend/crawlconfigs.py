@@ -6,6 +6,7 @@ from typing import List, Union, Optional
 from enum import Enum
 import uuid
 import asyncio
+import re
 from datetime import datetime
 
 import pymongo
@@ -169,6 +170,7 @@ class CrawlConfigOps:
         )
 
         self.coll_ops = None
+        self._file_rx = re.compile("\\W+")
 
         asyncio.create_task(self.init_index())
 
@@ -181,6 +183,10 @@ class CrawlConfigOps:
     def set_coll_ops(self, coll_ops):
         """ set collection ops """
         self.coll_ops = coll_ops
+
+    def sanitize(self, string=""):
+        """ sanitize string for use in wacz filename"""
+        return self._file_rx.sub("-", string.lower())
 
     async def add_crawl_config(
         self, config: CrawlConfigIn, archive: Archive, user: User
@@ -216,8 +222,14 @@ class CrawlConfigOps:
 
         crawlconfig = CrawlConfig.from_dict(data)
 
+        # pylint: disable=line-too-long
+        out_filename = f"{self.sanitize(crawlconfig.name)}-{self.sanitize(user.name)}-@ts-@hostsuffix.wacz"
+
         new_name = await self.crawl_manager.add_crawl_config(
-            crawlconfig=crawlconfig, storage=archive.storage, run_now=config.runNow
+            crawlconfig=crawlconfig,
+            storage=archive.storage,
+            run_now=config.runNow,
+            out_filename=out_filename,
         )
 
         return result, new_name
@@ -234,10 +246,10 @@ class CrawlConfigOps:
             raise HTTPException(status_code=400, detail="no_update_data")
 
         # update schedule in crawl manager first
-        if update.schedule is not None:
+        if update.schedule is not None or update.scale is not None:
             try:
-                await self.crawl_manager.update_crawl_schedule(
-                    str(cid), update.schedule
+                await self.crawl_manager.update_crawl_schedule_or_scale(
+                    str(cid), update.schedule, update.scale
                 )
             except Exception:
                 # pylint: disable=raise-missing-from
@@ -438,14 +450,6 @@ def init_crawl_config_api(
 
     @router.patch("/{cid}", dependencies=[Depends(archive_crawl_dep)])
     async def update_crawl_config(
-        update: UpdateCrawlConfig,
-        cid: str,
-    ):
-        return await ops.update_crawl_config(uuid.UUID(cid), update)
-
-    # depcreated: to remove in favor of general patch
-    @router.patch("/{cid}/schedule", dependencies=[Depends(archive_crawl_dep)])
-    async def update_crawl_schedule(
         update: UpdateCrawlConfig,
         cid: str,
     ):
