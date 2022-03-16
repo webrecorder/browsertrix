@@ -1,4 +1,5 @@
 type CrawlState =
+  | "starting"
   | "running"
   | "complete"
   | "failed"

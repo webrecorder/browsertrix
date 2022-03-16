@@ -60,7 +60,7 @@ export class CrawlDetail extends LiteElement {
   private get isRunning(): boolean | null {
     if (!this.crawl) return null;
 
-    return this.crawl.state === "running";
+    return this.crawl.state === "running" || this.crawl.state === "starting";
   }
 
   async firstUpdated() {
@@ -87,7 +87,7 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          if (this.crawl.state === "running") {
+          if (this.isRunning) {
             sectionContent = this.renderWatch();
           } else {
             sectionContent = this.renderReplay();
@@ -408,8 +408,7 @@ export class CrawlDetail extends LiteElement {
       </header>
 
       ${this.crawl
-        ? html`
-          <div id="screencast-crawl">
+        ? html` <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
               archiveId=${this.archiveId!}
@@ -422,7 +421,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderReplay() {
-    const isRunning = this.crawl?.state === "running";
+    const isRunning = this.isRunning;
 
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
@@ -652,7 +651,7 @@ export class CrawlDetail extends LiteElement {
     try {
       this.crawl = await this.getCrawl();
 
-      if (this.crawl.state === "running") {
+      if (this.isRunning) {
         // Start timer for next poll
         this.timerId = window.setTimeout(() => {
           this.fetchCrawl();

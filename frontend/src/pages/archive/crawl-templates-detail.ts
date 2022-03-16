@@ -963,6 +963,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
         <sl-menu-item value="prefix">Prefix</sl-menu-item>
         <sl-menu-item value="host">Host</sl-menu-item>
+        <sl-menu-item value="domain">Domain</sl-menu-item>
         <sl-menu-item value="any">Any</sl-menu-item>
       </sl-select>
       <sl-checkbox
