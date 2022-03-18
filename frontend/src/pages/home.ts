@@ -82,6 +82,10 @@ export class Home extends LiteElement {
               `}
         </div>
       </main>
+      <btrix-archives
+        .authState="${this.authState}"
+        .userInfo="${this.userInfo}"
+      ></btrix-archives>
     `;
   }
 

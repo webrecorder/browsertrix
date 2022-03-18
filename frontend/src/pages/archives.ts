@@ -69,8 +69,8 @@ export class Archives extends LiteElement {
                   >${archive.name}</span
                 >
                 ${this.userInfo &&
-                archive.users &&
-                isOwner(archive.users[this.userInfo.id].role)
+                archive.users && (this.userInfo.isAdmin ||
+                isOwner(archive.users[this.userInfo.id].role))
                   ? html`<sl-tag size="small" type="primary"
                       >${msg("Owner")}</sl-tag
                     >`

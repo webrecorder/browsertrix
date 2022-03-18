@@ -235,7 +235,19 @@ class CrawlOps:
             crawl.cid, crawl.id, crawl.finished, crawl.state
         )
 
+        if crawl_file:
+            await self.delete_redis_keys(crawl)
+
         return True
+
+    async def delete_redis_keys(self, crawl):
+        """ delete keys for this crawl """
+        key = crawl.id
+        try:
+            await self.redis.delete(f"{key}:s", f"{key}:p", f"{key}:q", f"{key}:d")
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
 
     async def list_finished_crawls(
         self,
