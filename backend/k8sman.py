@@ -746,7 +746,7 @@ class K8SManager:
                                     {
                                         "name": "STORE_FILENAME",
                                         "value": out_filename,
-                                    },
+                                    }
                                 ],
                                 "resources": resources,
                             }
