@@ -14,7 +14,11 @@ import "./crawl-templates-new";
 import "./crawl-detail";
 import "./crawls-list";
 
-export type ArchiveTab = "crawls" | "crawl-templates" | "members";
+export type ArchiveTab =
+  | "crawls"
+  | "crawl-templates"
+  | "browser-profiles"
+  | "members";
 
 const defaultTab = "crawls";
 
@@ -114,6 +118,9 @@ export class Archive extends LiteElement {
       case "crawl-templates":
         tabPanelContent = this.renderCrawlTemplates();
         break;
+      case "browser-profiles":
+        tabPanelContent = this.renderBrowserProfiles();
+        break;
       case "members":
         if (this.isAddingMember) {
           tabPanelContent = this.renderAddMember();
@@ -148,6 +155,10 @@ export class Archive extends LiteElement {
           ${this.renderNavTab({
             tabName: "crawl-templates",
             label: msg("Crawl Templates"),
+          })}
+          ${this.renderNavTab({
+            tabName: "browser-profiles",
+            label: msg("Browser Profiles"),
           })}
           ${showMembersTab
             ? this.renderNavTab({ tabName: "members", label: msg("Members") })
@@ -243,6 +254,10 @@ export class Archive extends LiteElement {
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
     ></btrix-crawl-templates-list>`;
+  }
+
+  private renderBrowserProfiles() {
+    return html``;
   }
 
   private renderMembers() {
