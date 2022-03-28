@@ -16,7 +16,7 @@ const POLL_INTERVAL_SECONDS = 10;
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-detail></btrix-crawl-detail>
+ * <btrix-crawl-detail crawlsBaseUrl="/crawls"></btrix-crawl-detail>
  * ```
  */
 @localized()
@@ -24,20 +24,23 @@ export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
+  // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
-  archiveId?: string;
+  crawlsBaseUrl!: string;
+
+  // e.g. `/archive/${this.archiveId}/crawl-templates`
+  @property({ type: String })
+  crawlTemplatesBaseUrl?: string;
+
+  // e.g. `${window.location.host}/watch/${this.archiveId}`
+  @property({ type: String })
+  screencastBaseUrl?: string;
 
   @property({ type: String })
   crawlId?: string;
 
   @state()
   private crawl?: Crawl;
-
-  @state()
-  private watchUrl?: string;
-
-  @state()
-  private isWatchExpanded: boolean = false;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -57,14 +60,6 @@ export class CrawlDetail extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
-  private get crawlsBaseUrl(): string {
-    if (this.archiveId) {
-      return `/archives/${this.archiveId}/crawls`;
-    }
-
-    return `/crawls`;
-  }
-
   private get isRunning(): boolean | null {
     if (!this.crawl) return null;
 
@@ -72,6 +67,10 @@ export class CrawlDetail extends LiteElement {
   }
 
   async firstUpdated() {
+    if (!this.crawlsBaseUrl) {
+      throw new Error("Crawls base URL not defined");
+    }
+
     this.fetchCrawl();
   }
 
@@ -294,14 +293,14 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Template ID")}
           </li>
-          ${this.archiveId
+          ${this.crawlTemplatesBaseUrl
             ? html`
                 <li
                   class="p-2 hover:bg-zinc-100 cursor-pointer"
                   role="menuitem"
                   @click=${() => {
                     this.navTo(
-                      `/archives/${this.archiveId}/crawl-templates/config/${crawlTemplateId}`
+                      `${this.crawlTemplatesBaseUrl}/config/${crawlTemplateId}`
                     );
                   }}
                 >
@@ -419,11 +418,11 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.crawl
+      ${this.crawl && this.screencastBaseUrl
         ? html` <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
-              archiveId=${ifDefined(this.archiveId)}
+              screencastBaseUrl=${this.screencastBaseUrl}
               crawlId=${this.crawlId!}
               .watchIPs=${this.crawl.watchIPs || []}
             ></btrix-screencast>
@@ -536,11 +535,11 @@ export class CrawlDetail extends LiteElement {
           <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
-              ? this.archiveId
+              ? this.crawlTemplatesBaseUrl
                 ? html`
                     <a
                       class="font-medium text-neutral-700 hover:text-neutral-900"
-                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                      href=${`/${this.crawlTemplatesBaseUrl}/config/${this.crawl.cid}`}
                       @click=${this.navLink}
                     >
                       <sl-icon

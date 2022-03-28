@@ -424,15 +424,16 @@ export class App extends LiteElement {
           ?isEditing=${Boolean(this.viewState.params.edit)}
         ></btrix-archive>`;
 
+      case "crawls":
       case "crawl":
-        return html`<btrix-crawl
+        return html`<btrix-crawls
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
           @notify=${this.onNotify}
           .authState=${this.authService.authState}
           crawlId=${this.viewState.params.crawlId}
-        ></btrix-crawl>`;
+        ></btrix-crawls>`;
 
       case "accountSettings":
         return html`<btrix-account-settings

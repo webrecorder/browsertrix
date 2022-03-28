@@ -200,8 +200,14 @@ export class Archive extends LiteElement {
     if (this.crawlId) {
       return html`<btrix-crawl-detail
         .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
         crawlId=${this.crawlId}
+        crawlsBaseUrl=${`/archives/${this.archiveId}/crawls`}
+        crawlTemplatesBaseUrl=${`/archives/${this.archiveId}/crawl-templates`}
+        screencastBaseUrl=${`${
+          window.location.protocol === "https:" ? "wss" : "ws"
+        }:${process.env.WEBSOCKET_HOST || window.location.host}/watch/${
+          this.archiveId
+        }/${this.crawlId}`}
       ></btrix-crawl-detail>`;
     }
 

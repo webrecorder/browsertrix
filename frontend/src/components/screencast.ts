@@ -28,8 +28,7 @@ type CloseMessage = Message & {
  * Usage example:
  * ```ts
  * <btrix-screencast
- *   archiveId=${archiveId}
- *   crawlId=${crawlId}
+ *   screencastBaseUrl=${screencastBaseUrl}
  * ></btrix-screencast>
  * ```
  */
@@ -104,10 +103,7 @@ export class Screencast extends LitElement {
   authToken?: string;
 
   @property({ type: String })
-  archiveId?: string;
-
-  @property({ type: String })
-  crawlId?: string;
+  screencastBaseUrl?: string;
 
   @property({ type: Array })
   watchIPs: string[] = [];
@@ -151,8 +147,7 @@ export class Screencast extends LitElement {
 
   async updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.get("archiveId") ||
-      changedProperties.get("crawlId") ||
+      changedProperties.get("screencastBaseUrl") ||
       changedProperties.get("watchIPs") ||
       changedProperties.get("authToken")
     ) {
@@ -223,8 +218,7 @@ export class Screencast extends LitElement {
   }
 
   private connectWs() {
-    // TODO remove check for archive ID if admin
-    if (!this.archiveId || !this.crawlId) {
+    if (!this.screencastBaseUrl) {
       return;
     }
 
@@ -233,13 +227,9 @@ export class Screencast extends LitElement {
       return;
     }
 
-    const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-      process.env.WEBSOCKET_HOST || window.location.host
-    }/watch/${this.archiveId}/${this.crawlId}`;
-
     this.watchIPs.forEach((ip: string) => {
       const ws = new WebSocket(
-        `${baseURL}/${ip}/ws?auth_bearer=${this.authToken || ""}`
+        `${this.screencastBaseUrl}/${ip}/ws?auth_bearer=${this.authToken || ""}`
       );
 
       ws.addEventListener("open", () => {
