@@ -688,8 +688,6 @@ export class CrawlDetail extends LiteElement {
     //   // (module) => module.default.finished[0]
     // );
 
-    console.log(this.crawlsBaseUrl);
-
     const data: Crawl = await this.apiFetch(
       `${this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
