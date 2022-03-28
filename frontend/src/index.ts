@@ -424,6 +424,18 @@ export class App extends LiteElement {
           ?isEditing=${Boolean(this.viewState.params.edit)}
         ></btrix-archive>`;
 
+      case "crawl":
+        return html`<btrix-archive
+          class="w-full"
+          @navigate=${this.onNavigateTo}
+          @need-login=${this.onNeedLogin}
+          @notify="${this.onNotify}"
+          .authState=${this.authService.authState}
+          .userInfo=${this.userInfo}
+          .viewStateData=${this.viewState.data}
+          crawlId=${this.viewState.params.crawlId}
+        ></btrix-archive>`;
+
       case "accountSettings":
         return html`<btrix-account-settings
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
