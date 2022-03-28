@@ -539,7 +539,7 @@ export class CrawlDetail extends LiteElement {
                 ? html`
                     <a
                       class="font-medium text-neutral-700 hover:text-neutral-900"
-                      href=${`/${this.crawlTemplatesBaseUrl}/config/${this.crawl.cid}`}
+                      href=${`${this.crawlTemplatesBaseUrl}/config/${this.crawl.cid}`}
                       @click=${this.navLink}
                     >
                       <sl-icon
