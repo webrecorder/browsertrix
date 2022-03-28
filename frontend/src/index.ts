@@ -404,7 +404,7 @@ export class App extends LiteElement {
       case "archive":
       case "archiveAddMember":
       case "archiveNewResourceTab":
-      case "crawl":
+      case "archiveCrawl":
       case "crawlTemplate":
       case "crawlTemplateEdit":
         return html`<btrix-archive

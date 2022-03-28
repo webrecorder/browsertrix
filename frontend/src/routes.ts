@@ -14,7 +14,7 @@ export const ROUTES = {
   archive: "/archives/:id/:tab",
   archiveNewResourceTab: "/archives/:id/:tab/new",
   archiveAddMember: "/archives/:id/:tab/add-member",
-  crawl: "/archives/:id/:tab/crawl/:crawlId",
+  archiveCrawl: "/archives/:id/:tab/crawl/:crawlId",
   crawlTemplate: "/archives/:id/:tab/config/:crawlConfigId",
   crawlTemplateEdit: "/archives/:id/:tab/config/:crawlConfigId?edit",
   users: "/users",
