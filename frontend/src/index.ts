@@ -424,17 +424,6 @@ export class App extends LiteElement {
           ?isEditing=${Boolean(this.viewState.params.edit)}
         ></btrix-archive>`;
 
-      case "crawls":
-      case "crawl":
-        return html`<btrix-crawls
-          class="w-full"
-          @navigate=${this.onNavigateTo}
-          @need-login=${this.onNeedLogin}
-          @notify=${this.onNotify}
-          .authState=${this.authService.authState}
-          crawlId=${this.viewState.params.crawlId}
-        ></btrix-crawls>`;
-
       case "accountSettings":
         return html`<btrix-account-settings
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
@@ -445,22 +434,54 @@ export class App extends LiteElement {
         ></btrix-account-settings>`;
 
       case "usersInvite": {
-        if (this.userInfo?.isAdmin) {
-          return html`<btrix-users-invite
-            class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
-            @navigate="${this.onNavigateTo}"
-            @need-login="${this.onNeedLogin}"
-            .authState="${this.authService.authState}"
-            .userInfo="${this.userInfo}"
-          ></btrix-users-invite>`;
+        if (this.userInfo) {
+          if (this.userInfo.isAdmin) {
+            return html`<btrix-users-invite
+              class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+              @navigate="${this.onNavigateTo}"
+              @need-login="${this.onNeedLogin}"
+              .authState="${this.authService.authState}"
+              .userInfo="${this.userInfo}"
+            ></btrix-users-invite>`;
+          } else {
+            return this.renderNotFoundPage();
+          }
         } else {
-          return this.renderNotFoundPage();
+          return this.renderSpinner();
+        }
+      }
+
+      case "crawls":
+      case "crawl": {
+        if (this.userInfo) {
+          if (this.userInfo.isAdmin) {
+            return html`<btrix-crawls
+              class="w-full"
+              @navigate=${this.onNavigateTo}
+              @need-login=${this.onNeedLogin}
+              @notify=${this.onNotify}
+              .authState=${this.authService.authState}
+              crawlId=${this.viewState.params.crawlId}
+            ></btrix-crawls>`;
+          } else {
+            return this.renderNotFoundPage();
+          }
+        } else {
+          return this.renderSpinner();
         }
       }
 
       default:
         return this.renderNotFoundPage();
     }
+  }
+
+  renderSpinner() {
+    return html`
+      <div class="w-full flex items-center justify-center text-4xl">
+        <sl-spinner></sl-spinner>
+      </div>
+    `;
   }
 
   renderNotFoundPage() {
