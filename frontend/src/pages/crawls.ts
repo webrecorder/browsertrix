@@ -37,6 +37,7 @@ export class Crawls extends LiteElement {
   private renderList() {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
+      crawlsBaseUrl="/crawls"
       shouldFetch
     ></btrix-crawls-list>`;
   }

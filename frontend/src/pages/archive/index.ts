@@ -197,12 +197,15 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawls() {
+    const crawlsBaseUrl = `/archives/${this.archiveId}/crawls`;
+    const crawlTemplatesBaseUrl = `/archives/${this.archiveId}/crawl-templates`;
+
     if (this.crawlId) {
       return html`<btrix-crawl-detail
         .authState=${this.authState!}
         crawlId=${this.crawlId}
-        crawlsBaseUrl=${`/archives/${this.archiveId}/crawls`}
-        crawlTemplatesBaseUrl=${`/archives/${this.archiveId}/crawl-templates`}
+        crawlsBaseUrl=${crawlsBaseUrl}
+        crawlTemplatesBaseUrl=${crawlTemplatesBaseUrl}
         screencastBaseUrl=${`${
           window.location.protocol === "https:" ? "wss" : "ws"
         }:${process.env.WEBSOCKET_HOST || window.location.host}/watch/${
@@ -213,7 +216,8 @@ export class Archive extends LiteElement {
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      .archiveId=${this.archiveId!}
+      crawlsBaseUrl=${crawlsBaseUrl}
+      crawlTemplatesBaseUrl=${crawlTemplatesBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
   }
