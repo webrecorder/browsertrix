@@ -13,6 +13,9 @@ import(/* webpackChunkName: "archives" */ "./archives").then(({ Archives }) => {
 import(/* webpackChunkName: "archive" */ "./archive").then(({ Archive }) => {
   customElements.define("btrix-archive", Archive);
 });
+import(/* webpackChunkName: "crawl" */ "./crawl").then(({ Crawl }) => {
+  customElements.define("btrix-crawl", Crawl);
+});
 import(/* webpackChunkName: "join" */ "./join").then(({ Join }) => {
   customElements.define("btrix-join", Join);
 });

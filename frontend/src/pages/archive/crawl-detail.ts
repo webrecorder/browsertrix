@@ -57,6 +57,14 @@ export class CrawlDetail extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
+  private get crawlsBaseUrl(): string {
+    if (this.archiveId) {
+      return `/archives/${this.archiveId}/crawls`;
+    }
+
+    return `/crawls`;
+  }
+
   private get isRunning(): boolean | null {
     if (!this.crawl) return null;
 
@@ -115,7 +123,7 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawls`}
+          href=${this.crawlsBaseUrl}
           @click=${this.navLink}
         >
           <sl-icon
@@ -175,7 +183,7 @@ export class CrawlDetail extends LiteElement {
             class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
               ? "text-primary bg-slate-50"
               : "text-neutral-500 hover:text-neutral-900"}"
-            href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
+            href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
             ${label}
@@ -286,17 +294,21 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Template ID")}
           </li>
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${(e: any) => {
-              this.navTo(
-                `/archives/${this.archiveId}/crawl-templates/config/${crawlTemplateId}`
-              );
-            }}
-          >
-            ${msg("View Crawl Template")}
-          </li>
+          ${this.archiveId
+            ? html`
+                <li
+                  class="p-2 hover:bg-zinc-100 cursor-pointer"
+                  role="menuitem"
+                  @click=${() => {
+                    this.navTo(
+                      `/archives/${this.archiveId}/crawl-templates/config/${crawlTemplateId}`
+                    );
+                  }}
+                >
+                  ${msg("View Crawl Template")}
+                </li>
+              `
+            : ""}
         </ul>
       </sl-dropdown>
     `;
@@ -411,7 +423,7 @@ export class CrawlDetail extends LiteElement {
         ? html` <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
-              archiveId=${this.archiveId!}
+              archiveId=${ifDefined(this.archiveId)}
               crawlId=${this.crawlId!}
               .watchIPs=${this.crawl.watchIPs || []}
             ></btrix-screencast>
@@ -524,21 +536,23 @@ export class CrawlDetail extends LiteElement {
           <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${this.crawl.configName}
-                    </span>
-                  </a>
-                `
+              ? this.archiveId
+                ? html`
+                    <a
+                      class="font-medium text-neutral-700 hover:text-neutral-900"
+                      href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                      @click=${this.navLink}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle"
+                        name="link-45deg"
+                      ></sl-icon>
+                      <span class="inline-block align-middle">
+                        ${this.crawl.configName}
+                      </span>
+                    </a>
+                  `
+                : html`<span> ${this.crawl.configName} </span>`
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
@@ -675,8 +689,10 @@ export class CrawlDetail extends LiteElement {
     //   // (module) => module.default.finished[0]
     // );
 
+    console.log(this.crawlsBaseUrl);
+
     const data: Crawl = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}.json`,
+      `${this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
 
@@ -686,7 +702,7 @@ export class CrawlDetail extends LiteElement {
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/cancel`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -708,7 +724,7 @@ export class CrawlDetail extends LiteElement {
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/stop`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -732,7 +748,7 @@ export class CrawlDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/scale`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/scale`,
         this.authState!,
         {
           method: "POST",

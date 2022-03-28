@@ -19,7 +19,7 @@ export const ROUTES = {
   crawlTemplateEdit: "/archives/:id/:tab/config/:crawlConfigId?edit",
   users: "/users",
   usersInvite: "/users/invite",
-  crawl: "/crawls/:crawlId",
+  crawl: "/crawls/crawl/:crawlId",
 } as const;
 
 export const DASHBOARD_ROUTE = ROUTES.home;

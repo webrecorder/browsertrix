@@ -425,16 +425,14 @@ export class App extends LiteElement {
         ></btrix-archive>`;
 
       case "crawl":
-        return html`<btrix-archive
+        return html`<btrix-crawl
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
-          @notify="${this.onNotify}"
+          @notify=${this.onNotify}
           .authState=${this.authService.authState}
-          .userInfo=${this.userInfo}
-          .viewStateData=${this.viewState.data}
           crawlId=${this.viewState.params.crawlId}
-        ></btrix-archive>`;
+        ></btrix-crawl>`;
 
       case "accountSettings":
         return html`<btrix-account-settings

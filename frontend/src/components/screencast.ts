@@ -223,6 +223,7 @@ export class Screencast extends LitElement {
   }
 
   private connectWs() {
+    // TODO remove check for archive ID if admin
     if (!this.archiveId || !this.crawlId) {
       return;
     }
