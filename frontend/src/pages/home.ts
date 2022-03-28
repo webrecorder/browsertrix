@@ -33,19 +33,25 @@ export class Home extends LiteElement {
   }
 
   render() {
+    if (!this.userInfo || !this.archiveList) {
+      return html`
+        <div class="flex items-center justify-center my-24 text-4xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
+
     let title: any;
     let content: any;
 
-    if (this.userInfo) {
-      if (this.userInfo.isAdmin === true) {
-        title = msg("Welcome");
-        content = this.renderLoggedInAdmin();
-      }
+    if (this.userInfo.isAdmin === true) {
+      title = msg("Welcome");
+      content = this.renderLoggedInAdmin();
+    }
 
-      if (this.userInfo.isAdmin === false) {
-        title = msg("Archives");
-        content = this.renderLoggedInNonAdmin();
-      }
+    if (this.userInfo.isAdmin === false) {
+      title = msg("Archives");
+      content = this.renderLoggedInNonAdmin();
     }
 
     return html`
@@ -64,16 +70,12 @@ export class Home extends LiteElement {
   }
 
   private renderLoggedInAdmin() {
-    if (!this.archiveList) {
-      return;
-    }
-
-    if (this.archiveList.length) {
+    if (this.archiveList!.length) {
       return html`
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
-              <h2 class="text-xl font-medium mb-4 mt-3">
+              <h2 class="text-lg font-medium mb-3 mt-2">
                 ${msg("All Archives")}
               </h2>
               <btrix-archives-list
@@ -82,9 +84,9 @@ export class Home extends LiteElement {
               ></btrix-archives-list>
             </section>
           </div>
-          <div class="col-span-3 md:col-span-1">
+          <div class="col-span-3 md:col-span-1 md:mt-12">
             <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-              <h2 class="text-xl font-medium mb-4">${msg("Invite a User")}</h2>
+              <h2 class="text-lg font-medium mb-4">${msg("Invite a User")}</h2>
               ${this.renderInvite()}
             </section>
           </div>
