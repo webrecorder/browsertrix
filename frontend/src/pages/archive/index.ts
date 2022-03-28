@@ -257,7 +257,35 @@ export class Archive extends LiteElement {
   }
 
   private renderBrowserProfiles() {
-    return html``;
+    const mock = [
+      {
+        name: "Twitter Example",
+        username: "user@example.com",
+      },
+      {
+        name: "Twitter Webrecorder",
+        username: "dev@webrecorder.com",
+      },
+    ];
+
+    return html`
+      <ul class="border rounded">
+        ${mock.map(
+          (data) => html`
+            <li
+              class="grid grid-cols-12 gap-2 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
+              role="button"
+              @click=${console.log}
+              title=${data.name}
+            >
+              <div class="col-span-12 md:col-span-5">
+                <div class="font-medium mb-1">${data.name}</div>
+              </div>
+            </li>
+          `
+        )}
+      </ul>
+    `;
   }
 
   private renderMembers() {
