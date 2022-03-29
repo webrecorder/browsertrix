@@ -220,11 +220,6 @@ export class Archive extends LiteElement {
           .authState=${this.authState!}
           crawlId=${this.crawlId}
           crawlsBaseUrl=${crawlsBaseUrl}
-          screencastBaseUrl=${`${
-            window.location.protocol === "https:" ? "wss" : "ws"
-          }:${process.env.WEBSOCKET_HOST || window.location.host}/watch/${
-            this.archiveId
-          }/${this.crawlId}`}
         ></btrix-crawl-detail>`;
     }
 

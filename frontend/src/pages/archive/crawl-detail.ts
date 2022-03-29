@@ -35,10 +35,6 @@ export class CrawlDetail extends LiteElement {
   @property({ type: Boolean })
   showArchiveLink = false;
 
-  // e.g. `${window.location.host}/watch/${this.archiveId}`
-  @property({ type: String })
-  screencastBaseUrl?: string;
-
   @property({ type: String })
   crawlId?: string;
 
@@ -402,11 +398,11 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.crawl && this.screencastBaseUrl
+      ${this.crawl
         ? html` <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
-              screencastBaseUrl=${this.screencastBaseUrl}
+              archiveId=${this.crawl.aid}
               crawlId=${this.crawlId!}
               .watchIPs=${this.crawl.watchIPs || []}
             ></btrix-screencast>
