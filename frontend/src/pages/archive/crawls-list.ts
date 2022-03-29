@@ -90,6 +90,10 @@ export class CrawlsList extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
+  private get apiBaseUrl() {
+    return this.crawlsAPIBaseUrl || this.crawlsBaseUrl;
+  }
+
   private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
     return orderBy(({ item }) => item[this.orderBy.field])(
       this.orderBy.direction
@@ -497,10 +501,7 @@ export class CrawlsList extends LiteElement {
     //   (module) => module.default
     // );
 
-    const data = await this.apiFetch(
-      this.crawlsAPIBaseUrl || this.crawlsBaseUrl,
-      this.authState!
-    );
+    const data = await this.apiFetch(this.apiBaseUrl, this.authState!);
 
     this.lastFetched = Date.now();
 
@@ -510,7 +511,7 @@ export class CrawlsList extends LiteElement {
   private async cancel(id: string) {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${id}/cancel`,
+        `${this.apiBaseUrl}/${id}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -532,7 +533,7 @@ export class CrawlsList extends LiteElement {
   private async stop(id: string) {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${id}/stop`,
+        `${this.apiBaseUrl}/${id}/stop`,
         this.authState!,
         {
           method: "POST",
