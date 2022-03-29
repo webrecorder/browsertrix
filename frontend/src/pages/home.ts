@@ -76,7 +76,7 @@ export class Home extends LiteElement {
           <sl-form
             @sl-submit=${(e: CustomEvent) => {
               const id = e.detail.formData.get("crawlId");
-              this.navTo(`/archives/all/crawls/crawl/${id}`);
+              this.navTo(`/crawls/crawl/${id}`);
             }}
           >
             <div class="flex flex-wrap items-center">

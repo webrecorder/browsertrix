@@ -49,6 +49,10 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   crawlsBaseUrl!: string;
 
+  // e.g. `/archive/${this.archiveId}/crawls`
+  @property({ type: String })
+  crawlsAPIBaseUrl?: string;
+
   // e.g. `/archive/${this.archiveId}/crawl-templates`
   @property({ type: String })
   crawlTemplatesBaseUrl?: string;
@@ -501,7 +505,10 @@ export class CrawlsList extends LiteElement {
     //   (module) => module.default
     // );
 
-    const data = await this.apiFetch(this.crawlsBaseUrl, this.authState!);
+    const data = await this.apiFetch(
+      this.crawlsAPIBaseUrl || this.crawlsBaseUrl,
+      this.authState!
+    );
 
     this.lastFetched = Date.now();
 

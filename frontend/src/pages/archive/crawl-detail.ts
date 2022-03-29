@@ -28,6 +28,10 @@ export class CrawlDetail extends LiteElement {
   @property({ type: String })
   crawlsBaseUrl!: string;
 
+  // e.g. `/archive/${this.archiveId}/crawls`
+  @property({ type: String })
+  crawlsAPIBaseUrl?: string;
+
   // e.g. `/archive/${this.archiveId}/crawl-templates`
   @property({ type: String })
   crawlTemplatesBaseUrl?: string;
@@ -689,7 +693,7 @@ export class CrawlDetail extends LiteElement {
     // );
 
     const data: Crawl = await this.apiFetch(
-      `${this.crawlsBaseUrl}/${this.crawlId}.json`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
 

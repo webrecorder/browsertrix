@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+import { ROUTES } from "../routes";
 import "./archive/crawl-detail";
 import "./archive/crawls-list";
 
@@ -28,7 +29,8 @@ export class Crawls extends LiteElement {
         <btrix-crawl-detail
           .authState=${this.authState!}
           crawlId=${this.crawlId!}
-          crawlsBaseUrl="/archives/all/crawls"
+          crawlsBaseUrl=${ROUTES.crawls}
+          crawlsAPIBaseUrl="/archives/all/crawl"
         ></btrix-crawl-detail>
       </div>
     `;
@@ -37,7 +39,8 @@ export class Crawls extends LiteElement {
   private renderList() {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      crawlsBaseUrl="/archives/all/crawls"
+      crawlsBaseUrl=${ROUTES.crawls}
+      crawlsAPIBaseUrl="/archives/all/crawl"
       shouldFetch
     ></btrix-crawls-list>`;
   }
