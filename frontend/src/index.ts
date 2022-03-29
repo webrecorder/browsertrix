@@ -215,15 +215,33 @@ export class App extends LiteElement {
         <nav
           class="max-w-screen-lg mx-auto px-3 box-border h-12 flex items-center justify-between"
         >
-          <div class="flex items-center">
+          <div>
             <a href="/" @click="${this.navLink}"
-              ><h1 class="text-sm font-medium">
+              ><h1 class="text-sm hover:text-neutral-400 font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
             >
-
-            ${isAdmin ? this.renderFindCrawl() : ""}
           </div>
+
+          ${isAdmin
+            ? html`
+                <div class="grid grid-flow-col gap-5 items-center">
+                  <a
+                    class="text-sm text-neutral-500 hover:text-neutral-400 font-medium"
+                    href="/archives"
+                    @click=${this.navLink}
+                    >${msg("All Archives")}</a
+                  >
+                  <a
+                    class="text-sm text-neutral-500 hover:text-neutral-400 font-medium"
+                    href="/crawls"
+                    @click=${this.navLink}
+                    >${msg("Running Crawls")}</a
+                  >
+                  <div>${this.renderFindCrawl()}</div>
+                </div>
+              `
+            : ""}
 
           <div class="grid grid-flow-col gap-5 items-center">
             ${this.authService.authState
@@ -506,9 +524,12 @@ export class App extends LiteElement {
         }}
         hoist
       >
-        <sl-button slot="trigger" type="text" size="small"
-          >${msg("Jump to Crawl")}</sl-button
+        <button
+          slot="trigger"
+          class="text-sm text-primary hover:text-indigo-400 font-medium"
         >
+          ${msg("Jump to Crawl")}
+        </button>
 
         <div class="p-2">
           <sl-form
