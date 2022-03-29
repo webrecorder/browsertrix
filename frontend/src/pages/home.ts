@@ -72,6 +72,36 @@ export class Home extends LiteElement {
   private renderLoggedInAdmin() {
     if (this.archiveList!.length) {
       return html`
+        <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
+          <sl-form
+            @sl-submit=${(e: CustomEvent) => {
+              const id = e.detail.formData.get("crawlId");
+              this.navTo(`/crawls/crawl/${id}`);
+            }}
+          >
+            <div class="flex flex-wrap items-center">
+              <div
+                class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
+              >
+                ${msg("Go to Crawl")}
+              </div>
+              <div class="grow mt-2 md:mt-0 md:mr-2">
+                <sl-input
+                  name="crawlId"
+                  placeholder=${msg("Enter Crawl ID")}
+                  required
+                ></sl-input>
+              </div>
+              <div class="grow-0 mt-2 md:mt-0 text-right">
+                <sl-button type="neutral" submit>
+                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
+                  ${msg("Go")}</sl-button
+                >
+              </div>
+            </div>
+          </sl-form>
+        </section>
+
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
