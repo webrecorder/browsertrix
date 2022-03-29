@@ -72,7 +72,7 @@ export class Home extends LiteElement {
   private renderLoggedInAdmin() {
     if (this.archiveList!.length) {
       return html`
-        <section class="border rounded-lg bg-white p-4 md:p-8 mb-5">
+        <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
           <sl-form
             @sl-submit=${(e: CustomEvent) => {
               const id = e.detail.formData.get("crawlId");
@@ -83,7 +83,7 @@ export class Home extends LiteElement {
               <div
                 class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
               >
-                ${msg("Go to crawl")}
+                ${msg("Go to Crawl")}
               </div>
               <div class="mr-2 grow">
                 <sl-input
@@ -93,7 +93,10 @@ export class Home extends LiteElement {
                 ></sl-input>
               </div>
               <div class="grow-0">
-                <sl-button type="primary" submit>${msg("Go")}</sl-button>
+                <sl-button type="neutral" submit>
+                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
+                  ${msg("Go")}</sl-button
+                >
               </div>
             </div>
           </sl-form>
