@@ -165,7 +165,7 @@ export class CrawlTemplatesNew extends LiteElement {
       </p>
 
       <main class="mt-6">
-        <div class="border rounded-lg">
+        <div class="md:border md:rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
@@ -219,10 +219,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderBasicSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Basic Settings")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -242,10 +242,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderScheduleSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Schedule")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
           <div class="flex items-end">
             <div class="pr-2 flex-1">
@@ -264,7 +264,7 @@ export class CrawlTemplatesNew extends LiteElement {
             </div>
           </div>
           <div class="flex items-center mt-2">
-            <span class="px-3">${msg("At")}</span>
+            <span class="pl-3 text-sm">${msg("At")}</span>
             <sl-select
               name="scheduleHour"
               value=${this.scheduleTime.hour}
@@ -313,7 +313,7 @@ export class CrawlTemplatesNew extends LiteElement {
                 >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
               >
             </sl-select>
-            <span class="px-3">${this.timeZoneShortName}</span>
+            <span class="pl-3 text-sm">${this.timeZoneShortName}</span>
           </div>
           <div class="text-sm text-gray-500 mt-2">
             ${this.formattededNextCrawlDate
@@ -345,10 +345,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderCrawlConfigSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Settings")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
           <sl-select
             name="scale"
