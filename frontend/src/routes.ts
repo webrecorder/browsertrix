@@ -19,8 +19,8 @@ export const ROUTES = {
   crawlTemplateEdit: "/archives/:id/:tab/config/:crawlConfigId?edit",
   users: "/users",
   usersInvite: "/users/invite",
-  crawls: "/crawls",
-  crawl: "/crawls/crawl/:crawlId",
+  crawls: "/archives/all/crawls",
+  crawl: "/archives/all/crawls/crawl/:crawlId",
 } as const;
 
 export const DASHBOARD_ROUTE = ROUTES.home;

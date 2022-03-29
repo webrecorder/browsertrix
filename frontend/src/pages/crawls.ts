@@ -28,7 +28,7 @@ export class Crawls extends LiteElement {
         <btrix-crawl-detail
           .authState=${this.authState!}
           crawlId=${this.crawlId!}
-          crawlsBaseUrl="/crawls"
+          crawlsBaseUrl="/archives/all/crawls"
         ></btrix-crawl-detail>
       </div>
     `;
@@ -37,7 +37,7 @@ export class Crawls extends LiteElement {
   private renderList() {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      crawlsBaseUrl="/crawls"
+      crawlsBaseUrl="/archives/all/crawls"
       shouldFetch
     ></btrix-crawls-list>`;
   }
