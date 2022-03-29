@@ -45,6 +45,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
+  @property({ type: String })
+  archiveId?: string;
+
   // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -383,7 +386,7 @@ export class CrawlsList extends LiteElement {
           ></sl-icon-button>
 
           <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
-            ${isRunning(crawl)
+            ${this.archiveId && isRunning(crawl)
               ? html`
                   <li
                     class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -440,17 +443,19 @@ export class CrawlsList extends LiteElement {
             >
               ${msg("Copy Crawl Template ID")}
             </li>
-            <li
-              class="p-2 hover:bg-zinc-100 cursor-pointer"
-              role="menuitem"
-              @click=${() => {
-                this.navTo(
-                  `/archives/${crawl.aid}/crawl-templates/config/${crawl.cid}`
-                );
-              }}
-            >
-              ${msg("View Crawl Template")}
-            </li>
+            ${this.archiveId
+              ? html`<li
+                  class="p-2 hover:bg-zinc-100 cursor-pointer"
+                  role="menuitem"
+                  @click=${() => {
+                    this.navTo(
+                      `/archives/${this.archiveId}/crawl-templates/config/${crawl.cid}`
+                    );
+                  }}
+                >
+                  ${msg("View Crawl Template")}
+                </li>`
+              : ""}
           </ul>
         </sl-dropdown>
       </div>
