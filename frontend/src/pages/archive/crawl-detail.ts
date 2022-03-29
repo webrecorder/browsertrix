@@ -703,7 +703,7 @@ export class CrawlDetail extends LiteElement {
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${this.crawlId}/cancel`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -725,7 +725,7 @@ export class CrawlDetail extends LiteElement {
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${this.crawlId}/stop`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -749,7 +749,7 @@ export class CrawlDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${this.crawlId}/scale`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/scale`,
         this.authState!,
         {
           method: "POST",

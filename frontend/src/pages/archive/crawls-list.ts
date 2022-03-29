@@ -389,7 +389,7 @@ export class CrawlsList extends LiteElement {
                     class="p-2 hover:bg-zinc-100 cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      this.stop(crawl.id);
+                      this.stop(crawl);
                       e.target.closest("sl-dropdown").hide();
                     }}
                   >
@@ -405,7 +405,7 @@ export class CrawlsList extends LiteElement {
                     class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      this.cancel(crawl.id);
+                      this.cancel(crawl);
                       e.target.closest("sl-dropdown").hide();
                     }}
                   >
@@ -507,10 +507,10 @@ export class CrawlsList extends LiteElement {
     return data;
   }
 
-  private async cancel(id: string) {
+  private async cancel(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${id}/cancel`,
+        `/archives/${crawl.aid}/crawls/${crawl.id}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -529,10 +529,10 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async stop(id: string) {
+  private async stop(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.crawlsBaseUrl}/${id}/stop`,
+        `/archives/${crawl.aid}/crawls/${crawl.id}/stop`,
         this.authState!,
         {
           method: "POST",
