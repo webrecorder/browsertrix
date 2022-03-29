@@ -225,7 +225,7 @@ export class CrawlsList extends LiteElement {
         : map((crawl) => ({ item: crawl }));
 
     return html`
-      <ul class="border rounded">
+      <ul class="border rounded text-sm md:text-base">
         ${flow(
           filterResults,
           this.sortCrawls.bind(this),
@@ -237,13 +237,13 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
     return html`<li
-      class="grid grid-cols-12 gap-2 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
+      class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
       role="button"
       @click=${() =>
         this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`)}
       title=${crawl.configName || crawl.cid}
     >
-      <div class="col-span-12 md:col-span-5">
+      <div class="col-span-11 md:col-span-5">
         <div class="font-medium mb-1">
           <a
             href=${`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`}
@@ -266,106 +266,7 @@ export class CrawlsList extends LiteElement {
           ></sl-format-date>
         </div>
       </div>
-      <div class="col-span-4 md:col-span-2 flex items-start">
-        <div class="mr-2">
-          <!-- TODO switch case in lit template? needed for tailwindcss purging -->
-          <span
-            class="inline-block ${crawl.state === "failed"
-              ? "text-red-500"
-              : crawl.state === "complete"
-              ? "text-emerald-500"
-              : isRunning(crawl)
-              ? "text-purple-500"
-              : "text-zinc-300"}"
-            style="font-size: 10px; vertical-align: 2px"
-          >
-            &#9679;
-          </span>
-        </div>
-        <div>
-          <div
-            class="whitespace-nowrap mb-1 capitalize${isRunning(crawl)
-              ? " motion-safe:animate-pulse"
-              : ""}"
-          >
-            ${crawl.state.replace(/_/g, " ")}
-          </div>
-          <div class="text-0-500 text-sm whitespace-nowrap truncate">
-            ${crawl.finished
-              ? html`
-                  <sl-relative-time
-                    date=${`${crawl.finished}Z` /** Z for UTC */}
-                  ></sl-relative-time>
-                `
-              : html`<btrix-relative-duration
-                  value=${`${crawl.started}Z`}
-                ></btrix-relative-duration>`}
-          </div>
-        </div>
-      </div>
-      <div class="col-span-4 md:col-span-2">
-        ${crawl.finished
-          ? html`
-              <div class="whitespace-nowrap truncate text-sm">
-                <span class="font-mono text-0-800 tracking-tighter">
-                  <sl-format-bytes
-                    value=${crawl.fileSize || 0}
-                    lang=${/* TODO localize: */ "en"}
-                  ></sl-format-bytes>
-                </span>
-                <span class="text-0-500">
-                  (${crawl.fileCount === 1
-                    ? msg(str`${crawl.fileCount} file`)
-                    : msg(str`${crawl.fileCount} files`)})
-                </span>
-              </div>
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                ${msg(
-                  str`in ${RelativeDuration.humanize(
-                    new Date(`${crawl.finished}Z`).valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf()
-                  )}`
-                )}
-              </div>
-            `
-          : crawl.stats
-          ? html`
-              <div
-                class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
-              >
-                ${this.numberFormatter.format(+crawl.stats.done)}
-                <span class="text-0-400">/</span>
-                ${this.numberFormatter.format(+crawl.stats.found)}
-              </div>
-              <div class="text-0-500 text-sm whitespace-nowrap truncate">
-                ${msg("pages crawled")}
-              </div>
-            `
-          : ""}
-      </div>
-      <div class="col-span-4 md:col-span-2">
-        ${crawl.manual
-          ? html`
-              <div class="whitespace-nowrap truncate mb-1">
-                <span
-                  class="bg-fuchsia-50 text-fuchsia-700 text-sm rounded px-1 leading-4"
-                  >${msg("Manual Start")}</span
-                >
-              </div>
-              <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
-                ${msg(str`by ${crawl.userName || crawl.userid}`)}
-              </div>
-            `
-          : html`
-              <div class="whitespace-nowrap truncate">
-                <span
-                  class="bg-teal-50 text-teal-700 text-sm rounded px-1 leading-4"
-                  >${msg("Scheduled Run")}</span
-                >
-              </div>
-            `}
-      </div>
-      <div class="col-span-12 md:col-span-1 flex justify-end">
+      <div class="md:order-last col-span-1 flex justify-end">
         <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
           <sl-icon-button
             slot="trigger"
@@ -445,6 +346,105 @@ export class CrawlsList extends LiteElement {
             </li>
           </ul>
         </sl-dropdown>
+      </div>
+      <div class="col-span-12 md:col-span-2 flex items-start">
+        <div class="mr-2">
+          <!-- TODO switch case in lit template? needed for tailwindcss purging -->
+          <span
+            class="inline-block ${crawl.state === "failed"
+              ? "text-red-500"
+              : crawl.state === "complete"
+              ? "text-emerald-500"
+              : isRunning(crawl)
+              ? "text-purple-500"
+              : "text-zinc-300"}"
+            style="font-size: 10px; vertical-align: 2px"
+          >
+            &#9679;
+          </span>
+        </div>
+        <div>
+          <div
+            class="whitespace-nowrap mb-1 capitalize${isRunning(crawl)
+              ? " motion-safe:animate-pulse"
+              : ""}"
+          >
+            ${crawl.state.replace(/_/g, " ")}
+          </div>
+          <div class="text-0-500 text-sm whitespace-nowrap truncate">
+            ${crawl.finished
+              ? html`
+                  <sl-relative-time
+                    date=${`${crawl.finished}Z` /** Z for UTC */}
+                  ></sl-relative-time>
+                `
+              : html`<btrix-relative-duration
+                  value=${`${crawl.started}Z`}
+                ></btrix-relative-duration>`}
+          </div>
+        </div>
+      </div>
+      <div class="col-span-6 md:col-span-2">
+        ${crawl.finished
+          ? html`
+              <div class="whitespace-nowrap truncate text-sm">
+                <span class="font-mono text-0-800 tracking-tighter">
+                  <sl-format-bytes
+                    value=${crawl.fileSize || 0}
+                    lang=${/* TODO localize: */ "en"}
+                  ></sl-format-bytes>
+                </span>
+                <span class="text-0-500">
+                  (${crawl.fileCount === 1
+                    ? msg(str`${crawl.fileCount} file`)
+                    : msg(str`${crawl.fileCount} files`)})
+                </span>
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg(
+                  str`in ${RelativeDuration.humanize(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf()
+                  )}`
+                )}
+              </div>
+            `
+          : crawl.stats
+          ? html`
+              <div
+                class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
+              >
+                ${this.numberFormatter.format(+crawl.stats.done)}
+                <span class="text-0-400">/</span>
+                ${this.numberFormatter.format(+crawl.stats.found)}
+              </div>
+              <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg("pages crawled")}
+              </div>
+            `
+          : ""}
+      </div>
+      <div class="col-span-6 md:col-span-2">
+        ${crawl.manual
+          ? html`
+              <div class="whitespace-nowrap truncate mb-1">
+                <span
+                  class="bg-fuchsia-50 text-fuchsia-700 text-sm rounded px-1 leading-4"
+                  >${msg("Manual Start")}</span
+                >
+              </div>
+              <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
+                ${msg(str`by ${crawl.userName || crawl.userid}`)}
+              </div>
+            `
+          : html`
+              <div class="whitespace-nowrap truncate">
+                <span
+                  class="bg-teal-50 text-teal-700 text-sm rounded px-1 leading-4"
+                  >${msg("Scheduled Run")}</span
+                >
+              </div>
+            `}
       </div>
     </li>`;
   };
