@@ -576,7 +576,7 @@ export class CrawlDetail extends LiteElement {
                     <li
                       class="flex justify-between p-3 border-t first:border-t-0"
                     >
-                      <div>
+                      <div class="whitespace-nowrap truncate">
                         <a
                           class="text-primary hover:underline"
                           href=${file.path}
@@ -585,7 +585,7 @@ export class CrawlDetail extends LiteElement {
                           >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                         </a>
                       </div>
-                      <div>
+                      <div class="whitespace-nowrap">
                         <sl-format-bytes value=${file.size}></sl-format-bytes>
                       </div>
                     </li>
