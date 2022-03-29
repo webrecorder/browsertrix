@@ -65,10 +65,6 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.state === "running" || this.crawl.state === "starting";
   }
 
-  private get apiBaseUrl() {
-    return this.crawlsAPIBaseUrl || this.crawlsBaseUrl;
-  }
-
   async firstUpdated() {
     if (!this.crawlsBaseUrl) {
       throw new Error("Crawls base URL not defined");
@@ -697,7 +693,7 @@ export class CrawlDetail extends LiteElement {
     // );
 
     const data: Crawl = await this.apiFetch(
-      `${this.apiBaseUrl}/${this.crawlId}.json`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
 
@@ -707,7 +703,7 @@ export class CrawlDetail extends LiteElement {
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.apiBaseUrl}/${this.crawlId}/cancel`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -729,7 +725,7 @@ export class CrawlDetail extends LiteElement {
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `${this.apiBaseUrl}/${this.crawlId}/stop`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -753,7 +749,7 @@ export class CrawlDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `${this.apiBaseUrl}/${this.crawlId}/scale`,
+        `${this.crawlsBaseUrl}/${this.crawlId}/scale`,
         this.authState!,
         {
           method: "POST",
