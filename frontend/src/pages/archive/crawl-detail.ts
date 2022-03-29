@@ -16,7 +16,7 @@ const POLL_INTERVAL_SECONDS = 10;
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-detail></btrix-crawl-detail>
+ * <btrix-crawl-detail crawlsBaseUrl="/crawls"></btrix-crawl-detail>
  * ```
  */
 @localized()
@@ -24,20 +24,22 @@ export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
+  // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
-  archiveId?: string;
+  crawlsBaseUrl!: string;
+
+  // e.g. `/archive/${this.archiveId}/crawls`
+  @property({ type: String })
+  crawlsAPIBaseUrl?: string;
+
+  @property({ type: Boolean })
+  showArchiveLink = false;
 
   @property({ type: String })
   crawlId?: string;
 
   @state()
   private crawl?: Crawl;
-
-  @state()
-  private watchUrl?: string;
-
-  @state()
-  private isWatchExpanded: boolean = false;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -64,6 +66,10 @@ export class CrawlDetail extends LiteElement {
   }
 
   async firstUpdated() {
+    if (!this.crawlsBaseUrl) {
+      throw new Error("Crawls base URL not defined");
+    }
+
     this.fetchCrawl();
   }
 
@@ -112,22 +118,6 @@ export class CrawlDetail extends LiteElement {
     }
 
     return html`
-      <div class="mb-7">
-        <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawls`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
-          >
-        </a>
-      </div>
-
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
@@ -175,7 +165,7 @@ export class CrawlDetail extends LiteElement {
             class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
               ? "text-primary bg-slate-50"
               : "text-neutral-500 hover:text-neutral-900"}"
-            href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlId}#${section}`}
+            href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
             ${label}
@@ -290,12 +280,13 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Template ID")}
           </li>
+
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
-            @click=${(e: any) => {
+            @click=${() => {
               this.navTo(
-                `/archives/${this.archiveId}/crawl-templates/config/${crawlTemplateId}`
+                `/archives/${this.crawl?.aid}/crawl-templates/config/${crawlTemplateId}`
               );
             }}
           >
@@ -415,7 +406,7 @@ export class CrawlDetail extends LiteElement {
         ? html` <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
-              archiveId=${this.archiveId!}
+              archiveId=${this.crawl.aid}
               crawlId=${this.crawlId!}
               .watchIPs=${this.crawl.watchIPs || []}
             ></btrix-screencast>
@@ -531,7 +522,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   <a
                     class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawl.cid}`}
+                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawl.cid}`}
                     @click=${this.navLink}
                   >
                     <sl-icon
@@ -559,6 +550,32 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
+        ${this.showArchiveLink
+          ? html`
+              <div class="col-span-1">
+                <dt class="text-sm text-0-600">${msg("Archive")}</dt>
+                <dd>
+                  ${this.crawl
+                    ? html`
+                        <a
+                          class="font-medium text-neutral-700 hover:text-neutral-900"
+                          href=${`/archives/${this.crawl.aid}/crawls`}
+                          @click=${this.navLink}
+                        >
+                          <sl-icon
+                            class="inline-block align-middle"
+                            name="link-45deg"
+                          ></sl-icon>
+                          <span class="inline-block align-middle">
+                            ${msg("View Archive")}
+                          </span>
+                        </a>
+                      `
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+                </dd>
+              </div>
+            `
+          : ""}
       </dl>
     `;
   }
@@ -680,7 +697,7 @@ export class CrawlDetail extends LiteElement {
     // );
 
     const data: Crawl = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}.json`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
 
@@ -690,7 +707,7 @@ export class CrawlDetail extends LiteElement {
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/cancel`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -712,7 +729,7 @@ export class CrawlDetail extends LiteElement {
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/stop`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -736,7 +753,7 @@ export class CrawlDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/scale`,
+        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/scale`,
         this.authState!,
         {
           method: "POST",

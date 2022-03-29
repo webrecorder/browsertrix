@@ -37,7 +37,7 @@ function isRunning(crawl: Crawl) {
 /**
  * Usage:
  * ```ts
- * <btrix-crawls-list></btrix-crawls-list>
+ * <btrix-crawls-list crawlsBaseUrl="/crawls"></btrix-crawls-list>
  * ```
  */
 @localized()
@@ -45,8 +45,13 @@ export class CrawlsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
+  // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
-  archiveId!: string;
+  crawlsBaseUrl!: string;
+
+  // e.g. `/archive/${this.archiveId}/crawls`
+  @property({ type: String })
+  crawlsAPIBaseUrl?: string;
 
   /**
    * Fetch & refetch data when needed,
@@ -94,6 +99,10 @@ export class CrawlsList extends LiteElement {
   protected updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("shouldFetch")) {
       if (this.shouldFetch) {
+        if (!this.crawlsBaseUrl) {
+          throw new Error("Crawls base URL not defined");
+        }
+
         this.fetchCrawls();
       } else {
         this.stopPollTimer();
@@ -239,14 +248,13 @@ export class CrawlsList extends LiteElement {
     return html`<li
       class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
       role="button"
-      @click=${() =>
-        this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`)}
+      @click=${() => this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}`)}
       title=${crawl.configName || crawl.cid}
     >
       <div class="col-span-11 md:col-span-5">
         <div class="font-medium mb-1">
           <a
-            href=${`/archives/${this.archiveId}/crawls/crawl/${crawl.id}`}
+            href=${`${this.crawlsBaseUrl}/crawl/${crawl.id}`}
             @click=${(e: any) => {
               e.stopPropagation();
               this.navLink(e);
@@ -282,7 +290,7 @@ export class CrawlsList extends LiteElement {
                     class="p-2 hover:bg-zinc-100 cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      this.stop(crawl.id);
+                      this.stop(crawl);
                       e.target.closest("sl-dropdown").hide();
                     }}
                   >
@@ -298,7 +306,7 @@ export class CrawlsList extends LiteElement {
                     class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
                     role="menuitem"
                     @click=${(e: any) => {
-                      this.cancel(crawl.id);
+                      this.cancel(crawl);
                       e.target.closest("sl-dropdown").hide();
                     }}
                   >
@@ -338,7 +346,7 @@ export class CrawlsList extends LiteElement {
               role="menuitem"
               @click=${(e: any) => {
                 this.navTo(
-                  `/archives/${this.archiveId}/crawl-templates/config/${crawl.cid}`
+                  `/archives/${crawl.aid}/crawl-templates/config/${crawl.cid}`
                 );
               }}
             >
@@ -490,7 +498,7 @@ export class CrawlsList extends LiteElement {
     // );
 
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls`,
+      this.crawlsAPIBaseUrl || this.crawlsBaseUrl,
       this.authState!
     );
 
@@ -499,10 +507,10 @@ export class CrawlsList extends LiteElement {
     return data;
   }
 
-  private async cancel(id: string) {
+  private async cancel(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${id}/cancel`,
+        `/archives/${crawl.aid}/crawls/${crawl.id}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -521,10 +529,10 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async stop(id: string) {
+  private async stop(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${id}/stop`,
+        `/archives/${crawl.aid}/crawls/${crawl.id}/stop`,
         this.authState!,
         {
           method: "POST",
