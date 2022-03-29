@@ -556,6 +556,32 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
+        ${this.crawlTemplatesBaseUrl
+          ? ""
+          : html`
+              <div class="col-span-1">
+                <dt class="text-sm text-0-600">${msg("Archive")}</dt>
+                <dd>
+                  ${this.crawl
+                    ? html`
+                        <a
+                          class="font-medium text-neutral-700 hover:text-neutral-900"
+                          href=${`/archives/${this.crawl.aid}/crawls`}
+                          @click=${this.navLink}
+                        >
+                          <sl-icon
+                            class="inline-block align-middle"
+                            name="link-45deg"
+                          ></sl-icon>
+                          <span class="inline-block align-middle">
+                            ${msg("View Archive")}
+                          </span>
+                        </a>
+                      `
+                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+                </dd>
+              </div>
+            `}
       </dl>
     `;
   }

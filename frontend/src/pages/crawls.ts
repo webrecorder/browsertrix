@@ -18,21 +18,21 @@ export class Crawls extends LiteElement {
   crawlId?: string;
 
   render() {
-    return html` <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+    return html` <div
+      class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border"
+    >
       ${this.crawlId ? this.renderDetail() : this.renderList()}
     </div>`;
   }
 
   private renderDetail() {
     return html`
-      <div class="mt-5">
-        <btrix-crawl-detail
-          .authState=${this.authState!}
-          crawlId=${this.crawlId!}
-          crawlsBaseUrl=${ROUTES.crawls}
-          crawlsAPIBaseUrl="/archives/all/crawls"
-        ></btrix-crawl-detail>
-      </div>
+      <btrix-crawl-detail
+        .authState=${this.authState!}
+        crawlId=${this.crawlId!}
+        crawlsBaseUrl=${ROUTES.crawls}
+        crawlsAPIBaseUrl="/archives/all/crawls"
+      ></btrix-crawl-detail>
     `;
   }
 
