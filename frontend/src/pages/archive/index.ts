@@ -198,7 +198,6 @@ export class Archive extends LiteElement {
 
   private renderCrawls() {
     const crawlsBaseUrl = `/archives/${this.archiveId}/crawls`;
-    const crawlTemplatesBaseUrl = `/archives/${this.archiveId}/crawl-templates`;
 
     if (this.crawlId) {
       return html` <div class="mb-7">
@@ -221,7 +220,6 @@ export class Archive extends LiteElement {
           .authState=${this.authState!}
           crawlId=${this.crawlId}
           crawlsBaseUrl=${crawlsBaseUrl}
-          crawlTemplatesBaseUrl=${crawlTemplatesBaseUrl}
           screencastBaseUrl=${`${
             window.location.protocol === "https:" ? "wss" : "ws"
           }:${process.env.WEBSOCKET_HOST || window.location.host}/watch/${
@@ -233,7 +231,6 @@ export class Archive extends LiteElement {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       crawlsBaseUrl=${crawlsBaseUrl}
-      crawlTemplatesBaseUrl=${crawlTemplatesBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
   }

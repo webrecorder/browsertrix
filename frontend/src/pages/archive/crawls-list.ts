@@ -53,10 +53,6 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
-  // e.g. `/archive/${this.archiveId}/crawl-templates`
-  @property({ type: String })
-  crawlTemplatesBaseUrl?: string;
-
   /**
    * Fetch & refetch data when needed,
    * e.g. when component is visible
@@ -444,21 +440,17 @@ export class CrawlsList extends LiteElement {
             >
               ${msg("Copy Crawl Template ID")}
             </li>
-            ${this.crawlTemplatesBaseUrl
-              ? html`
-                  <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
-                    role="menuitem"
-                    @click=${() => {
-                      this.navTo(
-                        `${this.crawlTemplatesBaseUrl}/crawl-templates/config/${crawl.cid}`
-                      );
-                    }}
-                  >
-                    ${msg("View Crawl Template")}
-                  </li>
-                `
-              : ""}
+            <li
+              class="p-2 hover:bg-zinc-100 cursor-pointer"
+              role="menuitem"
+              @click=${() => {
+                this.navTo(
+                  `/archives/${crawl.aid}/crawl-templates/config/${crawl.cid}`
+                );
+              }}
+            >
+              ${msg("View Crawl Template")}
+            </li>
           </ul>
         </sl-dropdown>
       </div>

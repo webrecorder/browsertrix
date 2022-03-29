@@ -32,9 +32,8 @@ export class CrawlDetail extends LiteElement {
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
-  // e.g. `/archive/${this.archiveId}/crawl-templates`
-  @property({ type: String })
-  crawlTemplatesBaseUrl?: string;
+  @property({ type: Boolean })
+  showArchiveLink = false;
 
   // e.g. `${window.location.host}/watch/${this.archiveId}`
   @property({ type: String })
@@ -281,21 +280,18 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Template ID")}
           </li>
-          ${this.crawlTemplatesBaseUrl
-            ? html`
-                <li
-                  class="p-2 hover:bg-zinc-100 cursor-pointer"
-                  role="menuitem"
-                  @click=${() => {
-                    this.navTo(
-                      `${this.crawlTemplatesBaseUrl}/config/${crawlTemplateId}`
-                    );
-                  }}
-                >
-                  ${msg("View Crawl Template")}
-                </li>
-              `
-            : ""}
+
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${() => {
+              this.navTo(
+                `/archives/${this.crawl?.aid}/crawl-templates/config/${crawlTemplateId}`
+              );
+            }}
+          >
+            ${msg("View Crawl Template")}
+          </li>
         </ul>
       </sl-dropdown>
     `;
@@ -523,23 +519,21 @@ export class CrawlDetail extends LiteElement {
           <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
-              ? this.crawlTemplatesBaseUrl
-                ? html`
-                    <a
-                      class="font-medium text-neutral-700 hover:text-neutral-900"
-                      href=${`${this.crawlTemplatesBaseUrl}/config/${this.crawl.cid}`}
-                      @click=${this.navLink}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle"
-                        name="link-45deg"
-                      ></sl-icon>
-                      <span class="inline-block align-middle">
-                        ${this.crawl.configName}
-                      </span>
-                    </a>
-                  `
-                : html`<span> ${this.crawl.configName} </span>`
+              ? html`
+                  <a
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
+                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawl.cid}`}
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${this.crawl.configName}
+                    </span>
+                  </a>
+                `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
@@ -556,9 +550,8 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        ${this.crawlTemplatesBaseUrl
-          ? ""
-          : html`
+        ${this.showArchiveLink
+          ? html`
               <div class="col-span-1">
                 <dt class="text-sm text-0-600">${msg("Archive")}</dt>
                 <dd>
@@ -581,7 +574,8 @@ export class CrawlDetail extends LiteElement {
                     : html`<sl-skeleton class="h-6"></sl-skeleton>`}
                 </dd>
               </div>
-            `}
+            `
+          : ""}
       </dl>
     `;
   }

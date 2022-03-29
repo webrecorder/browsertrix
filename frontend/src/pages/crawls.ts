@@ -32,6 +32,7 @@ export class Crawls extends LiteElement {
         crawlId=${this.crawlId!}
         crawlsBaseUrl=${ROUTES.crawls}
         crawlsAPIBaseUrl="/archives/all/crawls"
+        showArchiveLink
       ></btrix-crawl-detail>
     `;
   }
