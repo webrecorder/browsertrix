@@ -106,9 +106,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderInactiveNotice()}
 
-        <header class="px-4 pt-4 flex justify-between">
+        <header class="md:px-4 pt-4 md:flex justify-between">
           <div>
-            <h2 class="text-3xl font-bold md:h-9 leading-tight mb-1">
+            <h2 class="text-xl md:text-3xl font-bold md:h-9 leading-tight mb-1">
               ${this.crawlTemplate?.name
                 ? html`
                     <span>${this.crawlTemplate.name}</span>
@@ -124,31 +124,28 @@ export class CrawlTemplatesDetail extends LiteElement {
                           </sl-button>
                         `}
                   `
-                : html`<sl-skeleton
-                    class="h-7"
-                    style="width: 20em"
-                  ></sl-skeleton>`}
+                : html`<sl-skeleton class="h-7 w-80"></sl-skeleton>`}
             </h2>
-            <div class="text-sm text-neutral-400 h-5">
-              ${msg("Crawl Template")}
-              <code class="bg-neutral-50 text-xs ml-3"
+            <div class="text-sm text-neutral-400 md:h-5">
+              <div class="md:inline-block mr-3">${msg("Crawl Template")}</div>
+              <code class="bg-neutral-50 text-xs"
                 >${this.crawlTemplate?.id}</code
               >
             </div>
           </div>
 
-          <div class="flex-0">${this.renderMenu()}</div>
+          <div class="flex-0 text-right">${this.renderMenu()}</div>
         </header>
 
-        <section class="px-4 text-sm text-neutral-500">
+        <section class="md:px-4 text-sm text-neutral-500">
           ${this.renderDetails()}
         </section>
 
         ${this.renderCurrentlyRunningNotice()}
 
-        <main class="border rounded-lg">
+        <main class="md:border md:rounded-lg">
           <section class="md:grid grid-cols-4">
-            <div class="col-span-1 p-4 md:p-8 md:border-b">
+            <div class="col-span-1 pt-4 pb-2 md:p-8 md:border-b">
               <h3 class="font-medium">${msg("Configuration")}</h3>
               ${this.crawlTemplate?.oldId
                 ? html`
@@ -180,7 +177,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   `
                 : ""}
             </div>
-            <div class="col-span-3 p-4 border-b flex">
+            <div class="col-span-3 pb-4 md:p-4 border-b md:flex">
               <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
               <div class="flex-0 md:ml-4">
                 ${this.crawlTemplate?.inactive || !this.crawlTemplate
@@ -199,10 +196,10 @@ export class CrawlTemplatesDetail extends LiteElement {
           </section>
 
           <section class="md:grid grid-cols-4">
-            <div class="col-span-1 p-4 md:p-8 md:border-b">
+            <div class="col-span-1 pt-4 pb-2 md:p-8 md:border-b">
               <h3 class="font-medium">${msg("Schedule")}</h3>
             </div>
-            <div class="col-span-3 p-4 border-b flex">
+            <div class="col-span-3 pb-4 md:p-4 border-b md:flex">
               <div class="flex-1 md:p-4">${this.renderSchedule()}</div>
               <div class="flex-0 md:ml-4">
                 ${this.crawlTemplate?.inactive || !this.crawlTemplate
@@ -221,10 +218,10 @@ export class CrawlTemplatesDetail extends LiteElement {
           </section>
 
           <section class="md:grid grid-cols-4">
-            <div class="col-span-1 p-4 md:p-8">
+            <div class="col-span-1 pt-4 pb-2 md:p-8">
               <h3 class="font-medium">${msg("Crawls")}</h3>
             </div>
-            <div class="col-span-3 p-4 md:p-8">${this.renderCrawls()}</div>
+            <div class="col-span-3 pb-6 md:p-8">${this.renderCrawls()}</div>
           </section>
         </main>
       </div>
@@ -520,14 +517,15 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <div class="mb-5" role="table">
-        <div class="grid grid-cols-5 gap-4" role="row">
-          <span class="col-span-3 text-sm text-0-600" role="columnheader"
-            >${msg("Seed URL")}</span
-          >
-          <span class="col-span-1 text-sm text-0-600" role="columnheader"
+        <div
+          class="hidden md:grid grid-cols-5 gap-4 items-end text-xs md:text-sm text-0-600"
+          role="row"
+        >
+          <span class="col-span-3" role="columnheader">${msg("Seed URL")}</span>
+          <span class="col-span-1" role="columnheader"
             >${msg("Scope Type")}</span
           >
-          <span class="col-span-1 text-sm text-0-600" role="columnheader"
+          <span class="col-span-1" role="columnheader"
             >${msg("Page Limit")}</span
           >
         </div>
@@ -543,7 +541,10 @@ export class CrawlTemplatesDetail extends LiteElement {
                   role="row"
                   title=${typeof seed === "string" ? seed : seed.url}
                 >
-                  <div class="col-span-3 break-all leading-tight" role="cell">
+                  <div
+                    class="col-span-3 break-all leading-tight text-sm md:text-base"
+                    role="cell"
+                  >
                     ${typeof seed === "string" ? seed : seed.url}
                   </div>
                   <span

@@ -111,7 +111,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
           </div>
         </div>
         <div class="grid grid-flow-col gap-2 items-center mt-2">
-          <span class="px-1">${msg("At")}</span>
+          <span class="pr-2 text-sm">${msg("At")}</span>
           <sl-select
             name="scheduleHour"
             class="w-24"
@@ -178,7 +178,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
               >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
             >
           </sl-select>
-          <span class="px-1">${this.timeZoneShortName}</span>
+          <span class="pl-2 text-sm">${this.timeZoneShortName}</span>
         </div>
 
         <div class="mt-5">
