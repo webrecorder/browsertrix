@@ -200,27 +200,11 @@ export class Archive extends LiteElement {
     const crawlsBaseUrl = `/archives/${this.archiveId}/crawls`;
 
     if (this.crawlId) {
-      return html` <div class="mb-7">
-          <a
-            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-            href=${crawlsBaseUrl}
-            @click=${this.navLink}
-          >
-            <sl-icon
-              name="arrow-left"
-              class="inline-block align-middle"
-            ></sl-icon>
-            <span class="inline-block align-middle"
-              >${msg("Back to Crawls")}</span
-            >
-          </a>
-        </div>
-
-        <btrix-crawl-detail
-          .authState=${this.authState!}
-          crawlId=${this.crawlId}
-          crawlsBaseUrl=${crawlsBaseUrl}
-        ></btrix-crawl-detail>`;
+      return html` <btrix-crawl-detail
+        .authState=${this.authState!}
+        crawlId=${this.crawlId}
+        crawlsBaseUrl=${crawlsBaseUrl}
+      ></btrix-crawl-detail>`;
     }
 
     return html`<btrix-crawls-list
