@@ -85,14 +85,14 @@ export class Home extends LiteElement {
               >
                 ${msg("Go to Crawl")}
               </div>
-              <div class="mr-2 grow">
+              <div class="grow mt-2 md:mt-0 md:mr-2">
                 <sl-input
                   name="crawlId"
                   placeholder=${msg("Enter Crawl ID")}
                   required
                 ></sl-input>
               </div>
-              <div class="grow-0">
+              <div class="grow-0 mt-2 md:mt-0 text-right">
                 <sl-button type="neutral" submit>
                   <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
                   ${msg("Go")}</sl-button
