@@ -131,7 +131,7 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="grid grid-cols-6 gap-4 mb-4">
+        <section class="grid grid-cols-6 md:gap-4 mb-4">
           <div class="col-span-6 md:col-span-1">
             <h3 class="font-medium p-2">${msg("Summary")}</h3>
           </div>
@@ -197,7 +197,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderHeader() {
     return html`
-      <header class="flex justify-between">
+      <header class="md:flex justify-between">
         <h2 class="text-2xl font-medium mb-3 md:h-8">
           ${msg(
             html`<span class="font-normal">Crawl of</span> ${this.crawl
@@ -208,7 +208,11 @@ export class CrawlDetail extends LiteElement {
                   ></sl-skeleton>`}`
           )}
         </h2>
-        <div class="grid gap-2 grid-flow-col">
+        <div
+          class="grid gap-2 grid-flow-col ${this.isRunning
+            ? "justify-between"
+            : "justify-end"}"
+        >
           ${this.isRunning
             ? html`
                 <sl-button-group>
@@ -305,7 +309,7 @@ export class CrawlDetail extends LiteElement {
   private renderSummary() {
     return html`
       <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
@@ -335,7 +339,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
           <dd>
             ${this.crawl?.stats
@@ -355,7 +359,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
           <dd>
             ${this.crawl
@@ -376,7 +380,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
           <dd>
             ${this.crawl
@@ -465,7 +469,7 @@ export class CrawlDetail extends LiteElement {
   private renderOverview() {
     return html`
       <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
             ${this.crawl
@@ -483,7 +487,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Finished")}</dt>
           <dd>
             ${this.crawl
@@ -503,7 +507,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Reason")}</dt>
           <dd>
             ${this.crawl
@@ -520,7 +524,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
           <dd>
             ${this.crawl
@@ -542,7 +546,7 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        <div class="col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
           <dd class="truncate">
             ${this.crawl
