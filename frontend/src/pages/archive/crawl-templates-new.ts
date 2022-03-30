@@ -263,58 +263,71 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-select>
             </div>
           </div>
-          <div class="flex items-center mt-2">
-            <span class="pl-3 text-sm">${msg("At")}</span>
-            <sl-select
-              name="scheduleHour"
-              value=${this.scheduleTime.hour}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  hour: +e.target.value,
-                })}
-            >
-              ${hours.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <span class="px-1">:</span>
-            <sl-select
-              name="scheduleMinute"
-              class="mr-2"
-              value=${this.scheduleTime.minute}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  minute: +e.target.value,
-                })}
-            >
-              ${minutes.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <sl-select
-              value=${this.scheduleTime.period}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  period: e.target.value,
-                })}
-            >
-              <sl-menu-item value="AM"
-                >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+          <fieldset class="mt-2">
+            <label class="text-sm">${msg("Time")} </label>
+            <div class="flex items-center">
+              <sl-select
+                name="scheduleHour"
+                value=${this.scheduleTime.hour}
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    hour: +e.target.value,
+                  })}
               >
-              <sl-menu-item value="PM"
-                >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                ${hours.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <span class="px-1">:</span>
+              <sl-select
+                name="scheduleMinute"
+                class="mr-2"
+                value=${this.scheduleTime.minute}
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    minute: +e.target.value,
+                  })}
               >
-            </sl-select>
-            <span class="pl-3 text-sm">${this.timeZoneShortName}</span>
-          </div>
+                ${minutes.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <sl-button-group>
+                <sl-button
+                  type=${this.scheduleTime.period === "AM"
+                    ? "neutral"
+                    : "default"}
+                  aria-selected=${this.scheduleTime.period === "AM"}
+                  ?disabled=${!this.scheduleInterval}
+                  @click=${() =>
+                    (this.scheduleTime = {
+                      ...this.scheduleTime,
+                      period: "AM",
+                    })}
+                  >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+                >
+                <sl-button
+                  type=${this.scheduleTime.period === "PM"
+                    ? "neutral"
+                    : "default"}
+                  aria-selected=${this.scheduleTime.period === "PM"}
+                  ?disabled=${!this.scheduleInterval}
+                  @click=${() =>
+                    (this.scheduleTime = {
+                      ...this.scheduleTime,
+                      period: "PM",
+                    })}
+                  >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+                >
+              </sl-button-group>
+            </div>
+          </fieldset>
           <div class="text-sm text-gray-500 mt-2">
             ${this.formattededNextCrawlDate
               ? msg(

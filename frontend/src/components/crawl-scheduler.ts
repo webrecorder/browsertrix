@@ -6,6 +6,10 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { getLocaleTimeZone } from "../utils/localization";
 import type { CrawlTemplate } from "../pages/archive/types";
 
+const nowHour = new Date().getHours();
+const initialHours = nowHour % 12 || 12;
+const initialPeriod = nowHour > 11 ? "PM" : "AM";
+
 /**
  * Usage:
  * ```ts
@@ -37,6 +41,9 @@ export class CrawlTemplatesScheduler extends LiteElement {
   @state()
   private isScheduleDisabled?: boolean;
 
+  @state()
+  private schedulePeriod: "AM" | "PM" = initialPeriod;
+
   private get timeZoneShortName() {
     return getLocaleTimeZone();
   }
@@ -62,10 +69,6 @@ export class CrawlTemplatesScheduler extends LiteElement {
       }
       return "monthly";
     };
-
-    const nowHour = new Date().getHours();
-    const initialHours = nowHour % 12 || 12;
-    const initialPeriod = nowHour > 11 ? "PM" : "AM";
     const scheduleIntervalsMap = {
       daily: `0 ${nowHour} * * *`,
       weekly: `0 ${nowHour} * * ${new Date().getDay()}`,
@@ -110,76 +113,97 @@ export class CrawlTemplatesScheduler extends LiteElement {
             </sl-select>
           </div>
         </div>
-        <div class="grid grid-flow-col gap-2 items-center mt-2">
-          <span class="pr-2 text-sm">${msg("At")}</span>
-          <sl-select
-            name="scheduleHour"
-            class="w-24"
-            value=${initialHours}
-            ?disabled=${this.isScheduleDisabled}
-            hoist
-            @sl-hide=${this.stopProp}
-            @sl-after-hide=${this.stopProp}
-            @sl-select=${(e: any) => {
-              const hour = +e.target.value;
-              const period = e.target
-                .closest("sl-form")
-                .querySelector('sl-select[name="schedulePeriod"]').value;
+        <fieldset class="mt-2">
+          <label class="text-sm">${msg("Time")} </label>
+          <div class="md:flex">
+            <div class="flex items-center mb-2 md:mb-0 md:mr-2">
+              <sl-select
+                class="grow"
+                name="scheduleHour"
+                value=${initialHours}
+                ?disabled=${this.isScheduleDisabled}
+                hoist
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                @sl-select=${(e: any) => {
+                  const hour = +e.target.value;
+                  const period = this.schedulePeriod;
 
-              this.setScheduleHour({ hour, period, schedule: nextSchedule });
-            }}
-          >
-            ${hours.map(
-              ({ value, label }) =>
-                html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-            )}
-          </sl-select>
-          <span>:</span>
-          <sl-select
-            name="scheduleMinute"
-            class="w-24"
-            value="0"
-            ?disabled=${this.isScheduleDisabled}
-            hoist
-            @sl-hide=${this.stopProp}
-            @sl-after-hide=${this.stopProp}
-            @sl-select=${(e: any) =>
-              (this.editedSchedule = `${e.target.value} ${nextSchedule
-                .split(" ")
-                .slice(1)
-                .join(" ")}`)}
-          >
-            ${minutes.map(
-              ({ value, label }) =>
-                html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-            )}
-          </sl-select>
-          <sl-select
-            name="schedulePeriod"
-            class="w-24"
-            value=${initialPeriod}
-            ?disabled=${this.isScheduleDisabled}
-            hoist
-            @sl-hide=${this.stopProp}
-            @sl-after-hide=${this.stopProp}
-            @sl-select=${(e: any) => {
-              const hour = +e.target
-                .closest("sl-form")
-                .querySelector('sl-select[name="scheduleHour"]').value;
-              const period = e.target.value;
+                  this.setScheduleHour({
+                    hour,
+                    period,
+                    schedule: nextSchedule,
+                  });
+                }}
+              >
+                ${hours.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <span class="grow-0 px-1">:</span>
+              <sl-select
+                class="grow"
+                name="scheduleMinute"
+                value="0"
+                ?disabled=${this.isScheduleDisabled}
+                hoist
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                @sl-select=${(e: any) =>
+                  (this.editedSchedule = `${e.target.value} ${nextSchedule
+                    .split(" ")
+                    .slice(1)
+                    .join(" ")}`)}
+              >
+                ${minutes.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+            </div>
+            <sl-button-group>
+              <sl-button
+                type=${this.schedulePeriod === "AM" ? "neutral" : "default"}
+                aria-selected=${this.schedulePeriod === "AM"}
+                ?disabled=${this.isScheduleDisabled}
+                @click=${(e: any) => {
+                  const hour = +e.target
+                    .closest("sl-form")
+                    .querySelector('sl-select[name="scheduleHour"]').value;
+                  const period = "AM";
 
-              this.setScheduleHour({ hour, period, schedule: nextSchedule });
-            }}
-          >
-            <sl-menu-item value="AM"
-              >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
-            >
-            <sl-menu-item value="PM"
-              >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
-            >
-          </sl-select>
-          <span class="pl-2 text-sm">${this.timeZoneShortName}</span>
-        </div>
+                  this.schedulePeriod = period;
+                  this.setScheduleHour({
+                    hour,
+                    period,
+                    schedule: nextSchedule,
+                  });
+                }}
+                >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+              >
+              <sl-button
+                type=${this.schedulePeriod === "PM" ? "neutral" : "default"}
+                aria-selected=${this.schedulePeriod === "PM"}
+                ?disabled=${this.isScheduleDisabled}
+                @click=${(e: any) => {
+                  const hour = +e.target
+                    .closest("sl-form")
+                    .querySelector('sl-select[name="scheduleHour"]').value;
+                  const period = "PM";
+
+                  this.schedulePeriod = period;
+                  this.setScheduleHour({
+                    hour,
+                    period,
+                    schedule: nextSchedule,
+                  });
+                }}
+                >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+              >
+            </sl-button-group>
+          </div>
+        </fieldset>
 
         <div class="mt-5">
           ${this.isScheduleDisabled
