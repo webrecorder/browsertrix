@@ -45,6 +45,8 @@ class K8SManager:
 
         self.crawl_retries = int(os.environ.get("CRAWL_RETRIES", "3"))
 
+        self.crawler_liveness_port = int(os.environ.get("CRAWLER_LIVENESS_PORT", 0))
+
         self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
 
         self.grace_period = int(os.environ.get("GRACE_PERIOD_SECS", "600"))
@@ -524,6 +526,9 @@ class K8SManager:
                 return "stopping"
 
         # job fully done, do not treat as running or stopping
+        if finished >= total:
+            return "partial_complete"
+
         return None
 
     # pylint: disable=no-self-use
@@ -699,6 +704,16 @@ class K8SManager:
             },
         }
 
+        if self.crawler_liveness_port:
+            liveness_probe = {
+                "httpGet": {"path": "/healthz", "port": self.crawler_liveness_port},
+                "initialDelaySeconds": 15,
+                "periodSeconds": 120,
+                "failureThreshold": 3,
+            }
+        else:
+            liveness_probe = None
+
         job_template = {
             "metadata": {"annotations": annotations},
             "spec": {
@@ -749,6 +764,7 @@ class K8SManager:
                                     },
                                 ],
                                 "resources": resources,
+                                "livenessProbe": liveness_probe,
                             }
                         ],
                         "volumes": [
