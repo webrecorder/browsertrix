@@ -402,8 +402,11 @@ class K8SManager:
                 name=name, namespace=self.namespace
             )
 
-            if not job or job.metadata.labels["btrix.archive"] != aid:
-                return None
+            label_selector = f"job-name={name},btrix.archive={aid}"
+            if aid:
+                if not job or job.metadata.labels["btrix.archive"] != aid:
+                    return None
+                label_selector += f",btrix.archive={aid}"
 
             status = await self._get_crawl_state(job)
             if not status:
@@ -411,7 +414,7 @@ class K8SManager:
 
             pods = await self.core_api.list_namespaced_pod(
                 namespace=self.namespace,
-                label_selector=f"job-name={name},btrix.archive={aid}",
+                label_selector=label_selector
             )
 
             watch_ips = [pod.status.pod_ip for pod in pods.items if pod.status.pod_ip]
