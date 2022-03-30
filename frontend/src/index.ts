@@ -225,25 +225,27 @@ export class App extends LiteElement {
 
           ${isAdmin
             ? html`
-                <div class="grid grid-flow-col gap-5 items-center">
+                <div
+                  class="text-xs md:text-sm grid grid-flow-col gap-3 md:gap-5 items-center"
+                >
                   <a
-                    class="text-sm text-neutral-500 hover:text-neutral-400 font-medium"
+                    class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/archives"
                     @click=${this.navLink}
                     >${msg("All Archives")}</a
                   >
                   <a
-                    class="text-sm text-neutral-500 hover:text-neutral-400 font-medium"
+                    class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/crawls"
                     @click=${this.navLink}
                     >${msg("Running Crawls")}</a
                   >
-                  <div>${this.renderFindCrawl()}</div>
+                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
                 </div>
               `
             : ""}
 
-          <div class="grid grid-flow-col gap-5 items-center">
+          <div class="grid grid-flow-col gap-3 md:gap-5 items-center">
             ${this.authService.authState
               ? html` <sl-dropdown placement="bottom-end">
                   <sl-icon-button
@@ -526,7 +528,7 @@ export class App extends LiteElement {
       >
         <button
           slot="trigger"
-          class="text-sm text-primary hover:text-indigo-400 font-medium"
+          class="text-primary hover:text-indigo-400 font-medium"
         >
           ${msg("Jump to Crawl")}
         </button>
