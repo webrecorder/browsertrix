@@ -144,8 +144,8 @@ export class CrawlTemplatesDetail extends LiteElement {
         ${this.renderCurrentlyRunningNotice()}
 
         <main class="md:border md:rounded-lg">
-          <section class="md:grid grid-cols-4">
-            <div class="col-span-1 pt-4 pb-2 md:p-8 md:border-b">
+          <section class="grid grid-cols-4">
+            <div class="col-span-4 md:col-span-1 pt-4 pb-2 md:p-8 md:border-b">
               <h3 class="font-medium">${msg("Configuration")}</h3>
               ${this.crawlTemplate?.oldId
                 ? html`
@@ -177,7 +177,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   `
                 : ""}
             </div>
-            <div class="col-span-3 pb-4 md:p-4 border-b md:flex">
+            <div class="col-span-4 md:col-span-3 pb-4 md:p-4 border-b md:flex">
               <div class="flex-1 md:p-4">${this.renderConfiguration()}</div>
               <div class="flex-0 md:ml-4">
                 ${this.crawlTemplate?.inactive || !this.crawlTemplate
@@ -195,11 +195,11 @@ export class CrawlTemplatesDetail extends LiteElement {
             </div>
           </section>
 
-          <section class="md:grid grid-cols-4">
-            <div class="col-span-1 pt-4 pb-2 md:p-8 md:border-b">
+          <section class="grid grid-cols-4">
+            <div class="col-span-4 md:col-span-1 pt-4 pb-2 md:p-8 md:border-b">
               <h3 class="font-medium">${msg("Schedule")}</h3>
             </div>
-            <div class="col-span-3 pb-4 md:p-4 border-b md:flex">
+            <div class="col-span-4 md:col-span-3 pb-4 md:p-4 border-b md:flex">
               <div class="flex-1 md:p-4">${this.renderSchedule()}</div>
               <div class="flex-0 md:ml-4">
                 ${this.crawlTemplate?.inactive || !this.crawlTemplate
@@ -217,11 +217,13 @@ export class CrawlTemplatesDetail extends LiteElement {
             </div>
           </section>
 
-          <section class="md:grid grid-cols-4">
-            <div class="col-span-1 pt-4 pb-2 md:p-8">
+          <section class="grid grid-cols-4">
+            <div class="col-span-4 md:col-span-1 pt-4 pb-2 md:p-8">
               <h3 class="font-medium">${msg("Crawls")}</h3>
             </div>
-            <div class="col-span-3 pb-6 md:p-8">${this.renderCrawls()}</div>
+            <div class="col-span-4 md:col-span-3 pb-6 md:p-8">
+              ${this.renderCrawls()}
+            </div>
           </section>
         </main>
       </div>
@@ -592,7 +594,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         </span>
         <div class="relative">
           <pre
-            class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs"
+            class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs overflow-auto"
           ><code>${JSON.stringify(
             this.crawlTemplate?.config || {},
             null,
@@ -633,7 +635,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             : ""}
 
-          <div class="flex justify-between">
+          <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
               ${this.isSeedsJsonView
                 ? msg("Custom Config")
@@ -979,7 +981,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         value=${ifDefined(this.crawlTemplate!.config.limit)}
         placeholder=${msg("unlimited")}
       >
-        <span slot="suffix">${msg("pages")}</span>
+        <span slot="suffix" class="hidden md:block">${msg("pages")}</span>
       </sl-input>
     `;
   }
@@ -1004,7 +1006,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         </div>
 
         <div class="grid grid-cols-3 gap-4">
-          <div class="relative col-span-2">
+          <div class="relative col-span-3 md:col-span-2">
             ${this.renderSeedsJsonInput()}
 
             <div class="absolute top-2 right-2">
@@ -1012,7 +1014,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             </div>
           </div>
 
-          <div class="col-span-1">
+          <div class="col-span-3 md:col-span-1">
             ${this.invalidSeedsJsonMessage
               ? html`<btrix-alert type="danger">
                   ${this.invalidSeedsJsonMessage}
