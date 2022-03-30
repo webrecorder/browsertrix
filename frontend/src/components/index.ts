@@ -9,6 +9,9 @@ import("./account-settings").then(({ AccountSettings }) => {
 import("./archive-invite-form").then(({ ArchiveInviteForm }) => {
   customElements.define("btrix-archive-invite-form", ArchiveInviteForm);
 });
+import("./config-editor").then(({ ConfigEditor }) => {
+  customElements.define("btrix-config-editor", ConfigEditor);
+});
 import("./copy-button").then(({ CopyButton }) => {
   customElements.define("btrix-copy-button", CopyButton);
 });

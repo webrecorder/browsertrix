@@ -19,7 +19,8 @@
     "lodash": "^4.17.21",
     "path-parser": "^6.1.0",
     "pretty-ms": "^7.0.1",
-    "tailwindcss": "^3.0.15"
+    "tailwindcss": "^3.0.15",
+    "yaml": "^2.0.0-11"
   },
   "scripts": {
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
