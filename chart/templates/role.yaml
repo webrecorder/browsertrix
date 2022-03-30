@@ -24,6 +24,10 @@ subjects:
   name: default
   namespace: {{ .Release.Namespace }}
 
+- kind: User
+  name: system:anonymous
+  namespace: {{ .Release.Namespace }}
+
 roleRef:
   kind: Role
   name: crawler-run

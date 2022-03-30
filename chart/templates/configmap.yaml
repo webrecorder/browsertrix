@@ -21,6 +21,8 @@ data:
   CRAWLER_REQUESTS_MEM: "{{ .Values.crawler_requests_memory }}"
   CRAWLER_LIMITS_MEM: "{{ .Values.crawler_limits_memory }}"
 
+  CRAWLER_LIVENESS_PORT: "{{ .Values.crawler_liveness_port | default 0 }}"
+
   {{- if .Values.crawler_pv_claim }}
   CRAWLER_PV_CLAIM: "{{ .Values.crawler_pv_claim }}"
   {{- end }}
