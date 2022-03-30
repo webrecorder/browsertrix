@@ -45,6 +45,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
+  @property({ type: String })
+  archiveId?: string;
+
   // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -172,7 +175,7 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-2 md:col-span-1 flex items-center justify-end">
+        <div class="col-span-12 md:col-span-1 flex justify-end">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort by")}
           </div>
