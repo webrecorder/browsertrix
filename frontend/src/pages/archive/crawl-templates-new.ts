@@ -165,7 +165,7 @@ export class CrawlTemplatesNew extends LiteElement {
       </p>
 
       <main class="mt-6">
-        <div class="border rounded-lg">
+        <div class="md:border md:rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
             <div class="md:grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
@@ -219,10 +219,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderBasicSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Basic Settings")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -242,10 +242,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderScheduleSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Schedule")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
           <div class="flex items-end">
             <div class="pr-2 flex-1">
@@ -263,58 +263,71 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-select>
             </div>
           </div>
-          <div class="flex items-center mt-2">
-            <span class="px-3">${msg("At")}</span>
-            <sl-select
-              name="scheduleHour"
-              value=${this.scheduleTime.hour}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  hour: +e.target.value,
-                })}
-            >
-              ${hours.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <span class="px-1">:</span>
-            <sl-select
-              name="scheduleMinute"
-              class="mr-2"
-              value=${this.scheduleTime.minute}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  minute: +e.target.value,
-                })}
-            >
-              ${minutes.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
-            <sl-select
-              value=${this.scheduleTime.period}
-              ?disabled=${!this.scheduleInterval}
-              @sl-select=${(e: any) =>
-                (this.scheduleTime = {
-                  ...this.scheduleTime,
-                  period: e.target.value,
-                })}
-            >
-              <sl-menu-item value="AM"
-                >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+          <fieldset class="mt-2">
+            <label class="text-sm">${msg("Time")} </label>
+            <div class="flex items-center">
+              <sl-select
+                name="scheduleHour"
+                value=${this.scheduleTime.hour}
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    hour: +e.target.value,
+                  })}
               >
-              <sl-menu-item value="PM"
-                >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+                ${hours.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <span class="px-1">:</span>
+              <sl-select
+                name="scheduleMinute"
+                class="mr-2"
+                value=${this.scheduleTime.minute}
+                ?disabled=${!this.scheduleInterval}
+                @sl-select=${(e: any) =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    minute: +e.target.value,
+                  })}
               >
-            </sl-select>
-            <span class="px-3">${this.timeZoneShortName}</span>
-          </div>
+                ${minutes.map(
+                  ({ value, label }) =>
+                    html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
+                )}
+              </sl-select>
+              <sl-button-group>
+                <sl-button
+                  type=${this.scheduleTime.period === "AM"
+                    ? "neutral"
+                    : "default"}
+                  aria-selected=${this.scheduleTime.period === "AM"}
+                  ?disabled=${!this.scheduleInterval}
+                  @click=${() =>
+                    (this.scheduleTime = {
+                      ...this.scheduleTime,
+                      period: "AM",
+                    })}
+                  >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+                >
+                <sl-button
+                  type=${this.scheduleTime.period === "PM"
+                    ? "neutral"
+                    : "default"}
+                  aria-selected=${this.scheduleTime.period === "PM"}
+                  ?disabled=${!this.scheduleInterval}
+                  @click=${() =>
+                    (this.scheduleTime = {
+                      ...this.scheduleTime,
+                      period: "PM",
+                    })}
+                  >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+                >
+              </sl-button-group>
+            </div>
+          </fieldset>
           <div class="text-sm text-gray-500 mt-2">
             ${this.formattededNextCrawlDate
               ? msg(
@@ -345,10 +358,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderCrawlConfigSettings() {
     return html`
-      <div class="col-span-1 p-4 md:p-8 md:border-b">
+      <div class="col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Settings")}</h3>
       </div>
-      <section class="col-span-2 p-4 md:p-8 border-b grid gap-5">
+      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
           <sl-select
             name="scale"

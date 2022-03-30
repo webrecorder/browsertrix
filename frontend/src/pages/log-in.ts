@@ -199,7 +199,7 @@ export class LogInPage extends LiteElement {
       <article class="w-full max-w-sm grid gap-5">
         ${successMessage}
 
-        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+        <main class="md:bg-white md:shadow-xl md:rounded-lg p-12">
           <div>${form}</div>
         </main>
         <footer class="text-center">${link}</footer>

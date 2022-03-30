@@ -58,7 +58,7 @@ export class Home extends LiteElement {
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-        <div class="border rounded-lg bg-white p-4 md:p-8">
+        <div class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
           <h2 class="text-xl font-medium mb-4">${msg("Invite a User")}</h2>
 
           ${this.isInviteComplete

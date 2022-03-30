@@ -211,7 +211,7 @@ export class App extends LiteElement {
     return html`
       <div class="border-b">
         <nav
-          class="max-w-screen-lg mx-auto px-3 box-border h-12 flex items-center justify-between"
+          class="max-w-screen-lg mx-auto pl-3 box-border h-12 flex items-center justify-between"
         >
           <div>
             <a href="/" @click="${this.navLink}"
@@ -294,7 +294,7 @@ export class App extends LiteElement {
   renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-lg mx-auto p-3 box-border flex justify-between"
+        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-between"
       >
         <div>
           <sl-icon-button
