@@ -41,33 +41,7 @@ export class ConfigEditor extends LiteElement {
             <sl-menu-item value="yaml">${msg("YAML")}</sl-menu-item>
           </sl-select>
         </header>
-        <textarea
-          class="language-${this
-            .language} block w-full text-slate-700 p-4 font-mono text-sm"
-          autocomplete="off"
-          rows="10"
-          spellcheck="false"
-          .value=${this.value}
-          @keydown=${(e: any) => {
-            // Add indentation when pressing tab key instead of moving focus
-            if (e.keyCode === /* tab: */ 9) {
-              e.preventDefault();
-
-              const textarea = e.target;
-
-              textarea.setRangeText(
-                "  ",
-                textarea.selectionStart,
-                textarea.selectionStart,
-                "end"
-              );
-            }
-          }}
-          @change=${(e: any) => {
-            e.stopPropagation();
-            this.onChange(e.target.value);
-          }}
-        ></textarea>
+        ${this.renderTextArea()}
       </article>
     `;
   }
@@ -97,6 +71,63 @@ export class ConfigEditor extends LiteElement {
 
       // TODO handle parse error
     }
+  }
+
+  private renderTextArea() {
+    const lines = this.value.split("\n");
+    const rowCount = lines.length + 1;
+
+    return html`
+      <div>
+        <div class="flex font-mono text-sm leading-relaxed">
+          <div class="shrink-0 w-12 px-2 text-right text-neutral-400">
+            ${[...new Array(rowCount)].map((line, i) => html`${i + 1}<br />`)}
+          </div>
+          <div class="flex-1 px-2 overflow-auto text-slate-700">
+            <textarea
+              class="language-${this
+                .language} block w-full h-full outline-none resize-none"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              wrap="off"
+              rows=${rowCount}
+              .value=${this.value}
+              @keydown=${(e: any) => {
+                // Add indentation when pressing tab key instead of moving focus
+                if (e.keyCode === /* tab: */ 9) {
+                  e.preventDefault();
+
+                  const textarea = e.target;
+
+                  textarea.setRangeText(
+                    "  ",
+                    textarea.selectionStart,
+                    textarea.selectionStart,
+                    "end"
+                  );
+                }
+              }}
+              @keyup=${(e: any) => {
+                if (e.keyCode === /* enter: */ 13) {
+                  this.onChange(e.target.value);
+                }
+              }}
+              @change=${(e: any) => {
+                e.stopPropagation();
+                this.onChange(e.target.value);
+              }}
+              @paste=${(e: any) => {
+                // Use timeout to get value after paste
+                window.setTimeout(() => {
+                  this.onChange(e.target.value);
+                });
+              }}
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private onChange(nextValue: string) {
