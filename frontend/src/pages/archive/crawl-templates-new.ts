@@ -2,6 +2,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
+import { parse as yamlToJson } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -383,7 +384,7 @@ export class CrawlTemplatesNew extends LiteElement {
             ?checked=${this.isConfigCodeView}
             @sl-change=${(e: any) => (this.isConfigCodeView = e.target.checked)}
           >
-            <span class="text-sm">${msg("Use YAML/JSON")}</span>
+            <span class="text-sm">${msg("Use JSON/YAML")}</span>
           </sl-switch>
         </div>
 
@@ -488,7 +489,12 @@ export class CrawlTemplatesNew extends LiteElement {
     };
 
     if (this.isConfigCodeView) {
-      template.config = JSON.parse(this.configCode);
+      // Assume JSON if code starts with bracket, YAML otherwise
+      template.config = (
+        this.configCode.startsWith("{")
+          ? JSON.parse(this.configCode)
+          : yamlToJson(this.configCode)
+      ) as CrawlConfig;
     } else {
       template.config = {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
