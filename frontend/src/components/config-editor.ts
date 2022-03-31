@@ -1,7 +1,10 @@
 import { property, state } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { parse as jsonToYaml, stringify as yamlToJson } from "yaml";
-import parseJson from "parse-json";
+import {
+  parse as yamlToJson,
+  stringify as yamlStringify,
+  YAMLParseError,
+} from "yaml";
 
 import LiteElement, { html } from "../utils/LiteElement";
 
@@ -25,6 +28,22 @@ export class ConfigEditor extends LiteElement {
   @state()
   language: "json" | "yaml" = "json";
 
+  @state()
+  lineCount = 1;
+
+  @state()
+  errorMessage = "";
+
+  firstUpdated() {
+    this.lineCount = this.value.split("\n").length;
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    if (changedProperties.get("value")) {
+      this.lineCount = this.value.split("\n").length;
+    }
+  }
+
   render() {
     return html`
       <article class="border rounded">
@@ -42,102 +61,131 @@ export class ConfigEditor extends LiteElement {
           </sl-select>
         </header>
         ${this.renderTextArea()}
+
+        <div class="text-sm">
+          ${this.errorMessage
+            ? html`<btrix-alert type="danger">
+                ${this.errorMessage}
+              </btrix-alert> `
+            : html` <btrix-alert> ${msg("Valid configuration")} </btrix-alert>`}
+        </div>
       </article>
     `;
   }
 
+  private renderTextArea() {
+    return html`
+      <div class="flex font-mono text-sm leading-relaxed py-2">
+        <div class="shrink-0 w-12 px-2 text-right text-neutral-400">
+          ${[...new Array(this.lineCount)].map(
+            (line, i) => html`${i + 1}<br />`
+          )}
+        </div>
+        <div class="flex-1 px-2 overflow-auto text-slate-700">
+          <textarea
+            class="language-${this
+              .language} block w-full h-full outline-none resize-none"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            wrap="off"
+            rows=${this.lineCount}
+            .value=${this.value}
+            @keydown=${(e: any) => {
+              const textarea = e.target;
+
+              // Add indentation when pressing tab key instead of moving focus
+              if (e.keyCode === /* tab: */ 9) {
+                e.preventDefault();
+
+                textarea.setRangeText(
+                  "  ",
+                  textarea.selectionStart,
+                  textarea.selectionStart,
+                  "end"
+                );
+              } else if (e.keyCode === /* enter: */ 13) {
+                this.lineCount = this.lineCount + 1;
+              }
+            }}
+            @change=${(e: any) => {
+              e.stopPropagation();
+              this.onChange(e.target.value);
+            }}
+            @paste=${(e: any) => {
+              // Use timeout to get value after paste
+              window.setTimeout(() => {
+                this.onChange(e.target.value);
+              });
+            }}
+          ></textarea>
+        </div>
+      </div>
+    `;
+  }
+
+  private handleParseError(error: Error) {
+    if (error instanceof SyntaxError) {
+      // TODO better user-facing error
+      const errorMessage = error.message.replace("JSON.parse: ", "");
+      this.errorMessage = `${errorMessage
+        .charAt(0)
+        .toUpperCase()}${errorMessage.slice(1)}`;
+    } else if (error instanceof YAMLParseError) {
+      const errorMessage = error.message.replace("YAMLParseError: ", "");
+      this.errorMessage = errorMessage;
+    } else {
+      console.debug(error);
+    }
+  }
+
   private handleLanguageChange(e: any) {
     this.language = e.target.value;
+    this.errorMessage = "";
 
     let value = this.value;
 
     try {
       switch (this.language) {
         case "json":
-          const yaml = jsonToYaml(this.value);
+          const yaml = yamlToJson(this.value);
           value = JSON.stringify(yaml, null, 2);
           break;
         case "yaml":
           const json = JSON.parse(this.value);
-          value = yamlToJson(json);
+          value = yamlStringify(json);
           break;
         default:
           break;
       }
 
       this.onChange(value);
-    } catch (e) {
-      console.debug(e);
-
-      // TODO handle parse error
+    } catch (e: any) {
+      this.handleParseError(e);
     }
   }
 
-  private renderTextArea() {
-    const lines = this.value.split("\n");
-    const rowCount = lines.length + 1;
-
-    return html`
-      <div>
-        <div class="flex font-mono text-sm leading-relaxed">
-          <div class="shrink-0 w-12 px-2 text-right text-neutral-400">
-            ${[...new Array(rowCount)].map((line, i) => html`${i + 1}<br />`)}
-          </div>
-          <div class="flex-1 px-2 overflow-auto text-slate-700">
-            <textarea
-              class="language-${this
-                .language} block w-full h-full outline-none resize-none"
-              autocomplete="off"
-              autocapitalize="off"
-              spellcheck="false"
-              wrap="off"
-              rows=${rowCount}
-              .value=${this.value}
-              @keydown=${(e: any) => {
-                // Add indentation when pressing tab key instead of moving focus
-                if (e.keyCode === /* tab: */ 9) {
-                  e.preventDefault();
-
-                  const textarea = e.target;
-
-                  textarea.setRangeText(
-                    "  ",
-                    textarea.selectionStart,
-                    textarea.selectionStart,
-                    "end"
-                  );
-                }
-              }}
-              @keyup=${(e: any) => {
-                if (e.keyCode === /* enter: */ 13) {
-                  this.onChange(e.target.value);
-                }
-              }}
-              @change=${(e: any) => {
-                e.stopPropagation();
-                this.onChange(e.target.value);
-              }}
-              @paste=${(e: any) => {
-                // Use timeout to get value after paste
-                window.setTimeout(() => {
-                  this.onChange(e.target.value);
-                });
-              }}
-            ></textarea>
-          </div>
-        </div>
-      </div>
-    `;
+  private checkValidity(value: string) {
+    if (this.language === "json") {
+      JSON.parse(value);
+    } else if (this.language === "yaml") {
+      yamlToJson(this.value);
+    }
   }
 
   private onChange(nextValue: string) {
-    this.dispatchEvent(
-      new CustomEvent("on-change", {
-        detail: {
-          value: nextValue,
-        },
-      })
-    );
+    try {
+      this.checkValidity(nextValue);
+      this.dispatchEvent(
+        new CustomEvent("on-change", {
+          detail: {
+            value: nextValue,
+          },
+        })
+      );
+    } catch (e: any) {
+      this.handleParseError(e);
+    }
   }
 
   /**
