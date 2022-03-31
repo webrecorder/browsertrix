@@ -75,6 +75,7 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private isConfigCodeView: boolean = false;
 
+  /** YAML or stringified JSON config */
   @state()
   private configCode: string = "";
 
@@ -411,7 +412,7 @@ export class CrawlTemplatesNew extends LiteElement {
         )}
         rows="3"
         value=${this.initialCrawlTemplate!.config.seeds.join("\n")}
-        required
+        ?required=${!this.isConfigCodeView}
       ></sl-textarea>
       <sl-select
         name="scopeType"
@@ -445,8 +446,8 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderSeedsCodeEditor() {
     return html`
-      <div class="grid gap-4">
-        <div>
+      <div class="grid grid-cols-1 gap-4">
+        <div class="col-span-1">
           <p class="mb-2">
             ${msg(
               html`See
@@ -463,6 +464,7 @@ export class CrawlTemplatesNew extends LiteElement {
         </div>
 
         <btrix-config-editor
+          class="col-span-1"
           value=${this.configCode}
           @on-change=${(e: any) => {
             this.configCode = e.detail.value;

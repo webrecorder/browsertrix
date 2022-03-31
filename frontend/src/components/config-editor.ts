@@ -1,4 +1,4 @@
-import { property, state } from "lit/decorators.js";
+import { property, state, query } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import {
   parse as yamlToJson,
@@ -29,20 +29,10 @@ export class ConfigEditor extends LiteElement {
   language: "json" | "yaml" = "json";
 
   @state()
-  stagedValue = "";
-
-  @state()
   errorMessage = "";
 
-  firstUpdated() {
-    this.stagedValue = this.value;
-  }
-
-  updated(changedProperties: Map<string, any>) {
-    if (changedProperties.get("value")) {
-      this.stagedValue = this.value;
-    }
-  }
+  @query("#config-editor-textarea")
+  textareaElem?: HTMLTextAreaElement;
 
   render() {
     return html`
@@ -60,7 +50,9 @@ export class ConfigEditor extends LiteElement {
             <sl-menu-item value="yaml">${msg("YAML")}</sl-menu-item>
           </sl-select>
 
-          <btrix-copy-button .value=${this.stagedValue}></btrix-copy-button>
+          <btrix-copy-button
+            .getValue=${() => this.textareaElem?.value}
+          ></btrix-copy-button>
         </header>
 
         ${this.renderTextArea()}
@@ -77,7 +69,7 @@ export class ConfigEditor extends LiteElement {
   }
 
   private renderTextArea() {
-    const lineCount = this.stagedValue.split("\n").length;
+    const lineCount = this.value.split("\n").length;
 
     return html`
       <div class="flex font-mono text-sm leading-relaxed py-2">
@@ -86,6 +78,8 @@ export class ConfigEditor extends LiteElement {
         </div>
         <div class="flex-1 px-2 overflow-x-auto text-slate-700">
           <textarea
+            name="config"
+            id="config-editor-textarea"
             class="language-${this
               .language} block w-full h-full overflow-y-hidden outline-none resize-none"
             autocomplete="off"
@@ -108,19 +102,15 @@ export class ConfigEditor extends LiteElement {
                   "end"
                 );
               }
-
-              this.stagedValue = e.target.value;
             }}
             @change=${(e: any) => {
               e.stopPropagation();
-              this.onChange(e.target.value);
+              this.onChange((e.target as HTMLTextAreaElement).value);
             }}
             @paste=${(e: any) => {
               // Use timeout to get value after paste
               window.setTimeout(() => {
-                const { value } = e.target;
-
-                this.onChange(value);
+                this.onChange((e.target as HTMLTextAreaElement).value);
               });
             }}
           ></textarea>
@@ -146,18 +136,17 @@ export class ConfigEditor extends LiteElement {
 
   private handleLanguageChange(e: any) {
     this.language = e.target.value;
-    this.errorMessage = "";
 
-    let value = this.value;
+    let value = this.textareaElem?.value || "";
 
     try {
       switch (this.language) {
         case "json":
-          const yaml = yamlToJson(this.value);
+          const yaml = yamlToJson(value);
           value = JSON.stringify(yaml, null, 2);
           break;
         case "yaml":
-          const json = JSON.parse(this.value);
+          const json = JSON.parse(value);
           value = yamlStringify(json);
           break;
         default:
@@ -178,22 +167,26 @@ export class ConfigEditor extends LiteElement {
     }
   }
 
-  private onChange(nextValue: string) {
+  private onChange(value: string) {
     try {
-      this.checkValidity(nextValue);
-
+      this.checkValidity(value);
+      this.textareaElem?.setCustomValidity("");
       this.errorMessage = "";
-
       this.dispatchEvent(
         new CustomEvent("on-change", {
           detail: {
-            value: nextValue,
+            value: value,
           },
         })
       );
     } catch (e: any) {
+      this.textareaElem?.setCustomValidity(
+        `Please fix ${this.language.toUpperCase()} errors`
+      );
       this.handleParseError(e);
     }
+
+    this.textareaElem?.reportValidity();
   }
 
   /**
