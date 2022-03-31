@@ -7,7 +7,11 @@ import { msg, localized } from "@lit/localize";
  *
  * Usage example:
  * ```ts
- * <btrix-copy-button .value=${value} @on-copied=${console.log}></btrix-copy-button>
+ * <btrix-copy-button .value=${value}></btrix-copy-button>
+ * ```
+ * Or:
+ * ```ts
+ * <btrix-copy-button .getValue=${() => value}></btrix-copy-button>
  * ```
  *
  * @event on-copied
@@ -16,6 +20,9 @@ import { msg, localized } from "@lit/localize";
 export class CopyButton extends LitElement {
   @property({ type: String })
   value?: string;
+
+  @property({ type: Function })
+  getValue?: () => string;
 
   @state()
   private isCopied: boolean = false;
@@ -33,18 +40,22 @@ export class CopyButton extends LitElement {
 
   render() {
     return html`
-      <sl-button size="small" @click=${this.onClick} ?disabled=${!this.value}
+      <sl-button
+        size="small"
+        @click=${this.onClick}
+        ?disabled=${!this.value && !this.getValue}
         >${this.isCopied ? msg("Copied") : msg("Copy")}</sl-button
       >
     `;
   }
 
   private onClick() {
-    CopyButton.copyToClipboard(this.value!);
+    const value = (this.getValue ? this.getValue() : this.value) || "";
+    CopyButton.copyToClipboard(value);
 
     this.isCopied = true;
 
-    this.dispatchEvent(new CustomEvent("on-copied", { detail: this.value }));
+    this.dispatchEvent(new CustomEvent("on-copied", { detail: value }));
 
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;
