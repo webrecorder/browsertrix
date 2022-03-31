@@ -47,7 +47,7 @@ export class ConfigEditor extends LiteElement {
   render() {
     return html`
       <article class="border rounded">
-        <header class="flex bg-neutral-50 border-b p-1">
+        <header class="flex justify-between bg-neutral-50 border-b p-1">
           <sl-select
             value=${this.language}
             size="small"
@@ -59,7 +59,10 @@ export class ConfigEditor extends LiteElement {
             <sl-menu-item value="json">${msg("JSON")}</sl-menu-item>
             <sl-menu-item value="yaml">${msg("YAML")}</sl-menu-item>
           </sl-select>
+
+          <btrix-copy-button .value=${this.value}></btrix-copy-button>
         </header>
+
         ${this.renderTextArea()}
 
         <div class="text-sm">
@@ -76,15 +79,15 @@ export class ConfigEditor extends LiteElement {
   private renderTextArea() {
     return html`
       <div class="flex font-mono text-sm leading-relaxed py-2">
-        <div class="shrink-0 w-12 px-2 text-right text-neutral-400">
+        <div class="shrink-0 w-12 px-2 text-right text-neutral-300">
           ${[...new Array(this.lineCount)].map(
             (line, i) => html`${i + 1}<br />`
           )}
         </div>
-        <div class="flex-1 px-2 overflow-auto text-slate-700">
+        <div class="flex-1 px-2 overflow-x-auto text-slate-700">
           <textarea
             class="language-${this
-              .language} block w-full h-full outline-none resize-none"
+              .language} block w-full h-full overflow-y-hidden outline-none resize-none"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -115,7 +118,13 @@ export class ConfigEditor extends LiteElement {
             @paste=${(e: any) => {
               // Use timeout to get value after paste
               window.setTimeout(() => {
-                this.onChange(e.target.value);
+                const { value } = e.target;
+
+                // Update line count pre-emptively in case there's an
+                // error with the pasted values
+                this.lineCount = value.split("\n").length;
+
+                this.onChange(value);
               });
             }}
           ></textarea>
@@ -176,6 +185,9 @@ export class ConfigEditor extends LiteElement {
   private onChange(nextValue: string) {
     try {
       this.checkValidity(nextValue);
+
+      this.errorMessage = "";
+
       this.dispatchEvent(
         new CustomEvent("on-change", {
           detail: {
