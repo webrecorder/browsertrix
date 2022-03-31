@@ -73,7 +73,7 @@ export class CrawlTemplatesNew extends LiteElement {
     };
 
   @state()
-  private isConfigCodeView: boolean = true;
+  private isConfigCodeView: boolean = false;
 
   @state()
   private configCode: string = "";
