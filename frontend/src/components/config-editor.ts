@@ -29,18 +29,18 @@ export class ConfigEditor extends LiteElement {
   language: "json" | "yaml" = "json";
 
   @state()
-  lineCount = 1;
+  stagedValue = "";
 
   @state()
   errorMessage = "";
 
   firstUpdated() {
-    this.lineCount = this.value.split("\n").length;
+    this.stagedValue = this.value;
   }
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.get("value")) {
-      this.lineCount = this.value.split("\n").length;
+      this.stagedValue = this.value;
     }
   }
 
@@ -60,7 +60,7 @@ export class ConfigEditor extends LiteElement {
             <sl-menu-item value="yaml">${msg("YAML")}</sl-menu-item>
           </sl-select>
 
-          <btrix-copy-button .value=${this.value}></btrix-copy-button>
+          <btrix-copy-button .value=${this.stagedValue}></btrix-copy-button>
         </header>
 
         ${this.renderTextArea()}
@@ -77,12 +77,12 @@ export class ConfigEditor extends LiteElement {
   }
 
   private renderTextArea() {
+    const lineCount = this.stagedValue.split("\n").length;
+
     return html`
       <div class="flex font-mono text-sm leading-relaxed py-2">
         <div class="shrink-0 w-12 px-2 text-right text-neutral-300">
-          ${[...new Array(this.lineCount)].map(
-            (line, i) => html`${i + 1}<br />`
-          )}
+          ${[...new Array(lineCount)].map((line, i) => html`${i + 1}<br />`)}
         </div>
         <div class="flex-1 px-2 overflow-x-auto text-slate-700">
           <textarea
@@ -92,7 +92,7 @@ export class ConfigEditor extends LiteElement {
             autocapitalize="off"
             spellcheck="false"
             wrap="off"
-            rows=${this.lineCount}
+            rows=${lineCount}
             .value=${this.value}
             @keydown=${(e: any) => {
               const textarea = e.target;
@@ -107,9 +107,9 @@ export class ConfigEditor extends LiteElement {
                   textarea.selectionStart,
                   "end"
                 );
-              } else if (e.keyCode === /* enter: */ 13) {
-                this.lineCount = this.lineCount + 1;
               }
+
+              this.stagedValue = e.target.value;
             }}
             @change=${(e: any) => {
               e.stopPropagation();
@@ -119,10 +119,6 @@ export class ConfigEditor extends LiteElement {
               // Use timeout to get value after paste
               window.setTimeout(() => {
                 const { value } = e.target;
-
-                // Update line count pre-emptively in case there's an
-                // error with the pasted values
-                this.lineCount = value.split("\n").length;
 
                 this.onChange(value);
               });
