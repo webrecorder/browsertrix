@@ -68,7 +68,7 @@ export class ConfigEditor extends LiteElement {
         <div class="text-sm">
           ${this.errorMessage
             ? html`<btrix-alert type="danger">
-                ${this.errorMessage}
+                <div class="whitespace-pre-wrap">${this.errorMessage}</div>
               </btrix-alert> `
             : html` <btrix-alert> ${msg("Valid configuration")} </btrix-alert>`}
         </div>
@@ -178,7 +178,7 @@ export class ConfigEditor extends LiteElement {
     if (this.language === "json") {
       JSON.parse(value);
     } else if (this.language === "yaml") {
-      yamlToJson(this.value);
+      yamlToJson(value);
     }
   }
 
