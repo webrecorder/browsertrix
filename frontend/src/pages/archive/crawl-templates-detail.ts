@@ -3,7 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
-import { parse as yamlToJson } from "yaml";
+import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -71,7 +71,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       if (isComplexConfig) {
         this.isConfigCodeView = true;
       }
-      this.configCode = JSON.stringify(this.crawlTemplate.config, null, 2);
+      this.configCode = jsonToYaml(this.crawlTemplate.config);
     } catch (e: any) {
       this.notify({
         message:

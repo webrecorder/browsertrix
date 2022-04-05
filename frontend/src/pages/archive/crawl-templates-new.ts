@@ -2,7 +2,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
-import { parse as yamlToJson } from "yaml";
+import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -134,7 +134,7 @@ export class CrawlTemplatesNew extends LiteElement {
         ...this.initialCrawlTemplate?.config,
       },
     };
-    this.configCode = JSON.stringify(this.initialCrawlTemplate.config, null, 2);
+    this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
     super.connectedCallback();
   }
 
