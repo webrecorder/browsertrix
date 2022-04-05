@@ -589,16 +589,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
         <span slot="summary" class="text-sm">
-          <span class="font-medium">${msg("JSON Configuration")}</span>
+          <span class="font-medium">${msg("Advanced Configuration")}</span>
         </span>
         <div class="relative">
           <pre
-            class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs overflow-auto"
-          ><code>${JSON.stringify(
-            this.crawlTemplate?.config || {},
-            null,
-            2
-          )}</code></pre>
+            class="language-yaml text-neutral-600 p-4 rounded font-mono leading-relaxed text-xs overflow-auto"
+          ><code>${jsonToYaml(this.crawlTemplate?.config || {})}</code></pre>
 
           <div class="absolute top-2 right-2">
             <btrix-copy-button

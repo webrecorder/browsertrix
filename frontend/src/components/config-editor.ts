@@ -41,7 +41,7 @@ export class ConfigEditor extends LiteElement {
             ${this.errorMessage
               ? html`
                   <sl-icon
-                    class="text-danger inline-block align-middle"
+                    class="text-danger inline-block align-middle mr-1"
                     name="x-octagon"
                   ></sl-icon>
                   <span
@@ -51,7 +51,7 @@ export class ConfigEditor extends LiteElement {
                 `
               : html`
                   <sl-icon
-                    class="text-success inline-block align-middle"
+                    class="text-success inline-block align-middle mr-1"
                     name="check2"
                   ></sl-icon>
                   <span
@@ -87,7 +87,7 @@ export class ConfigEditor extends LiteElement {
         <div class="shrink-0 w-12 px-2 text-right text-neutral-300">
           ${[...new Array(lineCount)].map((line, i) => html`${i + 1}<br />`)}
         </div>
-        <div class="flex-1 px-2 overflow-x-auto text-slate-700">
+        <div class="flex-1 px-2 overflow-x-auto text-slate-600">
           <textarea
             name="config"
             id="config-editor-textarea"
