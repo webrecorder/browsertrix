@@ -1056,12 +1056,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.isConfigCodeView) {
       if (!this.configCode) return;
 
-      // Assume JSON if code starts with bracket, YAML otherwise
-      config = (
-        this.configCode.startsWith("{")
-          ? JSON.parse(this.configCode)
-          : yamlToJson(this.configCode)
-      ) as CrawlConfig;
+      config = yamlToJson(this.configCode) as CrawlConfig;
     } else {
       const pageLimit = formData.get("limit") as string;
       const seedUrlsStr = formData.get("seedUrls") as string;

@@ -26,9 +26,6 @@ export class ConfigEditor extends LiteElement {
   value = "";
 
   @state()
-  language: "json" | "yaml" = "json";
-
-  @state()
   errorMessage = "";
 
   @query("#config-editor-textarea")
@@ -37,18 +34,32 @@ export class ConfigEditor extends LiteElement {
   render() {
     return html`
       <article class="border rounded">
-        <header class="flex justify-between bg-neutral-50 border-b p-1">
-          <sl-select
-            value=${this.language}
-            size="small"
-            hoist
-            @sl-hide=${this.stopProp}
-            @sl-after-hide=${this.stopProp}
-            @sl-select=${this.handleLanguageChange}
-          >
-            <sl-menu-item value="json">${msg("JSON")}</sl-menu-item>
-            <sl-menu-item value="yaml">${msg("YAML")}</sl-menu-item>
-          </sl-select>
+        <header
+          class="flex items-center justify-between bg-neutral-50 border-b p-1"
+        >
+          <div class="px-1">
+            ${this.errorMessage
+              ? html`
+                  <sl-icon
+                    class="text-danger inline-block align-middle"
+                    name="x-octagon"
+                  ></sl-icon>
+                  <span
+                    class="inline-block align-middle text-sm text-neutral-500"
+                    >${msg("Invalid Configuration")}</span
+                  >
+                `
+              : html`
+                  <sl-icon
+                    class="text-success inline-block align-middle"
+                    name="check2"
+                  ></sl-icon>
+                  <span
+                    class="inline-block align-middle text-sm text-neutral-500"
+                    >${msg("Valid Configuration")}</span
+                  >
+                `}
+          </div>
 
           <btrix-copy-button
             .getValue=${() => this.textareaElem?.value}
@@ -62,7 +73,7 @@ export class ConfigEditor extends LiteElement {
             ? html`<btrix-alert type="danger">
                 <div class="whitespace-pre-wrap">${this.errorMessage}</div>
               </btrix-alert> `
-            : html` <btrix-alert> ${msg("Valid configuration")} </btrix-alert>`}
+            : ""}
         </div>
       </article>
     `;
@@ -80,8 +91,7 @@ export class ConfigEditor extends LiteElement {
           <textarea
             name="config"
             id="config-editor-textarea"
-            class="language-${this
-              .language} block w-full h-full overflow-y-hidden outline-none resize-none"
+            class="language-yaml block w-full h-full overflow-y-hidden outline-none resize-none"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -107,6 +117,10 @@ export class ConfigEditor extends LiteElement {
               e.stopPropagation();
               this.onChange((e.target as HTMLTextAreaElement).value);
             }}
+            @blur=${(e: any) => {
+              e.stopPropagation();
+              this.onBlur((e.target as HTMLTextAreaElement).value);
+            }}
             @paste=${(e: any) => {
               // Use timeout to get value after paste
               window.setTimeout(() => {
@@ -120,50 +134,23 @@ export class ConfigEditor extends LiteElement {
   }
 
   private handleParseError(error: Error) {
-    if (error instanceof SyntaxError) {
-      // TODO better user-facing error
-      const errorMessage = error.message.replace("JSON.parse: ", "");
-      this.errorMessage = `${errorMessage
-        .charAt(0)
-        .toUpperCase()}${errorMessage.slice(1)}`;
-    } else if (error instanceof YAMLParseError) {
+    if (error instanceof YAMLParseError) {
       const errorMessage = error.message.replace("YAMLParseError: ", "");
       this.errorMessage = errorMessage;
     } else {
+      this.errorMessage = msg("Invalid YAML or JSON");
       console.debug(error);
     }
   }
 
-  private handleLanguageChange(e: any) {
-    this.language = e.target.value;
-
-    let value = this.textareaElem?.value || "";
-
-    try {
-      switch (this.language) {
-        case "json":
-          const yaml = yamlToJson(value);
-          value = JSON.stringify(yaml, null, 2);
-          break;
-        case "yaml":
-          const json = JSON.parse(value);
-          value = yamlStringify(json);
-          break;
-        default:
-          break;
-      }
-
-      this.onChange(value);
-    } catch (e: any) {
-      this.handleParseError(e);
-    }
+  private checkValidity(value: string) {
+    yamlToJson(value);
   }
 
-  private checkValidity(value: string) {
-    if (this.language === "json") {
-      JSON.parse(value);
-    } else if (this.language === "yaml") {
-      yamlToJson(value);
+  private onBlur(value: string) {
+    if (!value) {
+      this.textareaElem?.setCustomValidity(msg("Please fill out this field"));
+      this.textareaElem?.reportValidity();
     }
   }
 
@@ -180,9 +167,7 @@ export class ConfigEditor extends LiteElement {
         })
       );
     } catch (e: any) {
-      this.textareaElem?.setCustomValidity(
-        `Please fix ${this.language.toUpperCase()} errors`
-      );
+      this.textareaElem?.setCustomValidity(msg("Please fix errors"));
       this.handleParseError(e);
     }
 

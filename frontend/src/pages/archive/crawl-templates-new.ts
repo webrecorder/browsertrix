@@ -489,12 +489,7 @@ export class CrawlTemplatesNew extends LiteElement {
     };
 
     if (this.isConfigCodeView) {
-      // Assume JSON if code starts with bracket, YAML otherwise
-      template.config = (
-        this.configCode.startsWith("{")
-          ? JSON.parse(this.configCode)
-          : yamlToJson(this.configCode)
-      ) as CrawlConfig;
+      template.config = yamlToJson(this.configCode) as CrawlConfig;
     } else {
       template.config = {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
