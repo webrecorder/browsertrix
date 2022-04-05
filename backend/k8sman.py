@@ -402,7 +402,7 @@ class K8SManager:
                 name=name, namespace=self.namespace
             )
 
-            label_selector = f"job-name={name},btrix.archive={aid}"
+            label_selector = f"job-name={name}"
             if aid:
                 if not job or job.metadata.labels["btrix.archive"] != aid:
                     return None

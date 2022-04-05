@@ -310,7 +310,7 @@ class CrawlOps:
     async def list_crawls(self, archive: Optional[Archive], running_only=False):
         """ list finished and running crawl data """
         running_crawls = await self.crawl_manager.list_running_crawls(
-            aid=archive.id_str
+            aid=archive.id_str if archive else None
         )
 
         await self.get_redis_stats(running_crawls)
@@ -482,7 +482,7 @@ def init_crawls_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.list_crawls(None)
+        return await ops.list_crawls(None, running_only=True)
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
