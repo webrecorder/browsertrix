@@ -384,7 +384,7 @@ export class CrawlTemplatesNew extends LiteElement {
             ?checked=${this.isConfigCodeView}
             @sl-change=${(e: any) => (this.isConfigCodeView = e.target.checked)}
           >
-            <span class="text-sm">${msg("Use JSON/YAML")}</span>
+            <span class="text-sm">${msg("Advanced Editor")}</span>
           </sl-switch>
         </div>
 
