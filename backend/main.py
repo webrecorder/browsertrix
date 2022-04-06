@@ -80,7 +80,7 @@ def main():
         crawl_manager,
         crawl_config_ops,
         archive_ops,
-        current_active_user
+        current_active_user,
     )
 
     coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)

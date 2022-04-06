@@ -413,8 +413,7 @@ class K8SManager:
                 return None
 
             pods = await self.core_api.list_namespaced_pod(
-                namespace=self.namespace,
-                label_selector=label_selector
+                namespace=self.namespace, label_selector=label_selector
             )
 
             watch_ips = [pod.status.pod_ip for pod in pods.items if pod.status.pod_ip]
@@ -764,7 +763,7 @@ class K8SManager:
                                     {
                                         "name": "STORE_FILENAME",
                                         "value": out_filename,
-                                    }
+                                    },
                                 ],
                                 "resources": resources,
                                 "livenessProbe": liveness_probe,
