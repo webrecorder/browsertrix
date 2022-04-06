@@ -6,7 +6,6 @@ import type { CurrentUser } from "../types/user";
 import type { ArchiveData } from "../utils/archives";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import { isOwner } from "../utils/archives";
 
 @needLogin
 @localized()
@@ -56,52 +55,16 @@ export class Archives extends LiteElement {
     }
 
     return html`
-      <ul class="border rounded-lg overflow-hidden">
-        ${this.archiveList.map(
-          (archive) =>
-            html`
-              <li
-                class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
-                role="button"
-                @click=${this.makeOnArchiveClick(archive)}
-              >
-                <span class="font-medium mr-2 transition-colors"
-                  >${archive.name}</span
-                >
-                ${this.userInfo &&
-                archive.users &&
-                isOwner(archive.users[this.userInfo.id].role)
-                  ? html`<sl-tag size="small" type="primary"
-                      >${msg("Owner")}</sl-tag
-                    >`
-                  : ""}
-              </li>
-            `
-        )}
-      </ul>
+      <btrix-archives-list
+        .userInfo=${this.userInfo}
+        .archiveList=${this.archiveList}
+      ></btrix-archives-list>
     `;
   }
 
-  async getArchives(): Promise<ArchiveData[]> {
+  private async getArchives(): Promise<ArchiveData[]> {
     const data = await this.apiFetch("/archives", this.authState!);
 
     return data.archives;
-  }
-
-  makeOnArchiveClick(archive: ArchiveData): Function {
-    const navigate = () => this.navTo(`/archives/${archive.id}/crawls`);
-
-    if (typeof window.getSelection !== undefined) {
-      return () => {
-        // Prevent navigation on user text selection
-        if (window.getSelection()?.type === "Range") {
-          return;
-        }
-
-        navigate();
-      };
-    }
-
-    return navigate;
   }
 }

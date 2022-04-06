@@ -15,6 +15,7 @@ from redis import asyncio as aioredis
 
 
 from db import BaseMongoModel
+from users import User
 from archives import Archive, MAX_CRAWL_SCALE
 from storages import get_presigned_url
 
@@ -235,7 +236,19 @@ class CrawlOps:
             crawl.cid, crawl.id, crawl.finished, crawl.state
         )
 
+        if crawl_file:
+            await self.delete_redis_keys(crawl)
+
         return True
+
+    async def delete_redis_keys(self, crawl):
+        """ delete keys for this crawl """
+        key = crawl.id
+        try:
+            await self.redis.delete(f"{key}:s", f"{key}:p", f"{key}:q", f"{key}:d")
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
 
     async def list_finished_crawls(
         self,
@@ -294,17 +307,13 @@ class CrawlOps:
         results = await cursor.to_list(length=1000)
         return [crawl_cls.from_dict(res) for res in results]
 
-    async def list_crawls(self, archive: Archive):
+    async def list_crawls(self, archive: Optional[Archive], running_only=False):
         """ list finished and running crawl data """
         running_crawls = await self.crawl_manager.list_running_crawls(
-            aid=archive.id_str
+            aid=archive.id_str if archive else None
         )
 
         await self.get_redis_stats(running_crawls)
-
-        finished_crawls = await self.list_finished_crawls(
-            aid=archive.id, exclude_files=True
-        )
 
         crawls = []
 
@@ -312,17 +321,28 @@ class CrawlOps:
             list_crawl = ListCrawlOut(**crawl.dict())
             crawls.append(await self._resolve_crawl_refs(list_crawl, archive))
 
-        crawls.extend(finished_crawls)
+        if not running_only:
+            aid = archive.id if archive else None
+            finished_crawls = await self.list_finished_crawls(
+                aid=aid, exclude_files=True
+            )
+
+            crawls.extend(finished_crawls)
 
         return ListCrawls(crawls=crawls)
 
     async def get_crawl(self, crawlid: str, archive: Archive):
         """ Get data for single crawl """
 
-        res = await self.crawls.find_one({"_id": crawlid, "aid": archive.id})
+        query = {"_id": crawlid}
+        if archive:
+            query["aid"] = archive.id
+
+        res = await self.crawls.find_one(query)
 
         if not res:
-            crawl = await self.crawl_manager.get_running_crawl(crawlid, archive.id_str)
+            aid_str = archive.id_str if archive else None
+            crawl = await self.crawl_manager.get_running_crawl(crawlid, aid_str)
             if crawl:
                 await self.get_redis_stats([crawl])
                 await self.cache_ips(crawl)
@@ -449,13 +469,20 @@ class CrawlOps:
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals
 def init_crawls_api(
-    app, mdb, redis_url, users, crawl_manager, crawl_config_ops, archives
+    app, mdb, redis_url, users, crawl_manager, crawl_config_ops, archives, user_dep
 ):
     """ API for crawl management, including crawl done callback"""
 
     ops = CrawlOps(mdb, redis_url, users, crawl_manager, crawl_config_ops, archives)
 
     archive_crawl_dep = archives.archive_crawl_dep
+
+    @app.get("/archives/all/crawls", tags=["crawls"], response_model=ListCrawls)
+    async def list_crawls_admin(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.list_crawls(None, running_only=True)
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
     async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
@@ -522,6 +549,17 @@ def init_crawls_api(
         res = await ops.delete_crawls(archive.id, delete_list)
 
         return {"deleted": res}
+
+    @app.get(
+        "/archives/all/crawls/{crawl_id}.json",
+        tags=["crawls"],
+        response_model=CrawlOut,
+    )
+    async def get_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_crawl(crawl_id, None)
 
     @app.get(
         "/archives/{aid}/crawls/{crawl_id}.json",

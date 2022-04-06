@@ -197,17 +197,20 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawls() {
+    const crawlsBaseUrl = `/archives/${this.archiveId}/crawls`;
+
     if (this.crawlId) {
-      return html`<btrix-crawl-detail
+      return html` <btrix-crawl-detail
         .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
         crawlId=${this.crawlId}
+        crawlsBaseUrl=${crawlsBaseUrl}
       ></btrix-crawl-detail>`;
     }
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      .archiveId=${this.archiveId!}
+      archiveId=${this.archiveId!}
+      crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
   }

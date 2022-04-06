@@ -10,6 +10,7 @@ export type Crawl = {
   id: string;
   userid: string;
   userName: string;
+  aid: string;
   cid: string;
   configName: string;
   schedule: string;

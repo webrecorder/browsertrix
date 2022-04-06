@@ -351,12 +351,14 @@ class CrawlConfigOps:
     async def get_crawl_config(
         self,
         cid: uuid.UUID,
-        archive: Archive,
+        archive: Optional[Archive],
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
         """Get an archive for user by unique id"""
-        query = {"_id": cid, "aid": archive.id}
+        query = {"_id": cid}
+        if archive:
+            query["aid"] = archive.id
         if active_only:
             query["inactive"] = {"$ne": True}
 
