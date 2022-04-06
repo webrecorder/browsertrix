@@ -208,6 +208,8 @@ export class App extends LiteElement {
   }
 
   renderNavBar() {
+    const isAdmin = this.userInfo?.isAdmin;
+
     return html`
       <div class="border-b">
         <nav
@@ -215,12 +217,35 @@ export class App extends LiteElement {
         >
           <div>
             <a href="/" @click="${this.navLink}"
-              ><h1 class="text-sm font-medium">
+              ><h1 class="text-sm hover:text-neutral-400 font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
             >
           </div>
-          <div class="grid grid-flow-col gap-5 items-center">
+
+          ${isAdmin
+            ? html`
+                <div
+                  class="text-xs md:text-sm grid grid-flow-col gap-3 md:gap-5 items-center"
+                >
+                  <a
+                    class="text-neutral-500 hover:text-neutral-400 font-medium"
+                    href="/archives"
+                    @click=${this.navLink}
+                    >${msg("All Archives")}</a
+                  >
+                  <a
+                    class="text-neutral-500 hover:text-neutral-400 font-medium"
+                    href="/crawls"
+                    @click=${this.navLink}
+                    >${msg("Running Crawls")}</a
+                  >
+                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
+                </div>
+              `
+            : ""}
+
+          <div class="grid grid-flow-col gap-3 md:gap-5 items-center">
             ${this.authService.authState
               ? html` <sl-dropdown placement="bottom-end">
                   <sl-icon-button
@@ -231,7 +256,7 @@ export class App extends LiteElement {
 
                   <sl-menu class="w-60 min-w-min max-w-full">
                     <div class="px-7 py-2">
-                      ${this.userInfo?.isAdmin
+                      ${isAdmin
                         ? html`
                             <div class="mb-2">
                               <sl-tag
@@ -404,7 +429,7 @@ export class App extends LiteElement {
       case "archive":
       case "archiveAddMember":
       case "archiveNewResourceTab":
-      case "crawl":
+      case "archiveCrawl":
       case "crawlTemplate":
       case "crawlTemplateEdit":
         return html`<btrix-archive
@@ -434,16 +459,40 @@ export class App extends LiteElement {
         ></btrix-account-settings>`;
 
       case "usersInvite": {
-        if (this.userInfo?.isAdmin) {
-          return html`<btrix-users-invite
-            class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
-            @navigate="${this.onNavigateTo}"
-            @need-login="${this.onNeedLogin}"
-            .authState="${this.authService.authState}"
-            .userInfo="${this.userInfo}"
-          ></btrix-users-invite>`;
+        if (this.userInfo) {
+          if (this.userInfo.isAdmin) {
+            return html`<btrix-users-invite
+              class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+              @navigate="${this.onNavigateTo}"
+              @need-login="${this.onNeedLogin}"
+              .authState="${this.authService.authState}"
+              .userInfo="${this.userInfo}"
+            ></btrix-users-invite>`;
+          } else {
+            return this.renderNotFoundPage();
+          }
         } else {
-          return this.renderNotFoundPage();
+          return this.renderSpinner();
+        }
+      }
+
+      case "crawls":
+      case "crawl": {
+        if (this.userInfo) {
+          if (this.userInfo.isAdmin) {
+            return html`<btrix-crawls
+              class="w-full"
+              @navigate=${this.onNavigateTo}
+              @need-login=${this.onNeedLogin}
+              @notify=${this.onNotify}
+              .authState=${this.authService.authState}
+              crawlId=${this.viewState.params.crawlId}
+            ></btrix-crawls>`;
+          } else {
+            return this.renderNotFoundPage();
+          }
+        } else {
+          return this.renderSpinner();
         }
       }
 
@@ -452,10 +501,67 @@ export class App extends LiteElement {
     }
   }
 
+  renderSpinner() {
+    return html`
+      <div class="w-full flex items-center justify-center text-4xl">
+        <sl-spinner></sl-spinner>
+      </div>
+    `;
+  }
+
   renderNotFoundPage() {
     return html`<btrix-not-found
       class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
+  }
+
+  renderFindCrawl() {
+    return html`
+      <sl-dropdown
+        @sl-after-show=${(e: any) => {
+          e.target.querySelector("sl-input").focus();
+        }}
+        @sl-after-hide=${(e: any) => {
+          e.target.querySelector("sl-input").value = "";
+        }}
+        hoist
+      >
+        <button
+          slot="trigger"
+          class="text-primary hover:text-indigo-400 font-medium"
+        >
+          ${msg("Jump to Crawl")}
+        </button>
+
+        <div class="p-2">
+          <sl-form
+            @sl-submit=${(e: any) => {
+              const id = e.detail.formData.get("crawlId");
+              this.navigate(`/crawls/crawl/${id}`);
+              e.target.closest("sl-dropdown").hide();
+            }}
+            lab
+          >
+            <div class="flex flex-wrap items-center">
+              <div class="mr-2 w-90">
+                <sl-input
+                  size="small"
+                  name="crawlId"
+                  placeholder=${msg("Enter Crawl ID")}
+                  required
+                ></sl-input>
+              </div>
+              <div class="grow-0">
+                <sl-button size="small" type="neutral" submit>
+                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
+                  ${msg("Go")}</sl-button
+                >
+              </div>
+            </div>
+          </sl-form>
+        </div>
+      </sl-dropdown>
+    `;
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

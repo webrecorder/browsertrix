@@ -72,6 +72,9 @@ class Archive(BaseMongoModel):
 
     def _is_auth(self, user, value):
         """Check if user has at least specified permission level"""
+        if user.is_superuser:
+            return True
+
         res = self.users.get(str(user.id))
         if not res:
             return False
@@ -156,7 +159,10 @@ class ArchiveOps:
 
     async def get_archives_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
         """Get all archives a user is a member of"""
-        query = {f"users.{user.id}": {"$gte": role.value}}
+        if user.is_superuser:
+            query = {}
+        else:
+            query = {f"users.{user.id}": {"$gte": role.value}}
         cursor = self.archives.find(query)
         results = await cursor.to_list(length=1000)
         return [Archive.from_dict(res) for res in results]
@@ -165,7 +171,10 @@ class ArchiveOps:
         self, aid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an archive for user by unique id"""
-        query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
+        if user.is_superuser:
+            query = {"_id": aid}
+        else:
+            query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
         res = await self.archives.find_one(query)
         return Archive.from_dict(res)
 
