@@ -2,6 +2,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
+import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -73,13 +74,11 @@ export class CrawlTemplatesNew extends LiteElement {
     };
 
   @state()
-  private isSeedsJsonView: boolean = false;
+  private isConfigCodeView: boolean = false;
 
+  /** YAML or stringified JSON config */
   @state()
-  private seedsJson: string = "";
-
-  @state()
-  private invalidSeedsJsonMessage: string = "";
+  private configCode: string = "";
 
   @state()
   private isSubmitting: boolean = false;
@@ -126,7 +125,7 @@ export class CrawlTemplatesNew extends LiteElement {
       (seed: any) => typeof seed !== "string"
     );
     if (isComplexConfig) {
-      this.isSeedsJsonView = true;
+      this.isConfigCodeView = true;
     }
     this.initialCrawlTemplate = {
       name: this.initialCrawlTemplate?.name || initialValues.name,
@@ -135,7 +134,7 @@ export class CrawlTemplatesNew extends LiteElement {
         ...this.initialCrawlTemplate?.config,
       },
     };
-    this.seedsJson = JSON.stringify(this.initialCrawlTemplate.config, null, 2);
+    this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
     super.connectedCallback();
   }
 
@@ -167,7 +166,7 @@ export class CrawlTemplatesNew extends LiteElement {
       <main class="mt-6">
         <div class="md:border md:rounded-lg">
           <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
-            <div class="md:grid grid-cols-3">
+            <div class="grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
               ${this.renderScheduleSettings()}
             </div>
@@ -219,10 +218,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderBasicSettings() {
     return html`
-      <div class="col-span-1 py-2 md:p-8 md:border-b">
+      <div class="col-span-3 md:col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Basic Settings")}</h3>
       </div>
-      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
+      <section class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -242,10 +241,10 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderScheduleSettings() {
     return html`
-      <div class="col-span-1 py-2 md:p-8 md:border-b">
+      <div class="col-span-3 md:col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Schedule")}</h3>
       </div>
-      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
+      <section class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
           <div class="flex items-end">
             <div class="pr-2 flex-1">
@@ -358,11 +357,13 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderCrawlConfigSettings() {
     return html`
-      <div class="col-span-1 py-2 md:p-8 md:border-b">
+      <div class="col-span-3 md:col-span-1 py-2 md:p-8 md:border-b">
         <h3 class="font-medium">${msg("Crawl Settings")}</h3>
       </div>
-      <section class="col-span-2 pb-6 md:p-8 border-b grid gap-5">
-        <div>
+      <section
+        class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid grid-cols-1 gap-5"
+      >
+        <div class="col-span-1">
           <sl-select
             name="scale"
             label=${msg("Crawl Scale")}
@@ -373,24 +374,26 @@ export class CrawlTemplatesNew extends LiteElement {
             <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
           </sl-select>
         </div>
-        <div class="flex justify-between">
+        <div class="col-span-1 flex justify-between">
           <h4 class="font-medium">
-            ${this.isSeedsJsonView
+            ${this.isConfigCodeView
               ? msg("Custom Config")
               : msg("Crawl Configuration")}
           </h4>
           <sl-switch
-            ?checked=${this.isSeedsJsonView}
-            @sl-change=${(e: any) => (this.isSeedsJsonView = e.target.checked)}
+            ?checked=${this.isConfigCodeView}
+            @sl-change=${(e: any) => (this.isConfigCodeView = e.target.checked)}
           >
-            <span class="text-sm">${msg("Use JSON Editor")}</span>
+            <span class="text-sm">${msg("Advanced Editor")}</span>
           </sl-switch>
         </div>
 
-        <div class="${this.isSeedsJsonView ? "" : "hidden"}">
-          ${this.renderSeedsJson()}
+        <div class="col-span-1${this.isConfigCodeView ? "" : " hidden"}">
+          ${this.renderSeedsCodeEditor()}
         </div>
-        <div class="grid gap-5${this.isSeedsJsonView ? "hidden" : ""}">
+        <div
+          class="col-span-1 grid gap-5${this.isConfigCodeView ? " hidden" : ""}"
+        >
           ${this.renderSeedsForm()}
         </div>
       </section>
@@ -410,7 +413,7 @@ export class CrawlTemplatesNew extends LiteElement {
         )}
         rows="3"
         value=${this.initialCrawlTemplate!.config.seeds.join("\n")}
-        required
+        ?required=${!this.isConfigCodeView}
       ></sl-textarea>
       <sl-select
         name="scopeType"
@@ -442,10 +445,10 @@ export class CrawlTemplatesNew extends LiteElement {
     `;
   }
 
-  private renderSeedsJson() {
+  private renderSeedsCodeEditor() {
     return html`
-      <div class="grid gap-4">
-        <div>
+      <div class="grid grid-cols-1 gap-4">
+        <div class="col-span-1">
           <p class="mb-2">
             ${msg(
               html`See
@@ -461,74 +464,15 @@ export class CrawlTemplatesNew extends LiteElement {
           </p>
         </div>
 
-        <div class="grid grid-cols-3 gap-4">
-          <div class="relative col-span-2">
-            ${this.renderSeedsJsonInput()}
-
-            <div class="absolute top-2 right-2">
-              <btrix-copy-button .value=${this.seedsJson}></btrix-copy-button>
-            </div>
-          </div>
-
-          <div class="col-span-1">
-            ${this.invalidSeedsJsonMessage
-              ? html`<btrix-alert type="danger">
-                  ${this.invalidSeedsJsonMessage}
-                </btrix-alert> `
-              : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
-          </div>
-        </div>
+        <btrix-config-editor
+          class="col-span-1"
+          value=${this.configCode}
+          @on-change=${(e: any) => {
+            this.configCode = e.detail.value;
+          }}
+        ></btrix-config-editor>
       </div>
     `;
-  }
-
-  private renderSeedsJsonInput() {
-    return html`
-      <textarea
-        id="json-editor"
-        class="language-json block w-full bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
-        autocomplete="off"
-        rows="10"
-        spellcheck="false"
-        .value=${this.seedsJson}
-        @keydown=${(e: any) => {
-          // Add indentation when pressing tab key instead of moving focus
-          if (e.keyCode === /* tab: */ 9) {
-            e.preventDefault();
-
-            const textarea = e.target;
-
-            textarea.setRangeText(
-              "  ",
-              textarea.selectionStart,
-              textarea.selectionStart,
-              "end"
-            );
-          }
-        }}
-        @change=${(e: any) => (this.seedsJson = e.target.value)}
-        @blur=${this.updateSeedsJson}
-      ></textarea>
-    `;
-  }
-
-  private updateSeedsJson(e: any) {
-    const textarea = e.target;
-    const text = textarea.value;
-
-    try {
-      const json = JSON.parse(text);
-
-      this.seedsJson = JSON.stringify(json, null, 2);
-      this.invalidSeedsJsonMessage = "";
-
-      textarea.setCustomValidity("");
-      textarea.reportValidity();
-    } catch (e: any) {
-      this.invalidSeedsJsonMessage = e.message
-        ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
-        : msg("JSON is invalid.");
-    }
   }
 
   private parseTemplate(formData: FormData) {
@@ -544,8 +488,8 @@ export class CrawlTemplatesNew extends LiteElement {
       scale: +scale,
     };
 
-    if (this.isSeedsJsonView) {
-      template.config = JSON.parse(this.seedsJson);
+    if (this.isConfigCodeView) {
+      template.config = yamlToJson(this.configCode) as CrawlConfig;
     } else {
       template.config = {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
@@ -564,19 +508,7 @@ export class CrawlTemplatesNew extends LiteElement {
   }) {
     if (!this.authState) return;
 
-    if (this.isSeedsJsonView && this.invalidSeedsJsonMessage) {
-      // Check JSON validity
-      const jsonEditor = event.target.querySelector("#json-editor");
-
-      jsonEditor.setCustomValidity(msg("Please correct JSON errors."));
-      jsonEditor.reportValidity();
-
-      return;
-    }
-
     const params = this.parseTemplate(event.detail.formData);
-
-    console.log(params);
 
     this.serverError = undefined;
     this.isSubmitting = true;

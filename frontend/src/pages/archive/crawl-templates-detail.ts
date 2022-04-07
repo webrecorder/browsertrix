@@ -3,6 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
+import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -36,13 +37,11 @@ export class CrawlTemplatesDetail extends LiteElement {
   private showAllSeedURLs: boolean = false;
 
   @state()
-  private isSeedsJsonView: boolean = false;
+  private isConfigCodeView: boolean = false;
 
+  /** YAML or stringified JSON config */
   @state()
-  private seedsJson: string = "";
-
-  @state()
-  private invalidSeedsJsonMessage: string = "";
+  private configCode: string = "";
 
   @state()
   private isSubmittingUpdate: boolean = false;
@@ -70,9 +69,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         (seed: any) => typeof seed !== "string"
       );
       if (isComplexConfig) {
-        this.isSeedsJsonView = true;
+        this.isConfigCodeView = true;
       }
-      this.seedsJson = JSON.stringify(this.crawlTemplate.config, null, 2);
+      this.configCode = jsonToYaml(this.crawlTemplate.config);
     } catch (e: any) {
       this.notify({
         message:
@@ -385,7 +384,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           >${msg("Actions")}</sl-button
         >
 
-        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
           ${menuItems.map((item: HTMLTemplateResult) => item)}
         </ul>
       </sl-dropdown>
@@ -590,16 +589,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
         <span slot="summary" class="text-sm">
-          <span class="font-medium">${msg("JSON Configuration")}</span>
+          <span class="font-medium">${msg("Advanced Configuration")}</span>
         </span>
         <div class="relative">
           <pre
-            class="language-json bg-gray-800 text-gray-50 p-4 rounded font-mono text-xs overflow-auto"
-          ><code>${JSON.stringify(
-            this.crawlTemplate?.config || {},
-            null,
-            2
-          )}</code></pre>
+            class="language-yaml text-neutral-600 p-4 rounded font-mono leading-relaxed text-xs overflow-auto"
+          ><code>${jsonToYaml(this.crawlTemplate?.config || {})}</code></pre>
 
           <div class="absolute top-2 right-2">
             <btrix-copy-button
@@ -637,23 +632,23 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
-              ${this.isSeedsJsonView
+              ${this.isConfigCodeView
                 ? msg("Custom Config")
                 : msg("Crawl Configuration")}
             </h4>
             <sl-switch
-              ?checked=${this.isSeedsJsonView}
+              ?checked=${this.isConfigCodeView}
               @sl-change=${(e: any) =>
-                (this.isSeedsJsonView = e.target.checked)}
+                (this.isConfigCodeView = e.target.checked)}
             >
-              <span class="text-sm">${msg("Use JSON Editor")}</span>
+              <span class="text-sm">${msg("Advanced Editor")}</span>
             </sl-switch>
           </div>
 
-          <div class="${this.isSeedsJsonView ? "" : "hidden"}">
-            ${this.renderSeedsJson()}
+          <div class="${this.isConfigCodeView ? "" : "hidden"}">
+            ${this.renderSeedsCodeEditor()}
           </div>
-          <div class="grid gap-5${this.isSeedsJsonView ? " hidden" : ""}">
+          <div class="grid gap-5${this.isConfigCodeView ? " hidden" : ""}">
             ${this.renderSeedsForm()}
           </div>
 
@@ -666,8 +661,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <sl-button
               type="primary"
               submit
-              ?disabled=${Boolean(this.invalidSeedsJsonMessage) ||
-              this.isSubmittingUpdate}
+              ?disabled=${this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
               >${msg("Save Changes")}</sl-button
             >
@@ -952,7 +946,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         )}
         rows="3"
         value=${this.crawlTemplate!.config.seeds.join("\n")}
-        required
+        ?required=${!this.isConfigCodeView}
       ></sl-textarea>
       <sl-select
         name="scopeType"
@@ -986,94 +980,15 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  private renderSeedsJson() {
+  private renderSeedsCodeEditor() {
     return html`
-      <div class="grid gap-4">
-        <div>
-          <p class="mb-2">
-            ${msg(
-              html`See
-                <a
-                  href="https://github.com/webrecorder/browsertrix-crawler#crawling-configuration-options"
-                  class="text-primary hover:underline"
-                  target="_blank"
-                  >Browsertrix Crawler docs
-                  <sl-icon name="box-arrow-up-right"></sl-icon
-                ></a>
-                for all configuration options.`
-            )}
-          </p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4">
-          <div class="relative col-span-3 md:col-span-2">
-            ${this.renderSeedsJsonInput()}
-
-            <div class="absolute top-2 right-2">
-              <btrix-copy-button .value=${this.seedsJson}></btrix-copy-button>
-            </div>
-          </div>
-
-          <div class="col-span-3 md:col-span-1">
-            ${this.invalidSeedsJsonMessage
-              ? html`<btrix-alert type="danger">
-                  ${this.invalidSeedsJsonMessage}
-                </btrix-alert> `
-              : html` <btrix-alert> ${msg("Valid JSON")} </btrix-alert>`}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSeedsJsonInput() {
-    return html`
-      <textarea
-        id="json-editor"
-        name="config"
-        class="language-json block w-full bg-gray-800 text-gray-50 p-4 rounded font-mono text-sm"
-        autocomplete="off"
-        rows="10"
-        spellcheck="false"
-        .value=${this.seedsJson}
-        @keydown=${(e: any) => {
-          // Add indentation when pressing tab key instead of moving focus
-          if (e.keyCode === /* tab: */ 9) {
-            e.preventDefault();
-
-            const textarea = e.target;
-
-            textarea.setRangeText(
-              "  ",
-              textarea.selectionStart,
-              textarea.selectionStart,
-              "end"
-            );
-          }
+      <btrix-config-editor
+        value=${this.configCode}
+        @on-change=${(e: any) => {
+          this.configCode = e.detail.value;
         }}
-        @change=${(e: any) => (this.seedsJson = e.target.value)}
-        @blur=${this.updateSeedsJson}
-      ></textarea>
+      ></btrix-config-editor>
     `;
-  }
-
-  private updateSeedsJson(e: any) {
-    const textarea = e.target;
-    const text = textarea.value;
-
-    try {
-      const json = JSON.parse(text);
-
-      this.seedsJson = JSON.stringify(json, null, 2);
-      this.invalidSeedsJsonMessage = "";
-
-      textarea.setCustomValidity("");
-      textarea.reportValidity();
-    } catch (e: any) {
-      this.invalidSeedsJsonMessage = e.message
-        ? msg(str`JSON is invalid: ${e.message.replace("JSON.parse: ", "")}`)
-        : msg("JSON is invalid.");
-    }
   }
 
   async getCrawlTemplate(): Promise<CrawlTemplate> {
@@ -1131,13 +1046,13 @@ export class CrawlTemplatesDetail extends LiteElement {
     detail: { formData: FormData };
   }) {
     const { formData } = e.detail;
-    const configValue = formData.get("config") as string;
+
     let config: CrawlConfig;
 
-    if (this.isSeedsJsonView) {
-      if (!configValue || this.invalidSeedsJsonMessage) return;
+    if (this.isConfigCodeView) {
+      if (!this.configCode) return;
 
-      config = JSON.parse(configValue) as CrawlConfig;
+      config = yamlToJson(this.configCode) as CrawlConfig;
     } else {
       const pageLimit = formData.get("limit") as string;
       const seedUrlsStr = formData.get("seedUrls") as string;
