@@ -264,10 +264,17 @@ export class Archive extends LiteElement {
       {
         id: "1",
         name: "Twitter Example",
+        description:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        last_updated: new Date().toUTCString(),
+        domains: ["https://twitter.com"],
       },
       {
         id: "2",
         name: "Twitter Webrecorder",
+        description: "Et netus et malesuada fames.",
+        last_updated: new Date().toUTCString(),
+        domains: ["https://twitter.com", "https://twitter.com/webrecorder_io"],
       },
     ];
 
@@ -298,23 +305,51 @@ export class Archive extends LiteElement {
     }
 
     return html`
-      <ul class="border rounded">
-        ${mock.map(
-          (data) => html`
-            <li
-              class="p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
-              role="button"
-              @click=${() =>
-                this.navTo(
-                  `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
-                )}
-              title=${data.name}
-            >
-              <div class="font-medium">${data.name}</div>
-            </li>
-          `
-        )}
-      </ul>
+      <div role="table">
+        <div class="mb-2 px-4" role="rowgroup">
+          <div
+            class="hidden md:grid grid-cols-8 gap-3 md:gap-5 text-sm text-neutral-500"
+            role="row"
+          >
+            <div class="col-span-4" role="columnheader" aria-sort="none">
+              ${msg("Description")}
+            </div>
+            <div class="col-span-1" role="columnheader" aria-sort="none">
+              ${msg("Last Updated")}
+            </div>
+            <div class="col-span-3" role="columnheader" aria-sort="none">
+              ${msg("Domains Visited")}
+            </div>
+          </div>
+        </div>
+        <div class="border rounded" role="rowgroup">
+          ${mock.map(
+            (data) => html`
+              <a
+                class="block p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
+                href=${`/archives/${this.archiveId}/browser-profiles/profile/${data.id}`}
+                @click=${this.navLink}
+                title=${data.name}
+              >
+                <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
+                  <div class="col-span-8 md:col-span-4" role="cell">
+                    <div class="font-medium mb-1">${data.name}</div>
+                    <div class="text-sm truncate" title=${data.description}>
+                      ${data.description}
+                    </div>
+                  </div>
+                  <div class="col-span-8 md:col-span-1 text-sm" role="cell">
+                    ${new Date(data.last_updated).toLocaleDateString()}
+                  </div>
+                  <div class="col-span-8 md:col-span-3 text-sm" role="cell">
+                    ${data.domains.join(", ")}
+                  </div>
+                </div>
+              </a>
+            `
+          )}
+        </div>
+      </div>
     `;
   }
 
