@@ -19,18 +19,55 @@ export class BrowserProfilesList extends LiteElement {
   @property({ type: String })
   archiveId?: string;
 
+  @property({ type: Boolean })
+  showCreateDialog = false;
+
   @state()
   browserProfiles?: Profile[];
 
+  @state()
+  isCreateFormVisible: boolean = false;
+
   firstUpdated() {
+    if (this.showCreateDialog) {
+      this.isCreateFormVisible = true;
+    }
+
     this.fetchCrawls();
   }
 
   render() {
-    return html` ${this.renderTable()} `;
+    return html`<header class="mb-3 text-right">
+        <a
+          href=${`/archives/${this.archiveId}/browser-profiles/new`}
+          class="inline-block bg-primary hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
+          role="button"
+          @click=${this.navLink}
+        >
+          <sl-icon
+            class="inline-block align-middle mr-2"
+            name="plus-lg"
+          ></sl-icon
+          ><span class="inline-block align-middle mr-2 text-sm"
+            >${msg("New Browser Profile")}</span
+          >
+        </a>
+      </header>
+
+      ${this.renderTable()}
+
+      <sl-dialog
+        label=${msg(str`Create Browser Profile`)}
+        ?open=${this.showCreateDialog}
+        @sl-request-close=${this.hideDialog}
+        @sl-show=${() => (this.isCreateFormVisible = true)}
+        @sl-after-hide=${() => (this.isCreateFormVisible = false)}
+      >
+        ${this.isCreateFormVisible ? this.renderNew() : ""}
+      </sl-dialog> `;
   }
 
-  renderTable() {
+  private renderTable() {
     return html`
       <div role="table">
         <div class="mb-2 px-4" role="rowgroup">
@@ -90,6 +127,89 @@ export class BrowserProfilesList extends LiteElement {
     `;
   }
 
+  private renderNew() {
+    return html`<sl-form @sl-submit=${this.onSubmit}>
+      <div class="grid gap-5">
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          help-text=${msg("You can change the browser profile name later.")}
+          placeholder=${msg("Example (example.com)", {
+            desc: "Example browser profile name",
+          })}
+          autocomplete="off"
+          value="My Profile"
+          required
+        ></sl-input>
+
+        <sl-input
+          type="url"
+          name="url"
+          label=${msg("Starting URL")}
+          placeholder=${msg("https://example.com")}
+          autocomplete="off"
+          required
+        ></sl-input>
+
+        <details>
+          <summary class="text-sm text-neutral-500 font-medium cursor-pointer">
+            ${msg("More options")}
+          </summary>
+          <div class="grid gap-5 p-3">
+            <sl-select
+              name="profile"
+              label=${msg("Extend Profile")}
+              help-text=${msg("Extend an existing browser profile.")}
+              clearable
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+            >
+              ${this.browserProfiles?.map(
+                (profile) => html`
+                  <sl-menu-item value=${profile.id}
+                    >${profile.name}</sl-menu-item
+                  >
+                `
+              )}
+            </sl-select>
+
+            <sl-textarea
+              name="description"
+              label=${msg("Description")}
+              help-text=${msg("Description of this browser profile.")}
+              placeholder=${msg("Example (example.com) login profile", {
+                desc: "Example browser profile name",
+              })}
+              rows="2"
+              autocomplete="off"
+            ></sl-textarea>
+          </div>
+        </details>
+
+        <div class="text-right">
+          <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
+          <sl-button type="primary" submit> ${msg("Create")} </sl-button>
+        </div>
+      </div>
+    </sl-form>`;
+  }
+
+  private hideDialog() {
+    this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+  }
+
+  async onSubmit(event: { detail: { formData: FormData } }) {
+    const { formData } = event.detail;
+    const params = {
+      name: formData.get("name"),
+      url: formData.get("url"),
+      profile: formData.get("profile"),
+      description: formData.get("description"),
+    };
+
+    console.log(params);
+  }
+
   /**
    * Fetch browser profiles and update internal state
    */
@@ -118,6 +238,15 @@ export class BrowserProfilesList extends LiteElement {
     );
 
     return data;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 
