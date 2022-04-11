@@ -66,12 +66,14 @@ export default class LiteElement extends LitElement {
    * @param event Click event
    */
   navLink(event: MouseEvent, href?: string): void {
-    // Detect keypress for opening in a new tab
     if (
+      // Detect keypress for opening in a new tab
       event.ctrlKey ||
       event.shiftKey ||
       event.metaKey ||
-      (event.button && event.button == 1)
+      (event.button && event.button == 1) ||
+      // Account for event prevented on anchor tag
+      event.defaultPrevented
     ) {
       return;
     }
