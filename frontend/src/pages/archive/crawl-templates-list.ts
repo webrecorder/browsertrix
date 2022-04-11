@@ -89,28 +89,19 @@ export class CrawlTemplatesList extends LiteElement {
       <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         ${this.crawlTemplates.map(
           (t) =>
-            html`<div
-              class="col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
+            html`<a
+              class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
               aria-label=${t.name}
-              role="button"
-              @click=${() => {
-                this.navTo(
-                  `/archives/${this.archiveId}/crawl-templates/config/${t.id}`
-                );
-              }}
+              href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
+              @click=${this.navLink}
             >
               <header class="flex">
-                <a
-                  href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
-                  class="block flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
+                <div
+                  class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
                   title=${t.name}
-                  @click=${(e: any) => {
-                    e.stopPropagation();
-                    this.navLink(e);
-                  }}
                 >
-                  ${t.name || "?"}
-                </a>
+                  ${t.name}
+                </div>
 
                 ${this.renderCardMenu(t)}
               </header>
@@ -235,7 +226,7 @@ export class CrawlTemplatesList extends LiteElement {
                 </div>
                 ${this.renderCardFooter(t)}
               </div>
-            </div>`
+            </a>`
         )}
       </div>
 
@@ -347,7 +338,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <sl-dropdown @click=${(e: any) => e.stopPropagation()}>
+      <sl-dropdown @click=${(e: any) => e.preventDefault()}>
         <sl-icon-button
           slot="trigger"
           name="three-dots-vertical"
