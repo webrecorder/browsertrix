@@ -208,6 +208,10 @@ export class BrowserProfilesList extends LiteElement {
     };
 
     console.log(params);
+
+    const newId = "fakeID";
+
+    this.navTo(`/archives/${this.archiveId}/browser-profiles/profile/${newId}`);
   }
 
   /**
