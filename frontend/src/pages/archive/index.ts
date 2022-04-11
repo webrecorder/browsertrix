@@ -15,6 +15,7 @@ import "./crawl-detail";
 import "./crawls-list";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
+import "./browser-profiles-new";
 
 export type ArchiveTab =
   | "crawls"
@@ -268,6 +269,13 @@ export class Archive extends LiteElement {
         .archiveId=${this.archiveId!}
         profileId=${this.browserProfileId}
       ></btrix-browser-profiles-detail>`;
+    }
+
+    if (this.isNewResourceTab) {
+      return html` <btrix-browser-profiles-new
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+      ></btrix-browser-profiles-new>`;
     }
 
     return html`<btrix-browser-profiles-list
