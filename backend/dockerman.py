@@ -409,20 +409,15 @@ class DockerManager:
 
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
-        self, userid, aid, storage, url="about:blank", base_id=None
+        self,
+        userid,
+        aid,
+        storage,
+        command,
+        filename="profile-@ts.tar.gz",
+        base_id=None,
     ):
         """ Run browser for profile creation """
-        command = [
-            "create-login-profile",
-            "--interactive",
-            "--shutdownWait",
-            "600",
-            "--filename",
-            "/tmp/profile.tar.gz",
-            "--url",
-            url,
-        ]
-
         storage_name = storage.name
         storage, storage_path = await self._get_storage_and_path(storage)
 
@@ -433,7 +428,7 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
-            "STORE_FILENAME=profile-@ts.tar.gz",
+            "STORE_FILENAME={filename}",
         ]
 
         labels = {
@@ -467,6 +462,19 @@ class DockerManager:
         labels = container["Config"]["Labels"]
         labels["browser_ip"] = self._get_container_ip(container)
         return labels
+
+    async def delete_profile_browser(self, browserid):
+        """ delete profile browser container, if any """
+        container = await self.client.containers.get(browserid)
+
+        if not container:
+            return False
+
+        if not container["Config"]["Labels"].get("btrix.profilebrowser"):
+            return False
+
+        await container.kill()
+        return True
 
     # ========================================================================
     async def _create_volume(self, crawlconfig, labels):

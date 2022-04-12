@@ -22,6 +22,7 @@ CRAWLER_NAMESPACE = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
 DEFAULT_NO_SCHEDULE = "* * 31 2 *"
 
 
+# pylint: disable=too-many-public-methods
 # ============================================================================
 class K8SManager:
     # pylint: disable=too-many-instance-attributes,too-many-locals,too-many-arguments
@@ -110,6 +111,10 @@ class K8SManager:
                             self.handle_crawl_failed(
                                 obj.involved_object.name, "timed_out"
                             )
+                        )
+                    elif obj.reason == "Completed":
+                        self.loop.create_task(
+                            self.handle_completed_job(obj.involved_object.name)
                         )
 
                 # pylint: disable=broad-except
@@ -503,6 +508,10 @@ class K8SManager:
             print("Job Failure Already Handled")
             return
 
+        # don't do anything here if not a crawl job
+        if not job.metadata.labels.get("btrix.crawlconfig"):
+            return
+
         crawl = self._make_crawl_for_job(job, reason, True)
 
         # if update succeeds, than crawl has not completed, so likely a failure
@@ -511,6 +520,87 @@ class K8SManager:
         # keep failed jobs around, for now
         if not failure and not self.no_delete_jobs:
             await self._delete_job(job_name)
+
+    async def handle_completed_job(self, job_name):
+        """ Handle completed job: if profile browser, delete """
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=job_name, namespace=self.namespace
+            )
+        # pylint: disable=bare-except
+        except:
+            return False
+
+        # delete job if profile browser job
+        if job.metadata.labels.get("btrix.profilebrowser"):
+            await self._delete_job(job_name)
+            return True
+
+    async def run_profile_browser(
+        self,
+        userid,
+        aid,
+        storage,
+        command,
+        filename="profile-@ts.tar.gz",
+        base_id=None,
+    ):
+        """run browser for profile creation """
+
+        # Configure Annotations + Labels
+        if storage.type == "default":
+            storage_name = storage.name
+            storage_path = storage.path
+            # annotations["btrix.def_storage_path"] = storage_path
+        else:
+            storage_name = aid
+            storage_path = ""
+
+        labels = {
+            "btrix.user": userid,
+            "btrix.archive": aid,
+            "btrix.profilebrowser": "1",
+        }
+
+        await self.check_storage(storage_name)
+
+        object_meta = client.V1ObjectMeta(
+            generate_name="profile-browser-",
+            labels=labels,
+        )
+
+        spec = self._get_profile_browser_template(
+            command, labels, storage_name, storage_path, filename
+        )
+
+        job = client.V1Job(
+            kind="Job", api_version="batch/v1", metadata=object_meta, spec=spec
+        )
+
+        new_job = await self.batch_api.create_namespaced_job(
+            body=job, namespace=self.namespace
+        )
+        return new_job.metadata.name
+
+    async def get_profile_browser_data(self, name):
+        """ return ip and labels for profile browser """
+        label_selector = f"job-name={name}"
+
+        pods = await self.core_api.list_namespaced_pod(
+            namespace=self.namespace, label_selector=label_selector
+        )
+
+        for pod in pods.items:
+            if pod.status.pod_ip and pod.metadata.labels.get("btrix.profilebrowser"):
+                labels = pod.metadata.labels
+                labels["browser_ip"] = pod.status.pod_ip
+                return labels
+
+        return None
+
+    async def delete_profile_browser(self, browserid):
+        """ delete browser job, if it is a profile browser job """
+        return await self.handle_completed_job(browserid)
 
     # ========================================================================
     # Internal Methods
@@ -795,3 +885,43 @@ class K8SManager:
             job_template["spec"]["activeDeadlineSeconds"] = crawl_timeout
 
         return job_template
+
+    def _get_profile_browser_template(
+        self, command, labels, storage_name, storage_path, out_filename
+    ):
+        return {
+            "template": {
+                "metadata": {"labels": labels},
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "crawler",
+                            "image": self.crawler_image,
+                            "imagePullPolicy": self.crawler_image_pull_policy,
+                            "command": command,
+                            "envFrom": [
+                                {"configMapRef": {"name": "shared-crawler-config"}},
+                                {"secretRef": {"name": f"storage-{storage_name}"}},
+                            ],
+                            "env": [
+                                {
+                                    "name": "CRAWL_ID",
+                                    "valueFrom": {
+                                        "fieldRef": {
+                                            "fieldPath": "metadata.labels['job-name']"
+                                        }
+                                    },
+                                },
+                                {"name": "STORE_PATH", "value": storage_path},
+                                {
+                                    "name": "STORE_FILENAME",
+                                    "value": out_filename,
+                                },
+                            ],
+                        }
+                    ],
+                    "restartPolicy": "Never",
+                    "terminationGracePeriodSeconds": self.grace_period,
+                },
+            }
+        }
