@@ -8,7 +8,10 @@ import { Profile } from "./types";
 /**
  * Usage:
  * ```ts
- * <btrix-browser-profiles-list></btrix-browser-profiles-list>
+ * <btrix-browser-profiles-list
+ *  authState=${authState}
+ *  archiveId=${archiveId}
+ * ></btrix-browser-profiles-list>
  * ```
  */
 @localized()
@@ -17,7 +20,7 @@ export class BrowserProfilesList extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId?: string;
+  archiveId!: string;
 
   @property({ type: Boolean })
   showCreateDialog = false;
@@ -39,7 +42,7 @@ export class BrowserProfilesList extends LiteElement {
       this.isCreateFormVisible = true;
     }
 
-    this.fetchCrawls();
+    this.fetchBrowserProfiles();
   }
 
   render() {
@@ -80,7 +83,7 @@ export class BrowserProfilesList extends LiteElement {
                 </btrix-alert>
               </div>
             `}
-        ${this.isCreateFormVisible ? this.renderNew() : ""}
+        ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
       </sl-dialog> `;
   }
 
@@ -144,7 +147,7 @@ export class BrowserProfilesList extends LiteElement {
     `;
   }
 
-  private renderNew() {
+  private renderCreateForm() {
     return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
         <sl-input
@@ -262,11 +265,9 @@ export class BrowserProfilesList extends LiteElement {
       description: formData.get("description"),
     };
 
-    console.log(params);
-
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/`,
+        `/archives/${this.archiveId}/profiles/browser`,
         this.authState!,
         {
           method: "POST",
@@ -274,35 +275,25 @@ export class BrowserProfilesList extends LiteElement {
         }
       );
 
-      console.log("data:", data);
-
-      const { url } = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/browser/${data.profile}`,
-        this.authState!
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.browserid}`,
+        params
       );
-
-      console.log(url);
-
+    } catch (e) {
       this.isSubmitting = false;
 
-      // this.navTo(
-      //   `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.profile}`
-      // );
-    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
-
-      this.isSubmitting = false;
     }
   }
 
   /**
    * Fetch browser profiles and update internal state
    */
-  private async fetchCrawls(): Promise<void> {
+  private async fetchBrowserProfiles(): Promise<void> {
     try {
       const data = await this.getProfiles();
 
@@ -317,10 +308,6 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(): Promise<Profile[]> {
-    if (!this.archiveId) {
-      throw new Error(`Archive ID ${typeof this.archiveId}`);
-    }
-
     const data = await this.apiFetch(
       `/archives/${this.archiveId}/profiles`,
       this.authState!
