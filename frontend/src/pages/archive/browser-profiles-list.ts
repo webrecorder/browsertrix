@@ -142,14 +142,37 @@ export class BrowserProfilesList extends LiteElement {
           required
         ></sl-input>
 
-        <sl-input
-          type="url"
-          name="url"
-          label=${msg("Starting URL")}
-          placeholder=${msg("https://example.com")}
-          autocomplete="off"
-          required
-        ></sl-input>
+        <div>
+          <label
+            id="startingUrlLabel"
+            class="text-sm leading-normal"
+            style="margin-bottom: var(--sl-spacing-3x-small)"
+            >${msg("Starting URL")}
+          </label>
+
+          <div class="flex">
+            <sl-select
+              class="grow-0 mr-1"
+              name="urlPrefix"
+              value="https://"
+              hoist
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+            >
+              <sl-menu-item value="http://">http://</sl-menu-item>
+              <sl-menu-item value="https://">https://</sl-menu-item>
+            </sl-select>
+            <sl-input
+              class="grow"
+              name="url"
+              placeholder=${msg("example.com")}
+              autocomplete="off"
+              aria-labelledby="startingUrlLabel"
+              required
+            >
+            </sl-input>
+          </div>
+        </div>
 
         <details>
           <summary class="text-sm text-neutral-500 font-medium cursor-pointer">
@@ -200,9 +223,10 @@ export class BrowserProfilesList extends LiteElement {
 
   async onSubmit(event: { detail: { formData: FormData } }) {
     const { formData } = event.detail;
+    const url = formData.get("url") as string;
     const params = {
       name: formData.get("name"),
-      url: formData.get("url"),
+      url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
       profile: formData.get("profile"),
       description: formData.get("description"),
     };
