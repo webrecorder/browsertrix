@@ -4,12 +4,20 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 
-type BrowserProfile = {
+type Profile = {
   id: string;
   name: string;
   description: string;
-  last_updated: string;
-  domains: string[];
+  created: string;
+  origins: string[];
+  baseId: string;
+  baseProfileName: string;
+  aid: string;
+  resource: {
+    filename: string;
+    hash: string;
+    size: number;
+  };
 };
 
 /**
@@ -27,23 +35,11 @@ export class BrowserProfilesList extends LiteElement {
   archiveId?: string;
 
   @state()
-  browserProfiles: BrowserProfile[] = [
-    // {
-    //   id: "1",
-    //   name: "Twitter Example",
-    //   description:
-    //     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    //   last_updated: new Date().toUTCString(),
-    //   domains: ["https://twitter.com"],
-    // },
-    // {
-    //   id: "2",
-    //   name: "Twitter Webrecorder",
-    //   description: "Et netus et malesuada fames.",
-    //   last_updated: new Date().toUTCString(),
-    //   domains: ["https://twitter.com", "https://twitter.com/webrecorder_io"],
-    // },
-  ];
+  browserProfiles?: Profile[];
+
+  firstUpdated() {
+    this.fetchCrawls();
+  }
 
   render() {
     return html` ${this.renderTable()} `;
@@ -61,29 +57,31 @@ export class BrowserProfilesList extends LiteElement {
               ${msg("Description")}
             </div>
             <div class="col-span-1" role="columnheader" aria-sort="none">
-              ${msg("Last Updated")}
+              ${msg("Created")}
             </div>
             <div class="col-span-3" role="columnheader" aria-sort="none">
-              ${msg("Domains Visited")}
+              ${msg("Origin URLs")}
             </div>
           </div>
         </div>
-        ${this.browserProfiles && this.browserProfiles.length
-          ? html`<div class="border rounded" role="rowgroup">
-              ${this.browserProfiles.map(this.renderItem.bind(this))}
-            </div>`
-          : html`
-              <div class="border-t border-b py-5">
-                <p class="text-center text-0-500">
-                  ${msg("No browser profiles yet.")}
-                </p>
-              </div>
-            `}
+        ${this.browserProfiles
+          ? this.browserProfiles.length
+            ? html`<div class="border rounded" role="rowgroup">
+                ${this.browserProfiles.map(this.renderItem.bind(this))}
+              </div>`
+            : html`
+                <div class="border-t border-b py-5">
+                  <p class="text-center text-0-500">
+                    ${msg("No browser profiles yet.")}
+                  </p>
+                </div>
+              `
+          : ""}
       </div>
     `;
   }
 
-  private renderItem(data: BrowserProfile) {
+  private renderItem(data: Profile) {
     return html`
       <a
         class="block p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
@@ -99,14 +97,44 @@ export class BrowserProfilesList extends LiteElement {
             </div>
           </div>
           <div class="col-span-8 md:col-span-1 text-sm" role="cell">
-            ${new Date(data.last_updated).toLocaleDateString()}
+            ${new Date(data.created).toLocaleDateString()}
           </div>
           <div class="col-span-8 md:col-span-3 text-sm" role="cell">
-            ${data.domains.join(", ")}
+            ${data.origins.join(", ")}
           </div>
         </div>
       </a>
     `;
+  }
+
+  /**
+   * Fetch browser profiles and update internal state
+   */
+  private async fetchCrawls(): Promise<void> {
+    try {
+      const data = await this.getProfiles();
+
+      this.browserProfiles = data;
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getProfiles(): Promise<Profile[]> {
+    if (!this.archiveId) {
+      throw new Error(`Archive ID ${typeof this.archiveId}`);
+    }
+
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/profiles`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 
