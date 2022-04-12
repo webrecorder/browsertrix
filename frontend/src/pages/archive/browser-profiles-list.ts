@@ -26,7 +26,10 @@ export class BrowserProfilesList extends LiteElement {
   browserProfiles?: Profile[];
 
   @state()
-  isCreateFormVisible: boolean = false;
+  private isCreateFormVisible = false;
+
+  @state()
+  private isSubmitting = false;
 
   firstUpdated() {
     if (this.showCreateDialog) {
@@ -180,7 +183,7 @@ export class BrowserProfilesList extends LiteElement {
           </summary>
           <div class="grid gap-5 p-3">
             <sl-select
-              name="profile"
+              name="baseId"
               label=${msg("Extend Profile")}
               help-text=${msg("Extend an existing browser profile.")}
               clearable
@@ -211,7 +214,14 @@ export class BrowserProfilesList extends LiteElement {
 
         <div class="text-right">
           <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
-          <sl-button type="primary" submit> ${msg("Create")} </sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Create")}
+          </sl-button>
         </div>
       </div>
     </sl-form>`;
@@ -222,20 +232,52 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
+    this.isSubmitting = true;
+
     const { formData } = event.detail;
     const url = formData.get("url") as string;
     const params = {
       name: formData.get("name"),
       url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
-      profile: formData.get("profile"),
+      baseId: formData.get("baseId"),
       description: formData.get("description"),
     };
 
     console.log(params);
 
-    const newId = "fakeID";
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
 
-    this.navTo(`/archives/${this.archiveId}/browser-profiles/profile/${newId}`);
+      console.log("data:", data);
+
+      const { url } = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/browser/${data.profile}`,
+        this.authState!
+      );
+
+      console.log(url);
+
+      this.isSubmitting = false;
+
+      // this.navTo(
+      //   `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.profile}`
+      // );
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+
+      this.isSubmitting = false;
+    }
   }
 
   /**
