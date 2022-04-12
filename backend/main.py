@@ -14,10 +14,13 @@ from invites import init_invites
 from users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
 from archives import init_archives_api
 
+from profiles import init_profiles_api
+
 from storages import init_storages_api
 from crawlconfigs import init_crawl_config_api
 from colls import init_collections_api
 from crawls import init_crawls_api
+
 
 app = FastAPI()
 
@@ -82,6 +85,8 @@ def main():
         archive_ops,
         current_active_user,
     )
+
+    init_profiles_api(mdb, crawl_manager, archive_ops, current_active_user)
 
     coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)
 
