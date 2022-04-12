@@ -584,19 +584,29 @@ class K8SManager:
 
     async def get_profile_browser_data(self, name):
         """ return ip and labels for profile browser """
-        label_selector = f"job-name={name}"
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=name, namespace=self.namespace
+            )
+        # pylint: disable=bare-except
+        except:
+            # job not found
+            return None
+
+        data = job.metadata.labels
+        if not data.get("btrix.profilebrowser"):
+            return None
 
         pods = await self.core_api.list_namespaced_pod(
-            namespace=self.namespace, label_selector=label_selector
+            namespace=self.namespace, label_selector=f"job-name={name}"
         )
 
         for pod in pods.items:
             if pod.status.pod_ip and pod.metadata.labels.get("btrix.profilebrowser"):
-                labels = pod.metadata.labels
-                labels["browser_ip"] = pod.status.pod_ip
-                return labels
+                data["browser_ip"] = pod.status.pod_ip
+                break
 
-        return None
+        return data
 
     async def delete_profile_browser(self, browserid):
         """ delete browser job, if it is a profile browser job """

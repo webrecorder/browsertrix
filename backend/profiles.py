@@ -59,7 +59,7 @@ class ProfileLaunchBrowserIn(BaseModel):
 class BrowserId(BaseModel):
     """ Profile id on newly created profile """
 
-    profile: str
+    browserid: str
 
 
 # ============================================================================
@@ -105,26 +105,23 @@ class ProfileOps:
         """ Create new profile """
         command = self.get_command(profile_launch.url)
 
-        profile = await self.crawl_manager.run_profile_browser(
+        browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(archive.id),
             archive.storage,
             command,
         )
 
-        if not profile:
+        if not browserid:
             raise HTTPException(status_code=400, detail="browser_not_created")
 
-        return BrowserId(profile=profile)
+        return BrowserId(browserid=browserid)
 
     async def get_profile_browser_url(self, browserid, headers):
         """ get profile browser url """
-        browser_ip, _ = await self._get_browser_data(browserid)
+        json, browser_ip, _ = await self._get_browser_data(browserid, "/target")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://{browser_ip}:9223/target") as resp:
-                json = await resp.json()
-                target_id = json.get("targetId")
+        target_id = json.get("targetId")
 
         if not target_id:
             raise HTTPException(status_code=400, detail="browser_not_available")
@@ -133,7 +130,7 @@ class ProfileOps:
         host = headers.get("Host") or "localhost"
         ws_scheme = "wss" if scheme == "https" else "ws"
 
-        prefix = f"{host}/profile/{browser_ip}/devtools"
+        prefix = f"{host}/browser/{browser_ip}/devtools"
 
         # pylint: disable=line-too-long
         return {
@@ -142,28 +139,16 @@ class ProfileOps:
 
     async def ping_profile_browser(self, browserid):
         """ ping profile browser to keep it running """
-        browser_ip, _ = await self._get_browser_data(browserid)
+        await self._get_browser_data(browserid, "/ping")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://{browser_ip}:9223/ping") as resp:
-                if resp.status == 200:
-                    return {"success": True}
-
-        raise HTTPException(status_code=400, detail="browser_not_available")
+        return {"success": True}
 
     async def commit_profile(self, browserid, commit_metadata):
         """ commit profile and shutdown profile browser """
-        browser_ip, browser_data = await self._get_browser_data(browserid)
+        json, _, browser_data = await self._get_browser_data(browserid, "/createProfileJS")
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"http://{browser_ip}:9223/createProfileJS"
-                ) as resp:
-                    json = await resp.json()
-
-                    resource = json["resource"]
-
+            resource = json["resource"]
         except:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="browser_not_valid")
@@ -220,18 +205,28 @@ class ProfileOps:
         """ resolve base profile name, if any """
         return ProfileOut(**profile.serialize())
 
-    async def _get_browser_data(self, browserid):
+    async def _get_browser_data(self, browserid, path):
         browser_data = await self.crawl_manager.get_profile_browser_data(browserid)
 
         if not browser_data:
             raise HTTPException(status_code=404, detail="browser_not_found")
 
-        browser_ip = browser_data["browser_ip"]
+        browser_ip = browser_data.get("browser_ip")
 
         if not browser_ip:
-            raise HTTPException(status_code=503, detail="browser_not_available")
+            raise HTTPException(status_code=200, detail="waiting_for_browser")
 
-        return browser_ip, browser_data
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://{browser_ip}:9223{path}") as resp:
+                    json = await resp.json()
+
+        except:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=200, detail="waiting_for_browser")
+
+
+        return json, browser_ip, browser_data
 
 
 # ============================================================================

@@ -52,7 +52,7 @@ server {
       proxy_set_header Connection $http_connection;
     }
 
-    location ~* /profile/([^/]+)/(.*) {
+    location ~* /browser/([^/]+)/(.*) {
       set $crawlerip $1;
       proxy_pass http://$crawlerip:9222/$2;
       proxy_set_header Host "localhost";
