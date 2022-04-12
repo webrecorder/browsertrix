@@ -104,7 +104,7 @@ class ProfileOps:
 
         if not browser_data:
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {browserid}"
+                status_code=404, detail=f"Browser not found: {browserid}"
             )
 
         browser_ip = browser_data["browser_ip"]
@@ -115,7 +115,7 @@ class ProfileOps:
                 target_id = json.get("targetId")
 
         if not target_id:
-            raise HTTPException(status_code=500, detail="Profile browser not available")
+            raise HTTPException(status_code=500, detail="Browser not available")
 
         scheme = headers.get("X-Forwarded-Proto") or "http"
         host = headers.get("Host") or "localhost"
@@ -136,7 +136,7 @@ class ProfileOps:
 
         if not browser_ip:
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {browserid}"
+                status_code=404, detail=f"Browser not found: {browserid}"
             )
 
         async with aiohttp.ClientSession() as session:
@@ -144,7 +144,7 @@ class ProfileOps:
                 if resp.status == 200:
                     return {"success": True}
 
-        raise HTTPException(status_code=500, detail="Profile browser not available")
+        raise HTTPException(status_code=500, detail="Browser not available")
 
     async def commit_profile(self, browserid, commit_metadata):
         """ commit profile and shutdown profile browser """
@@ -154,7 +154,7 @@ class ProfileOps:
 
         if not browser_ip:
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {browserid}"
+                status_code=404, detail=f"Browser not found: {browserid}"
             )
 
         async with aiohttp.ClientSession() as session:
@@ -184,14 +184,14 @@ class ProfileOps:
                     resource=profile_file,
                     userid=uuid.UUID(browser_data.get("btrix.user")),
                     aid=uuid.UUID(browser_data.get("btrix.archive")),
-                    baseid=baseid
+                    baseid=baseid,
                 )
 
                 await self.profiles.insert_one(profile.to_dict())
 
                 return self.resolve_base_profile(profile)
 
-        raise HTTPException(status_code=400, detail=f"Profile not valid: {browserid}")
+        raise HTTPException(status_code=400, detail=f"Browser not valid: {browserid}")
 
     async def list_profiles(self, archive: Archive):
         """ list all profiles"""
@@ -199,9 +199,19 @@ class ProfileOps:
         results = await cursor.to_list(length=1000)
         return [ProfileOut.from_dict(res) for res in results]
 
+    async def get_profile(self, archive: Archive, profileid: uuid.UUID):
+        """ get profile by id and archive """
+        res = await self.profiles.find_one({"_id": profileid, "aid": archive.id})
+        if not res:
+            raise HTTPException(
+                status_code=404, detail=f"Profile not found: {profileid}"
+            )
+
+        return ProfileOut.from_dict(res)
+
+    # pylint: disable=no-self-use
     def resolve_base_profile(self, profile):
         """ resolve base profile name, if any """
-        # TODO: implement support for base profiles
         return ProfileOut(**profile.serialize())
 
 
@@ -216,7 +226,7 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     archive_crawl_dep = archive_ops.archive_crawl_dep
 
     @router.get("", response_model=List[ProfileOut])
-    async def create_new(
+    async def list_profiles(
         archive: Archive = Depends(archive_crawl_dep),
     ):
         return await ops.list_profiles(archive)
@@ -229,15 +239,22 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     ):
         return await ops.create_new_profile(archive, user, profile_launch)
 
-    @router.post("/{browserid}/ping")
-    async def ping_browser(browserid: str):
+    @router.get("/{profileid}", response_model=ProfileOut)
+    async def get_profile(
+        profileid: str,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        return await ops.get_profile(archive, uuid.UUID(profileid))
+
+    @router.post("/browser/{browserid}/ping")
+    async def ping_profile_browser(browserid: str):
         return await ops.ping_profile_browser(browserid)
 
-    @router.post("/{browserid}/commit", response_model=ProfileOut)
-    async def commit_profile(browserid: str, profile_commit: ProfileCommitIn):
+    @router.post("/browser/{browserid}/commit", response_model=ProfileOut)
+    async def commit_profile_browser(browserid: str, profile_commit: ProfileCommitIn):
         return await ops.commit_profile(browserid, profile_commit)
 
-    @router.get("/{browserid}")
+    @router.get("/browser/{browserid}")
     async def get_profile_browser_url(browserid: str, request: Request):
         return await ops.get_profile_browser_url(browserid, request.headers)
 

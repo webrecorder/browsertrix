@@ -392,6 +392,7 @@ class DockerManager:
         """ Delete Crawl Config by Archive Id"""
         await self._delete_volume_by_labels([f"btrix.archive={aid}"])
 
+    # pylint: disable=no-self-use
     def resolve_storage_path(self, labels, filename):
         """resolve relative filename and storage name based on
         labels and full s3 filename"""
@@ -453,10 +454,7 @@ class DockerManager:
             "Labels": labels,
             "Cmd": command,
             "Env": env_vars,
-            "HostConfig": {
-                "NetworkMode": self.default_network,
-                "AutoRemove": True
-            },
+            "HostConfig": {"NetworkMode": self.default_network, "AutoRemove": True},
         }
 
         container = await self.client.containers.run(run_config)
@@ -469,7 +467,6 @@ class DockerManager:
         labels = container["Config"]["Labels"]
         labels["browser_ip"] = self._get_container_ip(container)
         return labels
-
 
     # ========================================================================
     async def _create_volume(self, crawlconfig, labels):
