@@ -39,15 +39,18 @@ export class BrowserProfilesNew extends LiteElement {
 
   private pollTimerId?: number;
 
+  connectedCallback() {
+    super.connectedCallback();
+
+    document.addEventListener("fullscreenchange", this.onFullscreenChange);
+  }
+
   disconnectedCallback() {
     window.clearTimeout(this.pollTimerId);
+    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
   }
 
   firstUpdated() {
-    // Scroll down to full view
-    // const { top } = this.getBoundingClientRect();
-    // window.scrollTo({ top: top - 20, left: 0, behavior: "smooth" });
-
     this.fetchBrowser();
   }
 
@@ -241,7 +244,6 @@ export class BrowserProfilesNew extends LiteElement {
 
     if (this.isFullscreen) {
       await document.exitFullscreen();
-      this.isFullscreen = false;
     }
 
     const { formData } = event.detail;
@@ -292,10 +294,16 @@ export class BrowserProfilesNew extends LiteElement {
         // Show browser navigation controls
         navigationUI: "show",
       });
-
-      this.isFullscreen = true;
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  private onFullscreenChange() {
+    if (document.fullscreenElement) {
+      this.isFullscreen = true;
+    } else {
+      this.isFullscreen = false;
     }
   }
 }
