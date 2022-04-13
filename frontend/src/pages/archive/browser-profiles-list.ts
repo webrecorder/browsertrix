@@ -69,9 +69,7 @@ export class BrowserProfilesList extends LiteElement {
   private renderItem(data: Profile) {
     return html`
       <a
-        class="block p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
-        href=${`/archives/${this.archiveId}/browser-profiles/profile/${data.id}`}
-        @click=${this.navLink}
+        class="block p-4 leading-none border-t first:border-t-0 transition-colors"
         title=${data.name}
       >
         <div class="grid grid-cols-7 gap-3 md:gap-5" role="row">
