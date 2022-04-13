@@ -25,49 +25,70 @@ export class BrowserProfilesNew extends LiteElement {
   @property({ type: String })
   browserId!: string;
 
-  @property({ type: Object })
-  profileData: Partial<{
-    name: string;
-    url: string;
-  }> = {};
-
   @state()
   browserUrl?: string;
 
   firstUpdated() {
-    console.log(this.profileData);
+    window.scrollTo({ top: 150 });
     this.fetchBrowser();
   }
 
   render() {
     return html`
-      <div class="mb-7">
-        <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/browser-profiles`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Browser Profiles")}</span
-          >
-        </a>
+      <div class="mb-5">
+        <p class="text-sm text-neutral-500 mb-5">
+          ${msg(
+            "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
+          )}
+        </p>
       </div>
 
       ${this.browserUrl
-        ? this.renderBrowser()
+        ? this.renderInteractiveBrowser()
         : html`
-            <div class="flex items-center justify-center my-24 text-4xl">
+            <div
+              class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+            >
               <sl-spinner></sl-spinner>
             </div>
           `}
+
+      <div class="rounded-b-lg border p-4">${this.renderForm()}</div>
     `;
   }
 
-  private renderBrowser() {
+  private renderForm() {
+    return html`<sl-form @sl-submit=${console.log}>
+      <div class="grid gap-5">
+        <sl-input
+          name="name"
+          label=${msg("Name")}
+          placeholder=${msg("Example (example.com)", {
+            desc: "Example browser profile name",
+          })}
+          autocomplete="off"
+          value="My Profile"
+          required
+        ></sl-input>
+
+        <sl-textarea
+          name="description"
+          label=${msg("Description")}
+          placeholder=${msg("Example (example.com) login profile", {
+            desc: "Example browser profile name",
+          })}
+          rows="2"
+          autocomplete="off"
+        ></sl-textarea>
+
+        <div class="text-right">
+          <sl-button type="primary" submit> ${msg("Save Profile")} </sl-button>
+        </div>
+      </div>
+    </sl-form>`;
+  }
+
+  private renderInteractiveBrowser() {
     return html`
       <iframe
         id="browser-iframe"

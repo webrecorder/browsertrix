@@ -66,7 +66,7 @@ export class BrowserProfilesList extends LiteElement {
       ${this.renderTable()}
 
       <sl-dialog
-        label=${msg(str`Create Browser Profile`)}
+        label=${msg(str`New Browser Profile`)}
         ?open=${this.showCreateDialog}
         @sl-request-close=${this.hideDialog}
         @sl-show=${() => (this.isCreateFormVisible = true)}
@@ -150,19 +150,6 @@ export class BrowserProfilesList extends LiteElement {
   private renderCreateForm() {
     return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
-        <sl-input
-          name="name"
-          label=${msg("Name")}
-          help-text=${msg("You can change the browser profile name later.")}
-          placeholder=${msg("Example (example.com)", {
-            desc: "Example browser profile name",
-          })}
-          autocomplete="off"
-          value="My Profile"
-          ?disabled=${!this.isBrowserCompatible}
-          required
-        ></sl-input>
-
         <div>
           <label
             id="startingUrlLabel"
@@ -201,7 +188,8 @@ export class BrowserProfilesList extends LiteElement {
           <summary class="text-sm text-neutral-500 font-medium cursor-pointer">
             ${msg("More options")}
           </summary>
-          <div class="grid gap-5 p-3">
+
+          <div class="p-3">
             <sl-select
               name="baseId"
               label=${msg("Extend Profile")}
@@ -219,18 +207,6 @@ export class BrowserProfilesList extends LiteElement {
                 `
               )}
             </sl-select>
-
-            <sl-textarea
-              name="description"
-              label=${msg("Description")}
-              help-text=${msg("Description of this browser profile.")}
-              placeholder=${msg("Example (example.com) login profile", {
-                desc: "Example browser profile name",
-              })}
-              rows="2"
-              autocomplete="off"
-              ?disabled=${!this.isBrowserCompatible}
-            ></sl-textarea>
           </div>
         </details>
 
@@ -242,7 +218,7 @@ export class BrowserProfilesList extends LiteElement {
             ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Create")}
+            ${msg("Start Browser")}
           </sl-button>
         </div>
       </div>
@@ -275,9 +251,14 @@ export class BrowserProfilesList extends LiteElement {
         }
       );
 
+      this.notify({
+        message: msg("Starting up browser for profile creation."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
       this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.browserid}`,
-        params
+        `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.browserid}`
       );
     } catch (e) {
       this.isSubmitting = false;

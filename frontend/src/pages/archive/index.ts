@@ -279,7 +279,6 @@ export class Archive extends LiteElement {
         .authState=${this.authState!}
         .archiveId=${this.archiveId!}
         .browserId=${this.browserId}
-        .profileData=${this.viewStateData || {}}
       ></btrix-browser-profiles-new>`;
     }
 
