@@ -38,14 +38,16 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   firstUpdated() {
-    window.scrollTo({ top: 150 });
+    // Scroll down to full view
+    const { top } = this.getBoundingClientRect();
+    window.scrollTo({ top: top - 20, left: 0, behavior: "smooth" });
 
     this.fetchBrowser();
   }
 
   render() {
     return html`
-      <div class="mb-5">
+      <div id="browserProfileInstructions" class="mb-5">
         <p class="text-sm text-neutral-500 mb-5">
           ${msg(
             "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
@@ -53,15 +55,17 @@ export class BrowserProfilesNew extends LiteElement {
         </p>
       </div>
 
-      ${this.browserUrl
-        ? this.renderInteractiveBrowser()
-        : html`
-            <div
-              class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
-            >
-              <sl-spinner></sl-spinner>
-            </div>
-          `}
+      <article aria-live="polite">
+        ${this.browserUrl
+          ? this.renderBrowser()
+          : html`
+              <div
+                class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+              >
+                <sl-spinner></sl-spinner>
+              </div>
+            `}
+      </article>
 
       <div class="rounded-b-lg border p-4">${this.renderForm()}</div>
     `;
@@ -106,13 +110,9 @@ export class BrowserProfilesNew extends LiteElement {
     </sl-form>`;
   }
 
-  private renderInteractiveBrowser() {
+  private renderBrowser() {
     return html`
-      <iframe
-        id="browser-iframe"
-        class="aspect-video w-full"
-        src=${this.browserUrl!}
-      ></iframe>
+      <iframe class="aspect-video w-full" src=${this.browserUrl!}></iframe>
     `;
   }
 
