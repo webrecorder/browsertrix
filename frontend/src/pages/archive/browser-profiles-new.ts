@@ -26,7 +26,10 @@ export class BrowserProfilesNew extends LiteElement {
   browserId!: string;
 
   @state()
-  browserUrl?: string;
+  private browserUrl?: string;
+
+  @state()
+  private isSubmitting = false;
 
   firstUpdated() {
     window.scrollTo({ top: 150 });
@@ -58,7 +61,7 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private renderForm() {
-    return html`<sl-form @sl-submit=${console.log}>
+    return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
         <sl-input
           name="name"
@@ -74,6 +77,7 @@ export class BrowserProfilesNew extends LiteElement {
         <sl-textarea
           name="description"
           label=${msg("Description")}
+          help-text=${msg("Optional profile description")}
           placeholder=${msg("Example (example.com) login profile", {
             desc: "Example browser profile name",
           })}
@@ -82,7 +86,14 @@ export class BrowserProfilesNew extends LiteElement {
         ></sl-textarea>
 
         <div class="text-right">
-          <sl-button type="primary" submit> ${msg("Save Profile")} </sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Save Profile")}
+          </sl-button>
         </div>
       </div>
     </sl-form>`;
@@ -153,6 +164,47 @@ export class BrowserProfilesNew extends LiteElement {
     );
     console.log("pinged");
     window.setTimeout(() => this.pingBrowser(), 60 * 1000);
+  }
+
+  private async onSubmit(event: { detail: { formData: FormData } }) {
+    this.isSubmitting = true;
+
+    const { formData } = event.detail;
+    const params = {
+      name: formData.get("name"),
+      description: formData.get("description"),
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/browser/${this.browserId}/commit`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+
+      console.log(data);
+
+      this.notify({
+        message: msg("Successfully created browser profile."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
+      );
+    } catch (e) {
+      this.isSubmitting = false;
+
+      this.notify({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 

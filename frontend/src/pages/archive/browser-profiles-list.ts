@@ -235,10 +235,8 @@ export class BrowserProfilesList extends LiteElement {
     const { formData } = event.detail;
     const url = formData.get("url") as string;
     const params = {
-      name: formData.get("name"),
       url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
       baseId: formData.get("baseId"),
-      description: formData.get("description"),
     };
 
     try {
