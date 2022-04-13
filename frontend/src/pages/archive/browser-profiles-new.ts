@@ -262,17 +262,17 @@ export class BrowserProfilesNew extends LiteElement {
         }
       );
 
-      console.log(data);
-
       this.notify({
         message: msg("Successfully created browser profile."),
         type: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
-      );
+      // TODO nav to detail page
+      // this.navTo(
+      //   `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
+      // );
+      this.navTo(`/archives/${this.archiveId}/browser-profiles`);
     } catch (e) {
       this.isSubmitting = false;
 
