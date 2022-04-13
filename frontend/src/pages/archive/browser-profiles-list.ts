@@ -78,7 +78,7 @@ export class BrowserProfilesList extends LiteElement {
               <div class="mb-4">
                 <btrix-alert type="warning" class="text-sm">
                   ${msg(
-                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser before proceding."
+                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
                   )}
                 </btrix-alert>
               </div>
