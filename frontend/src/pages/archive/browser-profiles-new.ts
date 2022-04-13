@@ -31,6 +31,9 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  @state()
+  private hasFetchError = false;
+
   private pollTimerId?: number;
 
   disconnectedCallback() {
@@ -55,9 +58,27 @@ export class BrowserProfilesNew extends LiteElement {
         </p>
       </div>
 
-      <article aria-live="polite">
+      <div aria-live="polite">
         ${this.browserUrl
-          ? this.renderBrowser()
+          ? html`
+              ${this.renderBrowser()}
+              <div class="rounded-b-lg border p-4">${this.renderForm()}</div>
+            `
+          : this.hasFetchError
+          ? html`
+              <btrix-alert type="danger">
+                ${msg(
+                  html`The interactive browser is not available. Try creating a
+                    new browser profile.
+                    <a
+                      class="font-medium underline"
+                      href=${`/archives/${this.archiveId}/browser-profiles/new`}
+                      @click=${this.navLink}
+                      >Create New</a
+                    >`
+                )}
+              </btrix-alert>
+            `
           : html`
               <div
                 class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
@@ -65,9 +86,7 @@ export class BrowserProfilesNew extends LiteElement {
                 <sl-spinner></sl-spinner>
               </div>
             `}
-      </article>
-
-      <div class="rounded-b-lg border p-4">${this.renderForm()}</div>
+      </div>
     `;
   }
 
@@ -123,6 +142,8 @@ export class BrowserProfilesNew extends LiteElement {
     try {
       await this.checkBrowserStatus();
     } catch (e) {
+      this.hasFetchError = true;
+
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
         type: "danger",
