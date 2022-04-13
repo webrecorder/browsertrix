@@ -34,6 +34,9 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private hasFetchError = false;
 
+  @state()
+  private isFullscreen = false;
+
   private pollTimerId?: number;
 
   disconnectedCallback() {
@@ -51,18 +54,46 @@ export class BrowserProfilesNew extends LiteElement {
   render() {
     return html`
       <div id="browserProfileInstructions" class="mb-5">
-        <p class="text-sm text-neutral-500 mb-5">
+        <p class="text-sm text-neutral-500">
           ${msg(
             "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
           )}
         </p>
       </div>
 
-      <div aria-live="polite">
+      <div id="interactive-browser" aria-live="polite">
         ${this.browserUrl
           ? html`
-              ${this.renderBrowser()}
-              <div class="rounded-b-lg border p-4">${this.renderForm()}</div>
+              <div class="lg:flex bg-white">
+                <div class="grow lg:rounded-l overflow-hidden">
+                  ${this.renderBrowser()}
+                </div>
+                <div
+                  class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner"
+                >
+                  ${document.fullscreenEnabled
+                    ? html`
+                        <div class="mb-4 text-right">
+                          <sl-button
+                            type="neutral"
+                            size="small"
+                            @click=${() =>
+                              this.enterFullscreen("interactive-browser")}
+                          >
+                            <sl-icon
+                              slot="prefix"
+                              name="arrows-fullscreen"
+                              label=${msg("Fullscreen")}
+                            ></sl-icon>
+                            ${msg("Go Fullscreen")}
+                          </sl-button>
+                        </div>
+                      `
+                    : ""}
+
+                  <div class="p-2">${this.renderForm()}</div>
+                </div>
+              </div>
             `
           : this.hasFetchError
           ? html`
@@ -131,7 +162,10 @@ export class BrowserProfilesNew extends LiteElement {
 
   private renderBrowser() {
     return html`
-      <iframe class="aspect-video w-full" src=${this.browserUrl!}></iframe>
+      <iframe
+        class="w-full ${this.isFullscreen ? "h-screen" : "aspect-video"} "
+        src=${this.browserUrl!}
+      ></iframe>
     `;
   }
 
@@ -202,6 +236,11 @@ export class BrowserProfilesNew extends LiteElement {
   private async onSubmit(event: { detail: { formData: FormData } }) {
     this.isSubmitting = true;
 
+    if (this.isFullscreen) {
+      await document.exitFullscreen();
+      this.isFullscreen = false;
+    }
+
     const { formData } = event.detail;
     const params = {
       name: formData.get("name"),
@@ -237,6 +276,23 @@ export class BrowserProfilesNew extends LiteElement {
         type: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  /**
+   * Enter fullscreen mode
+   * @param id ID of element to fullscreen
+   */
+  private async enterFullscreen(id: string) {
+    try {
+      document.getElementById(id)!.requestFullscreen({
+        // Show browser navigation controls
+        navigationUI: "show",
+      });
+
+      this.isFullscreen = true;
+    } catch (err) {
+      console.error(err);
     }
   }
 }
