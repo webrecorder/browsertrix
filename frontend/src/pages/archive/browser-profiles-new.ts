@@ -163,7 +163,8 @@ export class BrowserProfilesNew extends LiteElement {
   private renderBrowser() {
     return html`
       <iframe
-        class="w-full ${this.isFullscreen ? "h-screen" : "aspect-video"} "
+        class="w-full ${this.isFullscreen ? "h-screen" : "aspect-video"}"
+        title=${msg("Interactive browser for creating browser profile")}
         src=${this.browserUrl!}
       ></iframe>
     `;
