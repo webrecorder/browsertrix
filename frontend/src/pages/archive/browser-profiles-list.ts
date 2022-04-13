@@ -3,22 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-
-type Profile = {
-  id: string;
-  name: string;
-  description: string;
-  created: string;
-  origins: string[];
-  baseId: string;
-  baseProfileName: string;
-  aid: string;
-  resource: {
-    filename: string;
-    hash: string;
-    size: number;
-  };
-};
+import { Profile } from "./types";
 
 /**
  * Usage:

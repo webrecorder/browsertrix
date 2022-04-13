@@ -13,6 +13,7 @@ import "./crawl-templates-list";
 import "./crawl-templates-new";
 import "./crawl-detail";
 import "./crawls-list";
+import "./browser-profiles-detail";
 import "./browser-profiles-list";
 
 export type ArchiveTab =
@@ -262,35 +263,11 @@ export class Archive extends LiteElement {
 
   private renderBrowserProfiles() {
     if (this.browserProfileId) {
-      const profile = {
-        id: "2",
-        name: "Twitter Webrecorder",
-        description: "Et netus et malesuada fames.",
-        last_updated: new Date().toUTCString(),
-        domains: ["https://twitter.com", "https://twitter.com/webrecorder_io"],
-      };
-
-      return html`
-        <div class="mb-7">
-          <a
-            class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-            href=${`/archives/${this.archiveId}/browser-profiles`}
-            @click=${this.navLink}
-          >
-            <sl-icon
-              name="arrow-left"
-              class="inline-block align-middle"
-            ></sl-icon>
-            <span class="inline-block align-middle"
-              >${msg("Back to Browser Profiles")}</span
-            >
-          </a>
-        </div>
-
-        <header>
-          <h2 class="text-2xl font-medium mb-3 md:h-8">${profile.name}</h2>
-        </header>
-      `;
+      return html`<btrix-browser-profiles-detail
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+        profileId=${this.browserProfileId}
+      ></btrix-browser-profiles-detail>`;
     }
 
     return html`<btrix-browser-profiles-list
