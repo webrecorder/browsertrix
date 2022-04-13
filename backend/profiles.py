@@ -218,13 +218,41 @@ class ProfileOps:
         results = await cursor.to_list(length=1000)
         return [ProfileOut.from_dict(res) for res in results]
 
-    async def get_profile(self, archive: Archive, profileid: uuid.UUID):
+    async def get_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
         """ get profile by id and archive """
-        res = await self.profiles.find_one({"_id": profileid, "aid": archive.id})
+        query = {"_id": profileid}
+        if archive:
+            query["aid"] = archive.id
+
+        res = await self.profiles.find_one(query)
         if not res:
-            raise HTTPException(status_code=404, detail="browser_not_found")
+            raise HTTPException(status_code=404, detail="profile_not_found")
 
         return ProfileOut.from_dict(res)
+
+    async def get_profile_storage_path(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ return profile path filename (relative path) for given profile id and archive """
+        try:
+            profile = await self.get_profile(profileid, archive)
+            return profile.resource.filename
+        # pylint: disable=bare-except
+        except:
+            return None
+
+    async def get_profile_name(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ return profile for given profile id and archive """
+        try:
+            profile = await self.get_profile(profileid, archive)
+            return profile.name
+        # pylint: disable=bare-except
+        except:
+            return None
 
     async def delete_profile_browser(self, browserid):
         """ delete profile browser immediately """
@@ -302,7 +330,7 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         profileid: str,
         archive: Archive = Depends(archive_crawl_dep),
     ):
-        return await ops.get_profile(archive, uuid.UUID(profileid))
+        return await ops.get_profile(uuid.UUID(profileid), archive)
 
     @router.post("/browser", response_model=BrowserId)
     async def create_new(
@@ -341,3 +369,5 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         return await ops.delete_profile_browser(browserid)
 
     archive_ops.router.include_router(router)
+
+    return ops

@@ -64,7 +64,13 @@ def main():
 
         crawl_manager = DockerManager(archive_ops)
 
+    redis_url = os.environ.get("REDIS_URL")
+
     init_storages_api(archive_ops, crawl_manager, current_active_user)
+
+    profiles = init_profiles_api(
+        mdb, redis_url, crawl_manager, archive_ops, current_active_user
+    )
 
     crawl_config_ops = init_crawl_config_api(
         dbclient,
@@ -73,9 +79,8 @@ def main():
         user_manager,
         archive_ops,
         crawl_manager,
+        profiles,
     )
-
-    redis_url = os.environ.get("REDIS_URL")
 
     crawls = init_crawls_api(
         app,
@@ -87,8 +92,6 @@ def main():
         archive_ops,
         current_active_user,
     )
-
-    init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, current_active_user)
 
     coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)
 

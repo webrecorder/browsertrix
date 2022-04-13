@@ -170,8 +170,10 @@ class DockerManager:
     async def update_archive_storage(self, aid, userid, storage):
         """ No storage kept for docker manager """
 
-    # pylint: disable=unused-argument
-    async def add_crawl_config(self, crawlconfig, storage, run_now, out_filename):
+    # pylint: disable=too-many-arguments
+    async def add_crawl_config(
+        self, crawlconfig, storage, run_now, out_filename, profile_filename
+    ):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
         userid = str(crawlconfig.userid)
@@ -183,7 +185,11 @@ class DockerManager:
             "btrix.crawlconfig": cid,
             "btrix.colls": json.dumps(crawlconfig.colls),
             "btrix.storage_name": storage.name,
+            "btrix.out_filename": out_filename,
         }
+
+        if profile_filename:
+            labels["btrix.profilepath"] = profile_filename
 
         if storage.type == "default":
             labels["btrix.def_storage_path"] = storage.path
@@ -216,6 +222,7 @@ class DockerManager:
     async def update_crawl_schedule_or_scale(self, cid, schedule=None, scale=None):
         """ Update the schedule for existing crawl config """
 
+        # pylint: disable=unused-argument
         if schedule:
             print("Updating Schedule..", flush=True)
 
@@ -578,6 +585,11 @@ class DockerManager:
             self.redis_url,
         ]
 
+        profile_filename = labels.get("btrix.profilepath")
+        if profile_filename:
+            command.append("--profile")
+            command.append(f"@{profile_filename}")
+
         if self.extra_crawl_params:
             command += self.extra_crawl_params
 
@@ -592,6 +604,7 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
+            f"STORE_FILENAME={labels['btrix.out_filename']}",
             f"WEBHOOK_URL={self.redis_url}/{self.crawls_done_key}",
             f"CRAWL_ARGS={self.crawl_args}",
             f"WACZ_SIGN_URL={self.wacz_sign_url}",

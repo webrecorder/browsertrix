@@ -171,7 +171,9 @@ class K8SManager:
                 name=archive_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
-    async def add_crawl_config(self, crawlconfig, storage, run_now, out_filename):
+    async def add_crawl_config(
+        self, crawlconfig, storage, run_now, out_filename, profile_filename
+    ):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
         userid = str(crawlconfig.userid)
@@ -219,6 +221,7 @@ class K8SManager:
             out_filename,
             crawlconfig.crawlTimeout,
             crawlconfig.scale,
+            profile_filename,
         )
 
         spec = client.V1beta1CronJobSpec(
@@ -791,6 +794,7 @@ class K8SManager:
         out_filename,
         crawl_timeout,
         parallel,
+        profile_filename,
     ):
         """Return crawl job template for crawl job, including labels, adding optiona crawl params"""
 
@@ -815,6 +819,16 @@ class K8SManager:
         else:
             liveness_probe = None
 
+        command = [
+            "crawl",
+            "--config",
+            "/tmp/crawl-config.json",
+        ]
+
+        if profile_filename:
+            command.append("--profile")
+            command.append(f"@{profile_filename}")
+
         job_template = {
             "metadata": {"annotations": annotations},
             "spec": {
@@ -828,11 +842,7 @@ class K8SManager:
                                 "name": "crawler",
                                 "image": self.crawler_image,
                                 "imagePullPolicy": self.crawler_image_pull_policy,
-                                "command": [
-                                    "crawl",
-                                    "--config",
-                                    "/tmp/crawl-config.json",
-                                ],
+                                "command": command,
                                 "volumeMounts": [
                                     {
                                         "name": "crawl-config",
