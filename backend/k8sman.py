@@ -532,26 +532,25 @@ class K8SManager:
             return False
 
         # delete job if profile browser job
-        if job.metadata.labels.get("btrix.profilebrowser"):
+        if job.metadata.labels.get("btrix.profile"):
             await self._delete_job(job_name)
             return True
 
     async def run_profile_browser(
         self,
+        profileid,
         userid,
         aid,
         storage,
         command,
-        filename="profile-@ts.tar.gz",
+        filename,
         base_id=None,
     ):
         """run browser for profile creation """
-
         # Configure Annotations + Labels
         if storage.type == "default":
             storage_name = storage.name
             storage_path = storage.path
-            # annotations["btrix.def_storage_path"] = storage_path
         else:
             storage_name = aid
             storage_path = ""
@@ -559,7 +558,7 @@ class K8SManager:
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
-            "btrix.profilebrowser": "1",
+            "btrix.profile": profileid,
         }
 
         await self.check_storage(storage_name)
@@ -594,7 +593,7 @@ class K8SManager:
             return None
 
         data = job.metadata.labels
-        if not data.get("btrix.profilebrowser"):
+        if not data.get("btrix.profile"):
             return None
 
         pods = await self.core_api.list_namespaced_pod(
@@ -602,7 +601,7 @@ class K8SManager:
         )
 
         for pod in pods.items:
-            if pod.status.pod_ip and pod.metadata.labels.get("btrix.profilebrowser"):
+            if pod.status.pod_ip and pod.metadata.labels.get("btrix.profile"):
                 data["browser_ip"] = pod.status.pod_ip
                 break
 

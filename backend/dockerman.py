@@ -410,11 +410,12 @@ class DockerManager:
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
         self,
+        profileid,
         userid,
         aid,
         storage,
         command,
-        filename="profile-@ts.tar.gz",
+        filename,
         base_id=None,
     ):
         """ Run browser for profile creation """
@@ -428,14 +429,14 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
-            "STORE_FILENAME={filename}",
+            f"STORE_FILENAME={filename}",
         ]
 
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
             "btrix.storage_name": storage_name,
-            "btrix.profilebrowser": "1",
+            "btrix.profile": profileid,
         }
 
         if storage.type == "default":
@@ -458,6 +459,8 @@ class DockerManager:
     async def get_profile_browser_data(self, profile_id):
         """ Get IP of profile browser ip """
         container = await self.client.containers.get(profile_id)
+        if not container["Config"]["Labels"].get("btrix.profile"):
+            return None
 
         labels = container["Config"]["Labels"]
         labels["browser_ip"] = self._get_container_ip(container)
@@ -470,7 +473,7 @@ class DockerManager:
         if not container:
             return False
 
-        if not container["Config"]["Labels"].get("btrix.profilebrowser"):
+        if not container["Config"]["Labels"].get("btrix.profile"):
             return False
 
         await container.kill()

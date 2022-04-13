@@ -117,11 +117,15 @@ class ProfileOps:
         """ Create new profile """
         command = self.get_command(profile_launch.url)
 
+        profileid = str(uuid.uuid4())
+
         browserid = await self.crawl_manager.run_profile_browser(
+            profileid,
             str(user.id),
             str(archive.id),
             archive.storage,
             command,
+            filename=f"profile-{profileid}.tar.gz",
         )
 
         if not browserid:
@@ -170,11 +174,14 @@ class ProfileOps:
     async def commit_profile(self, browserid, commit_metadata):
         """ commit profile and shutdown profile browser """
         json, _, browser_data = await self._get_browser_data(
-            browserid, "/createProfileJS"
+            browserid, "/createProfileJS", "POST"
         )
+
+        profileid = None
 
         try:
             resource = json["resource"]
+            profileid = uuid.UUID(browser_data["btrix.profile"])
         except:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="browser_not_valid")
@@ -190,7 +197,7 @@ class ProfileOps:
             baseid = uuid.UUID(baseid)
 
         profile = Profile(
-            id=uuid.uuid4(),
+            id=profileid,
             name=commit_metadata.name,
             description=commit_metadata.description,
             created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
@@ -241,7 +248,7 @@ class ProfileOps:
         """ resolve base profile name, if any """
         return ProfileOut(**profile.serialize())
 
-    async def _get_browser_data(self, browserid, path):
+    async def _get_browser_data(self, browserid, path, method="GET"):
         browser_data = await self.crawl_manager.get_profile_browser_data(browserid)
 
         if not browser_data:
@@ -254,10 +261,12 @@ class ProfileOps:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"http://{browser_ip}:9223{path}") as resp:
+                async with session.request(
+                    method, f"http://{browser_ip}:9223{path}"
+                ) as resp:
                     json = await resp.json()
 
-        except:
+        except Exception:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
