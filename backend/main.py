@@ -75,10 +75,12 @@ def main():
         crawl_manager,
     )
 
+    redis_url = os.environ.get("REDIS_URL")
+
     crawls = init_crawls_api(
         app,
         mdb,
-        os.environ.get("REDIS_URL"),
+        redis_url,
         user_manager,
         crawl_manager,
         crawl_config_ops,
@@ -86,7 +88,7 @@ def main():
         current_active_user,
     )
 
-    init_profiles_api(mdb, crawl_manager, archive_ops, current_active_user)
+    init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, current_active_user)
 
     coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)
 
