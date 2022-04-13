@@ -31,8 +31,15 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  private pollTimerId?: number;
+
+  disconnectedCallback() {
+    window.clearTimeout(this.pollTimerId);
+  }
+
   firstUpdated() {
     window.scrollTo({ top: 150 });
+
     this.fetchBrowser();
   }
 
@@ -131,11 +138,16 @@ export class BrowserProfilesNew extends LiteElement {
     const result = await this.getBrowser();
 
     if (result.detail === "waiting_for_browser") {
-      window.setTimeout(() => this.checkBrowserStatus(), 5 * 1000);
-    } else {
+      this.pollTimerId = window.setTimeout(
+        () => this.checkBrowserStatus(),
+        5 * 1000
+      );
+    } else if (result.url) {
       this.browserUrl = result.url;
 
       this.pingBrowser();
+    } else {
+      console.debug("Unknown checkBrowserStatus state");
     }
   }
 
@@ -162,8 +174,8 @@ export class BrowserProfilesNew extends LiteElement {
         method: "POST",
       }
     );
-    console.log("pinged");
-    window.setTimeout(() => this.pingBrowser(), 60 * 1000);
+
+    this.pollTimerId = window.setTimeout(() => this.pingBrowser(), 60 * 1000);
   }
 
   private async onSubmit(event: { detail: { formData: FormData } }) {
