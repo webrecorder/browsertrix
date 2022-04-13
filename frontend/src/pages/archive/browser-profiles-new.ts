@@ -45,8 +45,8 @@ export class BrowserProfilesNew extends LiteElement {
 
   firstUpdated() {
     // Scroll down to full view
-    const { top } = this.getBoundingClientRect();
-    window.scrollTo({ top: top - 20, left: 0, behavior: "smooth" });
+    // const { top } = this.getBoundingClientRect();
+    // window.scrollTo({ top: top - 20, left: 0, behavior: "smooth" });
 
     this.fetchBrowser();
   }
@@ -62,11 +62,33 @@ export class BrowserProfilesNew extends LiteElement {
       </div>
 
       <div id="interactive-browser" aria-live="polite">
-        ${this.browserUrl
+        ${this.hasFetchError
           ? html`
+              <btrix-alert type="danger">
+                ${msg(
+                  html`The interactive browser is not available. Try creating a
+                    new browser profile.
+                    <a
+                      class="font-medium underline"
+                      href=${`/archives/${this.archiveId}/browser-profiles/new`}
+                      @click=${this.navLink}
+                      >Create New</a
+                    >`
+                )}
+              </btrix-alert>
+            `
+          : html`
               <div class="lg:flex bg-white">
                 <div class="grow lg:rounded-l overflow-hidden">
-                  ${this.renderBrowser()}
+                  ${this.browserUrl
+                    ? this.renderBrowser()
+                    : html`
+                        <div
+                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+                        >
+                          <sl-spinner></sl-spinner>
+                        </div>
+                      `}
                 </div>
                 <div
                   class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner"
@@ -94,28 +116,6 @@ export class BrowserProfilesNew extends LiteElement {
                   <div class="p-2">${this.renderForm()}</div>
                 </div>
               </div>
-            `
-          : this.hasFetchError
-          ? html`
-              <btrix-alert type="danger">
-                ${msg(
-                  html`The interactive browser is not available. Try creating a
-                    new browser profile.
-                    <a
-                      class="font-medium underline"
-                      href=${`/archives/${this.archiveId}/browser-profiles/new`}
-                      @click=${this.navLink}
-                      >Create New</a
-                    >`
-                )}
-              </btrix-alert>
-            `
-          : html`
-              <div
-                class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
-              >
-                <sl-spinner></sl-spinner>
-              </div>
             `}
       </div>
     `;
@@ -132,6 +132,7 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           autocomplete="off"
           value="My Profile"
+          ?disabled=${!this.browserUrl}
           required
         ></sl-input>
 
@@ -144,13 +145,14 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
+          ?disabled=${!this.browserUrl}
         ></sl-textarea>
 
         <div class="text-right">
           <sl-button
             type="primary"
             submit
-            ?disabled=${this.isSubmitting}
+            ?disabled=${!this.browserUrl || this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
             ${msg("Save Profile")}
