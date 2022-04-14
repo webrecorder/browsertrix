@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { ref } from "lit/directives/ref.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -184,6 +185,7 @@ export class BrowserProfilesNew extends LiteElement {
         class="w-full ${this.isFullscreen ? "h-screen" : "aspect-video"}"
         title=${msg("Interactive browser for creating browser profile")}
         src=${this.browserUrl!}
+        ${ref((el) => this.onIframeRef(el as HTMLIFrameElement))}
       ></iframe>
     `;
   }
@@ -295,6 +297,17 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private onIframeRef(el: HTMLIFrameElement) {
+    el.addEventListener("load", () => {
+      // TODO see if we can make this work locally without CORs errors
+      el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
+      el.contentWindow?.localStorage.setItem(
+        "InspectorView.screencastSplitViewState",
+        '{"vertical":{"size":241}}'
+      );
+    });
   }
 
   /**
