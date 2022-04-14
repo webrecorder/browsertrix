@@ -82,7 +82,7 @@ export class BrowserProfilesNew extends LiteElement {
               </btrix-alert>
             `
           : html`
-              <div class="lg:flex bg-white">
+              <div class="lg:flex bg-white relative">
                 <div class="grow lg:rounded-l overflow-hidden">
                   ${this.browserUrl
                     ? this.renderBrowser()
@@ -95,7 +95,7 @@ export class BrowserProfilesNew extends LiteElement {
                       `}
                 </div>
                 <div
-                  class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner"
+                  class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner bg-white absolute h-full right-0"
                 >
                   ${document.fullscreenEnabled
                     ? html`
@@ -300,13 +300,18 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private onIframeRef(el: HTMLIFrameElement) {
+    if (!el) return;
+
     el.addEventListener("load", () => {
       // TODO see if we can make this work locally without CORs errors
-      el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-      el.contentWindow?.localStorage.setItem(
-        "InspectorView.screencastSplitViewState",
-        '{"vertical":{"size":241}}'
-      );
+      try {
+        //el.style.width = "132%";
+        el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
+        el.contentWindow?.localStorage.setItem(
+          "InspectorView.screencastSplitViewState",
+          '{"vertical":{"size":241}}'
+        );
+      } catch (e) {}
     });
   }
 
