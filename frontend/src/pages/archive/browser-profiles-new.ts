@@ -103,14 +103,27 @@ export class BrowserProfilesNew extends LiteElement {
                             type="neutral"
                             size="small"
                             @click=${() =>
-                              this.enterFullscreen("interactive-browser")}
+                              this.isFullscreen
+                                ? document.exitFullscreen()
+                                : this.enterFullscreen("interactive-browser")}
                           >
-                            <sl-icon
-                              slot="prefix"
-                              name="arrows-fullscreen"
-                              label=${msg("Fullscreen")}
-                            ></sl-icon>
-                            ${msg("Go Fullscreen")}
+                            ${this.isFullscreen
+                              ? html`
+                                  <sl-icon
+                                    slot="prefix"
+                                    name="fullscreen-exit"
+                                    label=${msg("Exit fullscreen")}
+                                  ></sl-icon>
+                                  ${msg("Exit")}
+                                `
+                              : html`
+                                  <sl-icon
+                                    slot="prefix"
+                                    name="arrows-fullscreen"
+                                    label=${msg("Fullscreen")}
+                                  ></sl-icon>
+                                  ${msg("Go Fullscreen")}
+                                `}
                           </sl-button>
                         </div>
                       `
@@ -299,13 +312,13 @@ export class BrowserProfilesNew extends LiteElement {
     }
   }
 
-  private onFullscreenChange() {
+  private onFullscreenChange = () => {
     if (document.fullscreenElement) {
       this.isFullscreen = true;
     } else {
       this.isFullscreen = false;
     }
-  }
+  };
 }
 
 customElements.define("btrix-browser-profiles-new", BrowserProfilesNew);
