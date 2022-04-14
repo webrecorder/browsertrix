@@ -13,8 +13,14 @@ import "./crawl-templates-list";
 import "./crawl-templates-new";
 import "./crawl-detail";
 import "./crawls-list";
+import "./browser-profiles-detail";
+import "./browser-profiles-list";
 
-export type ArchiveTab = "crawls" | "crawl-templates" | "members";
+export type ArchiveTab =
+  | "crawls"
+  | "crawl-templates"
+  | "browser-profiles"
+  | "members";
 
 const defaultTab = "crawls";
 
@@ -35,6 +41,9 @@ export class Archive extends LiteElement {
 
   @property({ type: String })
   archiveTab: ArchiveTab = defaultTab;
+
+  @property({ type: String })
+  browserProfileId?: string;
 
   @property({ type: String })
   crawlId?: string;
@@ -114,6 +123,9 @@ export class Archive extends LiteElement {
       case "crawl-templates":
         tabPanelContent = this.renderCrawlTemplates();
         break;
+      case "browser-profiles":
+        tabPanelContent = this.renderBrowserProfiles();
+        break;
       case "members":
         if (this.isAddingMember) {
           tabPanelContent = this.renderAddMember();
@@ -148,6 +160,10 @@ export class Archive extends LiteElement {
           ${this.renderNavTab({
             tabName: "crawl-templates",
             label: msg("Crawl Templates"),
+          })}
+          ${this.renderNavTab({
+            tabName: "browser-profiles",
+            label: msg("Browser Profiles"),
           })}
           ${showMembersTab
             ? this.renderNavTab({ tabName: "members", label: msg("Members") })
@@ -243,6 +259,21 @@ export class Archive extends LiteElement {
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
     ></btrix-crawl-templates-list>`;
+  }
+
+  private renderBrowserProfiles() {
+    if (this.browserProfileId) {
+      return html`<btrix-browser-profiles-detail
+        .authState=${this.authState!}
+        .archiveId=${this.archiveId!}
+        profileId=${this.browserProfileId}
+      ></btrix-browser-profiles-detail>`;
+    }
+
+    return html`<btrix-browser-profiles-list
+      .authState=${this.authState!}
+      .archiveId=${this.archiveId!}
+    ></btrix-browser-profiles-list>`;
   }
 
   private renderMembers() {

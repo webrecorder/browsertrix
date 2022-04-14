@@ -55,3 +55,19 @@ export type CrawlTemplate = {
   config: CrawlConfig;
   scale: number;
 };
+
+export type Profile = {
+  id: string;
+  name: string;
+  description: string;
+  created: string;
+  origins: string[];
+  baseId: string;
+  baseProfileName: string;
+  aid: string;
+  resource: {
+    filename: string;
+    hash: string;
+    size: number;
+  };
+};
