@@ -8,7 +8,10 @@ import { Profile } from "./types";
 /**
  * Usage:
  * ```ts
- * <btrix-browser-profiles-list></btrix-browser-profiles-list>
+ * <btrix-browser-profiles-list
+ *  authState=${authState}
+ *  archiveId=${archiveId}
+ * ></btrix-browser-profiles-list>
  * ```
  */
 @localized()
@@ -17,20 +20,74 @@ export class BrowserProfilesList extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId?: string;
+  archiveId!: string;
+
+  @property({ type: Boolean })
+  showCreateDialog = false;
 
   @state()
   browserProfiles?: Profile[];
 
+  @state()
+  private isCreateFormVisible = false;
+
+  @state()
+  private isSubmitting = false;
+
+  /** Profile creation only works in Chromium-based browsers */
+  private isBrowserCompatible = Boolean((window as any).chrome);
+
   firstUpdated() {
-    this.fetchCrawls();
+    if (this.showCreateDialog) {
+      this.isCreateFormVisible = true;
+    }
+
+    this.fetchBrowserProfiles();
   }
 
   render() {
-    return html` ${this.renderTable()} `;
+    return html`<header class="mb-3 text-right">
+        <a
+          href=${`/archives/${this.archiveId}/browser-profiles/new`}
+          class="inline-block bg-primary hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
+          role="button"
+          @click=${this.navLink}
+        >
+          <sl-icon
+            class="inline-block align-middle mr-2"
+            name="plus-lg"
+          ></sl-icon
+          ><span class="inline-block align-middle mr-2 text-sm"
+            >${msg("New Browser Profile")}</span
+          >
+        </a>
+      </header>
+
+      ${this.renderTable()}
+
+      <sl-dialog
+        label=${msg(str`New Browser Profile`)}
+        ?open=${this.showCreateDialog}
+        @sl-request-close=${this.hideDialog}
+        @sl-show=${() => (this.isCreateFormVisible = true)}
+        @sl-after-hide=${() => (this.isCreateFormVisible = false)}
+      >
+        ${this.isBrowserCompatible
+          ? ""
+          : html`
+              <div class="mb-4">
+                <btrix-alert type="warning" class="text-sm">
+                  ${msg(
+                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
+                  )}
+                </btrix-alert>
+              </div>
+            `}
+        ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
+      </sl-dialog> `;
   }
 
-  renderTable() {
+  private renderTable() {
     return html`
       <div role="table">
         <div class="mb-2 px-4" role="rowgroup">
@@ -90,10 +147,132 @@ export class BrowserProfilesList extends LiteElement {
     `;
   }
 
+  private renderCreateForm() {
+    return html`<sl-form @sl-submit=${this.onSubmit}>
+      <div class="grid gap-5">
+        <div>
+          <label
+            id="startingUrlLabel"
+            class="text-sm leading-normal"
+            style="margin-bottom: var(--sl-spacing-3x-small)"
+            >${msg("Starting URL")}
+          </label>
+
+          <div class="flex">
+            <sl-select
+              class="grow-0 mr-1"
+              name="urlPrefix"
+              value="https://"
+              hoist
+              ?disabled=${!this.isBrowserCompatible}
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+            >
+              <sl-menu-item value="http://">http://</sl-menu-item>
+              <sl-menu-item value="https://">https://</sl-menu-item>
+            </sl-select>
+            <sl-input
+              class="grow"
+              name="url"
+              placeholder=${msg("example.com")}
+              autocomplete="off"
+              aria-labelledby="startingUrlLabel"
+              ?disabled=${!this.isBrowserCompatible}
+              required
+            >
+            </sl-input>
+          </div>
+        </div>
+
+        <details>
+          <summary class="text-sm text-neutral-500 font-medium cursor-pointer">
+            ${msg("More options")}
+          </summary>
+
+          <div class="p-3">
+            <sl-select
+              name="baseId"
+              label=${msg("Extend Profile")}
+              help-text=${msg("Extend an existing browser profile.")}
+              clearable
+              ?disabled=${!this.isBrowserCompatible}
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+            >
+              ${this.browserProfiles?.map(
+                (profile) => html`
+                  <sl-menu-item value=${profile.id}
+                    >${profile.name}</sl-menu-item
+                  >
+                `
+              )}
+            </sl-select>
+          </div>
+        </details>
+
+        <div class="text-right">
+          <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Start Browser")}
+          </sl-button>
+        </div>
+      </div>
+    </sl-form>`;
+  }
+
+  private hideDialog() {
+    this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+  }
+
+  async onSubmit(event: { detail: { formData: FormData } }) {
+    this.isSubmitting = true;
+
+    const { formData } = event.detail;
+    const url = formData.get("url") as string;
+    const params = {
+      url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
+      baseId: formData.get("baseId"),
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/browser`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+
+      this.notify({
+        message: msg("Starting up browser for profile creation."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/browser/${data.browserid}`
+      );
+    } catch (e) {
+      this.isSubmitting = false;
+
+      this.notify({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   /**
    * Fetch browser profiles and update internal state
    */
-  private async fetchCrawls(): Promise<void> {
+  private async fetchBrowserProfiles(): Promise<void> {
     try {
       const data = await this.getProfiles();
 
@@ -108,16 +287,21 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(): Promise<Profile[]> {
-    if (!this.archiveId) {
-      throw new Error(`Archive ID ${typeof this.archiveId}`);
-    }
-
     const data = await this.apiFetch(
       `/archives/${this.archiveId}/profiles`,
       this.authState!
     );
 
     return data;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 

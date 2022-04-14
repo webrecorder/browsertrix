@@ -69,7 +69,7 @@ export class CrawlTemplatesList extends LiteElement {
       >
         <a
           href=${`/archives/${this.archiveId}/crawl-templates/new`}
-          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-indigo-400 text-primary text-center font-medium rounded px-6 py-4 transition-colors"
+          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-primary text-primary text-center font-medium rounded px-6 py-4 transition-colors"
           @click=${this.navLink}
           role="button"
         >
@@ -81,7 +81,7 @@ export class CrawlTemplatesList extends LiteElement {
             class="inline-block align-middle mr-2 ${this.crawlTemplates.length
               ? "text-sm"
               : "font-medium"}"
-            >${msg("Create New Crawl Template")}</span
+            >${msg("New Crawl Template")}</span
           >
         </a>
       </div>

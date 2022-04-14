@@ -156,8 +156,8 @@ export class CrawlTemplatesNew extends LiteElement {
         </a>
       </nav>
 
-      <h2 class="text-xl font-bold mb-3">${msg("New Crawl Template")}</h2>
-      <p>
+      <h2 class="text-xl font-medium mb-3">${msg("New Crawl Template")}</h2>
+      <p class="text-neutral-500 text-sm">
         ${msg(
           "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
         )}
@@ -225,9 +225,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-input
           name="name"
           label=${msg("Name")}
-          help-text=${msg(
-            "Required. Name your template to easily identify it later."
-          )}
+          help-text=${msg("Name your template to easily identify it later.")}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl template name",
           })}
