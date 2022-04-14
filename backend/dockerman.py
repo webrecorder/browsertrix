@@ -29,7 +29,7 @@ from crawls import Crawl, CrawlOut, CrawlFile
 class DockerManager:
     """ Docker Crawl Manager Interface"""
 
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes,too-many-public-methods
     def __init__(self, archive_ops, extra_crawl_params=None):
         self.client = aiodocker.Docker()
 
@@ -170,8 +170,10 @@ class DockerManager:
     async def update_archive_storage(self, aid, userid, storage):
         """ No storage kept for docker manager """
 
-    # pylint: disable=unused-argument
-    async def add_crawl_config(self, crawlconfig, storage, run_now, out_filename):
+    # pylint: disable=too-many-arguments
+    async def add_crawl_config(
+        self, crawlconfig, storage, run_now, out_filename, profile_filename
+    ):
         """ Add new crawl config """
         cid = str(crawlconfig.id)
         userid = str(crawlconfig.userid)
@@ -183,7 +185,11 @@ class DockerManager:
             "btrix.crawlconfig": cid,
             "btrix.colls": json.dumps(crawlconfig.colls),
             "btrix.storage_name": storage.name,
+            "btrix.out_filename": out_filename,
         }
+
+        if profile_filename:
+            labels["btrix.profilepath"] = profile_filename
 
         if storage.type == "default":
             labels["btrix.def_storage_path"] = storage.path
@@ -216,6 +222,7 @@ class DockerManager:
     async def update_crawl_schedule_or_scale(self, cid, schedule=None, scale=None):
         """ Update the schedule for existing crawl config """
 
+        # pylint: disable=unused-argument
         if schedule:
             print("Updating Schedule..", flush=True)
 
@@ -334,22 +341,13 @@ class DockerManager:
             finish_now=True,
         )
 
-        storage_path = labels.get("btrix.def_storage_path")
-        inx = None
-        filename = None
-        storage_name = None
-        if storage_path:
-            inx = crawlcomplete.filename.index(storage_path)
-            filename = (
-                crawlcomplete.filename[inx:] if inx > 0 else crawlcomplete.filename
-            )
-            storage_name = labels.get("btrix.storage_name")
-
-        def_storage_name = storage_name if inx else None
+        def_storage_name, filename = self.resolve_storage_path(
+            labels, crawlcomplete.filename
+        )
 
         crawl_file = CrawlFile(
             def_storage_name=def_storage_name,
-            filename=filename or crawlcomplete.filename,
+            filename=filename,
             size=crawlcomplete.size,
             hash=crawlcomplete.hash,
         )
@@ -380,14 +378,8 @@ class DockerManager:
                 container, "stopping" if stop_type else "running", False, CrawlOut
             )
 
-            try:
-                crawl.watchIPs = [
-                    container["NetworkSettings"]["Networks"][self.default_network][
-                        "IPAddress"
-                    ]
-                ]
-            except:
-                crawl.watchIPs = []
+            crawl_ip = self._get_container_ip(container)
+            crawl.watchIPs = [crawl_ip] if crawl_ip else []
 
             return crawl
 
@@ -406,6 +398,93 @@ class DockerManager:
     async def delete_crawl_configs_for_archive(self, aid):
         """ Delete Crawl Config by Archive Id"""
         await self._delete_volume_by_labels([f"btrix.archive={aid}"])
+
+    # pylint: disable=no-self-use
+    def resolve_storage_path(self, labels, filename):
+        """resolve relative filename and storage name based on
+        labels and full s3 filename"""
+        storage_path = labels.get("btrix.def_storage_path")
+        inx = None
+        storage_name = None
+        if storage_path:
+            inx = filename.index(storage_path)
+            filename = filename[inx:] if inx > 0 else filename
+            storage_name = labels.get("btrix.storage_name")
+
+        def_storage_name = storage_name if inx else None
+        return def_storage_name, filename
+
+    # pylint: disable=too-many-arguments
+    async def run_profile_browser(
+        self,
+        profileid,
+        userid,
+        aid,
+        storage,
+        command,
+        filename,
+        base_id=None,
+    ):
+        """ Run browser for profile creation """
+        storage_name = storage.name
+        storage, storage_path = await self._get_storage_and_path(storage)
+
+        env_vars = [
+            f"STORE_USER={userid}",
+            f"STORE_ARCHIVE={aid}",
+            f"STORE_ENDPOINT_URL={storage.endpoint_url}",
+            f"STORE_ACCESS_KEY={storage.access_key}",
+            f"STORE_SECRET_KEY={storage.secret_key}",
+            f"STORE_PATH={storage_path}",
+            f"STORE_FILENAME={filename}",
+        ]
+
+        labels = {
+            "btrix.user": userid,
+            "btrix.archive": aid,
+            "btrix.storage_name": storage_name,
+            "btrix.profile": profileid,
+        }
+
+        if storage.type == "default":
+            labels["btrix.def_storage_path"] = storage.path
+
+        if base_id:
+            labels["btrix.baseprofile"] = base_id
+
+        run_config = {
+            "Image": self.crawler_image,
+            "Labels": labels,
+            "Cmd": command,
+            "Env": env_vars,
+            "HostConfig": {"NetworkMode": self.default_network, "AutoRemove": True},
+        }
+
+        container = await self.client.containers.run(run_config)
+        return container["id"][:12]
+
+    async def get_profile_browser_data(self, profile_id):
+        """ Get IP of profile browser ip """
+        container = await self.client.containers.get(profile_id)
+        if not container["Config"]["Labels"].get("btrix.profile"):
+            return None
+
+        labels = container["Config"]["Labels"]
+        labels["browser_ip"] = self._get_container_ip(container)
+        return labels
+
+    async def delete_profile_browser(self, browserid):
+        """ delete profile browser container, if any """
+        container = await self.client.containers.get(browserid)
+
+        if not container:
+            return False
+
+        if not container["Config"]["Labels"].get("btrix.profile"):
+            return False
+
+        await container.kill()
+        return True
 
     # ========================================================================
     async def _create_volume(self, crawlconfig, labels):
@@ -506,6 +585,11 @@ class DockerManager:
             self.redis_url,
         ]
 
+        profile_filename = labels.get("btrix.profilepath")
+        if profile_filename:
+            command.append("--profile")
+            command.append(f"@{profile_filename}")
+
         if self.extra_crawl_params:
             command += self.extra_crawl_params
 
@@ -520,6 +604,7 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
+            f"STORE_FILENAME={labels['btrix.out_filename']}",
             f"WEBHOOK_URL={self.redis_url}/{self.crawls_done_key}",
             f"CRAWL_ARGS={self.crawl_args}",
             f"WACZ_SIGN_URL={self.wacz_sign_url}",
@@ -544,6 +629,15 @@ class DockerManager:
         container = await self.client.containers.run(run_config)
         return container["id"][:12]
 
+    def _get_container_ip(self, container):
+        try:
+            return container["NetworkSettings"]["Networks"][self.default_network][
+                "IPAddress"
+            ]
+        # pylint: disable=broad-except,bare-except
+        except:
+            return None
+
     async def _list_running_containers(self, labels):
         results = await self.client.containers.list(
             filters=json.dumps({"status": ["running"], "label": labels})
@@ -567,6 +661,9 @@ class DockerManager:
     async def _handle_container_die(self, actor):
         """ Handle crawl container shutdown """
         container = await self.client.containers.get(actor["ID"])
+
+        if not container["Config"]["Labels"].get("btrix.crawlconfig"):
+            return
 
         if actor["Attributes"]["exitCode"] != 0:
             crawl = self._make_crawl_for_container(container, "failed", True)

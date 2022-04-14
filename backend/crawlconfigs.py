@@ -84,6 +84,8 @@ class CrawlConfigIn(BaseModel):
 
     name: Optional[str]
 
+    profileid: Optional[str]
+
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
@@ -113,6 +115,8 @@ class CrawlConfig(BaseMongoModel):
 
     userid: UUID4
 
+    profileid: Optional[UUID4]
+
     crawlCount: Optional[int] = 0
 
     lastCrawlId: Optional[str]
@@ -133,6 +137,7 @@ class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
     currCrawlId: Optional[str]
+    profileName: Optional[str]
     userName: Optional[str]
 
 
@@ -157,12 +162,15 @@ class UpdateCrawlConfig(BaseModel):
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
-    def __init__(self, dbclient, mdb, user_manager, archive_ops, crawl_manager):
+    def __init__(
+        self, dbclient, mdb, user_manager, archive_ops, crawl_manager, profiles
+    ):
         self.dbclient = dbclient
         self.crawl_configs = mdb["crawl_configs"]
         self.user_manager = user_manager
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
+        self.profiles = profiles
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -199,6 +207,14 @@ class CrawlConfigOps:
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
+        profile_filename = None
+        if config.profileid:
+            profile_filename = await self.profiles.get_profile_storage_path(
+                uuid.UUID(config.profileid), archive
+            )
+            if not profile_filename:
+                raise HTTPException(status_code=400, detail="invalid_profile_id")
+
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(
                 archive.id, config.colls
@@ -231,6 +247,7 @@ class CrawlConfigOps:
             storage=archive.storage,
             run_now=config.runNow,
             out_filename=out_filename,
+            profile_filename=profile_filename,
         )
 
         return result, new_name
@@ -346,6 +363,11 @@ class CrawlConfigOps:
         if user:
             crawlconfig.userName = user.name
 
+        if crawlconfig.profileid:
+            crawlconfig.profileName = await self.profiles.get_profile_name(
+                crawlconfig.profileid, archive
+            )
+
         return crawlconfig
 
     async def get_crawl_config(
@@ -425,10 +447,12 @@ class CrawlConfigOps:
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
-    dbclient, mdb, user_dep, user_manager, archive_ops, crawl_manager
+    dbclient, mdb, user_dep, user_manager, archive_ops, crawl_manager, profiles
 ):
     """Init /crawlconfigs api routes"""
-    ops = CrawlConfigOps(dbclient, mdb, user_manager, archive_ops, crawl_manager)
+    ops = CrawlConfigOps(
+        dbclient, mdb, user_manager, archive_ops, crawl_manager, profiles
+    )
 
     router = ops.router
 

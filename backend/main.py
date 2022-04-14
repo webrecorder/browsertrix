@@ -14,10 +14,13 @@ from invites import init_invites
 from users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
 from archives import init_archives_api
 
+from profiles import init_profiles_api
+
 from storages import init_storages_api
 from crawlconfigs import init_crawl_config_api
 from colls import init_collections_api
 from crawls import init_crawls_api
+
 
 app = FastAPI()
 
@@ -61,7 +64,13 @@ def main():
 
         crawl_manager = DockerManager(archive_ops)
 
+    redis_url = os.environ.get("REDIS_URL")
+
     init_storages_api(archive_ops, crawl_manager, current_active_user)
+
+    profiles = init_profiles_api(
+        mdb, redis_url, crawl_manager, archive_ops, current_active_user
+    )
 
     crawl_config_ops = init_crawl_config_api(
         dbclient,
@@ -70,12 +79,13 @@ def main():
         user_manager,
         archive_ops,
         crawl_manager,
+        profiles,
     )
 
     crawls = init_crawls_api(
         app,
         mdb,
-        os.environ.get("REDIS_URL"),
+        redis_url,
         user_manager,
         crawl_manager,
         crawl_config_ops,

@@ -42,7 +42,7 @@ server {
       set $crawl $2;
       set $crawlerip $3;
       set $auth_bearer $arg_auth_bearer;
-      auth_request  /ipaccess;
+      auth_request  /ipaccess_crawl;
 
       proxy_pass http://$crawlerip:9037/ws;
       proxy_set_header Host "localhost";
@@ -52,12 +52,43 @@ server {
       proxy_set_header Connection $http_connection;
     }
 
-    location = /ipaccess {
+    location = /ipaccess_crawl {
       internal;
       proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/crawls/$crawl/ipaccess/$crawlerip?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
 
+    location ~* /loadbrowser/([^/]+)/(.*)/page/(.*)$ {
+      set $browser_ip $1;
+      set $auth_bearer $arg_auth_bearer;
+      set $browserid $arg_browserid;
+      set $archive $arg_aid;
+      auth_request  /ipaccess_profiles;
+
+      proxy_pass http://$browser_ip:9222/$2/page/$3;
+      proxy_set_header Host "localhost";
+
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+    }
+
+    location = /ipaccess_profiles {
+      internal;
+      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/profiles/browser/$browserid/ipaccess/$browser_ip?auth_bearer=$auth_bearer;
+      proxy_pass_request_body off;
+      proxy_set_header Content-Length "";
+    }
+
+    location ~* /loadbrowser/([^/]+)/(.*) {
+      set $browser_ip $1;
+      proxy_pass http://$browser_ip:9222/$2;
+      proxy_set_header Host "localhost";
+
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+    }
 }
 
