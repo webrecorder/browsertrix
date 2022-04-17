@@ -99,7 +99,7 @@ export class BrowserProfilesNew extends LiteElement {
             `
           : html`
               <div class="lg:flex bg-white relative">
-                <div class="grow lg:rounded overflow-hidden">
+                <div class="grow lg:rounded-lg overflow-hidden">
                   ${this.browserUrl
                     ? this.renderBrowser()
                     : html`
@@ -146,7 +146,21 @@ export class BrowserProfilesNew extends LiteElement {
                       `
                     : ""}
 
-                  <div class="p-2">${this.renderForm()}</div>
+                  <div class="p-2">
+                    ${this.params.baseId
+                      ? html`
+                          <div class="mb-2">
+                            <btrix-alert class="text-sm" type="info"
+                              >${msg(
+                                html`Extending
+                                  <strong>${this.params.name}</strong>`
+                              )}</btrix-alert
+                            >
+                          </div>
+                        `
+                      : ""}
+                    ${this.renderForm()}
+                  </div>
                 </div>
               </div>
             `}
