@@ -242,7 +242,12 @@ export class CrawlTemplatesNew extends LiteElement {
           required
         ></sl-input>
 
-        <sl-select name="profileId" label=${msg("Browser Profile")} clearable>
+        <sl-select
+          name="profileId"
+          label=${msg("Browser Profile")}
+          clearable
+          ?disabled=${!this.browserProfiles?.length}
+        >
           ${this.browserProfiles?.map(
             (profile) => html`
               <sl-menu-item value=${profile.id}> ${profile.name} </sl-menu-item>
