@@ -83,19 +83,19 @@ export class BrowserProfilesNew extends LiteElement {
             `
           : html`
               <div class="lg:flex bg-white relative">
-                <div class="grow lg:rounded-l overflow-hidden">
+                <div class="grow lg:rounded overflow-hidden">
                   ${this.browserUrl
                     ? this.renderBrowser()
                     : html`
                         <div
-                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl pr-72"
                         >
                           <sl-spinner></sl-spinner>
                         </div>
                       `}
                 </div>
                 <div
-                  class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner bg-white absolute h-full right-0"
+                  class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 p-2 shadow-inner bg-white absolute h-full right-0"
                 >
                   ${document.fullscreenEnabled
                     ? html`
@@ -139,6 +139,9 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private renderForm() {
+    // URL params can be used to pass name and description to this form
+    const params = new URLSearchParams(window.location.search);
+
     return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
         <sl-input
@@ -148,7 +151,7 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value="My Profile"
+          value=${params.get("name") || ""}
           ?disabled=${!this.browserUrl}
           required
         ></sl-input>
@@ -162,6 +165,7 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
+          value=${params.get("description") || ""}
           ?disabled=${!this.browserUrl}
         ></sl-textarea>
 
@@ -304,12 +308,13 @@ export class BrowserProfilesNew extends LiteElement {
 
     el.addEventListener("load", () => {
       // TODO see if we can make this work locally without CORs errors
+      const sidebarWidth = 288;
       try {
         //el.style.width = "132%";
         el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
         el.contentWindow?.localStorage.setItem(
           "InspectorView.screencastSplitViewState",
-          '{"vertical":{"size":241}}'
+          `{"vertical":{"size":${sidebarWidth}}}`
         );
       } catch (e) {}
     });

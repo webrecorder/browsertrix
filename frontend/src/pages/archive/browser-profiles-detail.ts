@@ -144,17 +144,23 @@ export class BrowserProfilesDetail extends LiteElement {
         @sl-show=${() => (this.isCreateFormVisible = true)}
         @sl-after-hide=${() => (this.isCreateFormVisible = false)}
       >
-        ${this.isBrowserCompatible
-          ? ""
-          : html`
-              <div class="mb-4">
+        <div class="mb-4">
+          ${this.isBrowserCompatible
+            ? html`
+                <btrix-alert type="info" class="text-sm">
+                  ${msg(
+                    "Saving your edit will create a new version of this profile."
+                  )}
+                </btrix-alert>
+              `
+            : html`
                 <btrix-alert type="warning" class="text-sm">
                   ${msg(
                     "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
                   )}
                 </btrix-alert>
-              </div>
-            `}
+              `}
+        </div>
         ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
       </sl-dialog> `;
   }
