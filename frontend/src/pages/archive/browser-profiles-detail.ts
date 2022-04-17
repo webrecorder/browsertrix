@@ -25,6 +25,18 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private profile?: Profile;
 
+  @property({ type: Boolean })
+  showCreateDialog = false;
+
+  @state()
+  private isCreateFormVisible = false;
+
+  @state()
+  private isSubmitting = false;
+
+  /** Profile creation only works in Chromium-based browsers */
+  private isBrowserCompatible = Boolean((window as any).chrome);
+
   firstUpdated() {
     this.fetchProfile();
   }
@@ -65,7 +77,11 @@ export class BrowserProfilesDetail extends LiteElement {
               </sl-button>`
             : ""}
           ${this.profile
-            ? html`<sl-button size="small">${msg("Edit Profile")}</sl-button>`
+            ? html`<sl-button
+                size="small"
+                @click=${() => (this.showCreateDialog = true)}
+                >${msg("Edit Profile")}</sl-button
+              >`
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
               ></sl-skeleton>`}
@@ -119,7 +135,118 @@ export class BrowserProfilesDetail extends LiteElement {
             </dd>
           </div>
         </dl>
-      </section>`;
+      </section>
+
+      <sl-dialog
+        label=${msg(str`Edit Browser Profile`)}
+        ?open=${this.showCreateDialog}
+        @sl-request-close=${this.hideDialog}
+        @sl-show=${() => (this.isCreateFormVisible = true)}
+        @sl-after-hide=${() => (this.isCreateFormVisible = false)}
+      >
+        ${this.isBrowserCompatible
+          ? ""
+          : html`
+              <div class="mb-4">
+                <btrix-alert type="warning" class="text-sm">
+                  ${msg(
+                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
+                  )}
+                </btrix-alert>
+              </div>
+            `}
+        ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
+      </sl-dialog> `;
+  }
+
+  private renderCreateForm() {
+    return html`<sl-form @sl-submit=${this.onSubmit}>
+      <div class="grid gap-5">
+        <div>
+          <label
+            id="startingUrlLabel"
+            class="text-sm leading-normal"
+            style="margin-bottom: var(--sl-spacing-3x-small)"
+            >${msg("Starting URL")}
+          </label>
+
+          <sl-input
+            name="url"
+            placeholder=${msg("example.com")}
+            autocomplete="off"
+            aria-labelledby="startingUrlLabel"
+            value=${this.profile?.origins[0] || ""}
+            ?disabled=${!this.isBrowserCompatible}
+            required
+          >
+          </sl-input>
+        </div>
+
+        <div class="text-right">
+          <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Start Browser")}
+          </sl-button>
+        </div>
+      </div>
+    </sl-form>`;
+  }
+
+  private hideDialog() {
+    this.showCreateDialog = false;
+  }
+
+  async onSubmit(event: { detail: { formData: FormData } }) {
+    if (!this.profile) return;
+
+    this.isSubmitting = true;
+
+    const { formData } = event.detail;
+    const url = formData.get("url") as string;
+    const params = {
+      url,
+      baseId: this.profile.id,
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/browser`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+
+      this.notify({
+        message: msg("Starting up browser for profile creation."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
+          data.browserid
+        }?name=${window.encodeURIComponent(
+          this.profile.name
+        )}&description=${window.encodeURIComponent(
+          this.profile.description || ""
+        )}`
+      );
+    } catch (e) {
+      this.isSubmitting = false;
+
+      this.notify({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   /**
@@ -146,6 +273,15 @@ export class BrowserProfilesDetail extends LiteElement {
     );
 
     return data;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
 
