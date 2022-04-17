@@ -18,6 +18,7 @@ export type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: CrawlConfig;
+  profileid: string;
 };
 
 const initialValues = {
@@ -241,7 +242,7 @@ export class CrawlTemplatesNew extends LiteElement {
           required
         ></sl-input>
 
-        <sl-select name="profileid" label=${msg("Browser Profile")} clearable>
+        <sl-select name="profileId" label=${msg("Browser Profile")} clearable>
           ${this.browserProfiles?.map(
             (profile) => html`
               <sl-menu-item value=${profile.id}> ${profile.name} </sl-menu-item>
@@ -499,6 +500,7 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
+      profileid: formData.get("profileId") as string,
     };
 
     if (this.isConfigCodeView) {
