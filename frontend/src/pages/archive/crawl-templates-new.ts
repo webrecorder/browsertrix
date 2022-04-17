@@ -7,7 +7,7 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
-import type { CrawlConfig } from "./types";
+import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "./utils";
 
 export type NewCrawlTemplate = {
@@ -86,6 +86,9 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private serverError?: string;
 
+  @state()
+  browserProfiles?: Profile[];
+
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
@@ -136,6 +139,10 @@ export class CrawlTemplatesNew extends LiteElement {
     };
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
     super.connectedCallback();
+  }
+
+  protected firstUpdated() {
+    this.fetchBrowserProfiles();
   }
 
   render() {
@@ -233,6 +240,14 @@ export class CrawlTemplatesNew extends LiteElement {
           value=${this.initialCrawlTemplate!.name}
           required
         ></sl-input>
+
+        <sl-select name="profileid" label=${msg("Browser Profile")} clearable>
+          ${this.browserProfiles?.map(
+            (profile) => html`
+              <sl-menu-item value=${profile.id}> ${profile.name} </sl-menu-item>
+            `
+          )}
+        </sl-select>
       </section>
     `;
   }
@@ -562,6 +577,32 @@ export class CrawlTemplatesNew extends LiteElement {
       minute,
       period,
     });
+  }
+
+  /**
+   * Fetch browser profiles and update internal state
+   */
+  private async fetchBrowserProfiles(): Promise<void> {
+    try {
+      const data = await this.getProfiles();
+
+      this.browserProfiles = data;
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getProfiles(): Promise<Profile[]> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/profiles`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 
