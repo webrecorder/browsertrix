@@ -123,7 +123,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                           </sl-button>
                         `}
                   `
-                : html`<sl-skeleton class="h-7 w-80"></sl-skeleton>`}
+                : html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
             </h2>
             <div class="text-sm text-neutral-400 md:h-5">
               <div class="md:inline-block mr-3">${msg("Crawl Template")}</div>
