@@ -38,6 +38,15 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isFullscreen = false;
 
+  // URL params can be used to pass name and description
+  // base ID determines whether this is an edit/extension
+  @state()
+  private params: Partial<{
+    name: string;
+    description: string;
+    baseId: string | null;
+  }> = {};
+
   private pollTimerId?: number;
 
   connectedCallback() {
@@ -52,6 +61,13 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   firstUpdated() {
+    const params = new URLSearchParams(window.location.search);
+    this.params = {
+      name: params.get("name") || msg("My Profile"),
+      description: params.get("description") || "",
+      baseId: params.get("baseId") || null,
+    };
+
     this.fetchBrowser();
   }
 
@@ -139,9 +155,6 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private renderForm() {
-    // URL params can be used to pass name and description to this form
-    const params = new URLSearchParams(window.location.search);
-
     return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
         <sl-input
@@ -151,7 +164,7 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value=${params.get("name") || ""}
+          value=${this.params.name || ""}
           ?disabled=${!this.browserUrl}
           required
         ></sl-input>
@@ -165,7 +178,7 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
-          value=${params.get("description") || ""}
+          value=${this.params.description || ""}
           ?disabled=${!this.browserUrl}
         ></sl-textarea>
 
@@ -178,6 +191,26 @@ export class BrowserProfilesNew extends LiteElement {
           >
             ${msg("Save Profile")}
           </sl-button>
+
+          <div class="mt-2">
+            ${this.params.baseId
+              ? html`
+                  <a
+                    class="font-medium text-sm text-neutral-400 hover:underline"
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`}
+                    @click=${this.navLink}
+                    >${msg("Cancel and return to profile")}</a
+                  >
+                `
+              : html`
+                  <a
+                    class="font-medium text-sm text-neutral-400 hover:underline"
+                    href=${`/archives/${this.archiveId}/browser-profiles`}
+                    @click=${this.navLink}
+                    >${msg("Cancel")}</a
+                  >
+                `}
+          </div>
         </div>
       </div>
     </sl-form>`;

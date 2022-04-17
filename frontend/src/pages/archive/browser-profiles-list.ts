@@ -260,9 +260,7 @@ export class BrowserProfilesList extends LiteElement {
       this.navTo(
         `/archives/${this.archiveId}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent(
-          "My Profile"
-        )}&description=${window.encodeURIComponent("")}`
+        }?name=${window.encodeURIComponent("My Profile")}&description=&baseId=`
       );
     } catch (e) {
       this.isSubmitting = false;

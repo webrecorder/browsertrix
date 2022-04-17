@@ -242,7 +242,7 @@ export class BrowserProfilesDetail extends LiteElement {
           this.profile.name
         )}&description=${window.encodeURIComponent(
           this.profile.description || ""
-        )}`
+        )}&baseId=${window.encodeURIComponent(this.profile.id)}`
       );
     } catch (e) {
       this.isSubmitting = false;
