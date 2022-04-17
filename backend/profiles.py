@@ -58,6 +58,7 @@ class ProfileLaunchBrowserIn(BaseModel):
 
     url: HttpUrl
     baseId: Optional[str]
+    targetId: Optional[str]
 
 
 # ============================================================================
@@ -79,20 +80,6 @@ class ProfileCommitIn(BaseModel):
 class ProfileOps:
     """ Profile management """
 
-    @staticmethod
-    def get_command(url):
-        """ Get Command for running profile browser """
-        return [
-            "create-login-profile",
-            "--interactive",
-            "--shutdownWait",
-            str(BROWSER_EXPIRE),
-            "--filename",
-            "/tmp/profile.tar.gz",
-            "--url",
-            str(url),
-        ]
-
     def __init__(self, mdb, redis_url, crawl_manager):
         self.profiles = mdb["profiles"]
 
@@ -111,13 +98,17 @@ class ProfileOps:
             redis_url, encoding="utf-8", decode_responses=True
         )
 
-    async def create_new_profile(
+    async def create_new_browser(
         self, archive: Archive, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """ Create new profile """
-        command = self.get_command(profile_launch.url)
+        command = await self.get_command(profile_launch, archive)
 
-        profileid = str(uuid.uuid4())
+        if profile_launch.targetId:
+            profile = await self.get_profile(uuid.UUID(profile_launch.targetId))
+            profileid = profile.id
+        else:
+            profileid = str(uuid.uuid4())
 
         browserid = await self.crawl_manager.run_profile_browser(
             profileid,
@@ -135,6 +126,33 @@ class ProfileOps:
         await self.redis.expire(f"br:{browserid}", BROWSER_EXPIRE)
 
         return BrowserId(browserid=browserid)
+
+    async def get_command(
+        self, profile_launch: ProfileLaunchBrowserIn, archive: Optional[Archive] = None
+    ):
+        """ Get Command for running profile browser """
+        command = [
+            "create-login-profile",
+            "--interactive",
+            "--shutdownWait",
+            str(BROWSER_EXPIRE),
+            "--filename",
+            "/tmp/profile.tar.gz",
+            "--url",
+            str(profile_launch.url),
+        ]
+        if not profile_launch.baseId:
+            return command
+
+        path = await self.get_profile_storage_path(
+            uuid.UUID(profile_launch.baseId), archive
+        )
+        if not path:
+            raise HTTPException(status_code=400, detail="invalid_base_profile")
+
+        command.append("--profile")
+        command.append(f"@{path}")
+        return command
 
     async def get_profile_browser_url(self, browserid, aid, headers):
         """ get profile browser url """
@@ -208,7 +226,12 @@ class ProfileOps:
             baseid=baseid,
         )
 
-        await self.profiles.insert_one(profile.to_dict())
+        # await self.profiles.insert_one(profile.to_dict())
+        await self.profiles.find_one_and_update(
+            {"_id": profile.id},
+            profile.to_dict(),
+            upsert=True,
+        )
 
         return self.resolve_base_profile(profile)
 
@@ -338,7 +361,7 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.create_new_profile(archive, user, profile_launch)
+        return await ops.create_new_browser(archive, user, profile_launch)
 
     @router.post("/browser/{browserid}/ping")
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):

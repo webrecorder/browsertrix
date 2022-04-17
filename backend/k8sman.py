@@ -306,6 +306,8 @@ class K8SManager:
         filters = []
         if cid:
             filters.append(f"btrix.crawlconfig={cid}")
+        else:
+            filters.append("btrix.crawlconfig")
 
         if aid:
             filters.append(f"btrix.archive={aid}")

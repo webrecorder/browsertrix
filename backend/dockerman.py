@@ -237,6 +237,8 @@ class DockerManager:
 
         if cid:
             labels.append(f"btrix.crawlconfig={cid}")
+        else:
+            labels.append("btrix.crawlconfig")
 
         if aid:
             labels.append(f"btrix.archive={aid}")
