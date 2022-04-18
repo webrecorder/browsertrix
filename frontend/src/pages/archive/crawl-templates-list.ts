@@ -6,6 +6,7 @@ import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
+import filter from "lodash/fp/filter";
 import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -99,7 +100,39 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <div class="flex justify-end mb-3">
+      <header class="flex items-center justify-between mb-3">
+        <div class="text-sm">
+          <button
+            class="inline-block font-medium border-b-2 ${this
+              .filterByScheduled === null
+              ? "border-b-current text-primary"
+              : "border-b-transparent text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === null}
+            @click=${() => (this.filterByScheduled = null)}
+          >
+            ${msg("All")}
+          </button>
+          <button
+            class="inline-block font-medium border-b-2 ${this
+              .filterByScheduled === true
+              ? "border-b-current text-primary"
+              : "border-b-transparent text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === true}
+            @click=${() => (this.filterByScheduled = true)}
+          >
+            ${msg("Scheduled")}
+          </button>
+          <button
+            class="inline-block font-medium border-b-2 ${this
+              .filterByScheduled === false
+              ? "border-b-current text-primary"
+              : "border-b-transparent text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === false}
+            @click=${() => (this.filterByScheduled = false)}
+          >
+            ${msg("No schedule")}
+          </button>
+        </div>
         <div>
           <a
             href=${`/archives/${this.archiveId}/crawl-templates/new`}
@@ -116,9 +149,9 @@ export class CrawlTemplatesList extends LiteElement {
             >
           </a>
         </div>
-      </div>
+      </header>
 
-      <div class="mb-4">${this.renderControls()}</div>
+      <div class="mb-3">${this.renderControls()}</div>
 
       ${this.renderTemplateList()}
 
@@ -218,6 +251,12 @@ export class CrawlTemplatesList extends LiteElement {
       orderBy(this.orderBy.field, this.orderBy.direction),
       map(this.renderTemplateItem.bind(this)),
     ];
+
+    if (this.filterByScheduled === true) {
+      flowFns.unshift(filter(({ schedule }: any) => Boolean(schedule)));
+    } else if (this.filterByScheduled === false) {
+      flowFns.unshift(filter(({ schedule }: any) => !schedule));
+    }
 
     if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
       flowFns.unshift(this.filterResults);
