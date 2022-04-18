@@ -587,6 +587,29 @@ export class CrawlTemplatesDetail extends LiteElement {
         ${this.crawlTemplate?.config.extraHops ? msg("Yes") : msg("No")}
       </div>
 
+      <div class="mb-5">
+        <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
+        ${this.crawlTemplate
+          ? html`
+              ${this.crawlTemplate.profileid
+                ? html`<a
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle"
+                      >${this.crawlTemplate.profileName}</span
+                    >
+                  </a>`
+                : html`<span class="text-0-400">${msg("None")}</span>`}
+            `
+          : ""}
+      </div>
+
       <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
         <span slot="summary" class="text-sm">
           <span class="font-medium">${msg("Advanced Configuration")}</span>

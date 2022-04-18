@@ -3,11 +3,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
-import type { CrawlConfig } from "./types";
+import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "./utils";
 
 export type NewCrawlTemplate = {
@@ -18,6 +19,7 @@ export type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: CrawlConfig;
+  profileid: string;
 };
 
 const initialValues = {
@@ -86,6 +88,12 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private serverError?: string;
 
+  @state()
+  browserProfiles?: Profile[];
+
+  @state()
+  selectedProfile?: Profile;
+
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
@@ -136,6 +144,10 @@ export class CrawlTemplatesNew extends LiteElement {
     };
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
     super.connectedCallback();
+  }
+
+  protected firstUpdated() {
+    this.fetchBrowserProfiles();
   }
 
   render() {
@@ -233,6 +245,91 @@ export class CrawlTemplatesNew extends LiteElement {
           value=${this.initialCrawlTemplate!.name}
           required
         ></sl-input>
+
+        <div>
+          <sl-select
+            label=${msg("Browser Profile")}
+            clearable
+            value=${this.selectedProfile?.id || ""}
+            ?disabled=${!this.browserProfiles?.length}
+            @sl-change=${(e: any) =>
+              (this.selectedProfile = this.browserProfiles?.find(
+                ({ id }) => id === e.target.value
+              ))}
+            @sl-focus=${() => {
+              // Refetch to keep list up to date
+              this.fetchBrowserProfiles();
+            }}
+          >
+            ${this.browserProfiles
+              ? ""
+              : html` <sl-spinner slot="prefix"></sl-spinner> `}
+            ${this.browserProfiles?.map(
+              (profile) => html`
+                <sl-menu-item value=${profile.id}>
+                  ${profile.name}
+                  <div slot="suffix">
+                    <div class="text-xs">
+                      <sl-format-date
+                        date=${`${profile.created}Z` /** Z for UTC */}
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                      ></sl-format-date>
+                    </div></div
+                ></sl-menu-item>
+              `
+            )}
+          </sl-select>
+
+          ${this.browserProfiles && !this.browserProfiles.length
+            ? html`
+                <div class="mt-2 text-sm text-neutral-500">
+                  <span class="inline-block align-middle"
+                    >${msg("No browser profiles found.")}</span
+                  >
+                  <a
+                    href=${`/archives/${this.archiveId}/browser-profiles/new`}
+                    class="font-medium text-primary hover:text-indigo-500"
+                    target="_blank"
+                    ><span class="inline-block align-middle"
+                      >${msg("Create a browser profile")}</span
+                    >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="box-arrow-up-right"
+                    ></sl-icon
+                  ></a>
+                </div>
+              `
+            : ""}
+          ${this.selectedProfile
+            ? html`
+                <div
+                  class="mt-2 border bg-slate-50 border-slate-100 rounded p-2 text-sm flex justify-between"
+                >
+                  ${this.selectedProfile.description
+                    ? html`<em class="text-slate-500"
+                        >${this.selectedProfile.description}</em
+                      >`
+                    : ""}
+                  <a
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.selectedProfile.id}`}
+                    class="font-medium text-primary hover:text-indigo-500"
+                    target="_blank"
+                  >
+                    <span class="inline-block align-middle mr-1"
+                      >${msg("View profile")}</span
+                    >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="box-arrow-up-right"
+                    ></sl-icon>
+                  </a>
+                </div>
+              `
+            : ""}
+        </div>
       </section>
     `;
   }
@@ -325,7 +422,7 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-button-group>
             </div>
           </fieldset>
-          <div class="text-sm text-gray-500 mt-2">
+          <div class="text-sm text-neutral-500 mt-2">
             ${this.formattededNextCrawlDate
               ? msg(
                   html`Next scheduled crawl: ${this.formattededNextCrawlDate}`
@@ -484,6 +581,7 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
+      profileid: formData.get("profileId") as string,
     };
 
     if (this.isConfigCodeView) {
@@ -562,6 +660,34 @@ export class CrawlTemplatesNew extends LiteElement {
       minute,
       period,
     });
+  }
+
+  /**
+   * Fetch browser profiles and update internal state
+   */
+  private async fetchBrowserProfiles(): Promise<void> {
+    try {
+      const data = await this.getProfiles();
+
+      this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
+        data
+      ) as Profile[];
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getProfiles(): Promise<Profile[]> {
+    const data = await this.apiFetch(
+      `/archives/${this.archiveId}/profiles`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 
