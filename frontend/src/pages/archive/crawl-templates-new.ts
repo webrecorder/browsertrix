@@ -90,6 +90,9 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   browserProfiles?: Profile[];
 
+  @state()
+  selectedProfile?: Profile;
+
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
@@ -242,31 +245,64 @@ export class CrawlTemplatesNew extends LiteElement {
           required
         ></sl-input>
 
-        <sl-select
-          name="profileId"
-          label=${msg("Browser Profile")}
-          clearable
-          ?disabled=${!this.browserProfiles?.length}
-        >
-          ${this.browserProfiles?.map(
-            (profile) => html`
-              <sl-menu-item value=${profile.id}>
-                ${profile.name}
-                <div slot="suffix">
-                  <div class="text-xs">
-                    <sl-format-date
-                      date=${`${profile.created}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                    ></sl-format-date>
-                  </div></div
-              ></sl-menu-item>
-            `
-          )}
-        </sl-select>
+        <div>
+          <sl-select
+            label=${msg("Browser Profile")}
+            clearable
+            value=${this.selectedProfile?.id || ""}
+            ?disabled=${!this.browserProfiles?.length}
+            @sl-change=${(e: any) =>
+              (this.selectedProfile = this.browserProfiles?.find(
+                ({ id }) => id === e.target.value
+              ))}
+          >
+            ${this.browserProfiles?.map(
+              (profile) => html`
+                <sl-menu-item value=${profile.id}>
+                  ${profile.name}
+                  <div slot="suffix">
+                    <div class="text-xs">
+                      <sl-format-date
+                        date=${`${profile.created}Z` /** Z for UTC */}
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                      ></sl-format-date>
+                    </div></div
+                ></sl-menu-item>
+              `
+            )}
+          </sl-select>
+
+          ${this.selectedProfile
+            ? html`
+                <div
+                  class="mt-2 border bg-slate-50 border-slate-100 rounded p-2 text-sm flex justify-between"
+                >
+                  ${this.selectedProfile.description
+                    ? html`<em class="text-slate-500"
+                        >${this.selectedProfile.description}</em
+                      >`
+                    : ""}
+                  <a
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.selectedProfile.id}`}
+                    class="font-medium text-primary hover:text-indigo-500"
+                    target="_blank"
+                  >
+                    <span class="inline-block align-middle mr-1"
+                      >${msg("View profile")}</span
+                    >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="box-arrow-up-right"
+                    ></sl-icon>
+                  </a>
+                </div>
+              `
+            : ""}
+        </div>
       </section>
     `;
   }
@@ -359,7 +395,7 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-button-group>
             </div>
           </fieldset>
-          <div class="text-sm text-gray-500 mt-2">
+          <div class="text-sm text-neutral-500 mt-2">
             ${this.formattededNextCrawlDate
               ? msg(
                   html`Next scheduled crawl: ${this.formattededNextCrawlDate}`
