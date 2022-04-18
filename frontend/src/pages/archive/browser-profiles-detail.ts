@@ -94,15 +94,6 @@ export class BrowserProfilesDetail extends LiteElement {
               <span class="inline-block align-middle"
                 >${msg("Base Profile")}</span
               >
-              <sl-tooltip
-                content=${msg(
-                  "The browser profile that this profile is based off of"
-                )}
-                ><sl-icon
-                  class="inline-block align-middle"
-                  name="info-circle"
-                ></sl-icon
-              ></sl-tooltip>
             </dt>
             <dd>
               ${this.profile
