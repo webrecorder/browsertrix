@@ -130,7 +130,7 @@ export class BrowserProfilesDetail extends LiteElement {
             ? html`
                 <btrix-alert type="info" class="text-sm">
                   ${msg(
-                    "Saving any edits will create a new version of this profile."
+                    "Saving any edits after starting the browser will create a new version of this profile."
                   )}
                 </btrix-alert>
               `
