@@ -73,6 +73,7 @@ export class CrawlTemplatesList extends LiteElement {
   private fuse = new Fuse([], {
     keys: ["name"],
     shouldSort: false,
+    threshold: 0.4, // stricter; default is 0.6
   });
 
   async firstUpdated() {
