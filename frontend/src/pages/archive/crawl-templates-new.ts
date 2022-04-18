@@ -255,6 +255,10 @@ export class CrawlTemplatesNew extends LiteElement {
               (this.selectedProfile = this.browserProfiles?.find(
                 ({ id }) => id === e.target.value
               ))}
+            @sl-focus=${() => {
+              // Refetch to keep list up to date
+              this.fetchBrowserProfiles();
+            }}
           >
             ${this.browserProfiles
               ? ""
@@ -279,6 +283,27 @@ export class CrawlTemplatesNew extends LiteElement {
             )}
           </sl-select>
 
+          ${this.browserProfiles && !this.browserProfiles.length
+            ? html`
+                <div class="mt-2 text-sm text-neutral-500">
+                  <span class="inline-block align-middle"
+                    >${msg("No browser profiles found.")}</span
+                  >
+                  <a
+                    href=${`/archives/${this.archiveId}/browser-profiles/new`}
+                    class="font-medium text-primary hover:text-indigo-500"
+                    target="_blank"
+                    ><span class="inline-block align-middle"
+                      >${msg("Create a browser profile")}</span
+                    >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="box-arrow-up-right"
+                    ></sl-icon
+                  ></a>
+                </div>
+              `
+            : ""}
           ${this.selectedProfile
             ? html`
                 <div
