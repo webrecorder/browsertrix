@@ -250,7 +250,20 @@ export class CrawlTemplatesNew extends LiteElement {
         >
           ${this.browserProfiles?.map(
             (profile) => html`
-              <sl-menu-item value=${profile.id}> ${profile.name} </sl-menu-item>
+              <sl-menu-item value=${profile.id}>
+                ${profile.name}
+                <div slot="suffix">
+                  <div class="text-xs">
+                    <sl-format-date
+                      date=${`${profile.created}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                    ></sl-format-date>
+                  </div></div
+              ></sl-menu-item>
             `
           )}
         </sl-select>
