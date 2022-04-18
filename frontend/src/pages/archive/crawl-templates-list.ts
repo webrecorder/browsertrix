@@ -100,58 +100,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <header class="flex items-center justify-between mb-3">
-        <div class="text-sm">
-          <button
-            class="inline-block font-medium border-b-2 ${this
-              .filterByScheduled === null
-              ? "border-b-current text-primary"
-              : "border-b-transparent text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === null}
-            @click=${() => (this.filterByScheduled = null)}
-          >
-            ${msg("All")}
-          </button>
-          <button
-            class="inline-block font-medium border-b-2 ${this
-              .filterByScheduled === true
-              ? "border-b-current text-primary"
-              : "border-b-transparent text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === true}
-            @click=${() => (this.filterByScheduled = true)}
-          >
-            ${msg("Scheduled")}
-          </button>
-          <button
-            class="inline-block font-medium border-b-2 ${this
-              .filterByScheduled === false
-              ? "border-b-current text-primary"
-              : "border-b-transparent text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === false}
-            @click=${() => (this.filterByScheduled = false)}
-          >
-            ${msg("No schedule")}
-          </button>
-        </div>
-        <div>
-          <a
-            href=${`/archives/${this.archiveId}/crawl-templates/new`}
-            class="block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
-            role="button"
-            @click=${this.navLink}
-          >
-            <sl-icon
-              class="inline-block align-middle mr-2"
-              name="plus-lg"
-            ></sl-icon
-            ><span class="inline-block align-middle mr-2 text-sm"
-              >${msg("New Crawl Template")}</span
-            >
-          </a>
-        </div>
-      </header>
-
-      <div class="mb-3">${this.renderControls()}</div>
+      <div class="mb-4">${this.renderControls()}</div>
 
       ${this.renderTemplateList()}
 
@@ -179,13 +128,13 @@ export class CrawlTemplatesList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-2 gap-3 items-center">
-        <div class="col-span-2 md:col-span-1">
+      <div class="flex flex-wrap items-center">
+        <div class="grow mr-4 mb-4">
           <sl-input
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by name")}
-            pill
+            style="--sl-input-height-medium: 2.25rem;"
             clearable
             ?disabled=${!this.crawlTemplates?.length}
             @sl-input=${this.onSearchInput}
@@ -193,7 +142,59 @@ export class CrawlTemplatesList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-2 md:col-span-1 flex items-center justify-end">
+
+        <div class="grow-0 mb-4">
+          <a
+            href=${`/archives/${this.archiveId}/crawl-templates/new`}
+            class="block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
+            role="button"
+            @click=${this.navLink}
+          >
+            <sl-icon
+              class="inline-block align-middle mr-2"
+              name="plus-lg"
+            ></sl-icon
+            ><span class="inline-block align-middle mr-2 text-sm"
+              >${msg("New Crawl Template")}</span
+            >
+          </a>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between">
+        <div class="text-sm">
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === null
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === null}
+            @click=${() => (this.filterByScheduled = null)}
+          >
+            ${msg("All")}
+          </button>
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === true
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === true}
+            @click=${() => (this.filterByScheduled = true)}
+          >
+            ${msg("Scheduled")}
+          </button>
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === false
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === false}
+            @click=${() => (this.filterByScheduled = false)}
+          >
+            ${msg("No schedule")}
+          </button>
+        </div>
+        <div class="flex items-center justify-end">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort By")}
           </div>
@@ -210,6 +211,7 @@ export class CrawlTemplatesList extends LiteElement {
           >
             <sl-button
               slot="trigger"
+              size="small"
               pill
               caret
               ?disabled=${!this.crawlTemplates?.length}
