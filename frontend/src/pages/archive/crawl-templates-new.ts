@@ -669,7 +669,9 @@ export class CrawlTemplatesNew extends LiteElement {
     try {
       const data = await this.getProfiles();
 
-      this.browserProfiles = orderBy("created")("desc")(data) as Profile[];
+      this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
+        data
+      ) as Profile[];
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
