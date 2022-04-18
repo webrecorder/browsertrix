@@ -63,7 +63,10 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   @state()
-  private filterBy: string = "";
+  private searchBy: string = "";
+
+  @state()
+  private filterByScheduled: boolean | null = null;
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -96,28 +99,23 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <div
-        class=${this.crawlTemplates.length
-          ? "grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4"
-          : "flex justify-center"}
-      >
-        <a
-          href=${`/archives/${this.archiveId}/crawl-templates/new`}
-          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-primary text-primary text-center font-medium rounded px-6 py-4 transition-colors"
-          @click=${this.navLink}
-          role="button"
-        >
-          <sl-icon
-            class="inline-block align-middle mr-2"
-            name="plus-square"
-          ></sl-icon
-          ><span
-            class="inline-block align-middle mr-2 ${this.crawlTemplates.length
-              ? "text-sm"
-              : "font-medium"}"
-            >${msg("New Crawl Template")}</span
+      <div class="flex justify-end mb-3">
+        <div>
+          <a
+            href=${`/archives/${this.archiveId}/crawl-templates/new`}
+            class="block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
+            role="button"
+            @click=${this.navLink}
           >
-        </a>
+            <sl-icon
+              class="inline-block align-middle mr-2"
+              name="plus-lg"
+            ></sl-icon
+            ><span class="inline-block align-middle mr-2 text-sm"
+              >${msg("New Crawl Template")}</span
+            >
+          </a>
+        </div>
       </div>
 
       <div class="mb-4">${this.renderControls()}</div>
@@ -162,7 +160,7 @@ export class CrawlTemplatesList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-12 md:col-span-1 flex items-center justify-end">
+        <div class="col-span-2 md:col-span-1 flex items-center justify-end">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort By")}
           </div>
@@ -221,7 +219,7 @@ export class CrawlTemplatesList extends LiteElement {
       map(this.renderTemplateItem.bind(this)),
     ];
 
-    if (this.filterBy.length >= MIN_SEARCH_LENGTH) {
+    if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
       flowFns.unshift(this.filterResults);
     }
 
@@ -494,11 +492,11 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   private onSearchInput = debounce(200)((e: any) => {
-    this.filterBy = e.target.value;
+    this.searchBy = e.target.value;
   }) as any;
 
   private filterResults = () => {
-    const results = this.fuse.search(this.filterBy);
+    const results = this.fuse.search(this.searchBy);
 
     return results.map(({ item }) => item);
   };
