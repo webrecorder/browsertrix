@@ -64,18 +64,6 @@ export class BrowserProfilesDetail extends LiteElement {
           html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
         </h2>
         <div>
-          ${this.profile?.resource
-            ? html`<sl-button
-                type="neutral"
-                size="small"
-                href=${this.profile.resource.filename}
-                title=${this.profile.resource.filename}
-                download=${this.profile.resource.filename}
-              >
-                <sl-icon slot="prefix" name="download"></sl-icon>
-                ${msg("Download Profile")}
-              </sl-button>`
-            : ""}
           ${this.profile
             ? html`<sl-button
                 size="small"
