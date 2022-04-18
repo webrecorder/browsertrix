@@ -256,6 +256,9 @@ export class CrawlTemplatesNew extends LiteElement {
                 ({ id }) => id === e.target.value
               ))}
           >
+            ${this.browserProfiles
+              ? ""
+              : html` <sl-spinner slot="prefix"></sl-spinner> `}
             ${this.browserProfiles?.map(
               (profile) => html`
                 <sl-menu-item value=${profile.id}>
