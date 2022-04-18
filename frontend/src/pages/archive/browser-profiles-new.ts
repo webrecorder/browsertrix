@@ -73,7 +73,27 @@ export class BrowserProfilesNew extends LiteElement {
 
   render() {
     return html`
-      <div id="browserProfileInstructions" class="mb-5">
+      <div class="mb-7">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${this.params.baseId
+            ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`
+            : `/archives/${this.archiveId}/browser-profiles`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${this.params.baseId
+              ? msg("Back to Profile")
+              : msg("Back to Browser Profiles")}</span
+          >
+        </a>
+      </div>
+
+      <div class="mb-5">
         <p class="text-sm text-neutral-500">
           ${msg(
             "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
@@ -198,6 +218,16 @@ export class BrowserProfilesNew extends LiteElement {
 
         <div class="text-right">
           <sl-button
+            type="text"
+            href=${this.params.baseId
+              ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`
+              : `/archives/${this.archiveId}/browser-profiles`}
+            @click=${this.navLink}
+          >
+            ${msg("Cancel")}
+          </sl-button>
+
+          <sl-button
             type="primary"
             submit
             ?disabled=${!this.browserUrl || this.isSubmitting}
@@ -205,26 +235,6 @@ export class BrowserProfilesNew extends LiteElement {
           >
             ${msg("Save Profile")}
           </sl-button>
-
-          <div class="mt-2">
-            ${this.params.baseId
-              ? html`
-                  <a
-                    class="font-medium text-sm text-neutral-400 hover:underline"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`}
-                    @click=${this.navLink}
-                    >${msg("Return to profile")}</a
-                  >
-                `
-              : html`
-                  <a
-                    class="font-medium text-sm text-neutral-400 hover:underline"
-                    href=${`/archives/${this.archiveId}/browser-profiles`}
-                    @click=${this.navLink}
-                    >${msg("Cancel")}</a
-                  >
-                `}
-          </div>
         </div>
       </div>
     </sl-form>`;
