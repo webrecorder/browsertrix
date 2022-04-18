@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -274,8 +275,6 @@ export class CrawlTemplatesNew extends LiteElement {
                         month="2-digit"
                         day="2-digit"
                         year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
                       ></sl-format-date>
                     </div></div
                 ></sl-menu-item>
@@ -670,7 +669,7 @@ export class CrawlTemplatesNew extends LiteElement {
     try {
       const data = await this.getProfiles();
 
-      this.browserProfiles = data;
+      this.browserProfiles = orderBy("created")("desc")(data) as Profile[];
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
