@@ -91,18 +91,24 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   render() {
-    if (!this.crawlTemplates) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
     return html`
       <div class="mb-4">${this.renderControls()}</div>
 
-      ${this.renderTemplateList()}
+      ${this.crawlTemplates
+        ? this.crawlTemplates.length
+          ? this.renderTemplateList()
+          : html`
+              <div class="border-t border-b py-5">
+                <p class="text-center text-0-500">
+                  ${msg("No crawl templates yet.")}
+                </p>
+              </div>
+            `
+        : html`<div
+            class="w-full flex items-center justify-center my-24 text-4xl"
+          >
+            <sl-spinner></sl-spinner>
+          </div>`}
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
@@ -161,90 +167,93 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between">
-        <div class="text-sm">
-          <button
-            class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === null
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === null}
-            @click=${() => (this.filterByScheduled = null)}
-          >
-            ${msg("All")}
-          </button>
-          <button
-            class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === true
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === true}
-            @click=${() => (this.filterByScheduled = true)}
-          >
-            ${msg("Scheduled")}
-          </button>
-          <button
-            class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === false
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === false}
-            @click=${() => (this.filterByScheduled = false)}
-          >
-            ${msg("No schedule")}
-          </button>
-        </div>
-        <div class="flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort By")}
-          </div>
-          <sl-dropdown
-            placement="bottom-end"
-            distance="4"
-            @sl-select=${(e: any) => {
-              const [field, direction] = e.detail.item.value.split("_");
-              this.orderBy = {
-                field: field,
-                direction: direction,
-              };
-            }}
-          >
-            <sl-button
-              slot="trigger"
-              size="small"
-              pill
-              caret
-              ?disabled=${!this.crawlTemplates?.length}
-              >${(sortableFieldLabels as any)[this.orderBy.field] ||
-              sortableFieldLabels[
-                `${this.orderBy.field}_${this.orderBy.direction}`
-              ]}</sl-button
-            >
-            <sl-menu>
-              ${Object.entries(sortableFieldLabels).map(
-                ([value, label]) => html`
-                  <sl-menu-item
-                    value=${value}
-                    ?checked=${value ===
-                    `${this.orderBy.field}_${this.orderBy.direction}`}
-                    >${label}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-menu>
-          </sl-dropdown>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
-        </div>
-      </div>
+      ${this.crawlTemplates && this.crawlTemplates.length
+        ? html`<div class="flex flex-wrap items-center justify-between">
+            <div class="text-sm">
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === null
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === null}
+                @click=${() => (this.filterByScheduled = null)}
+              >
+                ${msg("All")}
+              </button>
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === true
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === true}
+                @click=${() => (this.filterByScheduled = true)}
+              >
+                ${msg("Scheduled")}
+              </button>
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === false
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === false}
+                @click=${() => (this.filterByScheduled = false)}
+              >
+                ${msg("No schedule")}
+              </button>
+            </div>
+            <div class="flex items-center justify-end">
+              <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+                ${msg("Sort By")}
+              </div>
+              <sl-dropdown
+                placement="bottom-end"
+                distance="4"
+                @sl-select=${(e: any) => {
+                  const [field, direction] = e.detail.item.value.split("_");
+                  this.orderBy = {
+                    field: field,
+                    direction: direction,
+                  };
+                }}
+              >
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  pill
+                  caret
+                  ?disabled=${!this.crawlTemplates?.length}
+                  >${(sortableFieldLabels as any)[this.orderBy.field] ||
+                  sortableFieldLabels[
+                    `${this.orderBy.field}_${this.orderBy.direction}`
+                  ]}</sl-button
+                >
+                <sl-menu>
+                  ${Object.entries(sortableFieldLabels).map(
+                    ([value, label]) => html`
+                      <sl-menu-item
+                        value=${value}
+                        ?checked=${value ===
+                        `${this.orderBy.field}_${this.orderBy.direction}`}
+                        >${label}</sl-menu-item
+                      >
+                    `
+                  )}
+                </sl-menu>
+              </sl-dropdown>
+              <sl-icon-button
+                name="arrow-down-up"
+                label=${msg("Reverse sort")}
+                @click=${() => {
+                  this.orderBy = {
+                    ...this.orderBy,
+                    direction:
+                      this.orderBy.direction === "asc" ? "desc" : "asc",
+                  };
+                }}
+              ></sl-icon-button>
+            </div>
+          </div>`
+        : ""}
     `;
   }
 
