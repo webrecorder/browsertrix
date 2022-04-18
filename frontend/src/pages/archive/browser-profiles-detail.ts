@@ -156,25 +156,21 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderCreateForm() {
     return html`<sl-form @sl-submit=${this.onSubmit}>
       <div class="grid gap-5">
-        <div>
-          <label
-            id="startingUrlLabel"
-            class="text-sm leading-normal"
-            style="margin-bottom: var(--sl-spacing-3x-small)"
-            >${msg("Starting URL")}
-          </label>
-
-          <sl-input
-            name="url"
-            placeholder=${msg("example.com")}
-            autocomplete="off"
-            aria-labelledby="startingUrlLabel"
-            value=${this.profile?.origins[0] || ""}
-            ?disabled=${!this.isBrowserCompatible}
-            required
-          >
-          </sl-input>
-        </div>
+        <sl-select
+          name="url"
+          value=${this.profile?.origins[0] || ""}
+          required
+          hoist
+          ?disabled=${!this.isBrowserCompatible}
+          @sl-hide=${this.stopProp}
+          @sl-after-hide=${this.stopProp}
+        >
+          ${this.profile?.origins.map(
+            (origin) => html`
+              <sl-menu-item value=${origin}>${origin}</sl-menu-item>
+            `
+          )}
+        </sl-select>
 
         <div class="text-right">
           <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
