@@ -177,7 +177,7 @@ export class CrawlsList extends LiteElement {
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort by")}
+            ${msg("Sort By")}
           </div>
           <sl-dropdown
             placement="bottom-end"

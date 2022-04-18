@@ -2,6 +2,9 @@ import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
+import flow from "lodash/fp/flow";
+import map from "lodash/fp/map";
+import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -12,6 +15,13 @@ import "../../components/crawl-scheduler";
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
   [configId: string]: string;
+};
+
+const sortableFieldLabels = {
+  created_desc: msg("Newest"),
+  created_asc: msg("Oldest"),
+  lastCrawlTime_desc: msg("Newest Crawl"),
+  lastCrawlTime_asc: msg("Oldest Crawl"),
 };
 
 /**
@@ -39,6 +49,15 @@ export class CrawlTemplatesList extends LiteElement {
 
   @state()
   selectedTemplateForEdit?: CrawlTemplate;
+
+  @state()
+  private orderBy: {
+    field: "created";
+    direction: "asc" | "desc";
+  } = {
+    field: "created",
+    direction: "desc",
+  };
 
   async firstUpdated() {
     try {
@@ -86,148 +105,61 @@ export class CrawlTemplatesList extends LiteElement {
         </a>
       </div>
 
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-        ${this.crawlTemplates.map(
-          (t) =>
-            html`<a
-              class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-              aria-label=${t.name}
-              href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
-              @click=${this.navLink}
-            >
-              <header class="flex">
-                <div
-                  class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-                  title=${t.name}
+      <div class="col-span-12 md:col-span-1 flex items-center justify-end mb-4">
+        <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+          ${msg("Sort By")}
+        </div>
+        <sl-dropdown
+          placement="bottom-end"
+          distance="4"
+          @sl-select=${(e: any) => {
+            const [field, direction] = e.detail.item.value.split("_");
+            this.orderBy = {
+              field: field,
+              direction: direction,
+            };
+          }}
+        >
+          <sl-button
+            slot="trigger"
+            pill
+            caret
+            ?disabled=${!this.crawlTemplates?.length}
+            >${(sortableFieldLabels as any)[this.orderBy.field] ||
+            sortableFieldLabels[
+              `${this.orderBy.field}_${this.orderBy.direction}`
+            ]}</sl-button
+          >
+          <sl-menu>
+            ${Object.entries(sortableFieldLabels).map(
+              ([value, label]) => html`
+                <sl-menu-item
+                  value=${value}
+                  ?checked=${value ===
+                  `${this.orderBy.field}_${this.orderBy.direction}`}
+                  >${label}</sl-menu-item
                 >
-                  ${t.name}
-                </div>
+              `
+            )}
+          </sl-menu>
+        </sl-dropdown>
+        <sl-icon-button
+          name="arrow-down-up"
+          label=${msg("Reverse sort")}
+          @click=${() => {
+            this.orderBy = {
+              ...this.orderBy,
+              direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+            };
+          }}
+        ></sl-icon-button>
+      </div>
 
-                ${this.renderCardMenu(t)}
-              </header>
-
-              <div class="px-3 pb-3 flex justify-between items-end text-0-800">
-                <div class="grid gap-2 text-xs leading-none">
-                  <div class="overflow-hidden">
-                    <sl-tooltip
-                      content=${t.config.seeds
-                        .map((seed) =>
-                          typeof seed === "string" ? seed : seed.url
-                        )
-                        .join(", ")}
-                    >
-                      <div
-                        class="font-mono whitespace-nowrap truncate text-0-500"
-                      >
-                        <span class="underline decoration-dashed"
-                          >${t.config.seeds
-                            .map((seed) =>
-                              typeof seed === "string" ? seed : seed.url
-                            )
-                            .join(", ")}</span
-                        >
-                      </div>
-                    </sl-tooltip>
-                  </div>
-                  <div class="font-mono text-purple-500">
-                    ${t.crawlCount === 1
-                      ? msg(str`${t.crawlCount} crawl`)
-                      : msg(
-                          str`${(t.crawlCount || 0).toLocaleString()} crawls`
-                        )}
-                  </div>
-                  <div>
-                    ${t.crawlCount
-                      ? html`<sl-tooltip>
-                          <span slot="content" class="capitalize">
-                            ${msg(
-                              str`Last Crawl: ${t.lastCrawlState.replace(
-                                /_/g,
-                                " "
-                              )}`
-                            )}
-                          </span>
-                          <a
-                            class="font-medium hover:underline"
-                            href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
-                            @click=${(e: any) => {
-                              e.stopPropagation();
-                              this.navLink(e);
-                            }}
-                          >
-                            <sl-icon
-                              class="inline-block align-middle mr-1 ${t.lastCrawlState ===
-                              "failed"
-                                ? "text-neutral-400"
-                                : "text-purple-400"}"
-                              name=${t.lastCrawlState === "complete"
-                                ? "check-circle-fill"
-                                : t.lastCrawlState === "failed"
-                                ? "x-circle-fill"
-                                : "exclamation-circle-fill"}
-                            ></sl-icon
-                            ><sl-format-date
-                              class="inline-block align-middle text-neutral-600"
-                              date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
-                              month="2-digit"
-                              day="2-digit"
-                              year="2-digit"
-                              hour="numeric"
-                              minute="numeric"
-                              time-zone-name="short"
-                            ></sl-format-date>
-                          </a>
-                        </sl-tooltip>`
-                      : html`
-                          <sl-icon
-                            class="inline-block align-middle mr-1 text-0-400"
-                            name="slash-circle"
-                          ></sl-icon
-                          ><span class="inline-block align-middle text-0-400"
-                            >${msg("No finished crawls")}</span
-                          >
-                        `}
-                  </div>
-                  <div>
-                    ${t.schedule
-                      ? html`
-                          <sl-tooltip content=${msg("Next scheduled crawl")}>
-                            <span>
-                              <sl-icon
-                                class="inline-block align-middle mr-1"
-                                name="clock-history"
-                              ></sl-icon
-                              ><sl-format-date
-                                class="inline-block align-middle text-0-600"
-                                date="${cronParser
-                                  .parseExpression(t.schedule, {
-                                    utc: true,
-                                  })
-                                  .next()
-                                  .toString()}"
-                                month="2-digit"
-                                day="2-digit"
-                                year="2-digit"
-                                hour="numeric"
-                                minute="numeric"
-                                time-zone-name="short"
-                              ></sl-format-date>
-                            </span>
-                          </sl-tooltip>
-                        `
-                      : html`<sl-icon
-                            class="inline-block align-middle mr-1 text-0-400"
-                            name="slash-circle"
-                          ></sl-icon
-                          ><span class="inline-block align-middle text-0-400"
-                            >${msg("No schedule")}</span
-                          >`}
-                  </div>
-                </div>
-                ${this.renderCardFooter(t)}
-              </div>
-            </a>`
-        )}
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+        ${flow(
+          orderBy(this.orderBy.field, this.orderBy.direction),
+          map(this.renderTemplateItem.bind(this))
+        )(this.crawlTemplates)}
       </div>
 
       <sl-dialog
@@ -250,6 +182,136 @@ export class CrawlTemplatesList extends LiteElement {
           : ""}
       </sl-dialog>
     `;
+  }
+
+  private renderTemplateItem(t: CrawlTemplate) {
+    return html`<a
+      class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
+      aria-label=${t.name}
+      href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
+      @click=${this.navLink}
+    >
+      <header class="flex">
+        <div
+          class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
+          title=${t.name}
+        >
+          ${t.name}
+        </div>
+
+        ${this.renderCardMenu(t)}
+      </header>
+
+      <div class="px-3 pb-3 flex justify-between items-end text-0-800">
+        <div class="grid gap-2 text-xs leading-none">
+          <div class="overflow-hidden">
+            <sl-tooltip
+              content=${t.config.seeds
+                .map((seed) => (typeof seed === "string" ? seed : seed.url))
+                .join(", ")}
+            >
+              <div class="font-mono whitespace-nowrap truncate text-0-500">
+                <span class="underline decoration-dashed"
+                  >${t.config.seeds
+                    .map((seed) => (typeof seed === "string" ? seed : seed.url))
+                    .join(", ")}</span
+                >
+              </div>
+            </sl-tooltip>
+          </div>
+          <div class="font-mono text-purple-500">
+            ${t.crawlCount === 1
+              ? msg(str`${t.crawlCount} crawl`)
+              : msg(str`${(t.crawlCount || 0).toLocaleString()} crawls`)}
+          </div>
+          <div>
+            ${t.crawlCount
+              ? html`<sl-tooltip>
+                  <span slot="content" class="capitalize">
+                    ${msg(
+                      str`Last Crawl: ${t.lastCrawlState.replace(/_/g, " ")}`
+                    )}
+                  </span>
+                  <a
+                    class="font-medium hover:underline"
+                    href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
+                    @click=${(e: any) => {
+                      e.stopPropagation();
+                      this.navLink(e);
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle mr-1 ${t.lastCrawlState ===
+                      "failed"
+                        ? "text-neutral-400"
+                        : "text-purple-400"}"
+                      name=${t.lastCrawlState === "complete"
+                        ? "check-circle-fill"
+                        : t.lastCrawlState === "failed"
+                        ? "x-circle-fill"
+                        : "exclamation-circle-fill"}
+                    ></sl-icon
+                    ><sl-format-date
+                      class="inline-block align-middle text-neutral-600"
+                      date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
+                  </a>
+                </sl-tooltip>`
+              : html`
+                  <sl-icon
+                    class="inline-block align-middle mr-1 text-0-400"
+                    name="slash-circle"
+                  ></sl-icon
+                  ><span class="inline-block align-middle text-0-400"
+                    >${msg("No finished crawls")}</span
+                  >
+                `}
+          </div>
+          <div>
+            ${t.schedule
+              ? html`
+                  <sl-tooltip content=${msg("Next scheduled crawl")}>
+                    <span>
+                      <sl-icon
+                        class="inline-block align-middle mr-1"
+                        name="clock-history"
+                      ></sl-icon
+                      ><sl-format-date
+                        class="inline-block align-middle text-0-600"
+                        date="${cronParser
+                          .parseExpression(t.schedule, {
+                            utc: true,
+                          })
+                          .next()
+                          .toString()}"
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                      ></sl-format-date>
+                    </span>
+                  </sl-tooltip>
+                `
+              : html`<sl-icon
+                    class="inline-block align-middle mr-1 text-0-400"
+                    name="slash-circle"
+                  ></sl-icon
+                  ><span class="inline-block align-middle text-0-400"
+                    >${msg("No schedule")}</span
+                  >`}
+          </div>
+        </div>
+        ${this.renderCardFooter(t)}
+      </div>
+    </a>`;
   }
 
   private renderCardMenu(t: CrawlTemplate) {
