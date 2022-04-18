@@ -152,7 +152,7 @@ export class BrowserProfilesNew extends LiteElement {
                           <div class="mb-2">
                             <btrix-alert class="text-sm" type="info"
                               >${msg(
-                                html`Extending
+                                html`Viewing
                                   <strong>${this.params.name}</strong>`
                               )}</btrix-alert
                             >
@@ -213,7 +213,7 @@ export class BrowserProfilesNew extends LiteElement {
                     class="font-medium text-sm text-neutral-400 hover:underline"
                     href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`}
                     @click=${this.navLink}
-                    >${msg("Cancel and return to profile")}</a
+                    >${msg("Return to profile")}</a
                   >
                 `
               : html`

@@ -66,9 +66,11 @@ export class BrowserProfilesDetail extends LiteElement {
         <div>
           ${this.profile
             ? html`<sl-button
+                type="primary"
                 size="small"
                 @click=${() => (this.showCreateDialog = true)}
-                >${msg("Edit Profile")}</sl-button
+                ><sl-icon slot="prefix" name="collection-play-fill"></sl-icon>
+                ${msg("Launch Browser Profile")}</sl-button
               >`
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
@@ -126,7 +128,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </section>
 
       <sl-dialog
-        label=${msg(str`Edit Browser Profile`)}
+        label=${msg(str`View & Edit Browser Profile`)}
         ?open=${this.showCreateDialog}
         @sl-request-close=${this.hideDialog}
         @sl-show=${() => (this.isCreateFormVisible = true)}
@@ -137,7 +139,7 @@ export class BrowserProfilesDetail extends LiteElement {
             ? html`
                 <btrix-alert type="info" class="text-sm">
                   ${msg(
-                    "Saving your edit will create a new version of this profile."
+                    "Saving any edits will create a new version of this profile."
                   )}
                 </btrix-alert>
               `
