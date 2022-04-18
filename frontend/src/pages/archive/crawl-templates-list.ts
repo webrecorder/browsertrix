@@ -2,9 +2,11 @@ import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
+import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
+import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -17,6 +19,7 @@ type RunningCrawlsMap = {
   [configId: string]: string;
 };
 
+const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),
   created_asc: msg("Oldest"),
@@ -59,9 +62,21 @@ export class CrawlTemplatesList extends LiteElement {
     direction: "desc",
   };
 
+  @state()
+  private filterBy: string = "";
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    keys: ["name"],
+    shouldSort: false,
+  });
+
   async firstUpdated() {
     try {
       this.crawlTemplates = await this.getCrawlTemplates();
+
+      // Update search/filter collection
+      this.fuse.setCollection(this.crawlTemplates as any);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl templates at this time."),
@@ -105,62 +120,9 @@ export class CrawlTemplatesList extends LiteElement {
         </a>
       </div>
 
-      <div class="col-span-12 md:col-span-1 flex items-center justify-end mb-4">
-        <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-          ${msg("Sort By")}
-        </div>
-        <sl-dropdown
-          placement="bottom-end"
-          distance="4"
-          @sl-select=${(e: any) => {
-            const [field, direction] = e.detail.item.value.split("_");
-            this.orderBy = {
-              field: field,
-              direction: direction,
-            };
-          }}
-        >
-          <sl-button
-            slot="trigger"
-            pill
-            caret
-            ?disabled=${!this.crawlTemplates?.length}
-            >${(sortableFieldLabels as any)[this.orderBy.field] ||
-            sortableFieldLabels[
-              `${this.orderBy.field}_${this.orderBy.direction}`
-            ]}</sl-button
-          >
-          <sl-menu>
-            ${Object.entries(sortableFieldLabels).map(
-              ([value, label]) => html`
-                <sl-menu-item
-                  value=${value}
-                  ?checked=${value ===
-                  `${this.orderBy.field}_${this.orderBy.direction}`}
-                  >${label}</sl-menu-item
-                >
-              `
-            )}
-          </sl-menu>
-        </sl-dropdown>
-        <sl-icon-button
-          name="arrow-down-up"
-          label=${msg("Reverse sort")}
-          @click=${() => {
-            this.orderBy = {
-              ...this.orderBy,
-              direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-            };
-          }}
-        ></sl-icon-button>
-      </div>
+      <div class="mb-4">${this.renderControls()}</div>
 
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-        ${flow(
-          orderBy(this.orderBy.field, this.orderBy.direction),
-          map(this.renderTemplateItem.bind(this))
-        )(this.crawlTemplates)}
-      </div>
+      ${this.renderTemplateList()}
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
@@ -181,6 +143,92 @@ export class CrawlTemplatesList extends LiteElement {
             `
           : ""}
       </sl-dialog>
+    `;
+  }
+
+  private renderControls() {
+    return html`
+      <div class="grid grid-cols-2 gap-3 items-center">
+        <div class="col-span-2 md:col-span-1">
+          <sl-input
+            class="w-full"
+            slot="trigger"
+            placeholder=${msg("Search by name")}
+            pill
+            clearable
+            ?disabled=${!this.crawlTemplates?.length}
+            @sl-input=${this.onSearchInput}
+          >
+            <sl-icon name="search" slot="prefix"></sl-icon>
+          </sl-input>
+        </div>
+        <div class="col-span-12 md:col-span-1 flex items-center justify-end">
+          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+            ${msg("Sort By")}
+          </div>
+          <sl-dropdown
+            placement="bottom-end"
+            distance="4"
+            @sl-select=${(e: any) => {
+              const [field, direction] = e.detail.item.value.split("_");
+              this.orderBy = {
+                field: field,
+                direction: direction,
+              };
+            }}
+          >
+            <sl-button
+              slot="trigger"
+              pill
+              caret
+              ?disabled=${!this.crawlTemplates?.length}
+              >${(sortableFieldLabels as any)[this.orderBy.field] ||
+              sortableFieldLabels[
+                `${this.orderBy.field}_${this.orderBy.direction}`
+              ]}</sl-button
+            >
+            <sl-menu>
+              ${Object.entries(sortableFieldLabels).map(
+                ([value, label]) => html`
+                  <sl-menu-item
+                    value=${value}
+                    ?checked=${value ===
+                    `${this.orderBy.field}_${this.orderBy.direction}`}
+                    >${label}</sl-menu-item
+                  >
+                `
+              )}
+            </sl-menu>
+          </sl-dropdown>
+          <sl-icon-button
+            name="arrow-down-up"
+            label=${msg("Reverse sort")}
+            @click=${() => {
+              this.orderBy = {
+                ...this.orderBy,
+                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+              };
+            }}
+          ></sl-icon-button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderTemplateList() {
+    const flowFns = [
+      orderBy(this.orderBy.field, this.orderBy.direction),
+      map(this.renderTemplateItem.bind(this)),
+    ];
+
+    if (this.filterBy.length >= MIN_SEARCH_LENGTH) {
+      flowFns.unshift(this.filterResults);
+    }
+
+    return html`
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+        ${flow(...flowFns)(this.crawlTemplates)}
+      </div>
     `;
   }
 
@@ -444,6 +492,16 @@ export class CrawlTemplatesList extends LiteElement {
       </div>
     `;
   }
+
+  private onSearchInput = debounce(200)((e: any) => {
+    this.filterBy = e.target.value;
+  }) as any;
+
+  private filterResults = () => {
+    const results = this.fuse.search(this.filterBy);
+
+    return results.map(({ item }) => item);
+  };
 
   /**
    * Fetch crawl templates and record running crawls
