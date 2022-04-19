@@ -29,12 +29,6 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private profile?: Profile;
 
-  @property({ type: Boolean })
-  showCreateDialog = false;
-
-  @state()
-  private isCreateFormVisible = false;
-
   @state()
   private isSubmitting = false;
 
@@ -62,6 +56,21 @@ export class BrowserProfilesDetail extends LiteElement {
         </a>
       </div>
 
+      ${this.isBrowserCompatible
+        ? ""
+        : html`
+            <div class="mb-4">
+              <btrix-alert type="warning" class="text-sm">
+                ${msg(
+                  html`Browser profile preview is only supported in
+                    Chromium-based browsers (such as Chrome) at this time.
+                    <br />To preview profiles, please re-open this page in a
+                    compatible browser.`
+                )}
+              </btrix-alert>
+            </div>
+          `}
+
       <header class="md:flex items-center justify-between mb-3">
         <h2 class="text-xl md:text-3xl font-bold md:h-9 mb-1">
           ${this.profile?.name ||
@@ -69,13 +78,17 @@ export class BrowserProfilesDetail extends LiteElement {
         </h2>
         <div>
           ${this.profile
-            ? html`<sl-button
-                type="primary"
-                size="small"
-                @click=${() => (this.showCreateDialog = true)}
-                ><sl-icon slot="prefix" name="collection-play-fill"></sl-icon>
-                ${msg("Launch Browser Profile")}</sl-button
-              >`
+            ? html`
+                <sl-button
+                  type="primary"
+                  size="small"
+                  @click=${() => this.launchBrowser()}
+                  ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
+                  ?loading=${this.isSubmitting}
+                  ><sl-icon slot="prefix" name="collection-play-fill"></sl-icon>
+                  ${msg("Preview Browser Profile")}</sl-button
+                >
+              `
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
               ></sl-skeleton>`}
@@ -115,99 +128,72 @@ export class BrowserProfilesDetail extends LiteElement {
                 : ""}
             </dd>
           </div>
-          <div class="col-span-2">
-            <dt class="text-sm text-0-600">${msg("Visited URLs")}</dt>
-            <dd>
-              <ul>
-                ${this.profile?.origins.map((url) => html`<li>${url}</li>`)}
-              </ul>
-            </dd>
+          <div class="col-span-2" role="table">
+            <div class="mb-1" role="rowgroup">
+              <div
+                class="flex items-center justify-between text-sm text-neutral-600"
+                role="row"
+              >
+                <div role="columnheader" aria-sort="none">
+                  ${msg("Visited URLs")}
+                </div>
+                <div role="columnheader" aria-sort="none">
+                  <span class="inline-block align-middle"
+                    >${msg("Preview")}</span
+                  >
+
+                  <sl-tooltip
+                    content=${msg(
+                      "Preview browser profile starting from the specified URL"
+                    )}
+                    ><sl-icon
+                      class="inline-block align-middle"
+                      name="info-circle"
+                    ></sl-icon
+                  ></sl-tooltip>
+                </div>
+              </div>
+            </div>
+            <div role="rowgroup">
+              ${this.profile?.origins.map(
+                (url) => html`
+                  <div
+                    class="flex items-center justify-between border-t"
+                    role="row"
+                  >
+                    <div class="text-sm" role="cell">${url}</div>
+                    <div role="cell">
+                      <sl-icon-button
+                        name="play-btn"
+                        class="text-xl"
+                        ?disabled=${!this.isBrowserCompatible ||
+                        this.isSubmitting}
+                        @click=${() => this.launchBrowser(url)}
+                      ></sl-icon-button>
+                    </div>
+                  </div>
+                `
+              )}
+            </div>
           </div>
         </dl>
-      </section>
-
-      <sl-dialog
-        label=${msg(str`View & Edit Browser Profile`)}
-        ?open=${this.showCreateDialog}
-        @sl-request-close=${this.hideDialog}
-        @sl-show=${() => (this.isCreateFormVisible = true)}
-        @sl-after-hide=${() => (this.isCreateFormVisible = false)}
-      >
-        <div class="mb-4">
-          ${this.isBrowserCompatible
-            ? ""
-            : html`
-                <btrix-alert type="warning" class="text-sm">
-                  ${msg(
-                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
-                  )}
-                </btrix-alert>
-              `}
-        </div>
-        ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
-      </sl-dialog> `;
+      </section> `;
   }
 
-  private renderCreateForm() {
-    return html`<sl-form @sl-submit=${this.onSubmit}>
-      <div class="grid gap-5">
-        <sl-select
-          name="url"
-          label=${msg("Starting URL")}
-          value=${this.profile?.origins[0] || ""}
-          required
-          hoist
-          ?disabled=${!this.isBrowserCompatible}
-          @sl-hide=${this.stopProp}
-          @sl-after-hide=${this.stopProp}
-        >
-          ${this.profile?.origins.map(
-            (origin) => html`
-              <sl-menu-item value=${origin}>${origin}</sl-menu-item>
-            `
-          )}
-        </sl-select>
-
-        <div class="text-right">
-          <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
-          <sl-button
-            type="primary"
-            submit
-            ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Start Browser")}
-          </sl-button>
-        </div>
-      </div>
-    </sl-form>`;
-  }
-
-  private hideDialog() {
-    this.showCreateDialog = false;
-  }
-
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  /**
+   * @param navigateStartUrl URL to launch preview from--
+   *                         different than starting URL, which will
+   *                         override the profile start url
+   */
+  private async launchBrowser(navigateStartUrl?: string) {
     if (!this.profile) return;
 
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
-    const url = formData.get("url") as string;
-    const params = {
-      url,
-      profileId: this.profile.id,
-    };
+    const url = this.profile.origins[0];
 
     try {
-      const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/browser`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+      const data = await this.createBrowser({ url });
 
       this.notify({
         message: msg("Starting up browser."),
@@ -222,17 +208,35 @@ export class BrowserProfilesDetail extends LiteElement {
           this.profile.name
         )}&description=${window.encodeURIComponent(
           this.profile.description || ""
-        )}&profileId=${window.encodeURIComponent(this.profile.id)}`
+        )}&profileId=${window.encodeURIComponent(
+          this.profile.id
+        )}&navigateUrl=${window.encodeURIComponent(navigateStartUrl || "")}`
       );
     } catch (e) {
       this.isSubmitting = false;
 
       this.notify({
-        message: msg("Sorry, couldn't create browser profile at this time."),
+        message: msg("Sorry, couldn't start browser at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private createBrowser({ url }: { url: string }) {
+    const params = {
+      url,
+      profileId: this.profile!.id,
+    };
+
+    return this.apiFetch(
+      `/archives/${this.archiveId}/profiles/browser`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      }
+    );
   }
 
   /**
