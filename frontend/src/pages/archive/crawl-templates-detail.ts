@@ -123,7 +123,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                           </sl-button>
                         `}
                   `
-                : html`<sl-skeleton class="h-7 w-80"></sl-skeleton>`}
+                : html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
             </h2>
             <div class="text-sm text-neutral-400 md:h-5">
               <div class="md:inline-block mr-3">${msg("Crawl Template")}</div>
@@ -591,10 +591,10 @@ export class CrawlTemplatesDetail extends LiteElement {
         <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
         ${this.crawlTemplate
           ? html`
-              ${this.crawlTemplate.profileid
+              ${this.crawlTemplate.profileId
                 ? html`<a
                     class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileId}`}
                     @click=${this.navLink}
                   >
                     <sl-icon

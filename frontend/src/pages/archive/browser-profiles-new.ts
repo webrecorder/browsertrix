@@ -38,6 +38,15 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isFullscreen = false;
 
+  // URL params can be used to pass name and description
+  // base ID determines whether this is an edit/extension
+  @state()
+  private params: Partial<{
+    name: string;
+    description: string;
+    profileId: string | null;
+  }> = {};
+
   private pollTimerId?: number;
 
   connectedCallback() {
@@ -52,12 +61,39 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   firstUpdated() {
+    const params = new URLSearchParams(window.location.search);
+    this.params = {
+      name: params.get("name") || msg("My Profile"),
+      description: params.get("description") || "",
+      profileId: params.get("profileId") || null,
+    };
+
     this.fetchBrowser();
   }
 
   render() {
     return html`
-      <div id="browserProfileInstructions" class="mb-5">
+      <div class="mb-7">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${this.params.profileId
+            ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
+            : `/archives/${this.archiveId}/browser-profiles`}
+          @click=${this.navLink}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"
+            >${this.params.profileId
+              ? msg("Back to Profile")
+              : msg("Back to Browser Profiles")}</span
+          >
+        </a>
+      </div>
+
+      <div class="mb-5">
         <p class="text-sm text-neutral-500">
           ${msg(
             "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
@@ -83,19 +119,19 @@ export class BrowserProfilesNew extends LiteElement {
             `
           : html`
               <div class="lg:flex bg-white relative">
-                <div class="grow lg:rounded-l overflow-hidden">
+                <div class="grow lg:rounded-lg overflow-hidden">
                   ${this.browserUrl
                     ? this.renderBrowser()
                     : html`
                         <div
-                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl pr-72"
                         >
                           <sl-spinner></sl-spinner>
                         </div>
                       `}
                 </div>
                 <div
-                  class="rounded-b lg:rounded-b-none lg:rounded-r border p-2 shadow-inner bg-white absolute h-full right-0"
+                  class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 p-2 shadow-inner bg-white absolute h-full right-0"
                 >
                   ${document.fullscreenEnabled
                     ? html`
@@ -130,7 +166,21 @@ export class BrowserProfilesNew extends LiteElement {
                       `
                     : ""}
 
-                  <div class="p-2">${this.renderForm()}</div>
+                  <div class="p-2">
+                    ${this.params.profileId
+                      ? html`
+                          <div class="mb-2">
+                            <btrix-alert class="text-sm" type="info"
+                              >${msg(
+                                html`Viewing
+                                  <strong>${this.params.name}</strong>`
+                              )}</btrix-alert
+                            >
+                          </div>
+                        `
+                      : ""}
+                    ${this.renderForm()}
+                  </div>
                 </div>
               </div>
             `}
@@ -148,7 +198,7 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value="My Profile"
+          value=${this.params.name || ""}
           ?disabled=${!this.browserUrl}
           required
         ></sl-input>
@@ -162,10 +212,21 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
+          value=${this.params.description || ""}
           ?disabled=${!this.browserUrl}
         ></sl-textarea>
 
         <div class="text-right">
+          <sl-button
+            type="text"
+            href=${this.params.profileId
+              ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
+              : `/archives/${this.archiveId}/browser-profiles`}
+            @click=${this.navLink}
+          >
+            ${msg("Cancel")}
+          </sl-button>
+
           <sl-button
             type="primary"
             submit
@@ -263,19 +324,35 @@ export class BrowserProfilesNew extends LiteElement {
 
     const { formData } = event.detail;
     const params = {
+      browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
     };
 
     try {
-      const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/browser/${this.browserId}/commit`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+      let data: {
+        id: string;
+      };
+
+      if (this.params.profileId) {
+        data = await this.apiFetch(
+          `/archives/${this.archiveId}/profiles/${this.params.profileId}`,
+          this.authState!,
+          {
+            method: "PUT",
+            body: JSON.stringify(params),
+          }
+        );
+      } else {
+        data = await this.apiFetch(
+          `/archives/${this.archiveId}/profiles`,
+          this.authState!,
+          {
+            method: "POST",
+            body: JSON.stringify(params),
+          }
+        );
+      }
 
       this.notify({
         message: msg("Successfully created browser profile."),
@@ -283,11 +360,9 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      // TODO nav to detail page
-      // this.navTo(
-      //   `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
-      // );
-      this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
+      );
     } catch (e) {
       this.isSubmitting = false;
 
@@ -304,12 +379,13 @@ export class BrowserProfilesNew extends LiteElement {
 
     el.addEventListener("load", () => {
       // TODO see if we can make this work locally without CORs errors
+      const sidebarWidth = 288;
       try {
         //el.style.width = "132%";
         el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
         el.contentWindow?.localStorage.setItem(
           "InspectorView.screencastSplitViewState",
-          '{"vertical":{"size":241}}'
+          `{"vertical":{"size":${sidebarWidth}}}`
         );
       } catch (e) {}
     });
