@@ -8,7 +8,11 @@ import { Profile } from "./types";
 /**
  * Usage:
  * ```ts
- * <btrix-browser-profiles-detail></btrix-browser-profiles-detail>
+ * <btrix-browser-profiles-detail
+ *  authState=${authState}
+ *  archiveId=${archiveId}
+ *  profileId=${profileId}
+ * ></btrix-browser-profiles-detail>
  * ```
  */
 @localized()
