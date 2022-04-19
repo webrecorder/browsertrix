@@ -1,4 +1,5 @@
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -30,7 +31,7 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private profile?: Profile;
 
-  @property({ type: Boolean })
+  @state()
   showCreateDialog = false;
 
   @state()
@@ -40,23 +41,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private isSubmitting = false;
 
   @state()
-  private isFullscreen = false;
-
-  @state()
-  private browserUrl?: string;
-
-  /** Profile creation only works in Chromium-based browsers */
-  private isBrowserCompatible = Boolean((window as any).chrome);
-
-  connectedCallback() {
-    super.connectedCallback();
-
-    document.addEventListener("fullscreenchange", this.onFullscreenChange);
-  }
-
-  disconnectedCallback() {
-    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
-  }
+  private browserId?: string;
 
   firstUpdated() {
     this.fetchProfile();
@@ -137,77 +122,38 @@ export class BrowserProfilesDetail extends LiteElement {
       <section>
         <header class="flex justify-between">
           <h3 class="text-lg font-medium mb-2">${msg("Preview Profile")}</h3>
-
-          <div>
-            ${document.fullscreenEnabled
-              ? html`
-                  <div class="text-right">
-                    <sl-button
-                      size="small"
-                      @click=${() =>
-                        this.isFullscreen
-                          ? document.exitFullscreen()
-                          : this.enterFullscreen("interactive-browser")}
-                    >
-                      <sl-icon
-                        slot="prefix"
-                        name="arrows-fullscreen"
-                        label=${msg("Fullscreen")}
-                      ></sl-icon>
-                      ${msg("Fullscreen")}
-                    </sl-button>
-                  </div>
-                `
-              : ""}
-          </div>
         </header>
 
-        <div
-          id="interactive-browser"
-          aria-live="polite"
-          class="lg:flex bg-white relative"
-        >
-          <div
-            class="grow lg:rounded-lg border overflow-hidden"
-            aria-live="polite"
-          >
-            ${this.browserUrl
-              ? html`
-                  <div
-                    class="w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
+        <main class="relative">
+          <btrix-profile-browser
+            .authState=${this.authState}
+            archiveId=${this.archiveId}
+            browserId=${ifDefined(this.browserId)}
+            .origins=${this.profile?.origins}
+          ></btrix-profile-browser>
+
+          ${this.browserId
+            ? ""
+            : html`
+                <div
+                  class="absolute top-0 left-0 h-full flex items-center justify-center"
+                  style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                >
+                  <sl-button
+                    type="primary"
+                    outline
+                    ?disabled=${this.isSubmitting}
+                    ?loading=${this.isSubmitting}
+                    @click=${this.startBrowserPreview}
+                    ><sl-icon
+                      slot="prefix"
+                      name="collection-play-fill"
+                    ></sl-icon>
+                    ${msg("Start Preview")}</sl-button
                   >
-                    <btrix-profile-browser
-                      browserSrc=${this.browserUrl}
-                    ></btrix-profile-browser>
-                  </div>
-                `
-              : html`
-                  <div
-                    class="w-full h-96 bg-slate-50 flex items-center justify-center text-4xl"
-                    style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px"
-                  >
-                    ${this.profile
-                      ? html`<sl-button
-                          type="primary"
-                          @click=${() => this.previewBrowser()}
-                          ><sl-icon
-                            slot="prefix"
-                            name="collection-play-fill"
-                          ></sl-icon>
-                          ${msg("Start Preview")}</sl-button
-                        >`
-                      : html`<sl-skeleton
-                          style="width: 6em; height: 2em;"
-                        ></sl-skeleton>`}
-                  </div>
-                `}
-          </div>
-          <div
-            class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 bg-white absolute h-full right-0"
-          >
-            ${this.renderOrigins()}
-          </div>
-        </div>
+                </div>
+              `}
+        </main>
       </section>
 
       <sl-dialog
@@ -217,17 +163,6 @@ export class BrowserProfilesDetail extends LiteElement {
         @sl-show=${() => (this.isCreateFormVisible = true)}
         @sl-after-hide=${() => (this.isCreateFormVisible = false)}
       >
-        <div class="mb-4">
-          ${this.isBrowserCompatible
-            ? ""
-            : html`
-                <btrix-alert type="warning" class="text-sm">
-                  ${msg(
-                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
-                  )}
-                </btrix-alert>
-              `}
-        </div>
         ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
       </sl-dialog> `;
   }
@@ -241,7 +176,7 @@ export class BrowserProfilesDetail extends LiteElement {
           value=${this.profile?.origins[0] || ""}
           required
           hoist
-          ?disabled=${!this.isBrowserCompatible}
+          ?disabled=${!ProfileBrowser.isBrowserCompatible}
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
         >
@@ -257,7 +192,8 @@ export class BrowserProfilesDetail extends LiteElement {
           <sl-button
             type="primary"
             submit
-            ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
+            ?disabled=${!ProfileBrowser.isBrowserCompatible ||
+            this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
             ${msg("Start Editing")}
@@ -267,68 +203,11 @@ export class BrowserProfilesDetail extends LiteElement {
     </sl-form>`;
   }
 
-  private renderOrigins() {
-    return html`
-      <div role="table">
-        <div class="leading-tight p-2 border-b" role="rowgroup">
-          <div
-            class="flex items-center justify-between text-xs text-neutral-500"
-            role="row"
-          >
-            <div role="columnheader" aria-sort="none">
-              ${msg("Visited URLs")}
-            </div>
-            <div role="columnheader" aria-sort="none">
-              <span class="inline-block align-middle">${msg("Preview")}</span>
-
-              <sl-tooltip
-                content=${msg(
-                  "Preview browser profile starting from the specified URL"
-                )}
-                ><sl-icon
-                  class="inline-block align-middle"
-                  name="info-circle"
-                ></sl-icon
-              ></sl-tooltip>
-            </div>
-          </div>
-        </div>
-        <div role="rowgroup">
-          ${this.profile?.origins.map(
-            (url) => html`
-              <div
-                class="flex items-center justify-between border-t first:border-t-0 border-t-neutral-100 hover:bg-slate-50"
-                role="row"
-              >
-                <div class="text-sm truncate w-full px-2" role="cell">
-                  ${url}
-                </div>
-                <div role="cell">
-                  <sl-icon-button
-                    name="play-btn"
-                    class="text-xl"
-                    ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
-                    @click=${() => this.previewBrowser(url)}
-                  ></sl-icon-button>
-                </div>
-              </div>
-            `
-          )}
-        </div>
-      </div>
-    `;
-  }
-
   private hideDialog() {
     this.showCreateDialog = false;
   }
 
-  /**
-   * @param navigateStartUrl URL to launch preview from--
-   *                         different than starting URL, which will
-   *                         override the profile start url
-   */
-  private async previewBrowser(navigateStartUrl?: string) {
+  private async startBrowserPreview() {
     if (!this.profile) return;
 
     this.isSubmitting = true;
@@ -344,28 +223,18 @@ export class BrowserProfilesDetail extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
-          data.browserid
-        }?name=${window.encodeURIComponent(
-          this.profile.name
-        )}&description=${window.encodeURIComponent(
-          this.profile.description || ""
-        )}&profileId=${window.encodeURIComponent(
-          this.profile.id
-        )}&navigateUrl=${window.encodeURIComponent(
-          navigateStartUrl && navigateStartUrl !== url ? navigateStartUrl : ""
-        )}`
-      );
+      this.browserId = data.browserid;
     } catch (e) {
       this.isSubmitting = false;
 
       this.notify({
-        message: msg("Sorry, couldn't start browser at this time."),
+        message: msg("Sorry, couldn't preview browser profile at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
     }
+
+    this.isSubmitting = false;
   }
 
   async onSubmit(event: { detail: { formData: FormData } }) {
@@ -446,29 +315,6 @@ export class BrowserProfilesDetail extends LiteElement {
 
     return data;
   }
-
-  /**
-   * Enter fullscreen mode
-   * @param id ID of element to fullscreen
-   */
-  private async enterFullscreen(id: string) {
-    try {
-      document.getElementById(id)!.requestFullscreen({
-        // Show browser navigation controls
-        navigationUI: "show",
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private onFullscreenChange = () => {
-    if (document.fullscreenElement) {
-      this.isFullscreen = true;
-    } else {
-      this.isFullscreen = false;
-    }
-  };
 
   /**
    * Stop propgation of sl-select events.
