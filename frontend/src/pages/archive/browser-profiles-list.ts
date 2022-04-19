@@ -193,7 +193,7 @@ export class BrowserProfilesList extends LiteElement {
 
           <div class="p-3">
             <sl-select
-              name="baseId"
+              name="profileId"
               label=${msg("Extend Profile")}
               help-text=${msg("Extend an existing browser profile.")}
               clearable
@@ -236,10 +236,17 @@ export class BrowserProfilesList extends LiteElement {
 
     const { formData } = event.detail;
     const url = formData.get("url") as string;
-    const params = {
+    const profileId = formData.get("profileId") as string;
+    const params: {
+      url: string;
+      profileId?: string;
+    } = {
       url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
-      baseId: formData.get("baseId"),
     };
+
+    if (profileId) {
+      params.profileId = profileId;
+    }
 
     try {
       const data = await this.apiFetch(
@@ -260,7 +267,9 @@ export class BrowserProfilesList extends LiteElement {
       this.navTo(
         `/archives/${this.archiveId}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent("My Profile")}&description=&baseId=`
+        }?name=${window.encodeURIComponent(
+          "My Profile"
+        )}&description=&profileId=`
       );
     } catch (e) {
       this.isSubmitting = false;

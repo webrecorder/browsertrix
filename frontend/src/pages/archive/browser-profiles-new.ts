@@ -44,7 +44,7 @@ export class BrowserProfilesNew extends LiteElement {
   private params: Partial<{
     name: string;
     description: string;
-    baseId: string | null;
+    profileId: string | null;
   }> = {};
 
   private pollTimerId?: number;
@@ -65,7 +65,7 @@ export class BrowserProfilesNew extends LiteElement {
     this.params = {
       name: params.get("name") || msg("My Profile"),
       description: params.get("description") || "",
-      baseId: params.get("baseId") || null,
+      profileId: params.get("profileId") || null,
     };
 
     this.fetchBrowser();
@@ -76,8 +76,8 @@ export class BrowserProfilesNew extends LiteElement {
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${this.params.baseId
-            ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`
+          href=${this.params.profileId
+            ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
             : `/archives/${this.archiveId}/browser-profiles`}
           @click=${this.navLink}
         >
@@ -86,7 +86,7 @@ export class BrowserProfilesNew extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${this.params.baseId
+            >${this.params.profileId
               ? msg("Back to Profile")
               : msg("Back to Browser Profiles")}</span
           >
@@ -167,7 +167,7 @@ export class BrowserProfilesNew extends LiteElement {
                     : ""}
 
                   <div class="p-2">
-                    ${this.params.baseId
+                    ${this.params.profileId
                       ? html`
                           <div class="mb-2">
                             <btrix-alert class="text-sm" type="info"
@@ -219,8 +219,8 @@ export class BrowserProfilesNew extends LiteElement {
         <div class="text-right">
           <sl-button
             type="text"
-            href=${this.params.baseId
-              ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.baseId}`
+            href=${this.params.profileId
+              ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
               : `/archives/${this.archiveId}/browser-profiles`}
             @click=${this.navLink}
           >
@@ -324,13 +324,14 @@ export class BrowserProfilesNew extends LiteElement {
 
     const { formData } = event.detail;
     const params = {
+      browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
     };
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/browser/${this.browserId}/commit`,
+        `/archives/${this.archiveId}/profiles`,
         this.authState!,
         {
           method: "POST",
@@ -344,11 +345,9 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      // TODO nav to detail page
-      // this.navTo(
-      //   `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
-      // );
-      this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
+      );
     } catch (e) {
       this.isSubmitting = false;
 

@@ -19,7 +19,7 @@ export type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: CrawlConfig;
-  profileid: string;
+  profileId: string;
 };
 
 const initialValues = {
@@ -581,7 +581,7 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
-      profileid: formData.get("profileId") as string,
+      profileId: formData.get("profileId") as string,
     };
 
     if (this.isConfigCodeView) {

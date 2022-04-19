@@ -97,9 +97,9 @@ export class BrowserProfilesDetail extends LiteElement {
             </dt>
             <dd>
               ${this.profile
-                ? this.profile.baseId
+                ? this.profile.profileId
                   ? html`<a
-                      href=${`/archives/${this.profile.aid}/browser-profiles/profile/${this.profile.baseId}`}
+                      href=${`/archives/${this.profile.aid}/browser-profiles/profile/${this.profile.profileId}`}
                       @click=${this.navLink}
                       >${this.profile.baseProfileName}</a
                     >`
@@ -193,7 +193,7 @@ export class BrowserProfilesDetail extends LiteElement {
     const url = formData.get("url") as string;
     const params = {
       url,
-      baseId: this.profile.id,
+      profileId: this.profile.id,
     };
 
     try {
@@ -219,7 +219,7 @@ export class BrowserProfilesDetail extends LiteElement {
           this.profile.name
         )}&description=${window.encodeURIComponent(
           this.profile.description || ""
-        )}&baseId=${window.encodeURIComponent(this.profile.id)}`
+        )}&profileId=${window.encodeURIComponent(this.profile.id)}`
       );
     } catch (e) {
       this.isSubmitting = false;
