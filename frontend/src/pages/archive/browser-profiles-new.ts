@@ -1,6 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import { ref } from "lit/directives/ref.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -28,9 +28,6 @@ export class BrowserProfilesNew extends LiteElement {
 
   @state()
   private browserUrl?: string;
-
-  @state()
-  private browserOrigins: string[] = [];
 
   @state()
   private isSubmitting = false;
@@ -125,15 +122,11 @@ export class BrowserProfilesNew extends LiteElement {
           : html`
               <div class="lg:flex bg-white relative">
                 <div class="grow lg:rounded-lg overflow-hidden">
-                  ${this.browserUrl
-                    ? this.renderBrowser()
-                    : html`
-                        <div
-                          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl pr-72"
-                        >
-                          <sl-spinner></sl-spinner>
-                        </div>
-                      `}
+                  <btrix-profile-browser
+                    browserSrc=${ifDefined(this.browserUrl)}
+                    ?isFullscreen=${this.isFullscreen}
+                    ?isLoading=${!this.browserUrl}
+                  ></btrix-profile-browser>
                 </div>
                 <div
                   class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 p-2 shadow-inner bg-white absolute h-full right-0"
@@ -245,17 +238,6 @@ export class BrowserProfilesNew extends LiteElement {
     </sl-form>`;
   }
 
-  private renderBrowser() {
-    return html`
-      <iframe
-        class="w-full ${this.isFullscreen ? "h-screen" : "aspect-video"}"
-        title=${msg("Interactive browser for creating browser profile")}
-        src=${this.browserUrl!}
-        ${ref((el) => this.onIframeRef(el as HTMLIFrameElement))}
-      ></iframe>
-    `;
-  }
-
   /**
    * Fetch browser profiles and update internal state
    */
@@ -337,9 +319,6 @@ export class BrowserProfilesNew extends LiteElement {
       }
     );
 
-    console.log(data);
-
-    this.browserOrigins = data.origins;
     this.pollTimerId = window.setTimeout(() => this.pingBrowser(), 60 * 1000);
   }
 
@@ -400,23 +379,6 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  private onIframeRef(el: HTMLIFrameElement) {
-    if (!el) return;
-
-    el.addEventListener("load", () => {
-      // TODO see if we can make this work locally without CORs errors
-      const sidebarWidth = 288;
-      try {
-        //el.style.width = "132%";
-        el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-        el.contentWindow?.localStorage.setItem(
-          "InspectorView.screencastSplitViewState",
-          `{"vertical":{"size":${sidebarWidth}}}`
-        );
-      } catch (e) {}
-    });
   }
 
   /**
