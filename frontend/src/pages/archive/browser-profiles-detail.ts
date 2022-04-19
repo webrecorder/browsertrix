@@ -92,18 +92,22 @@ export class BrowserProfilesDetail extends LiteElement {
           <div class="col-span-2 md:col-span-1">
             <dt class="text-sm text-0-600">
               <span class="inline-block align-middle"
-                >${msg("Base Profile")}</span
+                >${msg("Created at")}</span
               >
             </dt>
             <dd>
               ${this.profile
-                ? this.profile.profileId
-                  ? html`<a
-                      href=${`/archives/${this.profile.aid}/browser-profiles/profile/${this.profile.profileId}`}
-                      @click=${this.navLink}
-                      >${this.profile.baseProfileName}</a
-                    >`
-                  : html`<span class="text-neutral-400">${msg("None")}</span>`
+                ? html`
+                    <sl-format-date
+                      date=${`${this.profile.created}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
+                  `
                 : ""}
             </dd>
           </div>
