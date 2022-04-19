@@ -89,7 +89,7 @@ export class BrowserProfilesNew extends LiteElement {
       <div class="flex items-center justify-between mb-3 p-2 bg-slate-50">
         <p class="text-sm text-slate-600 mr-3 p-1">
           ${msg(
-            "Interact with the browser to record your browser profile. You will complete and save your profile in the next step."
+            "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
           )}
         </p>
 
