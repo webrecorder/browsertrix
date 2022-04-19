@@ -30,6 +30,9 @@ export class BrowserProfilesNew extends LiteElement {
   private browserUrl?: string;
 
   @state()
+  private browserOrigins: string[] = [];
+
+  @state()
   private isSubmitting = false;
 
   @state()
@@ -288,7 +291,7 @@ export class BrowserProfilesNew extends LiteElement {
 
       this.browserUrl = result.url;
 
-      // this.pingBrowser();
+      this.pingBrowser();
     } else {
       console.debug("Unknown checkBrowserStatus state");
     }
@@ -326,7 +329,7 @@ export class BrowserProfilesNew extends LiteElement {
    * Ping temporary browser every minute to keep it alive
    **/
   private async pingBrowser() {
-    await this.apiFetch(
+    const data = await this.apiFetch(
       `/archives/${this.archiveId}/profiles/browser/${this.browserId}/ping`,
       this.authState!,
       {
@@ -334,6 +337,9 @@ export class BrowserProfilesNew extends LiteElement {
       }
     );
 
+    console.log(data);
+
+    this.browserOrigins = data.origins;
     this.pollTimerId = window.setTimeout(() => this.pingBrowser(), 60 * 1000);
   }
 
