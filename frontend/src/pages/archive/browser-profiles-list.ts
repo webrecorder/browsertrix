@@ -186,32 +186,6 @@ export class BrowserProfilesList extends LiteElement {
           </div>
         </div>
 
-        <details>
-          <summary class="text-sm text-neutral-500 font-medium cursor-pointer">
-            ${msg("More options")}
-          </summary>
-
-          <div class="p-3">
-            <sl-select
-              name="profileId"
-              label=${msg("Extend Profile")}
-              help-text=${msg("Extend an existing browser profile.")}
-              clearable
-              ?disabled=${!this.isBrowserCompatible}
-              @sl-hide=${this.stopProp}
-              @sl-after-hide=${this.stopProp}
-            >
-              ${this.browserProfiles?.map(
-                (profile) => html`
-                  <sl-menu-item value=${profile.id}
-                    >${profile.name}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-select>
-          </div>
-        </details>
-
         <div class="text-right">
           <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
           <sl-button
@@ -220,7 +194,7 @@ export class BrowserProfilesList extends LiteElement {
             ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Start Browser")}
+            ${msg("Start Profile Creator")}
           </sl-button>
         </div>
       </div>
@@ -236,17 +210,12 @@ export class BrowserProfilesList extends LiteElement {
 
     const { formData } = event.detail;
     const url = formData.get("url") as string;
-    const profileId = formData.get("profileId") as string;
+
     const params: {
       url: string;
-      profileId?: string;
     } = {
       url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
     };
-
-    if (profileId) {
-      params.profileId = profileId;
-    }
 
     try {
       const data = await this.apiFetch(
