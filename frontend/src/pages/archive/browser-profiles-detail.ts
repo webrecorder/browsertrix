@@ -3,6 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { ProfileBrowser } from "../../components/profile-browser";
 import { Profile } from "./types";
 
 /**
@@ -40,6 +41,9 @@ export class BrowserProfilesDetail extends LiteElement {
 
   @state()
   private isFullscreen = false;
+
+  @state()
+  private browserUrl?: string;
 
   /** Profile creation only works in Chromium-based browsers */
   private isBrowserCompatible = Boolean((window as any).chrome);
@@ -167,9 +171,36 @@ export class BrowserProfilesDetail extends LiteElement {
             class="grow lg:rounded-lg border overflow-hidden"
             aria-live="polite"
           >
-            <btrix-profile-browser
-              ?isFullscreen=${this.isFullscreen}
-            ></btrix-profile-browser>
+            ${this.browserUrl
+              ? html`
+                  <div
+                    class="w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
+                  >
+                    <btrix-profile-browser
+                      browserSrc=${this.browserUrl}
+                    ></btrix-profile-browser>
+                  </div>
+                `
+              : html`
+                  <div
+                    class="w-full h-96 bg-slate-50 flex items-center justify-center text-4xl"
+                    style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px"
+                  >
+                    ${this.profile
+                      ? html`<sl-button
+                          type="primary"
+                          @click=${() => this.previewBrowser()}
+                          ><sl-icon
+                            slot="prefix"
+                            name="collection-play-fill"
+                          ></sl-icon>
+                          ${msg("Start Preview")}</sl-button
+                        >`
+                      : html`<sl-skeleton
+                          style="width: 6em; height: 2em;"
+                        ></sl-skeleton>`}
+                  </div>
+                `}
           </div>
           <div
             class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 bg-white absolute h-full right-0"
@@ -277,7 +308,7 @@ export class BrowserProfilesDetail extends LiteElement {
                     name="play-btn"
                     class="text-xl"
                     ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
-                    @click=${() => this.launchBrowser(url)}
+                    @click=${() => this.previewBrowser(url)}
                   ></sl-icon-button>
                 </div>
               </div>
@@ -297,7 +328,7 @@ export class BrowserProfilesDetail extends LiteElement {
    *                         different than starting URL, which will
    *                         override the profile start url
    */
-  private async launchBrowser(navigateStartUrl?: string) {
+  private async previewBrowser(navigateStartUrl?: string) {
     if (!this.profile) return;
 
     this.isSubmitting = true;

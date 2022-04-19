@@ -4,6 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { ProfileBrowser } from "../../components/profile-browser";
 
 /**
  * Usage:
@@ -122,11 +123,26 @@ export class BrowserProfilesNew extends LiteElement {
           : html`
               <div class="lg:flex bg-white relative">
                 <div class="grow lg:rounded-lg overflow-hidden">
-                  <btrix-profile-browser
-                    browserSrc=${ifDefined(this.browserUrl)}
-                    ?isFullscreen=${this.isFullscreen}
-                    ?isLoading=${!this.browserUrl}
-                  ></btrix-profile-browser>
+                  ${this.browserUrl
+                    ? html`
+                        <div
+                          class="w-full ${this.isFullscreen
+                            ? "h-screen"
+                            : "h-96"}"
+                        >
+                          <btrix-profile-browser
+                            browserSrc=${this.browserUrl}
+                          ></btrix-profile-browser>
+                        </div>
+                      `
+                    : html`
+                        <div
+                          class="w-full h-96 bg-slate-50 flex items-center justify-center text-4xl"
+                          style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px"
+                        >
+                          <sl-spinner></sl-spinner>
+                        </div>
+                      `}
                 </div>
                 <div
                   class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 p-2 shadow-inner bg-white absolute h-full right-0"
