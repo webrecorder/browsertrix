@@ -210,7 +210,9 @@ export class BrowserProfilesDetail extends LiteElement {
           this.profile.description || ""
         )}&profileId=${window.encodeURIComponent(
           this.profile.id
-        )}&navigateUrl=${window.encodeURIComponent(navigateStartUrl || "")}`
+        )}&navigateUrl=${window.encodeURIComponent(
+          navigateStartUrl && navigateStartUrl !== url ? navigateStartUrl : ""
+        )}`
       );
     } catch (e) {
       this.isSubmitting = false;
