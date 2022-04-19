@@ -29,6 +29,9 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  @state()
+  private isDialogVisible = false;
+
   // URL params can be used to pass name and description
   // base ID determines whether this is an edit/extension
   @state()
@@ -71,12 +74,18 @@ export class BrowserProfilesNew extends LiteElement {
         </a>
       </div>
 
-      <div class="mb-5">
-        <p class="text-sm text-neutral-500">
+      <div
+        class="flex items-center justify-between mb-3 p-2 border bg-slate-50"
+      >
+        <p class="text-sm text-slate-600 mr-3 p-2">
           ${msg(
-            "Interact with the browser to record your browser profile. When you’re finished interacting, name and save the profile."
+            "Interact with the browser to record your browser profile. You will complete and save your profile in the next step."
           )}
         </p>
+
+        <sl-button type="primary" @click=${() => (this.isDialogVisible = true)}>
+          ${msg("Next")}
+        </sl-button>
       </div>
 
       <btrix-profile-browser
@@ -86,20 +95,24 @@ export class BrowserProfilesNew extends LiteElement {
         initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
       ></btrix-profile-browser>
 
-      <div>
+      <sl-dialog
+        label=${msg(str`Save Browser Profile`)}
+        ?open=${this.isDialogVisible}
+        @sl-request-close=${() => (this.isDialogVisible = false)}
+      >
         ${this.params.profileId
           ? html`
               <div class="mb-2">
                 <btrix-alert class="text-sm" type="info"
                   >${msg(
-                    html`Viewing <strong>${this.params.name}</strong>`
+                    html`Extending <strong>${this.params.name}</strong>`
                   )}</btrix-alert
                 >
               </div>
             `
           : ""}
         ${this.renderForm()}
-      </div>
+      </sl-dialog>
     `;
   }
 
@@ -130,14 +143,8 @@ export class BrowserProfilesNew extends LiteElement {
         ></sl-textarea>
 
         <div class="text-right">
-          <sl-button
-            type="text"
-            href=${this.params.profileId
-              ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
-              : `/archives/${this.archiveId}/browser-profiles`}
-            @click=${this.navLink}
-          >
-            ${msg("Cancel")}
+          <sl-button type="text" @click=${() => (this.isDialogVisible = false)}>
+            ${msg("Back")}
           </sl-button>
 
           <sl-button
@@ -146,7 +153,7 @@ export class BrowserProfilesNew extends LiteElement {
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Save Profile")}
+            ${msg("Create Profile")}
           </sl-button>
         </div>
       </div>
