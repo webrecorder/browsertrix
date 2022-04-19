@@ -32,12 +32,6 @@ export class BrowserProfilesDetail extends LiteElement {
   private profile?: Profile;
 
   @state()
-  showCreateDialog = false;
-
-  @state()
-  private isCreateFormVisible = false;
-
-  @state()
   private isSubmitting = false;
 
   @state()
@@ -73,9 +67,9 @@ export class BrowserProfilesDetail extends LiteElement {
           ${this.profile
             ? html` <sl-button
                 size="small"
-                @click=${() => (this.showCreateDialog = true)}
+                @click=${() => this.duplicateProfile()}
               >
-                ${msg("Edit Browser Profile")}</sl-button
+                ${msg("Duplicate Profile")}</sl-button
               >`
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
@@ -154,57 +148,7 @@ export class BrowserProfilesDetail extends LiteElement {
                 </div>
               `}
         </main>
-      </section>
-
-      <sl-dialog
-        label=${msg(str`Edit Browser Profile`)}
-        ?open=${this.showCreateDialog}
-        @sl-request-close=${this.hideDialog}
-        @sl-show=${() => (this.isCreateFormVisible = true)}
-        @sl-after-hide=${() => (this.isCreateFormVisible = false)}
-      >
-        ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
-      </sl-dialog> `;
-  }
-
-  private renderCreateForm() {
-    return html`<sl-form @sl-submit=${this.onSubmit}>
-      <div class="grid gap-5">
-        <sl-select
-          name="url"
-          label=${msg("Starting URL")}
-          value=${this.profile?.origins[0] || ""}
-          required
-          hoist
-          ?disabled=${!ProfileBrowser.isBrowserCompatible}
-          @sl-hide=${this.stopProp}
-          @sl-after-hide=${this.stopProp}
-        >
-          ${this.profile?.origins.map(
-            (origin) => html`
-              <sl-menu-item value=${origin}>${origin}</sl-menu-item>
-            `
-          )}
-        </sl-select>
-
-        <div class="text-right">
-          <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
-          <sl-button
-            type="primary"
-            submit
-            ?disabled=${!ProfileBrowser.isBrowserCompatible ||
-            this.isSubmitting}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Start Editing")}
-          </sl-button>
-        </div>
-      </div>
-    </sl-form>`;
-  }
-
-  private hideDialog() {
-    this.showCreateDialog = false;
+      </section>`;
   }
 
   private async startBrowserPreview() {
@@ -237,13 +181,12 @@ export class BrowserProfilesDetail extends LiteElement {
     this.isSubmitting = false;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  private async duplicateProfile() {
     if (!this.profile) return;
 
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
-    const url = formData.get("url") as string;
+    const url = this.profile.origins[0];
 
     try {
       const data = await this.createBrowser({ url });
