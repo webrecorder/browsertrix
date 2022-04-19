@@ -45,6 +45,7 @@ export class BrowserProfilesNew extends LiteElement {
     name: string;
     description: string;
     profileId: string | null;
+    navigateUrl: string | null;
   }> = {};
 
   private pollTimerId?: number;
@@ -66,6 +67,7 @@ export class BrowserProfilesNew extends LiteElement {
       name: params.get("name") || msg("My Profile"),
       description: params.get("description") || "",
       profileId: params.get("profileId") || null,
+      navigateUrl: params.get("navigateUrl") || null,
     };
 
     this.fetchBrowser();
@@ -280,9 +282,13 @@ export class BrowserProfilesNew extends LiteElement {
         5 * 1000
       );
     } else if (result.url) {
+      if (this.params.navigateUrl) {
+        await this.navigateBrowser({ url: this.params.navigateUrl });
+      }
+
       this.browserUrl = result.url;
 
-      this.pingBrowser();
+      // this.pingBrowser();
     } else {
       console.debug("Unknown checkBrowserStatus state");
     }
@@ -295,6 +301,22 @@ export class BrowserProfilesNew extends LiteElement {
     const data = await this.apiFetch(
       `/archives/${this.archiveId}/profiles/browser/${this.browserId}`,
       this.authState!
+    );
+
+    return data;
+  }
+
+  /**
+   * Navigate to URL in temporary browser
+   **/
+  private async navigateBrowser({ url }: { url: string }) {
+    const data = this.apiFetch(
+      `/archives/${this.archiveId}/profiles/browser/${this.browserId}/navigate`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      }
     );
 
     return data;
