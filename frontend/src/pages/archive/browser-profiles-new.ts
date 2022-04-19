@@ -74,10 +74,20 @@ export class BrowserProfilesNew extends LiteElement {
         </a>
       </div>
 
-      <div
-        class="flex items-center justify-between mb-3 p-2 border bg-slate-50"
-      >
-        <p class="text-sm text-slate-600 mr-3 p-2">
+      ${this.params.profileId
+        ? html`
+            <div class="mb-2">
+              <btrix-alert class="text-sm" type="info"
+                >${msg(
+                  html`Extending <strong>${this.params.name}</strong>`
+                )}</btrix-alert
+              >
+            </div>
+          `
+        : ""}
+
+      <div class="flex items-center justify-between mb-3 p-2 bg-slate-50">
+        <p class="text-sm text-slate-600 mr-3 p-1">
           ${msg(
             "Interact with the browser to record your browser profile. You will complete and save your profile in the next step."
           )}
@@ -100,17 +110,6 @@ export class BrowserProfilesNew extends LiteElement {
         ?open=${this.isDialogVisible}
         @sl-request-close=${() => (this.isDialogVisible = false)}
       >
-        ${this.params.profileId
-          ? html`
-              <div class="mb-2">
-                <btrix-alert class="text-sm" type="info"
-                  >${msg(
-                    html`Extending <strong>${this.params.name}</strong>`
-                  )}</btrix-alert
-                >
-              </div>
-            `
-          : ""}
         ${this.renderForm()}
       </sl-dialog>
     `;
@@ -126,7 +125,7 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value=${this.params.name || ""}
+          value=${this.params.name ? msg(str`${this.params.name} Copy`) : ""}
           required
         ></sl-input>
 

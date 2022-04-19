@@ -1,7 +1,7 @@
 // import { LitElement, html } from "lit";
 import { property, state } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
@@ -188,6 +188,7 @@ export class ProfileBrowser extends LiteElement {
                 ? " hover:bg-slate-50 hover:text-primary"
                 : ""}"
               role=${this.iframeSrc ? "button" : "listitem"}
+              title=${msg(str`Go to ${url}`)}
               @click=${() =>
                 this.iframeSrc ? this.navigateBrowser({ url }) : {}}
             >
