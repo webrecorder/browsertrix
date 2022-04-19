@@ -207,12 +207,10 @@ export class ProfileBrowser extends LiteElement {
 
     return html`
       <h4 class="text-xs text-neutral-500 leading-tight p-2 border-b">
-        <span class="inline-block align-middle"
-          >${msg("Newly Visited URLs")}</span
-        >
+        <span class="inline-block align-middle">${msg("Newly Visited")}</span>
         <sl-tooltip
           content=${msg(
-            "Newly visited URLs are not included in the browser profile."
+            "Newly visited URLs have not been saved to the browser profile yet."
           )}
           ><sl-icon
             class="inline-block align-middle"
