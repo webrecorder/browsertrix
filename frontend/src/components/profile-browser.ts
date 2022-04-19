@@ -36,7 +36,7 @@ export class ProfileBrowser extends LiteElement {
     if (this.isLoading)
       return html`
         <div
-          class="aspect-video bg-slate-50 flex items-center justify-center text-4xl"
+          class="h-96 bg-slate-50 flex items-center justify-center text-4xl"
           style="padding-right: ${SIDE_BAR_WIDTH}px"
         >
           <sl-spinner></sl-spinner>
@@ -45,9 +45,7 @@ export class ProfileBrowser extends LiteElement {
 
     return html`
       <div
-        class="bg-slate-50 w-full ${this.isFullscreen
-          ? "h-screen"
-          : "aspect-video"}"
+        class="bg-slate-50 w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
       >
         ${this.browserSrc
           ? html`<iframe
