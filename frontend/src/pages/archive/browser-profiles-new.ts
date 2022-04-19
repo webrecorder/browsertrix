@@ -170,29 +170,14 @@ export class BrowserProfilesNew extends LiteElement {
     };
 
     try {
-      let data: {
-        id: string;
-      };
-
-      if (this.params.profileId) {
-        data = await this.apiFetch(
-          `/archives/${this.archiveId}/profiles/${this.params.profileId}`,
-          this.authState!,
-          {
-            method: "PATCH",
-            body: JSON.stringify(params),
-          }
-        );
-      } else {
-        data = await this.apiFetch(
-          `/archives/${this.archiveId}/profiles`,
-          this.authState!,
-          {
-            method: "POST",
-            body: JSON.stringify(params),
-          }
-        );
-      }
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
 
       this.notify({
         message: msg("Successfully created browser profile."),
