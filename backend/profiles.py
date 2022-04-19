@@ -57,8 +57,7 @@ class ProfileLaunchBrowserIn(BaseModel):
     """ Request to launch new browser for creating profile """
 
     url: HttpUrl
-    baseId: Optional[str]
-    targetId: Optional[str]
+    profileId: Optional[UUID4]
 
 
 # ============================================================================
@@ -69,9 +68,10 @@ class BrowserId(BaseModel):
 
 
 # ============================================================================
-class ProfileCommitIn(BaseModel):
-    """ Profile metadata for committing current profile """
+class ProfileCreateUpdate(BaseModel):
+    """ Profile metadata for committing current browser to profile """
 
+    browserid: Optional[str]
     name: str
     description: Optional[str]
 
@@ -104,19 +104,12 @@ class ProfileOps:
         """ Create new profile """
         command = await self.get_command(profile_launch, archive)
 
-        if profile_launch.targetId:
-            profile = await self.get_profile(uuid.UUID(profile_launch.targetId))
-            profileid = profile.id
-        else:
-            profileid = str(uuid.uuid4())
-
         browserid = await self.crawl_manager.run_profile_browser(
-            profileid,
             str(user.id),
             str(archive.id),
             archive.storage,
             command,
-            filename=f"profile-{profileid}.tar.gz",
+            baseprofile=profile_launch.profileId,
         )
 
         if not browserid:
@@ -141,12 +134,11 @@ class ProfileOps:
             "--url",
             str(profile_launch.url),
         ]
-        if not profile_launch.baseId:
+        if not profile_launch.profileId:
             return command
 
-        path = await self.get_profile_storage_path(
-            uuid.UUID(profile_launch.baseId), archive
-        )
+        path = await self.get_profile_storage_path(profile_launch.profileId, archive)
+
         if not path:
             raise HTTPException(status_code=400, detail="invalid_base_profile")
 
@@ -156,7 +148,7 @@ class ProfileOps:
 
     async def get_profile_browser_url(self, browserid, aid, headers):
         """ get profile browser url """
-        json, browser_ip, _ = await self._get_browser_data(browserid, "/target")
+        json, browser_ip, _ = await self._req_browser_data(browserid, "/target")
 
         target_id = json.get("targetId")
 
@@ -183,23 +175,28 @@ class ProfileOps:
 
     async def ping_profile_browser(self, browserid):
         """ ping profile browser to keep it running """
-        await self._get_browser_data(browserid, "/ping")
+        json, _, _2 = await self._req_browser_data(browserid, "/ping")
 
         await self.redis.expire(f"br:{browserid}", BROWSER_EXPIRE)
 
-        return {"success": True}
+        return {"success": True, "origins": json.get("origins") or []}
 
-    async def commit_profile(self, browserid, commit_metadata):
+    async def commit_profile(
+        self, browser_commit: ProfileCreateUpdate, profileid: uuid.UUID = None
+    ):
         """ commit profile and shutdown profile browser """
-        json, _, browser_data = await self._get_browser_data(
-            browserid, "/createProfileJS", "POST"
-        )
 
-        profileid = None
+        if not profileid:
+            profileid = uuid.uuid4()
+
+        filename_data = {"filename": f"profile-{profileid}.tar.gz"}
+
+        json, _, browser_data = await self._req_browser_data(
+            browser_commit.browserid, "/createProfileJS", "POST", json=filename_data
+        )
 
         try:
             resource = json["resource"]
-            profileid = uuid.UUID(browser_data["btrix.profile"])
         except:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="browser_not_valid")
@@ -216,8 +213,8 @@ class ProfileOps:
 
         profile = Profile(
             id=profileid,
-            name=commit_metadata.name,
-            description=commit_metadata.description,
+            name=browser_commit.name,
+            description=browser_commit.description,
             created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
             origins=json["origins"],
             resource=profile_file,
@@ -228,12 +225,25 @@ class ProfileOps:
 
         # await self.profiles.insert_one(profile.to_dict())
         await self.profiles.find_one_and_update(
-            {"_id": profile.id},
-            profile.to_dict(),
-            upsert=True,
+            {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
         return self.resolve_base_profile(profile)
+
+    async def update_profile_metadata(
+        self, profileid: UUID4, update: ProfileCreateUpdate
+    ):
+        """ Update name and description metadata only on existing profile """
+        query = {"name": update.name}
+        if update.description:
+            query["description"] = update.description
+
+        if not await self.profiles.find_one_and_update(
+            {"_id": profileid}, {"$set": query}
+        ):
+            raise HTTPException(status_code=404, detail="profile_not_found")
+
+        return {"success": True}
 
     async def list_profiles(self, archive: Archive):
         """ list all profiles"""
@@ -299,7 +309,7 @@ class ProfileOps:
         """ resolve base profile name, if any """
         return ProfileOut(**profile.serialize())
 
-    async def _get_browser_data(self, browserid, path, method="GET"):
+    async def _req_browser_data(self, browserid, path, method="GET", json=None):
         browser_data = await self.crawl_manager.get_profile_browser_data(browserid)
 
         if not browser_data:
@@ -313,7 +323,7 @@ class ProfileOps:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, f"http://{browser_ip}:9223{path}"
+                    method, f"http://{browser_ip}:9223{path}", json=json
                 ) as resp:
                     json = await resp.json()
 
@@ -338,7 +348,7 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         browserid: str, archive: Archive = Depends(archive_crawl_dep)
     ):
         if await ops.redis.hget(f"br:{browserid}", "archive") != str(archive.id):
-            raise HTTPException(status_code=403, detail="not_allowed")
+            raise HTTPException(status_code=404, detail="no_such_browser")
 
         return browserid
 
@@ -348,12 +358,34 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
     ):
         return await ops.list_profiles(archive)
 
-    @router.get("/{profileid}", response_model=ProfileOut)
-    async def get_profile(
-        profileid: str,
+    @router.post("", response_model=ProfileOut)
+    async def commit_browser_to_new(
+        browser_commit: ProfileCreateUpdate,
         archive: Archive = Depends(archive_crawl_dep),
     ):
-        return await ops.get_profile(uuid.UUID(profileid), archive)
+        await browser_dep(browser_commit.browserid, archive)
+
+        return await ops.commit_profile(browser_commit)
+
+    @router.patch("/{profileid}", response_model=ProfileOut)
+    async def commit_browser_to_existing(
+        browser_commit: ProfileCreateUpdate,
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        if not browser_commit.browserid:
+            return await ops.update_profile_metadata(profileid, browser_commit)
+
+        await browser_dep(browser_commit.browserid, archive)
+
+        return await ops.commit_profile(browser_commit, profileid)
+
+    @router.get("/{profileid}", response_model=ProfileOut)
+    async def get_profile(
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        return await ops.get_profile(profileid, archive)
 
     @router.post("/browser", response_model=BrowserId)
     async def create_new(
@@ -366,12 +398,6 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
     @router.post("/browser/{browserid}/ping")
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.ping_profile_browser(browserid)
-
-    @router.post("/browser/{browserid}/commit", response_model=ProfileOut)
-    async def commit_profile_browser(
-        profile_commit: ProfileCommitIn, browserid: str = Depends(browser_dep)
-    ):
-        return await ops.commit_profile(browserid, profile_commit)
 
     @router.get("/browser/{browserid}")
     async def get_profile_browser_url(
