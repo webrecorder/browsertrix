@@ -17,7 +17,7 @@ export const ROUTES = {
   archiveCrawl: "/archives/:id/:tab/crawl/:crawlId",
   browserProfile: "/archives/:id/:tab/profile/:browserProfileId",
   browser:
-    "/archives/:id/:tab/profile/browser/:browserId?name&description&profileId",
+    "/archives/:id/:tab/profile/browser/:browserId?name&description&profileId&navigateUrl",
   crawlTemplate: "/archives/:id/:tab/config/:crawlConfigId",
   crawlTemplateEdit: "/archives/:id/:tab/config/:crawlConfigId?edit",
   users: "/users",
