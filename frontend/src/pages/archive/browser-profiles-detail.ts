@@ -127,13 +127,7 @@ export class BrowserProfilesDetail extends LiteElement {
       >
         <div class="mb-4">
           ${this.isBrowserCompatible
-            ? html`
-                <btrix-alert type="info" class="text-sm">
-                  ${msg(
-                    "Saving any edits after starting the browser will create a new version of this profile."
-                  )}
-                </btrix-alert>
-              `
+            ? ""
             : html`
                 <btrix-alert type="warning" class="text-sm">
                   ${msg(
@@ -151,6 +145,7 @@ export class BrowserProfilesDetail extends LiteElement {
       <div class="grid gap-5">
         <sl-select
           name="url"
+          label=${msg("Starting URL")}
           value=${this.profile?.origins[0] || ""}
           required
           hoist
