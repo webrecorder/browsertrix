@@ -339,7 +339,7 @@ export class BrowserProfilesNew extends LiteElement {
           `/archives/${this.archiveId}/profiles/${this.params.profileId}`,
           this.authState!,
           {
-            method: "PUT",
+            method: "PATCH",
             body: JSON.stringify(params),
           }
         );
