@@ -38,8 +38,21 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  @state()
+  private isFullscreen = false;
+
   /** Profile creation only works in Chromium-based browsers */
   private isBrowserCompatible = Boolean((window as any).chrome);
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    document.addEventListener("fullscreenchange", this.onFullscreenChange);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
+  }
 
   firstUpdated() {
     this.fetchProfile();
@@ -118,10 +131,45 @@ export class BrowserProfilesDetail extends LiteElement {
       </section>
 
       <section>
-        <h3 class="text-lg font-medium mb-2">${msg("Preview Profile")}</h3>
-        <div class="lg:flex bg-white relative">
-          <div class="grow lg:rounded-lg border overflow-hidden">
-            <btrix-profile-browser></btrix-profile-browser>
+        <header class="flex justify-between">
+          <h3 class="text-lg font-medium mb-2">${msg("Preview Profile")}</h3>
+
+          <div>
+            ${document.fullscreenEnabled
+              ? html`
+                  <div class="text-right">
+                    <sl-button
+                      size="small"
+                      @click=${() =>
+                        this.isFullscreen
+                          ? document.exitFullscreen()
+                          : this.enterFullscreen("interactive-browser")}
+                    >
+                      <sl-icon
+                        slot="prefix"
+                        name="arrows-fullscreen"
+                        label=${msg("Fullscreen")}
+                      ></sl-icon>
+                      ${msg("Fullscreen")}
+                    </sl-button>
+                  </div>
+                `
+              : ""}
+          </div>
+        </header>
+
+        <div
+          id="interactive-browser"
+          aria-live="polite"
+          class="lg:flex bg-white relative"
+        >
+          <div
+            class="grow lg:rounded-lg border overflow-hidden"
+            aria-live="polite"
+          >
+            <btrix-profile-browser
+              ?isFullscreen=${this.isFullscreen}
+            ></btrix-profile-browser>
           </div>
           <div
             class="rounded-b lg:rounded-b-none lg:rounded-r border w-72 bg-white absolute h-full right-0"
@@ -367,6 +415,29 @@ export class BrowserProfilesDetail extends LiteElement {
 
     return data;
   }
+
+  /**
+   * Enter fullscreen mode
+   * @param id ID of element to fullscreen
+   */
+  private async enterFullscreen(id: string) {
+    try {
+      document.getElementById(id)!.requestFullscreen({
+        // Show browser navigation controls
+        navigationUI: "show",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  private onFullscreenChange = () => {
+    if (document.fullscreenElement) {
+      this.isFullscreen = true;
+    } else {
+      this.isFullscreen = false;
+    }
+  };
 
   /**
    * Stop propgation of sl-select events.
