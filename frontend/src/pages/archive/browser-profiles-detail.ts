@@ -114,8 +114,10 @@ export class BrowserProfilesDetail extends LiteElement {
       </section>
 
       <section>
-        <header class="flex justify-between">
-          <h3 class="text-lg font-medium mb-2">${msg("Preview Profile")}</h3>
+        <header>
+          <h3 class="text-lg font-medium mb-2">
+            ${msg("Browser Profile Viewer")}
+          </h3>
         </header>
 
         <main class="relative">
@@ -127,12 +129,30 @@ export class BrowserProfilesDetail extends LiteElement {
           ></btrix-profile-browser>
 
           ${this.browserId
-            ? ""
+            ? html` <div
+                class="absolute top-0 p-2"
+                style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+              >
+                <sl-button
+                  class="shadow"
+                  type="primary"
+                  size="small"
+                  ?disabled=${this.isSubmitting}
+                  ?loading=${this.isSubmitting}
+                  @click=${this.saveProfile}
+                  >${msg("Save Changes")}</sl-button
+                >
+              </div>`
             : html`
                 <div
-                  class="absolute top-0 left-0 h-full flex items-center justify-center"
+                  class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
                   style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
                 >
+                  <p class="mb-4 text-neutral-600 max-w-prose">
+                    ${msg(
+                      "Start the viewer to visit or edit web pages in the profile."
+                    )}
+                  </p>
                   <sl-button
                     type="primary"
                     outline
@@ -143,7 +163,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       slot="prefix"
                       name="collection-play-fill"
                     ></sl-icon>
-                    ${msg("Start Preview")}</sl-button
+                    ${msg("Start Viewer")}</sl-button
                   >
                 </div>
               `}
@@ -162,7 +182,7 @@ export class BrowserProfilesDetail extends LiteElement {
       const data = await this.createBrowser({ url });
 
       this.notify({
-        message: msg("Starting up browser."),
+        message: msg("Starting up browser..."),
         type: "success",
         icon: "check2-circle",
       });
@@ -192,7 +212,7 @@ export class BrowserProfilesDetail extends LiteElement {
       const data = await this.createBrowser({ url });
 
       this.notify({
-        message: msg("Starting up browser."),
+        message: msg("Starting up browser with current profile..."),
         type: "success",
         icon: "check2-circle",
       });
@@ -257,6 +277,42 @@ export class BrowserProfilesDetail extends LiteElement {
     );
 
     return data;
+  }
+
+  private async saveProfile() {
+    if (!this.browserId) return;
+
+    this.isSubmitting = true;
+
+    const params = {
+      name: this.profile!.name,
+      browserid: this.browserId,
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/${this.profileId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        }
+      );
+
+      this.notify({
+        message: msg("Successfully saved browser profile."),
+        type: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't save browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmitting = false;
   }
 
   /**
