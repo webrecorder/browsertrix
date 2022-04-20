@@ -44,14 +44,10 @@ export class BrowserProfilesNew extends LiteElement {
 
   firstUpdated() {
     const params = new URLSearchParams(window.location.search);
-    const name = params.get("name");
     const profileId = params.get("profileId");
 
     this.params = {
-      name:
-        profileId && name
-          ? msg(str`${this.params.name} Copy`)
-          : name || msg("My Profile"),
+      name: params.get("name") || "",
       description: params.get("description") || "",
       navigateUrl: params.get("navigateUrl") || "",
       profileId: profileId || null,
@@ -131,7 +127,9 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value=${this.params.name || ""}
+          value=${this.params.profileId && this.params.name
+            ? msg(str`${this.params.name} Copy`)
+            : this.params.name || msg("My Profile")}
           required
         ></sl-input>
 
