@@ -33,7 +33,7 @@ class Profile(BaseMongoModel):
     """ Browser profile """
 
     name: str
-    description: str
+    description: Optional[str] = ""
 
     userid: UUID4
     aid: UUID4
@@ -53,10 +53,16 @@ class ProfileOut(Profile):
 
 
 # ============================================================================
-class ProfileLaunchBrowserIn(BaseModel):
-    """ Request to launch new browser for creating profile """
+class UrlIn(BaseModel):
+    """ Request to set url """
 
     url: HttpUrl
+
+
+# ============================================================================
+class ProfileLaunchBrowserIn(UrlIn):
+    """ Request to launch new browser for creating profile """
+
     profileId: Optional[UUID4]
 
 
@@ -73,7 +79,7 @@ class ProfileCreateUpdate(BaseModel):
 
     browserid: Optional[str]
     name: str
-    description: Optional[str]
+    description: Optional[str] = ""
 
 
 # ============================================================================
@@ -109,8 +115,10 @@ class ProfileOps:
             str(archive.id),
             archive.storage,
             command,
-            baseprofile=profile_launch.profileId,
+            baseprofile=str(profile_launch.profileId),
         )
+
+        print("base profile", str(profile_launch.profileId))
 
         if not browserid:
             raise HTTPException(status_code=400, detail="browser_not_created")
@@ -181,6 +189,14 @@ class ProfileOps:
 
         return {"success": True, "origins": json.get("origins") or []}
 
+    async def navigate_profile_browser(self, browserid, urlin: UrlIn):
+        """ ping profile browser to keep it running """
+        await self._req_browser_data(browserid, "/navigate", "POST", json=urlin.dict())
+
+        await self.redis.expire(f"br:{browserid}", BROWSER_EXPIRE)
+
+        return {"success": True}
+
     async def commit_profile(
         self, browser_commit: ProfileCreateUpdate, profileid: uuid.UUID = None
     ):
@@ -209,6 +225,7 @@ class ProfileOps:
 
         baseid = browser_data.get("btrix.baseprofile")
         if baseid:
+            print("baseid", baseid)
             baseid = uuid.UUID(baseid)
 
         profile = Profile(
@@ -398,6 +415,12 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
     @router.post("/browser/{browserid}/ping")
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.ping_profile_browser(browserid)
+
+    @router.post("/browser/{browserid}/navigate")
+    async def navigate_profile_browser(
+        urlin: UrlIn, browserid: str = Depends(browser_dep)
+    ):
+        return await ops.navigate_profile_browser(browserid, urlin)
 
     @router.get("/browser/{browserid}")
     async def get_profile_browser_url(
