@@ -141,7 +141,7 @@ export class CrawlTemplatesList extends LiteElement {
                       ? html`<sl-tooltip>
                           <span slot="content" class="capitalize">
                             ${msg(
-                              str`Last Crawl: ${t.lastCrawlState.replace(
+                              str`Last Crawl: ${t.lastCrawlState && t.lastCrawlState.replace(
                                 /_/g,
                                 " "
                               )}`
