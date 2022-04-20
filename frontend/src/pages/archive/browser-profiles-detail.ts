@@ -116,7 +116,7 @@ export class BrowserProfilesDetail extends LiteElement {
       <section>
         <header>
           <h3 class="text-lg font-medium mb-2">
-            ${msg("Browser Profile Viewer")}
+            ${msg("Browser Profile Editor")}
           </h3>
         </header>
 
@@ -150,7 +150,7 @@ export class BrowserProfilesDetail extends LiteElement {
                 >
                   <p class="mb-4 text-neutral-600 max-w-prose">
                     ${msg(
-                      "Start the viewer to visit or edit web pages in the profile."
+                      "Load browser profile to view or edit web pages in the profile."
                     )}
                   </p>
                   <sl-button
@@ -163,7 +163,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       slot="prefix"
                       name="collection-play-fill"
                     ></sl-icon>
-                    ${msg("Start Viewer")}</sl-button
+                    ${msg("Load Browser Profile")}</sl-button
                   >
                 </div>
               `}

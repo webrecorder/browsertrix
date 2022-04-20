@@ -180,25 +180,7 @@ export class ProfileBrowser extends LiteElement {
         ${msg("Visited URLs")}
       </h4>
       <ul>
-        ${this.origins?.map(
-          (url) => html`
-            <li
-              class="p-2 flex items-center justify-between border-t first:border-t-0 border-t-neutral-100${this
-                .iframeSrc
-                ? " hover:bg-slate-50 hover:text-primary"
-                : ""}"
-              role=${this.iframeSrc ? "button" : "listitem"}
-              title=${msg(str`Go to ${url}`)}
-              @click=${() =>
-                this.iframeSrc ? this.navigateBrowser({ url }) : {}}
-            >
-              <div class="text-sm truncate w-full">${url}</div>
-              ${this.iframeSrc
-                ? html`<sl-icon name="play-btn" class="text-xl"></sl-icon>`
-                : ""}
-            </li>
-          `
-        )}
+        ${this.origins?.map((url) => this.renderOriginItem(url))}
       </ul>
     `;
   }
@@ -220,17 +202,26 @@ export class ProfileBrowser extends LiteElement {
         ></sl-tooltip>
       </h4>
       <ul>
-        ${this.newOrigins.map(
-          (url) => html`
-            <li
-              class="p-2 flex items-center justify-between border-t first:border-t-0 border-t-neutral-100"
-            >
-              <div class="text-sm truncate w-full">${url}</div>
-            </li>
-          `
-        )}
+        ${this.newOrigins.map((url) => this.renderOriginItem(url))}
       </ul>
     `;
+  }
+
+  private renderOriginItem(url: string) {
+    return html`<li
+      class="p-2 flex items-center justify-between border-t first:border-t-0 border-t-neutral-100${this
+        .iframeSrc
+        ? " hover:bg-slate-50 hover:text-primary"
+        : ""}"
+      role=${this.iframeSrc ? "button" : "listitem"}
+      title=${msg(str`Go to ${url}`)}
+      @click=${() => (this.iframeSrc ? this.navigateBrowser({ url }) : {})}
+    >
+      <div class="text-sm truncate w-full">${url}</div>
+      ${this.iframeSrc
+        ? html`<sl-icon name="play-btn" class="text-xl"></sl-icon>`
+        : ""}
+    </li>`;
   }
 
   /**
