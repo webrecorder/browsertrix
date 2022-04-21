@@ -38,7 +38,16 @@ export class BrowserProfilesDetail extends LiteElement {
   private isSubmitting = false;
 
   @state()
+  private showSaveButton = false;
+
+  @state()
   private browserId?: string;
+
+  private showSaveButtonTimerId?: number;
+
+  disconnectedCallback() {
+    window.clearTimeout(this.showSaveButtonTimerId);
+  }
 
   firstUpdated() {
     this.fetchProfile();
@@ -140,20 +149,21 @@ export class BrowserProfilesDetail extends LiteElement {
                     >
                       <sl-spinner></sl-spinner>
                     </div>`
-                  : html`
-                      <div
-                        class="absolute top-0 p-2"
-                        style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                  : ""}
+                ${this.showSaveButton
+                  ? html`<div
+                      class="absolute top-0 p-2"
+                      style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                    >
+                      <sl-button
+                        class="shadow"
+                        type="primary"
+                        size="small"
+                        @click=${this.saveProfile}
+                        >${msg("Done Editing")}</sl-button
                       >
-                        <sl-button
-                          class="shadow"
-                          type="primary"
-                          size="small"
-                          @click=${this.saveProfile}
-                          >${msg("Done Editing")}</sl-button
-                        >
-                      </div>
-                    `}
+                    </div>`
+                  : ""}
               `
             : html`
                 <div
@@ -200,6 +210,11 @@ export class BrowserProfilesDetail extends LiteElement {
       });
 
       this.browserId = data.browserid;
+
+      // Slightly delay showing the save button while browser loads
+      this.showSaveButtonTimerId = window.setTimeout(() => {
+        this.showSaveButton = true;
+      }, 3 * 1000);
     } catch (e) {
       this.isLoading = false;
 
@@ -293,6 +308,16 @@ export class BrowserProfilesDetail extends LiteElement {
 
   private async saveProfile() {
     if (!this.browserId) return;
+
+    if (
+      !window.confirm(
+        msg(
+          "Save browser changes to profile? You will need to reload the editor to make additional changes."
+        )
+      )
+    ) {
+      return;
+    }
 
     this.isSubmitting = true;
 
