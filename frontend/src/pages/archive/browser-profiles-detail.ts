@@ -32,6 +32,9 @@ export class BrowserProfilesDetail extends LiteElement {
   private profile?: Profile;
 
   @state()
+  private isLoading = false;
+
+  @state()
   private isSubmitting = false;
 
   @state()
@@ -128,21 +131,30 @@ export class BrowserProfilesDetail extends LiteElement {
             .origins=${this.profile?.origins}
           ></btrix-profile-browser>
 
-          ${this.browserId
-            ? html` <div
-                class="absolute top-0 p-2"
-                style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-              >
-                <sl-button
-                  class="shadow"
-                  type="primary"
-                  size="small"
-                  ?disabled=${this.isSubmitting}
-                  ?loading=${this.isSubmitting}
-                  @click=${this.saveProfile}
-                  >${msg("Save Changes")}</sl-button
-                >
-              </div>`
+          ${this.browserId && !this.isLoading
+            ? html`
+                ${this.isSubmitting
+                  ? html`<div
+                      class="absolute top-0 left-0 h-full flex items-center justify-center text-4xl bg-slate-50 lg:rounded-lg border"
+                      style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                    >
+                      <sl-spinner></sl-spinner>
+                    </div>`
+                  : html`
+                      <div
+                        class="absolute top-0 p-2"
+                        style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                      >
+                        <sl-button
+                          class="shadow"
+                          type="primary"
+                          size="small"
+                          @click=${this.saveProfile}
+                          >${msg("Done Editing")}</sl-button
+                        >
+                      </div>
+                    `}
+              `
             : html`
                 <div
                   class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
@@ -156,8 +168,8 @@ export class BrowserProfilesDetail extends LiteElement {
                   <sl-button
                     type="primary"
                     outline
-                    ?disabled=${this.isSubmitting}
-                    ?loading=${this.isSubmitting}
+                    ?disabled=${this.isLoading}
+                    ?loading=${this.isLoading}
                     @click=${this.startBrowserPreview}
                     ><sl-icon
                       slot="prefix"
@@ -174,7 +186,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private async startBrowserPreview() {
     if (!this.profile) return;
 
-    this.isSubmitting = true;
+    this.isLoading = true;
 
     const url = this.profile.origins[0];
 
@@ -189,7 +201,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.browserId = data.browserid;
     } catch (e) {
-      this.isSubmitting = false;
+      this.isLoading = false;
 
       this.notify({
         message: msg("Sorry, couldn't preview browser profile at this time."),
@@ -198,13 +210,13 @@ export class BrowserProfilesDetail extends LiteElement {
       });
     }
 
-    this.isSubmitting = false;
+    this.isLoading = false;
   }
 
   private async duplicateProfile() {
     if (!this.profile) return;
 
-    this.isSubmitting = true;
+    this.isLoading = true;
 
     const url = this.profile.origins[0];
 
@@ -227,7 +239,7 @@ export class BrowserProfilesDetail extends LiteElement {
         )}&profileId=${window.encodeURIComponent(this.profile.id)}&navigateUrl=`
       );
     } catch (e) {
-      this.isSubmitting = false;
+      this.isLoading = false;
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
@@ -290,7 +302,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/archives/${this.archiveId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -304,6 +316,8 @@ export class BrowserProfilesDetail extends LiteElement {
         type: "success",
         icon: "check2-circle",
       });
+
+      this.browserId = undefined;
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
