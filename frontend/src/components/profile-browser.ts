@@ -77,6 +77,8 @@ export class ProfileBrowser extends LiteElement {
         this.fetchBrowser();
       } else if (changedProperties.get("browserId")) {
         this.iframeSrc = undefined;
+
+        window.clearTimeout(this.pollTimerId);
       }
     }
   }
@@ -293,6 +295,8 @@ export class ProfileBrowser extends LiteElement {
    * Navigate to URL in temporary browser
    **/
   private async navigateBrowser({ url }: { url: string }) {
+    if (!this.iframeSrc) return;
+
     const data = this.apiFetch(
       `/archives/${this.archiveId}/profiles/browser/${this.browserId}/navigate`,
       this.authState!,
@@ -309,6 +313,8 @@ export class ProfileBrowser extends LiteElement {
    * Ping temporary browser every minute to keep it alive
    **/
   private async pingBrowser() {
+    if (!this.iframeSrc) return;
+
     const data = await this.apiFetch(
       `/archives/${this.archiveId}/profiles/browser/${this.browserId}/ping`,
       this.authState!,
