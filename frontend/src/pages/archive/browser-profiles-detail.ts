@@ -77,12 +77,7 @@ export class BrowserProfilesDetail extends LiteElement {
         </h2>
         <div>
           ${this.profile
-            ? html` <sl-button
-                size="small"
-                @click=${() => this.duplicateProfile()}
-              >
-                ${msg("Duplicate Profile")}</sl-button
-              >`
+            ? this.renderMenu()
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
               ></sl-skeleton>`}
@@ -194,6 +189,32 @@ export class BrowserProfilesDetail extends LiteElement {
               `}
         </main>
       </section>`;
+  }
+
+  private renderMenu() {
+    return html`
+      <sl-dropdown placement="bottom-end" distance="4">
+        <sl-button slot="trigger" type="primary" size="small" caret
+          >${msg("Actions")}</sl-button
+        >
+
+        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${() => this.duplicateProfile()}
+          >
+            <sl-icon
+              class="inline-block align-middle px-1"
+              name="files"
+            ></sl-icon>
+            <span class="inline-block align-middle pr-2"
+              >${msg("Duplicate profile")}</span
+            >
+          </li>
+        </ul>
+      </sl-dropdown>
+    `;
   }
 
   private async startBrowserPreview() {
