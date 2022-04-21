@@ -445,14 +445,17 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       );
 
-      this.notify({
-        message: msg("Successfully saved browser profile."),
-        type: "success",
-        icon: "check2-circle",
-      });
+      if (data.success === true) {
+        this.notify({
+          message: msg("Successfully saved browser profile."),
+          type: "success",
+          icon: "check2-circle",
+        });
 
-      this.profile = data;
-      this.browserId = undefined;
+        this.browserId = undefined;
+      } else {
+        throw data;
+      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
@@ -488,14 +491,21 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       );
 
-      this.notify({
-        message: msg("Successfully saved browser profile."),
-        type: "success",
-        icon: "check2-circle",
-      });
+      if (data.success === true) {
+        this.notify({
+          message: msg("Successfully saved browser profile."),
+          type: "success",
+          icon: "check2-circle",
+        });
 
-      this.profile = data;
-      this.isEditDialogOpen = false;
+        this.profile = {
+          ...this.profile,
+          ...params,
+        } as Profile;
+        this.isEditDialogOpen = false;
+      } else {
+        throw data;
+      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
