@@ -180,7 +180,8 @@ export class BrowserProfilesDetail extends LiteElement {
                   <sl-button
                     type="primary"
                     outline
-                    ?disabled=${this.isLoading}
+                    ?disabled=${this.isLoading ||
+                    !ProfileBrowser.isBrowserCompatible}
                     ?loading=${this.isLoading}
                     @click=${this.startBrowserPreview}
                     ><sl-icon
