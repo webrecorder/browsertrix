@@ -330,7 +330,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -345,6 +345,7 @@ export class BrowserProfilesDetail extends LiteElement {
         icon: "check2-circle",
       });
 
+      this.profile = data;
       this.browserId = undefined;
     } catch (e) {
       this.notify({
