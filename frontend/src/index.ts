@@ -172,7 +172,9 @@ export class App extends LiteElement {
     window.history.pushState(
       this.viewState,
       "",
-      `${this.viewState.pathname}${url.hash}${url.search}`
+      `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
+        url.search
+      }`
     );
   }
 

@@ -581,7 +581,7 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
-      profileid: formData.get("profileId") as string,
+      profileid: this.selectedProfile?.id,
     };
 
     if (this.isConfigCodeView) {

@@ -64,7 +64,7 @@ export type Profile = {
   description: string;
   created: string;
   origins: string[];
-  baseId: string;
+  profileId: string;
   baseProfileName: string;
   aid: string;
   resource: {
