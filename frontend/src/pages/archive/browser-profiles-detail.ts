@@ -172,7 +172,7 @@ export class BrowserProfilesDetail extends LiteElement {
                 >
                   <p class="mb-4 text-neutral-600 max-w-prose">
                     ${msg(
-                      "Load browser profile to view or edit web pages in the profile."
+                      "Load browser profile to view or edit websites in the profile."
                     )}
                   </p>
                   <sl-button

@@ -181,7 +181,13 @@ export class ProfileBrowser extends LiteElement {
   private renderOrigins() {
     return html`
       <h4 class="text-xs text-neutral-500 leading-tight p-2 border-b">
-        ${msg("Visited URLs")}
+        <span class="inline-block align-middle">${msg("Visited Sites")}</span>
+        <sl-tooltip content=${msg("Websites in the browser profile")}
+          ><sl-icon
+            class="inline-block align-middle"
+            name="info-circle"
+          ></sl-icon
+        ></sl-tooltip>
       </h4>
       <ul>
         ${this.origins?.map((url) => this.renderOriginItem(url))}
@@ -194,10 +200,10 @@ export class ProfileBrowser extends LiteElement {
 
     return html`
       <h4 class="text-xs text-neutral-500 leading-tight p-2 border-b">
-        <span class="inline-block align-middle">${msg("Newly Visited")}</span>
+        <span class="inline-block align-middle">${msg("New Sites")}</span>
         <sl-tooltip
           content=${msg(
-            "Newly visited URLs have not been saved to the browser profile yet."
+            "Websites that are not in the browser profile yet. Finish editing and save to add these websites to the profile."
           )}
           ><sl-icon
             class="inline-block align-middle"
