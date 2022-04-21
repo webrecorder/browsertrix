@@ -6,7 +6,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 
-const POLL_INTERVAL_SECONDS = 3;
+const POLL_INTERVAL_SECONDS = 2;
 
 /**
  * View embedded profile browser
@@ -315,7 +315,10 @@ export class ProfileBrowser extends LiteElement {
       );
     }
 
-    this.pollTimerId = window.setTimeout(() => this.pingBrowser(), 60 * 1000);
+    this.pollTimerId = window.setTimeout(
+      () => this.pingBrowser(),
+      POLL_INTERVAL_SECONDS * 1000
+    );
   }
 
   /**
