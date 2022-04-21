@@ -131,21 +131,49 @@ export class BrowserProfilesList extends LiteElement {
         @click=${this.navLink}
         title=${data.name}
       >
-        <div class="grid grid-cols-7 gap-3 md:gap-5" role="row">
-          <div class="col-span-7 md:col-span-3" role="cell">
+        <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
+          <div class="col-span-8 md:col-span-3" role="cell">
             <div class="font-medium mb-1">${data.name}</div>
             <div class="text-sm truncate" title=${data.description}>
               ${data.description}
             </div>
           </div>
-          <div class="col-span-7 md:col-span-1 text-sm" role="cell">
+          <div class="col-span-8 md:col-span-1 text-sm" role="cell">
             ${new Date(data.created).toLocaleDateString()}
           </div>
           <div class="col-span-7 md:col-span-3 text-sm" role="cell">
             ${data.origins.join(", ")}
           </div>
+          <div class="col-span-1 md:col-span-1 flex items-center justify-end">
+            ${this.renderMenu(data)}
+          </div>
         </div>
       </a>
+    `;
+  }
+
+  private renderMenu(data: Profile) {
+    return html`
+      <sl-dropdown @click=${(e: Event) => e.preventDefault()}>
+        <sl-icon-button
+          slot="trigger"
+          name="three-dots"
+          label=${msg("More")}
+          style="font-size: 1rem"
+        ></sl-icon-button>
+        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              this.duplicateProfile(data);
+              e.target.closest("sl-dropdown").hide();
+            }}
+          >
+            ${msg("Duplicate browser profile")}
+          </li>
+        </ul>
+      </sl-dropdown>
     `;
   }
 
@@ -211,21 +239,12 @@ export class BrowserProfilesList extends LiteElement {
     const { formData } = event.detail;
     const url = formData.get("url") as string;
 
-    const params: {
-      url: string;
-    } = {
-      url: `${formData.get("urlPrefix")}${url.substring(url.indexOf(",") + 1)}`,
-    };
-
     try {
-      const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/browser`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+      const data = await this.createBrowser({
+        url: `${formData.get("urlPrefix")}${url.substring(
+          url.indexOf(",") + 1
+        )}`,
+      });
 
       this.notify({
         message: msg("Starting up browser for profile creation."),
@@ -249,6 +268,51 @@ export class BrowserProfilesList extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async duplicateProfile(profile: Profile) {
+    const url = profile.origins[0];
+
+    try {
+      const data = await this.createBrowser({ url });
+
+      this.notify({
+        message: msg("Starting up browser with selected profile..."),
+        type: "success",
+        icon: "check2-circle",
+      });
+
+      this.navTo(
+        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
+          data.browserid
+        }?name=${window.encodeURIComponent(
+          profile.name
+        )}&description=${window.encodeURIComponent(
+          profile.description || ""
+        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`
+      );
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private createBrowser({ url }: { url: string }) {
+    const params = {
+      url,
+    };
+
+    return this.apiFetch(
+      `/archives/${this.archiveId}/profiles/browser`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      }
+    );
   }
 
   /**
