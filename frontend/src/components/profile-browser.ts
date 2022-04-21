@@ -107,19 +107,26 @@ export class ProfileBrowser extends LiteElement {
   private renderBrowser() {
     if (!ProfileBrowser.isBrowserCompatible) {
       return html`
-        <btrix-alert type="warning" class="text-sm">
-          ${msg(
-            "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
-          )}
-        </btrix-alert>
+        <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
+          <btrix-alert type="warning" class="text-sm">
+            ${msg(
+              "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
+            )}
+          </btrix-alert>
+        </div>
       `;
     }
 
     if (this.hasFetchError) {
       return html`
-        <btrix-alert type="danger">
-          ${msg(`The interactive browser is not available.`)}
-        </btrix-alert>
+        <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
+          <btrix-alert
+            type="danger"
+            style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+          >
+            ${msg(`The interactive browser is not available.`)}
+          </btrix-alert>
+        </div>
       `;
     }
 
