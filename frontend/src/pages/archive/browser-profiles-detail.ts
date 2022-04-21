@@ -102,8 +102,8 @@ export class BrowserProfilesDetail extends LiteElement {
       </header>
 
       <section class="rounded border p-4 mb-5">
-        <dl class="grid grid-cols-2 gap-5">
-          <div class="col-span-2 md:col-span-1">
+        <dl class="grid grid-cols-3 gap-5">
+          <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">${msg("Description")}</dt>
             <dd>
               ${this.profile
@@ -112,7 +112,7 @@ export class BrowserProfilesDetail extends LiteElement {
                 : ""}
             </dd>
           </div>
-          <div class="col-span-2 md:col-span-1">
+          <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">
               <span class="inline-block align-middle"
                 >${msg("Created at")}</span
@@ -132,6 +132,38 @@ export class BrowserProfilesDetail extends LiteElement {
                     ></sl-format-date>
                   `
                 : ""}
+            </dd>
+          </div>
+          <div class="col-span-3 md:col-span-1">
+            <dt class="text-sm text-0-600">
+              <span class="inline-block align-middle"
+                >${msg("Crawl Templates")}</span
+              >
+              <sl-tooltip content=${msg("Crawl Templates using this profile")}>
+                <sl-icon
+                  class="inline-block align-middle"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            </dt>
+            <dd>
+              <ul class="text-sm font-medium">
+                ${this.profile?.crawlconfigs.map(
+                  ({ id, name }) =>
+                    html`
+                      <li>
+                        <a
+                          class="text-neutral-600 hover:underline"
+                          href=${`/archives/${
+                            this.profile!.aid
+                          }/crawl-templates/config/${id}`}
+                        >
+                          ${name}
+                        </a>
+                      </li>
+                    `
+                )}
+              </ul>
             </dd>
           </div>
         </dl>

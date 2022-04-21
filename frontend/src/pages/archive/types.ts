@@ -67,9 +67,5 @@ export type Profile = {
   profileId: string;
   baseProfileName: string;
   aid: string;
-  resource: {
-    filename: string;
-    hash: string;
-    size: number;
-  };
+  crawlconfigs: { id: string; name: string }[];
 };
