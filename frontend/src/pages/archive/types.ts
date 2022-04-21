@@ -54,7 +54,7 @@ export type CrawlTemplate = {
   inactive: boolean;
   config: CrawlConfig;
   scale: number;
-  profileId: string | null;
+  profileid: string | null;
   profileName: string | null;
 };
 

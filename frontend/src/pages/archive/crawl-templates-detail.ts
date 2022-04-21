@@ -591,10 +591,10 @@ export class CrawlTemplatesDetail extends LiteElement {
         <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
         ${this.crawlTemplate
           ? html`
-              ${this.crawlTemplate.profileId
+              ${this.crawlTemplate.profileid
                 ? html`<a
                     class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileId}`}
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
                     @click=${this.navLink}
                   >
                     <sl-icon
