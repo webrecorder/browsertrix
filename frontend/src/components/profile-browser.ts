@@ -72,8 +72,12 @@ export class ProfileBrowser extends LiteElement {
   }
 
   updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("browserId") && this.browserId) {
-      this.fetchBrowser();
+    if (changedProperties.has("browserId")) {
+      if (this.browserId) {
+        this.fetchBrowser();
+      } else if (changedProperties.get("browserId")) {
+        this.iframeSrc = undefined;
+      }
     }
   }
 
