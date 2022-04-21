@@ -35,13 +35,22 @@ export class BrowserProfilesDetail extends LiteElement {
   private isLoading = false;
 
   @state()
-  private isSubmitting = false;
+  private isSubmittingBrowserChange = false;
+
+  @state()
+  private isSubmittingProfileChange = false;
 
   @state()
   private showSaveButton = false;
 
   @state()
   private browserId?: string;
+
+  @state()
+  private isEditDialogOpen = false;
+
+  @state()
+  private isEditDialogContentVisible = false;
 
   private showSaveButtonTimerId?: number;
 
@@ -72,17 +81,20 @@ export class BrowserProfilesDetail extends LiteElement {
 
       <header class="md:flex items-center justify-between mb-3">
         <h2 class="text-xl md:text-3xl font-bold md:h-9 mb-1">
-          ${this.profile?.name ||
-          html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
+          ${this.profile?.name
+            ? html`${this.profile?.name}
+                <sl-button
+                  size="small"
+                  type="text"
+                  @click=${() => (this.isEditDialogOpen = true)}
+                >
+                  ${msg("Edit")}
+                </sl-button>`
+            : html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
         </h2>
         <div>
           ${this.profile
-            ? html` <sl-button
-                size="small"
-                @click=${() => this.duplicateProfile()}
-              >
-                ${msg("Duplicate Profile")}</sl-button
-              >`
+            ? this.renderMenu()
             : html`<sl-skeleton
                 style="width: 6em; height: 2em;"
               ></sl-skeleton>`}
@@ -144,7 +156,7 @@ export class BrowserProfilesDetail extends LiteElement {
             ? html`
                 <!-- Hide browser area with overlay -->
                 <!-- TODO remove when browser no longer shows dev tools -->
-                ${this.isSubmitting
+                ${this.isSubmittingBrowserChange
                   ? html`<div
                       class="absolute top-0 left-0 h-full flex items-center justify-center text-4xl bg-slate-50 lg:rounded-l-lg border border-r-0"
                       style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
@@ -161,7 +173,7 @@ export class BrowserProfilesDetail extends LiteElement {
                         class="shadow"
                         type="primary"
                         size="small"
-                        @click=${this.saveProfile}
+                        @click=${this.saveBrowser}
                         >${msg("Done Editing")}</sl-button
                       >
                     </div>`
@@ -193,7 +205,100 @@ export class BrowserProfilesDetail extends LiteElement {
                 </div>
               `}
         </main>
-      </section>`;
+      </section>
+
+      <sl-dialog
+        label=${msg(str`Edit Profile`)}
+        ?open=${this.isEditDialogOpen}
+        @sl-request-close=${() => (this.isEditDialogOpen = false)}
+        @sl-show=${() => (this.isEditDialogContentVisible = true)}
+        @sl-after-hide=${() => (this.isEditDialogContentVisible = false)}
+      >
+        ${this.isEditDialogContentVisible ? this.renderEditProfile() : ""}
+      </sl-dialog> `;
+  }
+
+  private renderMenu() {
+    return html`
+      <sl-dropdown placement="bottom-end" distance="4">
+        <sl-button slot="trigger" type="primary" size="small" caret
+          >${msg("Actions")}</sl-button
+        >
+
+        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              e.target.closest("sl-dropdown").hide();
+              this.isEditDialogOpen = true;
+            }}
+          >
+            <sl-icon
+              class="inline-block align-middle px-1"
+              name="pencil-square"
+            ></sl-icon>
+            <span class="inline-block align-middle pr-2"
+              >${msg("Edit name & description")}</span
+            >
+          </li>
+          <li
+            class="p-2 hover:bg-zinc-100 cursor-pointer"
+            role="menuitem"
+            @click=${() => this.duplicateProfile()}
+          >
+            <sl-icon
+              class="inline-block align-middle px-1"
+              name="files"
+            ></sl-icon>
+            <span class="inline-block align-middle pr-2"
+              >${msg("Duplicate profile")}</span
+            >
+          </li>
+        </ul>
+      </sl-dropdown>
+    `;
+  }
+
+  private renderEditProfile() {
+    if (!this.profile) return;
+
+    return html`
+      <sl-form @sl-submit=${this.onSubmitEdit}>
+        <div class="mb-5">
+          <sl-input
+            name="name"
+            label=${msg("Name")}
+            autocomplete="off"
+            value=${this.profile.name}
+            required
+          ></sl-input>
+        </div>
+
+        <div class="mb-5">
+          <sl-textarea
+            name="description"
+            label=${msg("Description")}
+            rows="2"
+            autocomplete="off"
+            value=${this.profile.description || ""}
+          ></sl-textarea>
+        </div>
+
+        <div class="text-right">
+          <sl-button type="text" @click=${() => (this.isEditDialogOpen = false)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            type="primary"
+            submit
+            ?disabled=${this.isSubmittingProfileChange}
+            ?loading=${this.isSubmittingProfileChange}
+            >${msg("Save Changes")}</sl-button
+          >
+        </div>
+      </sl-form>
+    `;
   }
 
   private async startBrowserPreview() {
@@ -309,7 +414,7 @@ export class BrowserProfilesDetail extends LiteElement {
     return data;
   }
 
-  private async saveProfile() {
+  private async saveBrowser() {
     if (!this.browserId) return;
 
     if (
@@ -322,7 +427,7 @@ export class BrowserProfilesDetail extends LiteElement {
       return;
     }
 
-    this.isSubmitting = true;
+    this.isSubmittingBrowserChange = true;
     this.showSaveButton = false;
 
     const params = {
@@ -340,14 +445,17 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       );
 
-      this.notify({
-        message: msg("Successfully saved browser profile."),
-        type: "success",
-        icon: "check2-circle",
-      });
+      if (data.success === true) {
+        this.notify({
+          message: msg("Successfully saved browser profile."),
+          type: "success",
+          icon: "check2-circle",
+        });
 
-      this.profile = data;
-      this.browserId = undefined;
+        this.browserId = undefined;
+      } else {
+        throw data;
+      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
@@ -358,7 +466,55 @@ export class BrowserProfilesDetail extends LiteElement {
       this.showSaveButton = true;
     }
 
-    this.isSubmitting = false;
+    this.isSubmittingBrowserChange = false;
+  }
+
+  private async onSubmitEdit(e: { detail: { formData: FormData } }) {
+    this.isSubmittingProfileChange = true;
+
+    const { formData } = e.detail;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+
+    const params = {
+      name,
+      description,
+    };
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/${this.profileId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        }
+      );
+
+      if (data.success === true) {
+        this.notify({
+          message: msg("Successfully saved browser profile."),
+          type: "success",
+          icon: "check2-circle",
+        });
+
+        this.profile = {
+          ...this.profile,
+          ...params,
+        } as Profile;
+        this.isEditDialogOpen = false;
+      } else {
+        throw data;
+      }
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't save browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingProfileChange = false;
   }
 
   /**
