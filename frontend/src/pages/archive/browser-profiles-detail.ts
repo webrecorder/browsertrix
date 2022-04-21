@@ -142,9 +142,11 @@ export class BrowserProfilesDetail extends LiteElement {
 
           ${this.browserId && !this.isLoading
             ? html`
+                <!-- Hide browser area with overlay -->
+                <!-- TODO remove when browser no longer shows dev tools -->
                 ${this.isSubmitting
                   ? html`<div
-                      class="absolute top-0 left-0 h-full flex items-center justify-center text-4xl bg-slate-50 lg:rounded-lg border"
+                      class="absolute top-0 left-0 h-full flex items-center justify-center text-4xl bg-slate-50 lg:rounded-l-lg border border-r-0"
                       style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
                     >
                       <sl-spinner></sl-spinner>
@@ -320,6 +322,7 @@ export class BrowserProfilesDetail extends LiteElement {
     }
 
     this.isSubmitting = true;
+    this.showSaveButton = false;
 
     const params = {
       name: this.profile!.name,
@@ -349,6 +352,8 @@ export class BrowserProfilesDetail extends LiteElement {
         type: "danger",
         icon: "exclamation-octagon",
       });
+
+      this.showSaveButton = true;
     }
 
     this.isSubmitting = false;
