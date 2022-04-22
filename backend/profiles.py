@@ -15,6 +15,7 @@ from archives import Archive
 from users import User
 
 from db import BaseMongoModel
+from crawlconfigs import CrawlConfigIdNameOut
 
 
 BROWSER_EXPIRE = 300
@@ -42,14 +43,13 @@ class Profile(BaseMongoModel):
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
-    baseId: Optional[UUID4]
 
 
 # ============================================================================
-class ProfileOut(Profile):
-    """ Profile for output serialization, adds name of base profile, if any """
+class ProfileWithCrawlConfigs(Profile):
+    """ Profile with list of crawlconfigs useing this profile """
 
-    baseProfileName: Optional[str]
+    crawlconfigs: List[CrawlConfigIdNameOut] = []
 
 
 # ============================================================================
@@ -97,6 +97,12 @@ class ProfileOps:
             responses={404: {"description": "Not found"}},
         )
         asyncio.create_task(self.init_redis(redis_url))
+
+        self.crawlconfigs = None
+
+    def set_crawlconfigs(self, crawlconfigs):
+        """ set crawlconfigs ops """
+        self.crawlconfigs = crawlconfigs
 
     async def init_redis(self, redis_url):
         """ init redis async """
@@ -245,14 +251,14 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        return self.resolve_base_profile(profile)
+        return profile
 
     async def update_profile_metadata(
         self, profileid: UUID4, update: ProfileCreateUpdate
     ):
         """ Update name and description metadata only on existing profile """
         query = {"name": update.name}
-        if update.description:
+        if update.description is not None:
             query["description"] = update.description
 
         if not await self.profiles.find_one_and_update(
@@ -266,7 +272,7 @@ class ProfileOps:
         """ list all profiles"""
         cursor = self.profiles.find({"aid": archive.id})
         results = await cursor.to_list(length=1000)
-        return [ProfileOut.from_dict(res) for res in results]
+        return [Profile.from_dict(res) for res in results]
 
     async def get_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
@@ -280,7 +286,18 @@ class ProfileOps:
         if not res:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return ProfileOut.from_dict(res)
+        return Profile.from_dict(res)
+
+    async def get_profile_with_configs(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ get profile for api output, with crawlconfigs """
+
+        profile = await self.get_profile(profileid, archive)
+
+        crawlconfigs = await self.get_crawl_configs_for_profile(profileid, archive)
+
+        return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
 
     async def get_profile_storage_path(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
@@ -304,6 +321,39 @@ class ProfileOps:
         except:
             return None
 
+    async def get_crawl_configs_for_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ Get list of crawl config id, names for that use a particular profile """
+
+        crawlconfig_names = await self.crawlconfigs.get_crawl_config_ids_for_profile(
+            profileid, archive
+        )
+
+        return crawlconfig_names
+
+    async def delete_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ delete profile, if not used in active crawlconfig """
+        profile = await self.get_profile_with_configs(profileid, archive)
+
+        if len(profile.crawlconfigs) > 0:
+            return {"error": "in_use", "crawlconfigs": profile.crawlconfigs}
+
+        query = {"_id": profileid}
+        if archive:
+            query["aid"] = archive.id
+
+        # todo: delete the file itself!
+        # delete profile.pathname
+
+        res = await self.profiles.delete_one(query)
+        if not res or res.get("deleteCount") != 1:
+            raise HTTPException(status_code=404, detail="profile_not_found")
+
+        return {"success": True}
+
     async def delete_profile_browser(self, browserid):
         """ delete profile browser immediately """
         if not await self.crawl_manager.delete_profile_browser(browserid):
@@ -320,11 +370,6 @@ class ProfileOps:
             return {}
 
         raise HTTPException(status_code=403, detail="Unauthorized")
-
-    # pylint: disable=no-self-use
-    def resolve_base_profile(self, profile):
-        """ resolve base profile name, if any """
-        return ProfileOut(**profile.serialize())
 
     async def _req_browser_data(self, browserid, path, method="GET", json=None):
         browser_data = await self.crawl_manager.get_profile_browser_data(browserid)
@@ -369,13 +414,13 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
 
         return browserid
 
-    @router.get("", response_model=List[ProfileOut])
+    @router.get("", response_model=List[Profile])
     async def list_profiles(
         archive: Archive = Depends(archive_crawl_dep),
     ):
         return await ops.list_profiles(archive)
 
-    @router.post("", response_model=ProfileOut)
+    @router.post("", response_model=Profile)
     async def commit_browser_to_new(
         browser_commit: ProfileCreateUpdate,
         archive: Archive = Depends(archive_crawl_dep),
@@ -384,25 +429,35 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
 
         return await ops.commit_profile(browser_commit)
 
-    @router.patch("/{profileid}", response_model=ProfileOut)
+    @router.patch("/{profileid}")
     async def commit_browser_to_existing(
         browser_commit: ProfileCreateUpdate,
         profileid: UUID4,
         archive: Archive = Depends(archive_crawl_dep),
     ):
         if not browser_commit.browserid:
-            return await ops.update_profile_metadata(profileid, browser_commit)
+            await ops.update_profile_metadata(profileid, browser_commit)
 
-        await browser_dep(browser_commit.browserid, archive)
+        else:
+            await browser_dep(browser_commit.browserid, archive)
 
-        return await ops.commit_profile(browser_commit, profileid)
+            await ops.commit_profile(browser_commit, profileid)
 
-    @router.get("/{profileid}", response_model=ProfileOut)
+        return {"success": True}
+
+    @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
     async def get_profile(
         profileid: UUID4,
         archive: Archive = Depends(archive_crawl_dep),
     ):
-        return await ops.get_profile(profileid, archive)
+        return await ops.get_profile_with_configs(profileid, archive)
+
+    @router.delete("/{profileid}")
+    async def delete_profile(
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        return await ops.delete_profile(profileid, archive)
 
     @router.post("/browser", response_model=BrowserId)
     async def create_new(

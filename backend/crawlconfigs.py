@@ -84,7 +84,7 @@ class CrawlConfigIn(BaseModel):
 
     name: Optional[str]
 
-    profileid: Optional[str]
+    profileid: Optional[UUID4]
 
     colls: Optional[List[str]] = []
 
@@ -142,6 +142,13 @@ class CrawlConfigOut(CrawlConfig):
 
 
 # ============================================================================
+class CrawlConfigIdNameOut(BaseMongoModel):
+    """ Crawl Config id and name output only """
+
+    name: str
+
+
+# ============================================================================
 class CrawlConfigsResponse(BaseModel):
     """ model for crawl configs response """
 
@@ -154,6 +161,7 @@ class UpdateCrawlConfig(BaseModel):
 
     name: Optional[str]
     schedule: Optional[str]
+    profileid: Optional[str]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
 
 
@@ -171,6 +179,7 @@ class CrawlConfigOps:
         self.archive_ops = archive_ops
         self.crawl_manager = crawl_manager
         self.profiles = profiles
+        self.profiles.set_crawlconfigs(self)
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -210,7 +219,7 @@ class CrawlConfigOps:
         profile_filename = None
         if config.profileid:
             profile_filename = await self.profiles.get_profile_storage_path(
-                uuid.UUID(config.profileid), archive
+                config.profileid, archive
             )
             if not profile_filename:
                 raise HTTPException(status_code=400, detail="invalid_profile_id")
@@ -275,6 +284,15 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
+        if update.profileid is not None:
+            # if empty string, set to none, remove profile association
+            if update.profileid == "":
+                update.profileid = None
+            else:
+                update.profileid = (
+                    await self.profiles.get_profile(update.profileid)
+                ).id
+
         # update in db
         if not await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}}, {"$set": query}
@@ -334,6 +352,20 @@ class CrawlConfigOps:
             configs.append(config)
 
         return CrawlConfigsResponse(crawlConfigs=configs)
+
+    async def get_crawl_config_ids_for_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ Return all crawl configs that are associated with a given profileid"""
+        query = {"profileid": profileid, "inactive": {"$ne": True}}
+        if archive:
+            query["aid"] = archive.id
+
+        cursor = self.crawl_configs.find(query, projection=["_id", "name"])
+        results = await cursor.to_list(length=1000)
+        print("for profile", profileid, query, results)
+        results = [CrawlConfigIdNameOut.from_dict(res) for res in results]
+        return results
 
     async def get_running_crawl(self, crawlconfig: CrawlConfig):
         """ Return the id of currently running crawl for this config, if any """
