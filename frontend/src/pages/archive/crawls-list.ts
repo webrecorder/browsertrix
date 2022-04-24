@@ -129,7 +129,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header class="pb-4">${this.renderControls()}</header>
+        <header class="mb-4">${this.renderControls()}</header>
         <section>
           ${this.crawls.length
             ? this.renderCrawlList()
@@ -164,10 +164,10 @@ export class CrawlsList extends LiteElement {
       <div class="grid grid-cols-2 gap-3 items-center">
         <div class="col-span-2 md:col-span-1">
           <sl-input
+            size="small"
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by Crawl Template name or ID")}
-            pill
             clearable
             ?disabled=${!this.crawls?.length}
             @sl-input=${this.onSearchInput}
@@ -177,7 +177,7 @@ export class CrawlsList extends LiteElement {
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort by")}
+            ${msg("Sort By")}
           </div>
           <sl-dropdown
             placement="bottom-end"
@@ -192,6 +192,7 @@ export class CrawlsList extends LiteElement {
           >
             <sl-button
               slot="trigger"
+              size="small"
               pill
               caret
               ?disabled=${!this.crawls?.length}

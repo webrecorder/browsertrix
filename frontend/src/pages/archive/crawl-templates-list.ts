@@ -2,6 +2,12 @@ import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
+import debounce from "lodash/fp/debounce";
+import flow from "lodash/fp/flow";
+import map from "lodash/fp/map";
+import orderBy from "lodash/fp/orderBy";
+import filter from "lodash/fp/filter";
+import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -12,6 +18,14 @@ import "../../components/crawl-scheduler";
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
   [configId: string]: string;
+};
+
+const MIN_SEARCH_LENGTH = 2;
+const sortableFieldLabels = {
+  created_desc: msg("Newest"),
+  created_asc: msg("Oldest"),
+  lastCrawlTime_desc: msg("Newest Crawl"),
+  lastCrawlTime_asc: msg("Oldest Crawl"),
 };
 
 /**
@@ -40,9 +54,34 @@ export class CrawlTemplatesList extends LiteElement {
   @state()
   selectedTemplateForEdit?: CrawlTemplate;
 
+  @state()
+  private orderBy: {
+    field: "created";
+    direction: "asc" | "desc";
+  } = {
+    field: "created",
+    direction: "desc",
+  };
+
+  @state()
+  private searchBy: string = "";
+
+  @state()
+  private filterByScheduled: boolean | null = null;
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    keys: ["name"],
+    shouldSort: false,
+    threshold: 0.4, // stricter; default is 0.6
+  });
+
   async firstUpdated() {
     try {
       this.crawlTemplates = await this.getCrawlTemplates();
+
+      // Update search/filter collection
+      this.fuse.setCollection(this.crawlTemplates as any);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl templates at this time."),
@@ -53,182 +92,24 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   render() {
-    if (!this.crawlTemplates) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
     return html`
-      <div
-        class=${this.crawlTemplates.length
-          ? "grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4"
-          : "flex justify-center"}
-      >
-        <a
-          href=${`/archives/${this.archiveId}/crawl-templates/new`}
-          class="col-span-1 bg-slate-50 border border-indigo-200 hover:border-primary text-primary text-center font-medium rounded px-6 py-4 transition-colors"
-          @click=${this.navLink}
-          role="button"
-        >
-          <sl-icon
-            class="inline-block align-middle mr-2"
-            name="plus-square"
-          ></sl-icon
-          ><span
-            class="inline-block align-middle mr-2 ${this.crawlTemplates.length
-              ? "text-sm"
-              : "font-medium"}"
-            >${msg("New Crawl Template")}</span
-          >
-        </a>
-      </div>
+      <div class="mb-4">${this.renderControls()}</div>
 
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-        ${this.crawlTemplates.map(
-          (t) =>
-            html`<a
-              class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-              aria-label=${t.name}
-              href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
-              @click=${this.navLink}
-            >
-              <header class="flex">
-                <div
-                  class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-                  title=${t.name}
-                >
-                  ${t.name}
-                </div>
-
-                ${this.renderCardMenu(t)}
-              </header>
-
-              <div class="px-3 pb-3 flex justify-between items-end text-0-800">
-                <div class="grid gap-2 text-xs leading-none">
-                  <div class="overflow-hidden">
-                    <sl-tooltip
-                      content=${t.config.seeds
-                        .map((seed) =>
-                          typeof seed === "string" ? seed : seed.url
-                        )
-                        .join(", ")}
-                    >
-                      <div
-                        class="font-mono whitespace-nowrap truncate text-0-500"
-                      >
-                        <span class="underline decoration-dashed"
-                          >${t.config.seeds
-                            .map((seed) =>
-                              typeof seed === "string" ? seed : seed.url
-                            )
-                            .join(", ")}</span
-                        >
-                      </div>
-                    </sl-tooltip>
-                  </div>
-                  <div class="font-mono text-purple-500">
-                    ${t.crawlCount === 1
-                      ? msg(str`${t.crawlCount} crawl`)
-                      : msg(
-                          str`${(t.crawlCount || 0).toLocaleString()} crawls`
-                        )}
-                  </div>
-                  <div>
-                    ${t.crawlCount
-                      ? html`<sl-tooltip>
-                          <span slot="content" class="capitalize">
-                            ${msg(
-                              str`Last Crawl: ${t.lastCrawlState && t.lastCrawlState.replace(
-                                /_/g,
-                                " "
-                              )}`
-                            )}
-                          </span>
-                          <a
-                            class="font-medium hover:underline"
-                            href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
-                            @click=${(e: any) => {
-                              e.stopPropagation();
-                              this.navLink(e);
-                            }}
-                          >
-                            <sl-icon
-                              class="inline-block align-middle mr-1 ${t.lastCrawlState ===
-                              "failed"
-                                ? "text-neutral-400"
-                                : "text-purple-400"}"
-                              name=${t.lastCrawlState === "complete"
-                                ? "check-circle-fill"
-                                : t.lastCrawlState === "failed"
-                                ? "x-circle-fill"
-                                : "exclamation-circle-fill"}
-                            ></sl-icon
-                            ><sl-format-date
-                              class="inline-block align-middle text-neutral-600"
-                              date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
-                              month="2-digit"
-                              day="2-digit"
-                              year="2-digit"
-                              hour="numeric"
-                              minute="numeric"
-                              time-zone-name="short"
-                            ></sl-format-date>
-                          </a>
-                        </sl-tooltip>`
-                      : html`
-                          <sl-icon
-                            class="inline-block align-middle mr-1 text-0-400"
-                            name="slash-circle"
-                          ></sl-icon
-                          ><span class="inline-block align-middle text-0-400"
-                            >${msg("No finished crawls")}</span
-                          >
-                        `}
-                  </div>
-                  <div>
-                    ${t.schedule
-                      ? html`
-                          <sl-tooltip content=${msg("Next scheduled crawl")}>
-                            <span>
-                              <sl-icon
-                                class="inline-block align-middle mr-1"
-                                name="clock-history"
-                              ></sl-icon
-                              ><sl-format-date
-                                class="inline-block align-middle text-0-600"
-                                date="${cronParser
-                                  .parseExpression(t.schedule, {
-                                    utc: true,
-                                  })
-                                  .next()
-                                  .toString()}"
-                                month="2-digit"
-                                day="2-digit"
-                                year="2-digit"
-                                hour="numeric"
-                                minute="numeric"
-                                time-zone-name="short"
-                              ></sl-format-date>
-                            </span>
-                          </sl-tooltip>
-                        `
-                      : html`<sl-icon
-                            class="inline-block align-middle mr-1 text-0-400"
-                            name="slash-circle"
-                          ></sl-icon
-                          ><span class="inline-block align-middle text-0-400"
-                            >${msg("No schedule")}</span
-                          >`}
-                  </div>
-                </div>
-                ${this.renderCardFooter(t)}
+      ${this.crawlTemplates
+        ? this.crawlTemplates.length
+          ? this.renderTemplateList()
+          : html`
+              <div class="border-t border-b py-5">
+                <p class="text-center text-0-500">
+                  ${msg("No crawl templates yet.")}
+                </p>
               </div>
-            </a>`
-        )}
-      </div>
+            `
+        : html`<div
+            class="w-full flex items-center justify-center my-24 text-4xl"
+          >
+            <sl-spinner></sl-spinner>
+          </div>`}
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
@@ -250,6 +131,284 @@ export class CrawlTemplatesList extends LiteElement {
           : ""}
       </sl-dialog>
     `;
+  }
+
+  private renderControls() {
+    return html`
+      <div class="flex flex-wrap items-center">
+        <div class="grow mr-4 mb-4">
+          <sl-input
+            class="w-full"
+            slot="trigger"
+            placeholder=${msg("Search by name")}
+            style="--sl-input-height-medium: 2.25rem;"
+            clearable
+            ?disabled=${!this.crawlTemplates?.length}
+            @sl-input=${this.onSearchInput}
+          >
+            <sl-icon name="search" slot="prefix"></sl-icon>
+          </sl-input>
+        </div>
+
+        <div class="grow-0 mb-4">
+          <a
+            href=${`/archives/${this.archiveId}/crawl-templates/new`}
+            class="block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
+            role="button"
+            @click=${this.navLink}
+          >
+            <sl-icon
+              class="inline-block align-middle mr-2"
+              name="plus-lg"
+            ></sl-icon
+            ><span class="inline-block align-middle mr-2 text-sm"
+              >${msg("New Crawl Template")}</span
+            >
+          </a>
+        </div>
+      </div>
+
+      ${this.crawlTemplates && this.crawlTemplates.length
+        ? html`<div class="flex flex-wrap items-center justify-between">
+            <div class="text-sm">
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === null
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === null}
+                @click=${() => (this.filterByScheduled = null)}
+              >
+                ${msg("All")}
+              </button>
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === true
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === true}
+                @click=${() => (this.filterByScheduled = true)}
+              >
+                ${msg("Scheduled")}
+              </button>
+              <button
+                class="inline-block font-medium border-2 border-transparent ${this
+                  .filterByScheduled === false
+                  ? "border-b-current text-primary"
+                  : "text-neutral-500"} mr-3"
+                aria-selected=${this.filterByScheduled === false}
+                @click=${() => (this.filterByScheduled = false)}
+              >
+                ${msg("No schedule")}
+              </button>
+            </div>
+            <div class="flex items-center justify-end">
+              <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+                ${msg("Sort By")}
+              </div>
+              <sl-dropdown
+                placement="bottom-end"
+                distance="4"
+                @sl-select=${(e: any) => {
+                  const [field, direction] = e.detail.item.value.split("_");
+                  this.orderBy = {
+                    field: field,
+                    direction: direction,
+                  };
+                }}
+              >
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  pill
+                  caret
+                  ?disabled=${!this.crawlTemplates?.length}
+                  >${(sortableFieldLabels as any)[this.orderBy.field] ||
+                  sortableFieldLabels[
+                    `${this.orderBy.field}_${this.orderBy.direction}`
+                  ]}</sl-button
+                >
+                <sl-menu>
+                  ${Object.entries(sortableFieldLabels).map(
+                    ([value, label]) => html`
+                      <sl-menu-item
+                        value=${value}
+                        ?checked=${value ===
+                        `${this.orderBy.field}_${this.orderBy.direction}`}
+                        >${label}</sl-menu-item
+                      >
+                    `
+                  )}
+                </sl-menu>
+              </sl-dropdown>
+              <sl-icon-button
+                name="arrow-down-up"
+                label=${msg("Reverse sort")}
+                @click=${() => {
+                  this.orderBy = {
+                    ...this.orderBy,
+                    direction:
+                      this.orderBy.direction === "asc" ? "desc" : "asc",
+                  };
+                }}
+              ></sl-icon-button>
+            </div>
+          </div>`
+        : ""}
+    `;
+  }
+
+  private renderTemplateList() {
+    const flowFns = [
+      orderBy(this.orderBy.field, this.orderBy.direction),
+      map(this.renderTemplateItem.bind(this)),
+    ];
+
+    if (this.filterByScheduled === true) {
+      flowFns.unshift(filter(({ schedule }: any) => Boolean(schedule)));
+    } else if (this.filterByScheduled === false) {
+      flowFns.unshift(filter(({ schedule }: any) => !schedule));
+    }
+
+    if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
+      flowFns.unshift(this.filterResults);
+    }
+
+    return html`
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+        ${flow(...flowFns)(this.crawlTemplates)}
+      </div>
+    `;
+  }
+
+  private renderTemplateItem(t: CrawlTemplate) {
+    return html`<a
+      class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
+      aria-label=${t.name}
+      href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
+      @click=${this.navLink}
+    >
+      <header class="flex">
+        <div
+          class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
+          title=${t.name}
+        >
+          ${t.name}
+        </div>
+
+        ${this.renderCardMenu(t)}
+      </header>
+
+      <div class="px-3 pb-3 flex justify-between items-end text-0-800">
+        <div class="grid gap-2 text-xs leading-none">
+          <div class="overflow-hidden">
+            <sl-tooltip
+              content=${t.config.seeds
+                .map((seed) => (typeof seed === "string" ? seed : seed.url))
+                .join(", ")}
+            >
+              <div class="font-mono whitespace-nowrap truncate text-0-500">
+                <span class="underline decoration-dashed"
+                  >${t.config.seeds
+                    .map((seed) => (typeof seed === "string" ? seed : seed.url))
+                    .join(", ")}</span
+                >
+              </div>
+            </sl-tooltip>
+          </div>
+          <div class="font-mono text-purple-500">
+            ${t.crawlCount === 1
+              ? msg(str`${t.crawlCount} crawl`)
+              : msg(str`${(t.crawlCount || 0).toLocaleString()} crawls`)}
+          </div>
+          <div>
+            ${t.crawlCount
+              ? html`<sl-tooltip>
+                  <span slot="content" class="capitalize">
+                    ${msg(
+                      str`Last Crawl: ${t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")}`
+                    )}
+                  </span>
+                  <a
+                    class="font-medium hover:underline"
+                    href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
+                    @click=${(e: any) => {
+                      e.stopPropagation();
+                      this.navLink(e);
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle mr-1 ${t.lastCrawlState ===
+                      "failed"
+                        ? "text-neutral-400"
+                        : "text-purple-400"}"
+                      name=${t.lastCrawlState === "complete"
+                        ? "check-circle-fill"
+                        : t.lastCrawlState === "failed"
+                        ? "x-circle-fill"
+                        : "exclamation-circle-fill"}
+                    ></sl-icon
+                    ><sl-format-date
+                      class="inline-block align-middle text-neutral-600"
+                      date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
+                  </a>
+                </sl-tooltip>`
+              : html`
+                  <sl-icon
+                    class="inline-block align-middle mr-1 text-0-400"
+                    name="slash-circle"
+                  ></sl-icon
+                  ><span class="inline-block align-middle text-0-400"
+                    >${msg("No finished crawls")}</span
+                  >
+                `}
+          </div>
+          <div>
+            ${t.schedule
+              ? html`
+                  <sl-tooltip content=${msg("Next scheduled crawl")}>
+                    <span>
+                      <sl-icon
+                        class="inline-block align-middle mr-1"
+                        name="clock-history"
+                      ></sl-icon
+                      ><sl-format-date
+                        class="inline-block align-middle text-0-600"
+                        date="${cronParser
+                          .parseExpression(t.schedule, {
+                            utc: true,
+                          })
+                          .next()
+                          .toString()}"
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                      ></sl-format-date>
+                    </span>
+                  </sl-tooltip>
+                `
+              : html`<sl-icon
+                    class="inline-block align-middle mr-1 text-0-400"
+                    name="slash-circle"
+                  ></sl-icon
+                  ><span class="inline-block align-middle text-0-400"
+                    >${msg("No schedule")}</span
+                  >`}
+          </div>
+        </div>
+        ${this.renderCardFooter(t)}
+      </div>
+    </a>`;
   }
 
   private renderCardMenu(t: CrawlTemplate) {
@@ -382,6 +541,16 @@ export class CrawlTemplatesList extends LiteElement {
       </div>
     `;
   }
+
+  private onSearchInput = debounce(200)((e: any) => {
+    this.searchBy = e.target.value;
+  }) as any;
+
+  private filterResults = () => {
+    const results = this.fuse.search(this.searchBy);
+
+    return results.map(({ item }) => item);
+  };
 
   /**
    * Fetch crawl templates and record running crawls
