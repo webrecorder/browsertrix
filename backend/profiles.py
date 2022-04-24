@@ -15,6 +15,7 @@ from archives import Archive
 from users import User
 
 from db import BaseMongoModel
+from crawlconfigs import CrawlConfigIdNameOut
 
 
 BROWSER_EXPIRE = 300
@@ -33,7 +34,7 @@ class Profile(BaseMongoModel):
     """ Browser profile """
 
     name: str
-    description: str
+    description: Optional[str] = ""
 
     userid: UUID4
     aid: UUID4
@@ -42,22 +43,27 @@ class Profile(BaseMongoModel):
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
-    baseId: Optional[UUID4]
 
 
 # ============================================================================
-class ProfileOut(Profile):
-    """ Profile for output serialization, adds name of base profile, if any """
+class ProfileWithCrawlConfigs(Profile):
+    """ Profile with list of crawlconfigs useing this profile """
 
-    baseProfileName: Optional[str]
+    crawlconfigs: List[CrawlConfigIdNameOut] = []
 
 
 # ============================================================================
-class ProfileLaunchBrowserIn(BaseModel):
-    """ Request to launch new browser for creating profile """
+class UrlIn(BaseModel):
+    """ Request to set url """
 
     url: HttpUrl
-    baseId: Optional[str]
+
+
+# ============================================================================
+class ProfileLaunchBrowserIn(UrlIn):
+    """ Request to launch new browser for creating profile """
+
+    profileId: Optional[UUID4]
 
 
 # ============================================================================
@@ -68,30 +74,17 @@ class BrowserId(BaseModel):
 
 
 # ============================================================================
-class ProfileCommitIn(BaseModel):
-    """ Profile metadata for committing current profile """
+class ProfileCreateUpdate(BaseModel):
+    """ Profile metadata for committing current browser to profile """
 
+    browserid: Optional[str]
     name: str
-    description: Optional[str]
+    description: Optional[str] = ""
 
 
 # ============================================================================
 class ProfileOps:
     """ Profile management """
-
-    @staticmethod
-    def get_command(url):
-        """ Get Command for running profile browser """
-        return [
-            "create-login-profile",
-            "--interactive",
-            "--shutdownWait",
-            str(BROWSER_EXPIRE),
-            "--filename",
-            "/tmp/profile.tar.gz",
-            "--url",
-            str(url),
-        ]
 
     def __init__(self, mdb, redis_url, crawl_manager):
         self.profiles = mdb["profiles"]
@@ -105,28 +98,33 @@ class ProfileOps:
         )
         asyncio.create_task(self.init_redis(redis_url))
 
+        self.crawlconfigs = None
+
+    def set_crawlconfigs(self, crawlconfigs):
+        """ set crawlconfigs ops """
+        self.crawlconfigs = crawlconfigs
+
     async def init_redis(self, redis_url):
         """ init redis async """
         self.redis = await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
         )
 
-    async def create_new_profile(
+    async def create_new_browser(
         self, archive: Archive, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """ Create new profile """
-        command = self.get_command(profile_launch.url)
-
-        profileid = str(uuid.uuid4())
+        command = await self.get_command(profile_launch, archive)
 
         browserid = await self.crawl_manager.run_profile_browser(
-            profileid,
             str(user.id),
             str(archive.id),
             archive.storage,
             command,
-            filename=f"profile-{profileid}.tar.gz",
+            baseprofile=str(profile_launch.profileId),
         )
+
+        print("base profile", str(profile_launch.profileId))
 
         if not browserid:
             raise HTTPException(status_code=400, detail="browser_not_created")
@@ -136,9 +134,35 @@ class ProfileOps:
 
         return BrowserId(browserid=browserid)
 
+    async def get_command(
+        self, profile_launch: ProfileLaunchBrowserIn, archive: Optional[Archive] = None
+    ):
+        """ Get Command for running profile browser """
+        command = [
+            "create-login-profile",
+            "--interactive",
+            "--shutdownWait",
+            str(BROWSER_EXPIRE),
+            "--filename",
+            "/tmp/profile.tar.gz",
+            "--url",
+            str(profile_launch.url),
+        ]
+        if not profile_launch.profileId:
+            return command
+
+        path = await self.get_profile_storage_path(profile_launch.profileId, archive)
+
+        if not path:
+            raise HTTPException(status_code=400, detail="invalid_base_profile")
+
+        command.append("--profile")
+        command.append(f"@{path}")
+        return command
+
     async def get_profile_browser_url(self, browserid, aid, headers):
         """ get profile browser url """
-        json, browser_ip, _ = await self._get_browser_data(browserid, "/target")
+        json, browser_ip, _ = await self._req_browser_data(browserid, "/target")
 
         target_id = json.get("targetId")
 
@@ -165,23 +189,36 @@ class ProfileOps:
 
     async def ping_profile_browser(self, browserid):
         """ ping profile browser to keep it running """
-        await self._get_browser_data(browserid, "/ping")
+        json, _, _2 = await self._req_browser_data(browserid, "/ping")
+
+        await self.redis.expire(f"br:{browserid}", BROWSER_EXPIRE)
+
+        return {"success": True, "origins": json.get("origins") or []}
+
+    async def navigate_profile_browser(self, browserid, urlin: UrlIn):
+        """ ping profile browser to keep it running """
+        await self._req_browser_data(browserid, "/navigate", "POST", json=urlin.dict())
 
         await self.redis.expire(f"br:{browserid}", BROWSER_EXPIRE)
 
         return {"success": True}
 
-    async def commit_profile(self, browserid, commit_metadata):
+    async def commit_profile(
+        self, browser_commit: ProfileCreateUpdate, profileid: uuid.UUID = None
+    ):
         """ commit profile and shutdown profile browser """
-        json, _, browser_data = await self._get_browser_data(
-            browserid, "/createProfileJS", "POST"
-        )
 
-        profileid = None
+        if not profileid:
+            profileid = uuid.uuid4()
+
+        filename_data = {"filename": f"profile-{profileid}.tar.gz"}
+
+        json, _, browser_data = await self._req_browser_data(
+            browser_commit.browserid, "/createProfileJS", "POST", json=filename_data
+        )
 
         try:
             resource = json["resource"]
-            profileid = uuid.UUID(browser_data["btrix.profile"])
         except:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="browser_not_valid")
@@ -194,12 +231,13 @@ class ProfileOps:
 
         baseid = browser_data.get("btrix.baseprofile")
         if baseid:
+            print("baseid", baseid)
             baseid = uuid.UUID(baseid)
 
         profile = Profile(
             id=profileid,
-            name=commit_metadata.name,
-            description=commit_metadata.description,
+            name=browser_commit.name,
+            description=browser_commit.description,
             created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
             origins=json["origins"],
             resource=profile_file,
@@ -208,15 +246,33 @@ class ProfileOps:
             baseid=baseid,
         )
 
-        await self.profiles.insert_one(profile.to_dict())
+        # await self.profiles.insert_one(profile.to_dict())
+        await self.profiles.find_one_and_update(
+            {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
+        )
 
-        return self.resolve_base_profile(profile)
+        return profile
+
+    async def update_profile_metadata(
+        self, profileid: UUID4, update: ProfileCreateUpdate
+    ):
+        """ Update name and description metadata only on existing profile """
+        query = {"name": update.name}
+        if update.description is not None:
+            query["description"] = update.description
+
+        if not await self.profiles.find_one_and_update(
+            {"_id": profileid}, {"$set": query}
+        ):
+            raise HTTPException(status_code=404, detail="profile_not_found")
+
+        return {"success": True}
 
     async def list_profiles(self, archive: Archive):
         """ list all profiles"""
         cursor = self.profiles.find({"aid": archive.id})
         results = await cursor.to_list(length=1000)
-        return [ProfileOut.from_dict(res) for res in results]
+        return [Profile.from_dict(res) for res in results]
 
     async def get_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
@@ -230,7 +286,18 @@ class ProfileOps:
         if not res:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return ProfileOut.from_dict(res)
+        return Profile.from_dict(res)
+
+    async def get_profile_with_configs(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ get profile for api output, with crawlconfigs """
+
+        profile = await self.get_profile(profileid, archive)
+
+        crawlconfigs = await self.get_crawl_configs_for_profile(profileid, archive)
+
+        return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
 
     async def get_profile_storage_path(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
@@ -254,6 +321,39 @@ class ProfileOps:
         except:
             return None
 
+    async def get_crawl_configs_for_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ Get list of crawl config id, names for that use a particular profile """
+
+        crawlconfig_names = await self.crawlconfigs.get_crawl_config_ids_for_profile(
+            profileid, archive
+        )
+
+        return crawlconfig_names
+
+    async def delete_profile(
+        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+    ):
+        """ delete profile, if not used in active crawlconfig """
+        profile = await self.get_profile_with_configs(profileid, archive)
+
+        if len(profile.crawlconfigs) > 0:
+            return {"error": "in_use", "crawlconfigs": profile.crawlconfigs}
+
+        query = {"_id": profileid}
+        if archive:
+            query["aid"] = archive.id
+
+        # todo: delete the file itself!
+        # delete profile.pathname
+
+        res = await self.profiles.delete_one(query)
+        if not res or res.get("deleteCount") != 1:
+            raise HTTPException(status_code=404, detail="profile_not_found")
+
+        return {"success": True}
+
     async def delete_profile_browser(self, browserid):
         """ delete profile browser immediately """
         if not await self.crawl_manager.delete_profile_browser(browserid):
@@ -271,12 +371,7 @@ class ProfileOps:
 
         raise HTTPException(status_code=403, detail="Unauthorized")
 
-    # pylint: disable=no-self-use
-    def resolve_base_profile(self, profile):
-        """ resolve base profile name, if any """
-        return ProfileOut(**profile.serialize())
-
-    async def _get_browser_data(self, browserid, path, method="GET"):
+    async def _req_browser_data(self, browserid, path, method="GET", json=None):
         browser_data = await self.crawl_manager.get_profile_browser_data(browserid)
 
         if not browser_data:
@@ -290,7 +385,7 @@ class ProfileOps:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, f"http://{browser_ip}:9223{path}"
+                    method, f"http://{browser_ip}:9223{path}", json=json
                 ) as resp:
                     json = await resp.json()
 
@@ -315,22 +410,54 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         browserid: str, archive: Archive = Depends(archive_crawl_dep)
     ):
         if await ops.redis.hget(f"br:{browserid}", "archive") != str(archive.id):
-            raise HTTPException(status_code=403, detail="not_allowed")
+            raise HTTPException(status_code=404, detail="no_such_browser")
 
         return browserid
 
-    @router.get("", response_model=List[ProfileOut])
+    @router.get("", response_model=List[Profile])
     async def list_profiles(
         archive: Archive = Depends(archive_crawl_dep),
     ):
         return await ops.list_profiles(archive)
 
-    @router.get("/{profileid}", response_model=ProfileOut)
-    async def get_profile(
-        profileid: str,
+    @router.post("", response_model=Profile)
+    async def commit_browser_to_new(
+        browser_commit: ProfileCreateUpdate,
         archive: Archive = Depends(archive_crawl_dep),
     ):
-        return await ops.get_profile(uuid.UUID(profileid), archive)
+        await browser_dep(browser_commit.browserid, archive)
+
+        return await ops.commit_profile(browser_commit)
+
+    @router.patch("/{profileid}")
+    async def commit_browser_to_existing(
+        browser_commit: ProfileCreateUpdate,
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        if not browser_commit.browserid:
+            await ops.update_profile_metadata(profileid, browser_commit)
+
+        else:
+            await browser_dep(browser_commit.browserid, archive)
+
+            await ops.commit_profile(browser_commit, profileid)
+
+        return {"success": True}
+
+    @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
+    async def get_profile(
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        return await ops.get_profile_with_configs(profileid, archive)
+
+    @router.delete("/{profileid}")
+    async def delete_profile(
+        profileid: UUID4,
+        archive: Archive = Depends(archive_crawl_dep),
+    ):
+        return await ops.delete_profile(profileid, archive)
 
     @router.post("/browser", response_model=BrowserId)
     async def create_new(
@@ -338,17 +465,17 @@ def init_profiles_api(mdb, redis_url, crawl_manager, archive_ops, user_dep):
         archive: Archive = Depends(archive_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.create_new_profile(archive, user, profile_launch)
+        return await ops.create_new_browser(archive, user, profile_launch)
 
     @router.post("/browser/{browserid}/ping")
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.ping_profile_browser(browserid)
 
-    @router.post("/browser/{browserid}/commit", response_model=ProfileOut)
-    async def commit_profile_browser(
-        profile_commit: ProfileCommitIn, browserid: str = Depends(browser_dep)
+    @router.post("/browser/{browserid}/navigate")
+    async def navigate_profile_browser(
+        urlin: UrlIn, browserid: str = Depends(browser_dep)
     ):
-        return await ops.commit_profile(browserid, profile_commit)
+        return await ops.navigate_profile_browser(browserid, urlin)
 
     @router.get("/browser/{browserid}")
     async def get_profile_browser_url(

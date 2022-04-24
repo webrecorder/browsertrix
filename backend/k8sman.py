@@ -306,6 +306,8 @@ class K8SManager:
         filters = []
         if cid:
             filters.append(f"btrix.crawlconfig={cid}")
+        else:
+            filters.append("btrix.crawlconfig")
 
         if aid:
             filters.append(f"btrix.archive={aid}")
@@ -540,14 +542,7 @@ class K8SManager:
             return True
 
     async def run_profile_browser(
-        self,
-        profileid,
-        userid,
-        aid,
-        storage,
-        command,
-        filename,
-        base_id=None,
+        self, userid, aid, storage, command, baseprofile=None
     ):
         """run browser for profile creation """
         # Configure Annotations + Labels
@@ -561,8 +556,11 @@ class K8SManager:
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
-            "btrix.profile": profileid,
+            "btrix.profile": "1",
         }
+
+        if baseprofile:
+            labels["btrix.baseprofile"] = baseprofile
 
         await self.check_storage(storage_name)
 
@@ -572,7 +570,7 @@ class K8SManager:
         )
 
         spec = self._get_profile_browser_template(
-            command, labels, storage_name, storage_path, filename
+            command, labels, storage_name, storage_path
         )
 
         job = client.V1Job(
@@ -906,7 +904,7 @@ class K8SManager:
         return job_template
 
     def _get_profile_browser_template(
-        self, command, labels, storage_name, storage_path, out_filename
+        self, command, labels, storage_name, storage_path
     ):
         return {
             "template": {
@@ -932,10 +930,6 @@ class K8SManager:
                                     },
                                 },
                                 {"name": "STORE_PATH", "value": storage_path},
-                                {
-                                    "name": "STORE_FILENAME",
-                                    "value": out_filename,
-                                },
                             ],
                         }
                     ],

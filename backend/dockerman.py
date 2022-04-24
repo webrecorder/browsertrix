@@ -237,6 +237,8 @@ class DockerManager:
 
         if cid:
             labels.append(f"btrix.crawlconfig={cid}")
+        else:
+            labels.append("btrix.crawlconfig")
 
         if aid:
             labels.append(f"btrix.archive={aid}")
@@ -417,13 +419,11 @@ class DockerManager:
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
         self,
-        profileid,
         userid,
         aid,
         storage,
         command,
-        filename,
-        base_id=None,
+        baseprofile=None,
     ):
         """ Run browser for profile creation """
         storage_name = storage.name
@@ -436,21 +436,20 @@ class DockerManager:
             f"STORE_ACCESS_KEY={storage.access_key}",
             f"STORE_SECRET_KEY={storage.secret_key}",
             f"STORE_PATH={storage_path}",
-            f"STORE_FILENAME={filename}",
         ]
 
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
             "btrix.storage_name": storage_name,
-            "btrix.profile": profileid,
+            "btrix.profile": "1",
         }
 
         if storage.type == "default":
             labels["btrix.def_storage_path"] = storage.path
 
-        if base_id:
-            labels["btrix.baseprofile"] = base_id
+        if baseprofile:
+            labels["btrix.baseprofile"] = baseprofile
 
         run_config = {
             "Image": self.crawler_image,
