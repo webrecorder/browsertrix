@@ -1,4 +1,4 @@
-# central place to configure the production replayweb.pgae loading prefix
+# central place to configure the production replayweb.page loading prefix
 ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage@1.5.8/
 
 FROM node:16 as build
@@ -32,7 +32,8 @@ ENV RWP_BASE_URL=${RWP_BASE_URL}
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-COPY ./nginx.conf.template /etc/nginx/templates/
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./frontend.template /etc/nginx/templates/
 
 RUN rm /etc/nginx/conf.d/*
 
