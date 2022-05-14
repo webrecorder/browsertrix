@@ -4,6 +4,8 @@ from typing import Optional, List
 from datetime import datetime
 import uuid
 import asyncio
+import os
+
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
@@ -100,6 +102,8 @@ class ProfileOps:
 
         self.crawlconfigs = None
 
+        self.shared_profile_storage = os.environ.get("SHARED_PROFILE_STORAGE")
+
     def set_crawlconfigs(self, crawlconfigs):
         """ set crawlconfigs ops """
         self.crawlconfigs = crawlconfigs
@@ -116,15 +120,24 @@ class ProfileOps:
         """ Create new profile """
         command = await self.get_command(profile_launch, archive)
 
+        if self.shared_profile_storage:
+            storage_name = self.shared_profile_storage
+            storage = None
+        elif archive.storage and archive.storage.type == "default":
+            storage_name = None
+            storage = archive.storage
+        else:
+            storage_name = str(archive.id)
+            storage = None
+
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(archive.id),
-            archive.storage,
             command,
-            baseprofile=str(profile_launch.profileId),
+            storage=storage,
+            storage_name=storage_name,
+            baseprofile=profile_launch.profileId,
         )
-
-        print("base profile", str(profile_launch.profileId))
 
         if not browserid:
             raise HTTPException(status_code=400, detail="browser_not_created")
@@ -231,7 +244,6 @@ class ProfileOps:
 
         baseid = browser_data.get("btrix.baseprofile")
         if baseid:
-            print("baseid", baseid)
             baseid = uuid.UUID(baseid)
 
         profile = Profile(
@@ -391,7 +403,7 @@ class ProfileOps:
 
         except Exception:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=200, detail="waiting_for_browser")
+            raise HTTPException(status_code=400, detail="error_from_browser")
 
         return json, browser_ip, browser_data
 

@@ -54,6 +54,11 @@ spec:
         app: local-minio
 
     spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
       volumes:
         - name: data-minio
           persistentVolumeClaim:

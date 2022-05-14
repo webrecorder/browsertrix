@@ -6,7 +6,7 @@ metadata:
   name: crawler-run
 rules:
 - apiGroups: [""]
-  resources: ["pods", "pods/exec", "pods/log", "services", "configmaps", "secrets", "events"]
+  resources: ["pods", "pods/exec", "pods/log", "services", "configmaps", "secrets", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
 - apiGroups: ["batch", "extensions"]

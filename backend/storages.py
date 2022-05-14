@@ -71,7 +71,7 @@ async def get_s3_client(storage, use_access=False):
 
     async with session.create_client(
         "s3",
-        region_name="",
+        region_name=storage.region,
         endpoint_url=endpoint_url,
         aws_access_key_id=storage.access_key,
         aws_secret_access_key=storage.secret_key,

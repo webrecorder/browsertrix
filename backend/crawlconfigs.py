@@ -248,8 +248,12 @@ class CrawlConfigOps:
 
         crawlconfig = CrawlConfig.from_dict(data)
 
+        suffix = f"{self.sanitize(crawlconfig.name)}-{self.sanitize(user.name)}"
+
         # pylint: disable=line-too-long
-        out_filename = f"{self.sanitize(crawlconfig.name)}-{self.sanitize(user.name)}-@ts-@hostsuffix.wacz"
+        out_filename = (
+            f"data/{self.sanitize(crawlconfig.name)}-@id/{suffix}-@ts-@hostsuffix.wacz"
+        )
 
         new_name = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
