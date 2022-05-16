@@ -40,11 +40,11 @@ server {
     location ~* /watch/([^/]+)/([^/]+)/([^/]+)/ws {
       set $archive $1;
       set $crawl $2;
-      set $crawlerip $3;
+      set $num $3;
       set $auth_bearer $arg_auth_bearer;
-      auth_request  /ipaccess_crawl;
+      auth_request  /access_check;
 
-      proxy_pass http://$crawlerip:9037/ws;
+      proxy_pass http://crawl-$crawl-$num.crawl-$crawl${CRAWLER_FQDN_SUFFIX}:9037/ws;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;
@@ -52,21 +52,21 @@ server {
       proxy_set_header Connection $http_connection;
     }
 
-    location = /ipaccess_crawl {
+    location = /access_check {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/crawls/$crawl/ipaccess/$crawlerip?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/crawls/$crawl/access?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
 
     location ~* /loadbrowser/([^/]+)/(.*)/page/(.*)$ {
-      set $browser_ip $1;
+      set $browserid $1;
       set $auth_bearer $arg_auth_bearer;
-      set $browserid $arg_browserid;
       set $archive $arg_aid;
-      auth_request  /ipaccess_profiles;
+      auth_request  /access_check_profiles;
 
-      proxy_pass http://$browser_ip:9222/$2/page/$3;
+      #proxy_pass http://$browser_ip:9222/$2/page/$3;
+      proxy_pass http://browser-$browserid-0.browser-$browserid${CRAWLER_FQDN_SUFFIX}:9222/$2/page/$3;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;
@@ -74,16 +74,17 @@ server {
       proxy_set_header Connection $http_connection;
     }
 
-    location = /ipaccess_profiles {
+    location = /access_check_profiles {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/profiles/browser/$browserid/ipaccess/$browser_ip?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/profiles/browser/$browserid/access?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
 
     location ~* /loadbrowser/([^/]+)/(.*) {
-      set $browser_ip $1;
-      proxy_pass http://$browser_ip:9222/$2;
+      set $browserid $1;
+      #proxy_pass http://$browser_ip:9222/$2;
+      proxy_pass http://browser-$browserid-0.browser-$browserid${CRAWLER_FQDN_SUFFIX}:9222/$2;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;

@@ -9,8 +9,8 @@ rules:
   resources: ["pods", "pods/exec", "pods/log", "services", "configmaps", "secrets", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
-- apiGroups: ["batch", "extensions"]
-  resources: ["jobs", "cronjobs"]
+- apiGroups: ["batch", "extensions", "apps"]
+  resources: ["jobs", "cronjobs", "statefulsets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
 ---
@@ -24,9 +24,14 @@ subjects:
   name: default
   namespace: {{ .Release.Namespace }}
 
+- kind: ServiceAccount
+  name: default
+  namespace: {{ .Values.crawler_namespace }}
+
 - kind: User
   name: system:anonymous
   namespace: {{ .Release.Namespace }}
+
 
 roleRef:
   kind: Role

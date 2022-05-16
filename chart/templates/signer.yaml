@@ -38,47 +38,8 @@ stringData:
 # trusted_roots: pkg://authsign.trusted/roots.yaml
 
 ---
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: signer-storage-pvc
-  annotations:
-    "helm.sh/resource-policy": keep
-spec:
-  accessModes:
-    - ReadWriteOnce
-
-  resources:
-    requests:
-      storage: 1Gi
-
-  {{- if .Values.volume_storage_class }}
-  storageClassName: {{ .Values.volume_storage_class }}
-  {{- end }}
-
-
-{{- if not .Values.volume_storage_class }}
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: "signer-store-pv"
-  annotations:
-    "helm.sh/resource-policy": keep
-spec:
-  capacity:
-    storage: 1Gi
-
-  accessModes:
-    - "ReadWriteOnce"
-
-  hostPath:
-    path: /tmp/btrix-signer-data
-{{- end }}
-
----
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: auth-signer
   namespace: {{ .Release.Namespace }}
@@ -87,6 +48,24 @@ spec:
     matchLabels:
       app: auth-signer
   replicas: {{ .Values.api_num_replicas }}
+  serviceName: auth-signer
+  volumeClaimTemplates:
+  - metadata:
+      name: signer-storage
+      annotations:
+        helm.sh/resource-policy: keep
+    spec:
+      accessModes:
+        - ReadWriteOnce
+
+      resources:
+        requests:
+          storage: 1Gi
+
+      {{- if .Values.volume_storage_class }}
+      storageClassName: {{ .Values.volume_storage_class }}
+      {{- end }}
+
   template:
     metadata:
       labels:
@@ -111,10 +90,6 @@ spec:
             items:
               - key: config.yaml
                 path: config.yaml
-
-        - name: signer-storage
-          persistentVolumeClaim:
-            claimName: signer-storage-pvc
 
       containers:
         - name: signer
@@ -166,6 +141,7 @@ spec:
   {{- end }}
 {{- end }}
 
+  clusterIP: None
   ports:
     - protocol: TCP
       port: 80

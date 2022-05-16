@@ -18,11 +18,11 @@ import aioprocessing
 from redis import asyncio as aioredis
 
 
-from scheduler import run_scheduler
+from .scheduler import run_scheduler
 
-from archives import S3Storage
+from ..archives import S3Storage
 
-from crawls import Crawl, CrawlOut, CrawlFile
+from ..crawls import Crawl, CrawlOut, CrawlFile
 
 
 # ============================================================================

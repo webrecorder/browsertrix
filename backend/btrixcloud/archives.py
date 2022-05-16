@@ -9,11 +9,11 @@ from typing import Dict, Union, Literal, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from db import BaseMongoModel
+from .db import BaseMongoModel
 
-from users import User
+from .users import User
 
-from invites import InvitePending, InviteToArchiveRequest, UserRole
+from .invites import InvitePending, InviteToArchiveRequest, UserRole
 
 
 # crawl scale for constraint

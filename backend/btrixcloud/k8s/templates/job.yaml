@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ job_name }}
+  annotations:
+    btrix.run.manual: "{{ manual }}"
+
+  labels:
+    btrix.user: {{ userid }}
+    btrix.archive: {{ aid }}
+    btrix.crawlconfig: {{ cid }}
+
+spec:
+  backoffLimit: 1000
+  ttlSecondsAfterFinished: 20
+  template:
+    metadata:
+      labels:
+        btrix.user: {{ userid }}
+        btrix.archive: {{ aid }}
+        btrix.crawlconfig: {{ cid }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: crawl-job
+          image: {{ job_image }}
+          imagePullPolicy: Always
+          command: ["uvicorn", "btrixcloud.k8s.crawl_job:app", "--host", "0.0.0.0", "--access-log", "--log-level", "info"]
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+
+          envFrom:
+            - secretRef:
+                name: mongo-auth
+
+            - configMapRef:
+                name: crawl-config-{{ cid }}
+
+          env:
+            - name: JOB_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['job-name']
+
+            - name: RUN_MANUAL
+              value: "{{ manual }}"
+
+      volumes:
+        - name: config-volume
+          configMap:
+            name: shared-job-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+            
+
+

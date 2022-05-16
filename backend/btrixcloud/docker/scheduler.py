@@ -8,7 +8,7 @@ from apscheduler.jobstores.mongodb import MongoDBJobStore
 from pymongo import MongoClient
 from pytz import utc
 
-from db import DATABASE_URL
+from ..db import DATABASE_URL
 
 # pylint: disable=invalid-name
 global_trigger_q = None

@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from pydantic import BaseModel, UUID4
 
-from db import BaseMongoModel
-from archives import Archive
+from .db import BaseMongoModel
+from .archives import Archive
 
 
 # ============================================================================

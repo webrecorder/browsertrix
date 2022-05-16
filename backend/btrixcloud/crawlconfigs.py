@@ -13,10 +13,10 @@ import pymongo
 from pydantic import BaseModel, UUID4, conint
 from fastapi import APIRouter, Depends, HTTPException
 
-from users import User
-from archives import Archive, MAX_CRAWL_SCALE
+from .users import User
+from .archives import Archive, MAX_CRAWL_SCALE
 
-from db import BaseMongoModel
+from .db import BaseMongoModel
 
 
 # ============================================================================
@@ -89,7 +89,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
+    cale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     oldId: Optional[UUID4]
 
@@ -180,6 +180,7 @@ class CrawlConfigOps:
         self.crawl_manager = crawl_manager
         self.profiles = profiles
         self.profiles.set_crawlconfigs(self)
+        self.crawl_ops = None
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -191,6 +192,10 @@ class CrawlConfigOps:
         self._file_rx = re.compile("\\W+")
 
         asyncio.create_task(self.init_index())
+
+    def set_crawl_ops(self, ops):
+        """ set crawl ops reference """
+        self.crawl_ops = ops
 
     async def init_index(self):
         """ init index for crawls db """
@@ -255,7 +260,7 @@ class CrawlConfigOps:
             f"data/{self.sanitize(crawlconfig.name)}-@id/{suffix}-@ts-@hostsuffix.wacz"
         )
 
-        new_name = await self.crawl_manager.add_crawl_config(
+        crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=archive.storage,
             run_now=config.runNow,
@@ -263,7 +268,10 @@ class CrawlConfigOps:
             profile_filename=profile_filename,
         )
 
-        return result, new_name
+        if crawl_id and config.runNow:
+            await self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+
+        return result, crawl_id
 
     async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
         """ Update name, scale and/or schedule for an existing crawl config """
@@ -276,18 +284,6 @@ class CrawlConfigOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        # update schedule in crawl manager first
-        if update.schedule is not None or update.scale is not None:
-            try:
-                await self.crawl_manager.update_crawl_schedule_or_scale(
-                    str(cid), update.schedule, update.scale
-                )
-            except Exception:
-                # pylint: disable=raise-missing-from
-                raise HTTPException(
-                    status_code=404, detail=f"Crawl Config '{cid}' not found"
-                )
-
         if update.profileid is not None:
             # if empty string, set to none, remove profile association
             if update.profileid == "":
@@ -298,12 +294,30 @@ class CrawlConfigOps:
                 ).id
 
         # update in db
-        if not await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}}, {"$set": query}
-        ):
+        result = await self.crawl_configs.find_one_and_update(
+            {"_id": cid, "inactive": {"$ne": True}},
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
+
+        # update schedule in crawl manager first
+        if update.schedule is not None or update.scale is not None:
+            crawlconfig = CrawlConfig.from_dict(result)
+            try:
+                await self.crawl_manager.update_crawl_schedule_or_scale(
+                    crawlconfig, update.scale, update.schedule
+                )
+            except Exception as exc:
+                print(exc, flush=True)
+                # pylint: disable=raise-missing-from
+                raise HTTPException(
+                    status_code=404, detail=f"Crawl Config '{cid}' not found"
+                )
 
         return {"success": True}
 
@@ -342,11 +356,13 @@ class CrawlConfigOps:
 
         results = await cursor.to_list(length=1000)
 
-        crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
+        # crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
+        crawls = await self.crawl_ops.list_crawls(archive=archive, running_only=True)
 
         running = {}
         for crawl in crawls:
-            running[crawl.cid] = crawl.id
+            if crawl.cid in running and crawl.id != "stopping":
+                running[crawl.cid] = crawl.id
 
         configs = []
         for res in results:
@@ -373,7 +389,9 @@ class CrawlConfigOps:
 
     async def get_running_crawl(self, crawlconfig: CrawlConfig):
         """ Return the id of currently running crawl for this config, if any """
-        crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
+        # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
+        crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id, running_only=True)
+
         if len(crawls) == 1:
             return crawls[0].id
 
@@ -533,7 +551,11 @@ def init_crawl_config_api(
 
         crawl_id = None
         try:
-            crawl_id = await crawl_manager.run_crawl_config(cid, userid=str(user.id))
+            crawl_id = await crawl_manager.run_crawl_config(
+                crawlconfig, userid=str(user.id)
+            )
+            await ops.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+
         except Exception as e:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {e}")

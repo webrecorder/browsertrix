@@ -12,8 +12,10 @@ data:
   CRAWLER_IMAGE: {{ .Values.crawler_image }}
   CRAWLER_PULL_POLICY: {{ .Values.crawler_pull_policy }}
 
-  CRAWL_TIMEOUT: "{{ .Values.crawl_timeout }}"
-  CRAWL_RETRIES: "{{ .Values.crawl_retries }}"
+  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+
+  CRAWLER_TIMEOUT: "{{ .Values.crawl_timeout }}"
+  CRAWLER_RETRIES: "{{ .Values.crawl_retries }}"
 
   CRAWLER_REQUESTS_CPU: "{{ .Values.crawler_requests_cpu }}"
   CRAWLER_LIMITS_CPU: "{{ .Values.crawler_limits_cpu }}"
@@ -22,6 +24,8 @@ data:
   CRAWLER_LIMITS_MEM: "{{ .Values.crawler_limits_memory }}"
 
   CRAWLER_LIVENESS_PORT: "{{ .Values.crawler_liveness_port | default 0 }}"
+
+  JOB_IMAGE: "{{ .Values.api_image }}"
 
   {{- if .Values.crawler_pv_claim }}
   CRAWLER_PV_CLAIM: "{{ .Values.crawler_pv_claim }}"
@@ -52,10 +56,56 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  CRAWL_ARGS: "{{ .Values.crawler_args }} --redisStoreUrl {{ .Values.redis_url }}"
-  #WEBHOOK_URL: "http://browsertrix-cloud.default/_crawls/done"
-  WEBHOOK_URL: "{{ .Values.redis_url }}/crawls-done"
-  STORE_USER: ""
+  #CRAWL_ARGS: "{{ .Values.crawler_args }} --redisStoreUrl {{ .Values.redis_url }}"
+  CRAWL_ARGS: "{{ .Values.crawler_args }}"
+  #WEBHOOK_URL: "{{ .Values.redis_url }}/crawls-done"
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-job-config
+  namespace: {{ .Values.crawler_namespace }}
+
+
+data:
+  config.yaml: |
+    namespace: {{ .Values.crawler_namespace }}
+    termination_grace_secs: "{{ .Values.grace_period_secs | default 600 }}"
+ 
+    volume_storage_class: "{{ .Values.volume_storage_class }}"
+
+    requests_hd: "{{ .Values.crawler_requests_storage }}"
+
+    # redis
+    redis_image: {{ .Values.redis_image }}
+    redis_image_pull_policy: {{ .Values.redis_pull_policy }}
+
+    redis_requests_cpu: "{{ .Values.redis_requests_cpu }}"
+    redis_limits_cpu: "{{ .Values.redis_limits_cpu }}"
+
+    redis_requests_memory: "{{ .Values.redis_requests_memory }}"
+    redis_limits_memory: "{{ .Values.redis_limits_memory }}"
+
+
+    # crawler
+    crawler_image: {{ .Values.crawler_image }}
+    crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
+
+    crawler_requests_cpu: "{{ .Values.crawler_requests_cpu }}"
+    crawler_limits_cpu: "{{ .Values.crawler_limits_cpu }}"
+
+    crawler_requests_memory: "{{ .Values.crawler_requests_memory }}"
+    crawler_limits_memory: "{{ .Values.crawler_limits_memory }}"
+
+    crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
+
+    crawler_node_type: crawling
+
+  redis.conf: |
+    appendonly yes
+    dir /data
 
 ---
 apiVersion: v1

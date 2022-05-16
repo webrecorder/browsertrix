@@ -19,6 +19,9 @@ services:
 #    ports:
 #      - 8000:8000
 
+    environment:
+      - CRAWLER_FQDN_SUFFIX=
+
   frontend:
     build: ./frontend
     image: webrecorder/browsertrix-frontend
@@ -30,6 +33,7 @@ services:
 
     environment:
       - BACKEND_HOST=backend
+      - CRAWLER_FQDN_SUFFIX=
 
   redis:
     image: redis

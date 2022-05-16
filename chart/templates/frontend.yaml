@@ -57,6 +57,9 @@ spec:
             - name: BACKEND_HOST
               value: {{ .Values.name }}-backend
 
+            - name: CRAWLER_FQDN_SUFFIX
+              value: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+
           resources:
             limits:
               cpu: {{ .Values.nginx_limits_cpu }}

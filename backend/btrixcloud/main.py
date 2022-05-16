@@ -9,19 +9,19 @@ from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
 
-from db import init_db
+from .db import init_db
 
-from emailsender import EmailSender
-from invites import init_invites
-from users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
-from archives import init_archives_api
+from .emailsender import EmailSender
+from .invites import init_invites
+from .users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
+from .archives import init_archives_api
 
-from profiles import init_profiles_api
+from .profiles import init_profiles_api
 
-from storages import init_storages_api
-from crawlconfigs import init_crawl_config_api
-from colls import init_collections_api
-from crawls import init_crawls_api
+from .storages import init_storages_api
+from .crawlconfigs import init_crawl_config_api
+from .colls import init_collections_api
+from .crawls import init_crawls_api
 
 
 API_PREFIX = "/api"
@@ -31,12 +31,13 @@ app_root = FastAPI(
     openapi_url=API_PREFIX + "/openapi.json",
 )
 
-app = APIRouter()
 
 # ============================================================================
 # pylint: disable=too-many-locals
 def main():
     """ init browsertrix cloud api """
+
+    app = APIRouter()
 
     email = EmailSender()
     crawl_manager = None
@@ -64,21 +65,17 @@ def main():
 
     # pylint: disable=import-outside-toplevel
     if os.environ.get("KUBERNETES_SERVICE_HOST"):
-        from k8sman import K8SManager
+        from .k8s.k8sman import K8SManager
 
         crawl_manager = K8SManager()
     else:
-        from dockerman import DockerManager
+        from .docker.dockerman import DockerManager
 
         crawl_manager = DockerManager(archive_ops)
 
-    redis_url = os.environ.get("REDIS_URL")
-
     init_storages_api(archive_ops, crawl_manager, current_active_user)
 
-    profiles = init_profiles_api(
-        mdb, redis_url, crawl_manager, archive_ops, current_active_user
-    )
+    profiles = init_profiles_api(mdb, crawl_manager, archive_ops, current_active_user)
 
     crawl_config_ops = init_crawl_config_api(
         dbclient,
@@ -93,7 +90,6 @@ def main():
     crawls = init_crawls_api(
         app,
         mdb,
-        redis_url,
         user_manager,
         crawl_manager,
         crawl_config_ops,

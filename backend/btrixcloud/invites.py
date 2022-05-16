@@ -9,7 +9,7 @@ from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
 
-from db import BaseMongoModel
+from .db import BaseMongoModel
 
 
 # ============================================================================

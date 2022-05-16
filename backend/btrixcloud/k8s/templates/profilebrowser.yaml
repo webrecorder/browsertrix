@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: browser-{{ id }}
+  namespace: {{ namespace }}
+  labels:
+    browser: {{ id }}
+    role: browser
+
+spec:
+  selector:
+    matchLabels:
+      browser: {{ id }}
+      role: browser
+
+  serviceName: browser-{{ id }}
+  replicas: 1
+
+  template:
+    metadata:
+      labels:
+        browser: {{ id }}
+        role: browser
+
+    spec:
+      #terminationGracePeriod: {{ termination_grace_secs }}
+      #nodeSelector: {{ node_selector }}
+
+      containers:
+        - name: browser
+          image: {{ crawler_image }}
+          imagePullPolicy: {{ crawler_image_pull_policy }}
+          command:
+            - create-login-profile
+            - --interactive
+            - --filename
+            - /tmp/profile.tar.gz
+            - --url
+            - {{ url }}
+          {%- if profile_filename %}
+            - --profile
+            - "@{{ profile_filename }}"
+          {%- endif %}   
+
+          envFrom:
+            - secretRef:
+                name: storage-{{ storage_name }}
+
+          env:
+            - name: STORE_PATH
+              value: {{ storage_path }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: browser-{{ id }}
+  labels:
+    browser: {{ id }}
+    role: browser
+ 
+spec:
+  clusterIP: None
+  selector:
+    browser: {{ id }}
+    role: browser
+
+  ports:
+    - protocol: TCP
+      port: 9223
+      name: browser-api
+
+    - protocol: TCP
+      port: 9222
+      name: browser-ws
+

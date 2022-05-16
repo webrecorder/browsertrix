@@ -110,16 +110,18 @@ crawler_namespace: "crawlers"
 # crawler_pv_claim: "nfs-shared-crawls"
 
 # num retries
-crawl_retries: 3
+crawl_retries: 1000
 
 # browsertrix-crawler args:
-crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 2 --screencastPort 9037 --collection main"
+crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 4 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
 
 crawler_requests_cpu: "800m"
 crawler_limits_cpu: "1200m"
 
 crawler_requests_memory: "512Mi"
 crawler_limits_memory: "768Mi"
+
+crawler_requests_hd: "220Gi"
 
 # debug
 no_delete_jobs: 1

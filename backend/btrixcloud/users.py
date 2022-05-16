@@ -25,7 +25,7 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import MongoDBUserDatabase
 
-from invites import InvitePending, InviteRequest
+from .invites import InvitePending, InviteRequest
 
 
 # ============================================================================
