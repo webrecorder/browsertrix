@@ -34,8 +34,8 @@ services:
     image: redis
     command: redis-server --appendonly yes
 
-    ports:
-      - 6379:6379
+    #ports:
+    #  - 6379:6379
 
     volumes:
       - btrix-redis-data:/data
@@ -80,7 +80,7 @@ services:
 # enable to support signing of wacz files
 # port 80 must be open to automatically generate cert via LetsEncrypt
   authsign:
-    image: webrecorder/authsign:0.3.1
+    image: webrecorder/authsign:0.4.0
 
     volumes:
       - btrix-sign-data:/data
