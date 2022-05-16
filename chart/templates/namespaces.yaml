@@ -6,3 +6,4 @@ metadata:
     release: {{ .Release.Name }}
   annotations:
     "helm.sh/resource-policy": keep
+

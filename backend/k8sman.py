@@ -67,6 +67,12 @@ class K8SManager:
         else:
             self.crawl_volume["emptyDir"] = {}
 
+        crawl_node_type = os.environ.get("CRAWLER_NODE_TYPE")
+        if crawl_node_type:
+            self.crawl_node_selector = {"nodeType": crawl_node_type}
+        else:
+            self.crawl_node_selector = {}
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
         self.loop.create_task(self.init_redis(self.redis_url))
@@ -844,7 +850,7 @@ class K8SManager:
                 "template": {
                     "metadata": {"labels": labels},
                     "spec": {
-                        "nodeSelector": {"nodeType": "crawling"},
+                        "nodeSelector": self.crawl_node_selector,
                         "containers": [
                             {
                                 "name": "crawler",

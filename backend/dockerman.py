@@ -421,13 +421,18 @@ class DockerManager:
         self,
         userid,
         aid,
-        storage,
         command,
+        storage=None,
+        storage_name=None,
         baseprofile=None,
     ):
         """ Run browser for profile creation """
-        storage_name = storage.name
-        storage, storage_path = await self._get_storage_and_path(storage)
+        if storage_name:
+            storage = self.storages[storage_name]
+            storage_path = storage.path
+        else:
+            storage_name = storage.name
+            storage, storage_path = await self._get_storage_and_path(storage)
 
         env_vars = [
             f"STORE_USER={userid}",
