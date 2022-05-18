@@ -840,7 +840,7 @@ class K8SManager:
 
         if profile_filename:
             command.append("--profile")
-            command.append(f"@{profile_filename}")
+            command.append(f"@profiles/{profile_filename}")
 
         job_template = {
             "metadata": {"annotations": annotations},

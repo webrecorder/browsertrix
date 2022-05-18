@@ -403,7 +403,7 @@ class ProfileOps:
 
         except Exception:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="error_from_browser")
+            raise HTTPException(status_code=200, detail="waiting_for_browser")
 
         return json, browser_ip, browser_data
 
