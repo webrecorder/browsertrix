@@ -402,7 +402,7 @@ class CrawlOps:
 
         async with self.redis.pipeline(transaction=True) as pipe:
             for file_ in files:
-                pipe.get(f"{file_.filename}")
+                pipe.get(f"f:{file_.filename}")
 
             results = await pipe.execute()
 
