@@ -44,6 +44,7 @@ class S3Storage(BaseModel):
     access_key: str
     secret_key: str
     access_endpoint_url: Optional[str]
+    region: Optional[str] = ""
 
 
 # ============================================================================

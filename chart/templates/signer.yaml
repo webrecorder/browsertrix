@@ -42,6 +42,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: signer-storage-pvc
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   accessModes:
     - ReadWriteOnce
@@ -61,6 +63,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: "signer-store-pv"
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   capacity:
     storage: 1Gi
@@ -95,6 +99,11 @@ spec:
         {{- end }}
 
     spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
       volumes:
         - name: signer-config
           secret:

@@ -24,6 +24,11 @@ spec:
         {{- end }}
 
     spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
       initContainers:
 {{- if .Values.minio_local }}
         - name: init-bucket

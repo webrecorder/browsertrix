@@ -27,6 +27,8 @@ data:
   CRAWLER_PV_CLAIM: "{{ .Values.crawler_pv_claim }}"
   {{- end }}
 
+  CRAWLER_NODE_TYPE: "{{ .Values.crawler_node_type }}"
+
   REDIS_URL: "{{ .Values.redis_url }}"
 
   REDIS_CRAWLS_DONE_KEY: "crawls-done"

@@ -67,6 +67,12 @@ class K8SManager:
         else:
             self.crawl_volume["emptyDir"] = {}
 
+        crawl_node_type = os.environ.get("CRAWLER_NODE_TYPE")
+        if crawl_node_type:
+            self.crawl_node_selector = {"nodeType": crawl_node_type}
+        else:
+            self.crawl_node_selector = {}
+
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.run_event_loop())
         self.loop.create_task(self.init_redis(self.redis_url))
@@ -172,7 +178,12 @@ class K8SManager:
             )
 
     async def add_crawl_config(
-        self, crawlconfig, storage, run_now, out_filename, profile_filename
+        self,
+        crawlconfig,
+        storage,
+        run_now,
+        out_filename,
+        profile_filename,
     ):
         """add new crawl as cron job, store crawl config in configmap"""
         cid = str(crawlconfig.id)
@@ -343,7 +354,7 @@ class K8SManager:
             return None, None
 
         manual = job.metadata.annotations.get("btrix.run.manual") == "1"
-        if manual and not self.no_delete_jobs:
+        if manual and not self.no_delete_jobs and crawlcomplete.completed:
             self.loop.create_task(self._delete_job(job.metadata.name))
 
         crawl = self._make_crawl_for_job(
@@ -389,12 +400,14 @@ class K8SManager:
             endpoint_url = self._secret_data(storage_secret, "STORE_ENDPOINT_URL")
             access_key = self._secret_data(storage_secret, "STORE_ACCESS_KEY")
             secret_key = self._secret_data(storage_secret, "STORE_SECRET_KEY")
+            region = self._secret_data(storage_secret, "STORE_REGION") or ""
 
             self._default_storages[name] = S3Storage(
                 access_key=access_key,
                 secret_key=secret_key,
                 endpoint_url=endpoint_url,
                 access_endpoint_url=access_endpoint_url,
+                region=region,
             )
 
         return self._default_storages[name]
@@ -542,17 +555,19 @@ class K8SManager:
             return True
 
     async def run_profile_browser(
-        self, userid, aid, storage, command, baseprofile=None
+        self, userid, aid, command, storage=None, storage_name=None, baseprofile=None
     ):
         """run browser for profile creation """
-        # Configure Annotations + Labels
-        if storage.type == "default":
+
+        # if default storage, use name and path + profiles/
+        if storage:
             storage_name = storage.name
-            storage_path = storage.path
+            storage_path = storage.path + "profiles/"
+        # otherwise, use storage name and existing path from secret
         else:
-            storage_name = aid
             storage_path = ""
 
+        # Configure Annotations + Labels
         labels = {
             "btrix.user": userid,
             "btrix.archive": aid,
@@ -560,7 +575,7 @@ class K8SManager:
         }
 
         if baseprofile:
-            labels["btrix.baseprofile"] = baseprofile
+            labels["btrix.baseprofile"] = str(baseprofile)
 
         await self.check_storage(storage_name)
 
@@ -825,7 +840,7 @@ class K8SManager:
 
         if profile_filename:
             command.append("--profile")
-            command.append(f"@{profile_filename}")
+            command.append(f"@profiles/{profile_filename}")
 
         job_template = {
             "metadata": {"annotations": annotations},
@@ -835,6 +850,7 @@ class K8SManager:
                 "template": {
                     "metadata": {"labels": labels},
                     "spec": {
+                        "nodeSelector": self.crawl_node_selector,
                         "containers": [
                             {
                                 "name": "crawler",
@@ -891,7 +907,7 @@ class K8SManager:
                             },
                             self.crawl_volume,
                         ],
-                        "restartPolicy": "Never",
+                        "restartPolicy": "OnFailure",
                         "terminationGracePeriodSeconds": self.grace_period,
                     },
                 },

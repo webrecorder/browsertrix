@@ -6,6 +6,11 @@ name: browsertrix-cloud
 # keep empty to use hostPath (eg. on minikube)
 volume_storage_class:
 
+# if set, set the node selector 'nodeType' for deployment pods
+# main_node_type:
+
+# if set, set the node selector 'nodeType' to this crawling pods
+# crawler_node_type:
 
 registration_enabled: 1
 jwt_token_lifetime_minutes: 60
@@ -147,6 +152,10 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
 
+# optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
+# may be useful if, for example, the wacz files are public, while profiles should not be
+# shared_storage_profile:
+
 
 # Email Options
 # =========================================
@@ -178,7 +187,7 @@ signer:
   enabled: false
   # host: <set to signer domain>
   # cert_email: "test@example.com
-  # image: webrecorder/authsign:0.3.1
+  # image: webrecorder/authsign:0.4.0
   # image_pull_policy: "IfNotPresent"
   # auth_token: <set to custom value>
 

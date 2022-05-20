@@ -5,6 +5,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: redis-storage-pvc
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   accessModes:
     - ReadWriteOnce
@@ -24,6 +26,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: "local-redis-store-pv"
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   capacity:
     storage: 1Gi

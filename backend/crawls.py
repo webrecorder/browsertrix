@@ -230,13 +230,14 @@ class CrawlOps:
 
         print(f"Duration: {dura}", flush=True)
 
-        await self.archives.inc_usage(crawl.aid, dura)
+        # if crawl.finished:
+        if crawl.state == "complete":
+            await self.archives.inc_usage(crawl.aid, dura)
 
-        await self.crawl_configs.inc_crawls(
-            crawl.cid, crawl.id, crawl.finished, crawl.state
-        )
+            await self.crawl_configs.inc_crawls(
+                crawl.cid, crawl.id, crawl.finished, crawl.state
+            )
 
-        if crawl_file:
             await self.delete_redis_keys(crawl)
 
         return True
@@ -317,9 +318,12 @@ class CrawlOps:
 
         crawls = []
 
+        running_ids = set()
+
         for crawl in running_crawls:
             list_crawl = ListCrawlOut(**crawl.dict())
             crawls.append(await self._resolve_crawl_refs(list_crawl, archive))
+            running_ids.add(list_crawl.id)
 
         if not running_only:
             aid = archive.id if archive else None
@@ -327,7 +331,9 @@ class CrawlOps:
                 aid=aid, exclude_files=True
             )
 
-            crawls.extend(finished_crawls)
+            for crawl in finished_crawls:
+                if crawl.id not in running_ids:
+                    crawls.append(crawl)
 
         return ListCrawls(crawls=crawls)
 
@@ -339,21 +345,34 @@ class CrawlOps:
             query["aid"] = archive.id
 
         res = await self.crawls.find_one(query)
+        crawl = None
+        completed = False
 
-        if not res:
-            aid_str = archive.id_str if archive else None
-            crawl = await self.crawl_manager.get_running_crawl(crawlid, aid_str)
-            if crawl:
-                await self.get_redis_stats([crawl])
-                await self.cache_ips(crawl)
-
-        else:
+        if res:
             files = [CrawlFile(**data) for data in res["files"]]
 
             del res["files"]
 
             res["resources"] = await self._resolve_signed_urls(files, archive)
             crawl = CrawlOut.from_dict(res)
+            completed = crawl.state == "complete"
+
+        if not completed:
+            aid_str = archive.id_str if archive else None
+            running_crawl = await self.crawl_manager.get_running_crawl(crawlid, aid_str)
+            if running_crawl:
+                await self.get_redis_stats([running_crawl])
+                await self.cache_ips(running_crawl)
+
+                if crawl:
+                    crawl.stats = running_crawl.stats
+                    # pylint: disable=invalid-name
+                    crawl.watchIPs = running_crawl.watchIPs
+                    crawl.scale = running_crawl.scale
+                    crawl.state = running_crawl.state
+
+                else:
+                    crawl = running_crawl
 
         if not crawl:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
@@ -383,7 +402,7 @@ class CrawlOps:
 
         async with self.redis.pipeline(transaction=True) as pipe:
             for file_ in files:
-                pipe.get(f"{file_.filename}")
+                pipe.get(f"f:{file_.filename}")
 
             results = await pipe.execute()
 
