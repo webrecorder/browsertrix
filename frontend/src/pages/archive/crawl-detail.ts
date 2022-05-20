@@ -437,8 +437,8 @@ export class CrawlDetail extends LiteElement {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
-    //const replaySource = `/api/archives/${this.archiveId}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
-    const replaySource = this.crawl?.resources?.[0]?.path;
+    const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
+    //const replaySource = this.crawl?.resources?.[0]?.path;
 
     return html`
       <header class="flex justify-between">
