@@ -93,11 +93,19 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          if (this.isRunning) {
-            sectionContent = this.renderWatch();
-          } else {
-            sectionContent = this.renderReplay();
-          }
+          sectionContent = html`
+            ${this.isRunning
+              ? html`
+                  <section class="border rounded p-3 pl-5 mb-3">
+                    ${this.renderWatch()}
+                  </section>
+                `
+              : ""}
+
+            <section class="border rounded p-3 pl-5">
+              ${this.renderReplay()}
+            </section>
+          `;
         } else {
           // TODO loading indicator?
           return "";
@@ -400,7 +408,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderWatch() {
-    if (!this.authState) return "";
+    if (!this.authState || !this.crawl) return "";
 
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
@@ -418,22 +426,18 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.crawl
-        ? html` <div id="screencast-crawl">
-            <btrix-screencast
-              authToken=${authToken}
-              archiveId=${this.crawl.aid}
-              crawlId=${this.crawlId!}
-              .watchIPs=${this.crawl.watchIPs || []}
-            ></btrix-screencast>
-          </div>`
-        : ""}
+      <div id="screencast-crawl">
+        <btrix-screencast
+          authToken=${authToken}
+          archiveId=${this.crawl.aid}
+          crawlId=${this.crawlId!}
+          .watchIPs=${this.crawl.watchIPs || []}
+        ></btrix-screencast>
+      </div>
     `;
   }
 
   private renderReplay() {
-    const isRunning = this.isRunning;
-
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
@@ -456,7 +460,7 @@ export class CrawlDetail extends LiteElement {
 
       <div
         id="replay-crawl"
-        class="aspect-4/3 rounded border ${isRunning
+        class="aspect-4/3 rounded border ${this.isRunning
           ? "border-purple-200"
           : "border-slate-100"}"
       >
