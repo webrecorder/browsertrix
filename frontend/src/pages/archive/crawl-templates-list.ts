@@ -326,7 +326,9 @@ export class CrawlTemplatesList extends LiteElement {
               ? html`<sl-tooltip>
                   <span slot="content" class="capitalize">
                     ${msg(
-                      str`Last Crawl: ${t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")}`
+                      str`Last Crawl: ${
+                        t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")
+                      }`
                     )}
                   </span>
                   <a
@@ -524,7 +526,7 @@ export class CrawlTemplatesList extends LiteElement {
             ? "bg-purple-50"
             : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
           @click=${(e: any) => {
-            e.stopPropagation();
+            e.preventDefault();
             this.runningCrawlsMap[t.id]
               ? this.navTo(
                   `/archives/${this.archiveId}/crawls/crawl/${
