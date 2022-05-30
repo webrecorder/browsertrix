@@ -537,7 +537,7 @@ export class CrawlTemplatesList extends LiteElement {
           }}
         >
           <span class="whitespace-nowrap">
-            ${this.runningCrawlsMap[t.id] ? msg("View crawl") : msg("Run now")}
+            ${this.runningCrawlsMap[t.id] ? msg("Watch crawl") : msg("Run now")}
           </span>
         </button>
       </div>
@@ -680,7 +680,7 @@ export class CrawlTemplatesList extends LiteElement {
               href="/archives/${this
                 .archiveId}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
-              >View crawl</a
+              >Watch crawl</a
             >`
         ),
         type: "success",
