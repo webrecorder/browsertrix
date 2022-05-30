@@ -9,7 +9,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl } from "./types";
 
-type SectionName = "overview" | "watch" | "download" | "logs";
+type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -76,7 +76,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "watch", "download", "logs"].includes(hash)) {
+    if (["overview", "watch", "replay", "files", "logs"].includes(hash)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -93,19 +93,7 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          sectionContent = html`
-            ${this.isRunning
-              ? html`
-                  <section class="border rounded p-3 pl-5 mb-3">
-                    ${this.renderWatch()}
-                  </section>
-                `
-              : ""}
-
-            <section class="border rounded p-3 pl-5">
-              ${this.renderReplay()}
-            </section>
-          `;
+          sectionContent = this.renderWatch();
         } else {
           // TODO loading indicator?
           return "";
@@ -113,8 +101,10 @@ export class CrawlDetail extends LiteElement {
 
         break;
       }
-
-      case "download":
+      case "replay":
+        sectionContent = this.renderReplay();
+        break;
+      case "files":
         sectionContent = this.renderFiles();
         break;
       case "logs":
@@ -201,8 +191,14 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "watch", label: msg("View Crawl") })}
-          ${renderNavItem({ section: "download", label: msg("Download") })}
+          ${this.isRunning
+            ? renderNavItem({
+                section: "watch",
+                label: msg("Watch Crawl"),
+              })
+            : ""}
+          ${renderNavItem({ section: "replay", label: msg("Replay") })}
+          ${renderNavItem({ section: "files", label: msg("Files") })}
           ${renderNavItem({ section: "logs", label: msg("Logs") })}
         </ul>
       </nav>
@@ -415,7 +411,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <header class="flex justify-between">
         <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
-        ${document.fullscreenEnabled
+        ${this.isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
                 name="arrows-fullscreen"
@@ -426,14 +422,32 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      <div id="screencast-crawl">
-        <btrix-screencast
-          authToken=${authToken}
-          archiveId=${this.crawl.aid}
-          crawlId=${this.crawlId!}
-          .watchIPs=${this.crawl.watchIPs || []}
-        ></btrix-screencast>
-      </div>
+      ${this.isRunning
+        ? html`
+            <div id="screencast-crawl">
+              <btrix-screencast
+                authToken=${authToken}
+                archiveId=${this.crawl.aid}
+                crawlId=${this.crawlId!}
+                .watchIPs=${this.crawl.watchIPs || []}
+              ></btrix-screencast>
+            </div>
+          `
+        : html`
+            <div class="rounded border bg-neutral-50 p-3">
+              <p class="text-sm text-neutral-600">
+                ${msg(
+                  html`Crawl is not running.
+                    <a
+                      href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
+                      class="text-primary hover:underline"
+                      @click=${() => (this.sectionName = "replay")}
+                      >View replay</a
+                    >`
+                )}
+              </p>
+            </div>
+          `}
     `;
   }
 
@@ -458,12 +472,7 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      <div
-        id="replay-crawl"
-        class="aspect-4/3 rounded border ${this.isRunning
-          ? "border-purple-200"
-          : "border-slate-100"}"
-      >
+      <div id="replay-crawl" class="aspect-4/3 rounded border overflow-hidden">
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
         ${replaySource
           ? html`<replay-web-page
@@ -631,7 +640,9 @@ export class CrawlDetail extends LiteElement {
               </ul>
             `
           : html`
-              <p class="text-neutral-400">${msg("No files to download.")}</p>
+              <p class="text-sm text-neutral-400">
+                ${msg("No files to download yet.")}
+              </p>
             `
         : ""}
     `;
