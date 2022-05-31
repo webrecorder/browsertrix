@@ -515,6 +515,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderConfiguration() {
     const seeds = this.crawlTemplate?.config.seeds || [];
+    const configCodeYaml = jsonToYaml(this.crawlTemplate?.config || {});
 
     return html`
       <div class="mb-5" role="table">
@@ -617,16 +618,10 @@ export class CrawlTemplatesDetail extends LiteElement {
         <div class="relative">
           <pre
             class="language-yaml text-neutral-600 p-4 rounded font-mono leading-relaxed text-xs overflow-auto"
-          ><code>${jsonToYaml(this.crawlTemplate?.config || {})}</code></pre>
+          ><code>${configCodeYaml}</code></pre>
 
           <div class="absolute top-2 right-2">
-            <btrix-copy-button
-              .value="${JSON.stringify(
-                this.crawlTemplate?.config || {},
-                null,
-                2
-              )}"
-            ></btrix-copy-button>
+            <btrix-copy-button .value=${configCodeYaml}></btrix-copy-button>
           </div>
         </div>
       </sl-details>
