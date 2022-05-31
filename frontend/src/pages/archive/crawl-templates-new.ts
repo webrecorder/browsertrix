@@ -22,7 +22,10 @@ type NewCrawlTemplate = {
   profileid: string;
 };
 
-export type InitialCrawlTemplate = Pick<NewCrawlTemplate, "name" | "config">;
+export type InitialCrawlTemplate = Pick<
+  NewCrawlTemplate,
+  "name" | "config" | "profileid"
+>;
 
 const initialValues = {
   name: "",
@@ -136,6 +139,7 @@ export class CrawlTemplatesNew extends LiteElement {
     }
     this.initialCrawlTemplate = {
       name: this.initialCrawlTemplate?.name || initialValues.name,
+      profileid: this.initialCrawlTemplate?.profileid || "",
       config: {
         ...initialValues.config,
         ...this.initialCrawlTemplate?.config,
@@ -250,6 +254,9 @@ export class CrawlTemplatesNew extends LiteElement {
             label=${msg("Browser Profile")}
             clearable
             value=${this.selectedProfile?.id || ""}
+            placeholder=${this.browserProfiles
+              ? msg("Select Profile")
+              : msg("Loading")}
             ?disabled=${!this.browserProfiles?.length}
             @sl-change=${(e: any) =>
               (this.selectedProfile = this.browserProfiles?.find(
@@ -671,6 +678,12 @@ export class CrawlTemplatesNew extends LiteElement {
       this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
         data
       ) as Profile[];
+
+      if (this.initialCrawlTemplate?.profileid && !this.selectedProfile) {
+        this.selectedProfile = this.browserProfiles.find(
+          ({ id }) => id === this.initialCrawlTemplate?.profileid
+        );
+      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
