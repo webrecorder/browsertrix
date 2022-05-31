@@ -11,7 +11,7 @@ import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "./utils";
 
-export type NewCrawlTemplate = {
+type NewCrawlTemplate = {
   id?: string;
   name: string;
   schedule: string;
@@ -21,6 +21,8 @@ export type NewCrawlTemplate = {
   config: CrawlConfig;
   profileid: string;
 };
+
+export type InitialCrawlTemplate = Pick<NewCrawlTemplate, "name" | "config">;
 
 const initialValues = {
   name: "",
@@ -55,10 +57,7 @@ export class CrawlTemplatesNew extends LiteElement {
   archiveId!: string;
 
   @property({ type: Object })
-  initialCrawlTemplate?: {
-    name: string;
-    config: CrawlConfig;
-  };
+  initialCrawlTemplate?: InitialCrawlTemplate;
 
   @state()
   private isRunNow: boolean = initialValues.runNow;

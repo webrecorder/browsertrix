@@ -7,6 +7,7 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
@@ -1029,15 +1030,13 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async duplicateConfig() {
     if (!this.crawlTemplate) return;
 
-    const config: CrawlTemplate["config"] = {
-      ...this.crawlTemplate.config,
+    const crawlTemplate: InitialCrawlTemplate = {
+      name: msg(str`${this.crawlTemplate.name} Copy`),
+      config: this.crawlTemplate.config,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
-      crawlTemplate: {
-        name: msg(str`${this.crawlTemplate.name} Copy`),
-        config,
-      },
+      crawlTemplate,
     });
 
     this.notify({
