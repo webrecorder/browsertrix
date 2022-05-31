@@ -654,14 +654,6 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             : ""}
 
-          <div>
-            <btrix-select-browser-profile
-              archiveId=${this.archiveId}
-              profileId=${this.crawlTemplate.profileid || ""}
-              .authState=${this.authState}
-            ></btrix-select-browser-profile>
-          </div>
-
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
               ${this.isConfigCodeView
@@ -682,6 +674,14 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
           <div class="grid gap-5${this.isConfigCodeView ? " hidden" : ""}">
             ${this.renderSeedsForm()}
+          </div>
+
+          <div>
+            <btrix-select-browser-profile
+              archiveId=${this.archiveId}
+              profileId=${this.crawlTemplate.profileid || ""}
+              .authState=${this.authState}
+            ></btrix-select-browser-profile>
           </div>
 
           <div class="text-right">
@@ -930,7 +930,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       </sl-dialog>
 
       <sl-dialog
-        label=${msg(str`Edit Crawl Settings`)}
+        label=${msg(str`Edit Crawl Configuration`)}
         style="--width: ${dialogWidth}"
         ?open=${this.openDialogName === "config"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
@@ -1252,8 +1252,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       name: this.crawlTemplate!.name,
       schedule: this.crawlTemplate!.schedule,
       profileid: profileId || this.crawlTemplate!.profileid,
-      // runNow: this.crawlTemplate!.runNow,
-      // crawlTimeout: this.crawlTemplate!.crawlTimeout,
       config,
     };
 
