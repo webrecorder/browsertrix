@@ -36,6 +36,9 @@ import("./not-found").then(({ NotFound }) => {
 import("./screencast").then(({ Screencast: Screencast }) => {
   customElements.define("btrix-screencast", Screencast);
 });
+import("./select-browser-profile").then(({ SelectBrowserProfile }) => {
+  customElements.define("btrix-select-browser-profile", SelectBrowserProfile);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
