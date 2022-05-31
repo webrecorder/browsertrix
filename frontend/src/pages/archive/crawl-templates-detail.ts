@@ -1251,7 +1251,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       oldId: this.crawlTemplate!.id,
       name: this.crawlTemplate!.name,
       schedule: this.crawlTemplate!.schedule,
-      profileid: profileId || this.crawlTemplate!.profileid,
+      profileid: profileId,
       config,
     };
 
