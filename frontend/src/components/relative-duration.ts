@@ -10,8 +10,6 @@ import humanizeDuration from "pretty-ms";
  * ```ts
  * <btrix-relative-duration value=${value}></btrix-relative-duration>
  * ```
- *
- * @event on-copied
  */
 export class RelativeDuration extends LitElement {
   @property({ type: String })
