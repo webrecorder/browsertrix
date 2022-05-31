@@ -15,11 +15,11 @@ import type { Profile } from "../pages/archive/types";
  * <btrix-select-browser-profile
  *   authState=${authState}
  *   archiveId=${archiveId}
- *   .selectedProfile=${selectedProfile}
+ *   on-change=${({value}) => selectedProfile = value}
  * ></btrix-select-browser-profile>
  * ```
  *
- * @event
+ * @event on-change
  */
 @localized()
 export class SelectBrowserProfile extends LiteElement {
@@ -30,10 +30,10 @@ export class SelectBrowserProfile extends LiteElement {
   archiveId!: string;
 
   @property({ type: String })
-  initialProfileId?: string;
+  profileId?: string;
 
-  @property({ type: Object })
-  selectedProfile?: Profile;
+  @state()
+  private selectedProfile?: Profile;
 
   @state()
   private browserProfiles?: Profile[];
@@ -45,6 +45,7 @@ export class SelectBrowserProfile extends LiteElement {
   render() {
     return html`
       <sl-select
+        name="browserProfile"
         label=${msg("Browser Profile")}
         clearable
         value=${this.selectedProfile?.id || ""}
@@ -52,14 +53,14 @@ export class SelectBrowserProfile extends LiteElement {
           ? msg("Select Profile")
           : msg("Loading")}
         ?disabled=${!this.browserProfiles?.length}
-        @sl-change=${(e: any) =>
-          (this.selectedProfile = this.browserProfiles?.find(
-            ({ id }) => id === e.target.value
-          ))}
+        hoist
+        @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
           this.fetchBrowserProfiles();
         }}
+        @sl-hide=${this.stopProp}
+        @sl-after-hide=${this.stopProp}
       >
         ${this.browserProfiles
           ? ""
@@ -139,6 +140,20 @@ export class SelectBrowserProfile extends LiteElement {
     `;
   }
 
+  private onChange(e: any) {
+    this.selectedProfile = this.browserProfiles?.find(
+      ({ id }) => id === e.target.value
+    );
+
+    this.dispatchEvent(
+      new CustomEvent("on-change", {
+        detail: {
+          value: this.selectedProfile,
+        },
+      })
+    );
+  }
+
   /**
    * Fetch browser profiles and update internal state
    */
@@ -150,9 +165,9 @@ export class SelectBrowserProfile extends LiteElement {
         data
       ) as Profile[];
 
-      if (this.initialProfileId && !this.selectedProfile) {
+      if (this.profileId && !this.selectedProfile) {
         this.selectedProfile = this.browserProfiles.find(
-          ({ id }) => id === this.initialProfileId
+          ({ id }) => id === this.profileId
         );
       }
     } catch (e) {
@@ -171,5 +186,14 @@ export class SelectBrowserProfile extends LiteElement {
     );
 
     return data;
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }

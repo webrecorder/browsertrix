@@ -87,10 +87,10 @@ export class CrawlTemplatesNew extends LiteElement {
   private isSubmitting: boolean = false;
 
   @state()
-  private serverError?: string;
+  private browserProfileId?: string;
 
   @state()
-  private selectedProfile?: Profile;
+  private serverError?: string;
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -142,6 +142,7 @@ export class CrawlTemplatesNew extends LiteElement {
       },
     };
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
+    this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
   }
 
@@ -244,9 +245,10 @@ export class CrawlTemplatesNew extends LiteElement {
         <div>
           <btrix-select-browser-profile
             archiveId=${this.archiveId}
-            initialProfileId=${this.initialCrawlTemplate?.profileid || ""}
+            profileId=${this.initialCrawlTemplate?.profileid || ""}
             .authState=${this.authState}
-            .selectedProfile=${this.selectedProfile}
+            @on-change=${(e: any) =>
+              (this.browserProfileId = e.detail.value.id)}
           ></btrix-select-browser-profile>
         </div>
       </section>
@@ -500,8 +502,10 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
-      profileid: this.selectedProfile?.id,
+      profileid: this.browserProfileId,
     };
+
+    console.log('this.browserProfileId"', this.browserProfileId);
 
     if (this.isConfigCodeView) {
       template.config = yamlToJson(this.configCode) as CrawlConfig;

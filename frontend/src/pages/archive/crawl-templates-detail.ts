@@ -654,6 +654,14 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             : ""}
 
+          <div>
+            <btrix-select-browser-profile
+              archiveId=${this.archiveId}
+              profileId=${this.crawlTemplate.profileid || ""}
+              .authState=${this.authState}
+            ></btrix-select-browser-profile>
+          </div>
+
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
               ${this.isConfigCodeView
@@ -922,7 +930,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       </sl-dialog>
 
       <sl-dialog
-        label=${msg(str`Edit Crawl Configuration`)}
+        label=${msg(str`Edit Crawl Settings`)}
         style="--width: ${dialogWidth}"
         ?open=${this.openDialogName === "config"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
@@ -1069,6 +1077,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     detail: { formData: FormData };
   }) {
     const { formData } = e.detail;
+    const profileId = formData.get("browserProfile") as string;
 
     let config: CrawlConfig;
 
@@ -1088,8 +1097,11 @@ export class CrawlTemplatesDetail extends LiteElement {
       };
     }
 
-    if (config) {
-      await this.createRevisedTemplate(config);
+    if (config || profileId) {
+      await this.createRevisedTemplate({
+        config,
+        profileId,
+      });
     }
 
     this.openDialogName = undefined;
@@ -1226,13 +1238,20 @@ export class CrawlTemplatesDetail extends LiteElement {
    * Create new crawl template with revised crawl configuration
    * @param config Crawl config object
    */
-  private async createRevisedTemplate(config: CrawlConfig) {
+  private async createRevisedTemplate({
+    config,
+    profileId,
+  }: {
+    config?: CrawlConfig;
+    profileId: CrawlTemplate["profileid"];
+  }) {
     this.isSubmittingUpdate = true;
 
     const params = {
       oldId: this.crawlTemplate!.id,
       name: this.crawlTemplate!.name,
       schedule: this.crawlTemplate!.schedule,
+      profileid: profileId || this.crawlTemplate!.profileid,
       // runNow: this.crawlTemplate!.runNow,
       // crawlTimeout: this.crawlTemplate!.crawlTimeout,
       config,
@@ -1247,8 +1266,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           body: JSON.stringify(params),
         }
       );
-
-      console.log(data);
 
       this.navTo(
         `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
@@ -1277,8 +1294,6 @@ export class CrawlTemplatesDetail extends LiteElement {
    * @param params Crawl template properties to update
    */
   private async updateTemplate(params: Partial<CrawlTemplate>): Promise<void> {
-    console.log(params);
-
     this.isSubmittingUpdate = true;
 
     try {
