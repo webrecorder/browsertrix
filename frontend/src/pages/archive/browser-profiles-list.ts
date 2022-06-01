@@ -324,7 +324,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/archives/${this.archiveId}/profiles/${profile.id}`,
         this.authState!,
         {
@@ -337,6 +337,10 @@ export class BrowserProfilesList extends LiteElement {
         type: "success",
         icon: "check2-circle",
       });
+
+      this.browserProfiles = this.browserProfiles!.filter(
+        (p) => p.id !== profile.id
+      );
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
