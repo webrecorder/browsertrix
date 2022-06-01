@@ -15,8 +15,9 @@ services:
       - mongo
       - volume_placeholder_image
 
-    ports:
-      - 8000:8000
+# enable to expose backend api container directly
+#    ports:
+#      - 8000:8000
 
   frontend:
     build: ./frontend
@@ -33,9 +34,6 @@ services:
   redis:
     image: redis
     command: redis-server --appendonly yes
-
-    #ports:
-    #  - 6379:6379
 
     volumes:
       - btrix-redis-data:/data

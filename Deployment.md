@@ -16,7 +16,7 @@ Then, run `docker-compose build; docker-compose up -d` to launch.
 
 To update/relaunch, use `./docker-restart.sh`.
 
-The API should be available at: `http://localhost:8000/docs`
+The API documentation should be available at: `http://localhost:9871/api/docs`.
 
 To allow downloading of WACZ files via the UI from a remote host, set the `STORE_ACCESS_ENDPOINT_URL` to use the domain of the host.
 Otherwise, the files are accesible only through the default Minio service running on port 9000.
