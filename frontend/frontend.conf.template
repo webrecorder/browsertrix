@@ -32,7 +32,7 @@ server {
 
     # used by docker only: k8s deployment handles /api directly via ingress
     location /api/ {
-      proxy_pass http://${BACKEND_HOST}:8000/;
+      proxy_pass http://${BACKEND_HOST}:8000;
       proxy_set_header Host $http_host;
       proxy_set_header X-Forwarded-Proto $scheme;
     }
