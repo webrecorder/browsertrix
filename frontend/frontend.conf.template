@@ -54,7 +54,7 @@ server {
 
     location = /ipaccess_crawl {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/crawls/$crawl/ipaccess/$crawlerip?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/crawls/$crawl/ipaccess/$crawlerip?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
@@ -76,7 +76,7 @@ server {
 
     location = /ipaccess_profiles {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/archives/$archive/profiles/browser/$browserid/ipaccess/$browser_ip?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/profiles/browser/$browserid/ipaccess/$browser_ip?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
