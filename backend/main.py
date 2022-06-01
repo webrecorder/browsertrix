@@ -115,7 +115,7 @@ def main():
     async def healthz():
         return {}
 
-    @app.get("/openapi.json")
+    @app.get("/openapi.json", include_in_schema=False)
     async def openapi() -> JSONResponse:
         return JSONResponse(app_root.openapi())
 
