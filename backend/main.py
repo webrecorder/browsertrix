@@ -111,13 +111,15 @@ def main():
     async def get_settings():
         return settings
 
-    @app.get("/healthz")
-    async def healthz():
-        return {}
+    # internal routes
 
     @app.get("/openapi.json", include_in_schema=False)
     async def openapi() -> JSONResponse:
         return JSONResponse(app_root.openapi())
+
+    @app_root.get("/healthz", include_in_schema=False)
+    async def healthz():
+        return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
 
