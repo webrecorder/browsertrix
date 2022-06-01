@@ -6,6 +6,8 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 import os
 
 from fastapi import FastAPI
+from fastapi.routing import APIRouter
+from fastapi.responses import JSONResponse
 
 from db import init_db
 
@@ -22,8 +24,14 @@ from colls import init_collections_api
 from crawls import init_crawls_api
 
 
-app = FastAPI()
+API_PREFIX = "/api"
+app_root = FastAPI(
+    docs_url=API_PREFIX + "/docs",
+    redoc_url=API_PREFIX + "/redoc",
+    openapi_url=API_PREFIX + "/openapi.json",
+)
 
+app = APIRouter()
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -103,13 +111,21 @@ def main():
     async def get_settings():
         return settings
 
-    @app.get("/healthz")
+    # internal routes
+
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi() -> JSONResponse:
+        return JSONResponse(app_root.openapi())
+
+    @app_root.get("/healthz", include_in_schema=False)
     async def healthz():
         return {}
 
+    app_root.include_router(app, prefix=API_PREFIX)
+
 
 # ============================================================================
-@app.on_event("startup")
+@app_root.on_event("startup")
 async def startup():
     """init on startup"""
     main()

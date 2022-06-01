@@ -41,7 +41,7 @@ spec:
               number: 9000
 {{- end }}
 
-      - path: /api/(.*)
+      - path: /(api/.*)
         pathType: Prefix
         backend:
           service:

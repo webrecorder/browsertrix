@@ -8,5 +8,5 @@ RUN pip install -r requirements.txt
 
 ADD . /app
 
-CMD uvicorn main:app --host 0.0.0.0 --root-path /api --access-log --log-level info
+CMD uvicorn main:app_root --host 0.0.0.0 --access-log --log-level info
 
