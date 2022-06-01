@@ -324,7 +324,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      await this.apiFetch(
+      const data = await this.apiFetch(
         `/archives/${this.archiveId}/profiles/${profile.id}`,
         this.authState!,
         {
@@ -332,15 +332,31 @@ export class BrowserProfilesList extends LiteElement {
         }
       );
 
-      this.notify({
-        message: msg(html`Deleted <strong>${profile.name}</strong>.`),
-        type: "success",
-        icon: "check2-circle",
-      });
+      if (data.error && data.crawlconfigs) {
+        this.notify({
+          message: msg(
+            html`Could not delete <strong>${profile.name}</strong>, in use by
+              <strong
+                >${data.crawlconfigs
+                  .map(({ name }: any) => name)
+                  .join(", ")}</strong
+              >. Please remove browser profile from crawl template to continue.`
+          ),
+          type: "warning",
+          icon: "exclamation-triangle",
+          duration: 15000,
+        });
+      } else {
+        this.notify({
+          message: msg(html`Deleted <strong>${profile.name}</strong>.`),
+          type: "success",
+          icon: "check2-circle",
+        });
 
-      this.browserProfiles = this.browserProfiles!.filter(
-        (p) => p.id !== profile.id
-      );
+        this.browserProfiles = this.browserProfiles!.filter(
+          (p) => p.id !== profile.id
+        );
+      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
