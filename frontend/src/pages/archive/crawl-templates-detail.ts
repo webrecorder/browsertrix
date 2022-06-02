@@ -1077,7 +1077,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     detail: { formData: FormData };
   }) {
     const { formData } = e.detail;
-    const profileId = formData.get("browserProfile") as string;
+    const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;
 
