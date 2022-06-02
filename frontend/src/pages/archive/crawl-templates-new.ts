@@ -87,7 +87,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private isSubmitting: boolean = false;
 
   @state()
-  private browserProfileId?: string;
+  private browserProfileId?: string | null;
 
   @state()
   private serverError?: string;
