@@ -170,7 +170,29 @@ export class BrowserProfilesList extends LiteElement {
               e.target.closest("sl-dropdown").hide();
             }}
           >
-            ${msg("Duplicate browser profile")}
+            <sl-icon
+              class="inline-block align-middle px-1"
+              name="files"
+            ></sl-icon>
+            <span class="inline-block align-middle pr-2"
+              >${msg("Duplicate profile")}</span
+            >
+          </li>
+          <li
+            class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+            role="menuitem"
+            @click=${(e: any) => {
+              // Close dropdown before deleting template
+              e.target.closest("sl-dropdown").hide();
+
+              this.deleteProfile(data);
+            }}
+          >
+            <sl-icon
+              class="inline-block align-middle px-1"
+              name="file-earmark-x"
+            ></sl-icon>
+            <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
           </li>
         </ul>
       </sl-dropdown>
@@ -294,6 +316,50 @@ export class BrowserProfilesList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteProfile(profile: Profile) {
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/profiles/${profile.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (data.error && data.crawlconfigs) {
+        this.notify({
+          message: msg(
+            html`Could not delete <strong>${profile.name}</strong>, in use by
+              <strong
+                >${data.crawlconfigs
+                  .map(({ name }: any) => name)
+                  .join(", ")}</strong
+              >. Please remove browser profile from crawl template to continue.`
+          ),
+          type: "warning",
+          icon: "exclamation-triangle",
+          duration: 15000,
+        });
+      } else {
+        this.notify({
+          message: msg(html`Deleted <strong>${profile.name}</strong>.`),
+          type: "success",
+          icon: "check2-circle",
+        });
+
+        this.browserProfiles = this.browserProfiles!.filter(
+          (p) => p.id !== profile.id
+        );
+      }
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't delete browser profile at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });

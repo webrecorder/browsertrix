@@ -361,7 +361,7 @@ class ProfileOps:
         # delete profile.pathname
 
         res = await self.profiles.delete_one(query)
-        if not res or res.get("deleteCount") != 1:
+        if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
         return {"success": True}
