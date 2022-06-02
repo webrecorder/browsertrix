@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  browser:
+    image: {{ crawler_image }}
+    command:
+      - create-login-profile
+      - --interactive
+      - --filename
+      - /tmp/profile.tar.gz
+      - --url
+      - "{{ url }}"
+      {%- if profile_filename %}
+      - --profile
+      - "@{{ profile_filename }}"
+      {%- endif %}   
+
+
+    hostname: "browser-{{ id }}-0.browser-{{ id }}"
+    networks:
+      - btrix
+
+    deploy:
+      endpoint_mode: dnsrr
+      replicas: 1
+      labels:
+        browser: {{ id }}
+        role: browser
+
+    environment:
+      - STORE_ENDPOINT_URL={{ endpoint_url }}
+      - STORE_ACCESS_KEY={{ access_key }}
+      - STORE_SECRET_KEY={{ secret_key }}
+      - STORE_PATH={{ storage_path }}
+ 
+      
+networks:
+  btrix:
+    external: 
+      name: btrix-net
+

@@ -89,7 +89,7 @@ class CrawlConfigIn(BaseModel):
     colls: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    cale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     oldId: Optional[UUID4]
 
@@ -309,7 +309,7 @@ class CrawlConfigOps:
         if update.schedule is not None or update.scale is not None:
             crawlconfig = CrawlConfig.from_dict(result)
             try:
-                await self.crawl_manager.update_crawl_schedule_or_scale(
+                await self.crawl_manager.update_crawlconfig_schedule_or_scale(
                     crawlconfig, update.scale, update.schedule
                 )
             except Exception as exc:
@@ -361,13 +361,13 @@ class CrawlConfigOps:
 
         running = {}
         for crawl in crawls:
-            if crawl.cid in running and crawl.id != "stopping":
-                running[crawl.cid] = crawl.id
+            running[crawl.cid] = crawl.id
 
         configs = []
         for res in results:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
+            print("config", config.id, flush=True)
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 

@@ -329,6 +329,7 @@ class ProfileOps:
         if archive:
             query["aid"] = archive.id
 
+        # pylint: disable=fixme
         # todo: delete the file itself!
         # delete profile.pathname
 

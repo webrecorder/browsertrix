@@ -47,6 +47,8 @@ data:
 
   WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
 
+  SIGN_ACCESS_ENDPOINT: "1"
+
 
 ---
 apiVersion: v1

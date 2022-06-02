@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  job:
+    image: {{ job_image }}
+    command: ["uvicorn", "btrixcloud.swarm.crawl_job:app", "--host", "0.0.0.0", "--access-log", "--log-level", "info"]
+
+    configs:
+      - shared_job_config.yaml
+      - custom_job_config.yaml
+
+    secrets:
+      - storages.yaml
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    networks:
+      - btrix
+
+    deploy:
+      replicas: {{ 1 if not schedule else 0 }}
+      labels:
+        btrix.run.manual: "{{ manual }}"
+        btrix.user: {{ userid }}
+        btrix.archive: {{ aid }}
+        btrix.crawlconfig: {{ cid }}
+
+    {% if schedule %}
+        swarm.cronjob.enable: "true"
+        swarm.cronjob.skip-running: "true"
+        swarm.cronjob.schedule: "{{ schedule }}"
+    {% endif %}
+
+      mode: replicated
+      restart_policy:
+        condition: none
+
+    environment:
+      SHARED_JOB_CONFIG: shared_job_config.yaml
+      CUSTOM_JOB_CONFIG: custom_job_config.yaml
+      STORAGE_SECRETS: storages.yaml
+
+      JOB_ID: "{{ id }}"
+      STACK_PREFIX: "crawl-"
+      STORE_PATH: "{{ storage_path }}"
+      STORAGE_NAME: "{{ storage_name }}"
+      PROFILE_PATH: "{{ profile_path }}"
+
+      MONGO_HOST: mongo
+      MONGO_INITDB_ROOT_USERNAME: {{ mongo_user }}
+      MONGO_INITDB_ROOT_PASSWORD: {{ mongo_pass }}
+
+      RUN_MANUAL: "{{ manual }}"
+ 
+networks:
+  btrix:
+    external: 
+      name: btrix-net
+
+configs:
+  shared_job_config.yaml:
+    external: true
+    name: btrix_shared_job_config
+
+  custom_job_config.yaml:
+    external: true
+    name: crawl-opts-{{ cid }}
+
+secrets:
+  storages.yaml:
+    name: btrix_storages
+    external: true
+

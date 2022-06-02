@@ -1,11 +1,17 @@
-version: '3.5'
+version: '3.8'
 
 services:
   backend:
     build: ./backend
-    image: webrecorder/browsertrix-backend
+    image: ${REGISTRY}webrecorder/browsertrix-backend:latest
     volumes:
         - /var/run/docker.sock:/var/run/docker.sock
+
+    configs:
+        - shared_job_config
+
+    secrets:
+        - storages
 
     env_file:
       - ./configs/config.env
@@ -13,7 +19,6 @@ services:
     depends_on:
       - minio
       - mongo
-      - volume_placeholder_image
 
 # enable to expose backend api container directly
 #    ports:
@@ -22,25 +27,54 @@ services:
     environment:
       - CRAWLER_FQDN_SUFFIX=
 
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
   frontend:
     build: ./frontend
-    image: webrecorder/browsertrix-frontend
+    image: ${REGISTRY}webrecorder/browsertrix-frontend:latest
     ports:
       - 9871:80
 
     depends_on:
       - backend
+      - minio
 
     environment:
       - BACKEND_HOST=backend
       - CRAWLER_FQDN_SUFFIX=
+      - CRAWLER_SVC_SUFFIX=
 
-  redis:
-    image: redis
-    command: redis-server --appendonly yes
-
+  swarm-cronjob:
+    image: crazymax/swarm-cronjob
     volumes:
-      - btrix-redis-data:/data
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    environment:
+      - "TZ=UTC"
+      - "LOG_LEVEL=debug"
+      - "LOG_JSON=false"
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  prune-resources:
+    image: docker
+    command: ["docker", "volumes", "prune", "-f", "--filter", "label=crawl"]
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      mode: global
+      labels:
+        - "swarm.cronjob.enable=true"
+        - "swarm.cronjob.schedule=0 */5 * * *"
+        - "swarm.cronjob.skip-running=false"
+      restart_policy:
+        condition: none
 
   mongo:
     image: mongo
@@ -52,10 +86,11 @@ services:
 
   minio:
     image: minio/minio
-    command: ["server", "/data", "--console-address", ":9001"]
-    ports:
-      - 9000:9000
-      - 9001:9001
+    #command: ["server", "/data", "--console-address", ":9001"]
+
+    entrypoint: "/bin/sh"
+    # auto-create bucket via existing dir (only for single-node mode)
+    command: ["-c", "mkdir -p /data/$$MINIO_BUCKET; /usr/bin/docker-entrypoint.sh server /data --console-address :9001"]
 
     volumes:
       - btrix-minio-data:/data
@@ -63,39 +98,31 @@ services:
     env_file:
       - ./configs/config.env
 
-  init_minio_bucket:
-    image: minio/mc
-    entrypoint: "/bin/sh"
-    command: ['-c', 'mc mb local/test-bucket; mc policy set public local/test-bucket' ]
+# enable below to access minio console directly
+#    ports:
+#      - 9001:9001
+#
+#    environment:
+#      - MINIO_SERVER_URL=http://127.0.0.1:9000
 
-    env_file:
-      - ./configs/config.env
-
-    depends_on:
-      - minio
-
-  # adding here to ensure "tianon/true" is pulled, it's used to create volumes with configs
-  volume_placeholder_image:
-    image: tianon/true
-    container_name: volume_placeholder
 
 # enable to support signing of wacz files
 # port 80 must be open to automatically generate cert via LetsEncrypt
-  authsign:
-    image: webrecorder/authsign:0.4.0
+#  authsign:
+#    image: webrecorder/authsign:0.4.0
 
-    volumes:
-      - btrix-sign-data:/data
-      - ./configs/signing.yaml:/app-config/signing.yaml
+#    volumes:
+#      - btrix-sign-data:/data
+#      - ./configs/signing.yaml:/app-config/signing.yaml
 
-    environment:
-      - CONFIG=/app-config/signing.yaml
+#    environment:
+#      - CONFIG=/app-config/signing.yaml
 
-    env_file:
-      - ./configs/config.env
+#    env_file:
+#      - ./configs/config.env
 
-    ports:
-      - 80:80
+#    ports:
+#      - 80:80
 
 volumes:
   btrix-redis-data:
@@ -103,8 +130,17 @@ volumes:
   btrix-minio-data:
   btrix-sign-data:
 
-
 networks:
   default:
-    name: btrix-cloud-net
+    name: btrix-net
+
+configs:
+  shared_job_config:
+    file: ./configs/config.yaml
+
+secrets:
+  storages:
+    file: ./configs/storages.yaml
+
+
 

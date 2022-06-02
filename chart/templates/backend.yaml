@@ -29,23 +29,6 @@ spec:
         nodeType: {{ .Values.main_node_type }}
       {{- end }}
 
-      initContainers:
-{{- if .Values.minio_local }}
-        - name: init-bucket
-          image: {{ .Values.minio_mc_image }}
-          imagePullPolicy: {{ .Values.minio_pull_policy }}
-          env:
-            - name: MC_HOST_local
-              valueFrom:
-                secretKeyRef:
-                  name: auth-secrets
-                  key: MC_HOST
-
-          command: ['/bin/sh']
-          args: ['-c', 'mc mb --ignore-existing local/{{ .Values.minio_local_bucket_name }}' ]
-{{- end }}
-
-
       containers:
         - name: api
           image: {{ .Values.api_image }}

@@ -4,10 +4,8 @@ fastapi-users[mongodb]==9.2.2
 loguru
 aiofiles
 kubernetes-asyncio>=22.6.4
-aiodocker
-apscheduler
-aioprocessing
 aiobotocore
 redis>=4.2.0rc1
 pyyaml
 jinja2
+python_on_whales

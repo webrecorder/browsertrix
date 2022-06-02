@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  job:
+    image: {{ job_image }}
+    command: ["python", "-m", "btrixcloud.swarm.profile_job"]
+    configs:
+      - shared_job_config.yaml
+
+    secrets:
+      - storages.yaml
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    #networks:
+    #  - btrix
+
+    deploy:
+      #endpoint_mode: dnsrr
+      labels:
+        btrix.profile: "1"
+        btrix.archive: {{ aid }}
+        btrix.user: {{ userid }}
+        {%- if baseprofile %}
+        btrix.baseprofile: "{{ baseprofile }}"
+        {%- endif %}
+
+      #mode: replicated-job
+      replicas: 1
+
+    environment:
+      SHARED_JOB_CONFIG: shared_job_config.yaml
+      STORAGE_SECRETS: storages.yaml
+
+      JOB_ID: "{{ id }}"
+      STACK_PREFIX: "browser-"
+      STORE_PATH: "{{ storage_path }}"
+      STORAGE_NAME: "{{ storage_name }}"
+      IDLE_TIMEOUT: "60"
+      START_URL: "{{ url }}"
+      PROFILE_PATH: "{{ profile_path }}"
+ 
+
+#networks:
+#  btrix:
+#    external: 
+#      name: btrix-net
+
+
+configs:
+  shared_job_config.yaml:
+    external: true
+    name: btrix_shared_job_config
+
+secrets:
+  storages.yaml:
+    name: btrix_storages
+    external: true
+

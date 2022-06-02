@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ job_name }}
+  name: job-{{ id }}
   annotations:
     btrix.run.manual: "{{ manual }}"
 

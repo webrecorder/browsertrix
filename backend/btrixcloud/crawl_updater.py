@@ -2,6 +2,8 @@
 
 import os
 import json
+import uuid
+
 from datetime import datetime
 
 import asyncio
@@ -10,13 +12,16 @@ from redis import asyncio as aioredis
 import pymongo
 
 from .db import init_db
-from .crawls import Crawl, CrawlFile, CrawlCompleteIn, ts_now
+from .crawls import Crawl, CrawlFile, CrawlCompleteIn, dt_now
 
 
 # =============================================================================
 # pylint: disable=too-many-instance-attributes,bare-except
 class CrawlUpdater:
     """ Crawl Update """
+
+    started: datetime
+    finished: datetime
 
     def __init__(self, id_, job):
         _, mdb = init_db()
@@ -27,29 +32,29 @@ class CrawlUpdater:
         self.crawl_id = id_
         self.crawls_done_key = "crawls-done"
 
-        self.aid = os.environ.get("ARCHIVE_ID")
-        self.cid = os.environ.get("CRAWL_CONFIG_ID")
-        self.userid = os.environ.get("USER_ID")
+        self.aid = uuid.UUID(os.environ["ARCHIVE_ID"])
+        self.cid = uuid.UUID(os.environ["CRAWL_CONFIG_ID"])
+        self.userid = uuid.UUID(os.environ["USER_ID"])
+
         self.is_manual = os.environ.get("RUN_MANUAL") == "1"
 
-        self.scale = int(os.environ.get("INITIAL_SCALE") or "1")
+        self.scale = int(os.environ.get("INITIAL_SCALE") or 0)
 
         self.storage_path = os.environ.get("STORE_PATH")
-        self.storage_name = os.environ.get("STORE_NAME")
+        self.storage_name = os.environ.get("STORAGE_NAME")
 
         self.last_done = None
         self.last_found = None
         self.redis = None
         self.job = job
 
-        self.started = ts_now()
+        self.started = dt_now()
         self.finished = None
 
     async def init_crawl_updater(self, redis_url, scale=None):
         """ init crawl, then init redis, wait for valid connection """
 
-        if scale:
-            self.scale = scale
+        self.scale = scale
 
         await self.init_crawl()
         prev_start_time = None
@@ -63,6 +68,7 @@ class CrawlUpdater:
                     redis_url, encoding="utf-8", decode_responses=True
                 )
                 prev_start_time = await self.redis.get("start_time")
+
                 print("Redis Connected!", flush=True)
                 break
             except:
@@ -70,9 +76,12 @@ class CrawlUpdater:
                 await asyncio.sleep(retry)
 
         if prev_start_time:
-            self.started = prev_start_time
+            try:
+                self.started = datetime.fromisoformat(prev_start_time)
+            except:
+                pass
         else:
-            await self.redis.set("start_time", self.started)
+            await self.redis.set("start_time", str(self.started))
 
         # run redis loop
         while True:
@@ -111,14 +120,19 @@ class CrawlUpdater:
         if done >= self.scale:
             await self.finish_crawl()
 
-            await self.job.delete_crawl_objects()
+            await self.job.delete_crawl()
+
+    async def update_scale(self, new_scale):
+        """ set scale dynamically of running crawl """
+        self.scale = new_scale
+        await self.update_crawl(scale=new_scale)
 
     async def finish_crawl(self):
         """ finish crawl """
         if self.finished:
             return
 
-        self.finished = ts_now()
+        self.finished = dt_now()
 
         completed = self.last_done and self.last_done == self.last_found
 
@@ -139,7 +153,7 @@ class CrawlUpdater:
 
         # init crawl config stats
         await self.crawl_configs.find_one_and_update(
-            {"_id": self.cid, "inactive": False},
+            {"_id": self.cid, "inactive": {"$ne": True}},
             {
                 "$inc": {"crawlCount": 1},
                 "$set": {
@@ -221,11 +235,26 @@ class CrawlUpdater:
         if graceful:
             await self.update_crawl(state="stopping")
         else:
-            self.finished = ts_now()
+            self.finished = dt_now()
             await self.update_crawl(state="canceled", finished=self.finished)
 
     async def _get_running_stats(self, crawl_id):
         """ get stats from redis for running or finished crawl """
+
+    async def load_initial_scale(self):
+        """ load scale from config if not set """
+        if self.scale:
+            return self.scale
+
+        try:
+            result = await self.crawl_configs.find_one(
+                {"_id": self.cid}, {"scale": True}
+            )
+            return result["scale"]
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
+            return 1
 
     def _make_crawl(self, state, scale):
         """ Create crawl object for partial or fully complete crawl """

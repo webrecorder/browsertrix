@@ -35,7 +35,11 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./frontend.conf.template /etc/nginx/templates/
 
+RUN mkdir -p /etc/nginx/includes/
+COPY ./locations.conf /etc/nginx/includes/
+
 RUN rm /etc/nginx/conf.d/*
 
-RUN mkdir -p /etc/nginx/resolvers; echo "" > /etc/nginx/resolvers/resolvers.conf
+# default docker resolver, overridden in k8s
+RUN mkdir -p /etc/nginx/resolvers; echo "resolver 127.0.0.11;" > /etc/nginx/resolvers/resolvers.conf
 

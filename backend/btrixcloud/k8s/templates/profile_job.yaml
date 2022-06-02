@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: job-profile-browser-
+  name: "job-{{ id }}"
 
   labels:
     btrix.profile: "1"
@@ -40,7 +40,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.labels['job-name']
 
-            - name: STORAGE_PATH
+            - name: STORE_PATH
               value: {{ storage_path }}
 
             - name: STORAGE_NAME

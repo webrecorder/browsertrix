@@ -20,26 +20,6 @@ spec:
   {{- end }}
 
 
-{{- if not .Values.volume_storage_class }}
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: "local-minio-store-pv"
-  annotations:
-    "helm.sh/resource-policy": keep
-spec:
-  capacity:
-    storage: 5Gi
-
-  accessModes:
-    - "ReadWriteOnce"
-
-  hostPath:
-    path: /tmp/btrix-minio-data
-{{- end }}
-
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,6 +47,20 @@ spec:
         - name: data-minio
           persistentVolumeClaim:
             claimName: minio-storage-pvc
+
+      initContainers:
+        - name: init-bucket
+          image: {{ .Values.minio_mc_image }}
+          imagePullPolicy: {{ .Values.minio_pull_policy }}
+          env:
+            - name: MC_HOST_local
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secrets
+                  key: MC_HOST
+
+          command: ['/bin/sh']
+          args: ['-c', 'mc mb --ignore-existing local/{{ .Values.minio_local_bucket_name }}' ]
 
       containers:
         - name: minio

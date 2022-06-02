@@ -4,6 +4,9 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 """
 
 import os
+import signal
+import sys
+import asyncio
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
@@ -69,9 +72,11 @@ def main():
 
         crawl_manager = K8SManager()
     else:
-        from .docker.dockerman import DockerManager
+        # from .docker.dockerman import DockerManager
+        # crawl_manager = DockerManager(archive_ops)
+        from .swarm.swarmmanager import SwarmManager
 
-        crawl_manager = DockerManager(archive_ops)
+        crawl_manager = SwarmManager()
 
     init_storages_api(archive_ops, crawl_manager, current_active_user)
 
@@ -124,4 +129,13 @@ def main():
 @app_root.on_event("startup")
 async def startup():
     """init on startup"""
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGTERM, exit_handler)
+
     main()
+
+
+def exit_handler():
+    """ sigterm handler """
+    print("SIGTERM received, exiting")
+    sys.exit(1)
