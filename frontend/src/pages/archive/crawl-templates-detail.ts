@@ -679,7 +679,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div>
             <btrix-select-browser-profile
               archiveId=${this.archiveId}
-              profileId=${this.crawlTemplate.profileid || ""}
+              .profileId=${this.crawlTemplate.profileid || null}
               .authState=${this.authState}
             ></btrix-select-browser-profile>
           </div>
