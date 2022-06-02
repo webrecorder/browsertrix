@@ -18,7 +18,7 @@ type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: CrawlConfig;
-  profileid: string;
+  profileid: string | null;
 };
 
 export type InitialCrawlTemplate = Pick<
