@@ -135,7 +135,7 @@ export class CrawlTemplatesNew extends LiteElement {
     }
     this.initialCrawlTemplate = {
       name: this.initialCrawlTemplate?.name || initialValues.name,
-      profileid: this.initialCrawlTemplate?.profileid || "",
+      profileid: this.initialCrawlTemplate?.profileid || null,
       config: {
         ...initialValues.config,
         ...this.initialCrawlTemplate?.config,
@@ -245,7 +245,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <div>
           <btrix-select-browser-profile
             archiveId=${this.archiveId}
-            profileId=${this.initialCrawlTemplate?.profileid || ""}
+            .profileId=${this.initialCrawlTemplate?.profileid || null}
             .authState=${this.authState}
             @on-change=${(e: any) =>
               (this.browserProfileId = e.detail.value.id)}

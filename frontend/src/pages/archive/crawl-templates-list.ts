@@ -585,7 +585,7 @@ export class CrawlTemplatesList extends LiteElement {
     const crawlTemplate: InitialCrawlTemplate = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
-      profileid: template.profileid || "",
+      profileid: template.profileid || null,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
