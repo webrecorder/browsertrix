@@ -248,7 +248,9 @@ export class CrawlTemplatesNew extends LiteElement {
             .profileId=${this.initialCrawlTemplate?.profileid || null}
             .authState=${this.authState}
             @on-change=${(e: any) =>
-              (this.browserProfileId = e.detail.value.id)}
+              (this.browserProfileId = e.detail.value
+                ? e.detail.value.id
+                : null)}
           ></btrix-select-browser-profile>
         </div>
       </section>
@@ -504,8 +506,6 @@ export class CrawlTemplatesNew extends LiteElement {
       scale: +scale,
       profileid: this.browserProfileId,
     };
-
-    console.log('this.browserProfileId"', this.browserProfileId);
 
     if (this.isConfigCodeView) {
       template.config = yamlToJson(this.configCode) as CrawlConfig;
