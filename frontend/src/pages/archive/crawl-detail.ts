@@ -488,7 +488,7 @@ export class CrawlDetail extends LiteElement {
               replayBase="/replay/"
               noSandbox="true"
             ></replay-web-page>`
-          : ``}
+          : this.renderNoFilesMessage()}
       </div>
     `;
   }
@@ -645,11 +645,13 @@ export class CrawlDetail extends LiteElement {
               )}
             </ul>
           `
-        : html`
-            <p class="text-sm text-neutral-400">
-              ${msg("No files to download yet.")}
-            </p>
-          `}
+        : this.renderNoFilesMessage()}
+    `;
+  }
+
+  private renderNoFilesMessage() {
+    return html`
+      <p class="text-sm text-neutral-400">${msg("No files yet.")}</p>
     `;
   }
 
