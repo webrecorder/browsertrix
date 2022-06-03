@@ -65,6 +65,13 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.state === "running" || this.crawl.state === "starting";
   }
 
+  private get hasFiles(): boolean | null {
+    if (!this.crawl) return null;
+    if (!this.crawl.resources) return false;
+
+    return this.crawl.resources.length > 0;
+  }
+
   async firstUpdated() {
     if (!this.crawlsBaseUrl) {
       throw new Error("Crawls base URL not defined");
@@ -474,7 +481,7 @@ export class CrawlDetail extends LiteElement {
 
       <div id="replay-crawl" class="aspect-4/3 rounded border overflow-hidden">
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-        ${replaySource
+        ${replaySource && this.hasFiles
           ? html`<replay-web-page
               source="${replaySource}"
               coll="${ifDefined(this.crawl?.id)}"
@@ -613,38 +620,36 @@ export class CrawlDetail extends LiteElement {
     return html`
       <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
 
-      ${this.crawl
-        ? this.crawl.resources && this.crawl.resources.length
-          ? html`
-              <ul class="border rounded text-sm">
-                ${this.crawl.resources.map(
-                  (file) => html`
-                    <li
-                      class="flex justify-between p-3 border-t first:border-t-0"
-                    >
-                      <div class="whitespace-nowrap truncate">
-                        <a
-                          class="text-primary hover:underline"
-                          href=${file.path}
-                          download
-                          title=${file.name}
-                          >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                        </a>
-                      </div>
-                      <div class="whitespace-nowrap">
-                        <sl-format-bytes value=${file.size}></sl-format-bytes>
-                      </div>
-                    </li>
-                  `
-                )}
-              </ul>
-            `
-          : html`
-              <p class="text-sm text-neutral-400">
-                ${msg("No files to download yet.")}
-              </p>
-            `
-        : ""}
+      ${this.hasFiles
+        ? html`
+            <ul class="border rounded text-sm">
+              ${this.crawl!.resources!.map(
+                (file) => html`
+                  <li
+                    class="flex justify-between p-3 border-t first:border-t-0"
+                  >
+                    <div class="whitespace-nowrap truncate">
+                      <a
+                        class="text-primary hover:underline"
+                        href=${file.path}
+                        download
+                        title=${file.name}
+                        >${file.name.slice(file.name.lastIndexOf("/") + 1)}
+                      </a>
+                    </div>
+                    <div class="whitespace-nowrap">
+                      <sl-format-bytes value=${file.size}></sl-format-bytes>
+                    </div>
+                  </li>
+                `
+              )}
+            </ul>
+          `
+        : html`
+            <p class="text-sm text-neutral-400">
+              ${msg("No files to download yet.")}
+            </p>
+          `}
     `;
   }
 
