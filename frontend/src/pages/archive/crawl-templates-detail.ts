@@ -783,7 +783,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                         class="text-primary font-medium hover:underline text-sm p-1"
                         href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.currCrawlId}#watch`}
                         @click=${this.navLink}
-                        >${msg("View crawl")}</a
+                        >${msg("Watch crawl")}</a
                       >`
                     : this.crawlTemplate.inactive
                     ? ""
@@ -837,7 +837,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                     class="text-primary font-medium hover:underline text-sm p-1"
                     href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlTemplate.lastCrawlId}#watch`}
                     @click=${this.navLink}
-                    >${msg("View crawl")}</a
+                    >${msg("Watch crawl")}</a
                   >
                 `
               : html`<span class="text-0-400 text-sm p-1"
@@ -1201,7 +1201,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               href="/archives/${this
                 .archiveId}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
-              >View crawl</a
+              >Watch crawl</a
             >`
         ),
         type: "success",

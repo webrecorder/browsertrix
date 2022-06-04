@@ -9,7 +9,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl } from "./types";
 
-type SectionName = "overview" | "watch" | "download" | "logs";
+type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -65,6 +65,13 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.state === "running" || this.crawl.state === "starting";
   }
 
+  private get hasFiles(): boolean | null {
+    if (!this.crawl) return null;
+    if (!this.crawl.resources) return false;
+
+    return this.crawl.resources.length > 0;
+  }
+
   async firstUpdated() {
     if (!this.crawlsBaseUrl) {
       throw new Error("Crawls base URL not defined");
@@ -76,7 +83,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "watch", "download", "logs"].includes(hash)) {
+    if (["overview", "watch", "replay", "files", "logs"].includes(hash)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -93,11 +100,7 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          if (this.isRunning) {
-            sectionContent = this.renderWatch();
-          } else {
-            sectionContent = this.renderReplay();
-          }
+          sectionContent = this.renderWatch();
         } else {
           // TODO loading indicator?
           return "";
@@ -105,8 +108,10 @@ export class CrawlDetail extends LiteElement {
 
         break;
       }
-
-      case "download":
+      case "replay":
+        sectionContent = this.renderReplay();
+        break;
+      case "files":
         sectionContent = this.renderFiles();
         break;
       case "logs":
@@ -193,8 +198,14 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "watch", label: msg("View Crawl") })}
-          ${renderNavItem({ section: "download", label: msg("Download") })}
+          ${this.isRunning
+            ? renderNavItem({
+                section: "watch",
+                label: msg("Watch Crawl"),
+              })
+            : ""}
+          ${renderNavItem({ section: "replay", label: msg("Replay") })}
+          ${renderNavItem({ section: "files", label: msg("Files") })}
           ${renderNavItem({ section: "logs", label: msg("Logs") })}
         </ul>
       </nav>
@@ -400,14 +411,14 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderWatch() {
-    if (!this.authState) return "";
+    if (!this.authState || !this.crawl) return "";
 
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       <header class="flex justify-between">
         <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
-        ${document.fullscreenEnabled
+        ${this.isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
                 name="arrows-fullscreen"
@@ -418,22 +429,36 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.crawl
-        ? html` <div id="screencast-crawl">
-            <btrix-screencast
-              authToken=${authToken}
-              archiveId=${this.crawl.aid}
-              crawlId=${this.crawlId!}
-              .watchIPs=${this.crawl.watchIPs || []}
-            ></btrix-screencast>
-          </div>`
-        : ""}
+      ${this.isRunning
+        ? html`
+            <div id="screencast-crawl">
+              <btrix-screencast
+                authToken=${authToken}
+                archiveId=${this.crawl.aid}
+                crawlId=${this.crawlId!}
+                .watchIPs=${this.crawl.watchIPs || []}
+              ></btrix-screencast>
+            </div>
+          `
+        : html`
+            <div class="rounded border bg-neutral-50 p-3">
+              <p class="text-sm text-neutral-600">
+                ${msg(
+                  html`Crawl is not running.
+                    <a
+                      href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
+                      class="text-primary hover:underline"
+                      @click=${() => (this.sectionName = "replay")}
+                      >View replay</a
+                    >`
+                )}
+              </p>
+            </div>
+          `}
     `;
   }
 
   private renderReplay() {
-    const isRunning = this.isRunning;
-
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
@@ -454,21 +479,16 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      <div
-        id="replay-crawl"
-        class="aspect-4/3 rounded border ${isRunning
-          ? "border-purple-200"
-          : "border-slate-100"}"
-      >
+      <div id="replay-crawl" class="aspect-4/3 rounded border overflow-hidden">
         <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-        ${replaySource
+        ${replaySource && this.hasFiles
           ? html`<replay-web-page
               source="${replaySource}"
               coll="${ifDefined(this.crawl?.id)}"
               replayBase="/replay/"
               noSandbox="true"
             ></replay-web-page>`
-          : ``}
+          : this.renderNoFilesMessage()}
       </div>
     `;
   }
@@ -600,36 +620,38 @@ export class CrawlDetail extends LiteElement {
     return html`
       <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
 
-      ${this.crawl
-        ? this.crawl.resources && this.crawl.resources.length
-          ? html`
-              <ul class="border rounded text-sm">
-                ${this.crawl.resources.map(
-                  (file) => html`
-                    <li
-                      class="flex justify-between p-3 border-t first:border-t-0"
-                    >
-                      <div class="whitespace-nowrap truncate">
-                        <a
-                          class="text-primary hover:underline"
-                          href=${file.path}
-                          download
-                          title=${file.name}
-                          >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                        </a>
-                      </div>
-                      <div class="whitespace-nowrap">
-                        <sl-format-bytes value=${file.size}></sl-format-bytes>
-                      </div>
-                    </li>
-                  `
-                )}
-              </ul>
-            `
-          : html`
-              <p class="text-neutral-400">${msg("No files to download.")}</p>
-            `
-        : ""}
+      ${this.hasFiles
+        ? html`
+            <ul class="border rounded text-sm">
+              ${this.crawl!.resources!.map(
+                (file) => html`
+                  <li
+                    class="flex justify-between p-3 border-t first:border-t-0"
+                  >
+                    <div class="whitespace-nowrap truncate">
+                      <a
+                        class="text-primary hover:underline"
+                        href=${file.path}
+                        download
+                        title=${file.name}
+                        >${file.name.slice(file.name.lastIndexOf("/") + 1)}
+                      </a>
+                    </div>
+                    <div class="whitespace-nowrap">
+                      <sl-format-bytes value=${file.size}></sl-format-bytes>
+                    </div>
+                  </li>
+                `
+              )}
+            </ul>
+          `
+        : this.renderNoFilesMessage()}
+    `;
+  }
+
+  private renderNoFilesMessage() {
+    return html`
+      <p class="text-sm text-neutral-400">${msg("No files yet.")}</p>
     `;
   }
 
