@@ -4,12 +4,17 @@ Storage API
 from typing import Union
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import Depends, HTTPException
 from aiobotocore.session import get_session
 
 from archives import Archive, DefaultStorage, S3Storage
 from users import User
+
+
+# sign access endpoint
+sign_access_endpoint = os.environ.get("SIGN_ACCESS_ENDPOINT")
 
 
 # ============================================================================
@@ -103,11 +108,20 @@ async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
     else:
         raise Exception("No Default Storage Found, Invalid Storage Type")
 
-    async with get_s3_client(s3storage, True) as (client, bucket, key):
+    async with get_s3_client(s3storage, sign_access_endpoint) as (client, bucket, key):
         key += crawlfile.filename
 
         presigned_url = await client.generate_presigned_url(
             "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
         )
+
+        if (
+            not sign_access_endpoint
+            and s3storage.access_endpoint_url
+            and s3storage.access_endpoint_url != s3storage.endpoint_url
+        ):
+            presigned_url = presigned_url.replace(
+                s3storage.endpoint_url, s3storage.access_endpoint_url
+            )
 
     return presigned_url
