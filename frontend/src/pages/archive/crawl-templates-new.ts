@@ -3,7 +3,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronParser from "cron-parser";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
-import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -11,7 +10,7 @@ import { getLocaleTimeZone } from "../../utils/localization";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "./utils";
 
-export type NewCrawlTemplate = {
+type NewCrawlTemplate = {
   id?: string;
   name: string;
   schedule: string;
@@ -19,8 +18,13 @@ export type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: CrawlConfig;
-  profileid: string;
+  profileid: string | null;
 };
+
+export type InitialCrawlTemplate = Pick<
+  NewCrawlTemplate,
+  "name" | "config" | "profileid"
+>;
 
 const initialValues = {
   name: "",
@@ -55,10 +59,7 @@ export class CrawlTemplatesNew extends LiteElement {
   archiveId!: string;
 
   @property({ type: Object })
-  initialCrawlTemplate?: {
-    name: string;
-    config: CrawlConfig;
-  };
+  initialCrawlTemplate?: InitialCrawlTemplate;
 
   @state()
   private isRunNow: boolean = initialValues.runNow;
@@ -86,13 +87,10 @@ export class CrawlTemplatesNew extends LiteElement {
   private isSubmitting: boolean = false;
 
   @state()
+  private browserProfileId?: string | null;
+
+  @state()
   private serverError?: string;
-
-  @state()
-  browserProfiles?: Profile[];
-
-  @state()
-  selectedProfile?: Profile;
 
   private get timeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -137,17 +135,15 @@ export class CrawlTemplatesNew extends LiteElement {
     }
     this.initialCrawlTemplate = {
       name: this.initialCrawlTemplate?.name || initialValues.name,
+      profileid: this.initialCrawlTemplate?.profileid || null,
       config: {
         ...initialValues.config,
         ...this.initialCrawlTemplate?.config,
       },
     };
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
+    this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
-  }
-
-  protected firstUpdated() {
-    this.fetchBrowserProfiles();
   }
 
   render() {
@@ -247,88 +243,15 @@ export class CrawlTemplatesNew extends LiteElement {
         ></sl-input>
 
         <div>
-          <sl-select
-            label=${msg("Browser Profile")}
-            clearable
-            value=${this.selectedProfile?.id || ""}
-            ?disabled=${!this.browserProfiles?.length}
-            @sl-change=${(e: any) =>
-              (this.selectedProfile = this.browserProfiles?.find(
-                ({ id }) => id === e.target.value
-              ))}
-            @sl-focus=${() => {
-              // Refetch to keep list up to date
-              this.fetchBrowserProfiles();
-            }}
-          >
-            ${this.browserProfiles
-              ? ""
-              : html` <sl-spinner slot="prefix"></sl-spinner> `}
-            ${this.browserProfiles?.map(
-              (profile) => html`
-                <sl-menu-item value=${profile.id}>
-                  ${profile.name}
-                  <div slot="suffix">
-                    <div class="text-xs">
-                      <sl-format-date
-                        date=${`${profile.created}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                      ></sl-format-date>
-                    </div></div
-                ></sl-menu-item>
-              `
-            )}
-          </sl-select>
-
-          ${this.browserProfiles && !this.browserProfiles.length
-            ? html`
-                <div class="mt-2 text-sm text-neutral-500">
-                  <span class="inline-block align-middle"
-                    >${msg("No browser profiles found.")}</span
-                  >
-                  <a
-                    href=${`/archives/${this.archiveId}/browser-profiles/new`}
-                    class="font-medium text-primary hover:text-indigo-500"
-                    target="_blank"
-                    ><span class="inline-block align-middle"
-                      >${msg("Create a browser profile")}</span
-                    >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="box-arrow-up-right"
-                    ></sl-icon
-                  ></a>
-                </div>
-              `
-            : ""}
-          ${this.selectedProfile
-            ? html`
-                <div
-                  class="mt-2 border bg-slate-50 border-slate-100 rounded p-2 text-sm flex justify-between"
-                >
-                  ${this.selectedProfile.description
-                    ? html`<em class="text-slate-500"
-                        >${this.selectedProfile.description}</em
-                      >`
-                    : ""}
-                  <a
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.selectedProfile.id}`}
-                    class="font-medium text-primary hover:text-indigo-500"
-                    target="_blank"
-                  >
-                    <span class="inline-block align-middle mr-1"
-                      >${msg("View profile")}</span
-                    >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="box-arrow-up-right"
-                    ></sl-icon>
-                  </a>
-                </div>
-              `
-            : ""}
+          <btrix-select-browser-profile
+            archiveId=${this.archiveId}
+            .profileId=${this.initialCrawlTemplate?.profileid || null}
+            .authState=${this.authState}
+            @on-change=${(e: any) =>
+              (this.browserProfileId = e.detail.value
+                ? e.detail.value.id
+                : null)}
+          ></btrix-select-browser-profile>
         </div>
       </section>
     `;
@@ -581,7 +504,7 @@ export class CrawlTemplatesNew extends LiteElement {
       runNow: this.isRunNow,
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
-      profileid: this.selectedProfile?.id,
+      profileid: this.browserProfileId,
     };
 
     if (this.isConfigCodeView) {
@@ -660,34 +583,6 @@ export class CrawlTemplatesNew extends LiteElement {
       minute,
       period,
     });
-  }
-
-  /**
-   * Fetch browser profiles and update internal state
-   */
-  private async fetchBrowserProfiles(): Promise<void> {
-    try {
-      const data = await this.getProfiles();
-
-      this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
-        data
-      ) as Profile[];
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async getProfiles(): Promise<Profile[]> {
-    const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles`,
-      this.authState!
-    );
-
-    return data;
   }
 }
 

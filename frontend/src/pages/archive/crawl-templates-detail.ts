@@ -7,6 +7,7 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
@@ -670,6 +671,14 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${this.renderSeedsForm()}
           </div>
 
+          <div>
+            <btrix-select-browser-profile
+              archiveId=${this.archiveId}
+              .profileId=${this.crawlTemplate.profileid || null}
+              .authState=${this.authState}
+            ></btrix-select-browser-profile>
+          </div>
+
           <div class="text-right">
             <sl-button
               type="text"
@@ -1024,15 +1033,14 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async duplicateConfig() {
     if (!this.crawlTemplate) return;
 
-    const config: CrawlTemplate["config"] = {
-      ...this.crawlTemplate.config,
+    const crawlTemplate: InitialCrawlTemplate = {
+      name: msg(str`${this.crawlTemplate.name} Copy`),
+      config: this.crawlTemplate.config,
+      profileid: this.crawlTemplate.profileid || null,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
-      crawlTemplate: {
-        name: msg(str`${this.crawlTemplate.name} Copy`),
-        config,
-      },
+      crawlTemplate,
     });
 
     this.notify({
@@ -1064,6 +1072,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     detail: { formData: FormData };
   }) {
     const { formData } = e.detail;
+    const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;
 
@@ -1083,8 +1092,11 @@ export class CrawlTemplatesDetail extends LiteElement {
       };
     }
 
-    if (config) {
-      await this.createRevisedTemplate(config);
+    if (config || profileId) {
+      await this.createRevisedTemplate({
+        config,
+        profileId,
+      });
     }
 
     this.openDialogName = undefined;
@@ -1221,15 +1233,20 @@ export class CrawlTemplatesDetail extends LiteElement {
    * Create new crawl template with revised crawl configuration
    * @param config Crawl config object
    */
-  private async createRevisedTemplate(config: CrawlConfig) {
+  private async createRevisedTemplate({
+    config,
+    profileId,
+  }: {
+    config?: CrawlConfig;
+    profileId: CrawlTemplate["profileid"];
+  }) {
     this.isSubmittingUpdate = true;
 
     const params = {
       oldId: this.crawlTemplate!.id,
       name: this.crawlTemplate!.name,
       schedule: this.crawlTemplate!.schedule,
-      // runNow: this.crawlTemplate!.runNow,
-      // crawlTimeout: this.crawlTemplate!.crawlTimeout,
+      profileid: profileId,
       config,
     };
 
@@ -1242,8 +1259,6 @@ export class CrawlTemplatesDetail extends LiteElement {
           body: JSON.stringify(params),
         }
       );
-
-      console.log(data);
 
       this.navTo(
         `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
@@ -1272,8 +1287,6 @@ export class CrawlTemplatesDetail extends LiteElement {
    * @param params Crawl template properties to update
    */
   private async updateTemplate(params: Partial<CrawlTemplate>): Promise<void> {
-    console.log(params);
-
     this.isSubmittingUpdate = true;
 
     try {

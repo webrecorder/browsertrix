@@ -11,6 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate } from "./types";
 import { getUTCSchedule } from "./utils";
 import "../../components/crawl-scheduler";
@@ -581,15 +582,14 @@ export class CrawlTemplatesList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(template: CrawlTemplate) {
-    const config: CrawlTemplate["config"] = {
-      ...template.config,
+    const crawlTemplate: InitialCrawlTemplate = {
+      name: msg(str`${template.name} Copy`),
+      config: template.config,
+      profileid: template.profileid || null,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
-      crawlTemplate: {
-        name: msg(str`${template.name} Copy`),
-        config,
-      },
+      crawlTemplate,
     });
 
     this.notify({
