@@ -43,6 +43,3 @@ RUN rm /etc/nginx/conf.d/*; \
     #mkdir -p /etc/nginx/resolvers; echo "" > /etc/nginx/resolvers/resolvers.conf
 
 COPY ./locations.conf /etc/nginx/includes/
-
-EXPOSE 9781
-

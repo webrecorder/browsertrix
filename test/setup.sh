@@ -14,13 +14,11 @@ docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 count=0
 sleepfor=5
 
-sleep 10
-
 until $(curl -m 3 --output /dev/null --silent --head --fail http://127.0.0.1:9871/); do
   echo "waiting for startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))
-  if [ $count -gt 60 ]; then
+  if [ $count -gt 30 ]; then
     echo "swarm frontend startup failed, frontend & backend logs below:"
     echo ""
     echo "ps"
