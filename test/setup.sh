@@ -17,13 +17,14 @@ export REGISTRY=localhost:5000/
 docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 
 count=0
+sleepfor=5
 
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
+while [[ "$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
 do
-  echo "waiting for startup..."
-  sleep 5
-  count=$((count+1))
-  if [ $count -gt 25 ]; then
+  echo "waiting for startup... (has waited for $count seconds)"
+  sleep $sleepfor
+  count=$((count+$sleepfor))
+  if [ $count -gt 120 ]; then
     echo "swarm frontend startup failed, frontend & backend logs below:"
     echo ""
     echo "frontend"
