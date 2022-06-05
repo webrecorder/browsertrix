@@ -39,7 +39,8 @@ COPY ./frontend.conf.template /etc/nginx/templates/
 # default docker resolver, overridden in k8s
 RUN rm /etc/nginx/conf.d/*; \
     mkdir -p /etc/nginx/includes/; \
-    mkdir -p /etc/nginx/resolvers; echo "resolver 127.0.0.11;" > /etc/nginx/resolvers/resolvers.conf
+    mkdir -p /etc/nginx/resolvers; echo "" > /etc/nginx/resolvers/resolvers.conf
+    #mkdir -p /etc/nginx/resolvers; echo "resolver 127.0.0.11;" > /etc/nginx/resolvers/resolvers.conf
 
 COPY ./locations.conf /etc/nginx/includes/
 
