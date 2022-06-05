@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# to be run from repo root as cwd
+set -e
 
+# to be run from repo root as cwd
 cp ./configs/config.sample.env ./configs/config.env
 cp ./configs/storages.sample.yaml ./configs/storages.yaml
 
@@ -15,26 +16,25 @@ export REGISTRY=localhost:5000/
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 
-sleep 60
+count = 0
 
-docker stack ps btrix --no-trunc
-
-docker ps -a
-
-docker service logs btrix_backend &> /tmp/backend.log
-
-docker service logs btrix_frontend &> /tmp/frontend.log
-
-#docker stack ps btrix --no-trunc
-
-echo "backend log"
-
-cat /tmp/backend.log
-
-echo "frontend log"
-
-cat /tmp/frontend.log
-
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
+do
+  echo "waiting for startup..."
+  sleep 5
+  count=$((count+1))
+  if [ $count -gt 25 ]; then
+    echo "swarm frontend startup failed, frontend & backend logs below:"
+    echo ""
+    echo "frontend"
+    echo "--------"
+    docker service logs btrix_frontend &> | cat
+    echo "backend"
+    echo "--------"
+    docker service logs btrix_backend &> | cat
+    exit 1
+  fi
+done
 
 
 

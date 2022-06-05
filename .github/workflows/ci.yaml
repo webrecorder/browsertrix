@@ -64,5 +64,7 @@ jobs:
         name: Run Bootstrap Script
         run: ./test/setup.sh
 
-      #- run: curl http://localhost:9871/api/settings
+      - 
+        name: Get settings
+        run: curl http://localhost:9871/api/settings
 
