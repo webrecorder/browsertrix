@@ -19,14 +19,14 @@ docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 count=0
 sleepfor=5
 
-sleep 45
+sleep 60
 
 docker ps -a
 
 docker stack ps btrix
+#docker service logs btrix_frontend
 
-while [[ "$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
-do
+until $(curl --connect-timeout 2 --output /dev/null --silent --head --fail http://localhost:9871/); do
   echo "waiting for startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))
