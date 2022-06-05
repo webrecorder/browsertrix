@@ -67,6 +67,10 @@ jobs:
       #- run: curl http://localhost:9871/api/settings
       - run: docker ps -a
 
+      - run: docker service logs btrix_backend
+
+      - run: docker service logs btrix_frontend
+
       - run: docker stack ps btrix --no-trunc
 
 
