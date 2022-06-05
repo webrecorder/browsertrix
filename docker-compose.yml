@@ -26,6 +26,7 @@ services:
 
     environment:
       - CRAWLER_FQDN_SUFFIX=
+      - JOB_IMAGE=${REGISTRY}webrecorder/browsertrix-backend:latest
 
     deploy:
       placement:
