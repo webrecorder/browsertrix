@@ -21,7 +21,7 @@ def run_swarm_stack(name, data):
         fh_io.flush()
 
         try:
-            docker.stack.deploy(name, compose_files=[fh_io.name], orchestrator="swarm")
+            docker.stack.deploy(name, compose_files=[fh_io.name], orchestrator="swarm", resolve_image="never")
         except DockerException as exc:
             print(exc, flush=True)
 
