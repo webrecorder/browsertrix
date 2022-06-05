@@ -16,7 +16,7 @@ sleepfor=5
 
 sleep 10
 
-until $(curl -m 3 --output /dev/null --silent --head --fail http://localhost:9871/); do
+until $(curl -m 3 --output /dev/null --silent --head --fail http://127.0.0.1:9871/); do
   echo "waiting for startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))

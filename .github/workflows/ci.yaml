@@ -74,5 +74,5 @@ jobs:
 
       - 
         name: Get settings
-        run: curl -m 3 http://localhost:9871/api/settings
+        run: curl -m 3 http://127.0.0.1:9871/api/settings
 

@@ -37,7 +37,7 @@ services:
     build: ./frontend
     image: ${REGISTRY}webrecorder/browsertrix-frontend:latest
     ports:
-      - 9871:80
+      - 127.0.0.1:9871:80
 
     depends_on:
       - backend
