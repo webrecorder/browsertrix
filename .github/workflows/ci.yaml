@@ -65,7 +65,8 @@ jobs:
         run: ./test/setup.sh
 
       #- run: curl http://localhost:9871/api/settings
-      - run: docker network ls
+      - run: docker ps -a
 
-      - run: docker ps
+      - run: docker stack ps btrix --no-trunc
+
 
