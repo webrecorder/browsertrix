@@ -35,10 +35,6 @@ jobs:
         name: Copy Configs
         run: cp ./configs/config.sample.env ./configs/config.env; cp ./configs/storages.sample.yaml ./configs/storages.yaml
 
-      - 
-        name: Pull existing images
-        run: docker-compose pull
-
       -
         name: Build Backend
         uses: docker/build-push-action@v3

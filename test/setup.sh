@@ -23,12 +23,15 @@ until $(curl -m 3 --output /dev/null --silent --head --fail http://127.0.0.1:987
   if [ $count -gt 60 ]; then
     echo "swarm frontend startup failed, frontend & backend logs below:"
     echo ""
+    echo "ps"
+    echo "--------"
+    docker stack ps btrix --no-trunc
     echo "frontend"
     echo "--------"
-    docker service logs btrix_frontend #2>&1 | cat
+    docker service logs btrix_frontend 2>&1 | cat
     echo "backend"
     echo "--------"
-    docker service logs btrix_backend #2>&1 | cat
+    docker service logs btrix_backend 2>&1 | cat
     exit 0
   fi
 done
