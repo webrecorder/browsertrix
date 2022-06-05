@@ -43,3 +43,4 @@ RUN rm /etc/nginx/conf.d/*
 # default docker resolver, overridden in k8s
 RUN mkdir -p /etc/nginx/resolvers; echo "resolver 127.0.0.11;" > /etc/nginx/resolvers/resolvers.conf
 
+EXPOSE 9871
