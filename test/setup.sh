@@ -15,3 +15,6 @@ docker-compose build
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image never
 
+sleep 10
+
+docker stack ps btrix
