@@ -15,8 +15,22 @@ export REGISTRY=localhost:5000/
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image never
 
-sleep 20
+sleep 5
 
 docker stack ps btrix --no-trunc
+
+docker ps -a
+
+docker service logs btrix_backend &> /tmp/backend.log
+
+docker service logs btrix_frontend &> /tmp/frontend.log
+
+#docker stack ps btrix --no-trunc
+
+cat /tmp/backend.log
+
+cat /tmp/frontend.log
+
+
 
 
