@@ -44,3 +44,5 @@ RUN rm /etc/nginx/conf.d/*; \
 
 COPY ./locations.conf /etc/nginx/includes/
 
+EXPOSE 9781
+
