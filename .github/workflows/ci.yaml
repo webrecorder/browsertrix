@@ -31,6 +31,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - 
+        name: Pull existing images
+        run: docker-compose pull
+
       -
         name: Build Backend
         uses: docker/build-push-action@v3
@@ -66,5 +70,5 @@ jobs:
 
       - 
         name: Get settings
-        run: curl http://localhost:9871/api/settings
+        run: curl -m 3 http://localhost:9871/api/settings
 
