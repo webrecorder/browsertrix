@@ -19,11 +19,11 @@ docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 count=0
 sleepfor=5
 
-sleep 25
+sleep 45
 
 docker ps -a
 
-docker stack btrix ps
+docker stack ps btrix
 
 while [[ "$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
 do
