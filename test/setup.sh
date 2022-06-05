@@ -24,7 +24,12 @@ sleep 60
 docker ps -a
 
 docker stack ps btrix
-#docker service logs btrix_frontend
+
+docker service logs btrix_frontend 2>&1 | cat
+
+docker service logs btrix_backend 2>&1 | cat
+
+exit 0
 
 until $(curl --connect-timeout 2 --output /dev/null --silent --head --fail http://localhost:9871/); do
   echo "waiting for startup... (has waited for $count seconds)"
