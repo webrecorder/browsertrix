@@ -16,7 +16,7 @@ export REGISTRY=localhost:5000/
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 
-count = 0
+count=0
 
 while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9871)" != "200" ]];
 do
@@ -28,10 +28,10 @@ do
     echo ""
     echo "frontend"
     echo "--------"
-    docker service logs btrix_frontend &> | cat
+    docker service logs btrix_frontend 2>&1 | cat
     echo "backend"
     echo "--------"
-    docker service logs btrix_backend &> | cat
+    docker service logs btrix_backend 2>&1 | cat
     exit 1
   fi
 done
