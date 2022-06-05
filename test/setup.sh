@@ -9,7 +9,9 @@ docker swarm init
 
 docker service create --name registry --publish published=5000,target=5000 registry:2
 
-REGISTRY=localhost:5000/ docker-compose build
+export REGISTRY=localhost:5000/
+
+docker-compose build
 
 docker stack deploy -c docker-compose.yml btrix
 
