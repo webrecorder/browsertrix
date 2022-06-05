@@ -20,7 +20,7 @@ until $(curl -m 3 --output /dev/null --silent --head --fail http://localhost:987
   echo "waiting for startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))
-  if [ $count -gt 120 ]; then
+  if [ $count -gt 60 ]; then
     echo "swarm frontend startup failed, frontend & backend logs below:"
     echo ""
     echo "frontend"
