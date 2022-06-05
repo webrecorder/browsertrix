@@ -7,14 +7,16 @@ cp ./configs/storages.sample.yaml ./configs/storages.yaml
 
 docker swarm init
 
-docker service create --name registry --publish published=5000,target=5000 registry:2
+#docker service create --name registry --publish published=5000,target=5000 registry:2
 
 export REGISTRY=localhost:5000/
 
-docker-compose build
+#docker-compose build
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image never
 
-sleep 10
+sleep 20
 
-docker stack ps btrix
+docker stack ps btrix --no-trunc
+
+
