@@ -13,5 +13,5 @@ export REGISTRY=localhost:5000/
 
 docker-compose build
 
-docker stack deploy -c docker-compose.yml btrix
+docker stack deploy -c docker-compose.yml btrix --resolve-image never
 
