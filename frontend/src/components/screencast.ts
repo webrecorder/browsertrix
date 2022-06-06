@@ -302,8 +302,6 @@ export class Screencast extends LitElement {
   }
 
   updateDataList() {
-    console.log(this.imageDataMap.keys(), this.imageDataMap.values());
-    console.log(this.dataList);
     // keep same number of data entries (probably should only decrease if scale is reduced)
     this.dataList = [
       ...this.imageDataMap.values(),
