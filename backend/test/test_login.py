@@ -1,6 +1,6 @@
 import requests
 
-api_prefix = "http://localhost:9871/api"
+api_prefix = "http://127.0.0.1:9871/api"
 
 def test_login_invalid():
     username = "admin@example.com"
