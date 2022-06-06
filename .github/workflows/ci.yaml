@@ -22,15 +22,6 @@ jobs:
         with:
           driver-opts: network=host
 
-      -
-        name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - 
         name: Copy Configs
         run: cp ./configs/config.sample.env ./configs/config.env; cp ./configs/storages.sample.yaml ./configs/storages.yaml
