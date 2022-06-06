@@ -59,7 +59,7 @@ export class CrawlDetail extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
-  private get isRunning(): boolean | null {
+  private get isActive(): boolean | null {
     if (!this.crawl) return null;
 
     return this.crawl.state === "running" || this.crawl.state === "starting";
@@ -198,7 +198,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${this.isRunning
+          ${this.isActive
             ? renderNavItem({
                 section: "watch",
                 label: msg("Watch Crawl"),
@@ -226,11 +226,11 @@ export class CrawlDetail extends LiteElement {
           )}
         </h2>
         <div
-          class="grid gap-2 grid-flow-col ${this.isRunning
+          class="grid gap-2 grid-flow-col ${this.isActive
             ? "justify-between"
             : "justify-end"}"
         >
-          ${this.isRunning
+          ${this.isActive
             ? html`
                 <sl-button-group>
                   <sl-button
@@ -281,7 +281,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" size="small" caret
-          >${this.isRunning
+          >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button
         >
@@ -334,7 +334,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   <div class="flex items-baseline justify-between">
                     <div
-                      class="whitespace-nowrap capitalize${this.isRunning
+                      class="whitespace-nowrap capitalize${this.isActive
                         ? " motion-safe:animate-pulse"
                         : ""}"
                     >
@@ -343,7 +343,7 @@ export class CrawlDetail extends LiteElement {
                           ? "text-red-500"
                           : this.crawl.state === "complete"
                           ? "text-emerald-500"
-                          : this.isRunning
+                          : this.isActive
                           ? "text-purple-500"
                           : "text-zinc-300"}"
                         style="font-size: 10px; vertical-align: 2px"
@@ -363,7 +363,7 @@ export class CrawlDetail extends LiteElement {
             ${this.crawl?.stats
               ? html`
                   <span
-                    class="font-mono tracking-tighter${this.isRunning
+                    class="font-mono tracking-tighter${this.isActive
                       ? " text-purple-600"
                       : ""}"
                   >
@@ -413,12 +413,13 @@ export class CrawlDetail extends LiteElement {
   private renderWatch() {
     if (!this.authState || !this.crawl) return "";
 
+    const isRunning = this.crawl.state === "running";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       <header class="flex justify-between">
         <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
-        ${this.isRunning && document.fullscreenEnabled
+        ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
                 name="arrows-fullscreen"
@@ -429,7 +430,7 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.isRunning
+      ${isRunning
         ? html`
             <div id="screencast-crawl">
               <btrix-screencast
@@ -710,7 +711,7 @@ export class CrawlDetail extends LiteElement {
     try {
       this.crawl = await this.getCrawl();
 
-      if (this.isRunning) {
+      if (this.isActive) {
         // Start timer for next poll
         this.timerId = window.setTimeout(() => {
           this.fetchCrawl();
