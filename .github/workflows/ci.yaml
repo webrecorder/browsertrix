@@ -1,6 +1,6 @@
 name: Browsertrix Cloud Integration Test (for Swarm)
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   btrix-swarm-test:
