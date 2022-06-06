@@ -18,7 +18,6 @@ class BaseCrawlManager(ABC):
     def __init__(self, templates):
         super().__init__()
 
-        self.crawler_image = os.environ["CRAWLER_IMAGE"]
         self.job_image = os.environ["JOB_IMAGE"]
 
         self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"

@@ -1,4 +1,5 @@
-crawler_image: localhost:5000/webrecorder/browsertrix-crawler:latest
+redis_image: redis
+crawler_image: webrecorder/browsertrix-crawler:cloud
 
 crawler_requests_cpu: "0.8"
 crawler_limits_cpu: "1.0"
@@ -6,7 +7,5 @@ crawler_limits_cpu: "1.0"
 crawler_requests_memory: "800M"
 crawler_limits_memory: "1G"
 
-redis_image: redis
-
-crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 4 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
+crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 2 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
 
