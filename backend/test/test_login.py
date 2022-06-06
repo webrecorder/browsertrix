@@ -13,7 +13,7 @@ def test_login_invalid():
 
 def test_login():
     username = "admin@example.com"
-    password = "PASSWORD0"
+    password = "PASSW0RD0"
     r = requests.post(f"{api_prefix}/auth/jwt/login", data={"username": username, "password": password, "grant_type": "password"})
     data = r.json()
 
