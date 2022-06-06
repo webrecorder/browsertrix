@@ -54,9 +54,13 @@ jobs:
         name: Install Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.9' 
+          python-version: '3.9'
+
+      - 
+        name: Install Python Libs
+        run: pip install pytest
  
       - 
-        name: Integration Tests
-        run: py.test -v ./test/*.py
+        name: Backend Tests
+        run: py.test -v ./backend/test/*.py
 
