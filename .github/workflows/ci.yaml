@@ -69,6 +69,6 @@ jobs:
         run: ./test/setup.sh
 
       - 
-        name: Get settings
+        name: Check API Settings
         run: curl -m 3 http://127.0.0.1:9871/api/settings
 
