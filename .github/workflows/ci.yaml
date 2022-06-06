@@ -58,9 +58,9 @@ jobs:
 
       - 
         name: Install Python Libs
-        run: pip install pytest
+        run: pip install pytest requests
  
       - 
         name: Backend Tests
-        run: py.test -v ./backend/test/*.py
+        run: py.test -vv ./backend/test/*.py
 
