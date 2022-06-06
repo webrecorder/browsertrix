@@ -465,30 +465,46 @@ export class CrawlDetail extends LiteElement {
     const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
     //const replaySource = this.crawl?.resources?.[0]?.path;
 
+    const canReplay = replaySource && this.hasFiles;
+
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium mb-2">${msg("Replay Crawl")}</h3>
-        ${document.fullscreenEnabled
-          ? html`
-              <sl-icon-button
-                name="arrows-fullscreen"
-                label=${msg("Fullscreen")}
-                @click=${() => this.enterFullscreen("replay-crawl")}
-              ></sl-icon-button>
-            `
-          : ""}
+        <h3 class="text-lg font-medium my-2">${msg("Replay Crawl")}</h3>
+        ${
+          document.fullscreenEnabled && canReplay
+            ? html`
+                <sl-icon-button
+                  name="arrows-fullscreen"
+                  label=${msg("Fullscreen")}
+                  @click=${() => this.enterFullscreen("replay-crawl")}
+                ></sl-icon-button>
+              `
+            : ""
+        }
       </header>
 
-      <div id="replay-crawl" class="aspect-4/3 rounded border overflow-hidden">
-        <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-        ${replaySource && this.hasFiles
-          ? html`<replay-web-page
-              source="${replaySource}"
-              coll="${ifDefined(this.crawl?.id)}"
-              replayBase="/replay/"
-              noSandbox="true"
-            ></replay-web-page>`
-          : this.renderNoFilesMessage()}
+      <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
+      ${
+        canReplay
+          ? html`<div
+              id="replay-crawl"
+              class="aspect-4/3 rounded border overflow-hidden"
+            >
+              <replay-web-page
+                source="${replaySource}"
+                coll="${ifDefined(this.crawl?.id)}"
+                replayBase="/replay/"
+                noSandbox="true"
+              ></replay-web-page>
+            </div>`
+          : html`
+              <p class="text-sm text-neutral-400">
+                ${this.isRunning
+                  ? msg("No files yet.")
+                  : msg("No files to replay.")}
+              </p>
+            `
+      }
       </div>
     `;
   }
@@ -645,13 +661,13 @@ export class CrawlDetail extends LiteElement {
               )}
             </ul>
           `
-        : this.renderNoFilesMessage()}
-    `;
-  }
-
-  private renderNoFilesMessage() {
-    return html`
-      <p class="text-sm text-neutral-400">${msg("No files yet.")}</p>
+        : html`
+            <p class="text-sm text-neutral-400">
+              ${this.isRunning
+                ? msg("No files yet.")
+                : msg("No files to download.")}
+            </p>
+          `}
     `;
   }
 
