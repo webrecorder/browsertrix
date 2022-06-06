@@ -14,7 +14,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       -
         name: Set up Docker Buildx
@@ -50,7 +50,13 @@ jobs:
         name: Run Bootstrap Script
         run: ./test/setup.sh
 
+      -
+        name: Install Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9' 
+ 
       - 
-        name: Check API Settings
-        run: curl -m 3 http://127.0.0.1:9871/api/settings
+        name: Integration Tests
+        run: py.test -v ./test/*.py
 
