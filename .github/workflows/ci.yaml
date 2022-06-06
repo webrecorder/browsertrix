@@ -36,33 +36,24 @@ jobs:
         run: cp ./configs/config.sample.env ./configs/config.env; cp ./configs/storages.sample.yaml ./configs/storages.yaml
 
       -
-        name: Build Frontend
-        uses: docker/build-push-action@v3
-        with:
-          context: frontend
-          push: true
-          tags: localhost:5000/webrecorder/browsertrix-frontend:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      -
         name: Build Backend
         uses: docker/build-push-action@v3
         with:
           context: backend
           push: true
           tags: localhost:5000/webrecorder/browsertrix-backend:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
 
-      #-
-        # Temp fix
-        # https://github.com/docker/build-push-action/issues/252
-        # https://github.com/moby/buildkit/issues/1896
-        #name: Move cache
-        #run: |
-        #  rm -rf /tmp/.buildx-cache
-        #  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      -
+        name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          push: true
+          tags: localhost:5000/webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
 
       - 
         name: Run Bootstrap Script
