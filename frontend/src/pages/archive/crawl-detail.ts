@@ -413,6 +413,7 @@ export class CrawlDetail extends LiteElement {
   private renderWatch() {
     if (!this.authState || !this.crawl) return "";
 
+    const isStarting = this.crawl.state === "starting";
     const isRunning = this.crawl.state === "running";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
@@ -430,7 +431,13 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${isRunning
+      ${isStarting
+        ? html`<div class="rounded border p-3">
+            <p class="text-sm text-neutral-600">
+              ${msg("Crawl is starting...")}
+            </p>
+          </div>`
+        : isRunning
         ? html`
             <div id="screencast-crawl">
               <btrix-screencast
@@ -444,15 +451,15 @@ export class CrawlDetail extends LiteElement {
         : html`
             <div class="rounded border bg-neutral-50 p-3">
               <p class="text-sm text-neutral-600">
-                ${msg(
-                  html`Crawl is not running.
-                    <a
+                ${msg("Crawl is not running.")}
+                ${this.hasFiles
+                  ? html`<a
                       href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
                       class="text-primary hover:underline"
                       @click=${() => (this.sectionName = "replay")}
                       >View replay</a
                     >`
-                )}
+                  : ""}
               </p>
             </div>
           `}
