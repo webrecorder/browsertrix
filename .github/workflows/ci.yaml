@@ -65,6 +65,10 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - 
+        name: Install jq
+        uses: chrisdickinson/setup-yq@latest
+
+      - 
         name: Run Bootstrap Script
         run: ./test/setup.sh
 

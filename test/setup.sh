@@ -12,10 +12,12 @@ docker swarm init
 
 docker stack deploy -c docker-compose.yml btrix --resolve-image changed
 
-count=0
 sleepfor=5
 
-until $(curl -m 3 --output /dev/null --head --fail $FRONTEND_HOST/); do
+# check frontend
+count=0
+
+until $(curl -m 3 --output /dev/null --silent --head --fail $FRONTEND_HOST/); do
   echo "waiting for frontend startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))
@@ -34,8 +36,10 @@ until $(curl -m 3 --output /dev/null --head --fail $FRONTEND_HOST/); do
   fi
 done
 
+# check backend api
+count=0
 
-until $(curl -m 3 --output /dev/null --fail $FRONTEND_HOST/api/settings); do
+until $(curl -m 3 --output /dev/null --silent --fail $FRONTEND_HOST/api/settings | jq); do
   echo "waiting for backend api startup... (has waited for $count seconds)"
   sleep $sleepfor
   count=$((count+$sleepfor))
