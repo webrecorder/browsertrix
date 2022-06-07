@@ -1,4 +1,5 @@
 import { LitElement, html, css } from "lit";
+import { msg, localized, str } from "@lit/localize";
 import { property, state } from "lit/decorators.js";
 
 type Message = {
@@ -33,6 +34,7 @@ type CloseMessage = Message & {
  * ></btrix-screencast>
  * ```
  */
+@localized()
 export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
@@ -47,6 +49,11 @@ export class Screencast extends LitElement {
     .container {
       display: grid;
       gap: 0.5rem;
+    }
+
+    .screen-count {
+      color: var(--sl-color-neutral-500);
+      font-size: var(--sl-font-size-small);
     }
 
     .screen {
@@ -114,6 +121,9 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Number })
+  scale: number = 1;
+
   @property({ type: Array })
   watchIPs: string[] = [];
 
@@ -133,7 +143,9 @@ export class Screencast extends LitElement {
   private dataMap: Map<number, ScreencastMessage | null> = new Map();
   // Map page ID to data order
   private pageOrder: { [key: string]: number } = {};
-
+  // Number of available browsers.
+  // Multiply by scale to get available browser window count
+  private browsersCount = 0;
   private screenWidth = 640;
 
   shouldUpdate(changedProperties: Map<string, any>) {
@@ -174,18 +186,23 @@ export class Screencast extends LitElement {
   }
 
   render() {
-    const browserCount = this.dataList.length;
-
     return html`
       <div class="wrapper">
-        ${this.isConnecting || !browserCount
+        ${this.isConnecting || !this.dataList.length
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
           : ""}
+        <div class="screen-count">
+          ${msg(
+            str`${this.browsersCount * this.scale} browser windows available`
+          )}
+        </div>
         <div
           class="container"
-          style="grid-template-columns: repeat(${browserCount}, minmax(0, 1fr))"
+          style="grid-template-columns: repeat(${this
+            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
+            .scale}, auto)"
         >
           ${this.dataList.map((pageData) =>
             pageData
@@ -282,9 +299,13 @@ export class Screencast extends LitElement {
   ) {
     if (message.msg === "init") {
       this.dataMap = new Map(
-        Array.from({ length: message.browsers }).map((x, i) => [i, null])
+        Array.from({ length: message.browsers * this.scale }).map((x, i) => [
+          i,
+          null,
+        ])
       );
       this.dataList = Array.from(this.dataMap.values());
+      this.browsersCount = message.browsers;
       this.screenWidth = message.width;
     } else {
       const { id } = message;

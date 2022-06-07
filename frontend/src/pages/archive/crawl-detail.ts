@@ -455,6 +455,7 @@ export class CrawlDetail extends LiteElement {
                 authToken=${authToken}
                 archiveId=${this.crawl.aid}
                 crawlId=${this.crawlId!}
+                scale=${this.crawl.scale}
                 .watchIPs=${this.crawl.watchIPs || []}
               ></btrix-screencast>
             </div>
