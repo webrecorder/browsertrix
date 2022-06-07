@@ -62,6 +62,10 @@ export class Screencast extends LitElement {
       border-color: var(--sl-color-neutral-300);
     }
 
+    .placeholder {
+      background-color: var(--sl-color-neutral-50);
+    }
+
     figure {
       margin: 0;
     }
@@ -112,8 +116,9 @@ export class Screencast extends LitElement {
   @property({ type: Array })
   watchIPs: string[] = [];
 
+  // List of browser screens
   @state()
-  private dataList: Array<ScreencastMessage> = [];
+  private dataList: Array<ScreencastMessage | null> = [];
 
   @state()
   private isConnecting: boolean = false;
@@ -123,11 +128,11 @@ export class Screencast extends LitElement {
 
   // Websocket connections
   private wsMap: Map<string, WebSocket> = new Map();
+  // Map data order to screen data
+  private dataMap: Map<number, ScreencastMessage | null> = new Map();
+  // Map page ID to data order
+  private pageOrder: { [key: string]: number } = {};
 
-  // Page image data
-  private imageDataMap: Map<string, ScreencastMessage> = new Map();
-
-  private screenCount = 1;
   private screenWidth = 640;
 
   shouldUpdate(changedProperties: Map<string, any>) {
@@ -168,11 +173,12 @@ export class Screencast extends LitElement {
   }
 
   render() {
-    const cols = this.screenCount > 1 ? 2 : 1;
+    const browserCount = this.dataList.length;
+    const cols = browserCount > 1 ? 2 : 1;
 
     return html`
       <div class="wrapper">
-        ${this.isConnecting
+        ${this.isConnecting || !browserCount
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
@@ -180,19 +186,21 @@ export class Screencast extends LitElement {
         <div
           class="container"
           style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${Math.ceil(
-            this.screenCount / cols
+            browserCount / cols
           )}, auto);"
         >
-          ${this.dataList.map(
-            (pageData) => html` <figure
-              class="screen"
-              title="${pageData.url}"
-              role="button"
-              @click=${() => (this.focusedScreenData = pageData)}
-            >
-              <figcaption>${pageData.url}</figcaption>
-              <img src="data:image/png;base64,${pageData.data}" />
-            </figure>`
+          ${this.dataList.map((pageData) =>
+            pageData
+              ? html` <figure
+                  class="screen"
+                  title="${pageData.url}"
+                  role="button"
+                  @click=${() => (this.focusedScreenData = pageData)}
+                >
+                  <figcaption>${pageData.url}</figcaption>
+                  <img src="data:image/png;base64,${pageData.data}" />
+                </figure>`
+              : html`<div class="placeholder"></div>`
           )}
         </div>
       </div>
@@ -275,7 +283,10 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      this.screenCount = message.browsers;
+      this.dataMap = new Map(
+        Array.from({ length: message.browsers }).map((x, i) => [i, null])
+      );
+      this.dataList = Array.from(this.dataMap.values());
       this.screenWidth = message.width;
     } else {
       const { id } = message;
@@ -290,7 +301,19 @@ export class Screencast extends LitElement {
           this.isConnecting = false;
         }
 
-        this.imageDataMap.set(id, message);
+        let order = this.pageOrder[id];
+
+        if (order === undefined) {
+          // Find and fill first empty slot
+          const emptySlots = Array.from(this.dataMap.keys()).filter(
+            (k) => !this.dataMap.get(k)
+          );
+          this.pageOrder[id] = Math.min(...emptySlots);
+
+          order = this.pageOrder[id];
+        }
+
+        this.dataMap.set(order, message);
 
         if (this.focusedScreenData?.id === id) {
           this.focusedScreenData = message;
@@ -298,18 +321,18 @@ export class Screencast extends LitElement {
 
         this.updateDataList();
       } else if (message.msg === "close") {
-        this.imageDataMap.delete(id);
+        const order = this.pageOrder[id];
+
+        this.dataMap.set(order, null);
+        delete this.pageOrder[id];
+
         this.updateDataList();
       }
     }
   }
 
   updateDataList() {
-    // keep same number of data entries (probably should only decrease if scale is reduced)
-    this.dataList = [
-      ...this.imageDataMap.values(),
-      ...this.dataList.slice(this.imageDataMap.size),
-    ];
+    this.dataList = this.dataList.map((x, i) => this.dataMap.get(i) || null);
   }
 
   unfocusScreen() {
