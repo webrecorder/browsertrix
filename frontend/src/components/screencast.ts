@@ -64,6 +64,7 @@ export class Screencast extends LitElement {
 
     .placeholder {
       background-color: var(--sl-color-neutral-50);
+      border-radius: var(--sl-border-radius-medium);
     }
 
     figure {
