@@ -175,7 +175,6 @@ export class Screencast extends LitElement {
 
   render() {
     const browserCount = this.dataList.length;
-    const cols = browserCount > 1 ? 2 : 1;
 
     return html`
       <div class="wrapper">
@@ -186,9 +185,7 @@ export class Screencast extends LitElement {
           : ""}
         <div
           class="container"
-          style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${Math.ceil(
-            browserCount / cols
-          )}, auto);"
+          style="grid-template-columns: repeat(${browserCount}, minmax(0, 1fr))"
         >
           ${this.dataList.map((pageData) =>
             pageData
