@@ -8,6 +8,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl } from "./types";
+import { times } from "lodash";
 
 type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
@@ -78,6 +79,16 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.fetchCrawl();
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    const prevCrawl = changedProperties.get("crawl");
+
+    if (prevCrawl && this.crawl) {
+      if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+        this.crawlDone();
+      }
+    }
   }
 
   connectedCallback(): void {
@@ -834,6 +845,24 @@ export class CrawlDetail extends LiteElement {
 
   private stopPollTimer() {
     window.clearTimeout(this.timerId);
+  }
+
+  /** Callback when crawl is no longer running */
+  private crawlDone() {
+    if (!this.crawl) return;
+
+    this.notify({
+      message: msg(
+        html`Done crawling <strong>${this.crawl.configName}</strong>.`
+      ),
+      type: "success",
+      icon: "check2-circle",
+    });
+
+    if (this.sectionName === "watch") {
+      // Show replay tab
+      this.sectionName = "replay";
+    }
   }
 
   /**
