@@ -52,8 +52,9 @@ export class Screencast extends LitElement {
     }
 
     .screen-count {
-      color: var(--sl-color-neutral-500);
+      color: var(--sl-color-neutral-400);
       font-size: var(--sl-font-size-small);
+      margin-bottom: var(--sl-spacing-x-small);
     }
 
     .screen {
@@ -192,17 +193,21 @@ export class Screencast extends LitElement {
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
-          : ""}
-        <div class="screen-count">
-          ${msg(
-            str`${this.browsersCount * this.scale} browser windows available`
-          )}
-        </div>
+          : html`
+              <div class="screen-count">
+                ${msg(
+                  str`Running in ${
+                    this.browsersCount * this.scale
+                  } browser windows`
+                )}
+              </div>
+            `}
+
         <div
           class="container"
           style="grid-template-columns: repeat(${this
             .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
-            .scale}, auto)"
+            .scale}, minmax(2rem, auto))"
         >
           ${this.dataList.map((pageData) =>
             pageData

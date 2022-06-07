@@ -445,7 +445,7 @@ export class CrawlDetail extends LiteElement {
       ${isStarting
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${msg("Crawl is starting...")}
+              ${msg("Crawl starting...")}
             </p>
           </div>`
         : isRunning
