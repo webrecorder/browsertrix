@@ -168,6 +168,8 @@ export class Screencast extends LitElement {
   }
 
   render() {
+    const cols = this.screenCount > 1 ? 2 : 1;
+
     return html`
       <div class="wrapper">
         ${this.isConnecting
@@ -177,8 +179,9 @@ export class Screencast extends LitElement {
           : ""}
         <div
           class="container"
-          style="grid-template-columns: repeat(${this
-            .screenCount}, minmax(0, 1fr))"
+          style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${Math.ceil(
+            this.screenCount / cols
+          )}, auto);"
         >
           ${this.dataList.map(
             (pageData) => html` <figure
