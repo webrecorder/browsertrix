@@ -344,9 +344,9 @@ export class Screencast extends LitElement {
         if (order === undefined) {
           // Find and fill first empty slot
           const emptySlots = Array.from(this.dataMap.keys()).filter(
-            (k) => !this.dataMap.get(k)
+            (k) => this.dataMap.get(k) === null
           );
-          this.pageOrder[id] = Math.min(...emptySlots);
+          this.pageOrder[id] = emptySlots.length ? Math.min(...emptySlots) : 0;
 
           order = this.pageOrder[id];
         }
