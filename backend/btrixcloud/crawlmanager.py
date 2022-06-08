@@ -22,6 +22,8 @@ class BaseCrawlManager(ABC):
 
         self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
 
+        self.crawler_node_type = os.environ.get("CRAWLER_NODE_TYPE", "")
+
         self.templates = Jinja2Templates(directory=templates)
 
         self.loop = asyncio.get_running_loop()
@@ -172,6 +174,7 @@ class BaseCrawlManager(ABC):
             "aid": str(crawlconfig.aid),
             "job_image": self.job_image,
             "manual": "1" if manual else "0",
+            "crawler_node_type": self.crawler_node_type,
             "schedule": schedule,
         }
 

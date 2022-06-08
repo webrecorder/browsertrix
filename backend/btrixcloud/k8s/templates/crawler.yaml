@@ -89,6 +89,27 @@ spec:
       #      - name: redis-conf
       #        mountPath: /redis-conf
 
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ redis_node_type }}"
+
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 2
+              podAffinityTerm:
+                topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                labelSelector:
+                  matchLabels:
+                    job-name: job-{{ id }}
+                    crawl: {{ id }}
+
       containers:
         - name: redis
           image: {{ redis_image }}
@@ -194,6 +215,27 @@ spec:
         - name: crawl-config
           configMap:
             name: crawl-config-{{ cid }}
+
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ crawler_node_type }}"
+
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 2
+              podAffinityTerm:
+                topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                labelSelector:
+                  matchLabels:
+                    job-name: job-{{ id }}
+                    crawl: {{ id }}
 
       containers:
         - name: crawler

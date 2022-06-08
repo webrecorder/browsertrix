@@ -1,5 +1,5 @@
 redis_image: redis
-crawler_image: webrecorder/browsertrix-crawler:cloud
+crawler_image: localhost:5000/webrecorder/browsertrix-crawler:latest
 
 crawler_requests_cpu: "0.8"
 crawler_limits_cpu: "1.0"

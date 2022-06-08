@@ -21,6 +21,17 @@ spec:
         btrix.crawlconfig: {{ cid }}
     spec:
       restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ crawler_node_type }}"
+
       containers:
         - name: crawl-job
           image: {{ job_image }}

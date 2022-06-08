@@ -103,7 +103,8 @@ data:
 
     crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
 
-    crawler_node_type: crawling
+    crawler_node_type: "{{ .Values.crawler_node_type }}"
+    redis_node_type: "{{ .Values.redis_node_type }}"
 
   redis.conf: |
     appendonly yes
