@@ -147,9 +147,9 @@ export class Screencast extends LitElement {
   // Websocket connections
   private wsMap: Map<string, WebSocket> = new Map();
   // Map data order to screen data
-  private dataMap: Map<number, ScreencastMessage | null> = new Map();
+  private dataMap: { [index: number]: ScreencastMessage | null } = {};
   // Map page ID to data order
-  private pageOrder: { [key: string]: number } = {};
+  private pageOrderMap: Map<string, number> = new Map();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
   private browsersCount = 0;
@@ -317,13 +317,17 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      this.dataMap = new Map(
-        Array.from({ length: message.browsers * this.scale }).map((x, i) => [
-          i,
-          null,
-        ])
+      this.dataList = Array.from(
+        { length: message.browsers * this.scale },
+        () => null
       );
-      this.dataList = Array.from(this.dataMap.values());
+      this.dataMap = this.dataList.reduce(
+        (acc, val, i) => ({
+          ...acc,
+          [i]: val,
+        }),
+        {}
+      );
       this.browsersCount = message.browsers;
       this.screenWidth = message.width;
     } else {
@@ -339,38 +343,40 @@ export class Screencast extends LitElement {
           this.isConnecting = false;
         }
 
-        let order = this.pageOrder[id];
+        let idx = this.pageOrderMap.get(id);
 
-        if (order === undefined) {
+        if (idx === undefined) {
           // Find and fill first empty slot
-          const emptySlots = Array.from(this.dataMap.keys()).filter(
-            (k) => this.dataMap.get(k) === null
-          );
-          this.pageOrder[id] = emptySlots.length ? Math.min(...emptySlots) : 0;
+          idx = this.dataList.indexOf(null);
 
-          order = this.pageOrder[id];
+          if (idx === -1) {
+            console.debug("no empty slots");
+          }
+
+          this.pageOrderMap.set(id, idx);
         }
-
-        this.dataMap.set(order, message);
 
         if (this.focusedScreenData?.id === id) {
           this.focusedScreenData = message;
         }
 
+        this.dataMap[idx] = message;
         this.updateDataList();
       } else if (message.msg === "close") {
-        const order = this.pageOrder[id];
+        const idx = this.pageOrderMap.get(id);
 
-        this.dataMap.set(order, null);
-        delete this.pageOrder[id];
+        if (idx !== undefined) {
+          this.dataMap[idx] = null;
+          this.updateDataList();
 
-        this.updateDataList();
+          this.pageOrderMap.set(id, -1);
+        }
       }
     }
   }
 
   updateDataList() {
-    this.dataList = this.dataList.map((x, i) => this.dataMap.get(i) || null);
+    this.dataList = Object.values(this.dataMap);
   }
 
   unfocusScreen() {
