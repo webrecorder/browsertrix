@@ -108,17 +108,27 @@ class CrawlUpdater:
         """ check if crawl is done if all crawl workers have set their done state """
         results = await self.redis.hvals(f"{self.crawl_id}:status")
 
-        # check if done
+        # check if done / failed
         done = 0
+        failed = 0
         for res in results:
             if res == "done":
                 done += 1
-            else:
-                return
+            elif res == "failed":
+                failed += 1
 
-        # check if done
+        # check if all crawlers are done
         if done >= self.scale:
+            print("crawl done!", flush=True)
             await self.finish_crawl()
+
+            await self.job.delete_crawl()
+
+        # check if all crawlers failed
+        elif failed >= self.scale:
+            print("crawl failed!", flush=True)
+
+            await self.fail_crawl()
 
             await self.job.delete_crawl()
 
@@ -126,6 +136,15 @@ class CrawlUpdater:
         """ set scale dynamically of running crawl """
         self.scale = new_scale
         await self.update_crawl(scale=new_scale)
+
+    async def fail_crawl(self):
+        """ mark crawl as failed """
+        if self.finished:
+            return
+
+        self.finished = dt_now()
+
+        await self.update_crawl(state="failed", finished=self.finished)
 
     async def finish_crawl(self):
         """ finish crawl """
