@@ -57,6 +57,12 @@ export class Screencast extends LitElement {
       margin-bottom: var(--sl-spacing-x-small);
     }
 
+    .screen-count span,
+    .screen-count sl-icon {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
     .screen {
       border: 1px solid var(--sl-color-neutral-100);
       border-radius: var(--sl-border-radius-medium);
@@ -195,11 +201,19 @@ export class Screencast extends LitElement {
             </div> `
           : html`
               <div class="screen-count">
-                ${msg(
-                  str`Running in ${
-                    this.browsersCount * this.scale
-                  } browser windows`
-                )}
+                <span
+                  >${msg(
+                    str`Running in ${
+                      this.browsersCount * this.scale
+                    } browser windows`
+                  )}</span
+                >
+                <sl-tooltip
+                  content=${msg(
+                    str`${this.browsersCount} browsers × ${this.scale} crawlers. Number of crawlers corresponds to scale.`
+                  )}
+                  ><sl-icon name="info-circle"></sl-icon
+                ></sl-tooltip>
               </div>
             `}
 
