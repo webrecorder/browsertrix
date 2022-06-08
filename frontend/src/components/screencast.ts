@@ -366,10 +366,11 @@ export class Screencast extends LitElement {
         const idx = this.pageOrderMap.get(id);
 
         if (idx !== undefined) {
-          this.dataMap[idx] = null;
-          this.updateDataList();
-
-          this.pageOrderMap.set(id, -1);
+          // TODO uncomment after investigating backend sending
+          // "close" event while still screencasting
+          // this.dataMap[idx] = null;
+          // this.updateDataList();
+          // this.pageOrderMap.set(id, -1);
         }
       }
     }
