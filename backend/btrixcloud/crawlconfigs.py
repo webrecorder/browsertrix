@@ -117,6 +117,8 @@ class CrawlConfig(BaseMongoModel):
 
     profileid: Optional[UUID4]
 
+    crawlAttemptCount: Optional[int] = 0
+
     crawlCount: Optional[int] = 0
 
     lastCrawlId: Optional[str]
@@ -269,9 +271,19 @@ class CrawlConfigOps:
         )
 
         if crawl_id and config.runNow:
-            await self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+            await self.add_new_crawl(crawl_id, crawlconfig)
 
         return result, crawl_id
+
+    async def add_new_crawl(self, crawl_id, crawlconfig):
+        """ increments crawl count for this config and adds new crawl """
+        inc = self.crawl_configs.find_one_and_update(
+            {"_id": crawlconfig.id, "inactive": {"$ne": True}},
+            {"$inc": {"crawlAttemptCount": 1}},
+        )
+
+        add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+        await asyncio.gather(inc, add)
 
     async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
         """ Update name, scale and/or schedule for an existing crawl config """
@@ -320,22 +332,6 @@ class CrawlConfigOps:
                 )
 
         return {"success": True}
-
-    async def inc_crawls(
-        self, cid: uuid.UUID, crawl_id: str, finished: datetime, state: str
-    ):
-        """ Increment Crawl Counter """
-        await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
-            {
-                "$inc": {"crawlCount": 1},
-                "$set": {
-                    "lastCrawlId": crawl_id,
-                    "lastCrawlTime": finished,
-                    "lastCrawlState": state,
-                },
-            },
-        )
 
     async def get_crawl_configs(self, archive: Archive):
         """Get all crawl configs for an archive is a member of"""
@@ -458,7 +454,7 @@ class CrawlConfigOps:
         status = None
 
         # if no crawls have been run, actually delete
-        if not crawlconfig.crawlCount:
+        if not crawlconfig.crawlAttemptCount and not crawlconfig.crawlCount:
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "aid": crawlconfig.aid}
             )
@@ -554,7 +550,7 @@ def init_crawl_config_api(
             crawl_id = await crawl_manager.run_crawl_config(
                 crawlconfig, userid=str(user.id)
             )
-            await ops.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+            await ops.add_new_crawl(crawl_id, crawlconfig)
 
         except Exception as e:
             # pylint: disable=raise-missing-from
