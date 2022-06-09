@@ -24,8 +24,32 @@ spec:
         role: browser
 
     spec:
-      #terminationGracePeriod: {{ termination_grace_secs }}
-      #nodeSelector: {{ node_selector }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ crawler_node_type }}"
+
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 2
+              podAffinityTerm:
+                topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                labelSelector:
+                  matchLabels:
+                    job-name: job-{{ id }}
+                    crawl: {{ id }}
+
+      tolerations:
+        - key: "nodeType"
+          operator: "Equal"
+          value: "crawling"
+          effect: "NoSchedule"
 
       containers:
         - name: browser
