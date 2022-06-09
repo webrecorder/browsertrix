@@ -19,6 +19,7 @@ from .utils import (
 )
 
 from ..crawlmanager import BaseCrawlManager
+from ..db import resolve_db_url
 
 
 # ============================================================================
