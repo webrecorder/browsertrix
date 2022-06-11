@@ -507,7 +507,7 @@ export class CrawlDetail extends LiteElement {
             </div>`
           : html`
               <p class="text-sm text-neutral-400">
-                ${this.isRunning
+                ${this.isActive
                   ? msg("No files yet.")
                   : msg("No files to replay.")}
               </p>
@@ -671,7 +671,7 @@ export class CrawlDetail extends LiteElement {
           `
         : html`
             <p class="text-sm text-neutral-400">
-              ${this.isRunning
+              ${this.isActive
                 ? msg("No files yet.")
                 : msg("No files to download.")}
             </p>
