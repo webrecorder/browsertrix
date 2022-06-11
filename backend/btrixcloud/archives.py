@@ -2,7 +2,6 @@
 Archive API handling
 """
 import uuid
-from datetime import datetime
 
 from typing import Dict, Union, Literal, Optional
 
@@ -219,14 +218,6 @@ class ArchiveOps:
         archive.users[str(user.id)] = invite.role
         await self.update(archive)
         return True
-
-    async def inc_usage(self, aid: uuid.UUID, amount: int):
-        """ Increment usage counter by month for this archive """
-        yymm = datetime.utcnow().strftime("%Y-%m")
-        res = await self.archives.find_one_and_update(
-            {"_id": aid}, {"$inc": {f"usage.{yymm}": amount}}
-        )
-        return res is not None
 
 
 # ============================================================================

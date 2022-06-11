@@ -19,6 +19,7 @@ from .utils import (
 )
 
 from ..crawlmanager import BaseCrawlManager
+from ..db import resolve_db_url
 
 
 # ============================================================================
@@ -78,8 +79,7 @@ class SwarmManager(BaseCrawlManager):
 
     def _add_extra_crawl_job_params(self, params):
         """ add extra crawl job params """
-        params["mongo_user"] = os.environ["MONGO_INITDB_ROOT_USERNAME"]
-        params["mongo_pass"] = os.environ["MONGO_INITDB_ROOT_PASSWORD"]
+        params["mongo_db_url"] = resolve_db_url()
 
     async def _create_config_map(self, crawlconfig, **kwargs):
         """ create config map for config """

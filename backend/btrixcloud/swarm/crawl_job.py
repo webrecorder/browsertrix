@@ -32,40 +32,29 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
     async def _do_scale(self, new_scale):
         loop = asyncio.get_running_loop()
 
-        scale = self._get_scale()
-
         # if making scale smaller, ensure existing crawlers saved their data
-        if new_scale < scale:
+        if new_scale < self.scale:
             # ping for final exit
-            for num in range(scale, new_scale, -1):
+            for num in range(self.scale, new_scale, -1):
                 num = num - 1
                 service_id = f"crawl-{self.job_id}-{num}_crawler"
                 await loop.run_in_executor(None, ping_containers, service_id, "SIGUSR1")
 
             # delete
-            await self._do_delete_replicas(loop, new_scale, scale)
+            await self._do_delete_replicas(loop, new_scale, self.scale)
 
-        if new_scale > scale:
+        if new_scale > self.scale:
             # create new stacks
             params = {}
             params.update(self._cached_params)
 
-            for num in range(scale, new_scale):
+            for num in range(self.scale, new_scale):
                 stack_id = f"{self.prefix}{self.job_id}-{num}"
                 params["index"] = num
                 data = self.templates.env.get_template("crawler.yaml").render(params)
                 await loop.run_in_executor(None, run_swarm_stack, stack_id, data)
 
         return True
-
-    @property
-    def redis(self):
-        """ get redis service id """
-        return f"crawl-{self.job_id}-0_redis"
-
-    def _get_scale(self, crawl=None):
-        # return crawl.spec.mode["Replicated"]["Replicas"]
-        return self.crawl_updater.scale
 
     async def _get_crawl(self):
         loop = asyncio.get_running_loop()
@@ -76,7 +65,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
     async def _send_shutdown_signal(self, graceful=True):
         loop = asyncio.get_running_loop()
 
-        for num in range(0, self._get_scale()):
+        for num in range(0, self.scale):
             name = f"crawl-{self.job_id}-{num}_crawler"
             sig = "SIGABRT" if not graceful else "SIGINT"
             print(f"Sending {sig} to {name}", flush=True)
@@ -85,7 +74,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
     # pylint: disable=line-too-long
     @property
     def redis_url(self):
-        return f"redis://{self.redis}/0"
+        return f"redis://crawl-{self.job_id}-0_redis/0"
 
     async def _do_create(self, loop, template, params):
         scale = params.get("scale", 1)
@@ -99,8 +88,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             await loop.run_in_executor(None, run_swarm_stack, stack_id, data)
 
     async def _do_delete(self, loop):
-        scale = self._get_scale()
-        await self._do_delete_replicas(loop, 0, scale)
+        await self._do_delete_replicas(loop, 0, self.scale)
 
     async def _do_delete_replicas(self, loop, start, end):
         # volumes = []

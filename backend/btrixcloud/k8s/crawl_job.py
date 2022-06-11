@@ -40,8 +40,12 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
 
         return True
 
-    def _get_scale(self, crawl):
-        return crawl.spec.replicas
+    async def load_initial_scale(self, crawl=None):
+        """ load scale from crawl, if available """
+        if crawl:
+            return crawl.spec.replicas
+
+        return await super().load_initial_scale()
 
     async def _get_crawl(self):
         try:

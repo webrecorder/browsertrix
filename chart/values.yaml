@@ -63,7 +63,7 @@ nginx_limits_memory: "12Mi"
 # =========================================
 mongo_local: true
 
-mongo_host: "local-mongo"
+mongo_host: "local-mongo.default"
 
 mongo_image: "mongo"
 mongo_pull_policy: "IfNotPresent"

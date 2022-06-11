@@ -9,18 +9,30 @@ import motor.motor_asyncio
 
 from pydantic import BaseModel, UUID4
 
-MONGO_USER = os.environ["MONGO_INITDB_ROOT_USERNAME"]
-MONGO_PASS = os.environ["MONGO_INITDB_ROOT_PASSWORD"]
-MONGO_HOST = os.environ["MONGO_HOST"]
 
-DATABASE_URL = f"mongodb://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}:27017"
+# ============================================================================
+def resolve_db_url():
+    """get the mongo db url, either from MONGO_DB_URL or
+    from separate username, password and host settings"""
+    db_url = os.environ.get("MONGO_DB_URL")
+    if db_url:
+        return db_url
+
+    mongo_user = os.environ["MONGO_INITDB_ROOT_USERNAME"]
+    mongo_pass = os.environ["MONGO_INITDB_ROOT_PASSWORD"]
+    mongo_host = os.environ["MONGO_HOST"]
+
+    return f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}:27017"
 
 
 # ============================================================================
 def init_db():
     """initializde the mongodb connector"""
+
+    db_url = resolve_db_url()
+
     client = motor.motor_asyncio.AsyncIOMotorClient(
-        DATABASE_URL, uuidRepresentation="standard"
+        db_url, uuidRepresentation="standard"
     )
 
     mdb = client["browsertrixcloud"]

@@ -24,6 +24,24 @@ spec:
 
     spec:
       restartPolicy: OnFailure
+
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ crawler_node_type }}"
+
+      tolerations:
+        - key: "nodeType"
+          operator: "Equal"
+          value: "crawling"
+          effect: "NoSchedule"
+
       containers:
         - name: crawl-job
           image: {{ job_image }}
