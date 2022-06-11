@@ -365,12 +365,10 @@ export class Screencast extends LitElement {
       } else if (message.msg === "close") {
         const idx = this.pageOrderMap.get(id);
 
-        if (idx !== undefined) {
-          // TODO uncomment after investigating backend sending
-          // "close" event while still screencasting
-          // this.dataMap[idx] = null;
-          // this.updateDataList();
-          // this.pageOrderMap.set(id, -1);
+        if (idx !== undefined && idx !== null) {
+          this.dataMap[idx] = null;
+          this.updateDataList();
+          this.pageOrderMap.set(id, -1);
         }
       }
     }
