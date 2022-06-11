@@ -59,7 +59,7 @@ export class CrawlDetail extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
-  private get isRunning(): boolean | null {
+  private get isActive(): boolean | null {
     if (!this.crawl) return null;
 
     return this.crawl.state === "running" || this.crawl.state === "starting";
@@ -198,7 +198,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${this.isRunning
+          ${this.isActive
             ? renderNavItem({
                 section: "watch",
                 label: msg("Watch Crawl"),
@@ -226,11 +226,11 @@ export class CrawlDetail extends LiteElement {
           )}
         </h2>
         <div
-          class="grid gap-2 grid-flow-col ${this.isRunning
+          class="grid gap-2 grid-flow-col ${this.isActive
             ? "justify-between"
             : "justify-end"}"
         >
-          ${this.isRunning
+          ${this.isActive
             ? html`
                 <sl-button-group>
                   <sl-button
@@ -281,7 +281,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" size="small" caret
-          >${this.isRunning
+          >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button
         >
@@ -334,7 +334,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   <div class="flex items-baseline justify-between">
                     <div
-                      class="whitespace-nowrap capitalize${this.isRunning
+                      class="whitespace-nowrap capitalize${this.isActive
                         ? " motion-safe:animate-pulse"
                         : ""}"
                     >
@@ -343,7 +343,7 @@ export class CrawlDetail extends LiteElement {
                           ? "text-red-500"
                           : this.crawl.state === "complete"
                           ? "text-emerald-500"
-                          : this.isRunning
+                          : this.isActive
                           ? "text-purple-500"
                           : "text-zinc-300"}"
                         style="font-size: 10px; vertical-align: 2px"
@@ -363,7 +363,7 @@ export class CrawlDetail extends LiteElement {
             ${this.crawl?.stats
               ? html`
                   <span
-                    class="font-mono tracking-tighter${this.isRunning
+                    class="font-mono tracking-tighter${this.isActive
                       ? " text-purple-600"
                       : ""}"
                   >
@@ -413,12 +413,14 @@ export class CrawlDetail extends LiteElement {
   private renderWatch() {
     if (!this.authState || !this.crawl) return "";
 
+    const isStarting = this.crawl.state === "starting";
+    const isRunning = this.crawl.state === "running";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       <header class="flex justify-between">
         <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
-        ${this.isRunning && document.fullscreenEnabled
+        ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
                 name="arrows-fullscreen"
@@ -429,7 +431,13 @@ export class CrawlDetail extends LiteElement {
           : ""}
       </header>
 
-      ${this.isRunning
+      ${isStarting
+        ? html`<div class="rounded border p-3">
+            <p class="text-sm text-neutral-600">
+              ${msg("Crawl is starting...")}
+            </p>
+          </div>`
+        : isRunning
         ? html`
             <div id="screencast-crawl">
               <btrix-screencast
@@ -443,15 +451,15 @@ export class CrawlDetail extends LiteElement {
         : html`
             <div class="rounded border bg-neutral-50 p-3">
               <p class="text-sm text-neutral-600">
-                ${msg(
-                  html`Crawl is not running.
-                    <a
+                ${msg("Crawl is not running.")}
+                ${this.hasFiles
+                  ? html`<a
                       href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
                       class="text-primary hover:underline"
                       @click=${() => (this.sectionName = "replay")}
                       >View replay</a
                     >`
-                )}
+                  : ""}
               </p>
             </div>
           `}
@@ -465,30 +473,46 @@ export class CrawlDetail extends LiteElement {
     const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
     //const replaySource = this.crawl?.resources?.[0]?.path;
 
+    const canReplay = replaySource && this.hasFiles;
+
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium mb-2">${msg("Replay Crawl")}</h3>
-        ${document.fullscreenEnabled
-          ? html`
-              <sl-icon-button
-                name="arrows-fullscreen"
-                label=${msg("Fullscreen")}
-                @click=${() => this.enterFullscreen("replay-crawl")}
-              ></sl-icon-button>
-            `
-          : ""}
+        <h3 class="text-lg font-medium my-2">${msg("Replay Crawl")}</h3>
+        ${
+          document.fullscreenEnabled && canReplay
+            ? html`
+                <sl-icon-button
+                  name="arrows-fullscreen"
+                  label=${msg("Fullscreen")}
+                  @click=${() => this.enterFullscreen("replay-crawl")}
+                ></sl-icon-button>
+              `
+            : ""
+        }
       </header>
 
-      <div id="replay-crawl" class="aspect-4/3 rounded border overflow-hidden">
-        <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-        ${replaySource && this.hasFiles
-          ? html`<replay-web-page
-              source="${replaySource}"
-              coll="${ifDefined(this.crawl?.id)}"
-              replayBase="/replay/"
-              noSandbox="true"
-            ></replay-web-page>`
-          : this.renderNoFilesMessage()}
+      <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
+      ${
+        canReplay
+          ? html`<div
+              id="replay-crawl"
+              class="aspect-4/3 rounded border overflow-hidden"
+            >
+              <replay-web-page
+                source="${replaySource}"
+                coll="${ifDefined(this.crawl?.id)}"
+                replayBase="/replay/"
+                noSandbox="true"
+              ></replay-web-page>
+            </div>`
+          : html`
+              <p class="text-sm text-neutral-400">
+                ${this.isActive
+                  ? msg("No files yet.")
+                  : msg("No files to replay.")}
+              </p>
+            `
+      }
       </div>
     `;
   }
@@ -645,13 +669,13 @@ export class CrawlDetail extends LiteElement {
               )}
             </ul>
           `
-        : this.renderNoFilesMessage()}
-    `;
-  }
-
-  private renderNoFilesMessage() {
-    return html`
-      <p class="text-sm text-neutral-400">${msg("No files yet.")}</p>
+        : html`
+            <p class="text-sm text-neutral-400">
+              ${this.isActive
+                ? msg("No files yet.")
+                : msg("No files to download.")}
+            </p>
+          `}
     `;
   }
 
@@ -710,7 +734,7 @@ export class CrawlDetail extends LiteElement {
     try {
       this.crawl = await this.getCrawl();
 
-      if (this.isRunning) {
+      if (this.isActive) {
         // Start timer for next poll
         this.timerId = window.setTimeout(() => {
           this.fetchCrawl();
