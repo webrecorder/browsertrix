@@ -56,11 +56,6 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
 
         return True
 
-    @property
-    def redis(self):
-        """ get redis service id """
-        return f"crawl-{self.job_id}-0_redis"
-
     async def _get_crawl(self):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
@@ -79,7 +74,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
     # pylint: disable=line-too-long
     @property
     def redis_url(self):
-        return f"redis://{self.redis}/0"
+        return f"redis://crawl-{self.job_id}-0_redis/0"
 
     async def _do_create(self, loop, template, params):
         scale = params.get("scale", 1)
