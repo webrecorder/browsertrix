@@ -42,9 +42,12 @@ server {
       set $crawl $2;
       set $num $3;
       set $auth_bearer $arg_auth_bearer;
+      set $svc_suffix "${CRAWLER_SVC_SUFFIX}";
+      set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
+
       auth_request  /access_check;
 
-      proxy_pass http://crawl-$crawl-$num${CRAWLER_SVC_SUFFIX}${CRAWLER_FQDN_SUFFIX}:9037/ws;
+      proxy_pass http://crawl-$crawl-$num$svc_suffix$fqdn_suffix:9037/ws;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;
@@ -63,10 +66,11 @@ server {
       set $browserid $1;
       set $auth_bearer $arg_auth_bearer;
       set $archive $arg_aid;
+      set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
+
       auth_request  /access_check_profiles;
 
-      #proxy_pass http://$browser_ip:9222/$2/page/$3;
-      proxy_pass http://browser-$browserid-0.browser-$browserid${CRAWLER_FQDN_SUFFIX}:9222/$2/page/$3;
+      proxy_pass http://browser-$browserid-0.browser-$browserid$fqdn_suffix:9222/$2/page/$3;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;
@@ -83,8 +87,9 @@ server {
 
     location ~* /loadbrowser/([^/]+)/(.*) {
       set $browserid $1;
-      #proxy_pass http://$browser_ip:9222/$2;
-      proxy_pass http://browser-$browserid-0.browser-$browserid${CRAWLER_FQDN_SUFFIX}:9222/$2;
+      set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
+
+      proxy_pass http://browser-$browserid-0.browser-$browserid$fqdn_suffix:9222/$2;
       proxy_set_header Host "localhost";
 
       proxy_http_version 1.1;

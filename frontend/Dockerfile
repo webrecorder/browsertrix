@@ -35,11 +35,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./frontend.conf.template /etc/nginx/templates/
+COPY ./minio.conf /etc/nginx/includes/
 
-# default docker resolver, overridden in k8s
-RUN rm /etc/nginx/conf.d/*; \
-    mkdir -p /etc/nginx/includes/; \
-    mkdir -p /etc/nginx/resolvers; echo "resolver 127.0.0.11;" > /etc/nginx/resolvers/resolvers.conf
-    #mkdir -p /etc/nginx/resolvers; echo "" > /etc/nginx/resolvers/resolvers.conf
+ADD ./00-default-override-resolver-config.sh ./docker-entrypoint.d/
 
-COPY ./locations.conf /etc/nginx/includes/
