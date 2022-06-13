@@ -144,7 +144,6 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         """ create from yaml """
         await create_from_yaml(self.api_client, yaml_data, namespace=self.namespace)
 
-    # pylint: disable=no-self-use
     def _secret_data(self, secret, name):
         """ decode secret data """
         return base64.standard_b64decode(secret.data[name]).decode()

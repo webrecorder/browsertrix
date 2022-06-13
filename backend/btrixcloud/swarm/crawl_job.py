@@ -5,18 +5,15 @@ import os
 
 from fastapi import FastAPI
 
-from .utils import (
-    ping_containers,
-    get_service,
-    delete_swarm_stack,
-    run_swarm_stack,
-)
+from .utils import get_runner
 
 from .base_job import SwarmJobMixin
 from ..crawl_job import CrawlJob
 
 
 app = FastAPI()
+
+runner = get_runner()
 
 
 # =============================================================================
@@ -38,7 +35,9 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             for num in range(self.scale, new_scale, -1):
                 num = num - 1
                 service_id = f"crawl-{self.job_id}-{num}_crawler"
-                await loop.run_in_executor(None, ping_containers, service_id, "SIGUSR1")
+                await loop.run_in_executor(
+                    None, runner.ping_containers, service_id, "SIGUSR1"
+                )
 
             # delete
             await self._do_delete_replicas(loop, new_scale, self.scale)
@@ -52,14 +51,16 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
                 stack_id = f"{self.prefix}{self.job_id}-{num}"
                 params["index"] = num
                 data = self.templates.env.get_template("crawler.yaml").render(params)
-                await loop.run_in_executor(None, run_swarm_stack, stack_id, data)
+                await loop.run_in_executor(
+                    None, runner.run_service_stack, stack_id, data
+                )
 
         return True
 
     async def _get_crawl(self):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            None, get_service, f"crawl-{self.job_id}-0_crawler"
+            None, runner.get_service, f"crawl-{self.job_id}-0_crawler"
         )
 
     async def _send_shutdown_signal(self, graceful=True):
@@ -69,7 +70,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             name = f"crawl-{self.job_id}-{num}_crawler"
             sig = "SIGABRT" if not graceful else "SIGINT"
             print(f"Sending {sig} to {name}", flush=True)
-            await loop.run_in_executor(None, ping_containers, name, sig)
+            await loop.run_in_executor(None, runner.ping_containers, name, sig)
 
     # pylint: disable=line-too-long
     @property
@@ -85,7 +86,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             stack_id = f"{self.prefix}{self.job_id}-{num}"
             params["index"] = num
             data = self.templates.env.get_template(template).render(params)
-            await loop.run_in_executor(None, run_swarm_stack, stack_id, data)
+            await loop.run_in_executor(None, runner.run_service_stack, stack_id, data)
 
     async def _do_delete(self, loop):
         await self._do_delete_replicas(loop, 0, self.scale)
@@ -96,7 +97,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
         for num in range(end, start, -1):
             num = num - 1
             stack_id = f"{self.prefix}{self.job_id}-{num}"
-            await loop.run_in_executor(None, delete_swarm_stack, stack_id)
+            await loop.run_in_executor(None, runner.delete_service_stack, stack_id)
 
             # volumes.append(f"crawl-{self.job_id}-{num}")
 

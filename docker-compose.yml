@@ -4,14 +4,9 @@ services:
   backend:
     build: ./backend
     image: ${REGISTRY}webrecorder/browsertrix-backend:latest
-    volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-
-    configs:
-        - shared_job_config
 
     secrets:
-        - storages
+      - shared_job_config.yaml
 
     env_file:
       - ./configs/config.env
@@ -20,18 +15,12 @@ services:
       - minio
       - mongo
 
-# enable to expose backend api container directly
-#    ports:
-#      - 8000:8000
-
     environment:
       - CRAWLER_FQDN_SUFFIX=
       - JOB_IMAGE=${REGISTRY}webrecorder/browsertrix-backend:latest
+      - SHARED_JOB_CONFIG=shared_job_config.yaml
 
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
+    restart: always
 
   frontend:
     build: ./frontend
@@ -48,34 +37,7 @@ services:
       - CRAWLER_FQDN_SUFFIX=
       - CRAWLER_SVC_SUFFIX=
 
-  swarm-cronjob:
-    image: crazymax/swarm-cronjob
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-
-    environment:
-      - "TZ=UTC"
-      - "LOG_LEVEL=debug"
-      - "LOG_JSON=false"
-
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-
-  prune-resources:
-    image: docker
-    command: ["docker", "volumes", "prune", "-f", "--filter", "label=crawl"]
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    deploy:
-      mode: global
-      labels:
-        - "swarm.cronjob.enable=true"
-        - "swarm.cronjob.schedule=0 */5 * * *"
-        - "swarm.cronjob.skip-running=false"
-      restart_policy:
-        condition: none
+    restart: always
 
   mongo:
     image: mongo
@@ -84,6 +46,8 @@ services:
 
     env_file:
       - ./configs/config.env
+
+    restart: always
 
   minio:
     image: minio/minio
@@ -99,49 +63,17 @@ services:
     env_file:
       - ./configs/config.env
 
-# enable below to access minio console directly
-#    ports:
-#      - 9001:9001
-#
-#    environment:
-#      - MINIO_SERVER_URL=http://127.0.0.1:9000
-
-
-# enable to support signing of wacz files
-# port 80 must be open to automatically generate cert via LetsEncrypt
-#  authsign:
-#    image: webrecorder/authsign:0.4.0
-
-#    volumes:
-#      - btrix-sign-data:/data
-#      - ./configs/signing.yaml:/app-config/signing.yaml
-
-#    environment:
-#      - CONFIG=/app-config/signing.yaml
-
-#    env_file:
-#      - ./configs/config.env
-
-#    ports:
-#      - 80:80
+    restart: always
 
 volumes:
   btrix-redis-data:
   btrix-mongo-data:
   btrix-minio-data:
-  btrix-sign-data:
 
 networks:
   default:
     name: btrix-net
 
-configs:
-  shared_job_config:
-    file: ./configs/config.yaml
-
 secrets:
-  storages:
-    file: ./configs/storages.yaml
-
-
-
+  shared_job_config.yaml:
+    file: ./configs/config.yaml

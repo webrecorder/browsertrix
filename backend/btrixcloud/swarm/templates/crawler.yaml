@@ -6,7 +6,7 @@ services:
     command:
       - crawl
       - --config
-      - /crawlconfig.json
+      - /var/run/secrets/crawl-config-{{ cid }}
       - --redisStoreUrl
       - {{ redis_url }}
     {%- if profile_filename %}
@@ -15,17 +15,20 @@ services:
     {%- endif %}
 
     hostname: "crawl-{{ id }}-{{ index }}"
+    container_name: "crawl-{{ id }}-{{ index }}_crawler"
 
     networks:
       - btrix
 
-    configs:
-      - crawlconfig.json
+    secrets:
+      - crawl-config-{{ cid }}
 
     volumes:
       - crawl-data:/crawls
 
     stop_grace_period: 1000s
+
+    restart: always
 
     deploy:
       endpoint_mode: dnsrr
@@ -45,9 +48,9 @@ services:
     environment:
       - CRAWL_ID={{ id }}
 
-      - STORE_ENDPOINT_URL={{ endpoint_url }}
-      - STORE_ACCESS_KEY={{ access_key }}
-      - STORE_SECRET_KEY={{ secret_key }}
+      - STORE_ENDPOINT_URL={{ storages[storage_name].endpoint_url }}
+      - STORE_ACCESS_KEY={{ storages[storage_name].access_key }}
+      - STORE_SECRET_KEY={{ storages[storage_name].secret_key }}
 
       - STORE_PATH={{ storage_path }}
       - STORE_FILENAME={{ storage_filename }}
@@ -65,6 +68,7 @@ services:
   redis:
     image: {{ redis_image }}
     command: ["redis-server", "--appendonly", "yes"]
+    container_name: "crawl-{{ id }}-{{ index }}_redis"
 
     deploy:
       endpoint_mode: dnsrr
@@ -83,10 +87,9 @@ networks:
     external: 
       name: btrix-net
 
-configs:
-  crawlconfig.json:
+secrets:
+  crawl-config-{{ cid }}:
     external: true
-    name: crawl-config-{{ cid }}
 
 volumes:
   crawl-data:

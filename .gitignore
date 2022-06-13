@@ -1,6 +1,6 @@
 **/*.pyc
 **/node_modules/
 **/config.env
-configs/storages.yaml
+**/config.yaml
 **/signing.yaml
 .DS_Store

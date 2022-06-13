@@ -58,6 +58,7 @@ class CrawlJob(ABC):
         self.finished = None
 
         self._cached_params = {}
+        self._files_added = False
 
         params = {
             "cid": self.cid,
@@ -188,9 +189,16 @@ class CrawlJob(ABC):
         if self.finished:
             return
 
+        # check if one-page crawls actually succeeded
+        # if only one page found, and no files, assume failed
+        if self.last_found == 1 and not self._files_added:
+            await self.fail_crawl()
+            return
+
         self.finished = dt_now()
 
         completed = self.last_done and self.last_done == self.last_found
+
 
         state = "complete" if completed else "partial_complete"
         print("marking crawl as: " + state, flush=True)
@@ -283,6 +291,7 @@ class CrawlJob(ABC):
                 "$push": {"files": crawl_file.dict()},
             },
         )
+        self._files_added = True
 
         return True
 

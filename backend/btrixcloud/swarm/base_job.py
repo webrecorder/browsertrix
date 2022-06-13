@@ -9,8 +9,10 @@ import yaml
 
 from fastapi.templating import Jinja2Templates
 
-from .utils import get_templates_dir, run_swarm_stack, delete_swarm_stack
+from .utils import get_templates_dir, get_runner
 from ..utils import random_suffix
+
+runner = get_runner()
 
 
 # =============================================================================
@@ -19,9 +21,9 @@ class SwarmJobMixin:
     """ Crawl Job State """
 
     def __init__(self):
+        self.secrets_prefix = "/var/run/secrets/"
         self.shared_config_file = os.environ.get("SHARED_JOB_CONFIG")
         self.custom_config_file = os.environ.get("CUSTOM_JOB_CONFIG")
-        self.shared_secrets_file = os.environ.get("STORAGE_SECRETS")
 
         self.curr_storage = {}
 
@@ -39,15 +41,14 @@ class SwarmJobMixin:
         self.prefix = os.environ.get("STACK_PREFIX", "stack-")
 
         if self.custom_config_file:
-            self._populate_env("/" + self.custom_config_file)
+            self._populate_env(self.secrets_prefix + self.custom_config_file)
 
         self.templates = Jinja2Templates(directory=get_templates_dir())
 
         super().__init__()
 
-    # pylint: disable=no-self-use
     def _populate_env(self, filename):
-        with open(filename) as fh_config:
+        with open(filename, encoding="utf-8") as fh_config:
             params = yaml.safe_load(fh_config)
 
         for key in params:
@@ -61,7 +62,9 @@ class SwarmJobMixin:
         loop.add_signal_handler(signal.SIGUSR1, self.unschedule_job)
 
         if self.shared_config_file:
-            with open("/" + self.shared_config_file) as fh_config:
+            with open(
+                self.secrets_prefix + self.shared_config_file, encoding="utf-8"
+            ) as fh_config:
                 params = yaml.safe_load(fh_config)
         else:
             params = {}
@@ -71,18 +74,7 @@ class SwarmJobMixin:
         if extra_params:
             params.update(extra_params)
 
-        if (
-            os.environ.get("STORAGE_NAME")
-            and self.shared_secrets_file
-            and not self.curr_storage
-        ):
-            self.load_storage(
-                f"/var/run/secrets/{self.shared_secrets_file}",
-                os.environ.get("STORAGE_NAME"),
-            )
-
-        if self.curr_storage:
-            params.update(self.curr_storage)
+        params["storage_name"] = os.environ.get("STORAGE_NAME", "default")
 
         await self._do_create(loop, template, params)
 
@@ -94,7 +86,7 @@ class SwarmJobMixin:
         if not self.is_scheduled or self.remove_schedule:
             print("Removed other objects, removing ourselves", flush=True)
             await loop.run_in_executor(
-                None, delete_swarm_stack, f"job-{self.orig_job_id}"
+                None, runner.delete_service_stack, f"job-{self.orig_job_id}"
             )
         else:
             sys.exit(0)
@@ -102,28 +94,17 @@ class SwarmJobMixin:
         return True
 
     def unschedule_job(self):
-        """ mark job as unscheduled"""
+        """ mark job as unscheduled """
         print("Unscheduled, will delete when finished", flush=True)
         self.remove_schedule = True
-
-    def load_storage(self, filename, storage_name):
-        """ load storage credentials for given storage from yaml file """
-        with open(filename) as fh_config:
-            data = yaml.safe_load(fh_config.read())
-
-        if not data or not data.get("storages"):
-            return
-
-        for storage in data["storages"]:
-            if storage.get("name") == storage_name:
-                self.curr_storage = storage
-                break
 
     async def _do_create(self, loop, template, params):
         data = self.templates.env.get_template(template).render(params)
         return await loop.run_in_executor(
-            None, run_swarm_stack, self.prefix + self.job_id, data
+            None, runner.run_service_stack, self.prefix + self.job_id, data
         )
 
     async def _do_delete(self, loop):
-        await loop.run_in_executor(None, delete_swarm_stack, self.prefix + self.job_id)
+        await loop.run_in_executor(
+            None, runner.delete_service_stack, self.prefix + self.job_id
+        )

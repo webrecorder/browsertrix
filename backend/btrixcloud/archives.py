@@ -120,8 +120,8 @@ class Archive(BaseMongoModel):
 class ArchiveOps:
     """Archive API operations"""
 
-    def __init__(self, db, invites):
-        self.archives = db["archives"]
+    def __init__(self, mdb, invites):
+        self.archives = mdb["archives"]
 
         self.router = None
         self.archive_viewer_dep = None

@@ -335,6 +335,7 @@ class CrawlConfigOps:
 
     async def get_crawl_configs(self, archive: Archive):
         """Get all crawl configs for an archive is a member of"""
+        # pylint: disable=duplicate-code
         cursor = self.crawl_configs.aggregate(
             [
                 {"$match": {"aid": archive.id, "inactive": {"$ne": True}}},

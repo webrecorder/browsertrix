@@ -1,0 +1,49 @@
+# Docker Swarm Override
+#
+# Use for deploying on docker swarm:
+# docker stack deploy -c docker-compose.yml -c docker-compose.swarm.yml btrix
+
+
+version: '3.8'
+
+services:
+  backend:
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+    environment:
+      - "RUNTIME=swarm"
+
+  swarm-cronjob:
+    image: crazymax/swarm-cronjob
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    environment:
+      - "TZ=UTC"
+      - "LOG_LEVEL=debug"
+      - "LOG_JSON=false"
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  prune-resources:
+    image: docker
+    command: ["docker", "volumes", "prune", "-f", "--filter", "label=crawl"]
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      mode: global
+      labels:
+        - "swarm.cronjob.enable=true"
+        - "swarm.cronjob.schedule=0 */5 * * *"
+        - "swarm.cronjob.skip-running=false"
+      restart_policy:
+        condition: none
