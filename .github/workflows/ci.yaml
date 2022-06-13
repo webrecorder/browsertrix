@@ -24,7 +24,7 @@ jobs:
 
       - 
         name: Copy Configs
-        run: cp ./configs/config.sample.env ./configs/config.env; cp ./configs/config.sample.yaml ./configs/config.yaml
+        run: ./init-configs.sh
 
       -
         name: Build Backend
