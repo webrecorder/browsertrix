@@ -30,36 +30,10 @@ spec:
         nodeType: {{ .Values.main_node_type }}
       {{- end }}
 
-      volumes:
-        - name: nginx-resolver
-          emptyDir: {}
-
-        - name: nginx-extra-includes
-          emptyDir: {}
-
-      initContainers:
-        - name: init-nginx
-          image: {{ .Values.nginx_image }}
-          command: ["/bin/sh"]
-          args: ["-c", "echo resolver $(awk 'BEGIN{ORS=\" \"} $1==\"nameserver\" {print $2}' /etc/resolv.conf) valid=30s \";\" > /etc/nginx/resolvers/resolvers.conf"]
-          volumeMounts:
-            - name: nginx-resolver
-              mountPath: /etc/nginx/resolvers/
-
       containers:
         - name: nginx
           image: {{ .Values.nginx_image }}
           imagePullPolicy: {{ .Values.nginx_pull_policy }}
-          volumeMounts:
-            - name: nginx-resolver
-              mountPath: /etc/nginx/resolvers/
-              readOnly: true
-
-            # adding to override /etc/nginx/includes/locations.conf with empty dir for now
-            - name: nginx-extra-includes
-              mountPath: /etc/nginx/includes/
-              readOnly: true
-
           env:
             - name: BACKEND_HOST
               value: {{ .Values.name }}-backend
@@ -69,6 +43,9 @@ spec:
 
             - name: CRAWLER_SVC_SUFFIX
               value: ".crawl-$crawl"
+
+            - name: NO_MINIO_ROUTE
+              value: "1"
 
           resources:
             limits:
