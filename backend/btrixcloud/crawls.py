@@ -191,6 +191,7 @@ class CrawlOps:
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
 
+        # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
             {

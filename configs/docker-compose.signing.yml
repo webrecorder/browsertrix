@@ -1,0 +1,35 @@
+# add to support signing of wacz files
+
+version: "3.8"
+
+services:
+  authsign:
+    image: webrecorder/authsign:0.5.0
+
+    volumes:
+      - btrix-sign-data:/data
+      - ./configs/signing.yaml:/app-config/signing.yaml
+
+    environment:
+      - CONFIG=/app-config/signing.yaml
+      - WACZ_SIGN_TOKEN="${WACZ_SIGN_TOKEN}"
+
+    env_file:
+      - ./configs/config.env
+
+    # port 80 must be open to automatically generate cert via LetsEncrypt
+    # or set AUTHSIGN_PORT to use different port
+    ports:
+      - "${AUTHSIGN_PORT:-80}:80"
+
+  backend:
+    environment:
+      - WACZ_SIGN_URL="http://authsign:8080/sign"
+
+      # optional token for authenticating access to authsign
+      - WACZ_SIGN_TOKEN="${WACZ_SIGN_TOKEN}"
+
+volumes:
+  btrix-sign-data:
+
+

@@ -1,9 +1,0 @@
-
-# default storages using built-in minio
-
-storages:
-  - name: default
-    endpoint_url: http://minio:9000/btrix-data/
-    access_endpoint_url: /data/
-    access_key: ADMIN
-    secret_key: PASSW0RD

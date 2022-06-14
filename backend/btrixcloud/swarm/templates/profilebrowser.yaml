@@ -28,9 +28,9 @@ services:
         role: browser
 
     environment:
-      - STORE_ENDPOINT_URL={{ endpoint_url }}
-      - STORE_ACCESS_KEY={{ access_key }}
-      - STORE_SECRET_KEY={{ secret_key }}
+      - STORE_ENDPOINT_URL={{ storages[storage_name].endpoint_url }}
+      - STORE_ACCESS_KEY={{ storages[storage_name].access_key }}
+      - STORE_SECRET_KEY={{ storages[storage_name].secret_key }}
       - STORE_PATH={{ storage_path }}
  
       

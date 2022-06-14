@@ -31,7 +31,7 @@ class K8SJobMixin(K8sAPI):
 
     async def init_job_objects(self, template, extra_params=None):
         """ init k8s objects from specified template with given extra_params """
-        with open(self.config_file) as fh_config:
+        with open(self.config_file, encoding="utf-8") as fh_config:
             params = yaml.safe_load(fh_config)
 
         params["id"] = self.job_id

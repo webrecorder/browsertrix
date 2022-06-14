@@ -1,5 +1,5 @@
 redis_image: redis
-crawler_image: localhost:5000/webrecorder/browsertrix-crawler:latest
+crawler_image: webrecorder/browsertrix-crawler:latest
 
 crawler_requests_cpu: "0.8"
 crawler_limits_cpu: "1.0"
@@ -9,3 +9,9 @@ crawler_limits_memory: "1G"
 
 crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 2 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
 
+storages:
+  default:
+    endpoint_url: http://minio:9000/btrix-data/
+    access_endpoint_url: /data/
+    access_key: ADMIN
+    secret_key: PASSW0RD

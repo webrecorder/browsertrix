@@ -10,7 +10,7 @@ and managing all aspects of crawling process. This system provides the orchestra
 while the actual crawling is performed using
 [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
 
-The system is designed to run equally in Kubernetes and Docker.
+The system is designed to run in both Kubernetes and Docker Swarm, as well as locally under Podman.
 
 See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
 
@@ -21,7 +21,7 @@ See the [Deployment](Deployment.md) page for information on how to deploy Browse
 
 ## Development Status
 
-Browsertrix Cloud is currently in pre-alpha stages and not ready for production. This is an ambitious project and there's a lot to be done!
+Browsertrix Cloud is currently in an alpha stage and not ready for production. This is an ambitious project and there's a lot to be done!
 
 If you would like to help in a particular way, please open an issue or reach out to us in other ways.
 

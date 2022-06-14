@@ -50,8 +50,8 @@ class InviteToArchiveRequest(InviteRequest):
 class InviteOps:
     """ invite users (optionally to an archive), send emails and delete invites """
 
-    def __init__(self, db, email):
-        self.invites = db["invites"]
+    def __init__(self, mdb, email):
+        self.invites = mdb["invites"]
         self.email = email
 
     async def add_new_user_invite(
@@ -95,7 +95,6 @@ class InviteOps:
         """ remove invite from invite list """
         await self.invites.delete_one({"_id": invite_token})
 
-    # pylint: disable=no-self-use
     def accept_user_invite(self, user, invite_token: str):
         """ remove invite from user, if valid token, throw if not """
         invite = user.invites.pop(invite_token, "")

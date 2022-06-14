@@ -1,0 +1,20 @@
+# enable additional ports for debugging
+
+version: '3.8'
+
+services:
+  # enable backend directly
+  backend:
+    ports:
+      - 8000:8000
+
+  # enable minio data and console access directly
+  minio:
+    ports:
+      - 9001:9001
+      - 9000:9000
+
+    environment:
+      - MINIO_SERVER_URL=http://127.0.0.1:9000
+
+
