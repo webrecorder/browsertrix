@@ -18,32 +18,21 @@ services:
       - SOCKET_DEST=/run/user/0/podman/podman.sock
       - CRAWLER_FQDN_SUFFIX=.dns.podman
 
-    networks:
-      - default
-
   frontend:
     #hostname: frontend
     restart: always
     environment:
-      - CRAWLER_SVC_SUFFIX=_crawler
       - CRAWLER_FQDN_SUFFIX=.dns.podman
-    networks:
-      - default
-
 
   mongo:
     image: docker.io/library/mongo
     #hostname: mongo
     restart: always
-    networks:
-      - default
 
 
   minio:
     image: docker.io/minio/minio
     #hostname: minio
     restart: always
-    networks:
-      - default
 
 

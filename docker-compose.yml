@@ -33,7 +33,7 @@ services:
     environment:
       - BACKEND_HOST=backend
       - CRAWLER_FQDN_SUFFIX=
-      - CRAWLER_SVC_SUFFIX=
+      - CRAWLER_SVC_SUFFIX=_crawler
 
   mongo:
     image: mongo
