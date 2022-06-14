@@ -1,4 +1,4 @@
-ARG PODMAN_VERSION=remote
+ARG PODMAN_VERSION=4
 
 FROM docker.io/mgoltzsche/podman:${PODMAN_VERSION}-remote as podmanremote
 
@@ -11,11 +11,6 @@ ADD requirements.txt /app
 RUN pip install -r requirements.txt
 
 RUN python-on-whales download-cli
-
-#RUN cd /tmp/; \
-#    wget https://github.com/containers/podman/releases/download/v3.4.1/podman-remote-static.tar.gz; \
-#    tar xvfz podman-remote-static.tar.gz; \
-#    mv ./podman-remote-static /usr/bin/podman
 
 ADD btrixcloud/ /app/btrixcloud/
 
