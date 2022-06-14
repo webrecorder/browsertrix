@@ -14,7 +14,7 @@ services:
       - "@profiles/{{ profile_filename }}"
     {%- endif %}
 
-    hostname: "crawl-{{ id }}-{{ index }}"
+    hostname: "crawl-{{ id }}-{{ index }}_crawler"
     container_name: "crawl-{{ id }}-{{ index }}_crawler"
 
     networks:
@@ -69,6 +69,7 @@ services:
     image: {{ redis_image }}
     command: ["redis-server", "--appendonly", "yes"]
     container_name: "crawl-{{ id }}-{{ index }}_redis"
+    restart: always
 
     deploy:
       endpoint_mode: dnsrr

@@ -9,20 +9,22 @@ Browsertrix Cloud currently supports three deployment methods:
 
 Some basic instructions are provided below, we plan to expand this into more detail tutorial in the future.
 
+(All shell scripts can be found in the `./scripts` directory)
+
 ## Deploying with Docker Swarm
 
 For local deployments, using Docker Swarm is recommended. Docker Swarm can be used in a single-machine mode as well
 as with multi-machine setups. Docker Swarm is part of Docker, so if you have Docker installed, you can use this method.
 
-1. Run the `./init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
+1. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
 
 2. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
 
-3. Run `./run-swarm.sh` to initialize the cluster.
+3. Run `run-swarm.sh` to initialize the cluster.
 
 4. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).
 
-You can stop the deployment with `./stop-swarm.sh` and restart again with `./run-swarm.sh`
+You can stop the deployment with `stop-swarm.sh` and restart again with `run-swarm.sh`
 
 
 Note: Currently, unless email settings are configured, you will need to look at the logs to get the invite code for invites. You can do this by running:
@@ -48,31 +50,22 @@ To run with Podman as a non-root user, there's a few initial installation
 
 3. Ensure podman-compose is installed via `pip install podman-compose`.
 
-3. Run the `./init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
+3. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
 
 4. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
 
-5. Run `./run-podman.sh` to run Browsertrix Cloud using podman.
+5. Run `run-podman.sh` to run Browsertrix Cloud using podman.
 
 6. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).
 
 
-You can stop the deployment with `./stop-podman.sh` and restart again with `./run-podman.sh`
+You can stop the deployment with `stop-podman.sh` and restart again with `run-podman.sh`
 
 Note: Currently, unless email settings are configured, you will need to look at the logs to get the invite code for invites. You can do this by running:
 `podman logs -f browsertrix-cloud_backend_1`
 
 It's also possible to use Docker Compose with podman by setting `export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock`. You can change the setting
 in `run-podman.sh` and `stop-podman.sh` to use docker-compose instead if desired.
-
-
-### Deployment
-
-1) Run the ./init
-
-
-
-
 
 
 ### Enabling Signing (for Swarm and Podman Deployments)
@@ -90,7 +83,7 @@ To enable signing in the Docker-based deployment:
 
 2) In `docker-compose.signing.yaml`, set an optional signing token.
 
-3) In `./run-swarm.sh`, uncomment the option for running with signing.
+3) In `run-swarm.sh`, uncomment the option for running with signing.
 
 
 

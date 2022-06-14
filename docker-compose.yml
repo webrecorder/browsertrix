@@ -20,8 +20,6 @@ services:
       - JOB_IMAGE=${REGISTRY}webrecorder/browsertrix-backend:latest
       - SHARED_JOB_CONFIG=shared_job_config.yaml
 
-    restart: always
-
   frontend:
     build: ./frontend
     image: ${REGISTRY}webrecorder/browsertrix-frontend:latest
@@ -37,8 +35,6 @@ services:
       - CRAWLER_FQDN_SUFFIX=
       - CRAWLER_SVC_SUFFIX=
 
-    restart: always
-
   mongo:
     image: mongo
     volumes:
@@ -47,7 +43,6 @@ services:
     env_file:
       - ./configs/config.env
 
-    restart: always
 
   minio:
     image: minio/minio

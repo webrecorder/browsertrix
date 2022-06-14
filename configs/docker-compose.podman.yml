@@ -1,0 +1,49 @@
+# config for running with podman as the container engine
+
+version: '3.8'
+
+services:
+  backend:
+    #hostname: backend
+    restart: always
+    volumes:
+      - ${XDG_RUNTIME_DIR-/run}/podman/podman.sock:/run/podman/podman.sock:z
+
+    security_opt:
+      - "label=disable"
+
+    environment:
+      - RUNTIME=podman
+      - SOCKET_SRC=${XDG_RUNTIME_DIR-/run}/podman/podman.sock
+      - SOCKET_DEST=/run/podman/podman.sock
+      - CRAWLER_FQDN_SUFFIX=.dns.podman
+
+    networks:
+      - default
+
+  frontend:
+    #hostname: frontend
+    restart: always
+    environment:
+      - CRAWLER_SVC_SUFFIX=_crawler
+      - CRAWLER_FQDN_SUFFIX=.dns.podman
+    networks:
+      - default
+
+
+  mongo:
+    image: docker.io/library/mongo
+    #hostname: mongo
+    restart: always
+    networks:
+      - default
+
+
+  minio:
+    image: docker.io/minio/minio
+    #hostname: minio
+    restart: always
+    networks:
+      - default
+
+

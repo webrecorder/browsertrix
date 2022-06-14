@@ -24,7 +24,7 @@ jobs:
 
       - 
         name: Copy Configs
-        run: ./init-configs.sh
+        run: ./scripts/init-configs.sh
 
       -
         name: Build Backend
