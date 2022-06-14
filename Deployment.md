@@ -50,13 +50,15 @@ To run with Podman as a non-root user, there's a few initial installation
 
 3. Ensure podman-compose is installed via `pip install podman-compose`.
 
-3. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
+4. Run `build-podman.sh` to build the local images.
 
-4. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
+5. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
 
-5. Run `run-podman.sh` to run Browsertrix Cloud using podman.
+6. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
 
-6. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).
+7. Run `run-podman.sh` to run Browsertrix Cloud using podman.
+
+8. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).
 
 
 You can stop the deployment with `stop-podman.sh` and restart again with `run-podman.sh`
@@ -79,11 +81,11 @@ The `docker-compose.signing.yml` adds the capability for signing with the `auths
 
 To enable signing in the Docker-based deployment:
 
-1) Copy `configs/signing.sample.yaml` to `configs/signing.yaml` and set the domain and email fields in the config. Set `staging` to false to generate real certificates.
+1. Copy `configs/signing.sample.yaml` to `configs/signing.yaml` and set the domain and email fields in the config. Set `staging` to false to generate real certificates.
 
-2) In `docker-compose.signing.yaml`, set an optional signing token.
+2. In `docker-compose.signing.yaml`, set an optional signing token.
 
-3) In `run-swarm.sh`, uncomment the option for running with signing.
+3. In `run-swarm.sh`, uncomment the option for running with signing.
 
 
 
@@ -94,11 +96,11 @@ For deploying in the cloud, the Kubernetes (k8s) deployment is recommended.
 Browsertrix Cloud uses `helm` to deploy to K8s.
 
 
-1) Ensure `helm` is installed locally and `kubectl` is configured for your k8s cluster.
+1. Ensure `helm` is installed locally and `kubectl` is configured for your k8s cluster.
 
-2) Edit `chart/values.yaml` to configure your deployment. The `ingress` section contains the domain the service will be deployed in, and `signing` can be used to enable WACZ signing.
+2. Edit `chart/values.yaml` to configure your deployment. The `ingress` section contains the domain the service will be deployed in, and `signing` can be used to enable WACZ signing.
 
-3) Run: `helm upgrade --install -f ./chart/values.yaml btrix ./chart/` to deploy or upgrade an existing deployment.
+3. Run: `helm upgrade --install -f ./chart/values.yaml btrix ./chart/` to deploy or upgrade an existing deployment.
 
 
 To stop, run `helm uninstall btrix`.
