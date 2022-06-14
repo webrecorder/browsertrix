@@ -7,7 +7,7 @@ services:
     #hostname: backend
     restart: always
     volumes:
-      - ${XDG_RUNTIME_DIR-/run}/podman/podman.sock:/run/podman/podman.sock:z
+      - ${XDG_RUNTIME_DIR-/run}/podman/podman.sock:/run/user/0/podman/podman.sock:z
 
     security_opt:
       - "label=disable"
@@ -15,7 +15,7 @@ services:
     environment:
       - RUNTIME=podman
       - SOCKET_SRC=${XDG_RUNTIME_DIR-/run}/podman/podman.sock
-      - SOCKET_DEST=/run/podman/podman.sock
+      - SOCKET_DEST=/run/user/0/podman/podman.sock
       - CRAWLER_FQDN_SUFFIX=.dns.podman
 
     networks:
