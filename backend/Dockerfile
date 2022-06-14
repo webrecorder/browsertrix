@@ -1,4 +1,6 @@
-FROM docker.io/mgoltzsche/podman:4.1.0-remote as podmanremote
+ARG PODMAN_VERSION=remote
+
+FROM docker.io/mgoltzsche/podman:${PODMAN_VERSION}-remote as podmanremote
 
 FROM python:3.9
 

@@ -5,8 +5,11 @@ compose=podman-compose
 #compose=docker-compose
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
+# get current podman version
+version=$(podman --version | grep -P '([\d]\.[\d])' -o)
+
 # build
-$compose build backend frontend;
+$compose build --build-arg PODMAN_VERSION=$version backend frontend
 
 podman secret rm btrix_shared_job_config.yaml
 podman secret create btrix_shared_job_config.yaml $CURR/../configs/config.yaml
