@@ -64,40 +64,36 @@ export class Screencast extends LitElement {
     }
 
     .screen {
-      border: 1px solid var(--sl-color-neutral-100);
+      border: 1px solid var(--sl-panel-border-color);
       border-radius: var(--sl-border-radius-medium);
-      cursor: pointer;
-      transition: opacity 0.1s border-color 0.1s;
       overflow: hidden;
     }
 
-    .screen:hover {
-      opacity: 0.8;
-      border-color: var(--sl-color-neutral-300);
+    .screen[role="button"] {
+      cursor: pointer;
+      transition: opacity 0.1s border-color 0.1s;
     }
 
-    .placeholder {
-      background-color: var(--sl-color-neutral-50);
-      border-radius: var(--sl-border-radius-medium);
+    .screen[role="button"]:hover {
+      opacity: 0.8;
+      border-color: var(--sl-color-neutral-300);
     }
 
     figure {
       margin: 0;
     }
 
-    figcaption {
-      flex: 1;
-      border-bottom-width: 1px;
-      border-bottom-color: var(--sl-panel-border-color);
-      color: var(--sl-color-neutral-600);
-      font-size: var(--sl-font-size-small);
+    .caption {
       padding: var(--sl-spacing-x-small);
+      flex: 1;
+      border-bottom: 1px solid var(--sl-panel-border-color);
+      color: var(--sl-color-neutral-600);
     }
 
-    figcaption,
+    .caption,
     .dialog-label {
       display: block;
-      font-size: var(--sl-font-size-small);
+      font-size: var(--sl-font-size-x-small);
       line-height: 1;
       /* Truncate: */
       overflow: hidden;
@@ -110,6 +106,7 @@ export class Screencast extends LitElement {
     }
 
     .frame {
+      background-color: var(--sl-color-neutral-50);
       overflow: hidden;
     }
 
@@ -228,27 +225,28 @@ export class Screencast extends LitElement {
             .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
             .scale}, minmax(2rem, auto))"
         >
-          ${this.dataList.map((pageData) =>
-            pageData
-              ? html` <figure
-                  class="screen"
-                  title="${pageData.url}"
-                  role="button"
-                  @click=${() => (this.focusedScreenData = pageData)}
-                >
-                  <figcaption>${pageData.url}</figcaption>
-                  <div
-                    class="frame"
-                    style="aspect-ratio: ${this.screenWidth /
-                    this.screenHeight}"
-                  >
-                    <img src="data:image/png;base64,${pageData.data}" />
-                  </div>
-                </figure>`
-              : html`<div
-                  class="placeholder"
+          ${this.dataList.map(
+            (pageData) =>
+              html` <figure
+                class="screen"
+                title=${pageData?.url || ""}
+                role=${pageData ? "button" : "presentation"}
+                @click=${pageData
+                  ? () => (this.focusedScreenData = pageData)
+                  : () => {}}
+              >
+                <figcaption class="caption">
+                  ${pageData?.url || html`&nbsp;`}
+                </figcaption>
+                <div
+                  class="frame"
                   style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
-                ></div>`
+                >
+                  ${pageData
+                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
+                    : ""}
+                </div>
+              </figure>`
           )}
         </div>
       </div>
