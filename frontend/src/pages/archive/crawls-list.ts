@@ -488,7 +488,8 @@ export class CrawlsList extends LiteElement {
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
 
-      // Start timer for next poll
+      // Restart timer for next poll
+      this.stopPollTimer();
       this.timerId = window.setTimeout(() => {
         this.fetchCrawls();
       }, 1000 * POLL_INTERVAL_SECONDS);
