@@ -154,6 +154,7 @@ export class Screencast extends LitElement {
   // Multiply by scale to get available browser window count
   private browsersCount = 0;
   private screenWidth = 640;
+  private screenHeight = 480;
 
   shouldUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
@@ -232,7 +233,11 @@ export class Screencast extends LitElement {
                   @click=${() => (this.focusedScreenData = pageData)}
                 >
                   <figcaption>${pageData.url}</figcaption>
-                  <img src="data:image/png;base64,${pageData.data}" />
+                  <img
+                    src="data:image/png;base64,${pageData.data}"
+                    style="aspect-ratio: ${this.screenWidth} / ${this
+                      .screenHeight}"
+                  />
                 </figure>`
               : html`<div class="placeholder"></div>`
           )}
@@ -330,6 +335,8 @@ export class Screencast extends LitElement {
       );
       this.browsersCount = message.browsers;
       this.screenWidth = message.width;
+      this.screenHeight = message.height;
+      console.log(message);
     } else {
       const { id } = message;
 
