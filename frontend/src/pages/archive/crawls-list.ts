@@ -315,7 +315,25 @@ export class CrawlsList extends LiteElement {
                     </li>
                     <hr />
                   `
-                : ""}
+                : html`
+                    <li
+                      class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                      role="menuitem"
+                      @click=${(e: any) => {
+                        this.runNow(crawl);
+                        e.target.closest("sl-dropdown").hide();
+                      }}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle"
+                        name="arrow-clockwise"
+                      ></sl-icon>
+                      <span class="inline-block align-middle">
+                        ${msg("Re-run crawl")}
+                      </span>
+                    </li>
+                    <hr />
+                  `}
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
@@ -544,6 +562,45 @@ export class CrawlsList extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+    }
+  }
+
+  private async runNow(crawl: Crawl) {
+    try {
+      const data = await this.apiFetch(
+        `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}/run`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.started) {
+        this.fetchCrawls();
+      }
+
+      this.notify({
+        message: msg(
+          html`Started crawl from <strong>${crawl.configName}</strong>.
+            <br />
+            <a
+              class="underline hover:no-underline"
+              href="/archives/${this
+                .archiveId}/crawls/crawl/${data.started}#watch"
+              @click=${this.navLink.bind(this)}
+              >Watch crawl</a
+            >`
+        ),
+        type: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 }
