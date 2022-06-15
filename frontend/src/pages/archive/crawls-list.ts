@@ -10,7 +10,7 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl } from "./types";
+import type { Crawl, CrawlTemplate } from "./types";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -567,6 +567,30 @@ export class CrawlsList extends LiteElement {
 
   private async runNow(crawl: Crawl) {
     try {
+      // Get crawl config to check if crawl is already running
+      const crawlTemplate = await this.getCrawlTemplate(crawl);
+
+      if (crawlTemplate.currCrawlId) {
+        this.notify({
+          message: msg(
+            html`Crawl of <strong>${crawl.configName}</strong> is already
+              running.
+              <br />
+              <a
+                class="underline hover:no-underline"
+                href="/archives/${this
+                  .archiveId}/crawls/crawl/${crawlTemplate.currCrawlId}"
+                @click=${this.navLink.bind(this)}
+                >View crawl</a
+              >`
+          ),
+          type: "warning",
+          icon: "exclamation-triangle",
+        });
+
+        return;
+      }
+
       const data = await this.apiFetch(
         `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}/run`,
         this.authState!,
@@ -602,6 +626,15 @@ export class CrawlsList extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  async getCrawlTemplate(crawl: Crawl): Promise<CrawlTemplate> {
+    const data: CrawlTemplate = await this.apiFetch(
+      `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 
