@@ -109,7 +109,11 @@ export class Screencast extends LitElement {
       max-width: 40em;
     }
 
-    img {
+    .frame {
+      overflow: hidden;
+    }
+
+    .frame > img {
       display: block;
       width: 100%;
       height: auto;
@@ -233,13 +237,18 @@ export class Screencast extends LitElement {
                   @click=${() => (this.focusedScreenData = pageData)}
                 >
                   <figcaption>${pageData.url}</figcaption>
-                  <img
-                    src="data:image/png;base64,${pageData.data}"
-                    style="aspect-ratio: ${this.screenWidth} / ${this
-                      .screenHeight}"
-                  />
+                  <div
+                    class="frame"
+                    style="aspect-ratio: ${this.screenWidth /
+                    this.screenHeight}"
+                  >
+                    <img src="data:image/png;base64,${pageData.data}" />
+                  </div>
                 </figure>`
-              : html`<div class="placeholder"></div>`
+              : html`<div
+                  class="placeholder"
+                  style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+                ></div>`
           )}
         </div>
       </div>
@@ -336,7 +345,6 @@ export class Screencast extends LitElement {
       this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
-      console.log(message);
     } else {
       const { id } = message;
 
