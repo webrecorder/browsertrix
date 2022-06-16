@@ -17,4 +17,8 @@ services:
     environment:
       - MINIO_SERVER_URL=http://127.0.0.1:9000
 
+  # enable direct access to signing api
+  authsign:
+    ports:
+      - 8080:8080
 
