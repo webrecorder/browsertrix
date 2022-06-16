@@ -43,8 +43,14 @@ module.exports = merge(common, {
         headers: {
           Host: devBackendUrl.host,
         },
-        pathRewrite: { "^/api": "" },
         ws: true,
+      },
+
+      "/data": {
+        target: devBackendUrl.href,
+        headers: {
+          Host: devBackendUrl.host,
+        },
       },
     },
     // Serve replay service worker file
