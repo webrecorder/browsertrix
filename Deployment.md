@@ -20,7 +20,7 @@ as with multi-machine setups. Docker Swarm is part of Docker, so if you have Doc
 
 2. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
 
-3. Run `run-swarm.sh` to initialize the cluster.
+3. Run `build-swarm.sh` to initialize the cluster.
 
 4. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).
 
