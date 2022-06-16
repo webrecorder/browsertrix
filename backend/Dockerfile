@@ -18,3 +18,4 @@ COPY --from=podmanremote /usr/local/bin/podman-remote /usr/bin/podman
 
 CMD uvicorn btrixcloud.main:app_root --host 0.0.0.0 --access-log --log-level info
 
+EXPOSE 8000

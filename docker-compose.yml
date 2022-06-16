@@ -3,7 +3,7 @@ version: '3.8'
 services:
   backend:
     build: ./backend
-    image: ${REGISTRY}webrecorder/browsertrix-backend:latest
+    image: ${REGISTRY}webrecorder/browsertrix-backend:${BACKEND_TAG:-latest}
 
     secrets:
       - shared_job_config.yaml
@@ -17,12 +17,12 @@ services:
 
     environment:
       - CRAWLER_FQDN_SUFFIX=
-      - JOB_IMAGE=${REGISTRY}webrecorder/browsertrix-backend:latest
+      - JOB_IMAGE=${REGISTRY}webrecorder/browsertrix-backend:${BACKEND_TAG:-latest}
       - SHARED_JOB_CONFIG=shared_job_config.yaml
 
   frontend:
     build: ./frontend
-    image: ${REGISTRY}webrecorder/browsertrix-frontend:latest
+    image: ${REGISTRY}webrecorder/browsertrix-frontend:${FRONTEND_TAG:-latest}
     ports:
       - 9871:80
 
@@ -38,7 +38,7 @@ services:
   mongo:
     image: mongo
     volumes:
-      - btrix-mongo-data:/data/db
+      - ${MINIO_DATA_VOLUME:-btrix-mongo-data}:/data/db
 
     env_file:
       - ./configs/config.env
