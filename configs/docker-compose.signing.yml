@@ -4,7 +4,7 @@ version: "3.8"
 
 services:
   authsign:
-    image: webrecorder/authsign:{AUTHSIGN_TAG:-latest}
+    image: webrecorder/authsign:${AUTHSIGN_TAG:-latest}
 
     volumes:
       - btrix-sign-data:/data
