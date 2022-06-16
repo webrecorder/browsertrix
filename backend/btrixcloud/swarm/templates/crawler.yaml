@@ -58,7 +58,7 @@ services:
 
       {%- if auth_token %}
       - WACZ_SIGN_TOKEN={{ auth_token }}
-      - WACZ_SIGN_URL=http://authsign:5053/sign
+      - WACZ_SIGN_URL=http://authsign:8080/sign
       {%- endif %}
   
       - WEBHOOK_URL={{ redis_url }}/crawls-done
