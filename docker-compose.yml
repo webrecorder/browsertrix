@@ -38,7 +38,7 @@ services:
   mongo:
     image: mongo
     volumes:
-      - ${MINIO_DATA_VOLUME:-btrix-mongo-data}:/data/db
+      - btrix-mongo-data:/data/db
 
     env_file:
       - ./configs/config.env
@@ -53,7 +53,7 @@ services:
     command: ["-c", "mkdir -p /data/$$MINIO_BUCKET; /usr/bin/docker-entrypoint.sh server /data --console-address :9001"]
 
     volumes:
-      - btrix-minio-data:/data
+      - ${MINIO_DATA_VOLUME:-btrix-minio-data}:/data
 
     env_file:
       - ./configs/config.env
