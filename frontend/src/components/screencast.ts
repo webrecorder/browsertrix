@@ -1,4 +1,5 @@
 import { LitElement, html, css } from "lit";
+import { msg, localized, str } from "@lit/localize";
 import { property, state } from "lit/decorators.js";
 
 type Message = {
@@ -33,6 +34,7 @@ type CloseMessage = Message & {
  * ></btrix-screencast>
  * ```
  */
+@localized()
 export class Screencast extends LitElement {
   static styles = css`
     .wrapper {
@@ -49,15 +51,30 @@ export class Screencast extends LitElement {
       gap: 0.5rem;
     }
 
+    .screen-count {
+      color: var(--sl-color-neutral-400);
+      font-size: var(--sl-font-size-small);
+      margin-bottom: var(--sl-spacing-x-small);
+    }
+
+    .screen-count span,
+    .screen-count sl-icon {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
     .screen {
-      border: 1px solid var(--sl-color-neutral-100);
+      border: 1px solid var(--sl-panel-border-color);
       border-radius: var(--sl-border-radius-medium);
-      cursor: pointer;
-      transition: opacity 0.1s border-color 0.1s;
       overflow: hidden;
     }
 
-    .screen:hover {
+    .screen[role="button"] {
+      cursor: pointer;
+      transition: opacity 0.1s border-color 0.1s;
+    }
+
+    .screen[role="button"]:hover {
       opacity: 0.8;
       border-color: var(--sl-color-neutral-300);
     }
@@ -66,19 +83,17 @@ export class Screencast extends LitElement {
       margin: 0;
     }
 
-    figcaption {
-      flex: 1;
-      border-bottom-width: 1px;
-      border-bottom-color: var(--sl-panel-border-color);
-      color: var(--sl-color-neutral-600);
-      font-size: var(--sl-font-size-small);
+    .caption {
       padding: var(--sl-spacing-x-small);
+      flex: 1;
+      border-bottom: 1px solid var(--sl-panel-border-color);
+      color: var(--sl-color-neutral-600);
     }
 
-    figcaption,
+    .caption,
     .dialog-label {
       display: block;
-      font-size: var(--sl-font-size-small);
+      font-size: var(--sl-font-size-x-small);
       line-height: 1;
       /* Truncate: */
       overflow: hidden;
@@ -90,7 +105,12 @@ export class Screencast extends LitElement {
       max-width: 40em;
     }
 
-    img {
+    .frame {
+      background-color: var(--sl-color-neutral-50);
+      overflow: hidden;
+    }
+
+    .frame > img {
       display: block;
       width: 100%;
       height: auto;
@@ -109,11 +129,15 @@ export class Screencast extends LitElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Number })
+  scale: number = 1;
+
   @property({ type: Array })
   watchIPs: string[] = [];
 
+  // List of browser screens
   @state()
-  private dataList: Array<ScreencastMessage> = [];
+  private dataList: Array<ScreencastMessage | null> = [];
 
   @state()
   private isConnecting: boolean = false;
@@ -123,12 +147,15 @@ export class Screencast extends LitElement {
 
   // Websocket connections
   private wsMap: Map<string, WebSocket> = new Map();
-
-  // Page image data
-  private imageDataMap: Map<string, ScreencastMessage> = new Map();
-
-  private screenCount = 1;
+  // Map data order to screen data
+  private dataMap: { [index: number]: ScreencastMessage | null } = {};
+  // Map page ID to data order
+  private pageOrderMap: Map<string, number> = new Map();
+  // Number of available browsers.
+  // Multiply by scale to get available browser window count
+  private browsersCount = 0;
   private screenWidth = 640;
+  private screenHeight = 480;
 
   shouldUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
@@ -170,26 +197,56 @@ export class Screencast extends LitElement {
   render() {
     return html`
       <div class="wrapper">
-        ${this.isConnecting
+        ${this.isConnecting || !this.dataList.length
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
-          : ""}
+          : html`
+              <div class="screen-count">
+                <span
+                  >${msg(
+                    str`Running in ${
+                      this.browsersCount * this.scale
+                    } browser windows`
+                  )}</span
+                >
+                <sl-tooltip
+                  content=${msg(
+                    str`${this.browsersCount} browsers × ${this.scale} crawlers. Number of crawlers corresponds to scale.`
+                  )}
+                  ><sl-icon name="info-circle"></sl-icon
+                ></sl-tooltip>
+              </div>
+            `}
+
         <div
           class="container"
           style="grid-template-columns: repeat(${this
-            .screenCount}, minmax(0, 1fr))"
+            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
+            .scale}, minmax(2rem, auto))"
         >
           ${this.dataList.map(
-            (pageData) => html` <figure
-              class="screen"
-              title="${pageData.url}"
-              role="button"
-              @click=${() => (this.focusedScreenData = pageData)}
-            >
-              <figcaption>${pageData.url}</figcaption>
-              <img src="data:image/png;base64,${pageData.data}" />
-            </figure>`
+            (pageData) =>
+              html` <figure
+                class="screen"
+                title=${pageData?.url || ""}
+                role=${pageData ? "button" : "presentation"}
+                @click=${pageData
+                  ? () => (this.focusedScreenData = pageData)
+                  : () => {}}
+              >
+                <figcaption class="caption">
+                  ${pageData?.url || html`&nbsp;`}
+                </figcaption>
+                <div
+                  class="frame"
+                  style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+                >
+                  ${pageData
+                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
+                    : ""}
+                </div>
+              </figure>`
           )}
         </div>
       </div>
@@ -272,8 +329,20 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      this.screenCount = message.browsers;
+      this.dataList = Array.from(
+        { length: message.browsers * this.scale },
+        () => null
+      );
+      this.dataMap = this.dataList.reduce(
+        (acc, val, i) => ({
+          ...acc,
+          [i]: val,
+        }),
+        {}
+      );
+      this.browsersCount = message.browsers;
       this.screenWidth = message.width;
+      this.screenHeight = message.height;
     } else {
       const { id } = message;
 
@@ -287,26 +356,39 @@ export class Screencast extends LitElement {
           this.isConnecting = false;
         }
 
-        this.imageDataMap.set(id, message);
+        let idx = this.pageOrderMap.get(id);
+
+        if (idx === undefined) {
+          // Find and fill first empty slot
+          idx = this.dataList.indexOf(null);
+
+          if (idx === -1) {
+            console.debug("no empty slots");
+          }
+
+          this.pageOrderMap.set(id, idx);
+        }
 
         if (this.focusedScreenData?.id === id) {
           this.focusedScreenData = message;
         }
 
+        this.dataMap[idx] = message;
         this.updateDataList();
       } else if (message.msg === "close") {
-        this.imageDataMap.delete(id);
-        this.updateDataList();
+        const idx = this.pageOrderMap.get(id);
+
+        if (idx !== undefined && idx !== null) {
+          this.dataMap[idx] = null;
+          this.updateDataList();
+          this.pageOrderMap.set(id, -1);
+        }
       }
     }
   }
 
   updateDataList() {
-    // keep same number of data entries (probably should only decrease if scale is reduced)
-    this.dataList = [
-      ...this.imageDataMap.values(),
-      ...this.dataList.slice(this.imageDataMap.size),
-    ];
+    this.dataList = Object.values(this.dataMap);
   }
 
   unfocusScreen() {

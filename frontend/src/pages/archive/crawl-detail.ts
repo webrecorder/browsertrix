@@ -8,6 +8,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl } from "./types";
+import { times } from "lodash";
 
 type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
@@ -78,6 +79,16 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.fetchCrawl();
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    const prevCrawl = changedProperties.get("crawl");
+
+    if (prevCrawl && this.crawl) {
+      if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+        this.crawlDone();
+      }
+    }
   }
 
   connectedCallback(): void {
@@ -433,8 +444,8 @@ export class CrawlDetail extends LiteElement {
 
       ${isStarting
         ? html`<div class="rounded border p-3">
-            <p class="text-sm text-neutral-600">
-              ${msg("Crawl is starting...")}
+            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
+              ${msg("Crawl starting...")}
             </p>
           </div>`
         : isRunning
@@ -444,6 +455,7 @@ export class CrawlDetail extends LiteElement {
                 authToken=${authToken}
                 archiveId=${this.crawl.aid}
                 crawlId=${this.crawlId!}
+                scale=${this.crawl.scale}
                 .watchIPs=${this.crawl.watchIPs || []}
               ></btrix-screencast>
             </div>
@@ -850,6 +862,24 @@ export class CrawlDetail extends LiteElement {
 
   private stopPollTimer() {
     window.clearTimeout(this.timerId);
+  }
+
+  /** Callback when crawl is no longer running */
+  private crawlDone() {
+    if (!this.crawl) return;
+
+    this.notify({
+      message: msg(
+        html`Done crawling <strong>${this.crawl.configName}</strong>.`
+      ),
+      type: "success",
+      icon: "check2-circle",
+    });
+
+    if (this.sectionName === "watch") {
+      // Show replay tab
+      this.sectionName = "replay";
+    }
   }
 
   /**
