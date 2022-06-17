@@ -2,7 +2,7 @@
 compose=docker-compose
 
 # can optionally be used with podman-compose
-compose=podman-compose
+# compose=podman-compose
 
 CURR=$(dirname "${BASH_SOURCE[0]}")
 

@@ -65,7 +65,7 @@ services:
       {%- endif %}
   
       WEBHOOK_URL: "{{ redis_url }}/crawls-done"
-      CRAWL_ARGS: "{{ crawler_args }}"
+      CRAWL_ARGS: "{{ env.CRAWL_ARGS }}"
 
 {% if index == 0 %}
   redis:
