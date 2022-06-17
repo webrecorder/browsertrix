@@ -11,7 +11,7 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 
 
 WORKDIR /app
-COPY yarn.lock package.json .
+COPY yarn.lock package.json ./
 RUN yarn --frozen-lockfile
 
 COPY lit-localize.json \
@@ -20,7 +20,7 @@ COPY lit-localize.json \
      tsconfig.json \
      webpack.config.js \
      webpack.prod.js \
-     .
+     ./
 
 COPY src ./src/
 
