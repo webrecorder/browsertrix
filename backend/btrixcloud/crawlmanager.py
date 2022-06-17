@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from fastapi.templating import Jinja2Templates
 
 from .utils import random_suffix
+from .db import resolve_db_url
 
 
 # ============================================================================
@@ -63,6 +64,7 @@ class BaseCrawlManager(ABC):
             "baseprofile": baseprofile or "",
             "profile_path": profile_path,
             "url": url,
+            "env": os.environ,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -176,14 +178,11 @@ class BaseCrawlManager(ABC):
             "manual": "1" if manual else "0",
             "crawler_node_type": self.crawler_node_type,
             "schedule": schedule,
+            "env": os.environ,
+            "mongo_db_url": resolve_db_url(),
         }
 
-        self._add_extra_crawl_job_params(params)
-
         return self.templates.env.get_template("crawl_job.yaml").render(params)
-
-    def _add_extra_crawl_job_params(self, params):
-        """ add extra params for crawl job template, if any (swarm only) """
 
     async def _update_config_initial_scale(self, crawlconfig, scale):
         """ update initial scale in config, if needed (k8s only) """

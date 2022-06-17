@@ -1,10 +1,23 @@
 #!/bin/bash
+
+compose=docker-compose
+# can optionally be used with podman-compose
 compose=podman-compose
 
-# can optionally be used with docker-compose
-#compose=docker-compose
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
-podman secret rm btrix_shared_job_config.yaml
-podman secret create btrix_shared_job_config.yaml $CURR/../configs/config.yaml
-REGISTRY="" $compose -f $CURR/../docker-compose.yml -f  $CURR/../configs/docker-compose.podman.yml up -d --remove-orphans
+source $CURR/../configs/config.env
+
+SOCKET_SRC=${XDG_RUNTIME_DIR-/run}/podman/podman.sock
+SOCKET_DEST=/run/user/0/podman/podman.sock
+
+if [ -z "$WACZ_SIGN_URL" ]; then
+  echo "running w/o authsign"
+  docker stack deploy -c docker-compose.yml -c $CURR/../configs/docker-compose.podman.yml btrix
+
+else
+  echo "running with authsign"
+  docker stack deploy -c docker-compose.yml -c $CURR/../configs/docker-compose.podman.yml -c $CURR/../configs/docker-compose.signing.yml btrix
+
+fi
+

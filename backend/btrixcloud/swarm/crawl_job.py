@@ -1,7 +1,6 @@
 """ entry point for K8s crawl job which manages the stateful crawl """
 
 import asyncio
-import os
 
 from fastapi import FastAPI
 
@@ -19,12 +18,6 @@ runner = get_runner()
 # =============================================================================
 class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
     """ Crawl Job """
-
-    def _add_extra_crawl_template_params(self, params):
-        """ add extra params, if any, for crawl template """
-        params["userid"] = os.environ.get("USER_ID")
-        params["storage_filename"] = os.environ.get("STORE_FILENAME")
-        params["storage_path"] = os.environ.get("STORE_PATH")
 
     async def _do_scale(self, new_scale):
         loop = asyncio.get_running_loop()

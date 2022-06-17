@@ -4,7 +4,6 @@ import json
 import asyncio
 
 import aiohttp
-import yaml
 
 from ..archives import S3Storage
 
@@ -14,7 +13,6 @@ from .utils import (
 )
 
 from ..crawlmanager import BaseCrawlManager
-from ..db import resolve_db_url
 
 
 # ============================================================================
@@ -25,26 +23,14 @@ class SwarmManager(BaseCrawlManager):
     def __init__(self):
         super().__init__(get_templates_dir())
 
-        storages = []
-
-        with open(
-            f"/var/run/secrets/{os.environ.get('SHARED_JOB_CONFIG')}",
-            "rt",
-            encoding="utf-8",
-        ) as fh_in:
-            config = yaml.safe_load(fh_in.read())
-
-        storages = config.get("storages", [])
-
         self.storages = {
-            key: S3Storage(
-                name=key,
-                access_key=storage["access_key"],
-                secret_key=storage["secret_key"],
-                endpoint_url=storage["endpoint_url"],
-                access_endpoint_url=storage["access_endpoint_url"],
+            "default": S3Storage(
+                name="default",
+                access_key=os.environ.get("STORE_ACCESS_KEY"),
+                secret_key=os.environ.get("STORE_SECRET_KEY"),
+                endpoint_url=os.environ.get("STORE_ENDPOINT_URL"),
+                access_endpoint_url=os.environ.get("STORE_ACCESS_ENDPOINT_URL", ""),
             )
-            for key, storage in storages.items()
         }
 
         self.runner = get_runner()
@@ -90,6 +76,12 @@ class SwarmManager(BaseCrawlManager):
 
     async def delete_crawl_config_by_id(self, cid):
         """ delete crawl configs for crawlconfig id """
+
+        cid = str(cid)
+
+        # delete scheduled crawl job, if any
+        await self._delete_scheduled_job(f"sched-{cid[:12]}")
+
         await asyncio.gather(
             self.loop.run_in_executor(
                 None, self.runner.delete_secret, f"crawl-config-{cid}"
@@ -103,10 +95,7 @@ class SwarmManager(BaseCrawlManager):
     # ----------------------------------------------
     def _add_extra_crawl_job_params(self, params):
         """ add extra crawl job params """
-        params["mongo_db_url"] = resolve_db_url()
-        params["runtime"] = os.environ.get("RUNTIME", "")
-        params["socket_src"] = os.environ.get("SOCKET_SRC", "/var/run/docker.sock")
-        params["socket_dest"] = os.environ.get("SOCKET_DEST", "/var/run/docker.sock")
+        params["env"] = os.environ
 
     async def _create_config_map(self, crawlconfig, **kwargs):
         """ create config map for config """
@@ -163,17 +152,7 @@ class SwarmManager(BaseCrawlManager):
                 )
 
             if not crawlconfig.schedule:
-                # if currently running, ping container to exit on current job
-                # otherwise, delete!
-                if not await self.loop.run_in_executor(
-                    None,
-                    self.runner.ping_containers,
-                    service_name,
-                    "SIGUSR1",
-                ):
-                    await self.loop.run_in_executor(
-                        None, self.runner.delete_service_stack, stack_name
-                    )
+                await self._delete_scheduled_job(crawl_id)
 
             return
 
@@ -184,7 +163,20 @@ class SwarmManager(BaseCrawlManager):
             crawlconfig, crawl_id, manual=False, schedule=crawlconfig.schedule
         )
 
-        await self._create_from_yaml(f"job-{crawl_id}", data)
+        await self._create_from_yaml(stack_name, data)
+
+    async def _delete_scheduled_job(self, crawl_id):
+        # if currently running, ping container to exit on current job
+        # otherwise, delete!
+        if not await self.loop.run_in_executor(
+            None,
+            self.runner.ping_containers,
+            f"job-{crawl_id}_job",
+            "SIGUSR1",
+        ):
+            await self.loop.run_in_executor(
+                None, self.runner.delete_service_stack, f"job-{crawl_id}"
+            )
 
     async def _post_to_job(self, crawl_id, aid, path, data=None):
         """ make a POST request to the container for specified crawl job """
