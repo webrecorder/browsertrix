@@ -2,6 +2,7 @@
 
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
+set -o allexport
 source $CURR/../config.env
 
 if [ -n $REGISTRY ]; then

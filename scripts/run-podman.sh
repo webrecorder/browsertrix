@@ -6,6 +6,7 @@ compose=docker-compose
 
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
+set -o allexport
 source $CURR/../configs/config.env
 
 export SOCKET_SRC=${XDG_RUNTIME_DIR}/podman/podman.sock

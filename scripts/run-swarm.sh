@@ -5,6 +5,7 @@
 
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
+set -o allexport
 source $CURR/../configs/config.env
 
 docker swarm init

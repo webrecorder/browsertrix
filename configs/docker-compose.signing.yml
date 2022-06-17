@@ -4,14 +4,16 @@ version: "3.8"
 
 services:
   authsign:
-    image: ${REGISTRY}webrecorder/authsign:${AUTHSIGN_TAG:-latest}
+    image: webrecorder/authsign:${AUTHSIGN_TAG:-latest}
 
     volumes:
       - btrix-sign-data:/data
-      - ./configs/signing.yaml:/app-config/signing.yaml
+      - ./configs/signing.yaml:/app-config/signing.yaml:z
 
     environment:
       - CONFIG=/app-config/signing.yaml
+
+      # optional token for authenticating access to authsign
       - AUTH_TOKEN=${WACZ_SIGN_TOKEN}
 
     env_file:
@@ -24,7 +26,7 @@ services:
 
   backend:
     environment:
-      - WACZ_SIGN_URL="http://authsign:8080/sign"
+      - WACZ_SIGN_URL=${WACZ_SIGN_URL}
 
       # optional token for authenticating access to authsign
       - WACZ_SIGN_TOKEN=${WACZ_SIGN_TOKEN}
