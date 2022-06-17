@@ -12,7 +12,7 @@ services:
 
     environment:
       - CONFIG=/app-config/signing.yaml
-      - WACZ_SIGN_TOKEN="${WACZ_SIGN_TOKEN}"
+      - AUTH_TOKEN=${WACZ_SIGN_TOKEN}
 
     env_file:
       - ./configs/config.env
@@ -27,7 +27,7 @@ services:
       - WACZ_SIGN_URL="http://authsign:8080/sign"
 
       # optional token for authenticating access to authsign
-      - WACZ_SIGN_TOKEN="${WACZ_SIGN_TOKEN}"
+      - WACZ_SIGN_TOKEN=${WACZ_SIGN_TOKEN}
 
 volumes:
   btrix-sign-data:
