@@ -65,10 +65,8 @@ class CrawlJob(ABC):
             "storage_name": self.storage_name or "default",
             "storage_path": self.storage_path or "",
             "redis_url": self.redis_url,
-            "profile_filename": os.environ.get("PROFILE_FILENAME"),
+            "env": os.environ,
         }
-
-        self._add_extra_crawl_template_params(params)
 
         asyncio.create_task(self.async_init("crawler.yaml", params))
 
@@ -374,9 +372,6 @@ class CrawlJob(ABC):
         @app.get("/healthz")
         async def healthz():
             return {}
-
-    def _add_extra_crawl_template_params(self, params):
-        """ add extra params, if any, for crawl template """
 
     @abstractmethod
     async def init_job_objects(self, template, params):

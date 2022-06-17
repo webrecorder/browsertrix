@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   browser:
-    image: {{ crawler_image }}
+    image: {{ env.CRAWLER_IMAGE }}
     command:
       - create-login-profile
       - --interactive
@@ -10,9 +10,9 @@ services:
       - /tmp/profile.tar.gz
       - --url
       - "{{ url }}"
-      {%- if profile_filename %}
+      {%- if env.PROFILE_FILENAME %}
       - --profile
-      - "@{{ profile_filename }}"
+      - "@{{ env.PROFILE_FILENAME }}"
       {%- endif %}   
 
 
@@ -28,10 +28,11 @@ services:
         role: browser
 
     environment:
-      - STORE_ENDPOINT_URL={{ storages[storage_name].endpoint_url }}
-      - STORE_ACCESS_KEY={{ storages[storage_name].access_key }}
-      - STORE_SECRET_KEY={{ storages[storage_name].secret_key }}
-      - STORE_PATH={{ storage_path }}
+      STORE_ENDPOINT_URL: "{{ env.STORE_ENDPOINT_URL }}"
+      STORE_ACCESS_KEY: "{{ env.STORE_ACCESS_KEY }}"
+      STORE_SECRET_KEY: "{{ env.STORE_SECRET_KEY }}"
+
+      STORE_PATH: "{{ env.STORE_PATH }}"
  
       
 networks:

@@ -10,11 +10,10 @@ services:
       - "label=disable"
 
     secrets:
-      - btrix_shared_job_config.yaml
       - crawl-opts-{{ cid }}
 
     volumes:
-      - {{ socket_src }}:{{ socket_dest }}:z
+      - {{ env.SOCKET_SRC | default("/var/run/docker.sock", true) }}:{{ env.SOCKET_DEST | default("/var/run/docker.sock", true) }}:z
 
     networks:
       - btrix
@@ -38,11 +37,25 @@ services:
         condition: none
 
     environment:
-      SHARED_JOB_CONFIG: btrix_shared_job_config.yaml
       CUSTOM_JOB_CONFIG: crawl-opts-{{ cid }}
 
       JOB_ID: "{{ id }}"
       STACK_PREFIX: "crawl-"
+
+      CRAWLER_IMAGE: "{{ env.CRAWLER_IMAGE }}"
+      REDIS_IMAGE: "{{ env.REDIS_IMAGE }}"
+
+      CRAWL_ARGS: "{{ env.CRAWL_ARGS }}"
+
+      CRAWLER_REQUESTS_CPU: "{{ env.CRAWLER_REQUESTS_CPU }}"
+      CRAWLER_REQUESTS_MEMORY: "{{ env.CRAWLER_REQUESTS_MEMORY }}"
+      CRAWLER_LIMITS_CPU: "{{ env.CRAWLER_LIMITS_CPU }}"
+      CRAWLER_LIMITS_MEMORY: "{{ env.CRAWLER_LIMITS_MEMORY }}"
+
+      STORE_ENDPOINT_URL: "{{ env.STORE_ENDPOINT_URL }}"
+      STORE_ACCESS_KEY: "{{ env.STORE_ACCESS_KEY }}"
+      STORE_SECRET_KEY: "{{ env.STORE_SECRET_KEY }}"
+
       STORE_PATH: "{{ storage_path }}"
       STORAGE_NAME: "{{ storage_name }}"
       PROFILE_PATH: "{{ profile_path }}"
@@ -51,7 +64,10 @@ services:
 
       RUN_MANUAL: "{{ manual }}"
 
-      RUNTIME: "{{ runtime }}"
+      RUNTIME: "{{ env.RUNTIME }}"
+
+      WACZ_SIGN_URL: "{{ env.WACZ_SIGN_URL }}"
+      WACZ_SIGN_TOKEN: "{{ env.WACZ_SIGN_TOKEN }}"
  
 networks:
   btrix:
@@ -59,9 +75,6 @@ networks:
       name: btrix-net
 
 secrets:
-  btrix_shared_job_config.yaml:
-    external: true
-
   crawl-opts-{{ cid }}:
     external: true
 

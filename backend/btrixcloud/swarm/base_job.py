@@ -22,7 +22,6 @@ class SwarmJobMixin:
 
     def __init__(self):
         self.secrets_prefix = "/var/run/secrets/"
-        self.shared_config_file = os.environ.get("SHARED_JOB_CONFIG")
         self.custom_config_file = os.environ.get("CUSTOM_JOB_CONFIG")
 
         self.curr_storage = {}
@@ -61,20 +60,13 @@ class SwarmJobMixin:
         loop = asyncio.get_running_loop()
         loop.add_signal_handler(signal.SIGUSR1, self.unschedule_job)
 
-        if self.shared_config_file:
-            with open(
-                self.secrets_prefix + self.shared_config_file, encoding="utf-8"
-            ) as fh_config:
-                params = yaml.safe_load(fh_config)
-        else:
-            params = {}
-
-        params["id"] = self.job_id
+        params = {"id": self.job_id}
 
         if extra_params:
             params.update(extra_params)
 
         params["storage_name"] = os.environ.get("STORAGE_NAME", "default")
+        params["env"] = os.environ
 
         await self._do_create(loop, template, params)
 

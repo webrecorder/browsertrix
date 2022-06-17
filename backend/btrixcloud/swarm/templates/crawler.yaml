@@ -2,16 +2,16 @@ version: '3.9'
 
 services:
   crawler:
-    image: {{ crawler_image }}
+    image: {{ env.CRAWLER_IMAGE }}
     command:
       - crawl
       - --config
       - /var/run/secrets/crawl-config-{{ cid }}
       - --redisStoreUrl
       - {{ redis_url }}
-    {%- if profile_filename %}
+    {%- if env.PROFILE_FILENAME %}
       - --profile
-      - "@profiles/{{ profile_filename }}"
+      - "@profiles/{{ env.PROFILE_FILENAME }}"
     {%- endif %}
 
     hostname: "crawl-{{ id }}-{{ index }}_crawler"
@@ -37,36 +37,39 @@ services:
         crawl: {{ id }}
         role: crawler
 
+      {% if env.CRAWLER_LIMITS_CPU and env.CRAWLER_LIMITS_MEMORY and
+            env.CRAWLER_REQUESTS_CPU and env.CRAWLER_REQUESTS_MEMORY %}
       resources:
         limits:
-          cpus: "{{ crawler_limits_cpu }}"
-          memory: "{{ crawler_limits_memory }}"
+          cpus: "{{ env.CRAWLER_LIMITS_CPU }}"
+          memory: "{{ env.CRAWLER_LIMITS_MEMORY }}"
         reservations:
-          cpus: "{{ crawler_requests_cpu }}"
-          memory: "{{ crawler_requests_memory }}"
+          cpus: "{{ env.CRAWLER_REQUESTS_CPU }}"
+          memory: "{{ env.CRAWLER_REQUESTS_MEMORY }}"
+      {% endif %}
 
     environment:
-      - CRAWL_ID={{ id }}
+      CRAWL_ID: {{ id }}
 
-      - STORE_ENDPOINT_URL={{ storages[storage_name].endpoint_url }}
-      - STORE_ACCESS_KEY={{ storages[storage_name].access_key }}
-      - STORE_SECRET_KEY={{ storages[storage_name].secret_key }}
+      STORE_ENDPOINT_URL: "{{ env.STORE_ENDPOINT_URL }}"
+      STORE_ACCESS_KEY: "{{ env.STORE_ACCESS_KEY }}"
+      STORE_SECRET_KEY: "{{ env.STORE_SECRET_KEY }}"
 
-      - STORE_PATH={{ storage_path }}
-      - STORE_FILENAME={{ storage_filename }}
-      - STORE_USER={{ userid }}
+      STORE_PATH: "{{ env.STORE_PATH }}"
+      STORE_FILENAME: "{{ env.STORE_FILENAME }}"
+      STORE_USER: "{{ env.USER_ID }}"
 
-      {%- if auth_token %}
-      - WACZ_SIGN_TOKEN={{ auth_token }}
-      - WACZ_SIGN_URL=http://authsign:5053/sign
+      {%- if env.WACZ_SIGN_URL %}
+      WACZ_SIGN_TOKEN: "{{ env.WACZ_SIGN_TOKEN }}"
+      WACZ_SIGN_URL: "{{ env.WACZ_SIGN_URL }}"
       {%- endif %}
   
-      - WEBHOOK_URL={{ redis_url }}/crawls-done
-      - CRAWL_ARGS={{ crawler_args }}
+      WEBHOOK_URL: "{{ redis_url }}/crawls-done"
+      CRAWL_ARGS: "{{ env.CRAWL_ARGS }}"
 
 {% if index == 0 %}
   redis:
-    image: {{ redis_image }}
+    image: {{ env.REDIS_IMAGE }}
     command: ["redis-server", "--appendonly", "yes"]
     container_name: "crawl-{{ id }}-{{ index }}_redis"
     restart: always

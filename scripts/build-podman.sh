@@ -1,8 +1,9 @@
 #!/bin/bash
-compose=podman-compose
+compose=docker-compose
 
-# can optionally be used with docker-compose
-#compose=docker-compose
+# can optionally be used with podman-compose
+# compose=podman-compose
+
 CURR=$(dirname "${BASH_SOURCE[0]}")
 
 # get current podman version
