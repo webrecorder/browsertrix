@@ -16,9 +16,11 @@ Some basic instructions are provided below, we plan to expand this into more det
 For local deployments, using Docker Swarm is recommended. Docker Swarm can be used in a single-machine mode as well
 as with multi-machine setups. Docker Swarm is part of Docker, so if you have Docker installed, you can use this method.
 
-1. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
+1. Run the `init-configs.sh` which will copy the sample config `configs/config.sample.env` to `configs/config.env` if it doesn't already exist.
 
-2. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
+2. You can edit `configs/config.env` to set all settings for Browsertrix Cloud including, default passwords for superadmin, minio and mongodb.
+
+2.5. Optionally: Run `build-swarm.sh` to build images locally, such as if you've made any changes, otherwise can skip.
 
 3. Run `run-swarm.sh` to initialize the cluster.
 
@@ -52,9 +54,11 @@ To run with Podman as a non-root user, there's a few initial installation
 
 4. Run `build-podman.sh` to build the local images.
 
-5. Run the `init-configs.sh` which will copy the sample configs to `configs/config.env` and `configs/config.yaml`.
+5. Run the `init-configs.sh` which will copy the sample config `configs/config.sample.env` to `configs/config.env` if it doesn't already exist.
 
-6. You can edit `configs/config.env` and `configs/config.yaml` to set default passwords for superadmin, minio and mongodb.
+6. You can edit `configs/config.env` to set all settings for Browsertrix Cloud including, default passwords for superadmin, minio and mongodb.
+
+6.5. Optionally: Run `build-podman.sh` to build images locally, such as if you've made any changes, otherwise can skip.
 
 7. Run `run-podman.sh` to run Browsertrix Cloud using podman.
 

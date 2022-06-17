@@ -60,8 +60,8 @@ services:
       STORE_USER: "{{ env.USER_ID }}"
 
       {%- if env.WACZ_SIGN_URL %}
-        WACZ_SIGN_TOKEN: "{{ env.WACZ_SIGN_TOKEN }}"
-        WACZ_SIGN_URL: "{{ env.WACZ_SIGN_URL }}"
+      WACZ_SIGN_TOKEN: "{{ env.WACZ_SIGN_TOKEN }}"
+      WACZ_SIGN_URL: "{{ env.WACZ_SIGN_URL }}"
       {%- endif %}
   
       WEBHOOK_URL: "{{ redis_url }}/crawls-done"
