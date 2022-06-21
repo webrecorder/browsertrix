@@ -45,9 +45,6 @@ export class CrawlsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
-  @property({ type: String })
-  archiveId?: string;
-
   // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -579,8 +576,7 @@ export class CrawlsList extends LiteElement {
               <br />
               <a
                 class="underline hover:no-underline"
-                href="/archives/${this
-                  .archiveId}/crawls/crawl/${crawlTemplate.currCrawlId}"
+                href="/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
                 @click=${this.navLink.bind(this)}
                 >View crawl</a
               >`
@@ -610,8 +606,7 @@ export class CrawlsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/archives/${this
-                .archiveId}/crawls/crawl/${data.started}#watch"
+              href="/archives/${crawl.aid}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`

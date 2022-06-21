@@ -7,8 +7,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl } from "./types";
-import { times } from "lodash";
+import type { Crawl, CrawlTemplate } from "./types";
 
 type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
@@ -298,6 +297,28 @@ export class CrawlDetail extends LiteElement {
         >
 
         <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          ${this.isActive
+            ? ""
+            : html`
+                <li
+                  class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                  role="menuitem"
+                  @click=${(e: any) => {
+                    this.runNow();
+                    e.target.closest("sl-dropdown").hide();
+                  }}
+                >
+                  <sl-icon
+                    class="inline-block align-middle"
+                    name="arrow-clockwise"
+                  ></sl-icon>
+                  <span class="inline-block align-middle">
+                    ${msg("Re-run crawl")}
+                  </span>
+                </li>
+                <hr />
+              `}
+
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
@@ -858,6 +879,84 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.isSubmittingUpdate = false;
+  }
+
+  private async runNow() {
+    if (!this.crawl) return;
+
+    try {
+      // Get crawl config to check if crawl is already running
+      const crawlTemplate = await this.getCrawlTemplate();
+
+      if (crawlTemplate.currCrawlId) {
+        this.notify({
+          message: msg(
+            html`Crawl of <strong>${this.crawl.configName}</strong> is already
+              running.
+              <br />
+              <a
+                class="underline hover:no-underline"
+                href="/archives/${this.crawl
+                  .aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+                @click=${this.navLink.bind(this)}
+                >View crawl</a
+              >`
+          ),
+          type: "warning",
+          icon: "exclamation-triangle",
+        });
+
+        return;
+      }
+
+      const data = await this.apiFetch(
+        `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}/run`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.started) {
+        this.fetchCrawl();
+      }
+
+      this.notify({
+        message: msg(
+          html`Started crawl from <strong>${this.crawl.configName}</strong>.
+            <br />
+            <a
+              class="underline hover:no-underline"
+              href="/archives/${this.crawl
+                .aid}/crawls/crawl/${data.started}#watch"
+              @click=${this.navLink.bind(this)}
+              >Watch crawl</a
+            >`
+        ),
+        type: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  async getCrawlTemplate(): Promise<CrawlTemplate> {
+    if (!this.crawl) {
+      throw new Error("missing crawl");
+    }
+
+    const data: CrawlTemplate = await this.apiFetch(
+      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}`,
+      this.authState!
+    );
+
+    return data;
   }
 
   private stopPollTimer() {
