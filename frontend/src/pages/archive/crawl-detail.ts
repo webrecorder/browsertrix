@@ -932,12 +932,20 @@ export class CrawlDetail extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.isApiError && e.statusCode === 404) {
+        this.notify({
+          message: e.message,
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't run crawl at this time."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
