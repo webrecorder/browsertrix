@@ -13,7 +13,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate } from "./types";
-import { getUTCSchedule } from "./utils";
+import { getUTCSchedule } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
 type RunningCrawlsMap = {

@@ -4,6 +4,7 @@ import cronstrue from "cronstrue"; // TODO localize
 
 import LiteElement, { html } from "../utils/LiteElement";
 import { getLocaleTimeZone } from "../utils/localization";
+import { ScheduleInterval, getScheduleInterval } from "../utils/cron";
 import type { CrawlTemplate } from "../pages/archive/types";
 
 const nowHour = new Date().getHours();
@@ -59,23 +60,13 @@ export class CrawlTemplatesScheduler extends LiteElement {
       label: `${i}`.padStart(2, "0"),
     }));
 
-    const getInitialScheduleInterval = (schedule: string) => {
-      const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
-      if (dayofMonth === "*") {
-        if (dayOfWeek === "*") {
-          return "daily";
-        }
-        return "weekly";
-      }
-      return "monthly";
-    };
-    const scheduleIntervalsMap = {
+    const scheduleIntervalsMap: Record<ScheduleInterval, string> = {
       daily: `0 ${nowHour} * * *`,
       weekly: `0 ${nowHour} * * ${new Date().getDay()}`,
       monthly: `0 ${nowHour} ${new Date().getDate()} * *`,
     };
     const initialInterval = this.schedule
-      ? getInitialScheduleInterval(this.schedule)
+      ? getScheduleInterval(this.schedule)
       : "weekly";
     const nextSchedule =
       this.editedSchedule || scheduleIntervalsMap[initialInterval];

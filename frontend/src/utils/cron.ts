@@ -1,3 +1,21 @@
+export type ScheduleInterval = "daily" | "weekly" | "monthly";
+
+/**
+ * Parse interval from cron expression
+ **/
+export const getScheduleInterval = (
+  schedule: string
+): "daily" | "weekly" | "monthly" => {
+  const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
+  if (dayofMonth === "*") {
+    if (dayOfWeek === "*") {
+      return "daily";
+    }
+    return "weekly";
+  }
+  return "monthly";
+};
+
 /**
  * Get schedule as UTC cron job expression
  * https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
@@ -8,7 +26,7 @@ export function getUTCSchedule({
   hour,
   period,
 }: {
-  interval: "daily" | "weekly" | "monthly";
+  interval: ScheduleInterval;
   minute: number | string;
   hour: number | string;
   period: "AM" | "PM";
