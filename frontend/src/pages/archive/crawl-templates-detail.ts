@@ -1135,6 +1135,11 @@ export class CrawlTemplatesDetail extends LiteElement {
         }
       );
 
+      this.crawlTemplate = {
+        ...this.crawlTemplate,
+        inactive: true,
+      };
+
       this.notify({
         message: msg(
           html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`
