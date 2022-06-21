@@ -5,6 +5,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@cheap-glitch/mi-cron": "^1.0.1",
     "@formatjs/intl-displaynames": "^5.2.5",
     "@formatjs/intl-getcanonicallocales": "^1.8.0",
     "@lit/localize": "^0.11.1",
@@ -12,7 +13,6 @@
     "@xstate/fsm": "^1.6.2",
     "axios": "^0.22.0",
     "color": "^4.0.1",
-    "cron-parser": "^4.2.1",
     "cronstrue": "^1.123.0",
     "fuse.js": "^6.5.3",
     "lit": "^2.0.0",

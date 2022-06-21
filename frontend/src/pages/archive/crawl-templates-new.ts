@@ -1,7 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import cronParser from "cron-parser";
+import { parseCron } from "@cheap-glitch/mi-cron";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -105,12 +105,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
     return this.scheduleInterval
       ? html`<sl-format-date
-          date="${cronParser
-            .parseExpression(utcSchedule, {
-              utc: true,
-            })
-            .next()
-            .toString()}"
+          date=${parseCron.nextDate(utcSchedule)!.toUTCString()}
           weekday="long"
           month="long"
           day="numeric"

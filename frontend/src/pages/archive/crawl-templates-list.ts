@@ -1,7 +1,7 @@
 import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import cronParser from "cron-parser";
+import { parseCron } from "@cheap-glitch/mi-cron";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -384,12 +384,7 @@ export class CrawlTemplatesList extends LiteElement {
                       ></sl-icon
                       ><sl-format-date
                         class="inline-block align-middle text-0-600"
-                        date="${cronParser
-                          .parseExpression(t.schedule, {
-                            utc: true,
-                          })
-                          .next()
-                          .toString()}"
+                        date=${parseCron.nextDate(t.schedule)!.toUTCString()}
                         month="2-digit"
                         day="2-digit"
                         year="2-digit"
