@@ -30,8 +30,12 @@ const sortableFieldLabels = {
   fileSize_desc: msg("Largest Files"),
 };
 
-function isRunning(crawl: Crawl) {
-  return crawl.state === "running" || crawl.state === "starting";
+function isActive(crawl: Crawl) {
+  return (
+    crawl.state === "running" ||
+    crawl.state === "starting" ||
+    crawl.state === "stopping"
+  );
 }
 
 /**
@@ -279,7 +283,7 @@ export class CrawlsList extends LiteElement {
             ></sl-icon-button>
 
             <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
-              ${isRunning(crawl)
+              ${isActive(crawl)
                 ? html`
                     <li
                       class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -376,7 +380,7 @@ export class CrawlsList extends LiteElement {
                 ? "text-red-500"
                 : crawl.state === "complete"
                 ? "text-emerald-500"
-                : isRunning(crawl)
+                : isActive(crawl)
                 ? "text-purple-500"
                 : "text-zinc-300"}"
               style="font-size: 10px; vertical-align: 2px"
@@ -386,7 +390,7 @@ export class CrawlsList extends LiteElement {
           </div>
           <div>
             <div
-              class="whitespace-nowrap mb-1 capitalize${isRunning(crawl)
+              class="whitespace-nowrap mb-1 capitalize${isActive(crawl)
                 ? " motion-safe:animate-pulse"
                 : ""}"
             >
