@@ -768,7 +768,8 @@ export class CrawlDetail extends LiteElement {
       this.crawl = await this.getCrawl();
 
       if (this.isActive) {
-        // Start timer for next poll
+        // Restart timer for next poll
+        this.stopPollTimer();
         this.timerId = window.setTimeout(() => {
           this.fetchCrawl();
         }, 1000 * POLL_INTERVAL_SECONDS);
@@ -785,12 +786,6 @@ export class CrawlDetail extends LiteElement {
   }
 
   async getCrawl(): Promise<Crawl> {
-    // Mock to use in dev:
-    // return import("../../__mocks__/api/archives/[id]/crawls").then(
-    //   (module) => module.default.running[0]
-    //   // (module) => module.default.finished[0]
-    // );
-
     const data: Crawl = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
