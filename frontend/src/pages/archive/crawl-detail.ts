@@ -81,11 +81,19 @@ export class CrawlDetail extends LiteElement {
   }
 
   updated(changedProperties: Map<string, any>) {
-    const prevCrawl = changedProperties.get("crawl");
+    const prevId = changedProperties.get("crawlId");
 
-    if (prevCrawl && this.crawl) {
-      if (prevCrawl.state === "running" && this.crawl.state !== "running") {
-        this.crawlDone();
+    if (prevId && prevId !== this.crawlId) {
+      // Handle update on URL change, e.g. from re-run
+      this.stopPollTimer();
+      this.fetchCrawl();
+    } else {
+      const prevCrawl = changedProperties.get("crawl");
+
+      if (prevCrawl && this.crawl) {
+        if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+          this.crawlDone();
+        }
       }
     }
   }
@@ -913,20 +921,12 @@ export class CrawlDetail extends LiteElement {
       );
 
       if (data.started) {
-        this.fetchCrawl();
+        this.navTo(`/archives/${this.crawl.aid}/crawls/crawl/${data.started}`);
       }
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${this.crawl.configName}</strong>.
-            <br />
-            <a
-              class="underline hover:no-underline"
-              href="/archives/${this.crawl
-                .aid}/crawls/crawl/${data.started}#watch"
-              @click=${this.navLink.bind(this)}
-              >Watch crawl</a
-            >`
+          html`Started crawl from <strong>${this.crawl.configName}</strong>.`
         ),
         type: "success",
         icon: "check2-circle",
