@@ -42,6 +42,9 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
+  private crawlTemplate?: CrawlTemplate;
+
+  @state()
   private sectionName: SectionName = "overview";
 
   @state()
@@ -72,12 +75,12 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.resources.length > 0;
   }
 
-  async firstUpdated() {
+  firstUpdated() {
     if (!this.crawlsBaseUrl) {
       throw new Error("Crawls base URL not defined");
     }
 
-    this.fetchCrawl();
+    this.fetchData();
   }
 
   updated(changedProperties: Map<string, any>) {
@@ -86,7 +89,7 @@ export class CrawlDetail extends LiteElement {
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
       this.stopPollTimer();
-      this.fetchCrawl();
+      this.fetchData();
     } else {
       const prevCrawl = changedProperties.get("crawl");
 
@@ -305,9 +308,8 @@ export class CrawlDetail extends LiteElement {
         >
 
         <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
-          ${this.isActive
-            ? ""
-            : html`
+          ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
+            ? html`
                 <li
                   class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
                   role="menuitem"
@@ -325,7 +327,8 @@ export class CrawlDetail extends LiteElement {
                   </span>
                 </li>
                 <hr />
-              `}
+              `
+            : ""}
 
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -633,6 +636,11 @@ export class CrawlDetail extends LiteElement {
                     <span class="inline-block align-middle">
                       ${this.crawl.configName}
                     </span>
+                    ${this.crawlTemplate?.inactive
+                      ? html`<sl-tag type="warning" size="small"
+                          >${msg("Inactive")}</sl-tag
+                        >`
+                      : ""}
                   </a>
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
@@ -768,6 +776,11 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private async fetchData() {
+    await this.fetchCrawl();
+    this.fetchCrawlTemplate();
+  }
+
   /**
    * Fetch crawl and update internal state
    */
@@ -796,6 +809,30 @@ export class CrawlDetail extends LiteElement {
   async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  /**
+   * Fetch crawl template and update internal state
+   */
+  private async fetchCrawlTemplate(): Promise<void> {
+    try {
+      this.crawlTemplate = await this.getCrawlTemplate();
+    } catch {
+      // Fail silently since page will mostly still function
+    }
+  }
+
+  async getCrawlTemplate(): Promise<CrawlTemplate> {
+    if (!this.crawl) {
+      throw new Error("missing crawl");
+    }
+
+    const data: CrawlTemplate = await this.apiFetch(
+      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}`,
       this.authState!
     );
 
@@ -947,19 +984,6 @@ export class CrawlDetail extends LiteElement {
         });
       }
     }
-  }
-
-  async getCrawlTemplate(): Promise<CrawlTemplate> {
-    if (!this.crawl) {
-      throw new Error("missing crawl");
-    }
-
-    const data: CrawlTemplate = await this.apiFetch(
-      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}`,
-      this.authState!
-    );
-
-    return data;
   }
 
   private stopPollTimer() {
