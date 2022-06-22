@@ -1,11 +1,14 @@
+import { parseCron } from "@cheap-glitch/mi-cron";
+import { msg, str } from "@lit/localize";
+
 export type ScheduleInterval = "daily" | "weekly" | "monthly";
 
 /**
  * Parse interval from cron expression
  **/
-export const getScheduleInterval = (
+export function getScheduleInterval(
   schedule: string
-): "daily" | "weekly" | "monthly" => {
+): "daily" | "weekly" | "monthly" {
   const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
   if (dayofMonth === "*") {
     if (dayOfWeek === "*") {
@@ -14,7 +17,44 @@ export const getScheduleInterval = (
     return "weekly";
   }
   return "monthly";
-};
+}
+
+/**
+ * Get human-readable schedule from cron expression
+ * Example: "Every day at 9:30 AM CDT"
+ **/
+export function humanizeSchedule(schedule: string): string {
+  const interval = getScheduleInterval(schedule);
+  const { days } = parseCron(schedule)!;
+  const nextDate = parseCron.nextDate(schedule)!;
+  const formattedTime = nextDate.toLocaleString(undefined, {
+    minute: "numeric",
+    hour: "numeric",
+    timeZoneName: "short",
+  });
+  let intervalMsg: any = "";
+
+  switch (interval) {
+    case "daily":
+      intervalMsg = msg(str`Every day at ${formattedTime}`);
+      break;
+    case "weekly":
+      intervalMsg = msg(
+        str`Every ${nextDate.toLocaleString(undefined, { weekday: "long" })}
+          at ${formattedTime}`
+      );
+      break;
+    case "monthly":
+      intervalMsg = msg(
+        str`On day ${days[0]} of the month at ${formattedTime}`
+      );
+      break;
+    default:
+      break;
+  }
+
+  return intervalMsg;
+}
 
 /**
  * Get schedule as UTC cron job expression
