@@ -162,6 +162,11 @@ export class CrawlTemplatesScheduler extends LiteElement {
                 )}
               </sl-select>
             </div>
+            <input
+              name="schedulePeriod"
+              type="hidden"
+              value=${this.schedulePeriod}
+            />
             <sl-button-group>
               <sl-button
                 type=${this.schedulePeriod === "AM" ? "neutral" : "default"}
