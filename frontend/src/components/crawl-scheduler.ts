@@ -1,10 +1,13 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import cronstrue from "cronstrue"; // TODO localize
 
 import LiteElement, { html } from "../utils/LiteElement";
 import { getLocaleTimeZone } from "../utils/localization";
-import { ScheduleInterval, getScheduleInterval } from "../utils/cron";
+import {
+  ScheduleInterval,
+  getScheduleInterval,
+  humanizeNextDate,
+} from "../utils/cron";
 import type { CrawlTemplate } from "../pages/archive/types";
 
 const nowHour = new Date().getHours();
@@ -210,11 +213,8 @@ export class CrawlTemplatesScheduler extends LiteElement {
                 html`<span class="font-medium">New schedule will be:</span
                   ><br />
                   <span class="text-0-600"
-                    >${cronstrue.toString(nextSchedule, {
-                      verbose: true,
-                    })}
-                    (in ${this.timeZoneShortName} time zone)</span
-                  >`
+                    >${humanizeNextDate(nextSchedule)}
+                  </span>`
               )}
         </div>
 

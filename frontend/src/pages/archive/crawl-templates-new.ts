@@ -1,13 +1,12 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import { parseCron } from "@cheap-glitch/mi-cron";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { getLocaleTimeZone } from "../../utils/localization";
-import type { ScheduleInterval } from "../../utils/cron";
+import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
 
@@ -104,19 +103,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
 
-    return this.scheduleInterval
-      ? html`<sl-format-date
-          date=${parseCron.nextDate(utcSchedule)!.toUTCString()}
-          weekday="long"
-          month="long"
-          day="numeric"
-          year="numeric"
-          hour="numeric"
-          minute="numeric"
-          time-zone-name="short"
-          time-zone=${this.timeZone}
-        ></sl-format-date>`
-      : undefined;
+    return this.scheduleInterval ? humanizeNextDate(utcSchedule) : undefined;
   }
 
   connectedCallback(): void {

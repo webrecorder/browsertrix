@@ -20,7 +20,27 @@ export function getScheduleInterval(
 }
 
 /**
- * Get human-readable schedule from cron expression
+ * Get human-friendly date from cron expression
+ * Example: "Every day at 9:30 AM CDT"
+ **/
+export function humanizeNextDate(schedule: string): string {
+  const nextDate = parseCron.nextDate(schedule);
+
+  if (!nextDate) return "";
+
+  return nextDate.toLocaleString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    timeZoneName: "short",
+  });
+}
+
+/**
+ * Get human-friendly schedule from cron expression
  * Example: "Every day at 9:30 AM CDT"
  **/
 export function humanizeSchedule(schedule: string): string {
