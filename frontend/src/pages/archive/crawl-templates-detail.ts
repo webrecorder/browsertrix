@@ -3,13 +3,14 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import cronstrue from "cronstrue"; // TODO localize
+import { parseCron } from "@cheap-glitch/mi-cron";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
-import { getUTCSchedule } from "../../utils/cron";
+import { getUTCSchedule, getScheduleInterval } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
 const SEED_URLS_MAX = 3;
@@ -698,6 +699,39 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderHumanizedSchedule() {
+    if (!this.crawlTemplate?.schedule) return;
+    const interval = getScheduleInterval(this.crawlTemplate.schedule);
+    const nextDate = parseCron
+      .nextDate(this.crawlTemplate.schedule)!
+      .toUTCString();
+    const formattedTime = html`
+      <sl-format-date
+        date=${nextDate}
+        hour="numeric"
+        minute="numeric"
+        time-zone-name="short"
+      ></sl-format-date>
+    `;
+    let intervalMsg: any = "None";
+
+    switch (interval) {
+      case "daily":
+        intervalMsg = msg(html`Every day at ${formattedTime}`);
+        break;
+      case "weekly":
+        intervalMsg = msg(html`Every [week] at ${formattedTime}`);
+        break;
+      case "monthly":
+        intervalMsg = msg(html`On day [day] of the month at ${formattedTime}`);
+        break;
+      default:
+        break;
+    }
+
+    return intervalMsg;
+  }
+
   private renderSchedule() {
     return html`
       <dl class="grid gap-5">
@@ -712,11 +746,13 @@ export class CrawlTemplatesDetail extends LiteElement {
                       // currently being used.
                       // https://github.com/bradymholt/cRonstrue/issues/94
                       html`<span
-                        >${cronstrue.toString(this.crawlTemplate.schedule, {
-                          verbose: true,
-                        })}
-                        (in UTC time zone)</span
-                      >`
+                          >${cronstrue.toString(this.crawlTemplate.schedule, {
+                            verbose: true,
+                          })}
+                          (in UTC time zone)</span
+                        >
+
+                        ${this.renderHumanizedSchedule()} `
                     : html`<span class="text-0-400">${msg("None")}</span>`}
                 `
               : html`<sl-skeleton></sl-skeleton>`}
