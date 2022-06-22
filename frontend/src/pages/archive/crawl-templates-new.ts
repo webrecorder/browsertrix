@@ -5,7 +5,6 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { getLocaleTimeZone } from "../../utils/localization";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
@@ -65,7 +64,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private isRunNow: boolean = initialValues.runNow;
 
   @state()
-  private scheduleInterval: "" | ScheduleInterval = "";
+  private scheduleInterval: ScheduleInterval | "" = "";
 
   /** Schedule local time */
   @state()
@@ -91,14 +90,6 @@ export class CrawlTemplatesNew extends LiteElement {
 
   @state()
   private serverError?: string;
-
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
-  private get timeZoneShortName() {
-    return getLocaleTimeZone();
-  }
 
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
