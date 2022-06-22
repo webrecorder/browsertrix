@@ -43,34 +43,63 @@ export function humanizeNextDate(schedule: string): string {
  * Get human-friendly schedule from cron expression
  * Example: "Every day at 9:30 AM CDT"
  **/
-export function humanizeSchedule(schedule: string): string {
+export function humanizeSchedule(
+  schedule: string,
+  options: { length?: "short" } = {}
+): string {
   const interval = getScheduleInterval(schedule);
   const { days } = parseCron(schedule)!;
   const nextDate = parseCron.nextDate(schedule)!;
-  const formattedTime = nextDate.toLocaleString(undefined, {
-    minute: "numeric",
-    hour: "numeric",
-    timeZoneName: "short",
+  const formattedWeekDay = nextDate.toLocaleString(undefined, {
+    weekday: "long",
   });
+
   let intervalMsg: any = "";
 
-  switch (interval) {
-    case "daily":
-      intervalMsg = msg(str`Every day at ${formattedTime}`);
-      break;
-    case "weekly":
-      intervalMsg = msg(
-        str`Every ${nextDate.toLocaleString(undefined, { weekday: "long" })}
-          at ${formattedTime}`
-      );
-      break;
-    case "monthly":
-      intervalMsg = msg(
-        str`On day ${days[0]} of the month at ${formattedTime}`
-      );
-      break;
-    default:
-      break;
+  if (options.length === "short") {
+    const formattedTime = nextDate.toLocaleString(undefined, {
+      minute: "numeric",
+      hour: "numeric",
+    });
+
+    switch (interval) {
+      case "daily":
+        intervalMsg = msg(str`${formattedTime} every day`);
+        break;
+      case "weekly":
+        intervalMsg = msg(str`Every ${formattedWeekDay}`);
+        break;
+      case "monthly":
+        intervalMsg = msg(str`Day ${days[0]} of every month`);
+        break;
+      default:
+        break;
+    }
+  } else {
+    const formattedTime = nextDate.toLocaleString(undefined, {
+      minute: "numeric",
+      hour: "numeric",
+      timeZoneName: "short",
+    });
+
+    switch (interval) {
+      case "daily":
+        intervalMsg = msg(str`Every day at ${formattedTime}`);
+        break;
+      case "weekly":
+        intervalMsg = msg(
+          str`Every ${formattedWeekDay}
+            at ${formattedTime}`
+        );
+        break;
+      case "monthly":
+        intervalMsg = msg(
+          str`On day ${days[0]} of the month at ${formattedTime}`
+        );
+        break;
+      default:
+        break;
+    }
   }
 
   return intervalMsg;
