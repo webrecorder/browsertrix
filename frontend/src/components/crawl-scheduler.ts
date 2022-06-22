@@ -3,10 +3,11 @@ import { msg, localized, str } from "@lit/localize";
 import { parseCron } from "@cheap-glitch/mi-cron";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import { getLocaleTimeZone } from "../utils/localization";
 import {
   ScheduleInterval,
   getScheduleInterval,
+  getUTCSchedule,
+  humanizeSchedule,
   humanizeNextDate,
 } from "../utils/cron";
 import type { CrawlTemplate } from "../pages/archive/types";
@@ -56,7 +57,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
       period: new Date().getHours() > 11 ? "PM" : "AM",
     };
 
-  private get isScheduleDisabled() {
+  private get isScheduleDisabled(): boolean {
     return !this.scheduleInterval;
   }
 
@@ -64,25 +65,10 @@ export class CrawlTemplatesScheduler extends LiteElement {
     this.setInitialValues();
   }
 
-  private setInitialValues() {
-    if (this.schedule) {
-      const nextDate = parseCron.nextDate(this.schedule)!;
-      const hour = nextDate.getHours() % 12;
-      const minute = nextDate.getMinutes();
-
-      this.scheduleTime = {
-        hour,
-        minute,
-        period: hour > 11 ? "PM" : "AM",
-      };
-      this.scheduleInterval = getScheduleInterval(this.schedule);
-    }
-  }
-
   render() {
     // TODO consolidate with new
 
-    const nextSchedule = "";
+    const utcSchedule = this.getUTCSchedule();
 
     return html`
       <sl-form @sl-submit=${this.onSubmit}>
@@ -187,18 +173,19 @@ export class CrawlTemplatesScheduler extends LiteElement {
           </div>
         </fieldset>
 
-        <div class="mt-5">
+        <div class="mt-5 bg-neutral-50 rounded p-3 text-sm text-neutral-800">
           ${this.isScheduleDisabled
-            ? msg(html`<span class="font-medium"
-                >Crawls will not repeat.</span
-              >`)
-            : msg(
-                html`<span class="font-medium">New schedule will be:</span
-                  ><br />
-                  <span class="text-0-600"
-                    >${humanizeNextDate(nextSchedule)}
-                  </span>`
-              )}
+            ? html`<span class="font-medium"
+                >${msg("Crawls will not repeat.")}</span
+              >`
+            : html`
+                <p>${msg(str`Schedule: ${humanizeSchedule(utcSchedule)}.`)}</p>
+                <p>
+                  ${msg(
+                    str`Next scheduled run: ${humanizeNextDate(utcSchedule)}.`
+                  )}
+                </p>
+              `}
         </div>
 
         <div class="mt-5${this.cancelable ? " text-right" : ""}">
@@ -237,6 +224,29 @@ export class CrawlTemplatesScheduler extends LiteElement {
    */
   private stopProp(e: CustomEvent) {
     e.stopPropagation();
+  }
+
+  private setInitialValues() {
+    if (this.schedule) {
+      const nextDate = parseCron.nextDate(this.schedule)!;
+      const hours = nextDate.getHours();
+
+      this.scheduleTime = {
+        hour: hours % 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+      this.scheduleInterval = getScheduleInterval(this.schedule);
+    }
+  }
+
+  private getUTCSchedule(): string {
+    if (!this.scheduleInterval) return "";
+
+    return getUTCSchedule({
+      interval: this.scheduleInterval,
+      ...this.scheduleTime,
+    });
   }
 }
 
