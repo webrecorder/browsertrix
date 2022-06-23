@@ -63,7 +63,11 @@ export class CrawlDetail extends LiteElement {
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
 
-    return this.crawl.state === "running" || this.crawl.state === "starting";
+    return (
+      this.crawl.state === "running" ||
+      this.crawl.state === "starting" ||
+      this.crawl.state === "stopping"
+    );
   }
 
   private get hasFiles(): boolean | null {
