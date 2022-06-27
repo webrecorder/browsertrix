@@ -2,14 +2,13 @@ import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import cronstrue from "cronstrue"; // TODO localize
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
-import { getUTCSchedule } from "./utils";
+import { getUTCSchedule, humanizeSchedule } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
 const SEED_URLS_MAX = 3;
@@ -707,16 +706,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${this.crawlTemplate
               ? html`
                   ${this.crawlTemplate.schedule
-                    ? // TODO localize
-                      // NOTE human-readable string is in UTC, limitation of library
-                      // currently being used.
-                      // https://github.com/bradymholt/cRonstrue/issues/94
-                      html`<span
-                        >${cronstrue.toString(this.crawlTemplate.schedule, {
-                          verbose: true,
-                        })}
-                        (in UTC time zone)</span
-                      >`
+                    ? humanizeSchedule(this.crawlTemplate.schedule)
                     : html`<span class="text-0-400">${msg("None")}</span>`}
                 `
               : html`<sl-skeleton></sl-skeleton>`}

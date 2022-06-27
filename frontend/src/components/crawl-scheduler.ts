@@ -1,14 +1,25 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import cronstrue from "cronstrue"; // TODO localize
+import { parseCron } from "@cheap-glitch/mi-cron";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import { getLocaleTimeZone } from "../utils/localization";
+import {
+  ScheduleInterval,
+  getScheduleInterval,
+  getUTCSchedule,
+  humanizeSchedule,
+  humanizeNextDate,
+} from "../utils/cron";
 import type { CrawlTemplate } from "../pages/archive/types";
 
-const nowHour = new Date().getHours();
-const initialHours = nowHour % 12 || 12;
-const initialPeriod = nowHour > 11 ? "PM" : "AM";
+const hours = Array.from({ length: 12 }).map((x, i) => ({
+  value: i + 1,
+  label: `${i + 1}`,
+}));
+const minutes = Array.from({ length: 60 }).map((x, i) => ({
+  value: i,
+  label: `${i}`.padStart(2, "0"),
+}));
 
 /**
  * Usage:
@@ -36,49 +47,28 @@ export class CrawlTemplatesScheduler extends LiteElement {
   cancelable?: boolean = false;
 
   @state()
-  private editedSchedule?: string;
+  private scheduleInterval: ScheduleInterval | "" = "";
 
   @state()
-  private isScheduleDisabled?: boolean;
+  private scheduleTime: { hour: number; minute: number; period: "AM" | "PM" } =
+    {
+      hour: new Date().getHours() % 12 || 12,
+      minute: 0,
+      period: new Date().getHours() > 11 ? "PM" : "AM",
+    };
 
-  @state()
-  private schedulePeriod: "AM" | "PM" = initialPeriod;
+  private get isScheduleDisabled(): boolean {
+    return !this.scheduleInterval;
+  }
 
-  private get timeZoneShortName() {
-    return getLocaleTimeZone();
+  firstUpdated() {
+    this.setInitialValues();
   }
 
   render() {
     // TODO consolidate with new
-    const hours = Array.from({ length: 12 }).map((x, i) => ({
-      value: i + 1,
-      label: `${i + 1}`,
-    }));
-    const minutes = Array.from({ length: 60 }).map((x, i) => ({
-      value: i,
-      label: `${i}`.padStart(2, "0"),
-    }));
 
-    const getInitialScheduleInterval = (schedule: string) => {
-      const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
-      if (dayofMonth === "*") {
-        if (dayOfWeek === "*") {
-          return "daily";
-        }
-        return "weekly";
-      }
-      return "monthly";
-    };
-    const scheduleIntervalsMap = {
-      daily: `0 ${nowHour} * * *`,
-      weekly: `0 ${nowHour} * * ${new Date().getDay()}`,
-      monthly: `0 ${nowHour} ${new Date().getDate()} * *`,
-    };
-    const initialInterval = this.schedule
-      ? getInitialScheduleInterval(this.schedule)
-      : "weekly";
-    const nextSchedule =
-      this.editedSchedule || scheduleIntervalsMap[initialInterval];
+    const utcSchedule = this.getUTCSchedule();
 
     return html`
       <sl-form @sl-submit=${this.onSubmit}>
@@ -87,23 +77,12 @@ export class CrawlTemplatesScheduler extends LiteElement {
             <sl-select
               name="scheduleInterval"
               label=${msg("Recurring crawls")}
-              value=${initialInterval}
+              value=${this.scheduleInterval}
               hoist
               @sl-hide=${this.stopProp}
               @sl-after-hide=${this.stopProp}
               @sl-select=${(e: any) => {
-                if (e.target.value) {
-                  this.isScheduleDisabled = false;
-                  this.editedSchedule = `${nextSchedule
-                    .split(" ")
-                    .slice(0, 2)
-                    .join(" ")} ${(scheduleIntervalsMap as any)[e.target.value]
-                    .split(" ")
-                    .slice(2)
-                    .join(" ")}`;
-                } else {
-                  this.isScheduleDisabled = true;
-                }
+                this.scheduleInterval = e.target.value;
               }}
             >
               <sl-menu-item value="">${msg("None")}</sl-menu-item>
@@ -120,20 +99,16 @@ export class CrawlTemplatesScheduler extends LiteElement {
               <sl-select
                 class="grow"
                 name="scheduleHour"
-                value=${initialHours}
+                value=${this.scheduleTime.hour}
                 ?disabled=${this.isScheduleDisabled}
                 hoist
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
                 @sl-select=${(e: any) => {
-                  const hour = +e.target.value;
-                  const period = this.schedulePeriod;
-
-                  this.setScheduleHour({
-                    hour,
-                    period,
-                    schedule: nextSchedule,
-                  });
+                  this.scheduleTime = {
+                    ...this.scheduleTime,
+                    hour: +e.target.value,
+                  };
                 }}
               >
                 ${hours.map(
@@ -145,16 +120,16 @@ export class CrawlTemplatesScheduler extends LiteElement {
               <sl-select
                 class="grow"
                 name="scheduleMinute"
-                value="0"
+                value=${this.scheduleTime.minute}
                 ?disabled=${this.isScheduleDisabled}
                 hoist
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
                 @sl-select=${(e: any) =>
-                  (this.editedSchedule = `${e.target.value} ${nextSchedule
-                    .split(" ")
-                    .slice(1)
-                    .join(" ")}`)}
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    minute: +e.target.value,
+                  })}
               >
                 ${minutes.map(
                   ({ value, label }) =>
@@ -165,66 +140,52 @@ export class CrawlTemplatesScheduler extends LiteElement {
             <input
               name="schedulePeriod"
               type="hidden"
-              value=${this.schedulePeriod}
+              value=${this.scheduleTime.period}
             />
             <sl-button-group>
               <sl-button
-                type=${this.schedulePeriod === "AM" ? "neutral" : "default"}
-                aria-selected=${this.schedulePeriod === "AM"}
+                type=${this.scheduleTime.period === "AM"
+                  ? "neutral"
+                  : "default"}
+                aria-selected=${this.scheduleTime.period === "AM"}
                 ?disabled=${this.isScheduleDisabled}
-                @click=${(e: any) => {
-                  const hour = +e.target
-                    .closest("sl-form")
-                    .querySelector('sl-select[name="scheduleHour"]').value;
-                  const period = "AM";
-
-                  this.schedulePeriod = period;
-                  this.setScheduleHour({
-                    hour,
-                    period,
-                    schedule: nextSchedule,
-                  });
-                }}
+                @click=${() =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    period: "AM",
+                  })}
                 >${msg("AM", { desc: "Time AM/PM" })}</sl-button
               >
               <sl-button
-                type=${this.schedulePeriod === "PM" ? "neutral" : "default"}
-                aria-selected=${this.schedulePeriod === "PM"}
+                type=${this.scheduleTime.period === "PM"
+                  ? "neutral"
+                  : "default"}
+                aria-selected=${this.scheduleTime.period === "PM"}
                 ?disabled=${this.isScheduleDisabled}
-                @click=${(e: any) => {
-                  const hour = +e.target
-                    .closest("sl-form")
-                    .querySelector('sl-select[name="scheduleHour"]').value;
-                  const period = "PM";
-
-                  this.schedulePeriod = period;
-                  this.setScheduleHour({
-                    hour,
-                    period,
-                    schedule: nextSchedule,
-                  });
-                }}
+                @click=${() =>
+                  (this.scheduleTime = {
+                    ...this.scheduleTime,
+                    period: "PM",
+                  })}
                 >${msg("PM", { desc: "Time AM/PM" })}</sl-button
               >
             </sl-button-group>
           </div>
         </fieldset>
 
-        <div class="mt-5">
+        <div class="mt-5 bg-neutral-50 rounded p-3 text-sm text-neutral-800">
           ${this.isScheduleDisabled
-            ? msg(html`<span class="font-medium"
-                >Crawls will not repeat.</span
-              >`)
-            : msg(
-                html`<span class="font-medium">New schedule will be:</span
-                  ><br />
-                  <span class="text-0-600"
-                    >${cronstrue.toString(nextSchedule, {
-                      verbose: true,
-                    })}
-                    (in ${this.timeZoneShortName} time zone)</span
-                  >`
-              )}
+            ? html`<span class="font-medium"
+                >${msg("Crawls will not repeat.")}</span
+              >`
+            : html`
+                <p>${msg(str`Schedule: ${humanizeSchedule(utcSchedule)}.`)}</p>
+                <p>
+                  ${msg(
+                    str`Next scheduled run: ${humanizeNextDate(utcSchedule)}.`
+                  )}
+                </p>
+              `}
         </div>
 
         <div class="mt-5${this.cancelable ? " text-right" : ""}">
@@ -257,40 +218,35 @@ export class CrawlTemplatesScheduler extends LiteElement {
   }
 
   /**
-   * Set correct local hour in schedule in 24-hr format
-   **/
-  private setScheduleHour({
-    hour,
-    period,
-    schedule,
-  }: {
-    hour: number;
-    period: "AM" | "PM";
-    schedule: string;
-  }) {
-    // Convert 12-hr to 24-hr time
-    let periodOffset = 0;
-
-    if (hour === 12) {
-      if (period === "AM") {
-        periodOffset = -12;
-      }
-    } else if (period === "PM") {
-      periodOffset = 12;
-    }
-
-    this.editedSchedule = `${schedule.split(" ")[0]} ${
-      hour + periodOffset
-    } ${schedule.split(" ").slice(2).join(" ")}`;
-  }
-
-  /**
    * Stop propgation of sl-select events.
    * Prevents bug where sl-dialog closes when dropdown closes
    * https://github.com/shoelace-style/shoelace/issues/170
    */
   private stopProp(e: CustomEvent) {
     e.stopPropagation();
+  }
+
+  private setInitialValues() {
+    if (this.schedule) {
+      const nextDate = parseCron.nextDate(this.schedule)!;
+      const hours = nextDate.getHours();
+
+      this.scheduleTime = {
+        hour: hours % 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+      this.scheduleInterval = getScheduleInterval(this.schedule);
+    }
+  }
+
+  private getUTCSchedule(): string {
+    if (!this.scheduleInterval) return "";
+
+    return getUTCSchedule({
+      interval: this.scheduleInterval,
+      ...this.scheduleTime,
+    });
   }
 }
 

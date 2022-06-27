@@ -1,14 +1,13 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import cronParser from "cron-parser";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { getLocaleTimeZone } from "../../utils/localization";
+import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
-import { getUTCSchedule } from "./utils";
+import { getUTCSchedule } from "../../utils/cron";
 
 type NewCrawlTemplate = {
   id?: string;
@@ -65,7 +64,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private isRunNow: boolean = initialValues.runNow;
 
   @state()
-  private scheduleInterval: "" | "daily" | "weekly" | "monthly" = "";
+  private scheduleInterval: ScheduleInterval | "" = "";
 
   /** Schedule local time */
   @state()
@@ -92,35 +91,10 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private serverError?: string;
 
-  private get timeZone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-
-  private get timeZoneShortName() {
-    return getLocaleTimeZone();
-  }
-
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
 
-    return this.scheduleInterval
-      ? html`<sl-format-date
-          date="${cronParser
-            .parseExpression(utcSchedule, {
-              utc: true,
-            })
-            .next()
-            .toString()}"
-          weekday="long"
-          month="long"
-          day="numeric"
-          year="numeric"
-          hour="numeric"
-          minute="numeric"
-          time-zone-name="short"
-          time-zone=${this.timeZone}
-        ></sl-format-date>`
-      : undefined;
+    return this.scheduleInterval ? humanizeNextDate(utcSchedule) : undefined;
   }
 
   connectedCallback(): void {

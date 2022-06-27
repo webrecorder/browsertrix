@@ -1,7 +1,7 @@
 import type { HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import cronParser from "cron-parser";
+import { parseCron } from "@cheap-glitch/mi-cron";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -13,7 +13,11 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate } from "./types";
-import { getUTCSchedule } from "./utils";
+import {
+  getUTCSchedule,
+  humanizeNextDate,
+  humanizeSchedule,
+} from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
 type RunningCrawlsMap = {
@@ -359,7 +363,6 @@ export class CrawlTemplatesList extends LiteElement {
                       year="2-digit"
                       hour="numeric"
                       minute="numeric"
-                      time-zone-name="short"
                     ></sl-format-date>
                   </a>
                 </sl-tooltip>`
@@ -376,27 +379,21 @@ export class CrawlTemplatesList extends LiteElement {
           <div>
             ${t.schedule
               ? html`
-                  <sl-tooltip content=${msg("Next scheduled crawl")}>
+                  <sl-tooltip
+                    content=${msg(
+                      str`Next scheduled crawl: ${humanizeNextDate(t.schedule)}`
+                    )}
+                  >
                     <span>
                       <sl-icon
                         class="inline-block align-middle mr-1"
                         name="clock-history"
                       ></sl-icon
-                      ><sl-format-date
-                        class="inline-block align-middle text-0-600"
-                        date="${cronParser
-                          .parseExpression(t.schedule, {
-                            utc: true,
-                          })
-                          .next()
-                          .toString()}"
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                      ></sl-format-date>
+                      ><span class="inline-block align-middle text-0-600"
+                        >${humanizeSchedule(t.schedule, {
+                          length: "short",
+                        })}</span
+                      >
                     </span>
                   </sl-tooltip>
                 `

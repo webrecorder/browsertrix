@@ -39,6 +39,11 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@cheap-glitch/mi-cron@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@cheap-glitch/mi-cron/-/mi-cron-1.0.1.tgz#111f4ce746c269aedf74533ac806881763a68f99"
+  integrity sha512-kxl7vhg+SUgyHRn22qVbR9MfSm5CzdlYZDJTbGemqFFi/Jmno/hdoQIvBIPoqFY9dcPyxzOUNRRFn6x88UQMpw==
+
 "@discoveryjs/json-ext@^0.5.0":
   version "0.5.5"
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.5.tgz#9283c9ce5b289a3c4f61c12757469e59377f81f3"
@@ -1773,18 +1778,6 @@ cosmiconfig@^7.0.0, cosmiconfig@^7.0.1:
     parse-json "^5.0.0"
     path-type "^4.0.0"
     yaml "^1.10.0"
-
-cron-parser@^4.2.1:
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/cron-parser/-/cron-parser-4.2.1.tgz#b43205d05ccd5c93b097dae64f3bd811f5993af3"
-  integrity sha512-5sJBwDYyCp+0vU5b7POl8zLWfgV5fOHxlc45FWoWdHecGC7MQHCjx0CHivCMRnGFovghKhhyYM+Zm9DcY5qcHg==
-  dependencies:
-    luxon "^1.28.0"
-
-cronstrue@^1.123.0:
-  version "1.123.0"
-  resolved "https://registry.yarnpkg.com/cronstrue/-/cronstrue-1.123.0.tgz#de622dd8ea07981790f488d3f89a25e6e728ac8b"
-  integrity sha512-hVu9yNYRYr+jj5KET1p7FaBxFwtCHM1ByffP9lZ6yJ6p53u4VEmzH8117v9PUydxWNzc8Eq+sCZEzsKcB3ckiA==
 
 cross-spawn@^7.0.2, cross-spawn@^7.0.3:
   version "7.0.3"
@@ -3557,11 +3550,6 @@ lru-cache@^6.0.0:
   integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
   dependencies:
     yallist "^4.0.0"
-
-luxon@^1.28.0:
-  version "1.28.0"
-  resolved "https://registry.yarnpkg.com/luxon/-/luxon-1.28.0.tgz#e7f96daad3938c06a62de0fb027115d251251fbf"
-  integrity sha512-TfTiyvZhwBYM/7QdAVDh+7dBTBA29v4ik0Ce9zda3Mnf8on1S5KJI8P2jKFZ8+5C0jhmr0KwJEO/Wdpm0VeWJQ==
 
 make-dir@^3.0.0:
   version "3.1.0"
