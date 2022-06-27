@@ -11,6 +11,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlTemplate } from "./types";
+import type { InitialCrawlTemplate } from "./crawl-templates-new";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -564,30 +565,29 @@ export class CrawlsList extends LiteElement {
   }
 
   private async runNow(crawl: Crawl) {
+    // Get crawl config to check if crawl is already running
+    const crawlTemplate = await this.getCrawlTemplate(crawl);
+
+    if (crawlTemplate?.currCrawlId) {
+      this.notify({
+        message: msg(
+          html`Crawl of <strong>${crawl.configName}</strong> is already running.
+            <br />
+            <a
+              class="underline hover:no-underline"
+              href="/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+              @click=${this.navLink.bind(this)}
+              >View crawl</a
+            >`
+        ),
+        type: "warning",
+        icon: "exclamation-triangle",
+      });
+
+      return;
+    }
+
     try {
-      // Get crawl config to check if crawl is already running
-      const crawlTemplate = await this.getCrawlTemplate(crawl);
-
-      if (crawlTemplate.currCrawlId) {
-        this.notify({
-          message: msg(
-            html`Crawl of <strong>${crawl.configName}</strong> is already
-              running.
-              <br />
-              <a
-                class="underline hover:no-underline"
-                href="/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
-                @click=${this.navLink.bind(this)}
-                >View crawl</a
-              >`
-          ),
-          type: "warning",
-          icon: "exclamation-triangle",
-        });
-
-        return;
-      }
-
       const data = await this.apiFetch(
         `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}/run`,
         this.authState!,
@@ -618,9 +618,19 @@ export class CrawlsList extends LiteElement {
     } catch (e: any) {
       if (e.isApiError && e.statusCode === 404) {
         this.notify({
-          message: e.message,
+          message: msg(
+            html`Sorry, cannot rerun crawl from a deactivated crawl template.
+              <br />
+              <button
+                class="underline hover:no-underline"
+                @click=${() => this.duplicateConfig(crawl, crawlTemplate)}
+              >
+                Duplicate crawl template
+              </button>`
+          ),
           type: "danger",
           icon: "exclamation-octagon",
+          duration: 8000,
         });
       } else {
         this.notify({
@@ -639,6 +649,27 @@ export class CrawlsList extends LiteElement {
     );
 
     return data;
+  }
+
+  /**
+   * Create a new template using existing template data
+   */
+  private async duplicateConfig(crawl: Crawl, template: CrawlTemplate) {
+    const crawlTemplate: InitialCrawlTemplate = {
+      name: msg(str`${template.name} Copy`),
+      config: template.config,
+      profileid: template.profileid || null,
+    };
+
+    this.navTo(`/archives/${crawl.aid}/crawl-templates/new`, {
+      crawlTemplate,
+    });
+
+    this.notify({
+      message: msg(str`Copied crawl configuration to new template.`),
+      type: "success",
+      icon: "check2-circle",
+    });
   }
 }
 
