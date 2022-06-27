@@ -340,6 +340,22 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderSummary() {
+    let crawlScaleLabel = `${this.crawl?.scale}`;
+
+    switch (this.crawl?.scale) {
+      case 1:
+        crawlScaleLabel = msg("Standard", { desc: "Crawl scale label" });
+        break;
+      case 2:
+        crawlScaleLabel = msg("Big (2x)", { desc: "Crawl scale label" });
+        break;
+      case 3:
+        crawlScaleLabel = msg("Bigger (3x)", { desc: "Crawl scale label" });
+        break;
+      default:
+        break;
+    }
+
     return html`
       <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
         <div class="col-span-2 md:col-span-1">
@@ -417,7 +433,7 @@ export class CrawlDetail extends LiteElement {
           <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
           <dd>
             ${this.crawl
-              ? html`<span class="font-mono">${this.crawl.scale}</span>`
+              ? crawlScaleLabel
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
