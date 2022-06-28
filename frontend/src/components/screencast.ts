@@ -36,6 +36,9 @@ type CloseMessage = Message & {
  */
 @localized()
 export class Screencast extends LitElement {
+  static baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+    process.env.WEBSOCKET_HOST || window.location.host
+  }/watch`;
   static styles = css`
     .wrapper {
       position: relative;
@@ -137,9 +140,6 @@ export class Screencast extends LitElement {
   private dataList: Array<ScreencastMessage | null> = [];
 
   @state()
-  private isConnecting: boolean = false;
-
-  @state()
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
@@ -155,28 +155,28 @@ export class Screencast extends LitElement {
   private screenHeight = 480;
 
   protected firstUpdated() {
-    this.isConnecting = true;
-
     // Connect to websocket server
-    this.connectWs();
+    this.connectAll();
   }
 
   async updated(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
-      changedProperties.get("scale") ||
       changedProperties.get("authToken")
     ) {
-      console.log("updated");
+      console.log("updated, reconnect");
       // Reconnect
-      this.disconnectWs();
-      this.connectWs();
+      this.disconnectAll();
+      this.connectAll();
+    } else if (changedProperties.get("scale")) {
+      console.log("updated, connect");
+      this.connectAll();
     }
   }
 
   disconnectedCallback() {
-    this.disconnectWs();
+    this.disconnectAll();
     super.disconnectedCallback();
   }
 
@@ -185,7 +185,7 @@ export class Screencast extends LitElement {
 
     return html`
       <div class="wrapper">
-        ${this.isConnecting || !this.dataList.length
+        ${!this.dataList.length
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
@@ -265,42 +265,22 @@ export class Screencast extends LitElement {
     `;
   }
 
-  private connectWs() {
+  /**
+   * Connect to all crawler instances
+   */
+  private connectAll() {
     if (!this.archiveId || !this.crawlId) {
       return;
     }
 
-    const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-      process.env.WEBSOCKET_HOST || window.location.host
-    }/watch/${this.archiveId}/${this.crawlId}`;
-
     for (let idx = 0; idx < this.scale; idx++) {
-      const ws = new WebSocket(
-        `${baseURL}/${idx}/ws?auth_bearer=${this.authToken || ""}`
-      );
-
-      ws.addEventListener("open", () => {
-        if (this.wsMap.size === this.scale) {
-          this.isConnecting = false;
-        }
-      });
-      ws.addEventListener("close", () => {
-        this.wsMap.delete(idx);
-      });
-      ws.addEventListener("error", () => {
-        this.isConnecting = false;
-      });
-      ws.addEventListener("message", ({ data }) => {
-        this.handleMessage(JSON.parse(data));
-      });
-
-      this.wsMap.set(idx, ws);
+      if (!this.wsMap.get(idx)) {
+        this.connectWs(idx);
+      }
     }
   }
 
-  private disconnectWs() {
-    this.isConnecting = false;
-
+  private disconnectAll() {
     this.wsMap.forEach((ws) => {
       ws.close();
     });
@@ -333,10 +313,6 @@ export class Screencast extends LitElement {
           return;
         }
 
-        if (this.isConnecting) {
-          this.isConnecting = false;
-        }
-
         let idx = this.pageOrderMap.get(id);
 
         if (idx === undefined) {
@@ -366,6 +342,35 @@ export class Screencast extends LitElement {
         }
       }
     }
+  }
+
+  /**
+   * Connect to a crawler websocket instance by index
+   */
+  private connectWs(index: number): WebSocket {
+    const ws = new WebSocket(
+      `${Screencast.baseURL}/${this.archiveId}/${
+        this.crawlId
+      }/${index}/ws?auth_bearer=${this.authToken || ""}`
+    );
+
+    // ws.addEventListener("open", () => {});
+    ws.addEventListener("close", (e) => {
+      console.log("ws close event:", e);
+
+      this.wsMap.delete(index);
+    });
+    ws.addEventListener("error", (e) => {
+      ws.close();
+      console.log("ws error event:", e);
+    });
+    ws.addEventListener("message", ({ data }) => {
+      this.handleMessage(JSON.parse(data));
+    });
+
+    this.wsMap.set(index, ws);
+
+    return ws;
   }
 
   updateDataList() {
