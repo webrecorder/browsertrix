@@ -435,7 +435,7 @@ export class Screencast extends LitElement {
           );
         } else {
           console.error(
-            `stopping websocket retries, tried ${Screencast.maxRetries} times`
+            `stopping websocket retries, tried ${Screencast.maxRetries} times with ${delaySec} second delay`
           );
         }
       }
