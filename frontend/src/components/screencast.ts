@@ -39,6 +39,8 @@ export class Screencast extends LitElement {
   static baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
     process.env.WEBSOCKET_HOST || window.location.host
   }/watch`;
+  static maxRetries = 10;
+
   static styles = css`
     .wrapper {
       position: relative;
@@ -153,6 +155,7 @@ export class Screencast extends LitElement {
   private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
+  private timerIds: number[] = [];
 
   protected firstUpdated() {
     // Connect to websocket server
@@ -165,18 +168,24 @@ export class Screencast extends LitElement {
       changedProperties.get("crawlId") ||
       changedProperties.get("authToken")
     ) {
-      console.log("updated, reconnect");
       // Reconnect
       this.disconnectAll();
       this.connectAll();
-    } else if (changedProperties.get("scale")) {
-      console.log("updated, connect");
-      this.connectAll();
+    } else {
+      const prevScale = changedProperties.get("scale");
+      if (prevScale) {
+        if (this.scale > prevScale) {
+          this.scaleUp();
+        } else {
+          this.scaleDown();
+        }
+      }
     }
   }
 
   disconnectedCallback() {
     this.disconnectAll();
+    this.timerIds.forEach(window.clearTimeout);
     super.disconnectedCallback();
   }
 
@@ -265,6 +274,26 @@ export class Screencast extends LitElement {
     `;
   }
 
+  private scaleUp() {
+    // Reconnect after 20 second delay
+    this.timerIds.push(
+      window.setTimeout(() => {
+        this.connectAll();
+      }, 20 * 1000)
+    );
+  }
+
+  private scaleDown() {
+    for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
+      const ws = this.wsMap.get(idx);
+
+      if (ws) {
+        ws.close(1000);
+        this.wsMap.delete(idx);
+      }
+    }
+  }
+
   /**
    * Connect to all crawler instances
    */
@@ -275,14 +304,28 @@ export class Screencast extends LitElement {
 
     for (let idx = 0; idx < this.scale; idx++) {
       if (!this.wsMap.get(idx)) {
-        this.connectWs(idx);
+        const ws = this.connectWs(idx);
+
+        ws.addEventListener("close", (e) => {
+          if (e.code !== 1000) {
+            // Not normal closure, try connecting again after 10 sec
+            this.timerIds.push(
+              window.setTimeout(() => {
+                this.retryConnectWs({ index: idx });
+              }, 10 * 1000)
+            );
+          }
+        });
+
+        this.wsMap.set(idx, ws);
       }
     }
   }
 
   private disconnectAll() {
-    this.wsMap.forEach((ws) => {
-      ws.close();
+    this.wsMap.forEach((ws, i) => {
+      ws.close(1000);
+      this.wsMap.delete(i);
     });
   }
 
@@ -345,7 +388,7 @@ export class Screencast extends LitElement {
   }
 
   /**
-   * Connect to a crawler websocket instance by index
+   * Connect & receive messages from crawler websocket instance
    */
   private connectWs(index: number): WebSocket {
     const ws = new WebSocket(
@@ -354,23 +397,49 @@ export class Screencast extends LitElement {
       }/${index}/ws?auth_bearer=${this.authToken || ""}`
     );
 
-    // ws.addEventListener("open", () => {});
-    ws.addEventListener("close", (e) => {
-      console.log("ws close event:", e);
-
-      this.wsMap.delete(index);
-    });
-    ws.addEventListener("error", (e) => {
-      ws.close();
-      console.log("ws error event:", e);
-    });
     ws.addEventListener("message", ({ data }) => {
       this.handleMessage(JSON.parse(data));
     });
 
-    this.wsMap.set(index, ws);
-
     return ws;
+  }
+
+  /**
+   * Retry connecting to websocket with exponential backoff
+   */
+  private retryConnectWs(opts: {
+    index: number;
+    retries?: number;
+    delaySec?: number;
+  }): void {
+    const { index, retries = 0, delaySec = 10 } = opts;
+
+    if (index >= this.scale) {
+      return;
+    }
+
+    const ws = this.connectWs(index);
+
+    ws.addEventListener("close", (e) => {
+      if (e.code !== 1000) {
+        // Not normal closure, try connecting again
+        if (retries < Screencast.maxRetries) {
+          this.timerIds.push(
+            window.setTimeout(() => {
+              this.retryConnectWs({
+                index,
+                retries: retries + 1,
+                delaySec: delaySec * 2,
+              });
+            }, delaySec * 1000)
+          );
+        } else {
+          console.error(
+            `stopping websocket retries, tried ${Screencast.maxRetries} times`
+          );
+        }
+      }
+    });
   }
 
   updateDataList() {
