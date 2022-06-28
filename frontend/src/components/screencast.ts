@@ -132,9 +132,6 @@ export class Screencast extends LitElement {
   @property({ type: Number })
   scale: number = 1;
 
-  @property({ type: Array })
-  watchIPs: string[] = [];
-
   // List of browser screens
   @state()
   private dataList: Array<ScreencastMessage | null> = [];
@@ -146,28 +143,16 @@ export class Screencast extends LitElement {
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
-  private wsMap: Map<string, WebSocket> = new Map();
+  private wsMap: Map<number, WebSocket> = new Map();
   // Map data order to screen data
   private dataMap: { [index: number]: ScreencastMessage | null } = {};
   // Map page ID to data order
   private pageOrderMap: Map<string, number> = new Map();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
-  private browsersCount = 0;
+  private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
-
-  shouldUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
-      // Check stringified value of IP list
-      return (
-        this.watchIPs.toString() !==
-        changedProperties.get("watchIPs").toString()
-      );
-    }
-
-    return true;
-  }
 
   protected firstUpdated() {
     this.isConnecting = true;
@@ -180,9 +165,10 @@ export class Screencast extends LitElement {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
-      changedProperties.get("watchIPs") ||
+      changedProperties.get("scale") ||
       changedProperties.get("authToken")
     ) {
+      console.log("updated");
       // Reconnect
       this.disconnectWs();
       this.connectWs();
@@ -195,6 +181,8 @@ export class Screencast extends LitElement {
   }
 
   render() {
+    const browserWindows = this.browsersCount * this.scale;
+
     return html`
       <div class="wrapper">
         ${this.isConnecting || !this.dataList.length
@@ -204,15 +192,13 @@ export class Screencast extends LitElement {
           : html`
               <div class="screen-count">
                 <span
-                  >${msg(
-                    str`Running in ${
-                      this.browsersCount * this.scale
-                    } browser windows`
-                  )}</span
+                  >${browserWindows > 1
+                    ? msg(str`Running in ${browserWindows} browser windows`)
+                    : msg(str`Running in 1 browser window`)}</span
                 >
                 <sl-tooltip
                   content=${msg(
-                    str`${this.browsersCount} browsers × ${this.scale} crawlers. Number of crawlers corresponds to scale.`
+                    str`${this.browsersCount} browser(s) × ${this.scale} crawler(s). Number of crawlers corresponds to scale.`
                   )}
                   ><sl-icon name="info-circle"></sl-icon
                 ></sl-tooltip>
@@ -284,27 +270,22 @@ export class Screencast extends LitElement {
       return;
     }
 
-    if (!this.watchIPs?.length) {
-      console.warn("No watch IPs to connect to");
-      return;
-    }
-
     const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
       process.env.WEBSOCKET_HOST || window.location.host
     }/watch/${this.archiveId}/${this.crawlId}`;
 
-    this.watchIPs.forEach((ip: string) => {
+    for (let idx = 0; idx < this.scale; idx++) {
       const ws = new WebSocket(
-        `${baseURL}/${ip}/ws?auth_bearer=${this.authToken || ""}`
+        `${baseURL}/${idx}/ws?auth_bearer=${this.authToken || ""}`
       );
 
       ws.addEventListener("open", () => {
-        if (this.wsMap.size === this.watchIPs.length) {
+        if (this.wsMap.size === this.scale) {
           this.isConnecting = false;
         }
       });
       ws.addEventListener("close", () => {
-        this.wsMap.delete(ip);
+        this.wsMap.delete(idx);
       });
       ws.addEventListener("error", () => {
         this.isConnecting = false;
@@ -313,8 +294,8 @@ export class Screencast extends LitElement {
         this.handleMessage(JSON.parse(data));
       });
 
-      this.wsMap.set(ip, ws);
-    });
+      this.wsMap.set(idx, ws);
+    }
   }
 
   private disconnectWs() {

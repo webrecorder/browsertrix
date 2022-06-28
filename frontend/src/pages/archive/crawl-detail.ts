@@ -460,7 +460,6 @@ export class CrawlDetail extends LiteElement {
                 archiveId=${this.crawl.aid}
                 crawlId=${this.crawlId!}
                 scale=${this.crawl.scale}
-                .watchIPs=${this.crawl.watchIPs || []}
               ></btrix-screencast>
             </div>
           `
