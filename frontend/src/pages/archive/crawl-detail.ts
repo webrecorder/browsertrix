@@ -7,8 +7,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl } from "./types";
-import { times } from "lodash";
+import type { Crawl, CrawlTemplate } from "./types";
 
 type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
 
@@ -41,6 +40,9 @@ export class CrawlDetail extends LiteElement {
 
   @state()
   private crawl?: Crawl;
+
+  @state()
+  private crawlTemplate?: CrawlTemplate;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -77,20 +79,28 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.resources.length > 0;
   }
 
-  async firstUpdated() {
+  firstUpdated() {
     if (!this.crawlsBaseUrl) {
       throw new Error("Crawls base URL not defined");
     }
 
-    this.fetchCrawl();
+    this.fetchData();
   }
 
   updated(changedProperties: Map<string, any>) {
-    const prevCrawl = changedProperties.get("crawl");
+    const prevId = changedProperties.get("crawlId");
 
-    if (prevCrawl && this.crawl) {
-      if (prevCrawl.state === "running" && this.crawl.state !== "running") {
-        this.crawlDone();
+    if (prevId && prevId !== this.crawlId) {
+      // Handle update on URL change, e.g. from re-run
+      this.stopPollTimer();
+      this.fetchData();
+    } else {
+      const prevCrawl = changedProperties.get("crawl");
+
+      if (prevCrawl && this.crawl) {
+        if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+          this.crawlDone();
+        }
       }
     }
   }
@@ -302,6 +312,28 @@ export class CrawlDetail extends LiteElement {
         >
 
         <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+          ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
+            ? html`
+                <li
+                  class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                  role="menuitem"
+                  @click=${(e: any) => {
+                    this.runNow();
+                    e.target.closest("sl-dropdown").hide();
+                  }}
+                >
+                  <sl-icon
+                    class="inline-block align-middle"
+                    name="arrow-clockwise"
+                  ></sl-icon>
+                  <span class="inline-block align-middle">
+                    ${msg("Re-run crawl")}
+                  </span>
+                </li>
+                <hr />
+              `
+            : ""}
+
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
@@ -608,6 +640,11 @@ export class CrawlDetail extends LiteElement {
                     <span class="inline-block align-middle">
                       ${this.crawl.configName}
                     </span>
+                    ${this.crawlTemplate?.inactive
+                      ? html`<sl-tag type="warning" size="small"
+                          >${msg("Inactive")}</sl-tag
+                        >`
+                      : ""}
                   </a>
                 `
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
@@ -743,6 +780,11 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private async fetchData() {
+    await this.fetchCrawl();
+    this.fetchCrawlTemplate();
+  }
+
   /**
    * Fetch crawl and update internal state
    */
@@ -751,7 +793,8 @@ export class CrawlDetail extends LiteElement {
       this.crawl = await this.getCrawl();
 
       if (this.isActive) {
-        // Start timer for next poll
+        // Restart timer for next poll
+        this.stopPollTimer();
         this.timerId = window.setTimeout(() => {
           this.fetchCrawl();
         }, 1000 * POLL_INTERVAL_SECONDS);
@@ -768,14 +811,32 @@ export class CrawlDetail extends LiteElement {
   }
 
   async getCrawl(): Promise<Crawl> {
-    // Mock to use in dev:
-    // return import("../../__mocks__/api/archives/[id]/crawls").then(
-    //   (module) => module.default.running[0]
-    //   // (module) => module.default.finished[0]
-    // );
-
     const data: Crawl = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  /**
+   * Fetch crawl template and update internal state
+   */
+  private async fetchCrawlTemplate(): Promise<void> {
+    try {
+      this.crawlTemplate = await this.getCrawlTemplate();
+    } catch {
+      // Fail silently since page will mostly still function
+    }
+  }
+
+  async getCrawlTemplate(): Promise<CrawlTemplate> {
+    if (!this.crawl) {
+      throw new Error("missing crawl");
+    }
+
+    const data: CrawlTemplate = await this.apiFetch(
+      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}`,
       this.authState!
     );
 
@@ -862,6 +923,63 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.isSubmittingUpdate = false;
+  }
+
+  private async runNow() {
+    if (!this.crawl) return;
+
+    try {
+      // Get crawl config to check if crawl is already running
+      const crawlTemplate = await this.getCrawlTemplate();
+
+      if (crawlTemplate.currCrawlId) {
+        this.notify({
+          message: msg(
+            html`Crawl of <strong>${this.crawl.configName}</strong> is already
+              running.
+              <br />
+              <a
+                class="underline hover:no-underline"
+                href="/archives/${this.crawl
+                  .aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+                @click=${this.navLink.bind(this)}
+                >View crawl</a
+              >`
+          ),
+          type: "warning",
+          icon: "exclamation-triangle",
+        });
+
+        return;
+      }
+
+      const data = await this.apiFetch(
+        `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}/run`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.started) {
+        this.navTo(`/archives/${this.crawl.aid}/crawls/crawl/${data.started}`);
+      }
+
+      this.notify({
+        message: msg(
+          html`Started crawl from <strong>${this.crawl.configName}</strong>.`
+        ),
+        type: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't run crawl at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private stopPollTimer() {
