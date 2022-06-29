@@ -121,10 +121,11 @@ export default class LiteElement extends LitElement {
         this.dispatchEvent(new CustomEvent("need-login"));
       }
 
+      let detail;
       let errorMessage: string;
 
       try {
-        const detail = (await resp.json()).detail;
+        detail = (await resp.json()).detail;
 
         if (typeof detail === "string") {
           errorMessage = detail;
@@ -139,10 +140,10 @@ export default class LiteElement extends LitElement {
         errorMessage = "Unknown API error";
       }
 
-      // TODO client error details
       throw new APIError({
         message: errorMessage,
         status: resp.status,
+        details: detail,
       });
     }
 
