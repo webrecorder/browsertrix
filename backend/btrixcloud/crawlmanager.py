@@ -133,14 +133,11 @@ class BaseCrawlManager(ABC):
 
         return True
 
-    async def stop_crawl(self, crawl_id, aid, graceful=True):
-        """Attempt to stop crawl, either gracefully by issuing a SIGTERM which
-        will attempt to finish current pages
-
-        OR, abruptly by first issueing a SIGABRT, followed by SIGTERM, which
-        will terminate immediately"""
+    async def shutdown_crawl(self, crawl_id, aid, graceful=True):
+        """Request a crawl cancelation or stop by calling an API
+        on the job pod/container, returning the result"""
         return await self._post_to_job(
-            crawl_id, aid, "/cancel" if not graceful else "/stop"
+            crawl_id, aid, "/stop" if graceful else "/cancel"
         )
 
     async def scale_crawl(self, crawl_id, aid, scale=1):

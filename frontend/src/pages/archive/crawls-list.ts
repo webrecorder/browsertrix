@@ -536,7 +536,7 @@ export class CrawlsList extends LiteElement {
         }
       );
 
-      if (data.canceled === true) {
+      if (data.success === true) {
         this.fetchCrawls();
       } else {
         this.notify({
@@ -558,7 +558,7 @@ export class CrawlsList extends LiteElement {
         }
       );
 
-      if (data.stopped_gracefully === true) {
+      if (data.success === true) {
         this.fetchCrawls();
       } else {
         this.notify({

@@ -184,7 +184,11 @@ class SwarmManager(BaseCrawlManager):
             async with session.request(
                 "POST", f"http://job-{crawl_id}_job:8000{path}", json=data
             ) as resp:
-                await resp.json()
+                try:
+                    return await resp.json()
+                # pylint: disable=bare-except
+                except:
+                    return {"error": "post_failed"}
 
     async def _delete_crawl_configs(self, label):
         """ delete crawl configs by specified label """

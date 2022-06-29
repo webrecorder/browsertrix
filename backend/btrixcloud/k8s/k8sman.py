@@ -222,6 +222,9 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         )
 
     async def _post_to_job(self, crawl_id, aid, path, data=None):
+        """post to default container in a pod for job
+        try all pods in case of many
+        """
         job_name = f"job-{crawl_id}"
 
         pods = await self.core_api.list_namespaced_pod(
@@ -229,12 +232,23 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             label_selector=f"job-name={job_name},btrix.archive={aid}",
         )
 
+        if not pods.items:
+            return {"error": "job_not_running"}
+
         for pod in pods.items:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
                     "POST", f"http://{pod.status.pod_ip}:8000{path}", json=data
                 ) as resp:
-                    await resp.json()
+                    # try all in case of multiple pods, return value of first running pod
+                    try:
+                        return await resp.json()
+                    # pylint: disable=bare-except
+                    except:
+                        # try next pod
+                        pass
+
+        return {"error": "post_failed"}
 
     async def _update_scheduled_job(self, crawlconfig):
         """ create or remove cron job based on crawlconfig schedule """
