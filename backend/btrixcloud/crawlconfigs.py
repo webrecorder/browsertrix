@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 
 import pymongo
-from pydantic import BaseModel, UUID4, conint
+from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException
 
 from .users import User
@@ -35,12 +35,12 @@ class ScopeType(str, Enum):
 class Seed(BaseModel):
     """Crawl seed"""
 
-    url: str
+    url: HttpUrl
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
     include: Union[str, List[str], None]
     exclude: Union[str, List[str], None]
-    sitemap: Union[bool, str, None]
+    sitemap: Union[bool, HttpUrl, None]
     allowHash: Optional[bool]
     depth: Optional[int]
 
@@ -49,7 +49,7 @@ class Seed(BaseModel):
 class RawCrawlConfig(BaseModel):
     """Base Crawl Config"""
 
-    seeds: List[Union[str, Seed]]
+    seeds: List[Union[HttpUrl, Seed]]
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
