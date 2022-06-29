@@ -2,6 +2,7 @@ type StatusCode = number;
 type Detail = {
   loc: any[];
   msg: string;
+  type: string;
 };
 
 export class APIError extends Error {

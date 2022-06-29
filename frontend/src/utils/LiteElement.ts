@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import type { TemplateResult } from "lit";
+import { msg } from "@lit/localize";
 
 import type { Auth } from "../utils/AuthService";
 import { APIError } from "./api";
@@ -122,23 +123,23 @@ export default class LiteElement extends LitElement {
       }
 
       let detail;
-      let errorMessage: string;
+      let errorMessage: string = msg("Unknown API error");
 
       try {
         detail = (await resp.json()).detail;
 
         if (typeof detail === "string") {
           errorMessage = detail;
-        } else {
-          // TODO return client error details
-          const fieldDetail = detail[detail.length - 1];
+        } else if (Array.isArray(detail) && detail.length) {
+          const fieldDetail = detail[0];
           const { loc, msg } = fieldDetail;
 
-          errorMessage = `${loc[loc.length - 1]} ${msg}`;
+          const fieldName = loc
+            .filter((v: any) => v !== "body" && typeof v === "string")
+            .join(" ");
+          errorMessage = `${fieldName} ${msg}`;
         }
-      } catch {
-        errorMessage = "Unknown API error";
-      }
+      } catch {}
 
       throw new APIError({
         message: errorMessage,
