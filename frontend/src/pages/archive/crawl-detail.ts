@@ -434,7 +434,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium mb-2">${msg("Watch Crawl")}</h3>
+        <h3 class="text-lg font-medium my-2">${msg("Watch Crawl")}</h3>
         ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
