@@ -48,8 +48,6 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
                     None, runner.run_service_stack, stack_id, data
                 )
 
-        return True
-
     async def _get_crawl(self):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(

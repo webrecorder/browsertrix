@@ -17,7 +17,7 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
     async def _do_scale(self, new_scale):
         crawl = await self._get_crawl()
         if not crawl:
-            return False
+            raise Exception("crawl_not_found")
 
         # if making scale smaller, ensure existing crawlers saved their data
         pods = []
@@ -37,8 +37,6 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
         await self.apps_api.patch_namespaced_stateful_set(
             name=crawl.metadata.name, namespace=self.namespace, body=crawl
         )
-
-        return True
 
     async def load_initial_scale(self, crawl=None):
         """ load scale from crawl, if available """

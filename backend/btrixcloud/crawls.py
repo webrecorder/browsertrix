@@ -489,9 +489,11 @@ def init_crawls_api(
         scale: CrawlScale, crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
 
-        error = await crawl_manager.scale_crawl(crawl_id, archive.id_str, scale.scale)
-        if error:
-            raise HTTPException(status_code=400, detail=error)
+        result = await crawl_manager.scale_crawl(crawl_id, archive.id_str, scale.scale)
+        if not result or not result.get("success"):
+            raise HTTPException(
+                status_code=400, detail=result.get("error") or "unknown"
+            )
 
         return {"scaled": scale.scale}
 

@@ -167,13 +167,16 @@ class CrawlJob(ABC):
 
     async def scale_to(self, scale):
         """ scale to 'scale' """
-        if not await self._do_scale(scale):
-            return False
+        try:
+            await self._do_scale(scale)
+        # pylint: disable=broad-except
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
 
         self.scale = scale
         await self.update_crawl(scale=scale)
 
-        return True
+        return {"success": True}
 
     async def fail_crawl(self):
         """ mark crawl as failed """
@@ -369,7 +372,7 @@ class CrawlJob(ABC):
 
         @app.post("/scale/{size}")
         async def scale(size: int):
-            return {"success": await self.scale_to(size)}
+            return await self.scale_to(size)
 
         @app.post("/stop")
         async def stop():
