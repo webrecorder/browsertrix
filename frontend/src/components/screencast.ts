@@ -36,6 +36,11 @@ type CloseMessage = Message & {
  */
 @localized()
 export class Screencast extends LitElement {
+  static baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+    process.env.WEBSOCKET_HOST || window.location.host
+  }/watch`;
+  static maxRetries = 10;
+
   static styles = css`
     .wrapper {
       position: relative;
@@ -132,87 +137,77 @@ export class Screencast extends LitElement {
   @property({ type: Number })
   scale: number = 1;
 
-  @property({ type: Array })
-  watchIPs: string[] = [];
-
   // List of browser screens
   @state()
   private dataList: Array<ScreencastMessage | null> = [];
 
   @state()
-  private isConnecting: boolean = false;
-
-  @state()
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
-  private wsMap: Map<string, WebSocket> = new Map();
+  private wsMap: Map<number, WebSocket> = new Map();
   // Map data order to screen data
   private dataMap: { [index: number]: ScreencastMessage | null } = {};
   // Map page ID to data order
   private pageOrderMap: Map<string, number> = new Map();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
-  private browsersCount = 0;
+  private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
-
-  shouldUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.size === 1 && changedProperties.has("watchIPs")) {
-      // Check stringified value of IP list
-      return (
-        this.watchIPs.toString() !==
-        changedProperties.get("watchIPs").toString()
-      );
-    }
-
-    return true;
-  }
+  private timerIds: number[] = [];
 
   protected firstUpdated() {
-    this.isConnecting = true;
-
     // Connect to websocket server
-    this.connectWs();
+    this.connectAll();
   }
 
   async updated(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("archiveId") ||
       changedProperties.get("crawlId") ||
-      changedProperties.get("watchIPs") ||
       changedProperties.get("authToken")
     ) {
       // Reconnect
-      this.disconnectWs();
-      this.connectWs();
+      this.disconnectAll();
+      this.connectAll();
+    } else {
+      const prevScale = changedProperties.get("scale");
+      if (prevScale) {
+        if (this.scale > prevScale) {
+          this.scaleUp();
+        } else {
+          this.scaleDown();
+        }
+      }
     }
   }
 
   disconnectedCallback() {
-    this.disconnectWs();
+    this.disconnectAll();
+    this.timerIds.forEach(window.clearTimeout);
     super.disconnectedCallback();
   }
 
   render() {
+    const browserWindows = this.browsersCount * this.scale;
+
     return html`
       <div class="wrapper">
-        ${this.isConnecting || !this.dataList.length
+        ${!this.dataList.length
           ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
           : html`
               <div class="screen-count">
                 <span
-                  >${msg(
-                    str`Running in ${
-                      this.browsersCount * this.scale
-                    } browser windows`
-                  )}</span
+                  >${browserWindows > 1
+                    ? msg(str`Running in ${browserWindows} browser windows`)
+                    : msg(str`Running in 1 browser window`)}</span
                 >
                 <sl-tooltip
                   content=${msg(
-                    str`${this.browsersCount} browsers × ${this.scale} crawlers. Number of crawlers corresponds to scale.`
+                    str`${this.browsersCount} browser(s) × ${this.scale} crawler(s). Number of crawlers corresponds to scale.`
                   )}
                   ><sl-icon name="info-circle"></sl-icon
                 ></sl-tooltip>
@@ -279,49 +274,58 @@ export class Screencast extends LitElement {
     `;
   }
 
-  private connectWs() {
+  private scaleUp() {
+    // Reconnect after 20 second delay
+    this.timerIds.push(
+      window.setTimeout(() => {
+        this.connectAll();
+      }, 20 * 1000)
+    );
+  }
+
+  private scaleDown() {
+    for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
+      const ws = this.wsMap.get(idx);
+
+      if (ws) {
+        ws.close(1000);
+        this.wsMap.delete(idx);
+      }
+    }
+  }
+
+  /**
+   * Connect to all crawler instances
+   */
+  private connectAll() {
     if (!this.archiveId || !this.crawlId) {
       return;
     }
 
-    if (!this.watchIPs?.length) {
-      console.warn("No watch IPs to connect to");
-      return;
+    for (let idx = 0; idx < this.scale; idx++) {
+      if (!this.wsMap.get(idx)) {
+        const ws = this.connectWs(idx);
+
+        ws.addEventListener("close", (e) => {
+          if (e.code !== 1000) {
+            // Not normal closure, try connecting again after 10 sec
+            this.timerIds.push(
+              window.setTimeout(() => {
+                this.retryConnectWs({ index: idx });
+              }, 10 * 1000)
+            );
+          }
+        });
+
+        this.wsMap.set(idx, ws);
+      }
     }
-
-    const baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-      process.env.WEBSOCKET_HOST || window.location.host
-    }/watch/${this.archiveId}/${this.crawlId}`;
-
-    this.watchIPs.forEach((ip: string) => {
-      const ws = new WebSocket(
-        `${baseURL}/${ip}/ws?auth_bearer=${this.authToken || ""}`
-      );
-
-      ws.addEventListener("open", () => {
-        if (this.wsMap.size === this.watchIPs.length) {
-          this.isConnecting = false;
-        }
-      });
-      ws.addEventListener("close", () => {
-        this.wsMap.delete(ip);
-      });
-      ws.addEventListener("error", () => {
-        this.isConnecting = false;
-      });
-      ws.addEventListener("message", ({ data }) => {
-        this.handleMessage(JSON.parse(data));
-      });
-
-      this.wsMap.set(ip, ws);
-    });
   }
 
-  private disconnectWs() {
-    this.isConnecting = false;
-
-    this.wsMap.forEach((ws) => {
-      ws.close();
+  private disconnectAll() {
+    this.wsMap.forEach((ws, i) => {
+      ws.close(1000);
+      this.wsMap.delete(i);
     });
   }
 
@@ -350,10 +354,6 @@ export class Screencast extends LitElement {
         if (message.url === "about:blank") {
           // Skip blank pages
           return;
-        }
-
-        if (this.isConnecting) {
-          this.isConnecting = false;
         }
 
         let idx = this.pageOrderMap.get(id);
@@ -385,6 +385,61 @@ export class Screencast extends LitElement {
         }
       }
     }
+  }
+
+  /**
+   * Connect & receive messages from crawler websocket instance
+   */
+  private connectWs(index: number): WebSocket {
+    const ws = new WebSocket(
+      `${Screencast.baseURL}/${this.archiveId}/${
+        this.crawlId
+      }/${index}/ws?auth_bearer=${this.authToken || ""}`
+    );
+
+    ws.addEventListener("message", ({ data }) => {
+      this.handleMessage(JSON.parse(data));
+    });
+
+    return ws;
+  }
+
+  /**
+   * Retry connecting to websocket with exponential backoff
+   */
+  private retryConnectWs(opts: {
+    index: number;
+    retries?: number;
+    delaySec?: number;
+  }): void {
+    const { index, retries = 0, delaySec = 10 } = opts;
+
+    if (index >= this.scale) {
+      return;
+    }
+
+    const ws = this.connectWs(index);
+
+    ws.addEventListener("close", (e) => {
+      if (e.code !== 1000) {
+        // Not normal closure, try connecting again
+        if (retries < Screencast.maxRetries) {
+          this.timerIds.push(
+            window.setTimeout(() => {
+              this.retryConnectWs({
+                index,
+                retries: retries + 1,
+                delaySec: delaySec * 2,
+              });
+            }, delaySec * 1000)
+          );
+        } else {
+          console.error(
+            `stopping websocket retries, tried ${Screencast.maxRetries} times with ${delaySec} second delay`
+          );
+        }
+      }
+    });
   }
 
   updateDataList() {
