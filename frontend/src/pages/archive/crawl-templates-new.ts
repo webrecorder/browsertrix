@@ -574,7 +574,7 @@ export class CrawlTemplatesNew extends LiteElement {
       ${msg(
         "Couldn't save crawl template. Please fix the following crawl configuration issues:"
       )}
-      <ul class="list-disc">
+      <ul class="list-disc w-fit mx-auto">
         ${detailsWithoutDictError.map(renderDetail)}
       </ul>
     `;
