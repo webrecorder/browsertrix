@@ -57,17 +57,17 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
         except:
             return None
 
-    async def _send_shutdown_signal(self, graceful=True):
+    async def _send_shutdown_signal(self):
         pods = await self.core_api.list_namespaced_pod(
             namespace=self.namespace,
             label_selector=f"crawl={self.job_id},role=crawler",
         )
 
-        await send_signal_to_pods(
+        return await send_signal_to_pods(
             self.core_api_ws,
             self.namespace,
             pods.items,
-            "SIGABRT" if not graceful else "SIGINT",
+            "SIGINT",
         )
 
     # pylint: disable=line-too-long

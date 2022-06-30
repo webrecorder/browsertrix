@@ -59,6 +59,8 @@ class CrawlJob(ABC):
 
         self._cached_params = {}
         self._files_added = False
+        self._graceful_shutdown_pending = False
+        self._delete_pending = False
 
         params = {
             "cid": self.cid,
@@ -159,7 +161,7 @@ class CrawlJob(ABC):
 
     async def delete_crawl(self):
         """ delete crawl stateful sets, services and pvcs """
-        self.shutdown_pending = True
+        self._delete_pending = True
 
         await self.delete_job_objects(f"crawl={self.job_id}")
 
@@ -292,27 +294,33 @@ class CrawlJob(ABC):
 
         return True
 
-    async def shutdown(self, graceful=False):
-        """ shutdown crawling, either graceful or immediately"""
-        if self.shutdown_pending:
-            return False
+    async def graceful_shutdown(self):
+        """ attempt to graceful stop the crawl, all data should be uploaded """
+        if self._graceful_shutdown_pending:
+            print("Already trying to stop crawl gracefully", flush=True)
+            return {"success": False, "error": "already_stopping"}
 
-        self.shutdown_pending = True
+        print("Stopping crawl", flush=True)
 
-        print("Stopping crawl" if graceful else "Canceling crawl", flush=True)
+        if not await self._send_shutdown_signal():
+            return {"success": False, "error": "unreachable"}
 
-        await self._send_shutdown_signal(graceful=graceful)
+        self._graceful_shutdown_pending = True
 
-        if graceful:
-            await self.update_crawl(state="stopping")
+        await self.update_crawl(state="stopping")
 
-        else:
-            self.finished = dt_now()
-            await self.update_crawl(state="canceled", finished=self.finished)
+        return {"success": True}
 
-            await self.delete_crawl()
+    async def cancel(self):
+        """ cancel the crawl immediately """
+        print("Canceling crawl", flush=True)
 
-        return True
+        self.finished = dt_now()
+        await self.update_crawl(state="canceled", finished=self.finished)
+
+        await self.delete_crawl()
+
+        return {"success": True}
 
     # pylint: disable=unused-argument
     async def load_initial_scale(self, crawl=None):
@@ -348,14 +356,16 @@ class CrawlJob(ABC):
         """ register signal and app handlers """
 
         def sig_handler():
-            if self.shutdown_pending:
+            if self._delete_pending:
+                print("got SIGTERM/SIGINT, already deleting", flush=True)
                 return
 
-            print("got SIGTERM, job not complete, but shutting down", flush=True)
+            print("got SIGTERM/SIGINT, exiting job", flush=True)
             sys.exit(3)
 
         loop = asyncio.get_running_loop()
         loop.add_signal_handler(signal.SIGTERM, sig_handler)
+        loop.add_signal_handler(signal.SIGINT, sig_handler)
 
         @app.post("/scale/{size}")
         async def scale(size: int):
@@ -363,11 +373,11 @@ class CrawlJob(ABC):
 
         @app.post("/stop")
         async def stop():
-            return {"success": await self.shutdown(graceful=True)}
+            return await self.graceful_shutdown()
 
         @app.post("/cancel")
         async def cancel():
-            return {"success": await self.shutdown(graceful=False)}
+            return await self.cancel()
 
         @app.get("/healthz")
         async def healthz():
@@ -390,8 +400,8 @@ class CrawlJob(ABC):
         """ set number of replicas """
 
     @abstractmethod
-    async def _send_shutdown_signal(self, graceful=True):
-        """ shutdown crawl """
+    async def _send_shutdown_signal(self):
+        """ gracefully shutdown crawl """
 
     @property
     @abstractmethod

@@ -56,14 +56,20 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             None, runner.get_service, f"crawl-{self.job_id}-0_crawler"
         )
 
-    async def _send_shutdown_signal(self, graceful=True):
+    async def _send_shutdown_signal(self):
         loop = asyncio.get_running_loop()
+        count = 0
 
         for num in range(0, self.scale):
             name = f"crawl-{self.job_id}-{num}_crawler"
-            sig = "SIGABRT" if not graceful else "SIGINT"
-            print(f"Sending {sig} to {name}", flush=True)
-            await loop.run_in_executor(None, runner.ping_containers, name, sig)
+            print(f"Sending SIGABRT to {name}", flush=True)
+            count += await loop.run_in_executor(
+                None, runner.ping_containers, name, "SIGABRT"
+            )
+
+        # for now, assume success if at least 1 container is signaled
+        # count may not equal scale as not all containers may have launched yet
+        return count >= 1
 
     # pylint: disable=line-too-long
     @property

@@ -869,7 +869,7 @@ export class CrawlDetail extends LiteElement {
         }
       );
 
-      if (data.canceled === true) {
+      if (data.success === true) {
         this.fetchCrawl();
       } else {
         this.notify({
@@ -891,7 +891,7 @@ export class CrawlDetail extends LiteElement {
         }
       );
 
-      if (data.stopping_gracefully === true) {
+      if (data.success === true) {
         this.fetchCrawl();
       } else {
         this.notify({

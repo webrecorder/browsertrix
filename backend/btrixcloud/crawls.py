@@ -357,15 +357,53 @@ class CrawlOps:
             # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
             return False
 
-    async def update_crawl(self, crawl_id: str, state: str):
+    async def update_crawl_state(self, crawl_id: str, state: str):
         """ called only when job container is being stopped/canceled """
+
+        data = {"state": state}
+        # if cancelation, set the finish time here
+        if state == "canceled":
+            data["finished"] = dt_now()
+
         await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
                 "state": {"$in": ["running", "starting", "canceling", "stopping"]},
             },
-            {"$set": {"state": state}},
+            {"$set": data},
         )
+
+    async def shutdown_crawl(self, crawl_id: str, archive: Archive, graceful: bool):
+        """ stop or cancel specified crawl """
+        result = None
+        try:
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl_id, archive.id_str, graceful=graceful
+            )
+
+            if result.get("success"):
+                # for canceletion, just set to canceled immediately if succeeded
+                await self.update_crawl_state(
+                    crawl_id, "stopping" if graceful else "canceled"
+                )
+                return {"success": True}
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            # if reached here, probably crawl doesn't exist anymore
+            raise HTTPException(
+                status_code=404, detail=f"crawl_not_found, (details: {exc})"
+            )
+
+        # if job no longer running, canceling is considered success,
+        # but graceful stoppage is not possible, so would be a failure
+        if result.get("error") == "job_not_running":
+            if not graceful:
+                await self.update_crawl_state(crawl_id, "canceled")
+                return {"success": True}
+
+        # return whatever detail may be included in the response
+        raise HTTPException(status_code=400, detail=result.get("error"))
 
 
 # ============================================================================
@@ -397,26 +435,7 @@ def init_crawls_api(
     async def crawl_cancel_immediately(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
-        result = False
-        try:
-            result = await crawl_manager.stop_crawl(
-                crawl_id, archive.id_str, graceful=False
-            )
-
-            await ops.update_crawl(crawl_id, "canceling")
-
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            await ops.update_crawl(crawl_id, "canceled")
-            raise HTTPException(status_code=400, detail=f"Error Canceling Crawl: {exc}")
-
-        if not result:
-            await ops.update_crawl(crawl_id, "canceled")
-            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
-
-        # await ops.store_crawl(crawl)
-
-        return {"canceled": True}
+        return await ops.shutdown_crawl(crawl_id, archive, graceful=False)
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/stop",
@@ -425,24 +444,7 @@ def init_crawls_api(
     async def crawl_graceful_stop(
         crawl_id, archive: Archive = Depends(archive_crawl_dep)
     ):
-        stopping = False
-        try:
-            stopping = await crawl_manager.stop_crawl(
-                crawl_id, archive.id_str, graceful=True
-            )
-
-            await ops.update_crawl(crawl_id, "stopping")
-
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            # await ops.update_crawl(crawl_id, "failed")
-            raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
-
-        if not stopping:
-            # await ops.update_crawl(crawl_id, "failed")
-            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawl_id}")
-
-        return {"stopping_gracefully": True}
+        return await ops.shutdown_crawl(crawl_id, archive, graceful=True)
 
     @app.post("/archives/{aid}/crawls/delete", tags=["crawls"])
     async def delete_crawls(

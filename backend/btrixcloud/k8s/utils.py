@@ -27,7 +27,7 @@ async def create_from_yaml(k8s_client, doc, namespace):
 async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
     """ send signal to all pods """
     command = ["kill", "-s", signame, "1"]
-    interrupted = False
+    signaled = False
 
     try:
         for pod in pods:
@@ -40,10 +40,10 @@ async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
                 command=command,
                 stdout=True,
             )
-            interrupted = True
+            signaled = True
 
     # pylint: disable=broad-except
     except Exception as exc:
-        print(f"Exec Error: {exc}", flush=True)
+        print(f"Send Signal Error: {exc}", flush=True)
 
-    return interrupted
+    return signaled
