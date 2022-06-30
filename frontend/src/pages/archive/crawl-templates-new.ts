@@ -8,6 +8,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
+import { TemplateResult } from "lit";
 
 type NewCrawlTemplate = {
   id?: string;
@@ -89,7 +90,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private browserProfileId?: string | null;
 
   @state()
-  private serverError?: string;
+  private serverError?: TemplateResult | string;
 
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
@@ -536,13 +537,47 @@ export class CrawlTemplatesNew extends LiteElement {
       }
     } catch (e: any) {
       if (e?.isApiError) {
-        this.serverError = e?.message;
+        const isConfigError = ({ loc }: any) =>
+          loc.some((v: string) => v === "config");
+        if (e.details && e.details.some(isConfigError)) {
+          this.serverError = this.formatConfigServerError(e.details);
+        } else {
+          this.serverError = e.message;
+        }
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }
     }
 
     this.isSubmitting = false;
+  }
+
+  /**
+   * Format `config` related API error returned from server
+   */
+  private formatConfigServerError(details: any): TemplateResult {
+    const detailsWithoutDictError = details.filter(
+      ({ type }: any) => type !== "type_error.dict"
+    );
+
+    const renderDetail = ({ loc, msg: detailMsg }: any) => html`
+      <li>
+        ${loc.some((v: string) => v === "seeds") &&
+        typeof loc[loc.length - 1] === "number"
+          ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
+          : `${loc[loc.length - 1]}: `}
+        ${detailMsg}
+      </li>
+    `;
+
+    return html`
+      ${msg(
+        "Couldn't save crawl template. Please fix the following crawl configuration issues:"
+      )}
+      <ul class="list-disc w-fit mx-auto">
+        ${detailsWithoutDictError.map(renderDetail)}
+      </ul>
+    `;
   }
 
   private getUTCSchedule(): string {
