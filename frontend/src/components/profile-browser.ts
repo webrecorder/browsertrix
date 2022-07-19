@@ -96,8 +96,8 @@ export class ProfileBrowser extends LiteElement {
           <div
             class="rounded-b lg:rounded-b-none lg:rounded-r border w-72  bg-white absolute h-full top-0 right-0"
           >
-            ${this.renderFullscreenButton()} ${this.renderOrigins()}
-            ${this.renderNewOrigins()}
+            ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
+            ${this.renderOrigins()} ${this.renderNewOrigins()}
           </div>
         </div>
       </div>
@@ -154,37 +154,37 @@ export class ProfileBrowser extends LiteElement {
   }
 
   private renderFullscreenButton() {
-    return html`${document.fullscreenEnabled
-      ? html`
-          <div class="p-2 text-right">
-            <sl-button
-              size="small"
-              @click=${() =>
-                this.isFullscreen
-                  ? document.exitFullscreen()
-                  : this.enterFullscreen("interactive-browser")}
-            >
-              ${this.isFullscreen
-                ? html`
-                    <sl-icon
-                      slot="prefix"
-                      name="fullscreen-exit"
-                      label=${msg("Exit fullscreen")}
-                    ></sl-icon>
-                    ${msg("Exit")}
-                  `
-                : html`
-                    <sl-icon
-                      slot="prefix"
-                      name="arrows-fullscreen"
-                      label=${msg("Enter fullscreen")}
-                    ></sl-icon>
-                    ${msg("Fullscreen")}
-                  `}
-            </sl-button>
-          </div>
-        `
-      : ""}`;
+    if (!this.browserId) return;
+
+    return html`
+      <div class="p-2 text-right">
+        <sl-button
+          size="small"
+          @click=${() =>
+            this.isFullscreen
+              ? document.exitFullscreen()
+              : this.enterFullscreen("interactive-browser")}
+        >
+          ${this.isFullscreen
+            ? html`
+                <sl-icon
+                  slot="prefix"
+                  name="fullscreen-exit"
+                  label=${msg("Exit fullscreen")}
+                ></sl-icon>
+                ${msg("Exit")}
+              `
+            : html`
+                <sl-icon
+                  slot="prefix"
+                  name="arrows-fullscreen"
+                  label=${msg("Enter fullscreen")}
+                ></sl-icon>
+                ${msg("Fullscreen")}
+              `}
+        </sl-button>
+      </div>
+    `;
   }
 
   private renderOrigins() {
