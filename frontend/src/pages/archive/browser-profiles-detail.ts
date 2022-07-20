@@ -42,9 +42,6 @@ export class BrowserProfilesDetail extends LiteElement {
   private isSubmittingProfileChange = false;
 
   @state()
-  private showSaveButton = false;
-
-  @state()
   private browserId?: string;
 
   @state()
@@ -53,10 +50,10 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditDialogContentVisible = false;
 
-  private showSaveButtonTimerId?: number;
+  @state()
+  private isEditingBrowser = false;
 
   disconnectedCallback() {
-    window.clearTimeout(this.showSaveButtonTimerId);
     this.deleteBrowser();
   }
 
@@ -172,10 +169,26 @@ export class BrowserProfilesDetail extends LiteElement {
       </section>
 
       <section>
-        <header>
-          <h3 class="text-lg font-medium mb-2">
-            ${msg("Browser Profile Editor")}
-          </h3>
+        <header class="flex justify-between mb-2">
+          <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
+          <div>
+            ${this.isEditingBrowser
+              ? html`
+                  <sl-button size="small" @click=${this.cancelEditBrowser}
+                    >${msg("Cancel")}</sl-button
+                  >
+                  <sl-button
+                    type="primary"
+                    size="small"
+                    ?loading=${this.isSubmittingBrowserChange}
+                    @click=${this.saveBrowser}
+                    >${msg("Save Changes")}</sl-button
+                  >
+                `
+              : html`<sl-button size="small" @click=${this.startEditBrowser}
+                  >${msg("Edit Browser Profile")}</sl-button
+                >`}
+          </div>
         </header>
 
         <main class="relative">
@@ -186,42 +199,15 @@ export class BrowserProfilesDetail extends LiteElement {
             .origins=${this.profile?.origins}
           ></btrix-profile-browser>
 
-          ${this.browserId && !this.isLoading
-            ? html`
-                <!-- Hide browser area with overlay -->
-                <!-- TODO remove when browser no longer shows dev tools -->
-                ${this.isSubmittingBrowserChange
-                  ? html`<div
-                      class="absolute top-0 left-0 h-full flex items-center justify-center text-4xl bg-slate-50 lg:rounded-l-lg border border-r-0"
-                      style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-                    >
-                      <sl-spinner></sl-spinner>
-                    </div>`
-                  : ""}
-                ${this.showSaveButton
-                  ? html`<div
-                      class="absolute top-0 p-2"
-                      style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-                    >
-                      <sl-button
-                        class="shadow"
-                        type="primary"
-                        size="small"
-                        @click=${this.saveBrowser}
-                        >${msg("Done Editing")}</sl-button
-                      >
-                    </div>`
-                  : ""}
-              `
+          ${this.browserId
+            ? ""
             : html`
                 <div
                   class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
                   style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
                 >
                   <p class="mb-4 text-neutral-600 max-w-prose">
-                    ${msg(
-                      "Load browser to view or edit websites in the profile."
-                    )}
+                    ${msg("Load browser to view websites in the profile.")}
                   </p>
                   <sl-button
                     type="primary"
@@ -359,18 +345,7 @@ export class BrowserProfilesDetail extends LiteElement {
     try {
       const data = await this.createBrowser({ url });
 
-      this.notify({
-        message: msg("Starting up browser..."),
-        type: "success",
-        icon: "check2-circle",
-      });
-
       this.browserId = data.browserid;
-
-      // Slightly delay showing the save button while browser loads
-      this.showSaveButtonTimerId = window.setTimeout(() => {
-        this.showSaveButton = true;
-      }, 3 * 1000);
     } catch (e) {
       this.isLoading = false;
 
@@ -382,6 +357,32 @@ export class BrowserProfilesDetail extends LiteElement {
     }
 
     this.isLoading = false;
+  }
+
+  private async startEditBrowser() {
+    if (!this.profile) return;
+
+    this.isEditingBrowser = true;
+
+    if (this.browserId) {
+      // Start new browser
+      try {
+        await this.deleteBrowser();
+      } catch (e) {
+        console.debug(e);
+      }
+
+      this.browserId = undefined;
+    }
+
+    await this.startBrowserPreview();
+  }
+
+  private async cancelEditBrowser() {
+    this.isEditingBrowser = false;
+
+    await this.deleteBrowser();
+    this.startBrowserPreview();
   }
 
   private async duplicateProfile() {
@@ -532,7 +533,6 @@ export class BrowserProfilesDetail extends LiteElement {
     }
 
     this.isSubmittingBrowserChange = true;
-    this.showSaveButton = false;
 
     const params = {
       name: this.profile!.name,
@@ -566,8 +566,6 @@ export class BrowserProfilesDetail extends LiteElement {
         type: "danger",
         icon: "exclamation-octagon",
       });
-
-      this.showSaveButton = true;
     }
 
     this.isSubmittingBrowserChange = false;
