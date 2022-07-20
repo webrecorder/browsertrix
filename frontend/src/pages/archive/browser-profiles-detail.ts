@@ -57,6 +57,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
   disconnectedCallback() {
     window.clearTimeout(this.showSaveButtonTimerId);
+    this.deleteBrowser();
   }
 
   firstUpdated() {
@@ -475,6 +476,18 @@ export class BrowserProfilesDetail extends LiteElement {
       {
         method: "POST",
         body: JSON.stringify(params),
+      }
+    );
+  }
+
+  private deleteBrowser() {
+    if (!this.browserId) return;
+
+    return this.apiFetch(
+      `/archives/${this.archiveId}/profiles/browser/${this.browserId}`,
+      this.authState!,
+      {
+        method: "DELETE",
       }
     );
   }
