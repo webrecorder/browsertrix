@@ -33,7 +33,10 @@ export class BrowserProfilesDetail extends LiteElement {
   private profile?: Profile;
 
   @state()
-  private isLoading = false;
+  private isBrowserLoading = false;
+
+  @state()
+  private isBrowserLoaded = false;
 
   @state()
   private isSubmittingBrowserChange = false;
@@ -172,7 +175,7 @@ export class BrowserProfilesDetail extends LiteElement {
         <header class="flex justify-between mb-2">
           <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
           <div>
-            ${this.isEditingBrowser
+            ${this.isEditingBrowser && !this.isBrowserLoading
               ? html`
                   <sl-button size="small" @click=${this.cancelEditBrowser}
                     >${msg("Cancel")}</sl-button
@@ -181,11 +184,17 @@ export class BrowserProfilesDetail extends LiteElement {
                     type="primary"
                     size="small"
                     ?loading=${this.isSubmittingBrowserChange}
+                    ?disabled=${this.isSubmittingBrowserChange ||
+                    !this.isBrowserLoaded}
                     @click=${this.saveBrowser}
                     >${msg("Save Changes")}</sl-button
                   >
                 `
-              : html`<sl-button size="small" @click=${this.startEditBrowser}
+              : html`<sl-button
+                  size="small"
+                  ?loading=${this.isBrowserLoading}
+                  ?disabled=${this.isBrowserLoading}
+                  @click=${this.startEditBrowser}
                   >${msg("Edit Browser Profile")}</sl-button
                 >`}
           </div>
@@ -197,6 +206,7 @@ export class BrowserProfilesDetail extends LiteElement {
             archiveId=${this.archiveId}
             browserId=${ifDefined(this.browserId)}
             .origins=${this.profile?.origins}
+            @load=${() => (this.isBrowserLoaded = true)}
           ></btrix-profile-browser>
 
           ${this.browserId
@@ -212,9 +222,8 @@ export class BrowserProfilesDetail extends LiteElement {
                   <sl-button
                     type="primary"
                     outline
-                    ?disabled=${this.isLoading ||
-                    !ProfileBrowser.isBrowserCompatible}
-                    ?loading=${this.isLoading}
+                    ?disabled=${!ProfileBrowser.isBrowserCompatible}
+                    ?loading=${this.isBrowserLoading}
                     @click=${this.startBrowserPreview}
                     ><sl-icon
                       slot="prefix"
@@ -338,7 +347,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private async startBrowserPreview() {
     if (!this.profile) return;
 
-    this.isLoading = true;
+    this.isBrowserLoading = true;
 
     const url = this.profile.origins[0];
 
@@ -346,8 +355,9 @@ export class BrowserProfilesDetail extends LiteElement {
       const data = await this.createBrowser({ url });
 
       this.browserId = data.browserid;
+      this.isBrowserLoading = false;
     } catch (e) {
-      this.isLoading = false;
+      this.isBrowserLoading = false;
 
       this.notify({
         message: msg("Sorry, couldn't preview browser profile at this time."),
@@ -355,8 +365,6 @@ export class BrowserProfilesDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
-
-    this.isLoading = false;
   }
 
   private async startEditBrowser() {
@@ -365,14 +373,11 @@ export class BrowserProfilesDetail extends LiteElement {
     this.isEditingBrowser = true;
 
     if (this.browserId) {
-      // Start new browser
       try {
         await this.deleteBrowser();
       } catch (e) {
         console.debug(e);
       }
-
-      this.browserId = undefined;
     }
 
     await this.startBrowserPreview();
@@ -381,14 +386,19 @@ export class BrowserProfilesDetail extends LiteElement {
   private async cancelEditBrowser() {
     this.isEditingBrowser = false;
 
-    await this.deleteBrowser();
-    this.startBrowserPreview();
+    if (this.browserId) {
+      this.browserId = undefined;
+      this.isBrowserLoading = false;
+      this.isBrowserLoaded = false;
+
+      this.deleteBrowser();
+    }
   }
 
   private async duplicateProfile() {
     if (!this.profile) return;
 
-    this.isLoading = true;
+    this.isBrowserLoading = true;
 
     const url = this.profile.origins[0];
 
@@ -411,7 +421,7 @@ export class BrowserProfilesDetail extends LiteElement {
         )}&profileId=${window.encodeURIComponent(this.profile.id)}&navigateUrl=`
       );
     } catch (e) {
-      this.isLoading = false;
+      this.isBrowserLoading = false;
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),

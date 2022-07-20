@@ -21,6 +21,8 @@ const POLL_INTERVAL_SECONDS = 2;
  *   origins=${origins}
  * ></btrix-profile-browser>
  * ```
+ *
+ * @event load Event on iframe load, with src URL
  */
 @localized()
 export class ProfileBrowser extends LiteElement {
@@ -50,6 +52,9 @@ export class ProfileBrowser extends LiteElement {
   private iframeSrc?: string;
 
   @state()
+  private isIframeLoaded = false;
+
+  @state()
   private hasFetchError = false;
 
   @state()
@@ -77,6 +82,7 @@ export class ProfileBrowser extends LiteElement {
         this.fetchBrowser();
       } else if (changedProperties.get("browserId")) {
         this.iframeSrc = undefined;
+        this.isIframeLoaded = false;
 
         window.clearTimeout(this.pollTimerId);
       }
@@ -135,11 +141,12 @@ export class ProfileBrowser extends LiteElement {
         class="w-full h-full"
         title=${msg("Interactive browser for creating browser profile")}
         src=${this.iframeSrc}
+        @load=${this.onIframeLoad}
         ${ref((el) => this.onIframeRef(el as HTMLIFrameElement))}
       ></iframe>`;
     }
 
-    if (this.browserId && !this.iframeSrc) {
+    if (this.browserId && !this.isIframeLoaded) {
       return html`
         <div
           class="w-full h-full flex items-center justify-center text-4xl"
@@ -280,6 +287,8 @@ export class ProfileBrowser extends LiteElement {
 
       this.iframeSrc = result.url;
 
+      this.dispatchEvent(new CustomEvent("load", { detail: result.url }));
+
       this.pingBrowser();
     } else {
       console.debug("Unknown checkBrowserStatus state");
@@ -357,6 +366,12 @@ export class ProfileBrowser extends LiteElement {
     } catch (err) {
       console.error(err);
     }
+  }
+
+  private onIframeLoad() {
+    this.isIframeLoaded = true;
+
+    this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
   private onFullscreenChange = () => {
