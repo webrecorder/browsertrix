@@ -172,16 +172,19 @@ export class BrowserProfilesDetail extends LiteElement {
       </section>
 
       <section>
-        <header class="flex justify-between mb-2">
+        <header>
           <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
-          <div>
+        </header>
+
+        <div class="rounded p-2 bg-slate-50">
+          <div class="mb-2 text-right">
             ${this.isEditingBrowser && !this.isBrowserLoading
               ? html`
                   <sl-button size="small" @click=${this.cancelEditBrowser}
                     >${msg("Cancel")}</sl-button
                   >
                   <sl-button
-                    type="primary"
+                    type="neutral"
                     size="small"
                     ?loading=${this.isSubmittingBrowserChange}
                     ?disabled=${this.isSubmittingBrowserChange ||
@@ -198,42 +201,42 @@ export class BrowserProfilesDetail extends LiteElement {
                   >${msg("Edit Browser Profile")}</sl-button
                 >`}
           </div>
-        </header>
 
-        <main class="relative">
-          <btrix-profile-browser
-            .authState=${this.authState}
-            archiveId=${this.archiveId}
-            browserId=${ifDefined(this.browserId)}
-            .origins=${this.profile?.origins}
-            @load=${() => (this.isBrowserLoaded = true)}
-          ></btrix-profile-browser>
+          <main class="relative">
+            <btrix-profile-browser
+              .authState=${this.authState}
+              archiveId=${this.archiveId}
+              browserId=${ifDefined(this.browserId)}
+              .origins=${this.profile?.origins}
+              @load=${() => (this.isBrowserLoaded = true)}
+            ></btrix-profile-browser>
 
-          ${this.browserId
-            ? ""
-            : html`
-                <div
-                  class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
-                  style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-                >
-                  <p class="mb-4 text-neutral-600 max-w-prose">
-                    ${msg("Load browser to view websites in the profile.")}
-                  </p>
-                  <sl-button
-                    type="primary"
-                    outline
-                    ?disabled=${!ProfileBrowser.isBrowserCompatible}
-                    ?loading=${this.isBrowserLoading}
-                    @click=${this.startBrowserPreview}
-                    ><sl-icon
-                      slot="prefix"
-                      name="collection-play-fill"
-                    ></sl-icon>
-                    ${msg("Load Browser")}</sl-button
+            ${this.browserId
+              ? ""
+              : html`
+                  <div
+                    class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
+                    style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
                   >
-                </div>
-              `}
-        </main>
+                    <p class="mb-4 text-neutral-600 max-w-prose">
+                      ${msg("Load browser to view websites in the profile.")}
+                    </p>
+                    <sl-button
+                      type="primary"
+                      outline
+                      ?disabled=${!ProfileBrowser.isBrowserCompatible}
+                      ?loading=${this.isBrowserLoading}
+                      @click=${this.startBrowserPreview}
+                      ><sl-icon
+                        slot="prefix"
+                        name="collection-play-fill"
+                      ></sl-icon>
+                      ${msg("Load Browser")}</sl-button
+                    >
+                  </div>
+                `}
+          </main>
+        </div>
       </section>
 
       <sl-dialog
