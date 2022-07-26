@@ -56,6 +56,9 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditingBrowser = false;
 
+  @state()
+  private browserCreatedAt?: Date;
+
   disconnectedCallback() {
     this.deleteBrowser();
   }
@@ -177,29 +180,40 @@ export class BrowserProfilesDetail extends LiteElement {
         </header>
 
         <div class="rounded p-2 bg-slate-50">
-          <div class="mb-2 text-right">
-            ${this.isEditingBrowser && !this.isBrowserLoading
-              ? html`
-                  <sl-button size="small" @click=${this.cancelEditBrowser}
-                    >${msg("Cancel")}</sl-button
-                  >
-                  <sl-button
-                    type="neutral"
-                    size="small"
-                    ?loading=${this.isSubmittingBrowserChange}
-                    ?disabled=${this.isSubmittingBrowserChange ||
-                    !this.isBrowserLoaded}
-                    @click=${this.saveBrowser}
-                    >${msg("Save Changes")}</sl-button
-                  >
-                `
-              : html`<sl-button
-                  size="small"
-                  ?loading=${this.isBrowserLoading}
-                  ?disabled=${this.isBrowserLoading}
-                  @click=${this.startEditBrowser}
-                  >${msg("Edit Browser Profile")}</sl-button
-                >`}
+          <div class="mb-2 flex justify-between items-center">
+            <div class="text-xs text-neutral-500 mx-1">
+              ${this.browserId && this.isEditingBrowser
+                ? html`
+                    ${msg(html`Browser session started at
+                      <sl-format-date
+                        .date=${this.browserCreatedAt!}
+                        month="2-digit"
+                        day="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                      ></sl-format-date>`)}
+                  `
+                : ""}
+            </div>
+
+            <div>
+              ${this.isEditingBrowser && !this.isBrowserLoading
+                ? html`
+                    <sl-button size="small" @click=${this.cancelEditBrowser}
+                      >${msg("Cancel")}</sl-button
+                    >
+                    <sl-button
+                      type="primary"
+                      size="small"
+                      ?loading=${this.isSubmittingBrowserChange}
+                      ?disabled=${this.isSubmittingBrowserChange ||
+                      !this.isBrowserLoaded}
+                      @click=${this.saveBrowser}
+                      >${msg("Save Changes")}</sl-button
+                    >
+                  `
+                : this.renderEditButton()}
+            </div>
           </div>
 
           <main class="relative">
@@ -253,7 +267,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderMenu() {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" type="primary" size="small" caret
+        <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
 
@@ -306,6 +320,38 @@ export class BrowserProfilesDetail extends LiteElement {
     `;
   }
 
+  private renderEditButton() {
+    if (this.browserId) {
+      return html`
+        <sl-button
+          size="small"
+          ?loading=${this.isBrowserLoading}
+          ?disabled=${this.isBrowserLoading}
+          @click=${this.startEditBrowser}
+          >${msg("Switch to Edit Mode")}</sl-button
+        >
+        <sl-button
+          size="small"
+          type="neutral"
+          ?loading=${!this.isBrowserLoaded}
+          ?disabled=${!this.isBrowserLoaded}
+          @click=${() => (this.isEditingBrowser = true)}
+          >${msg("Enable Save")}</sl-button
+        >
+      `;
+    }
+
+    return html`
+      <sl-button
+        size="small"
+        ?loading=${this.isBrowserLoading}
+        ?disabled=${this.isBrowserLoading}
+        @click=${this.startEditBrowser}
+        >${msg("Edit Websites")}</sl-button
+      >
+    `;
+  }
+
   private renderEditProfile() {
     if (!this.profile) return;
 
@@ -351,6 +397,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (!this.profile) return;
 
     this.isBrowserLoading = true;
+    this.browserCreatedAt = new Date();
 
     const url = this.profile.origins[0];
 
@@ -373,15 +420,22 @@ export class BrowserProfilesDetail extends LiteElement {
   private async startEditBrowser() {
     if (!this.profile) return;
 
-    this.isEditingBrowser = true;
-
     if (this.browserId) {
-      try {
-        await this.deleteBrowser();
-      } catch (e) {
-        console.debug(e);
+      if (
+        window.confirm(
+          msg(
+            "This will reset the browser profile to the last saved session. Are you sure?"
+          )
+        )
+      ) {
+        this.browserId = undefined;
+        this.deleteBrowser(); // TODO DELETE is returning 404
+      } else {
+        return;
       }
     }
+
+    this.isEditingBrowser = true;
 
     await this.startBrowserPreview();
   }
@@ -538,7 +592,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (
       !window.confirm(
         msg(
-          "Save browser changes to profile? You will need to re-load the editor to make additional changes."
+          "Save current browser session to profile? You will need to re-load the editor to make additional changes."
         )
       )
     ) {
