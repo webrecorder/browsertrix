@@ -429,7 +429,7 @@ export class BrowserProfilesDetail extends LiteElement {
         )
       ) {
         this.browserId = undefined;
-        this.deleteBrowser(); // TODO DELETE is returning 404
+        await this.deleteBrowser(); // TODO DELETE is returning 404
       } else {
         return;
       }
