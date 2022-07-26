@@ -202,6 +202,9 @@ export class BrowserProfilesDetail extends LiteElement {
                     <sl-button size="small" @click=${this.cancelEditBrowser}
                       >${msg("Cancel")}</sl-button
                     >
+                    <sl-button size="small" @click=${this.startBrowserPreview}
+                      >${msg("Reset")}</sl-button
+                    >
                     <sl-button
                       type="primary"
                       size="small"
@@ -212,7 +215,15 @@ export class BrowserProfilesDetail extends LiteElement {
                       >${msg("Save Changes")}</sl-button
                     >
                   `
-                : this.renderEditButton()}
+                : html`
+                    <sl-button
+                      size="small"
+                      ?loading=${this.isBrowserLoading}
+                      ?disabled=${this.isBrowserLoading}
+                      @click=${this.startEditBrowser}
+                      >${msg("Edit Browser Profile")}</sl-button
+                    >
+                  `}
             </div>
           </div>
 
@@ -317,38 +328,6 @@ export class BrowserProfilesDetail extends LiteElement {
           </li>
         </ul>
       </sl-dropdown>
-    `;
-  }
-
-  private renderEditButton() {
-    if (this.browserId) {
-      return html`
-        <sl-button
-          size="small"
-          ?loading=${this.isBrowserLoading}
-          ?disabled=${this.isBrowserLoading}
-          @click=${this.startEditBrowser}
-          >${msg("Switch to Edit Mode")}</sl-button
-        >
-        <sl-button
-          size="small"
-          type="neutral"
-          ?loading=${!this.isBrowserLoaded}
-          ?disabled=${!this.isBrowserLoaded}
-          @click=${() => (this.isEditingBrowser = true)}
-          >${msg("Enable Save")}</sl-button
-        >
-      `;
-    }
-
-    return html`
-      <sl-button
-        size="small"
-        ?loading=${this.isBrowserLoading}
-        ?disabled=${this.isBrowserLoading}
-        @click=${this.startEditBrowser}
-        >${msg("Edit Websites")}</sl-button
-      >
     `;
   }
 
