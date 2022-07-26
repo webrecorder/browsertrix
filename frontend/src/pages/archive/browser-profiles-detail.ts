@@ -538,7 +538,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (
       !window.confirm(
         msg(
-          "Save browser changes to profile? You will need to reload the editor to make additional changes."
+          "Save browser changes to profile? You will need to re-load the editor to make additional changes."
         )
       )
     ) {
@@ -569,6 +569,7 @@ export class BrowserProfilesDetail extends LiteElement {
           icon: "check2-circle",
         });
 
+        this.isEditingBrowser = false;
         this.browserId = undefined;
       } else {
         throw data;
