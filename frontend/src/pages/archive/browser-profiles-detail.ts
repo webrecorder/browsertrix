@@ -56,9 +56,6 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditingBrowser = false;
 
-  @state()
-  private browserCreatedAt?: Date;
-
   disconnectedCallback() {
     if (this.browserId) {
       this.deleteBrowser(this.browserId);
@@ -373,7 +370,6 @@ export class BrowserProfilesDetail extends LiteElement {
     if (!this.profile) return;
 
     this.isBrowserLoading = true;
-    this.browserCreatedAt = new Date();
 
     const url = this.profile.origins[0];
 
@@ -408,8 +404,7 @@ export class BrowserProfilesDetail extends LiteElement {
     }
 
     this.isEditingBrowser = true;
-
-    await this.startBrowserPreview();
+    this.startBrowserPreview();
   }
 
   private async cancelEditBrowser() {
@@ -428,6 +423,8 @@ export class BrowserProfilesDetail extends LiteElement {
         console.debug(e);
       }
     }
+
+    this.startBrowserPreview();
   }
 
   private async duplicateProfile() {
