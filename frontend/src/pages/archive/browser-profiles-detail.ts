@@ -60,7 +60,9 @@ export class BrowserProfilesDetail extends LiteElement {
   private browserCreatedAt?: Date;
 
   disconnectedCallback() {
-    this.deleteBrowser();
+    if (this.browserId) {
+      this.deleteBrowser(this.browserId);
+    }
   }
 
   firstUpdated() {
@@ -181,17 +183,12 @@ export class BrowserProfilesDetail extends LiteElement {
 
         <div class="rounded p-2 bg-slate-50">
           <div class="mb-2 flex justify-between items-center">
-            <div class="text-xs text-neutral-500 mx-1">
+            <div class="text-sm text-neutral-500 mx-1">
               ${this.browserId && this.isEditingBrowser
                 ? html`
-                    ${msg(html`Browser session started at
-                      <sl-format-date
-                        .date=${this.browserCreatedAt!}
-                        month="2-digit"
-                        day="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                      ></sl-format-date>`)}
+                    ${msg(
+                      "Interact with the browsing tool to make changes to your browser profile."
+                    )}
                   `
                 : ""}
             </div>
@@ -202,7 +199,7 @@ export class BrowserProfilesDetail extends LiteElement {
                     <sl-button size="small" @click=${this.cancelEditBrowser}
                       >${msg("Cancel")}</sl-button
                     >
-                    <sl-button size="small" @click=${this.startBrowserPreview}
+                    <sl-button size="small" @click=${this.startEditBrowser}
                       >${msg("Reset")}</sl-button
                     >
                     <sl-button
@@ -400,17 +397,13 @@ export class BrowserProfilesDetail extends LiteElement {
     if (!this.profile) return;
 
     if (this.browserId) {
-      if (
-        window.confirm(
-          msg(
-            "This will reset the browser profile to the last saved session. Are you sure?"
-          )
-        )
-      ) {
-        this.browserId = undefined;
-        await this.deleteBrowser(); // TODO DELETE is returning 404
-      } else {
-        return;
+      const browserId = this.browserId;
+      this.browserId = undefined;
+      try {
+        await this.deleteBrowser(browserId);
+      } catch (e) {
+        // TODO Investigate DELETE is returning 404
+        console.debug(e);
       }
     }
 
@@ -423,11 +416,17 @@ export class BrowserProfilesDetail extends LiteElement {
     this.isEditingBrowser = false;
 
     if (this.browserId) {
+      const browserId = this.browserId;
       this.browserId = undefined;
       this.isBrowserLoading = false;
       this.isBrowserLoaded = false;
 
-      this.deleteBrowser();
+      try {
+        await this.deleteBrowser(browserId);
+      } catch (e) {
+        // TODO Investigate DELETE is returning 404
+        console.debug(e);
+      }
     }
   }
 
@@ -527,11 +526,9 @@ export class BrowserProfilesDetail extends LiteElement {
     );
   }
 
-  private deleteBrowser() {
-    if (!this.browserId) return;
-
+  private deleteBrowser(id: string) {
     return this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser/${this.browserId}`,
+      `/archives/${this.archiveId}/profiles/browser/${id}`,
       this.authState!,
       {
         method: "DELETE",
@@ -571,7 +568,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (
       !window.confirm(
         msg(
-          "Save current browser session to profile? You will need to re-load the editor to make additional changes."
+          "Save browser changes to profile? You will need to re-load the browsing tool to make additional changes."
         )
       )
     ) {
