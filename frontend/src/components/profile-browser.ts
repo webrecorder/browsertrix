@@ -293,6 +293,8 @@ export class ProfileBrowser extends LiteElement {
 
       this.iframeSrc = result.url;
 
+      await this.updateComplete;
+
       this.dispatchEvent(new CustomEvent("load", { detail: result.url }));
 
       this.pingBrowser();
