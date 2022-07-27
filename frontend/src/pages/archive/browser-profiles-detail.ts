@@ -230,7 +230,7 @@ export class BrowserProfilesDetail extends LiteElement {
               @load=${() => (this.isBrowserLoaded = true)}
             ></btrix-profile-browser>
 
-            ${this.browserId
+            ${this.browserId || this.isBrowserLoading
               ? ""
               : html`
                   <div
@@ -244,7 +244,6 @@ export class BrowserProfilesDetail extends LiteElement {
                       type="primary"
                       outline
                       ?disabled=${!ProfileBrowser.isBrowserCompatible}
-                      ?loading=${this.isBrowserLoading}
                       @click=${this.startBrowserPreview}
                       ><sl-icon
                         slot="prefix"
@@ -390,41 +389,38 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async startEditBrowser() {
-    if (!this.profile) return;
+    const prevBrowserId = this.browserId;
 
-    if (this.browserId) {
-      const browserId = this.browserId;
-      this.browserId = undefined;
+    this.isEditingBrowser = true;
+
+    this.startBrowserPreview();
+
+    if (prevBrowserId) {
       try {
-        await this.deleteBrowser(browserId);
+        await this.deleteBrowser(prevBrowserId);
       } catch (e) {
         // TODO Investigate DELETE is returning 404
         console.debug(e);
       }
     }
-
-    this.isEditingBrowser = true;
-    this.startBrowserPreview();
   }
 
   private async cancelEditBrowser() {
+    const prevBrowserId = this.browserId;
+
     this.isEditingBrowser = false;
+    this.isBrowserLoaded = false;
 
-    if (this.browserId) {
-      const browserId = this.browserId;
-      this.browserId = undefined;
-      this.isBrowserLoading = false;
-      this.isBrowserLoaded = false;
+    this.startBrowserPreview();
 
+    if (prevBrowserId) {
       try {
-        await this.deleteBrowser(browserId);
+        await this.deleteBrowser(prevBrowserId);
       } catch (e) {
         // TODO Investigate DELETE is returning 404
         console.debug(e);
       }
     }
-
-    this.startBrowserPreview();
   }
 
   private async duplicateProfile() {

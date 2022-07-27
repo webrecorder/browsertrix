@@ -79,6 +79,7 @@ export class ProfileBrowser extends LiteElement {
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("browserId")) {
       if (this.browserId) {
+        window.clearTimeout(this.pollTimerId);
         this.fetchBrowser();
       } else if (changedProperties.get("browserId")) {
         this.iframeSrc = undefined;
@@ -251,9 +252,14 @@ export class ProfileBrowser extends LiteElement {
   }
 
   /**
-   * Fetch browser profiles and update internal state
+   * Fetch browser profile and update internal state
    */
   private async fetchBrowser(): Promise<void> {
+    await this.updateComplete;
+
+    this.iframeSrc = undefined;
+    this.isIframeLoaded = false;
+
     try {
       await this.checkBrowserStatus();
     } catch (e) {
@@ -342,7 +348,7 @@ export class ProfileBrowser extends LiteElement {
     if (!this.origins) {
       this.origins = data.origins;
     } else {
-      this.newOrigins = data.origins.filter(
+      this.newOrigins = data.origins?.filter(
         (url: string) => !this.origins?.includes(url)
       );
     }
