@@ -3,6 +3,7 @@
 import os
 import asyncio
 import sys
+import traceback
 
 import yaml
 
@@ -41,7 +42,11 @@ class K8SJobMixin(K8sAPI):
 
         data = self.templates.env.get_template(template).render(params)
 
-        await create_from_yaml(self.api_client, data, namespace=self.namespace)
+        try:
+            await create_from_yaml(self.api_client, data, namespace=self.namespace)
+        except Exception:
+            traceback.print_exc()
+            return
 
     async def delete_job_objects(self, selector):
         """ delete crawl stateful sets, services and pvcs """

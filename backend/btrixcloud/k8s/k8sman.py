@@ -135,7 +135,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
     async def delete_profile_browser(self, browserid):
         """ delete browser job, if it is a profile browser job """
-        return await self._handle_completed_job(f"job-{browserid}")
+        return await self._delete_job(f"job-{browserid}")
 
     # ========================================================================
     # Internal Methods
@@ -148,25 +148,19 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         """ decode secret data """
         return base64.standard_b64decode(secret.data[name]).decode()
 
-    async def _handle_completed_job(self, job_name):
-        """ Handle completed job: delete """
-        # until ttl controller is ready
-        if self.no_delete_jobs:
-            return
-
+    async def _delete_job(self, name):
+        """ delete job """
         try:
-            await self._delete_job(job_name)
+            await self.batch_api.delete_namespaced_job(
+                name=name,
+                namespace=self.namespace,
+                grace_period_seconds=60,
+                propagation_policy="Foreground",
+            )
+            return True
         # pylint: disable=bare-except
         except:
-            pass
-
-    async def _delete_job(self, name):
-        await self.batch_api.delete_namespaced_job(
-            name=name,
-            namespace=self.namespace,
-            grace_period_seconds=60,
-            propagation_policy="Foreground",
-        )
+            return False
 
     async def _create_config_map(self, crawlconfig, **kwargs):
         """ Create Config Map based on CrawlConfig """

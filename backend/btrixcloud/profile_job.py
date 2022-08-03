@@ -33,6 +33,9 @@ class ProfileJob(ABC):
 
         self.loop.create_task(self.async_init("profilebrowser.yaml", params))
 
+        print(f"running browser for at least {self.idle_timeout} secs", flush=True)
+        signal.setitimer(signal.ITIMER_REAL, self.idle_timeout, 0)
+
     async def async_init(self, template, params):
         """ async init, overridable by subclass """
         await self.init_job_objects(template, params)
@@ -52,12 +55,12 @@ class ProfileJob(ABC):
 
         signal.setitimer(signal.ITIMER_REAL, self.idle_timeout, 0)
 
-    def timeout_handler(self):
+    def exit_handler(self):
         """ handle SIGTERM  """
         print("sigterm: shutting down browser...", flush=True)
         self._do_exit()
 
-    def exit_handler(self):
+    def timeout_handler(self):
         """ handle SIGALRM """
         print("sigalrm: timer expired ending idle browser...", flush=True)
         self._do_exit()
