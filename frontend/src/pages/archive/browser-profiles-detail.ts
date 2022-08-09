@@ -53,9 +53,6 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditDialogContentVisible = false;
 
-  @state()
-  private isEditingBrowser = false;
-
   disconnectedCallback() {
     if (this.browserId) {
       this.deleteBrowser(this.browserId);
@@ -181,7 +178,7 @@ export class BrowserProfilesDetail extends LiteElement {
         <div class="rounded p-2 bg-slate-50">
           <div class="mb-2 flex justify-between items-center">
             <div class="text-sm text-neutral-500 mx-1">
-              ${this.browserId && this.isEditingBrowser
+              ${this.browserId
                 ? html`
                     ${msg(
                       "Interact with the browsing tool to make changes to your browser profile."
@@ -191,7 +188,7 @@ export class BrowserProfilesDetail extends LiteElement {
             </div>
 
             <div>
-              ${this.isEditingBrowser && !this.isBrowserLoading
+              ${this.browserId && !this.isBrowserLoading
                 ? html`
                     <sl-button size="small" @click=${this.cancelEditBrowser}
                       >${msg("Cancel")}</sl-button
@@ -206,7 +203,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       ?disabled=${this.isSubmittingBrowserChange ||
                       !this.isBrowserLoaded}
                       @click=${this.saveBrowser}
-                      >${msg("Save Changes")}</sl-button
+                      >${msg("Save")}</sl-button
                     >
                   `
                 : html`
@@ -238,7 +235,9 @@ export class BrowserProfilesDetail extends LiteElement {
                     style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
                   >
                     <p class="mb-4 text-neutral-600 max-w-prose">
-                      ${msg("Load browser to view websites in the profile.")}
+                      ${msg(
+                        "Load browser to view or edit websites in the profile."
+                      )}
                     </p>
                     <sl-button
                       type="primary"
@@ -391,9 +390,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private async startEditBrowser() {
     const prevBrowserId = this.browserId;
 
-    this.isEditingBrowser = true;
-
-    this.startBrowserPreview();
+    await this.startBrowserPreview();
 
     if (prevBrowserId) {
       try {
@@ -408,10 +405,8 @@ export class BrowserProfilesDetail extends LiteElement {
   private async cancelEditBrowser() {
     const prevBrowserId = this.browserId;
 
-    this.isEditingBrowser = false;
     this.isBrowserLoaded = false;
-
-    this.startBrowserPreview();
+    this.browserId = undefined;
 
     if (prevBrowserId) {
       try {
@@ -592,7 +587,6 @@ export class BrowserProfilesDetail extends LiteElement {
           icon: "check2-circle",
         });
 
-        this.isEditingBrowser = false;
         this.browserId = undefined;
       } else {
         throw data;
