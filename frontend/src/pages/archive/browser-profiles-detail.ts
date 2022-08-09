@@ -193,9 +193,6 @@ export class BrowserProfilesDetail extends LiteElement {
                     <sl-button size="small" @click=${this.cancelEditBrowser}
                       >${msg("Cancel")}</sl-button
                     >
-                    <sl-button size="small" @click=${this.startEditBrowser}
-                      >${msg("Reset")}</sl-button
-                    >
                     <sl-button
                       type="primary"
                       size="small"
@@ -211,8 +208,8 @@ export class BrowserProfilesDetail extends LiteElement {
                       size="small"
                       ?loading=${this.isBrowserLoading}
                       ?disabled=${this.isBrowserLoading}
-                      @click=${this.startEditBrowser}
-                      >${msg("Edit Browser Profile")}</sl-button
+                      @click=${this.duplicateProfile}
+                      >${msg("Duplicate")}</sl-button
                     >
                   `}
             </div>
@@ -384,21 +381,6 @@ export class BrowserProfilesDetail extends LiteElement {
         type: "danger",
         icon: "exclamation-octagon",
       });
-    }
-  }
-
-  private async startEditBrowser() {
-    const prevBrowserId = this.browserId;
-
-    await this.startBrowserPreview();
-
-    if (prevBrowserId) {
-      try {
-        await this.deleteBrowser(prevBrowserId);
-      } catch (e) {
-        // TODO Investigate DELETE is returning 404
-        console.debug(e);
-      }
     }
   }
 
