@@ -50,9 +50,8 @@ export class SelectBrowserProfile extends LiteElement {
         clearable
         value=${this.selectedProfile?.id || ""}
         placeholder=${this.browserProfiles
-          ? msg("Select Profile")
+          ? msg("Default Profile")
           : msg("Loading")}
-        ?disabled=${!this.browserProfiles?.length}
         hoist
         @sl-change=${this.onChange}
         @sl-focus=${() => {
@@ -81,11 +80,14 @@ export class SelectBrowserProfile extends LiteElement {
             ></sl-menu-item>
           `
         )}
+        ${this.browserProfiles && !this.browserProfiles.length
+          ? this.renderNoProfiles()
+          : ""}
       </sl-select>
 
-      ${this.browserProfiles && !this.browserProfiles.length
-        ? this.renderNoProfiles()
-        : this.renderSelectedProfileInfo()}
+      ${this.browserProfiles && this.browserProfiles.length
+        ? this.renderSelectedProfileInfo()
+        : ""}
     `;
   }
 
@@ -120,14 +122,21 @@ export class SelectBrowserProfile extends LiteElement {
 
   private renderNoProfiles() {
     return html`
-      <div class="mt-2 text-sm text-neutral-500">
+      <div class="mx-2 text-sm text-neutral-500">
         <span class="inline-block align-middle"
-          >${msg("No browser profiles found.")}</span
+          >${msg("No additional browser profiles found.")}</span
         >
         <a
           href=${`/archives/${this.archiveId}/browser-profiles/new`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
+          @click=${(e: any) => {
+            const select = e.target.closest("sl-select");
+            if (select) {
+              select.blur();
+              select.dropdown?.hide();
+            }
+          }}
           ><span class="inline-block align-middle"
             >${msg("Create a browser profile")}</span
           >
