@@ -52,9 +52,6 @@ spec:
             - secretRef:
                 name: mongo-auth
 
-            - configMapRef:
-                name: crawl-config-{{ cid }}
-
           env:
             - name: JOB_ID
               valueFrom:
@@ -63,6 +60,39 @@ spec:
 
             - name: RUN_MANUAL
               value: "{{ manual }}"
+
+            - name: USER_ID
+              value: "{{ userid }}"
+
+            - name: ARCHIVE_ID
+              value: "{{ aid }}"
+
+            - name: CRAWL_CONFIG_ID
+              value: "{{ cid }}"
+
+            - name: STORE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: crawl-config-{{ cid }}
+                  key: STORE_PATH
+
+            - name: STORE_FILENAME
+              valueFrom:
+                configMapKeyRef:
+                  name: crawl-config-{{ cid }}
+                  key: STORE_PATH
+
+            - name: STORAGE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: crawl-config-{{ cid }}
+                  key: STORAGE_NAME
+
+            - name: PROFILE_FILENAME
+              valueFrom:
+                configMapKeyRef:
+                  name: crawl-config-{{ cid }}
+                  key: PROFILE_FILENAME
 
       volumes:
         - name: config-volume

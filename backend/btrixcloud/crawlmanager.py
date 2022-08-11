@@ -98,9 +98,6 @@ class BaseCrawlManager(ABC):
             STORE_PATH=storage_path,
             STORE_FILENAME=out_filename,
             STORAGE_NAME=storage_name,
-            USER_ID=str(crawlconfig.userid),
-            ARCHIVE_ID=str(crawlconfig.aid),
-            CRAWL_CONFIG_ID=str(crawlconfig.id),
             PROFILE_FILENAME=profile_filename,
         )
 
