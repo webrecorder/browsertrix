@@ -95,6 +95,7 @@ class BaseCrawlManager(ABC):
         # Create Config Map
         await self._create_config_map(
             crawlconfig,
+            USER_ID=str(crawlconfig.userid),
             STORE_PATH=storage_path,
             STORE_FILENAME=out_filename,
             STORAGE_NAME=storage_name,
