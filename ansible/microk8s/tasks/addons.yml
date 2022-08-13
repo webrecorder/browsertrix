@@ -1,0 +1,35 @@
+---
+- name: microk8s | get current addons state
+  become: true
+  ansible.builtin.command:
+    cmd: microk8s.status --format yaml
+  changed_when: false
+  register: microk8s_status
+
+- name: set current state fact
+  set_fact:
+    microk8s_status: "{{ microk8s_status.stdout | from_yaml }}"
+
+- name: microk8s | enable addons
+  become: true
+  loop: "{{ microk8s_status.addons }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ansible.builtin.command:
+    cmd: microk8s.enable {{ item.name }}{% if microk8s_plugins[item.name] != True %}:{{ microk8s_plugins[item.name] }}{% endif %}
+  when:
+    - item.status == 'disabled'
+    - item.name in microk8s_plugins
+    - microk8s_plugins[item.name]
+
+- name: microk8s | disable addons
+  become: true
+  loop: "{{ microk8s_status.addons }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ansible.builtin.command:
+    cmd: microk8s.disable {{ item.name }}
+  when:
+    - item.status == 'enabled'
+    - item.name in microk8s_plugins
+    - not microk8s_plugins[item.name]

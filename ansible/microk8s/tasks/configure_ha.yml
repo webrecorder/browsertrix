@@ -1,0 +1,67 @@
+---
+- name: Enumerate all cluster HA hosts within the hosts file
+  become: true
+  ansible.builtin.blockinfile:
+    dest: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED: microk8s HA Cluster Hosts"
+    content: |
+      {% for host in groups[microk8s_group_HA] %}
+      {{ hostvars[host].ansible_default_ipv4.address }} {{ hostvars[host].ansible_hostname }}
+      {% endfor %}
+
+- name: Enumerate all cluster worker hosts within the hosts file
+  become: true
+  ansible.builtin.blockinfile:
+    dest: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED: microk8s WORKER Cluster Hosts"
+    content: |
+      {% for host in groups[microk8s_group_WORKERS] %}
+      {{ hostvars[host].ansible_default_ipv4.address }} {{ hostvars[host].ansible_hostname }}
+      {% endfor %}
+  when: add_workers_to_hostfile
+
+- name: Find the designated host
+  set_fact:
+    designated_host: '{{ (groups[microk8s_group_HA]|sort)[0] }}'
+
+- block:
+    - name: Waiting for microk8s to be ready on microk8s host master
+      ansible.builtin.command: "microk8s status --wait-ready"
+      delegate_to: "{{ designated_host }}"
+      delegate_facts: true
+      changed_when: false
+
+    - name: Get the microk8s join command from the microk8s master
+      shell: "microk8s add-node | grep -E -m1 'microk8s join {{ microk8s_ip_regex_HA }}'"
+      delegate_to: "{{ designated_host }}"
+      delegate_facts: true
+      changed_when: false
+      register: microk8s_join_command
+
+    - name: Get microk8s cluster nodes
+      ansible.builtin.command: "microk8s kubectl get node"
+      delegate_to: "{{ designated_host }}"
+      delegate_facts: true
+      changed_when: false
+      register: microk8s_cluster_node
+
+    - name: Waiting for microk8s to be ready on microk8s host node
+      ansible.builtin.command: "microk8s status --wait-ready"
+      changed_when: false
+
+    - name: Set the microk8s join command on the microk8s node
+      ansible.builtin.command: "{{ microk8s_join_command.stdout }}"
+      when: microk8s_cluster_node.stdout.find(inventory_hostname) == -1
+      register: join_command_output
+      failed_when:
+        - "'already known to dqlite' not in join_command_output.stdout"
+        - join_command_output.rc > 0
+
+  become: true
+  when:
+    - inventory_hostname != designated_host
+    - inventory_hostname in groups[microk8s_group_HA]
+
+- name: configure cluster addons
+  include_tasks: addons.yml
+  when: inventory_hostname == designated_host

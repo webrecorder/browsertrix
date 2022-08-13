@@ -1,0 +1,16 @@
+---
+# tasks file for microk8s
+#
+- import_tasks: install.yml
+
+- name: microk8s | configure users
+  include_tasks: configure_groups.yml
+  when: users is defined
+
+- name: microk8s | configure single node addons
+  include_tasks: addons.yml
+  when: not enable_ha
+
+- name: microk8s | configure High Availability
+  include_tasks: configure_ha.yml
+  when: enable_ha

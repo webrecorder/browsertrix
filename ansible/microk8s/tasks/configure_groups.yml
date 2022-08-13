@@ -1,0 +1,72 @@
+---
+- name: microk8s | add user to group
+  become: true
+  ansible.builtin.command: "usermod -a -G microk8s {{ user }}"
+  changed_when: true
+  with_items: '{{ users }}'
+  loop_control:
+    loop_var: user
+    label: '{{ user }}'
+
+- name: microk8s | ensure .kube folder for the user
+  become: true
+  become_user: '{{ user }}'
+  file:
+    path: ~/.kube
+    state: directory
+    owner: '{{ user }}'
+    group: '{{ user }}'
+    mode: 0750
+  with_items: '{{ users }}'
+  loop_control:
+    loop_var: user
+    label: '{{ user }}'
+
+- name: microk8s | create kubectl config
+  become: true
+  changed_when: true
+  shell: microk8s config > /home/{{ user }}/.kube/config
+  args:
+    executable: /bin/bash
+  with_items: '{{ users }}'
+  loop_control:
+    loop_var: user
+    label: '{{ user }}'
+
+- name: microk8s | ensure permission on files is to user
+  become: true
+  file:
+    path: ~/.kube
+    state: directory
+    owner: '{{ user }}'
+    group: '{{ user }}'
+    recurse: true
+  with_items: '{{ users }}'
+  loop_control:
+    loop_var: user
+    label: '{{ user }}'
+
+- name: microk8s | add helm repository to user
+  become: true
+  become_user: '{{ item.0 }}'
+  shell: "helm repo add {{ item.1.name }} {{ item.1.url }}"
+  args:
+    executable: /bin/bash
+  changed_when: true
+  with_nested:
+    - "{{ users }}"
+    - "{{ helm3_repositories }}"
+  when: microk8s_plugins.helm3
+
+- name: microk8s | update helm repos
+  become: true
+  become_user: '{{ user }}'
+  shell: "helm repo update"
+  args:
+    executable: /bin/bash
+  changed_when: true
+  with_items: '{{ users }}'
+  loop_control:
+    loop_var: user
+    label: '{{ user }}'
+  when: microk8s_plugins.helm3
