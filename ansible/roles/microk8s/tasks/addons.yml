@@ -7,7 +7,7 @@
   register: microk8s_status
 
 - name: set current state fact
-  set_fact:
+  ansible.builtin.set_fact:
     microk8s_status: "{{ microk8s_status.stdout | from_yaml }}"
 
 - name: microk8s | enable addons

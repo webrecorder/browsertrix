@@ -11,7 +11,7 @@
 - name: microk8s | ensure .kube folder for the user
   become: true
   become_user: '{{ user }}'
-  file:
+  ansible.builtin.file:
     path: ~/.kube
     state: directory
     owner: '{{ user }}'
@@ -25,7 +25,7 @@
 - name: microk8s | create kubectl config
   become: true
   changed_when: true
-  shell: microk8s config > /home/{{ user }}/.kube/config
+  ansible.builtin.shell: microk8s config > /home/{{ user }}/.kube/config
   args:
     executable: /bin/bash
   with_items: '{{ users }}'
@@ -35,7 +35,7 @@
 
 - name: microk8s | ensure permission on files is to user
   become: true
-  file:
+  ansible.builtin.file:
     path: ~/.kube
     state: directory
     owner: '{{ user }}'
@@ -49,7 +49,7 @@
 - name: microk8s | add helm repository to user
   become: true
   become_user: '{{ item.0 }}'
-  shell: "helm repo add {{ item.1.name }} {{ item.1.url }}"
+  ansible.builtin.shell: "helm repo add {{ item.1.name }} {{ item.1.url }}"
   args:
     executable: /bin/bash
   changed_when: true
@@ -61,7 +61,7 @@
 - name: microk8s | update helm repos
   become: true
   become_user: '{{ user }}'
-  shell: "helm repo update"
+  ansible.builtin.shell: "helm repo update"
   args:
     executable: /bin/bash
   changed_when: true
