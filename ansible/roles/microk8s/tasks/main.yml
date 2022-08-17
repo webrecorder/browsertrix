@@ -9,8 +9,8 @@
 
 - name: microk8s | configure single node addons
   include_tasks: addons.yml
-  when: not enable_ha
+  when: not microk8s_enable_ha
 
 - name: microk8s | configure High Availability
   include_tasks: configure_ha.yml
-  when: enable_ha
+  when: microk8s_enable_ha

@@ -2,7 +2,7 @@
 # defaults file for microk8s
 #
 # version management
-microk8s_version: "2.20/stable"
+microk8s_version: "1.24/stable"
 microk8s_disable_snap_autoupdate: false
 
 # plugin configuration
