@@ -31,12 +31,17 @@ The example here has been tested with Docker's Runtime
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+replace this with the IP address of your endpoint
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
-
+```yaml
+---
+- name: install microk8s
+  hosts: "{{ your_ip }}"
+  remote_user: "{{ your_user }}"
+  become: true
+  roles:
+    - role: ../roles/microk8s
+```
 License
 -------
 

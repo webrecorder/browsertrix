@@ -1,0 +1,7 @@
+---
+- name: install microk8s
+  hosts: "{{ your_ip }}"
+  remote_user: "{{ your_user }}"
+  become: true
+  roles:
+    - role: ../roles/microk8s
