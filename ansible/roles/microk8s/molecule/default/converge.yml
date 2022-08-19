@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Include webrecorder.microk8s"
+      ansible.builtin.include_role:
+        name: "webrecorder.microk8s"
