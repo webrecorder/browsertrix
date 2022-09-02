@@ -50,17 +50,11 @@ spec:
 
       initContainers:
         - name: init-bucket
-          image: {{ .Values.minio_mc_image }}
+          image: {{ .Values.minio_image }}
           imagePullPolicy: {{ .Values.minio_pull_policy }}
-          env:
-            - name: MC_HOST_local
-              valueFrom:
-                secretKeyRef:
-                  name: auth-secrets
-                  key: MC_HOST
 
           command: ['/bin/sh']
-          args: ['-c', 'mc mb --ignore-existing local/{{ .Values.minio_local_bucket_name }}' ]
+          args: ["-c", "mkdir", "-p", "/data/{{ .Values.minio_local_bucket_name }}" ]
 
       containers:
         - name: minio
