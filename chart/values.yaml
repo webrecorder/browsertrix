@@ -66,7 +66,7 @@ mongo_local: true
 
 mongo_host: "local-mongo.default"
 
-mongo_image: "mongo"
+mongo_image: "docker.io/library/mongo:5.0.11"
 mongo_pull_policy: "IfNotPresent"
 
 mongo_requests_cpu: "12m"
@@ -140,7 +140,7 @@ minio_image: minio/minio
 minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
-minio_local_bucket_name: &local_bucket_name "test-bucket"
+minio_local_bucket_name: &local_bucket_name "btrix-data"
 
 
 # Storage
