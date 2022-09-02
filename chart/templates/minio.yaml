@@ -54,7 +54,12 @@ spec:
           imagePullPolicy: {{ .Values.minio_pull_policy }}
 
           command: ['/bin/sh']
-          args: ["-c", "mkdir", "-p", "/data/{{ .Values.minio_local_bucket_name }}" ]
+          args: ["mkdir", "-p", "/data/{{ .Values.minio_local_bucket_name }}" ]
+
+          volumeMounts:
+            - name: data-minio
+              mountPath: /data
+              subPath: minio
 
       containers:
         - name: minio
