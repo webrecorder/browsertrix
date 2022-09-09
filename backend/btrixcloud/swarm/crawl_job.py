@@ -54,15 +54,15 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
             None, runner.get_service, f"crawl-{self.job_id}-0_crawler"
         )
 
-    async def _send_shutdown_signal(self):
+    async def _send_shutdown_signal(self, signame):
         loop = asyncio.get_running_loop()
         count = 0
 
         for num in range(0, self.scale):
             name = f"crawl-{self.job_id}-{num}_crawler"
-            print(f"Sending SIGABRT to {name}", flush=True)
+            print(f"Sending {signame} to {name}", flush=True)
             count += await loop.run_in_executor(
-                None, runner.ping_containers, name, "SIGABRT"
+                None, runner.ping_containers, name, signame
             )
 
         # for now, assume success if at least 1 container is signaled

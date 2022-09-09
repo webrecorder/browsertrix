@@ -259,9 +259,9 @@ spec:
             - /tmp/crawl-config.json
             - --redisStoreUrl
             - {{ redis_url }}
-          {%- if profile_filename %}
+          {%- if env.PROFILE_FILENAME %}
             - --profile
-            - "@profiles/{{ profile_filename }}"
+            - "@profiles/{{ env.PROFILE_FILENAME }}"
           {%- endif %}
 
           volumeMounts:
