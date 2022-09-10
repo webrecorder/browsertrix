@@ -6,6 +6,7 @@ import signal
 import os
 import json
 import uuid
+import time
 
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -16,6 +17,10 @@ import pymongo
 
 from .db import init_db
 from .crawls import Crawl, CrawlFile, CrawlCompleteIn, dt_now
+
+
+# Seconds before allowing another shutdown attempt
+SHUTDOWN_ATTEMPT_WAIT = 60
 
 
 # =============================================================================
@@ -29,8 +34,6 @@ class CrawlJob(ABC):
 
     def __init__(self):
         super().__init__()
-
-        self.shutdown_pending = False
 
         _, mdb = init_db()
         self.archives = mdb["archives"]
@@ -59,7 +62,7 @@ class CrawlJob(ABC):
 
         self._cached_params = {}
         self._files_added = False
-        self._graceful_shutdown_pending = False
+        self._graceful_shutdown_pending = 0
         self._delete_pending = False
 
         params = {
@@ -299,16 +302,21 @@ class CrawlJob(ABC):
 
     async def graceful_shutdown(self):
         """ attempt to graceful stop the crawl, all data should be uploaded """
-        if self._graceful_shutdown_pending:
+        if (
+            self._graceful_shutdown_pending
+            and (time.time() - self._graceful_shutdown_pending) < SHUTDOWN_ATTEMPT_WAIT
+        ):
             print("Already trying to stop crawl gracefully", flush=True)
             return {"success": False, "error": "already_stopping"}
 
         print("Stopping crawl", flush=True)
 
-        if not await self._send_shutdown_signal():
+        if not await self._send_shutdown_signal("SIGUSR1"):
             return {"success": False, "error": "unreachable"}
 
-        self._graceful_shutdown_pending = True
+        await self._send_shutdown_signal("SIGTERM")
+
+        self._graceful_shutdown_pending = time.time()
 
         await self.update_crawl(state="stopping")
 
@@ -403,7 +411,7 @@ class CrawlJob(ABC):
         """ set number of replicas """
 
     @abstractmethod
-    async def _send_shutdown_signal(self):
+    async def _send_shutdown_signal(self, signame):
         """ gracefully shutdown crawl """
 
     @property
