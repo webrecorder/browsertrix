@@ -2,27 +2,56 @@
 - name: setup digital ocrean
   hosts: localhost
   connection: local
-  remote_user: "root"
-  become: true
   gather_facts: false
     #  vars_files:
     # - "../group_vars/do/vault.yml"
   vars:
     #    ansible_python_interpreter: /usr/bin/python
-    droplet_image: "ubuntu-20-04-x64"
-    droplet_size: "s-1vcpu-1gb"
+    droplet_size: "s-1vcpu-2gb"
     droplet_region: "sfo3"
     
   tasks:
-    - name: d_ocean | Create a new DigitalOcean Kubernetes cluster in New York 1
+    - name: d_ocean | Create a mongodb database
+      community.digitalocean.digital_ocean_database:
+        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
+        state: present
+        name: webrecorder
+        engine: mongodb
+        size: db-s-1vcpu-1gb
+        region: "{{ droplet_region }}"
+        tags: webrecorder
+        version: 5
+        num_nodes: 1
+      register: webrecorder_database
+
+    - name: d_ocean | Gather databases info
+      community.digitalocean.digital_ocean_database_info:
+        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
+      register: my_databases
+
+    - name: d_ocean | Show the database info we just created
+      debug:
+        msg: "{{ my_databases.results }}"
+      ignore_errors: true
+
+    - name: d_ocean | Create new Space
+      community.digitalocean.digital_ocean_spaces:
+        name: webrecorder
+        aws_access_key_id: "{{ lookup('env', 'DO_AWS_ACCESS_KEY')}}"
+        aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
+        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
+        region: "{{ droplet_region }}"
+      ignore_errors: true
+
+    - name: d_ocean | Create a new DigitalOcean Kubernetes cluster in {{ droplet_region }}
       community.digitalocean.digital_ocean_kubernetes:
         state: present
         oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
         name: webrecorder
-        region: nyc1
+        region: "{{ droplet_region }}"
         node_pools:
           - name: webrecorder-workers
-            size: s-1vcpu-2gb
+            size: "{{ droplet_size }}"
             count: 3
         return_kubeconfig: true
         wait_timeout: 600
@@ -35,16 +64,14 @@
         msg: "{{ webrecorder_cluster.data.kubeconfig }}"
       ignore_errors: true
 
-    - name: d_ocean | add public ssh key to digitalocean account
-      community.digitalocean.digital_ocean_sshkey:
-        name: "my_laptop"
-        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-        ssh_pub_key: "{{lookup('file', '~/.ssh/id_rsa.pub') }}"
-        state: present
-      register: sshkey_result
+    - name: d_ocean | pipe config information debugging
+      ansible.builtin.debug:
+        var: item
+      loop: "{{ webrecorder_cluster | community.general.json_query('webrecorder_cluster.cluster[*].name') }}"
       ignore_errors: true
 
-    - name: Get information about an existing DigitalOcean Kubernetes cluster
+
+    - name: d_ocean | Get information about an existing DigitalOcean Kubernetes cluster
       community.digitalocean.digital_ocean_kubernetes_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
         name: webrecorder
@@ -52,21 +79,35 @@
       register: my_cluster
       ignore_errors: true
 
-    - ansible.builtin.debug:
+    - name: d_ocean | print information about an existing DigitalOcean Kubernetes cluster
+      ansible.builtin.debug:
         msg: "Cluster name is {{ my_cluster.data.name }}, ID is {{ my_cluster.data.id }}"
       ignore_errors: true
 
-    - ansible.builtin.debug:
+    - name: d_ocean | print Kubernetes cluster config
+      ansible.builtin.debug:
         msg: "Cluster kubeconfig is {{ my_cluster.data.kubeconfig }}"
       ignore_errors: true
 
-    - name: Create a Load Balancer and associate it with a tag
+    - name: d_ocean | save kubectl config to kube_dir
+      command: doctl kubernetes cluster kubeconfig save {{ my_cluster.data.id }}
+      changed_when: false
+      ignore_errors: true
+
+    - name: d_ocean | deploy btrix
+      command: "helm upgrade --install -f ./chart/values.yaml btrix ./chart"
+      args:
+        chdir: ../../
+      changed_when: false
+      ignore_errors: true
+
+    - name: d_ocean | Create a Load Balancer and associate it with a tag
       community.digitalocean.digital_ocean_load_balancer:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
         state: present
         name: webrecorder
         tag: k8s
-        region: nyc1
+        region: "{{ droplet_region }}"
       ignore_errors: true
 
     - name: Get name from load balancer id
