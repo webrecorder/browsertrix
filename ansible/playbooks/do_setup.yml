@@ -87,30 +87,6 @@
       changed_when: false
       ignore_errors: true
 
-
-    - name: d_ocean | Create a Load Balancer and associate it with a tag
-      community.digitalocean.digital_ocean_load_balancer:
-        oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
-        state: present
-        name: webrecorder
-        tag: k8s
-        region: "{{ droplet_region }}"
-        forwarding_rules:
-          - entry_protocol: http
-            entry_port: 80
-            target_protocol: http
-            target_port: 31670
-        health_check:
-          - port: 31670
-      ignore_errors: true
-
-    - name: Get name from load balancer id
-      community.digitalocean.digital_ocean_load_balancer_info:
-       oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
-      register: resp_out
-    - debug:
-        var: resp_out.results
-
     - name: d_ocean | Create default A record
       community.digitalocean.digital_ocean_domain_record:
         state: present
@@ -129,7 +105,5 @@
       ignore_errors: true
 
     - name: d_ocean | Create a do service for a load balancer
-      command: "kubectl apply -f do_loadbalancer.yaml"
-      args:
-        chdir: ../
+      command: "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/do/deploy.yaml"
       changed_when: false
