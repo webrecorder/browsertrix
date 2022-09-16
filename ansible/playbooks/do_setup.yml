@@ -127,3 +127,9 @@
         chdir: ../../
       changed_when: false
       ignore_errors: true
+
+    - name: d_ocean | Create a do service for a load balancer
+      command: "kubectl apply -f do_loadbalancer.yaml"
+      args:
+        chdir: ../
+      changed_when: false

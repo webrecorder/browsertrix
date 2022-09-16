@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  annotations:
+    kubernetes.digitalocean.com/load-balancer-id: "your-load-balancer-id"
+    service.beta.kubernetes.io/do-loadbalancer-size-unit: "3"
+    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
+spec:
+  type: LoadBalancer
+  selector:
+    app: webrecorder-demo
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
