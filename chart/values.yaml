@@ -12,18 +12,19 @@ volume_storage_class:
 # if set, set the node selector 'nodeType' to this crawling pods
 # crawler_node_type:
 
-registration_enabled: 1
-jwt_token_lifetime_minutes: 60
+registration_enabled: 0
+jwt_token_lifetime_minutes: 1440
 
+grace_period_secs: 1000
 # number of workers for backend api
 backend_workers: 4
 
 # base url for replayweb.page
-rwp_base_url: "https://replayweb.page/"
+rwp_base_url: "https://kayiwa.info/"
 
 superuser:
   # set this to enable a superuser admin
-  email: admin@example.com
+  email: kayiwa@pobox.com
 
   # optional: if not set, automatically generated
   password:
@@ -62,7 +63,7 @@ nginx_limits_memory: "12Mi"
 
 # MongoDB Image
 # =========================================
-mongo_local: true
+mongo_local: false
 
 mongo_host: "local-mongo.default"
 
@@ -77,6 +78,7 @@ mongo_limits_memory: "512Mi"
 
 
 mongo_auth:
+  db_url: mongodb+srv://doadmin:5X34D6dE2o8F0Gs9@webrecorder-7038f51a.mongo.ondigitalocean.com/admin?tls=true&authSource=admin&replicaSet=webrecorder
   username: root
   password: example 
 
@@ -131,7 +133,7 @@ no_delete_jobs: 1
 # Local Minio Pod (optional)
 # =========================================
 # set to true to use a local minio image
-minio_local: true
+minio_local: false
 
 minio_scheme: "http"
 minio_host: "local-minio.default:9000"
@@ -149,11 +151,12 @@ minio_local_bucket_name: &local_bucket_name "btrix-data"
 
 storages:
   - name: "default"
-    access_key: "ADMIN"
-    secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
+    access_key: "DO00VFZZBMP7CVERL9RG"
+    secret_key: "U7QpmU2x2fZgKv4167YnD9BDkHYJZ6laZuLXBle7Ylk"
+      #bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
+      #endpoint_url: "http://local-minio.default:9000/"
+    endpoint_url: "https://sfo3.digitaloceanspaces.com"
 
 # optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
 # may be useful if, for example, the wacz files are public, while profiles should not be
@@ -177,8 +180,8 @@ email:
 # Ingress (Optional)
 # Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
 ingress:
-  host: "btrix.cloud"
-  cert_email: "test@example.com"
+  host: "kayiwa.info"
+  cert_email: "kayiwa@pobox.com"
   scheme: "http"
   tls: false
 

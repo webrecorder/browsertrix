@@ -11,6 +11,7 @@
     #    ansible_python_interpreter: /usr/bin/python
     droplet_size: "s-1vcpu-2gb"
     droplet_region: "sfo3"
+    do_project: "{{ my_project | default('test')}}"
     
   tasks:
 
@@ -23,6 +24,7 @@
         size: db-s-1vcpu-1gb
         region: "{{ droplet_region }}"
         tags: webrecorder
+        project_name: "{{ do_project }}"
         version: 5
         num_nodes: 1
       register: webrecorder_database
@@ -93,11 +95,18 @@
         name: webrecorder
         tag: k8s
         region: "{{ droplet_region }}"
+        forwarding_rules:
+          - entry_protocol: http
+            entry_port: 80
+            target_protocol: http
+            target_port: 31670
+        health_check:
+          - port: 31670
       ignore_errors: true
 
     - name: Get name from load balancer id
       community.digitalocean.digital_ocean_load_balancer_info:
-        oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
+       oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
       register: resp_out
     - debug:
         var: resp_out.results
