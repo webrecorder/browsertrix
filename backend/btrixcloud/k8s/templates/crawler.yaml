@@ -20,6 +20,11 @@ spec:
   serviceName: redis-{{ id }}
   replicas: 1
   podManagementPolicy: Parallel
+
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+
   volumeClaimTemplates:
     - metadata:
         name: redis-data
@@ -28,9 +33,6 @@ spec:
           role: crawler
 
       spec:
-        persistentVolumeClaimRetentionPolicy:
-          whenDeleted: Deleted
-          whenScaled: Delete
         accessModes:
           - ReadWriteOnce
 
@@ -186,6 +188,11 @@ spec:
   serviceName: crawl-{{ id }}
   replicas: {{ scale }}
   podManagementPolicy: Parallel
+
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+
   volumeClaimTemplates:
     - metadata:
         name: crawl-data
@@ -194,9 +201,6 @@ spec:
           role: crawler
 
       spec:
-        persistentVolumeClaimRetentionPolicy:
-          whenDeleted: Deleted
-          whenScaled: Delete
         accessModes:
           - ReadWriteOnce
 
