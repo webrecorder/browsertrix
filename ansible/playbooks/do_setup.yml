@@ -1,6 +1,8 @@
 ---
 # this playbook will set up a kubernetes cluster, a mongodb database, create a spaces instance to run browsertrix cloud
 # It is assumed that you have a digital ocean API in your environment and have ACCESS keys for your Spaces
+# the playbook also uses doctl
+# set your env variables to have `DO_API_TOKEN` `DO_AWS_ACCESS_KEY` and `DO_AWS_SECRET_KEY`
 - name: deploy browsertrix on  digital ocrean
   hosts: localhost
   connection: local
@@ -28,6 +30,7 @@
         version: 5
         num_nodes: 1
       register: webrecorder_database
+      ignore_errors: true
 
     - name: d_ocean | Gather databases info
       community.digitalocean.digital_ocean_database_info:
@@ -105,5 +108,5 @@
       ignore_errors: true
 
     - name: d_ocean | Create a do service for a load balancer
-      command: "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/do/deploy.yaml"
+      command: "kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.1/deploy/static/provider/do/deploy.yaml"
       changed_when: false
