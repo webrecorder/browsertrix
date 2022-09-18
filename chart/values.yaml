@@ -20,11 +20,11 @@ grace_period_secs: 1000
 backend_workers: 4
 
 # base url for replayweb.page
-rwp_base_url: "https://kayiwa.info/"
+rwp_base_url: "https://replayweb.page/"
 
 superuser:
   # set this to enable a superuser admin
-  email: kayiwa@pobox.com
+  email: admin@example.com
 
   # optional: if not set, automatically generated
   password:
@@ -63,7 +63,7 @@ nginx_limits_memory: "12Mi"
 
 # MongoDB Image
 # =========================================
-mongo_local: false
+mongo_local: true
 
 mongo_host: "local-mongo.default"
 
@@ -78,7 +78,6 @@ mongo_limits_memory: "512Mi"
 
 
 mongo_auth:
-  db_url: mongodb+srv://doadmin:5X34D6dE2o8F0Gs9@webrecorder-7038f51a.mongo.ondigitalocean.com/admin?tls=true&authSource=admin&replicaSet=webrecorder
   username: root
   password: example 
 
@@ -151,12 +150,11 @@ minio_local_bucket_name: &local_bucket_name "btrix-data"
 
 storages:
   - name: "default"
-    access_key: "DO00VFZZBMP7CVERL9RG"
-    secret_key: "U7QpmU2x2fZgKv4167YnD9BDkHYJZ6laZuLXBle7Ylk"
-      #bucket_name: *local_bucket_name
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
 
-      #endpoint_url: "http://local-minio.default:9000/"
-    endpoint_url: "https://sfo3.digitaloceanspaces.com"
+    endpoint_url: "http://local-minio.default:9000/"
 
 # optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
 # may be useful if, for example, the wacz files are public, while profiles should not be
