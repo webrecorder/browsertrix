@@ -98,7 +98,10 @@ export class CrawlDetail extends LiteElement {
       const prevCrawl = changedProperties.get("crawl");
 
       if (prevCrawl && this.crawl) {
-        if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+        if (
+          (prevCrawl.state === "running" || prevCrawl.state === "stopping") &&
+          !this.isActive
+        ) {
           this.crawlDone();
         }
       }
