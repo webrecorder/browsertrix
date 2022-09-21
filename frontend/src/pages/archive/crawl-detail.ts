@@ -481,6 +481,7 @@ export class CrawlDetail extends LiteElement {
 
     const isStarting = this.crawl.state === "starting";
     const isRunning = this.crawl.state === "running";
+    const isStopping = this.crawl.state === "stopping";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
@@ -505,7 +506,20 @@ export class CrawlDetail extends LiteElement {
           </div>`
         : this.isActive
         ? html`
-            <div id="screencast-crawl">
+            ${isStopping
+              ? html`
+                  <div class="mb-4">
+                    <btrix-alert type="warning" class="text-sm">
+                      ${msg("Crawl stopping...")}
+                    </btrix-alert>
+                  </div>
+                `
+              : ""}
+
+            <div
+              id="screencast-crawl"
+              class="${isStopping ? "opacity-40" : ""} transition-opacity"
+            >
               <btrix-screencast
                 authToken=${authToken}
                 archiveId=${this.crawl.aid}
