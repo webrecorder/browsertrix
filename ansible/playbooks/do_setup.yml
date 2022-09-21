@@ -16,8 +16,8 @@
     - space_name: "{{ my_space_name | default('btrixcloud-test')}}"
     - btrix_db: "{{ my_db | default('btrixcloud-test')}}"
     - k8s_cluster: "{{ my_k8s | default('btrixcloud-test')}}"
-    - post_install: |
-         Get the loadbalancer IP from your DigitalOcean and re-run the playbook by passing the IP variable
+    - domain_name: "{{ my_domain | default('example.edu')}}"
+    - email_address: "{{ my_email | default('superuser@example.com')}}"
     
   tasks:
 
@@ -154,21 +154,21 @@
         values:
           mongo_local: false
           mongo_auth:
-            db_url: "{{ webrecorder_database.data.uri }}"
+            db_url: "{{ webrecorder_database.data.database.private_connection.uri }}"
             username: root
             password: example
           minio_local: false
 
           storages:
           - name: "default"
-            access_key: "DO_AWS_ACCESS_KEY"
-            secret_key: "DO_AWS_SECRET_KEY"
+            access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY')}}"
+            secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
 
-            endpoint_url: "{{ webrecorder_space.data.space_url }}"
+            endpoint_url: "{{ webrecorder_space.data.space.space_url }}"
 
           rwp_base_url: "{{ domain_name }}"
           superuser:
-            email: example@domain.com
+            email: "{{ email_address }}"
         values_files:
           - ../../chart/values.yaml
       ignore_errors: true
