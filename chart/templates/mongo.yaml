@@ -10,8 +10,8 @@ metadata:
 
 type: Opaque
 stringData:
-  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongo_auth.username | quote }}
-  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongo_auth.password | quote }}
+  MONGO_INITDB_ROOT_USERNAME: "{{ .Values.mongo_auth.username }}"
+  MONGO_INITDB_ROOT_PASSWORD: "{{ .Values.mongo_auth.password }}"
   MONGO_HOST: "{{ .Values.mongo_host }}"
   MONGO_DB_URL: "{{ .Values.mongo_auth.db_url }}"
 
@@ -24,8 +24,8 @@ metadata:
 
 type: Opaque
 stringData:
-  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongo_auth.username | quote }}
-  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongo_auth.password | quote }}
+  MONGO_INITDB_ROOT_USERNAME: "{{ .Values.mongo_auth.username }}"
+  MONGO_INITDB_ROOT_PASSWORD: "{{ .Values.mongo_auth.password }}"
   MONGO_HOST: "{{ .Values.mongo_host }}"
   MONGO_DB_URL: "{{ .Values.mongo_auth.db_url }}"
 
