@@ -500,7 +500,7 @@ export class CrawlDetail extends LiteElement {
               ${msg("Crawl starting...")}
             </p>
           </div>`
-        : isRunning
+        : this.isActive
         ? html`
             <div id="screencast-crawl">
               <btrix-screencast
