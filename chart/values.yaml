@@ -12,8 +12,8 @@ volume_storage_class:
 # if set, set the node selector 'nodeType' to this crawling pods
 # crawler_node_type:
 
-registration_enabled: 1
-jwt_token_lifetime_minutes: 60
+registration_enabled: 0
+jwt_token_lifetime_minutes: 1440
 
 # number of workers for backend api
 backend_workers: 4
@@ -77,8 +77,12 @@ mongo_limits_memory: "512Mi"
 
 
 mongo_auth:
-  username: root
-  password: example 
+  # specify either username + password (for local mongo)
+  # username: root
+  # password: example
+
+  # or full URL (for remote mongo server)
+  # db_url: mongodb+srv://...
 
 
 # Redis Image
@@ -122,10 +126,17 @@ crawler_limits_cpu: "1200m"
 crawler_requests_memory: "512Mi"
 crawler_limits_memory: "768Mi"
 
-crawler_requests_hd: "220Gi"
+crawler_requests_storage: "220Gi"
+
+crawler_liveness_port: 6065
+
+# time to wait for graceful stop
+grace_period: 1000
+
+
 
 # debug
-no_delete_jobs: 1
+no_delete_jobs: 0
 
 
 # Local Minio Pod (optional)
