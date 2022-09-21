@@ -10,15 +10,24 @@
     #  vars_files:
     # - "../group_vars/do/vault.yml"
   vars:
-    #    ansible_python_interpreter: /usr/bin/python
-    droplet_size: "s-1vcpu-2gb"
-    droplet_region: "sfo3"
-    do_project: "{{ my_project | default('btrixcloud-test')}}"
-    space_name: "{{ my_space_name | default('btrixcloud-test')}}"
-    btrix_db: "{{ my_db | default('btrixcloud-test')}}"
-    k8s_cluster: "{{ my_k8s | default('btrixcloud-test')}}"
+    - droplet_size: "s-1vcpu-2gb"
+    - droplet_region: "sfo3"
+    - do_project: "{{ my_project | default('btrixcloud-test')}}"
+    - space_name: "{{ my_space_name | default('btrixcloud-test')}}"
+    - btrix_db: "{{ my_db | default('btrixcloud-test')}}"
+    - k8s_cluster: "{{ my_k8s | default('btrixcloud-test')}}"
+    - post_install: |
+         Get the loadbalancer IP from your DigitalOcean and re-run the playbook by passing the IP variable
     
   tasks:
+
+    - name: d_ocean | install doctl and helm
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - helm
+        - doctl
 
     - name: d_ocean | Create a mongodb database
       community.digitalocean.digital_ocean_database:
@@ -142,19 +151,45 @@
         release_namespace: default
         kubeconfig: ~/.kube/config
         chart_ref: ../../chart/
+        values:
+          mongo_local: false
+          mongo_auth:
+            db_url: "{{ webrecorder_database.data.uri }}"
+            username: root
+            password: example
+          minio_local: false
+
+          storages:
+          - name: "default"
+            access_key: "DO_AWS_ACCESS_KEY"
+            secret_key: "DO_AWS_SECRET_KEY"
+
+            endpoint_url: "{{ webrecorder_space.data.space_url }}"
+
+          rwp_base_url: "{{ domain_name }}"
+          superuser:
+            email: example@domain.com
         values_files:
           - ../../chart/values.yaml
-          - ../../chart/do_values.yaml
       ignore_errors: true
 
-    - name: d_ocean | get loadbalancer info
+    - name: d_ocean | get loadbalancer info from doctl
       command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }}
       register: my_lb
 
-    - name: d_ocean | Show the loadbalancer info
+    - name: d_ocean | Show the loadbalancer info from doctl
       debug:
         var: my_lb
         verbosity: 2
+
+          #    - name: d_ocean | save doctl results as json
+          #      ansible.builtin.set_fact:
+          #        doctllb: "{{ my_lb | from_json }}"
+
+          #    - name: d_ocean | Show the loadbalancer info with json
+          #      debug:
+          #        var: doctllb
+          #        verbosity: 2
 
     - name: d_ocean | show loadbalancer ip
       command: doctl compute load-balancer list
@@ -165,16 +200,28 @@
         var: doc_lb_ip
         verbosity: 2
 
-    - name: d_ocean | Show the loadbalancer ip
+    - name: d_ocean | Show the loadbalancer ip from ansible
       community.digitalocean.digital_ocean_load_balancer_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
       register: lb_ip
 
-    - name: d_ocean | print ip of your loadbalancer
+    - name: d_ocean | print ip of your loadbalancer from ansible
       ansible.builtin.debug:
         #var: "{{ lb_ip | type_debug }}"
-        var: lb_ip.results
+        var: lb_ip
+        verbosity: 2
       ignore_errors: true
+
+        #    - name: d_ocean | print loadbalancer ip from list
+        # ansible.builtin.debug:
+        #  var: lb_ip.data.['4']
+        #  verbosity: 2
+
+          # example from ansible documentation
+          #    - name: d_ocean | query json
+          # ansible.builtin.debug: msg="{{ lb_ip | json_query(jmesquery) }}"
+          # vars:
+          # jmesquery: "[*].{Name: name, Email: email, Phone: phone, CompanyName: company.name, WebSite: website, City: address.city}"
 
     - name: d_ocean | Create default A record
       community.digitalocean.digital_ocean_domain_record:
@@ -185,4 +232,11 @@
         name: "@"
         data: "{{ lb_ip | default('omit')}}"
       ignore_errors: true
+
+    - name: d_ocean | register the dns of your webrecorder
+      command: doctl compute domain records create --record-type A --record-name test1 --record-data "{{ loadbalancer_ip }}" "{{ domain_name }}"
+      changed_when: false
+      failed_when: false
+      register: cluster_check
+
 
