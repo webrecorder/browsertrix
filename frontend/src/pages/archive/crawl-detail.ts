@@ -39,6 +39,9 @@ export class CrawlDetail extends LiteElement {
   crawlId?: string;
 
   @state()
+  private lastFetched?: number;
+
+  @state()
   private crawl?: Crawl;
 
   @state()
@@ -441,6 +444,7 @@ export class CrawlDetail extends LiteElement {
                         <span class="text-purple-600">
                           <btrix-relative-duration
                             value=${`${this.crawl.started}Z`}
+                            endTime=${this.lastFetched || Date.now()}
                           ></btrix-relative-duration>
                         </span>
                       `}
@@ -831,6 +835,8 @@ export class CrawlDetail extends LiteElement {
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
+
+    this.lastFetched = Date.now();
 
     return data;
   }

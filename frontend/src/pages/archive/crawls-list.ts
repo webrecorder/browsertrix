@@ -137,7 +137,9 @@ export class CrawlsList extends LiteElement {
             ? this.renderCrawlList()
             : html`
                 <div class="border-t border-b py-5">
-                  <p class="text-center text-0-500">${msg("No crawls yet.")}</p>
+                  <p class="text-center text-neutral-500">
+                    ${msg("No crawls yet.")}
+                  </p>
                 </div>
               `}
         </section>
@@ -177,7 +179,9 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-0-500 mr-2">${msg("Sort By")}</div>
+          <div class="whitespace-nowrap text-neutral-500 mr-2">
+            ${msg("Sort By")}
+          </div>
           <sl-dropdown
             placement="bottom-end"
             distance="4"
@@ -376,7 +380,7 @@ export class CrawlsList extends LiteElement {
                 : crawl.state === "complete"
                 ? "text-emerald-500"
                 : isActive(crawl)
-                ? "text-purple-500"
+                ? "text-purple-500 motion-safe:animate-pulse"
                 : "text-zinc-300"}"
               style="font-size: 10px; vertical-align: 2px"
             >
@@ -391,20 +395,31 @@ export class CrawlsList extends LiteElement {
             >
               ${crawl.state.replace(/_/g, " ")}
             </div>
-            <div class="text-0-500 text-sm whitespace-nowrap truncate">
+            <div class="text-neutral-500 text-sm whitespace-nowrap truncate">
               ${crawl.finished
                 ? html`
                     <sl-relative-time
                       date=${`${crawl.finished}Z` /** Z for UTC */}
                     ></sl-relative-time>
                   `
-                : crawl.state === "canceled"
-                ? msg("Unknown")
-                : html`<btrix-relative-duration
-                    value=${`${crawl.started}Z`}
-                    compact
-                    verbose
-                  ></btrix-relative-duration>`}
+                : html`
+                    ${crawl.state === "canceled"
+                      ? msg("Unknown")
+                      : html`<btrix-relative-duration
+                          class="text-purple-500"
+                          value=${`${crawl.started}Z`}
+                          endTime=${this.lastFetched || Date.now()}
+                          title=${msg(
+                            str`Running for ${RelativeDuration.humanize(
+                              Date.now() -
+                                new Date(`${crawl.started}Z`).valueOf(),
+                              { verbose: true }
+                            )}`
+                          )}
+                          compact
+                          verbose
+                        ></btrix-relative-duration>`}
+                  `}
             </div>
           </div>
         </div>
@@ -418,13 +433,15 @@ export class CrawlsList extends LiteElement {
                       lang=${/* TODO localize: */ "en"}
                     ></sl-format-bytes>
                   </span>
-                  <span class="text-0-500">
+                  <span class="text-neutral-500">
                     (${crawl.fileCount === 1
                       ? msg(str`${crawl.fileCount} file`)
                       : msg(str`${crawl.fileCount} files`)})
                   </span>
                 </div>
-                <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg(
                     str`in ${RelativeDuration.humanize(
                       new Date(`${crawl.finished}Z`).valueOf() -
@@ -443,7 +460,9 @@ export class CrawlsList extends LiteElement {
                   <span class="text-0-400">/</span>
                   ${this.numberFormatter.format(+crawl.stats.found)}
                 </div>
-                <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg("pages crawled")}
                 </div>
               `
@@ -458,7 +477,9 @@ export class CrawlsList extends LiteElement {
                     >${msg("Manual Start")}</span
                   >
                 </div>
-                <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="ml-1 text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg(str`by ${crawl.userName || crawl.userid}`)}
                 </div>
               `

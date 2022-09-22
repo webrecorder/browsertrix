@@ -5,7 +5,6 @@ import humanizeDuration from "pretty-ms";
 
 /**
  * Show time passed from date in human-friendly format
- * Updates every 10 seconds
  *
  * Usage example:
  * ```ts
@@ -17,17 +16,14 @@ export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format
 
+  @property({ type: Number })
+  endTime?: number; // Optional value to compare to
+
   @property({ type: Boolean })
   compact = false;
 
   @property({ type: Boolean })
   verbose = false;
-
-  @state()
-  private now = Date.now();
-
-  // For long polling:
-  private timerId?: number;
 
   static humanize(duration: number, options: any = {}) {
     const minMs = 60 * 1000;
@@ -46,12 +42,9 @@ export class RelativeDuration extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-
-    this.timerId = window.setInterval(() => this.updateValue(), 1000 * 10);
   }
 
   disconnectedCallback(): void {
-    window.clearInterval(this.timerId);
     super.disconnectedCallback();
   }
 
@@ -59,15 +52,11 @@ export class RelativeDuration extends LitElement {
     if (!this.value) return "";
 
     return RelativeDuration.humanize(
-      this.now - new Date(this.value).valueOf(),
+      (this.endTime || Date.now()) - new Date(this.value).valueOf(),
       {
         compact: this.compact,
         verbose: this.verbose,
       }
     );
-  }
-
-  private updateValue() {
-    this.now = Date.now();
   }
 }
