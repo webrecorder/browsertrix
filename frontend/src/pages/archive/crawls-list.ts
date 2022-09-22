@@ -256,7 +256,6 @@ export class CrawlsList extends LiteElement {
       <a
         href=${`${this.crawlsBaseUrl}/crawl/${crawl.id}`}
         class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary transition-colors"
-        title=${crawl.configName}
         @click=${this.navLink}
       >
         <div class="col-span-11 md:col-span-5">
@@ -405,20 +404,27 @@ export class CrawlsList extends LiteElement {
                 : html`
                     ${crawl.state === "canceled"
                       ? msg("Unknown")
-                      : html`<btrix-relative-duration
-                          class="text-purple-500"
-                          value=${`${crawl.started}Z`}
-                          endTime=${this.lastFetched || Date.now()}
-                          title=${msg(
-                            str`Running for ${RelativeDuration.humanize(
-                              Date.now() -
-                                new Date(`${crawl.started}Z`).valueOf(),
-                              { verbose: true }
-                            )}`
-                          )}
-                          compact
-                          verbose
-                        ></btrix-relative-duration>`}
+                      : html`
+                          <sl-tooltip placement="bottom">
+                            <span slot="content">
+                              ${msg(
+                                str`Running for ${RelativeDuration.humanize(
+                                  Date.now() -
+                                    new Date(`${crawl.started}Z`).valueOf(),
+                                  { verbose: true }
+                                )}`
+                              )}
+                            </span>
+
+                            <btrix-relative-duration
+                              class="text-purple-500"
+                              value=${`${crawl.started}Z`}
+                              endTime=${this.lastFetched || Date.now()}
+                              compact
+                              verbose
+                            ></btrix-relative-duration>
+                          </sl-tooltip>
+                        `}
                   `}
             </div>
           </div>
