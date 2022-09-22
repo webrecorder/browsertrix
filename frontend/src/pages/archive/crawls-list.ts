@@ -402,6 +402,8 @@ export class CrawlsList extends LiteElement {
                 ? msg("Unknown")
                 : html`<btrix-relative-duration
                     value=${`${crawl.started}Z`}
+                    compact
+                    verbose
                   ></btrix-relative-duration>`}
             </div>
           </div>

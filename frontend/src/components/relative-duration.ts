@@ -17,6 +17,12 @@ export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format
 
+  @property({ type: Boolean })
+  compact = false;
+
+  @property({ type: Boolean })
+  verbose = false;
+
   @state()
   private now = Date.now();
 
@@ -27,7 +33,9 @@ export class RelativeDuration extends LitElement {
     const minMs = 60 * 1000;
 
     if (duration < minMs) {
-      return msg(str`< 1 minute`);
+      return msg(str`< 1 minute`, {
+        desc: "Less than one minute",
+      });
     }
 
     return humanizeDuration(duration, {
@@ -50,7 +58,13 @@ export class RelativeDuration extends LitElement {
   render() {
     if (!this.value) return "";
 
-    return RelativeDuration.humanize(this.now - new Date(this.value).valueOf());
+    return RelativeDuration.humanize(
+      this.now - new Date(this.value).valueOf(),
+      {
+        compact: this.compact,
+        verbose: this.verbose,
+      }
+    );
   }
 
   private updateValue() {
