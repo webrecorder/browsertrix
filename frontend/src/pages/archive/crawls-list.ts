@@ -398,6 +398,8 @@ export class CrawlsList extends LiteElement {
                       date=${`${crawl.finished}Z` /** Z for UTC */}
                     ></sl-relative-time>
                   `
+                : crawl.state === "canceled"
+                ? msg("Unknown")
                 : html`<btrix-relative-duration
                     value=${`${crawl.started}Z`}
                   ></btrix-relative-duration>`}
