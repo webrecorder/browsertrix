@@ -1,5 +1,6 @@
 import { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
+import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
 
 /**
@@ -11,6 +12,7 @@ import humanizeDuration from "pretty-ms";
  * <btrix-relative-duration value=${value}></btrix-relative-duration>
  * ```
  */
+@localized()
 export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format
@@ -21,9 +23,16 @@ export class RelativeDuration extends LitElement {
   // For long polling:
   private timerId?: number;
 
-  static humanize(duration: number) {
+  static humanize(duration: number, options: any = {}) {
+    const minMs = 60 * 1000;
+
+    if (duration < minMs) {
+      return msg(str`< 1 minute`);
+    }
+
     return humanizeDuration(duration, {
       secondsDecimalDigits: 0,
+      ...options,
     });
   }
 

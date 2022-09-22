@@ -426,7 +426,8 @@ export class CrawlsList extends LiteElement {
                   ${msg(
                     str`in ${RelativeDuration.humanize(
                       new Date(`${crawl.finished}Z`).valueOf() -
-                        new Date(`${crawl.started}Z`).valueOf()
+                        new Date(`${crawl.started}Z`).valueOf(),
+                      { compact: true }
                     )}`
                   )}
                 </div>
