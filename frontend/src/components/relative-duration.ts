@@ -5,7 +5,7 @@ import humanizeDuration from "pretty-ms";
 
 /**
  * Show time passed from date in human-friendly format
- * Updates every 5 seconds
+ * Updates every 10 seconds
  *
  * Usage example:
  * ```ts
@@ -47,7 +47,7 @@ export class RelativeDuration extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
 
-    this.timerId = window.setInterval(() => this.updateValue(), 1000 * 5);
+    this.timerId = window.setInterval(() => this.updateValue(), 1000 * 10);
   }
 
   disconnectedCallback(): void {
