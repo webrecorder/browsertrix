@@ -30,7 +30,7 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
             )
 
         if pods:
-            await send_signal_to_pods(self.core_api_ws, self.namespace, pods, "SIGUSR1")
+            await send_signal_to_pods(self.core_api_ws, self.namespace, pods, "SIGUSR2")
 
         crawl.spec.replicas = new_scale
 

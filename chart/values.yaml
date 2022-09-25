@@ -78,8 +78,12 @@ mongo_limits_memory: "512Mi"
 
 
 mongo_auth:
-  username: root
-  password: example 
+  # specify either username + password (for local mongo)
+  # username: root
+  # password: example
+
+  # or full URL (for remote mongo server)
+  # db_url: mongodb+srv://...
 
 
 # Redis Image
@@ -123,10 +127,17 @@ crawler_limits_cpu: "1200m"
 crawler_requests_memory: "512Mi"
 crawler_limits_memory: "768Mi"
 
-crawler_requests_hd: "220Gi"
+crawler_requests_storage: "220Gi"
+
+crawler_liveness_port: 6065
+
+# time to wait for graceful stop
+grace_period: 1000
+
+
 
 # debug
-no_delete_jobs: 1
+no_delete_jobs: 0
 
 
 # Local Minio Pod (optional)

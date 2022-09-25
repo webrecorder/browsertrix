@@ -29,6 +29,7 @@ class ScopeType(str, Enum):
     HOST = "host"
     DOMAIN = "domain"
     ANY = "any"
+    CUSTOM = "custom"
 
 
 # ============================================================================

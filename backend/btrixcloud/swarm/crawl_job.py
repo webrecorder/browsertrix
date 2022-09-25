@@ -29,7 +29,7 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
                 num = num - 1
                 service_id = f"crawl-{self.job_id}-{num}_crawler"
                 await loop.run_in_executor(
-                    None, runner.ping_containers, service_id, "SIGUSR1"
+                    None, runner.ping_containers, service_id, "SIGUSR2"
                 )
 
             # delete
