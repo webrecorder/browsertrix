@@ -11,6 +11,8 @@
     # - "../group_vars/do/vault.yml"
   vars:
     - droplet_size: "s-1vcpu-2gb"
+    - main_node_size: "s-1vcpu-2gb"
+    - crawl_node_size: "c-4"
     - droplet_region: "sfo3"
     - do_project: "{{ my_project | default('btrixcloud-test')}}"
     - space_name: "{{ my_space_name | default('btrixcloud-test')}}"
