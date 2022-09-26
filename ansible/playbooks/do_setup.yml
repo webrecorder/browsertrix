@@ -7,19 +7,8 @@
   hosts: localhost
   connection: local
   gather_facts: false
-    #  vars_files:
-    # - "../group_vars/do/vault.yml"
-  vars:
-    - droplet_size: "s-1vcpu-2gb"
-    - main_node_size: "s-1vcpu-2gb"
-    - crawl_node_size: "c-4"
-    - droplet_region: "sfo3"
-    - do_project: "{{ my_project | default('btrixcloud-test')}}"
-    - space_name: "{{ my_space_name | default('btrixcloud-test')}}"
-    - btrix_db: "{{ my_db | default('btrixcloud-test')}}"
-    - k8s_cluster: "{{ my_k8s | default('btrixcloud-test')}}"
-    - domain_name: "{{ my_domain | default('example.edu')}}"
-    - email_address: "{{ my_email | default('superuser@example.com')}}"
+  vars_files:
+   - "../group_vars/do/main.yml"
     
   tasks:
 
@@ -179,66 +168,17 @@
       command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }}
       register: my_lb
 
-    - name: d_ocean | Show the loadbalancer info from doctl
-      debug:
-        var: my_lb
-        verbosity: 2
-
-          #    - name: d_ocean | save doctl results as json
-          #      ansible.builtin.set_fact:
-          #        doctllb: "{{ my_lb | from_json }}"
-
-          #    - name: d_ocean | Show the loadbalancer info with json
-          #      debug:
-          #        var: doctllb
-          #        verbosity: 2
-
     - name: d_ocean | show loadbalancer ip
       command: doctl compute load-balancer list
       register: doc_lb_ip
-
-    - name: d_ocean | Show the loadbalancer info
-      debug:
-        var: doc_lb_ip
-        verbosity: 2
 
     - name: d_ocean | Show the loadbalancer ip from ansible
       community.digitalocean.digital_ocean_load_balancer_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
       register: lb_ip
 
-    - name: d_ocean | print ip of your loadbalancer from ansible
-      ansible.builtin.debug:
-        #var: "{{ lb_ip | type_debug }}"
-        var: lb_ip
-        verbosity: 2
-      ignore_errors: true
-
-        #    - name: d_ocean | print loadbalancer ip from list
-        # ansible.builtin.debug:
-        #  var: lb_ip.data.['4']
-        #  verbosity: 2
-
-          # example from ansible documentation
-          #    - name: d_ocean | query json
-          # ansible.builtin.debug: msg="{{ lb_ip | json_query(jmesquery) }}"
-          # vars:
-          # jmesquery: "[*].{Name: name, Email: email, Phone: phone, CompanyName: company.name, WebSite: website, City: address.city}"
-
-    - name: d_ocean | Create default A record
-      community.digitalocean.digital_ocean_domain_record:
-        state: present
-        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-        domain: "{{ domain_name | default('example.edu') }}"
-        type: A
-        name: "@"
-        data: "{{ lb_ip | default('omit')}}"
-      ignore_errors: true
-
     - name: d_ocean | register the dns of your webrecorder
-      command: doctl compute domain records create --record-type A --record-name test1 --record-data "{{ loadbalancer_ip }}" "{{ domain_name }}"
+      command: doctl compute domain records create --record-type A --record-name "btrixcloud-{{ ip_name | default('test1') }}" --record-data "{{ loadbalancer_ip }}" "{{ domain_name }}"
       changed_when: false
       failed_when: false
       register: cluster_check
-
-

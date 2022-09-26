@@ -1,0 +1,11 @@
+---
+droplet_size: "s-1vcpu-2gb"
+main_node_size: "s-1vcpu-2gb"
+crawl_node_size: "c-4"
+droplet_region: "sfo3"
+do_project: "btrixcloud-{{ my_project | default('project')}}"
+space_name: "btrixcloud-{{ my_space_name | default('space')}}"
+btrix_db: "btrixcloud-{{ my_db | default('db')}}"
+k8s_cluster: "btrixcloud-{{ my_k8s | default('k8s')}}"
+domain_name: "{{ my_domain | default('example.edu')}}"
+email_address: "{{ my_email | default('superuser@example.com')}}"
