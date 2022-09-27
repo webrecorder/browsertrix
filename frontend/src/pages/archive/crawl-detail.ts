@@ -587,7 +587,7 @@ export class CrawlDetail extends LiteElement {
         </tbody>
         <tfoot>
           <tr>
-            <td class="pt-3 pr-1">
+            <td class="pt-3 pr-1 align-top">
               <sl-select
                 name="type"
                 placeholder=${msg("Select Type")}
@@ -598,8 +598,8 @@ export class CrawlDetail extends LiteElement {
                 <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
               </sl-select>
             </td>
-            <td class="pt-3 pl-1 flex">
-              <div class="flex-1 mr-2">
+            <td class="pt-3 pl-1 align-top md:flex">
+              <div class="flex-1 mb-2 md:mb-0 md:mr-2">
                 <sl-input name="value" size="small"> </sl-input>
               </div>
               <div class="flex-0">
