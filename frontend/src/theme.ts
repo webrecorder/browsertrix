@@ -43,7 +43,7 @@ const theme = css`
     /* Fonts */
     --sl-font-mono: "Recursive Mono Linear", SFMono-Regular, Consolas,
       "Liberation Mono", Menlo, monospace;
-    --sl-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    --sl-font-sans: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
       "Segoe UI Emoji", "Segoe UI Symbol";
 
