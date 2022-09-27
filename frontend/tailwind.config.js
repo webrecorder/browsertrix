@@ -48,6 +48,7 @@ function makeTheme() {
     fontWeight: {
       light: "var(--sl-font-weight-light)",
       normal: "var(--sl-font-weight-normal)",
+      medium: "var(--sl-font-weight-medium)",
       semibold: "var(--sl-font-weight-semibold)",
       bold: "var(--sl-font-weight-bold)",
     },

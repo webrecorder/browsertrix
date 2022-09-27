@@ -37,8 +37,8 @@ const theme = css`
     --sl-color-primary-950: ${unsafeCSS(primaryColor.darken(0.4))};
 
     /*
-   * Typography
-   */
+     * Typography
+     */
 
     /* Fonts */
     --sl-font-mono: "Recursive Mono Linear", SFMono-Regular, Consolas,
@@ -52,6 +52,7 @@ const theme = css`
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /* Font weights */
+    --sl-font-weight-medium: 500;
     --sl-font-weight-semibold: 600;
 
     /*

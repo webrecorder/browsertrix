@@ -31,6 +31,21 @@
 @font-face {
   font-family: 'Inter';
   font-style:  normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./Inter-Medium.woff2?v=3.19") format("woff2");
+}
+@font-face {
+  font-family: 'Inter';
+  font-style:  italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./Inter-MediumItalic.woff2?v=3.19") format("woff2");
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style:  normal;
   font-weight: 600;
   font-display: swap;
   src: url("./Inter-SemiBold.woff2?v=3.19") format("woff2");
