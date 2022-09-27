@@ -20,6 +20,7 @@ import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
 import "./components";
 import "./pages";
+import "./global.css";
 
 type DialogContent = {
   label?: TemplateResult | string;

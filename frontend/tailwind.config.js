@@ -32,6 +32,17 @@ function makeTheme() {
     fontFamily: {
       sans: `var(--sl-font-sans)`,
       serif: `var(--sl-font-serif)`,
+      mono: `var(--sl-font-mono)`,
+    },
+    fontSize: {
+      xs: ["var(--sl-font-size-x-small)", { lineHeight: "1.33" }],
+      sm: ["var(--sl-font-size-small)", { lineHeight: "1.25rem" }],
+      base: ["var(--sl-font-size-medium)", { lineHeight: "1.5" }],
+      lg: ["var(--sl-font-size-large)", { lineHeight: "1.6" }],
+      xl: ["var(--sl-font-size-x-large)", { lineHeight: "1.5" }],
+      "2xl": ["var(--sl-font-size-2x-large)", { lineHeight: "1.5" }],
+      "3xl": ["var(--sl-font-size-3x-large)", { lineHeight: "1" }],
+      "4xl": ["var(--sl-font-size-4x-large)", { lineHeight: "1" }],
     },
     borderRadius: {
       sm: `var(--sl-border-radius-small)`,

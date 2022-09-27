@@ -37,13 +37,27 @@ const theme = css`
     --sl-color-primary-950: ${unsafeCSS(primaryColor.darken(0.4))};
 
     /*
+   * Typography
+   */
+
+    /* Fonts */
+    --sl-font-mono: "Recursive", SFMono-Regular, Consolas, "Liberation Mono",
+      Menlo, monospace;
+    --sl-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol";
+
+    /* Font sizes */
+    --sl-font-size-2x-large: 2rem; /* 32px */
+
+    /*
      * Forms
      */
 
     /* Buttons */
-    --sl-button-font-size-small: var(--sl-font-size-small);
-    --sl-button-font-size-medium: var(--sl-font-size-medium);
-    --sl-button-font-size-large: var(--sl-font-size-large);
+    --sl-button-font-size-small: var(--sl-font-size-x-small);
+    --sl-button-font-size-medium: var(--sl-font-size-small);
+    --sl-button-font-size-large: var(--sl-font-size-medium);
 
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
