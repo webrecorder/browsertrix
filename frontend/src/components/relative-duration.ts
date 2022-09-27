@@ -42,8 +42,12 @@ export class RelativeDuration extends LitElement {
     }
 
     if (!options.verbose && options.unitCount === undefined) {
-      // Show seconds up to 2 minutes
-      options.unitCount = duration < 120 * 1000 ? 2 : 1;
+      // Show second unit if less than 2 min or greater than 1 hr
+      if (duration >= 60 * 2 * 1000 || duration >= 60 * 60 * 1000) {
+        options.unitCount = 2;
+      } else {
+        options.unitCount = 1;
+      }
     }
 
     return humanizeDuration(duration, {
