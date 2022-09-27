@@ -243,7 +243,7 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between">
-        <h2 class="text-2xl font-medium mb-3 md:h-8">
+        <h2 class="text-xl font-medium mb-3 md:h-8">
           ${msg(
             html`<span class="font-normal">Crawl of</span> ${this.crawl
                 ? this.crawl.configName

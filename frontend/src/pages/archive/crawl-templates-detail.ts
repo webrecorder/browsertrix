@@ -107,7 +107,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <header class="md:px-4 pt-4 md:flex justify-between">
           <div>
-            <h2 class="text-xl md:text-3xl font-bold md:h-9 leading-tight mb-1">
+            <h2 class="text-xl md:text-2xl font-bold md:h-9 leading-tight mb-1">
               ${this.crawlTemplate?.name
                 ? html`
                     <span>${this.crawlTemplate.name}</span>
@@ -543,10 +543,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   role="row"
                   title=${typeof seed === "string" ? seed : seed.url}
                 >
-                  <div
-                    class="col-span-3 break-all leading-tight text-sm md:text-base"
-                    role="cell"
-                  >
+                  <div class="col-span-3 break-all leading-tight" role="cell">
                     ${typeof seed === "string" ? seed : seed.url}
                   </div>
                   <span

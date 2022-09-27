@@ -685,7 +685,7 @@ export class App extends LiteElement {
       noHeader: true,
       body: html`
         <div class="grid gap-4 text-center">
-          <p class="mt-8 text-2xl font-medium">
+          <p class="mt-8 text-xl font-medium">
             ${msg("Welcome to Browsertrix Cloud!")}
           </p>
 

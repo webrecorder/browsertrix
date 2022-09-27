@@ -240,7 +240,7 @@ export class CrawlsList extends LiteElement {
         : map((crawl) => ({ item: crawl }));
 
     return html`
-      <ul class="border rounded text-sm md:text-base">
+      <ul class="border rounded">
         ${flow(
           filterResults,
           this.sortCrawls.bind(this),

@@ -59,7 +59,7 @@ export class Home extends LiteElement {
         <header
           class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
-          <h1 class="text-2xl font-medium">${title}</h1>
+          <h1 class="text-xl font-medium">${title}</h1>
         </header>
         <hr />
       </div>

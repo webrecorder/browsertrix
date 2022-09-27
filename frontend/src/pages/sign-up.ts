@@ -20,7 +20,7 @@ export class SignUp extends LiteElement {
           ${this.isSignedUpWithoutAuth
             ? html`
                 <div
-                  class="text-2xl font-semibold mb-5 text-primary"
+                  class="text-xl font-semibold mb-5 text-primary"
                   role="alert"
                 >
                   ${msg("Successfully signed up")}
@@ -32,7 +32,7 @@ export class SignUp extends LiteElement {
                 </p>
               `
             : html`
-                <h1 class="text-3xl font-semibold mb-5">${msg("Sign up")}</h1>
+                <h1 class="text-2xl font-semibold mb-5">${msg("Sign up")}</h1>
 
                 <btrix-sign-up-form
                   @submit=${this.onSubmit}
