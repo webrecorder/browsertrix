@@ -382,9 +382,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" type="primary" size="small" caret
-          >${msg("Actions")}</sl-button
-        >
+        <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
         <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
           ${menuItems.map((item: HTMLTemplateResult) => item)}

@@ -308,7 +308,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" size="small" caret
+        <sl-button slot="trigger" caret
           >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button

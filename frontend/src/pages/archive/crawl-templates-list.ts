@@ -146,7 +146,6 @@ export class CrawlTemplatesList extends LiteElement {
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by name")}
-            style="--sl-input-height-medium: 2.25rem;"
             clearable
             ?disabled=${!this.crawlTemplates?.length}
             @sl-input=${this.onSearchInput}
@@ -156,20 +155,14 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
 
         <div class="grow-0 mb-4">
-          <a
+          <sl-button
             href=${`/archives/${this.archiveId}/crawl-templates/new`}
-            class="block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
-            role="button"
+            type="primary"
             @click=${this.navLink}
           >
-            <sl-icon
-              class="inline-block align-middle mr-2"
-              name="plus-lg"
-            ></sl-icon
-            ><span class="inline-block align-middle mr-2 text-sm"
-              >${msg("New Crawl Template")}</span
-            >
-          </a>
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("New Crawl Template")}
+          </sl-button>
         </div>
       </div>
 

@@ -267,9 +267,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderMenu() {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" size="small" caret
-          >${msg("Actions")}</sl-button
-        >
+        <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
         <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
           <li
