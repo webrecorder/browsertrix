@@ -3,6 +3,12 @@ import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
 
+type HumanizeOptions = {
+  compact?: boolean;
+  verbose?: boolean;
+  unitCount?: number;
+};
+
 /**
  * Show time passed from date in human-friendly format
  *
@@ -25,13 +31,19 @@ export class RelativeDuration extends LitElement {
   @property({ type: Boolean })
   verbose = false;
 
-  static humanize(duration: number, options: any = {}) {
-    const minMs = 60 * 1000;
+  @property({ type: Number })
+  unitCount?: number;
 
-    if (duration < minMs) {
-      return msg(str`< 1 minute`, {
-        desc: "Less than one minute",
+  static humanize(duration: number, options: HumanizeOptions = {}) {
+    if (!options.verbose && duration < 10 * 1000) {
+      return msg(str`< 10 seconds`, {
+        desc: "Less than ten seconds",
       });
+    }
+
+    if (!options.verbose && options.unitCount === undefined) {
+      // Show seconds up to 2 minutes
+      options.unitCount = duration < 120 * 1000 ? 2 : 1;
     }
 
     return humanizeDuration(duration, {
@@ -56,6 +68,7 @@ export class RelativeDuration extends LitElement {
       {
         compact: this.compact,
         verbose: this.verbose,
+        unitCount: this.unitCount,
       }
     );
   }

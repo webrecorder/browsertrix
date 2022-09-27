@@ -401,10 +401,12 @@ export class CrawlsList extends LiteElement {
                       date=${`${crawl.finished}Z` /** Z for UTC */}
                     ></sl-relative-time>
                   `
-                : html`
-                    ${crawl.state === "canceled"
-                      ? msg("Unknown")
-                      : html`
+                : ""}
+              ${!crawl.finished
+                ? html`
+                    ${crawl.state === "canceled" ? msg("Unknown") : ""}
+                    ${crawl.state === "running"
+                      ? html`
                           <sl-tooltip placement="bottom">
                             <span slot="content">
                               ${msg(
@@ -420,12 +422,12 @@ export class CrawlsList extends LiteElement {
                               class="text-purple-500"
                               value=${`${crawl.started}Z`}
                               endTime=${this.lastFetched || Date.now()}
-                              compact
-                              verbose
                             ></btrix-relative-duration>
                           </sl-tooltip>
-                        `}
-                  `}
+                        `
+                      : ""}
+                  `
+                : ""}
             </div>
           </div>
         </div>
