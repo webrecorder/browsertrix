@@ -11,7 +11,7 @@ export class QueueExclusionTable extends LiteElement {
   render() {
     return html`
       <table class="leading-none border-separate border-spacing-0">
-        <thead class="text-sm">
+        <thead class="text-xs text-neutral-700">
           <tr class="text-left">
             <th class="font-normal px-2 pb-1">${msg("Exclusion Type")}</th>
             <th class="font-normal px-2 pb-1 w-full">

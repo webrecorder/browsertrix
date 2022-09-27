@@ -29,7 +29,7 @@ export class NumberedList extends LitElement {
         var(--sl-panel-border-color);
       border-right: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
-      padding: var(--sl-spacing-x-small);
+      padding: 0.5em;
     }
 
     li:first-child {
@@ -51,7 +51,18 @@ export class NumberedList extends LitElement {
     }
 
     li::marker {
-      color: var(--sl-color-neutral-500);
+      color: var(--sl-color-neutral-400);
+      font-size: var(--sl-font-size-medium);
+      font-weight: var(--sl-font-weight-normal);
+    }
+
+    a {
+      color: var(--sl-color-indigo-500);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--sl-color-indigo-400);
     }
   `;
 
