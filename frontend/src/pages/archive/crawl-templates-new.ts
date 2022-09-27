@@ -357,14 +357,24 @@ export class CrawlTemplatesNew extends LiteElement {
         class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid grid-cols-1 gap-5"
       >
         <div class="col-span-1">
-          <sl-select
-            name="scale"
-            label=${msg("Crawl Scale")}
-            value=${initialValues.scale}
-          >
-            <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
-            <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
-            <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
+          <sl-select name="scale" value=${initialValues.scale}>
+            <label slot="label">
+              <span class="inline-block align-middle">
+                ${msg("Crawler Instances")}
+              </span>
+              <sl-tooltip
+                content=${msg(
+                  "The number of crawler instances that will run in parallel for this crawl job."
+                )}
+                ><sl-icon
+                  class="inline-block align-middle ml-1 text-neutral-500"
+                  name="info-circle"
+                ></sl-icon
+              ></sl-tooltip>
+            </label>
+            <sl-menu-item value="1">${msg("1")}</sl-menu-item>
+            <sl-menu-item value="2">${msg("2")}</sl-menu-item>
+            <sl-menu-item value="3">${msg("3")}</sl-menu-item>
           </sl-select>
         </div>
         <div class="col-span-1 flex justify-between">
