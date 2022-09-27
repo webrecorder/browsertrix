@@ -155,6 +155,15 @@ export class CrawlTemplatesNew extends LiteElement {
             </div>
 
             <div class="p-4 md:p-8 text-center grid gap-5">
+              <div>
+                <sl-checkbox
+                  name="runNow"
+                  ?checked=${initialValues.runNow}
+                  @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
+                  >${msg("Run immediately on save")}
+                </sl-checkbox>
+              </div>
+
               ${this.serverError
                 ? html`<btrix-alert id="formError" type="danger"
                     >${this.serverError}</btrix-alert
@@ -167,31 +176,11 @@ export class CrawlTemplatesNew extends LiteElement {
                   submit
                   ?loading=${this.isSubmitting}
                   ?disabled=${this.isSubmitting}
-                  >${msg("Save Crawl Template")}</sl-button
+                  >${this.isRunNow
+                    ? msg("Save & Run Template")
+                    : msg("Save Template")}</sl-button
                 >
               </div>
-
-              ${this.isRunNow || this.scheduleInterval
-                ? html`<div class="text-sm text-gray-500">
-                    ${this.isRunNow
-                      ? html`
-                          <p class="mb-2">
-                            ${msg("A crawl will start immediately on save.")}
-                          </p>
-                        `
-                      : ""}
-                    ${this.scheduleInterval
-                      ? html`
-                          <p class="mb-2">
-                            ${msg(
-                              html`Scheduled crawl will run
-                              ${this.formattededNextCrawlDate}.`
-                            )}
-                          </p>
-                        `
-                      : ""}
-                  </div>`
-                : ""}
             </div>
           </sl-form>
         </div>
@@ -328,13 +317,6 @@ export class CrawlTemplatesNew extends LiteElement {
               : msg("No crawls scheduled")}
           </div>
         </div>
-
-        <sl-checkbox
-          name="runNow"
-          ?checked=${initialValues.runNow}
-          @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
-          >${msg("Run immediately on save")}
-        </sl-checkbox>
 
         <sl-input
           name="crawlTimeoutMinutes"
