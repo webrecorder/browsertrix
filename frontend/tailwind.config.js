@@ -45,6 +45,12 @@ function makeTheme() {
       "3xl": ["var(--sl-font-size-3x-large)", { lineHeight: "1" }],
       "4xl": ["var(--sl-font-size-4x-large)", { lineHeight: "1" }],
     },
+    fontWeight: {
+      light: "var(--sl-font-weight-light)",
+      normal: "var(--sl-font-weight-normal)",
+      semibold: "var(--sl-font-weight-semibold)",
+      bold: "var(--sl-font-weight-bold)",
+    },
     borderRadius: {
       sm: `var(--sl-border-radius-small)`,
       DEFAULT: `var(--sl-border-radius-medium)`,

@@ -20,7 +20,8 @@ import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
 import "./components";
 import "./pages";
-import "./global.css";
+import "./assets/fonts/Inter/inter.css";
+import "./assets/fonts/Recursive/recursive.css";
 
 type DialogContent = {
   label?: TemplateResult | string;

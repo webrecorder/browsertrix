@@ -1,0 +1,7 @@
+@font-face {
+  font-family: 'Recursive Mono Linear';
+  font-style:  normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./RecursiveMonoLnrSt-Regular.woff2") format("woff2");
+}

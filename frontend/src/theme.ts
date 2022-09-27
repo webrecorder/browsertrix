@@ -1,6 +1,6 @@
 /**
  * Shoelace CSS theming variables
- * https://github.com/shoelace-style/shoelace/blob/current/src/themes/light.styles.ts
+ * https://github.com/shoelace-style/shoelace/blob/next/src/themes/light.css
  *
  * To make new variables available to Tailwind, update
  * `theme` in tailwind.cofnig.js
@@ -41,8 +41,8 @@ const theme = css`
    */
 
     /* Fonts */
-    --sl-font-mono: "Recursive", SFMono-Regular, Consolas, "Liberation Mono",
-      Menlo, monospace;
+    --sl-font-mono: "Recursive Mono Linear", SFMono-Regular, Consolas,
+      "Liberation Mono", Menlo, monospace;
     --sl-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
       "Segoe UI Emoji", "Segoe UI Symbol";
@@ -50,6 +50,9 @@ const theme = css`
     /* Font sizes */
     --sl-font-size-medium: 0.875rem; /* 14px */
     --sl-font-size-2x-large: 2rem; /* 32px */
+
+    /* Font weights */
+    --sl-font-weight-semibold: 600;
 
     /*
      * Forms
