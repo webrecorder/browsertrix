@@ -1,7 +1,8 @@
 @font-face {
-  font-family: 'Recursive Mono Linear';
-  font-style:  normal;
+  font-family: 'Recursive var';
   font-weight: 400;
   font-display: swap;
-  src: url("./RecursiveMonoLnrSt-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-variation-settings: 'MONO' 1, 'CASL' 0, 'slnt' 0, 'CRSV' 0;
+  src: url("./Recursive_VF_1.085.woff2") format("woff2");
 }
