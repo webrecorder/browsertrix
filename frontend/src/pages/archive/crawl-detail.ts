@@ -560,27 +560,34 @@ export class CrawlDetail extends LiteElement {
 
   private renderExclusionTable() {
     return html`
-      <table
-        class="grid border-collapse"
-        style="grid-template-columns: min-content 1fr;"
-      >
-        <thead class="contents">
-          <tr class="contents text-left">
-            <th class="font-normal">${msg("Exclusion Type")}</th>
-            <th class="font-normal">${msg("Exclusion Text")}</th>
+      <table class="leading-none border-separate border-spacing-0">
+        <thead class="text-sm">
+          <tr class="text-left">
+            <th class="font-normal px-2 pb-1">${msg("Exclusion Type")}</th>
+            <th class="font-normal px-2 pb-1 w-full">
+              ${msg("Exclusion Text")}
+            </th>
           </tr>
         </thead>
-        <tbody class="contents">
-          <tr class="contents">
-            <td>Matches Text</td>
-            <td>https://example.com/login/</td>
+        <tbody>
+          <tr class="even:bg-neutral-50">
+            <td class="border-t border-x rounded-tl p-2">Matches Text</td>
+            <td class="border-t border-r rounded-tr p-2">
+              https://example.com/login/
+            </td>
           </tr>
-          <tr class="contents">
-            <td>Regex</td>
-            <td>/\\users/</td>
+          <tr class="even:bg-neutral-50">
+            <td class="border-t border-x p-2">Matches Text</td>
+            <td class="border-t border-r p-2">/users/</td>
           </tr>
-          <tr class="contents">
-            <td>
+          <tr class="even:bg-neutral-50">
+            <td class="border-y border-x rounded-bl p-2">Regex</td>
+            <td class="border-y border-r rounded-br p-2">/\\users/</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="pt-3 pr-1">
               <sl-select
                 name="type"
                 placeholder=${msg("Select Type")}
@@ -591,8 +598,8 @@ export class CrawlDetail extends LiteElement {
                 <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
               </sl-select>
             </td>
-            <td class="flex">
-              <div class="flex-1 mr-3">
+            <td class="pt-3 pl-1 flex">
+              <div class="flex-1 mr-2">
                 <sl-input name="value" size="small"> </sl-input>
               </div>
               <div class="flex-0">
@@ -602,7 +609,7 @@ export class CrawlDetail extends LiteElement {
               </div>
             </td>
           </tr>
-        </tbody>
+        </tfoot>
       </table>
     `;
   }
