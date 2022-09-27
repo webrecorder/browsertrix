@@ -59,6 +59,11 @@ const theme = css`
     --sl-button-font-size-medium: var(--sl-font-size-small);
     --sl-button-font-size-large: var(--sl-font-size-medium);
 
+    /* Inputs */
+    --sl-input-font-size-small: var(--sl-font-size-x-small);
+    --sl-input-font-size-medium: var(--sl-font-size-small);
+    --sl-input-font-size-large: var(--sl-font-size-medium);
+
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
     --sl-input-label-font-size-medium: var(--sl-font-size-small);

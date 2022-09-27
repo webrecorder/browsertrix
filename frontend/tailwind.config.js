@@ -21,6 +21,7 @@ function makeTheme() {
     }));
 
   return {
+    // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
     colors: {
       current: "currentColor",
       ...colors.map(makeColorPalette),
