@@ -166,7 +166,6 @@ export class CrawlsList extends LiteElement {
       <div class="grid grid-cols-2 gap-3 items-center">
         <div class="col-span-2 md:col-span-1">
           <sl-input
-            size="small"
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by Crawl Template name or ID")}
@@ -178,9 +177,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort By")}
-          </div>
+          <div class="whitespace-nowrap text-0-500 mr-2">${msg("Sort By")}</div>
           <sl-dropdown
             placement="bottom-end"
             distance="4"
