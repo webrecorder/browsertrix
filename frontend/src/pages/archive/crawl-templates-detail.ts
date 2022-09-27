@@ -877,7 +877,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             ></sl-tooltip>
           </label>
 
-          <sl-menu-item value="1">${msg("1 (Standard)")}</sl-menu-item>
+          <sl-menu-item value="1">${msg("1")}</sl-menu-item>
           <sl-menu-item value="2">${msg("2")}</sl-menu-item>
           <sl-menu-item value="3">${msg("3")}</sl-menu-item>
         </sl-select>
