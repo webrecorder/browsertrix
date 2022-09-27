@@ -175,11 +175,15 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="mb-4">${this.renderSummary()}</section>
+        <section class="rounded-lg border mb-4">
+          ${this.renderSummary()}
+        </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+          <div class="col-span-6 md:col-span-5 md:rounded-lg md:border md:p-6">
+            ${sectionContent}
+          </div>
         </section>
       </main>
 
@@ -235,7 +239,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
-          ${renderNavItem({ section: "logs", label: msg("Logs") })}
+          <!-- ${renderNavItem({ section: "logs", label: msg("Logs") })} -->
         </ul>
       </nav>
     `;
@@ -377,13 +381,13 @@ export class CrawlDetail extends LiteElement {
 
   private renderSummary() {
     return html`
-      <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
+      <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
               ? html`
-                  <div class="flex items-baseline justify-between">
+                  <div class="inline-flex items-baseline justify-between">
                     <div
                       class="whitespace-nowrap capitalize${this.isActive
                         ? " motion-safe:animate-pulse"
@@ -471,7 +475,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Watch Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">
+          ${msg("Watch Crawl")}
+        </h3>
         ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
@@ -532,7 +538,9 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQueue() {
-    return html`TODO`;
+    return html`<h3 class="text-lg font-medium leading-none mb-2">
+      ${msg("Crawl Queue")}
+    </h3>`;
   }
 
   private renderReplay() {
@@ -546,7 +554,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Replay Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">${msg(
+          "Replay Crawl"
+        )}</h3>
         ${
           document.fullscreenEnabled && canReplay
             ? html`
@@ -588,7 +598,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
+      <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
@@ -716,7 +726,9 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
+      <h3 class="text-lg font-medium leading-none mb-2">
+        ${msg("Download Files")}
+      </h3>
 
       ${this.hasFiles
         ? html`
