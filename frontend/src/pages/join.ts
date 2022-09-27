@@ -60,7 +60,7 @@ export class Join extends LiteElement {
             this.inviteInfo.inviterEmail ||
             placeholder}
           </div>
-          <p class="text-xl md:text-3xl font-semibold mb-5">
+          <p class="text-xl md:text-2xl font-semibold mb-5">
             ${msg(
               html`You've been invited to join
                 <span class="text-primary break-words"

@@ -25,7 +25,7 @@ export class Verify extends LiteElement {
     if (this.serverError) {
       return html`<btrix-alert type="danger">${this.serverError}</btrix-alert>`;
     }
-    return html` <div class="text-4xl"><sl-spinner></sl-spinner></div> `;
+    return html` <div class="text-3xl"><sl-spinner></sl-spinner></div> `;
   }
 
   private async verify(): Promise<void> {

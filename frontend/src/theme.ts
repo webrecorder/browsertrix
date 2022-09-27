@@ -1,6 +1,6 @@
 /**
  * Shoelace CSS theming variables
- * https://github.com/shoelace-style/shoelace/blob/current/src/themes/light.styles.ts
+ * https://github.com/shoelace-style/shoelace/blob/next/src/themes/light.css
  *
  * To make new variables available to Tailwind, update
  * `theme` in tailwind.cofnig.js
@@ -37,13 +37,37 @@ const theme = css`
     --sl-color-primary-950: ${unsafeCSS(primaryColor.darken(0.4))};
 
     /*
+     * Typography
+     */
+
+    /* Fonts */
+    --sl-font-mono: "Recursive var", SFMono-Regular, Consolas, "Liberation Mono",
+      Menlo, monospace;
+    --sl-font-sans: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol";
+
+    /* Font sizes */
+    --sl-font-size-medium: 0.875rem; /* 14px */
+    --sl-font-size-2x-large: 2rem; /* 32px */
+
+    /* Font weights */
+    --sl-font-weight-medium: 500;
+    --sl-font-weight-semibold: 600;
+
+    /*
      * Forms
      */
 
     /* Buttons */
-    --sl-button-font-size-small: var(--sl-font-size-small);
-    --sl-button-font-size-medium: var(--sl-font-size-medium);
-    --sl-button-font-size-large: var(--sl-font-size-large);
+    --sl-button-font-size-small: var(--sl-font-size-x-small);
+    --sl-button-font-size-medium: var(--sl-font-size-small);
+    --sl-button-font-size-large: var(--sl-font-size-medium);
+
+    /* Inputs */
+    --sl-input-font-size-small: var(--sl-font-size-x-small);
+    --sl-input-font-size-medium: var(--sl-font-size-small);
+    --sl-input-font-size-large: var(--sl-font-size-medium);
 
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);

@@ -123,7 +123,7 @@ export class CrawlsList extends LiteElement {
   render() {
     if (!this.crawls) {
       return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
+        class="w-full flex items-center justify-center my-24 text-3xl"
       >
         <sl-spinner></sl-spinner>
       </div>`;
@@ -142,7 +142,7 @@ export class CrawlsList extends LiteElement {
               `}
         </section>
         <footer class="mt-2">
-          <span class="text-0-400 text-sm">
+          <span class="text-0-400 text-xs">
             ${this.lastFetched
               ? msg(html`Last updated:
                   <sl-format-date
@@ -166,7 +166,6 @@ export class CrawlsList extends LiteElement {
       <div class="grid grid-cols-2 gap-3 items-center">
         <div class="col-span-2 md:col-span-1">
           <sl-input
-            size="small"
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by Crawl Template name or ID")}
@@ -178,9 +177,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort By")}
-          </div>
+          <div class="whitespace-nowrap text-0-500 mr-2">${msg("Sort By")}</div>
           <sl-dropdown
             placement="bottom-end"
             distance="4"
@@ -240,7 +237,7 @@ export class CrawlsList extends LiteElement {
         : map((crawl) => ({ item: crawl }));
 
     return html`
-      <ul class="border rounded text-sm md:text-base">
+      <ul class="border rounded">
         ${flow(
           filterResults,
           this.sortCrawls.bind(this),

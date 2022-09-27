@@ -243,7 +243,7 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between">
-        <h2 class="text-2xl font-medium mb-3 md:h-8">
+        <h2 class="text-xl font-medium mb-3 md:h-8">
           ${msg(
             html`<span class="font-normal">Crawl of</span> ${this.crawl
                 ? this.crawl.configName
@@ -308,7 +308,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" size="small" caret
+        <sl-button slot="trigger" caret
           >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button

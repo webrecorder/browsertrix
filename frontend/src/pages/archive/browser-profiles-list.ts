@@ -47,20 +47,14 @@ export class BrowserProfilesList extends LiteElement {
 
   render() {
     return html`<header class="mb-3 text-right">
-        <a
+        <sl-button
           href=${`/archives/${this.archiveId}/browser-profiles/new`}
-          class="inline-block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
-          role="button"
+          type="primary"
           @click=${this.navLink}
         >
-          <sl-icon
-            class="inline-block align-middle mr-2"
-            name="plus-lg"
-          ></sl-icon
-          ><span class="inline-block align-middle mr-2 text-sm"
-            >${msg("New Browser Profile")}</span
-          >
-        </a>
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          ${msg("New Browser Profile")}
+        </sl-button>
       </header>
 
       ${this.renderTable()}

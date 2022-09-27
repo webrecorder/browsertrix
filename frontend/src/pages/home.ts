@@ -35,7 +35,7 @@ export class Home extends LiteElement {
   render() {
     if (!this.userInfo || !this.archiveList) {
       return html`
-        <div class="flex items-center justify-center my-24 text-4xl">
+        <div class="flex items-center justify-center my-24 text-3xl">
           <sl-spinner></sl-spinner>
         </div>
       `;
@@ -59,7 +59,7 @@ export class Home extends LiteElement {
         <header
           class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
-          <h1 class="text-2xl font-medium">${title}</h1>
+          <h1 class="text-xl font-medium">${title}</h1>
         </header>
         <hr />
       </div>
