@@ -6,7 +6,10 @@ import { property } from "lit/decorators.js";
  *
  * Usage example:
  * ```ts
- * <btrix-details></btrix-details>
+ * <btrix-details>
+ *   <span slot="summary">Summary</span>
+ *   ${content}
+ * </btrix-details>
  * ```
  */
 export class Details extends LitElement {

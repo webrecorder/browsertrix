@@ -549,12 +549,22 @@ export class CrawlDetail extends LiteElement {
 
       <btrix-details class="mb-3" open>
         <span slot="summary">${msg("Pending Exclusions")}</span>
-        <div>content</div>
+        <btrix-numbered-list
+          .items=${["https://example.com/a/", "https://example.com/b/"]}
+          aria-live="polite"
+        ></btrix-numbered-list>
       </btrix-details>
 
       <btrix-details class="mb-3" open>
         <span slot="summary">${msg("Crawl Queue")}</span>
-        <div>content</div>
+        <btrix-numbered-list
+          .items=${[
+            "https://example.com/a/",
+            "https://example.com/b/",
+            "https://example.com/c/",
+          ]}
+          aria-live="polite"
+        ></btrix-numbered-list>
       </btrix-details> `;
   }
 

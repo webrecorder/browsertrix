@@ -45,6 +45,9 @@ import("./select-browser-profile").then(({ SelectBrowserProfile }) => {
 import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
   customElements.define("btrix-queue-exclusion-table", QueueExclusionTable);
 });
+import("./numbered-list").then(({ NumberedList }) => {
+  customElements.define("btrix-numbered-list", NumberedList);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
