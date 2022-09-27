@@ -538,13 +538,13 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQueue() {
-    return html`<h3 class="text-lg font-medium leading-none mb-2">
+    return html`<h3 class="text-lg font-medium leading-none mb-4">
         ${msg("Crawl Queue")}
       </h3>
 
       <btrix-details class="mb-3" open>
         <span slot="summary">${msg("Exclusion Table")}</span>
-        <div>content</div>
+        ${this.renderExclusionTable()}
       </btrix-details>
 
       <btrix-details class="mb-3" open>
@@ -556,6 +556,55 @@ export class CrawlDetail extends LiteElement {
         <span slot="summary">${msg("Crawl Queue")}</span>
         <div>content</div>
       </btrix-details> `;
+  }
+
+  private renderExclusionTable() {
+    return html`
+      <table
+        class="grid border-collapse"
+        style="grid-template-columns: min-content 1fr;"
+      >
+        <thead class="contents">
+          <tr class="contents text-left">
+            <th class="font-normal">${msg("Exclusion Type")}</th>
+            <th class="font-normal">${msg("Exclusion Text")}</th>
+          </tr>
+        </thead>
+        <tbody class="contents">
+          <tr class="contents">
+            <td>Matches Text</td>
+            <td>https://example.com/login/</td>
+          </tr>
+          <tr class="contents">
+            <td>Regex</td>
+            <td>/\\users/</td>
+          </tr>
+          <tr class="contents">
+            <td>
+              <sl-select
+                name="type"
+                placeholder=${msg("Select Type")}
+                size="small"
+                required
+              >
+                <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
+                <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
+              </sl-select>
+            </td>
+            <td class="flex">
+              <div class="flex-1 mr-3">
+                <sl-input name="value" size="small"> </sl-input>
+              </div>
+              <div class="flex-0">
+                <sl-button type="primary" size="small" submit
+                  >${msg("Add Exclusion")}</sl-button
+                >
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
   }
 
   private renderReplay() {
