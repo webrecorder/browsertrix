@@ -35,7 +35,7 @@ export class Home extends LiteElement {
   render() {
     if (!this.userInfo || !this.archiveList) {
       return html`
-        <div class="flex items-center justify-center my-24 text-4xl">
+        <div class="flex items-center justify-center my-24 text-3xl">
           <sl-spinner></sl-spinner>
         </div>
       `;

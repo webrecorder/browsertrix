@@ -511,7 +511,7 @@ export class App extends LiteElement {
 
   renderSpinner() {
     return html`
-      <div class="w-full flex items-center justify-center text-4xl">
+      <div class="w-full flex items-center justify-center text-3xl">
         <sl-spinner></sl-spinner>
       </div>
     `;

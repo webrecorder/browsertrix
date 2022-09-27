@@ -123,7 +123,7 @@ export class CrawlsList extends LiteElement {
   render() {
     if (!this.crawls) {
       return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
+        class="w-full flex items-center justify-center my-24 text-3xl"
       >
         <sl-spinner></sl-spinner>
       </div>`;
