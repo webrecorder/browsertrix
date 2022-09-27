@@ -539,8 +539,23 @@ export class CrawlDetail extends LiteElement {
 
   private renderQueue() {
     return html`<h3 class="text-lg font-medium leading-none mb-2">
-      ${msg("Crawl Queue")}
-    </h3>`;
+        ${msg("Crawl Queue")}
+      </h3>
+
+      <btrix-details class="mb-3" open>
+        <span slot="summary">${msg("Exclusion Table")}</span>
+        <div>content</div>
+      </btrix-details>
+
+      <btrix-details class="mb-3" open>
+        <span slot="summary">${msg("Pending Exclusions")}</span>
+        <div>content</div>
+      </btrix-details>
+
+      <btrix-details class="mb-3" open>
+        <span slot="summary">${msg("Crawl Queue")}</span>
+        <div>content</div>
+      </btrix-details> `;
   }
 
   private renderReplay() {
