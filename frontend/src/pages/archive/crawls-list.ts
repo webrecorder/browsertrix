@@ -142,7 +142,7 @@ export class CrawlsList extends LiteElement {
               `}
         </section>
         <footer class="mt-2">
-          <span class="text-0-400 text-sm">
+          <span class="text-0-400 text-xs">
             ${this.lastFetched
               ? msg(html`Last updated:
                   <sl-format-date

@@ -48,6 +48,7 @@ const theme = css`
       "Segoe UI Emoji", "Segoe UI Symbol";
 
     /* Font sizes */
+    --sl-font-size-medium: 0.875rem; /* 14px */
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /*

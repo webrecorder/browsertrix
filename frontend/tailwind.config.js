@@ -70,7 +70,7 @@ module.exports = {
     extend: makeTheme(),
   },
 
-  content: ["./**/*.html", "./src/**/*.{ts,js}"],
+  content: ["./**/*.html", "./src/**/*.{ts,js,ejs}"],
 
   extract: {
     include: ["./src/**/*.{ts,js}"],
