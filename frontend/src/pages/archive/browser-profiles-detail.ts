@@ -81,7 +81,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <header class="md:flex items-center justify-between mb-3">
-        <h2 class="text-xl md:text-2xl font-bold md:h-9 mb-1">
+        <h2 class="text-xl md:text-2xl font-semibold md:h-9 mb-1">
           ${this.profile?.name
             ? html`${this.profile?.name}
                 <sl-button

@@ -233,7 +233,7 @@ export class AccountSettings extends LiteElement {
     }
 
     return html`<div class="grid gap-4">
-      <h1 class="text-xl font-bold">${msg("Account settings")}</h1>
+      <h1 class="text-xl font-semibold">${msg("Account settings")}</h1>
 
       ${successMessage}
 
@@ -277,7 +277,7 @@ export class AccountSettings extends LiteElement {
     }
 
     return html` <div class="max-w-sm">
-      <h3 class="font-bold mb-3">${msg("Change password")}</h3>
+      <h3 class="font-semibold mb-3">${msg("Change password")}</h3>
       <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
         <div class="mb-5">
           <sl-input

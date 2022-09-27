@@ -107,7 +107,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <header class="md:px-4 pt-4 md:flex justify-between">
           <div>
-            <h2 class="text-xl md:text-2xl font-bold md:h-9 leading-tight mb-1">
+            <h2
+              class="text-xl md:text-2xl font-semibold md:h-9 leading-tight mb-1"
+            >
               ${this.crawlTemplate?.name
                 ? html`
                     <span>${this.crawlTemplate.name}</span>
