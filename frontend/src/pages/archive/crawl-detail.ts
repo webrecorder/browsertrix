@@ -230,7 +230,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "queue", label: msg("Queue") })}
+          ${/* renderNavItem({ section: "queue", label: msg("Queue") }) */ ""}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -239,7 +239,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
-          <!-- ${renderNavItem({ section: "logs", label: msg("Logs") })} -->
+          ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
         </ul>
       </nav>
     `;
@@ -556,7 +556,7 @@ export class CrawlDetail extends LiteElement {
             },
             {
               type: "regex",
-              value: "\\/admin\\/",
+              value: "example.com/admin.*",
             },
           ]}
         ></btrix-queue-exclusion-table>
@@ -569,7 +569,7 @@ export class CrawlDetail extends LiteElement {
             class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
             aria-live="polite"
           >
-            ${msg(str`${2} URLs will be excluded`)}
+            ${msg(str`${2} URLs`)}
           </span>
         </span>
         <btrix-numbered-list
@@ -583,10 +583,10 @@ export class CrawlDetail extends LiteElement {
         <span slot="summary"
           >${msg("Crawl Queue")}
           <span
-            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-slate-500  bg-slate-50"
+            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
             aria-live="polite"
           >
-            ${msg("No Changes")}
+            ${msg(str`${2} URLs will be Excluded`)}
           </span>
         </span>
         <btrix-numbered-list

@@ -8,6 +8,8 @@ type Exclusion = {
   value: string;
 };
 
+const MIN_LENGTH = 2;
+
 /**
  * Crawl queue exclusion table
  */
@@ -15,6 +17,12 @@ type Exclusion = {
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
   exclusions: Exclusion[] = [];
+
+  @state()
+  private selectValue = "text";
+
+  @state()
+  private inputValue = "";
 
   render() {
     return html`
@@ -38,7 +46,8 @@ export class QueueExclusionTable extends LiteElement {
                 name="type"
                 placeholder=${msg("Select Type")}
                 size="small"
-                required
+                .value=${this.selectValue}
+                @sl-select=${(e: any) => (this.selectValue = e.target.value)}
               >
                 <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
                 <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
@@ -46,10 +55,26 @@ export class QueueExclusionTable extends LiteElement {
             </td>
             <td class="pt-3 pl-1 align-top md:flex">
               <div class="flex-1 mb-2 md:mb-0 md:mr-2">
-                <sl-input name="value" size="small"> </sl-input>
+                <sl-input
+                  name="value"
+                  size="small"
+                  autocomplete="off"
+                  minlength=${MIN_LENGTH}
+                  placeholder=${this.selectValue === "text"
+                    ? "/skip-this-page"
+                    : "example.com/skip.*"}
+                  .value=${this.inputValue}
+                  @sl-input=${(e: any) => (this.inputValue = e.target.value)}
+                >
+                </sl-input>
               </div>
               <div class="flex-0">
-                <sl-button type="primary" size="small" submit
+                <sl-button
+                  type="primary"
+                  size="small"
+                  submit
+                  ?disabled=${!this.inputValue ||
+                  this.inputValue.length < MIN_LENGTH}
                   >${msg("Add Exclusion")}</sl-button
                 >
               </div>
