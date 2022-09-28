@@ -65,7 +65,9 @@ const theme = css`
     --sl-button-font-size-large: var(--sl-font-size-medium);
 
     /* Inputs */
-    --sl-input-font-size-small: var(--sl-font-size-x-small);
+    --sl-input-height-small: 2rem; /* 32px */
+
+    --sl-input-font-size-small: var(--sl-font-size-small);
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
@@ -78,6 +80,16 @@ const theme = css`
   .sl-toast-stack {
     bottom: 0;
     top: auto;
+  }
+
+  /* Elevate select and buttons */
+  sl-select::part(control),
+  sl-button::part(base) {
+    box-shadow: var(--sl-shadow-small);
+  }
+
+  sl-select[size="small"]::part(control) {
+    --sl-input-spacing-small: var(--sl-spacing-x-small);
   }
 `;
 

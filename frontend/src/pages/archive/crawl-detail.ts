@@ -544,7 +544,22 @@ export class CrawlDetail extends LiteElement {
 
       <btrix-details class="mb-3" open>
         <span slot="summary">${msg("Exclusion Table")}</span>
-        <btrix-queue-exclusion-table></btrix-queue-exclusion-table>
+        <btrix-queue-exclusion-table
+          .exclusions=${[
+            {
+              type: "text",
+              value: "https://example.com/login/",
+            },
+            {
+              type: "text",
+              value: "/users/",
+            },
+            {
+              type: "regex",
+              value: "\\/admin\\/",
+            },
+          ]}
+        ></btrix-queue-exclusion-table>
       </btrix-details>
 
       <btrix-details class="mb-3" open>
