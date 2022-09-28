@@ -749,7 +749,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         </div>
         <div class="col-span-1">
           <dt class="text-sm text-0-600">
-            <span class="inline-block align-middle">${msg("Crawl Scale")}</span>
+            <span class="inline-block align-middle"
+              >${msg("Crawler Instances")}</span
+            >
           </dt>
           <dd>
             <span class="inline-block font-mono mr-2"
@@ -852,15 +854,29 @@ export class CrawlTemplatesDetail extends LiteElement {
       <sl-form @sl-submit=${this.handleSubmitEditScale}>
         <sl-select
           name="scale"
-          label=${msg("Crawl Scale")}
           value=${this.crawlTemplate.scale}
           hoist
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
         >
-          <sl-menu-item value="1">${msg("Standard")}</sl-menu-item>
-          <sl-menu-item value="2">${msg("Big (2x)")}</sl-menu-item>
-          <sl-menu-item value="3">${msg("Bigger (3x)")}</sl-menu-item>
+          <label slot="label">
+            <span class="inline-block align-middle">
+              ${msg("Crawler Instances")}
+            </span>
+            <sl-tooltip
+              content=${msg(
+                "The number of crawler instances that will run in parallel for this crawl job."
+              )}
+              ><sl-icon
+                class="inline-block align-middle ml-1 text-neutral-500"
+                name="info-circle"
+              ></sl-icon
+            ></sl-tooltip>
+          </label>
+
+          <sl-menu-item value="1">${msg("1")}</sl-menu-item>
+          <sl-menu-item value="2">${msg("2")}</sl-menu-item>
+          <sl-menu-item value="3">${msg("3")}</sl-menu-item>
         </sl-select>
 
         <div class="mt-5 text-right">
