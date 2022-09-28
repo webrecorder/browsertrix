@@ -1,6 +1,9 @@
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
-// import LiteElement, { html } from "../utils/LiteElement";
+
+type ListItem = {
+  content: any; // any lit template content
+};
 
 /**
  * Styled numbered list
@@ -12,7 +15,10 @@ import { property } from "lit/decorators.js";
  */
 export class NumberedList extends LitElement {
   @property({ type: Array })
-  items: any[] = [];
+  items: ListItem[] = [];
+
+  @property({ type: Object })
+  innerStyle?: any;
 
   static styles = css`
     :host {
@@ -69,8 +75,10 @@ export class NumberedList extends LitElement {
   render() {
     return html`
       <ol>
-        ${this.items.map((item) => html` <li>${item}</li> `)}
+        ${this.items.map((item) => html` <li>${item.content}</li> `)}
       </ol>
+
+      ${this.innerStyle}
     `;
   }
 }

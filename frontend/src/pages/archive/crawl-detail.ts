@@ -539,7 +539,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderQueue() {
     return html`<h3 class="text-lg font-medium leading-none mb-4">
-        ${msg("Crawl Queue")}
+        ${msg("Queue Exclusion Editor")}
       </h3>
 
       <btrix-details class="mb-4" open>
@@ -574,14 +574,17 @@ export class CrawlDetail extends LiteElement {
         </span>
         <btrix-numbered-list
           class="text-xs text-neutral-500"
-          .items=${["https://example.com/a/", "https://example.com/b/"]}
+          .items=${[
+            { content: "https://example.com/a/" },
+            { content: "https://example.com/b/" },
+          ]}
           aria-live="polite"
         ></btrix-numbered-list>
       </btrix-details>
 
       <btrix-details open>
         <span slot="summary"
-          >${msg("Crawl Queue")}
+          >${msg("Queue")}
           <span
             class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
             aria-live="polite"
@@ -592,11 +595,32 @@ export class CrawlDetail extends LiteElement {
         <btrix-numbered-list
           class="text-xs"
           .items=${[
-            html`<a href="#">https://example.com/a/</a>`,
-            html`<a href="#">https://example.com/b/</a>`,
-            html`<a href="#">https://example.com/c/</a>`,
+            {
+              content: html`<a href="#" style="color: var(--danger)"
+                >https://example.com/a/</a
+              >`,
+            },
+            {
+              content: html`<a href="#" style="color: var(--danger)"
+                >https://example.com/b/</a
+              >`,
+            },
+            {
+              content: html`<a href="#">https://example.com/c/</a>`,
+            },
+            {
+              content: html`<a href="#">https://example.com/d/</a>`,
+            },
           ]}
           aria-live="polite"
+          .innerStyle=${html`
+            <style>
+              li:first-child::marker,
+              li:nth-child(2)::marker {
+                color: var(--danger) !important;
+              }
+            </style>
+          `}
         ></btrix-numbered-list>
       </btrix-details> `;
   }
