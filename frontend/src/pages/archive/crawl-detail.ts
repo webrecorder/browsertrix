@@ -563,16 +563,32 @@ export class CrawlDetail extends LiteElement {
       </btrix-details>
 
       <btrix-details class="mb-4" open>
-        <span slot="summary">${msg("Pending Exclusions")}</span>
+        <span slot="summary"
+          >${msg("Pending Exclusions")}
+          <span
+            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
+            aria-live="polite"
+          >
+            ${msg(str`${2} URLs will be excluded`)}
+          </span>
+        </span>
         <btrix-numbered-list
-          class="text-xs text-danger"
+          class="text-xs text-neutral-500"
           .items=${["https://example.com/a/", "https://example.com/b/"]}
           aria-live="polite"
         ></btrix-numbered-list>
       </btrix-details>
 
       <btrix-details open>
-        <span slot="summary">${msg("Crawl Queue")}</span>
+        <span slot="summary"
+          >${msg("Crawl Queue")}
+          <span
+            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-slate-500  bg-slate-50"
+            aria-live="polite"
+          >
+            ${msg("No Changes")}
+          </span>
+        </span>
         <btrix-numbered-list
           class="text-xs"
           .items=${[
