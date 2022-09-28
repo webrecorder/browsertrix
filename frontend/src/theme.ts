@@ -52,7 +52,7 @@ const theme = css`
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /* Font weights */
-    --sl-font-weight-medium: 500;
+    --sl-font-weight-medium: 500; // doesn't exist in shoelace
     --sl-font-weight-semibold: 600;
 
     /*
@@ -60,7 +60,7 @@ const theme = css`
      */
 
     /* Buttons */
-    --sl-button-font-size-small: var(--sl-font-size-x-small);
+    --sl-button-font-size-small: var(--sl-font-size-small);
     --sl-button-font-size-medium: var(--sl-font-size-small);
     --sl-button-font-size-large: var(--sl-font-size-medium);
 
@@ -88,6 +88,7 @@ const theme = css`
     box-shadow: var(--sl-shadow-small);
   }
 
+  /* Decrease control spacing on small select */
   sl-select[size="small"]::part(control) {
     --sl-input-spacing-small: var(--sl-spacing-x-small);
   }

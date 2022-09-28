@@ -542,7 +542,7 @@ export class CrawlDetail extends LiteElement {
         ${msg("Crawl Queue")}
       </h3>
 
-      <btrix-details class="mb-3" open>
+      <btrix-details class="mb-4" open>
         <span slot="summary">${msg("Exclusion Table")}</span>
         <btrix-queue-exclusion-table
           .exclusions=${[
@@ -562,7 +562,7 @@ export class CrawlDetail extends LiteElement {
         ></btrix-queue-exclusion-table>
       </btrix-details>
 
-      <btrix-details class="mb-3" open>
+      <btrix-details class="mb-4" open>
         <span slot="summary">${msg("Pending Exclusions")}</span>
         <btrix-numbered-list
           class="text-xs text-danger"
@@ -571,7 +571,7 @@ export class CrawlDetail extends LiteElement {
         ></btrix-numbered-list>
       </btrix-details>
 
-      <btrix-details class="mb-3" open>
+      <btrix-details open>
         <span slot="summary">${msg("Crawl Queue")}</span>
         <btrix-numbered-list
           class="text-xs"
