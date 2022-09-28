@@ -405,7 +405,7 @@ export class CrawlsList extends LiteElement {
               ${!crawl.finished
                 ? html`
                     ${crawl.state === "canceled" ? msg("Unknown") : ""}
-                    ${crawl.state === "running"
+                    ${isActive(crawl)
                       ? html`
                           <btrix-relative-duration
                             class="text-purple-500"
