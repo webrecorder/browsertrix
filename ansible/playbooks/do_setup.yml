@@ -24,6 +24,7 @@
       command: doctl db list
       changed_when: false
       failed_when: false
+      tags: helm_upgrade
       register: db_check
 
     - name: d_ocean | create mongodb database
@@ -31,6 +32,7 @@
       async: 1800
       poll: 60
       register: webrecorder_database
+      tags: helm_upgrade
       when: db_check.stdout.find('{{ btrix_db }}') == -1
 
     - name: d_ocean | drop mongodb database
@@ -69,6 +71,7 @@
         aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
         region: "{{ droplet_region }}"
       register: webrecorder_space
+      tags: helm_upgrade
       ignore_errors: true
 
     - name: d_ocean | Show the space info we just created
@@ -108,6 +111,7 @@
         name: "{{ k8s_cluster }}"
         return_kubeconfig: true
       register: my_cluster
+      tags: helm_upgrade
 
     - name: d_ocean | Show the cluster info
       debug:
@@ -127,7 +131,7 @@
     - name: d_ocean | save kubectl config to kube_dir
       command: doctl kubernetes cluster kubeconfig save {{ my_cluster.data.id }}
       changed_when: false
-      ignore_errors: true
+      tags: helm_upgrade
 
     - name: d_ocean | deploy btrix
       kubernetes.core.helm:
@@ -138,7 +142,7 @@
         values:
           mongo_local: false
           mongo_auth:
-            db_url: "{{ webrecorder_database.stdout[uri] }}"
+            db_url: "{{ webrecorder_database.stdout[0].private_connection.uri }}"
             username: root
             password: example
           minio_local: false
@@ -155,6 +159,7 @@
             email: "{{ email_address }}"
         values_files:
           - ../../chart/values.yaml
+      tags: helm_upgrade
       ignore_errors: true
 
     - name: d_ocean | get loadbalancer info from doctl
