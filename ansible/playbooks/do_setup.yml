@@ -43,13 +43,13 @@
       tags: never
 
     - name: d_ocean | Show the database info doctl created
-      debug:
+      ansible.builtin.debug:
         var: webrecorder_database
         verbosity: 2
 
     - name: d_ocean | Show the database info doctl stdout created
-      debug:
-        var: webrecorder_database.stdout
+      ansible.builtin.debug:
+        var: webrecorder_database.stdout.[0]
         verbosity: 2
 
     - name: d_ocean | Gather all DigitalOcean databases
@@ -112,11 +112,6 @@
         return_kubeconfig: true
       register: my_cluster
       tags: helm_upgrade
-
-    - name: d_ocean | Show the cluster info
-      debug:
-        var: my_cluster
-        verbosity: 2
 
     - name: d_ocean | print information about an existing DigitalOcean Kubernetes cluster
       ansible.builtin.debug:
