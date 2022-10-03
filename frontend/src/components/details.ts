@@ -26,7 +26,7 @@ export class Details extends LitElement {
     summary {
       border-bottom: 1px solid var(--sl-panel-border-color);
       color: var(--sl-color-neutral-500);
-      padding: var(--sl-spacing-x-small) 0;
+      padding: var(--sl-spacing-2x-small) 0;
       margin-bottom: var(--sl-spacing-x-small);
       line-height: 1;
       cursor: pointer;
@@ -41,6 +41,7 @@ export class Details extends LitElement {
       width: 1rem;
       height: 1rem;
       margin-right: var(--sl-spacing-2x-small);
+      flex: 0;
     }
 
     details[open] summary::before {
@@ -49,6 +50,10 @@ export class Details extends LitElement {
 
     details:not([open]) summary::before {
       content: url(${unsafeCSS(caretRightFillSvg)});
+    }
+
+    .summary-content {
+      flex: 1;
     }
   `;
 
@@ -68,7 +73,9 @@ export class Details extends LitElement {
     return html`
       <details ?open=${this.open}>
         <summary>
-          <slot name="summary"></slot>
+          <div class="summary-content">
+            <slot name="summary"></slot>
+          </div>
         </summary>
         <slot></slot>
       </details>

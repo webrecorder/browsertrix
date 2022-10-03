@@ -543,7 +543,11 @@ export class CrawlDetail extends LiteElement {
       </h3>
 
       <btrix-details class="mb-4" open>
-        <span slot="summary">${msg("Exclusion Table")}</span>
+        <div slot="summary" class="flex items-center justify-between">
+          ${msg("Exclusion Table")}
+
+          <btrix-pagination></btrix-pagination>
+        </div>
         <btrix-queue-exclusion-table
           .exclusions=${[
             {
@@ -563,15 +567,19 @@ export class CrawlDetail extends LiteElement {
       </btrix-details>
 
       <btrix-details class="mb-4" open>
-        <span slot="summary"
-          >${msg("Pending Exclusions")}
-          <span
-            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
-            aria-live="polite"
-          >
-            ${msg(str`+${2} URLs`)}
+        <div slot="summary" class="flex items-center justify-between">
+          <span>
+            ${msg("Pending Exclusions")}
+            <span
+              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
+              aria-live="polite"
+            >
+              ${msg(str`+${2} URLs`)}
+            </span>
           </span>
-        </span>
+
+          <btrix-pagination></btrix-pagination>
+        </div>
         <btrix-numbered-list
           class="text-xs text-neutral-500"
           .items=${[
@@ -583,15 +591,20 @@ export class CrawlDetail extends LiteElement {
       </btrix-details>
 
       <btrix-details open>
-        <span slot="summary"
-          >${msg("Queue")}
-          <span
-            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
-            aria-live="polite"
-          >
-            ${msg(str`-${2} URLs`)}
+        <div slot="summary" class="flex items-center justify-between">
+          <span>
+            >${msg("Queue")}
+            <span
+              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
+              aria-live="polite"
+            >
+              ${msg(str`-${2} URLs`)}
+            </span>
           </span>
-        </span>
+
+          <btrix-pagination></btrix-pagination>
+        </div>
+
         <btrix-numbered-list
           class="text-xs"
           .items=${[

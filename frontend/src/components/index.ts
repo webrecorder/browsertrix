@@ -48,6 +48,9 @@ import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
 import("./numbered-list").then(({ NumberedList }) => {
   customElements.define("btrix-numbered-list", NumberedList);
 });
+import("./pagination").then(({ Pagination }) => {
+  customElements.define("btrix-pagination", Pagination);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
