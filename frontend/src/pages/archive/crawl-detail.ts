@@ -39,9 +39,6 @@ export class CrawlDetail extends LiteElement {
   crawlId?: string;
 
   @state()
-  private lastFetched?: number;
-
-  @state()
   private crawl?: Crawl;
 
   @state()
@@ -836,8 +833,6 @@ export class CrawlDetail extends LiteElement {
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
     );
-
-    this.lastFetched = Date.now();
 
     return data;
   }
