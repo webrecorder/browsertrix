@@ -13,7 +13,6 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlTemplate } from "./types";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
-import { triggerFocusFor } from "@open-wc/testing";
 
 type CrawlSearchResult = {
   item: Crawl;
