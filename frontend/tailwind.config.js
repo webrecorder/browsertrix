@@ -1,4 +1,8 @@
-// Use Shoelace CSS variables in Tailwind theme for consistency
+/**
+ * Use Shoelace CSS variables in Tailwind theme for consistency
+ *
+ * Customize Shoelace variables in `theme.ts`
+ */
 function makeTheme() {
   // Map color palettes:
   const colors = [
@@ -10,7 +14,6 @@ function makeTheme() {
     "indigo",
     "purple",
     "pink",
-    "neutral",
   ];
   // Map color grading:
   const colorGrades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
@@ -30,7 +33,15 @@ function makeTheme() {
       success: `var(--success)`,
       warning: `var(--warning)`,
       danger: `var(--danger)`,
+      neutral: {
+        ...makeColorPalette("neutral"),
+        // Shoelace supports additional neutral variables:
+        0: `var(--sl-color-neutral-0)`,
+        950: `var(--sl-color-neutral-950)`,
+        1000: `var(--sl-color-neutral-1000)`,
+      },
     },
+
     fontFamily: {
       sans: `var(--sl-font-sans)`,
       serif: `var(--sl-font-serif)`,

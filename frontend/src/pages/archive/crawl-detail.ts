@@ -566,10 +566,10 @@ export class CrawlDetail extends LiteElement {
         <span slot="summary"
           >${msg("Pending Exclusions")}
           <span
-            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
+            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
             aria-live="polite"
           >
-            ${msg(str`${2} URLs`)}
+            ${msg(str`+${2} URLs`)}
           </span>
         </span>
         <btrix-numbered-list
@@ -586,10 +586,10 @@ export class CrawlDetail extends LiteElement {
         <span slot="summary"
           >${msg("Queue")}
           <span
-            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-full text-rose-600  bg-rose-50"
+            class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
             aria-live="polite"
           >
-            ${msg(str`${2} URLs will be Excluded`)}
+            ${msg(str`-${2} URLs`)}
           </span>
         </span>
         <btrix-numbered-list
