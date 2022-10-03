@@ -609,7 +609,9 @@ export class CrawlDetail extends LiteElement {
               content: html`<a href="#">https://example.com/c/</a>`,
             },
             {
-              content: html`<a href="#">https://example.com/d/</a>`,
+              content: html`<a href="#"
+                >https://example.com/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc//abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/</a
+              >`,
             },
           ]}
           aria-live="polite"

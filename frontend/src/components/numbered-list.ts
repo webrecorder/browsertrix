@@ -27,7 +27,7 @@ export class NumberedList extends LitElement {
 
     ol {
       font-family: var(--sl-font-mono);
-      line-height: 1;
+      line-height: 1.1;
     }
 
     li {
@@ -35,7 +35,7 @@ export class NumberedList extends LitElement {
         var(--sl-panel-border-color);
       border-right: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
-      padding: 0.5em;
+      padding: var(--sl-spacing-2x-small) var(--sl-spacing-x-small);
     }
 
     li:first-child {
