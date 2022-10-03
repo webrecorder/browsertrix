@@ -57,24 +57,20 @@ export class RelativeDuration extends LitElement {
   }
 
   protected updated(changedProperties: Map<string | number | symbol, unknown>) {
-    const durationChanged =
-      changedProperties.has("value") || changedProperties.has("endTime");
-
-    if (changedProperties.has("tickSeconds") || durationChanged) {
+    if (changedProperties.has("tickSeconds")) {
       window.clearTimeout(this.timerId);
     }
-    if (this.tickSeconds && durationChanged) {
+
+    if (changedProperties.has("endTime") && this.tickSeconds) {
       this.tick(this.tickSeconds * 1000);
     }
   }
 
   private tick(timeoutMs: number) {
+    window.clearTimeout(this.timerId);
+
     this.timerId = window.setTimeout(() => {
       this.endTime = Date.now();
-
-      if (this.tickSeconds) {
-        this.tick(this.tickSeconds * 1000);
-      }
     }, timeoutMs);
   }
 
