@@ -41,12 +41,6 @@ export class RelativeDuration extends LitElement {
   private timerId?: number;
 
   static humanize(duration: number, options: HumanizeOptions = {}) {
-    if (!options.verbose && duration < 10 * 1000) {
-      return msg(str`< 10 seconds`, {
-        desc: "Less than ten seconds",
-      });
-    }
-
     if (!options.verbose && options.unitCount === undefined) {
       // Show second unit if less than 2 min or greater than 1 hr
       if (duration < 60 * 2 * 1000 || duration > 60 * 60 * 1000) {

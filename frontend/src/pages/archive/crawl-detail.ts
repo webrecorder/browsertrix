@@ -444,8 +444,8 @@ export class CrawlDetail extends LiteElement {
                         <span class="text-purple-600">
                           <btrix-relative-duration
                             value=${`${this.crawl.started}Z`}
-                            endTime=${this.lastFetched || Date.now()}
-                            unitCount="2"
+                            unitCount="3"
+                            tickSeconds="1"
                           ></btrix-relative-duration>
                         </span>
                       `}
