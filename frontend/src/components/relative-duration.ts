@@ -23,16 +23,22 @@ export class RelativeDuration extends LitElement {
   value?: string; // `new Date` compatible date format
 
   @property({ type: Number })
-  endTime?: number; // Optional value to compare to
+  tickSeconds?: number; // Enables ticks every specified seconds
+
+  @property({ type: Number })
+  endTime?: number = Date.now();
 
   @property({ type: Boolean })
-  compact = false;
+  compact? = false;
 
   @property({ type: Boolean })
-  verbose = false;
+  verbose? = false;
 
   @property({ type: Number })
   unitCount?: number;
+
+  @state()
+  private timerId?: number;
 
   static humanize(duration: number, options: HumanizeOptions = {}) {
     if (!options.verbose && duration < 10 * 1000) {
@@ -61,7 +67,30 @@ export class RelativeDuration extends LitElement {
   }
 
   disconnectedCallback(): void {
+    window.clearTimeout(this.timerId);
     super.disconnectedCallback();
+  }
+
+  protected updated(changedProperties: Map<string | number | symbol, unknown>) {
+    const durationChanged =
+      changedProperties.has("value") || changedProperties.has("endTime");
+
+    if (changedProperties.has("tickSeconds") || durationChanged) {
+      window.clearTimeout(this.timerId);
+    }
+    if (this.tickSeconds && durationChanged) {
+      this.tick(this.tickSeconds * 1000);
+    }
+  }
+
+  private tick(timeoutMs: number) {
+    this.timerId = window.setTimeout(() => {
+      this.endTime = Date.now();
+
+      if (this.tickSeconds) {
+        this.tick(this.tickSeconds * 1000);
+      }
+    }, timeoutMs);
   }
 
   render() {
