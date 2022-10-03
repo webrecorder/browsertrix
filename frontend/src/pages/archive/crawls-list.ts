@@ -1,4 +1,5 @@
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
@@ -12,6 +13,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlTemplate } from "./types";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
+import { triggerFocusFor } from "@open-wc/testing";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -405,15 +407,7 @@ export class CrawlsList extends LiteElement {
               ${!crawl.finished
                 ? html`
                     ${crawl.state === "canceled" ? msg("Unknown") : ""}
-                    ${isActive(crawl)
-                      ? html`
-                          <btrix-relative-duration
-                            class="text-purple-500"
-                            value=${`${crawl.started}Z`}
-                            endTime=${this.lastFetched || Date.now()}
-                          ></btrix-relative-duration>
-                        `
-                      : ""}
+                    ${isActive(crawl) ? this.renderActiveDuration(crawl) : ""}
                   `
                 : ""}
             </div>
@@ -491,6 +485,37 @@ export class CrawlsList extends LiteElement {
       </a>
     </li>`;
   };
+
+  private renderActiveDuration(crawl: Crawl) {
+    const endTime = this.lastFetched || Date.now();
+    const duration = endTime - new Date(`${crawl.started}Z`).valueOf();
+    let unitCount: number;
+    let tickSeconds: number | undefined = undefined;
+
+    // Show second unit if showing seconds or greater than 1 hr
+    const showSeconds = duration < 60 * 2 * 1000;
+    if (showSeconds || duration > 60 * 60 * 1000) {
+      unitCount = 2;
+    } else {
+      unitCount = 1;
+    }
+    // Tick if seconds are showing
+    if (showSeconds) {
+      tickSeconds = 1;
+    } else {
+      tickSeconds = undefined;
+    }
+
+    return html`
+      <btrix-relative-duration
+        class="text-purple-500"
+        value=${`${crawl.started}Z`}
+        endTime=${this.lastFetched || Date.now()}
+        unitCount=${unitCount}
+        tickSeconds=${ifDefined(tickSeconds)}
+      ></btrix-relative-duration>
+    `;
+  }
 
   private onSearchInput = debounce(200)((e: any) => {
     this.filterBy = e.target.value;

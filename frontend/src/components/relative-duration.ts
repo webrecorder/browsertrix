@@ -3,7 +3,7 @@ import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
 
-type HumanizeOptions = {
+export type HumanizeOptions = {
   compact?: boolean;
   verbose?: boolean;
   unitCount?: number;
@@ -41,15 +41,6 @@ export class RelativeDuration extends LitElement {
   private timerId?: number;
 
   static humanize(duration: number, options: HumanizeOptions = {}) {
-    if (!options.verbose && options.unitCount === undefined) {
-      // Show second unit if less than 2 min or greater than 1 hr
-      if (duration < 60 * 2 * 1000 || duration > 60 * 60 * 1000) {
-        options.unitCount = 2;
-      } else {
-        options.unitCount = 1;
-      }
-    }
-
     return humanizeDuration(duration, {
       secondsDecimalDigits: 0,
       ...options,
