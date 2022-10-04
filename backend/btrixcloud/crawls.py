@@ -419,6 +419,7 @@ class CrawlOps:
             redis_url, encoding="utf-8", decode_responses=True
         )
 
+        total = await redis.llen(f"{crawl_id}:q")
         results = await redis.lrange(f"{crawl_id}:q", offset, count)
         results = [json.loads(result)["url"] for result in results]
 
@@ -427,9 +428,9 @@ class CrawlOps:
             regex = re.compile(regex)
             matched = [result for result in results if regex.search(result)]
 
-        return {"results": results, "matched": matched}
+        return {"total": total, "results": results, "matched": matched}
 
-    async def filter_crawl_queue(self, crawl_id, regex):
+    async def match_crawl_queue(self, crawl_id, regex):
         """ get crawl queue """
 
         # pylint: disable=line-too-long
