@@ -65,9 +65,10 @@ export class Pagination extends LitElement {
     }
 
     /* Use width of text to determine input width */
-    .inputValue {
+    .totalPages {
       padding: 0 1ch;
       height: var(--sl-input-height-small);
+      min-width: 1ch;
       visibility: hidden;
     }
 
@@ -164,7 +165,7 @@ export class Pagination extends LitElement {
   private renderInput() {
     return html`
       <div class="pageInput">
-        <div class="inputValue" role="none">${this.inputValue}</div>
+        <div class="totalPages" role="none">${this.pages}</div>
         <sl-input
           class="input"
           type="number"

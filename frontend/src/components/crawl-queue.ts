@@ -1,5 +1,5 @@
 import { property, state } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
@@ -85,7 +85,10 @@ export class CrawlQueue extends LiteElement {
     }
 
     return html`
-      <header class="flex justify-end">
+      <header class="flex items-center justify-end">
+        <span class="text-neutral-500" aria-live="polite">
+          ${msg(str`${this.total} URLs in queue`)}
+        </span>
         <btrix-pagination
           size=${this.pageSize}
           totalCount=${this.total}
