@@ -61,31 +61,42 @@ export class CrawlQueue extends LiteElement {
     this.fetchQueue();
   }
 
-  updated(changedProperties: Map<string, any>) {
+  async updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("page")) {
+      await this.performUpdate;
       this.fetchQueue();
     }
   }
 
   render() {
     if (!this.total) {
+      if (this.isLoading) {
+        return html`
+          <div class="flex items-center justify-center text-3xl">
+            <sl-spinner></sl-spinner>
+          </div>
+        `;
+      }
+
       return html`
         <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
       `;
     }
 
     return html`
-      <btrix-pagination
-        size=${this.pageSize}
-        totalCount=${this.total}
-        @page-change=${(e: CustomEvent) => {
-          this.page = e.detail.page;
-        }}
-      >
-      </btrix-pagination>
+      <header class="flex justify-end">
+        <btrix-pagination
+          size=${this.pageSize}
+          totalCount=${this.total}
+          @page-change=${(e: CustomEvent) => {
+            this.page = e.detail.page;
+          }}
+        >
+        </btrix-pagination>
+      </header>
 
       <btrix-numbered-list
-        class="text-xs"
+        class="text-xs transition-opacity${this.isLoading ? " opacity-60" : ""}"
         .items=${this.results.map((url) => ({
           content: html`<a
             href=${url}

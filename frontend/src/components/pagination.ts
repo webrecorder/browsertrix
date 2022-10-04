@@ -37,6 +37,7 @@ export class Pagination extends LitElement {
       all: unset;
       display: flex;
       align-items: center;
+      cursor: pointer;
     }
 
     sl-input::part(input) {

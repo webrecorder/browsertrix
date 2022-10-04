@@ -523,11 +523,13 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQueue() {
-    return html`<h3 class="text-lg font-medium leading-none mb-4">
+    return html`<h3 class="text-lg font-medium leading-none">
         ${msg("Crawl Queue")}
       </h3>
 
-      ${this.isActive
+      ${!this.crawl
+        ? ""
+        : this.isActive
         ? html`
             <btrix-crawl-queue
               archiveId=${this.crawl!.aid}
