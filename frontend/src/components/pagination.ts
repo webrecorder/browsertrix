@@ -37,14 +37,6 @@ export class Pagination extends LitElement {
       all: unset;
     }
 
-    sl-dropdown {
-      margin-right: 0.5ch;
-    }
-
-    sl-dropdown sl-button {
-      min-width: 3ch;
-    }
-
     sl-input::part(input) {
       -moz-appearance: textfield;
       margin: 0 0.5ch;
@@ -62,6 +54,25 @@ export class Pagination extends LitElement {
       align-items: center;
       width: fit-content;
       white-space: nowrap;
+    }
+
+    .pageInput {
+      position: relative;
+      margin-right: 0.5ch;
+    }
+
+    /* Use width of text to determine input width */
+    .inputValue {
+      padding: 0 1ch;
+      height: var(--sl-input-height-small);
+      visibility: hidden;
+    }
+
+    .input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
     }
 
     .chevron {
@@ -85,10 +96,18 @@ export class Pagination extends LitElement {
   size: number = 10;
 
   @state()
+  private inputValue = "";
+
+  @state()
   private page: number = 1;
 
   @state()
   private pages = 0;
+
+  connectedCallback() {
+    this.inputValue = `${this.page}`;
+    super.connectedCallback();
+  }
 
   async updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
@@ -120,27 +139,7 @@ export class Pagination extends LitElement {
             </button>
           </li>
           <li class="currentPage" role="presentation">
-            ${msg(html`
-              <sl-dropdown placement="bottom" @sl-select=${this.onSelectPage}>
-                <sl-button
-                  slot="trigger"
-                  size="small"
-                  style="width: calc(${`${this.page}`.length + 1.5}ch"
-                  >${this.page}</sl-button
-                >
-                <sl-menu>
-                  ${Array.from({ length: this.pages }).map((x, idx) => {
-                    const page: number = idx + 1;
-                    return html`
-                      <sl-menu-item value=${page} ?checked=${page === this.page}
-                        >${page}</sl-menu-item
-                      >
-                    `;
-                  })}
-                </sl-menu>
-              </sl-dropdown>
-              of ${this.pages}
-            `)}
+            ${msg(html` ${this.renderInput()} of ${this.pages} `)}
           </li>
           <li>
             <button
@@ -157,8 +156,50 @@ export class Pagination extends LitElement {
     `;
   }
 
-  private onSelectPage(e: CustomEvent) {
-    this.page = +e.detail.item.value;
+  private renderInput() {
+    return html`
+      <div class="pageInput">
+        <div class="inputValue" role="none">${this.inputValue}</div>
+        <sl-input
+          class="input"
+          type="number"
+          inputmode="numeric"
+          size="small"
+          value=${this.inputValue}
+          aria-label=${msg(str`Current page, page ${this.page}`)}
+          aria-current="page"
+          autocomplete="off"
+          min="1"
+          max=${this.pages}
+          @keydown=${(e: any) => {
+            // Prevent typing non-numeric keys
+            if (e.key.length === 1 && /\D/.test(e.key)) {
+              e.preventDefault();
+            }
+          }}
+          @keyup=${(e: any) => {
+            this.inputValue = e.target.value;
+          }}
+          @sl-change=${(e: any) => {
+            const page = +e.target.value;
+
+            if (page < 1) {
+              this.page = 1;
+            } else if (page > this.pages) {
+              this.page = this.pages;
+            } else {
+              this.page = page;
+            }
+
+            this.inputValue = `${this.page}`;
+          }}
+          @focus=${(e: any) => {
+            // Select text on focus for easy typing
+            e.target.select();
+          }}
+        ></sl-input>
+      </div>
+    `;
   }
 
   private onPrev() {
