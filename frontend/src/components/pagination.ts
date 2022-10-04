@@ -35,9 +35,12 @@ export class Pagination extends LitElement {
       all: unset;
     }
 
-    sl-input {
-      min-width: calc(2ch + 2px);
+    sl-dropdown {
       margin-right: 0.5ch;
+    }
+
+    sl-dropdown sl-button {
+      min-width: 3ch;
     }
 
     sl-input::part(input) {
@@ -85,14 +88,7 @@ export class Pagination extends LitElement {
   @state()
   private pages = 0;
 
-  @state()
-  private pageValue = "";
-
   updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("page")) {
-      this.pageValue = `${this.page}`;
-    }
-
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
     }
@@ -118,43 +114,30 @@ export class Pagination extends LitElement {
           </li>
           <li class="currentPage" role="presentation">
             ${msg(html`
-              <sl-input
-                type="number"
-                value=${this.pageValue}
-                size="small"
-                aria-label=${msg(str`Current page, page ${this.page}`)}
-                aria-current="page"
-                style="width: calc(${this.pageValue.length + 1}ch + 2px"
-                autocomplete="off"
-                min="1"
-                max=${this.pages}
-                @sl-input=${(e: any) => {
-                  console.log(e.target.value);
-                  this.pageValue = e.target.value;
-
-                  if (!this.pageValue) {
-                    this.pageValue = "1";
-                  }
-                  const page = +this.pageValue;
-                  console.log("page", page);
-
-                  if (page < 1) {
-                    this.page = 1;
-                  } else if (page > this.pages) {
-                    this.page = this.pages;
-                  } else {
-                    this.page = page;
-                  }
-
-                  console.log(this.page);
-
-                  // console.log(this.page.toString());
+              <sl-dropdown
+                placement="bottom"
+                @sl-select=${(e: any) => {
+                  console.log(e.detail.item.value);
+                  this.page = +e.detail.item.value;
                 }}
-                @focus=${(e: any) => {
-                  // Select text on focus for easy typing
-                  e.target.select();
-                }}
-              ></sl-input>
+              >
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  style="width: calc(${`${this.page}`.length + 1.5}ch"
+                  >${this.page}</sl-button
+                >
+                <sl-menu>
+                  ${Array.from({ length: this.pages }).map((x, idx) => {
+                    const page = idx + 1;
+                    return html`
+                      <sl-menu-item value=${page} ?checked=${page === this.page}
+                        >${page}</sl-menu-item
+                      >
+                    `;
+                  })}
+                </sl-menu>
+              </sl-dropdown>
               of ${this.pages}
             `)}
           </li>
