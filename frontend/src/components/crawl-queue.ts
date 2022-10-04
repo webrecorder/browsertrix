@@ -97,7 +97,8 @@ export class CrawlQueue extends LiteElement {
 
       <btrix-numbered-list
         class="text-xs transition-opacity${this.isLoading ? " opacity-60" : ""}"
-        .items=${this.results.map((url) => ({
+        .items=${this.results.map((url, idx) => ({
+          order: idx + 1 + (this.page - 1) * this.pageSize,
           content: html`<a
             href=${url}
             target="_blank"
@@ -131,7 +132,9 @@ export class CrawlQueue extends LiteElement {
 
   private async getQueue(): Promise<ResponseData> {
     const data: ResponseData = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/queue?offset=${this.page}&count=${this.pageSize}`,
+      `/archives/${this.archiveId}/crawls/${this.crawlId}/queue?offset=${
+        (this.page - 1) * this.pageSize
+      }&count=${this.page * this.pageSize - 1}`,
       this.authState!
     );
 

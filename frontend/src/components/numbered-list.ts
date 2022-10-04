@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
 
 type ListItem = {
+  order?: number;
   content: any; // any lit template content
 };
 
@@ -57,6 +58,7 @@ export class NumberedList extends LitElement {
     }
 
     li::marker {
+      content: attr(data-marker);
       color: var(--sl-color-neutral-400);
       font-size: var(--sl-font-size-medium);
       font-weight: var(--sl-font-weight-normal);
@@ -75,7 +77,12 @@ export class NumberedList extends LitElement {
   render() {
     return html`
       <ol>
-        ${this.items.map((item) => html` <li>${item.content}</li> `)}
+        ${this.items.map(
+          (item, idx) =>
+            html`
+              <li data-marker="${item.order || idx + 1}. ">${item.content}</li>
+            `
+        )}
       </ol>
 
       ${this.innerStyle}
