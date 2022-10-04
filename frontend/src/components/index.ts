@@ -51,6 +51,9 @@ import("./numbered-list").then(({ NumberedList }) => {
 import("./pagination").then(({ Pagination }) => {
   customElements.define("btrix-pagination", Pagination);
 });
+import("./crawl-queue").then(({ CrawlQueue }) => {
+  customElements.define("btrix-crawl-queue", CrawlQueue);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

@@ -10,11 +10,11 @@ import chevronRight from "../assets/images/chevron-right.svg";
  *
  * Usage example:
  * ```ts
- * <btrix-pagination page='2' totalCount='10'>
+ * <btrix-pagination totalCount="11" @page-change=${this.console.log}>
  * </btrix-pagination>
  * ```
  *
- * @event page-change
+ * @event page-change { page: number; pages: number; }
  */
 @localized()
 export class Pagination extends LitElement {
@@ -35,6 +35,8 @@ export class Pagination extends LitElement {
 
     button {
       all: unset;
+      display: flex;
+      align-items: center;
     }
 
     sl-input::part(input) {
@@ -116,6 +118,8 @@ export class Pagination extends LitElement {
     }
 
     if (changedProperties.get("page") && this.page) {
+      await this.performUpdate;
+      this.inputValue = `${this.page}`;
       this.onPageChange();
     }
   }

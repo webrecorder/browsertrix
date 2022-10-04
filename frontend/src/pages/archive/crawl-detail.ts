@@ -56,7 +56,6 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  // For long polling:
   private timerId?: number;
 
   // TODO localize
@@ -230,7 +229,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${/* renderNavItem({ section: "queue", label: msg("Queue") }) */ ""}
+          ${renderNavItem({ section: "queue", label: msg("Queue") })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -519,130 +518,24 @@ export class CrawlDetail extends LiteElement {
               ></btrix-screencast>
             </div>
           `
-        : html`
-            <div class="rounded border bg-neutral-50 p-3">
-              <p class="text-sm text-neutral-600">
-                ${msg("Crawl is not running.")}
-                ${this.hasFiles
-                  ? html`<a
-                      href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
-                      class="text-primary hover:underline"
-                      @click=${() => (this.sectionName = "replay")}
-                      >View replay</a
-                    >`
-                  : ""}
-              </p>
-            </div>
-          `}
+        : this.renderInactiveCrawlMessage()}
     `;
   }
 
   private renderQueue() {
     return html`<h3 class="text-lg font-medium leading-none mb-4">
-        ${msg("Queue Exclusion Editor")}
+        ${msg("Crawl Queue")}
       </h3>
 
-      <btrix-details class="mb-4" open @on-toggle=${console.log}>
-        <div slot="title">${msg("Exclusion Table")}</div>
-        <div slot="summary-description">
-          <btrix-pagination
-            totalCount=${10}
-            size="1"
-            @page-change=${console.log}
-          ></btrix-pagination>
-        </div>
-        <btrix-queue-exclusion-table
-          .exclusions=${[
-            {
-              type: "text",
-              value: "https://example.com/login/",
-            },
-            {
-              type: "text",
-              value: "/users/",
-            },
-            {
-              type: "regex",
-              value: "example.com/admin.*",
-            },
-          ]}
-        ></btrix-queue-exclusion-table>
-      </btrix-details>
-
-      <btrix-details class="mb-4" open @on-toggle=${console.log}>
-        <div slot="title">
-          <span>
-            ${msg("Pending Exclusions")}
-            <span
-              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
-              aria-live="polite"
-            >
-              ${msg(str`+${2} URLs`)}
-            </span>
-          </span>
-        </div>
-        <div slot="summary-description">
-          <btrix-pagination></btrix-pagination>
-        </div>
-        <btrix-numbered-list
-          class="text-xs text-neutral-500"
-          .items=${[
-            { content: "https://example.com/a/" },
-            { content: "https://example.com/b/" },
-          ]}
-          aria-live="polite"
-        ></btrix-numbered-list>
-      </btrix-details>
-
-      <btrix-details open @on-toggle=${console.log}>
-        <div slot="title">
-          <span>
-            ${msg("Queue")}
-            <span
-              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
-              aria-live="polite"
-            >
-              ${msg(str`-${2} URLs`)}
-            </span>
-          </span>
-        </div>
-        <div slot="summary-description">
-          <btrix-pagination></btrix-pagination>
-        </div>
-
-        <btrix-numbered-list
-          class="text-xs"
-          .items=${[
-            {
-              content: html`<a href="#" style="color: var(--danger)"
-                >https://example.com/a/</a
-              >`,
-            },
-            {
-              content: html`<a href="#" style="color: var(--danger)"
-                >https://example.com/b/</a
-              >`,
-            },
-            {
-              content: html`<a href="#">https://example.com/c/</a>`,
-            },
-            {
-              content: html`<a href="#"
-                >https://example.com/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc//abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/</a
-              >`,
-            },
-          ]}
-          aria-live="polite"
-          .innerStyle=${html`
-            <style>
-              li:first-child::marker,
-              li:nth-child(2)::marker {
-                color: var(--danger) !important;
-              }
-            </style>
-          `}
-        ></btrix-numbered-list>
-      </btrix-details> `;
+      ${this.isActive
+        ? html`
+            <btrix-crawl-queue
+              archiveId=${this.crawl!.aid}
+              crawlId=${this.crawl!.id}
+              .authState=${this.authState}
+            ></btrix-crawl-queue>
+          `
+        : this.renderInactiveCrawlMessage()} `;
   }
 
   private renderReplay() {
@@ -915,6 +808,24 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private renderInactiveCrawlMessage() {
+    return html`
+      <div class="rounded border bg-neutral-50 p-3">
+        <p class="text-sm text-neutral-600">
+          ${msg("Crawl is not running.")}
+          ${this.hasFiles
+            ? html`<a
+                href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
+                class="text-primary hover:underline"
+                @click=${() => (this.sectionName = "replay")}
+                >View replay</a
+              >`
+            : ""}
+        </p>
+      </div>
+    `;
+  }
+
   private async fetchData() {
     await this.fetchCrawl();
     this.fetchCrawlTemplate();
@@ -945,7 +856,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  async getCrawl(): Promise<Crawl> {
+  private async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
@@ -965,7 +876,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  async getCrawlTemplate(): Promise<CrawlTemplate> {
+  private async getCrawlTemplate(): Promise<CrawlTemplate> {
     if (!this.crawl) {
       throw new Error("missing crawl");
     }
