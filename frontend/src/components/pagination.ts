@@ -130,7 +130,7 @@ export class Pagination extends LitElement {
                 >
                 <sl-menu>
                   ${Array.from({ length: this.pages }).map((x, idx) => {
-                    const page = idx + 1;
+                    const page: number = idx + 1;
                     return html`
                       <sl-menu-item value=${page} ?checked=${page === this.page}
                         >${page}</sl-menu-item
