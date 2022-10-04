@@ -546,7 +546,7 @@ export class CrawlDetail extends LiteElement {
         <div slot="summary" class="flex items-center justify-between">
           ${msg("Exclusion Table")}
 
-          <btrix-pagination></btrix-pagination>
+          <btrix-pagination totalCount=${10}></btrix-pagination>
         </div>
         <btrix-queue-exclusion-table
           .exclusions=${[
@@ -593,7 +593,7 @@ export class CrawlDetail extends LiteElement {
       <btrix-details open>
         <div slot="summary" class="flex items-center justify-between">
           <span>
-            >${msg("Queue")}
+            ${msg("Queue")}
             <span
               class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
               aria-live="polite"
