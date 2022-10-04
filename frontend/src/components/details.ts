@@ -14,10 +14,12 @@ import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
  *   ${content}
  * </btrix-details>
  * ```
+ *
+ * @event on-toggle
  */
 export class Details extends LitElement {
   @property({ type: Boolean })
-  open?: false;
+  open? = false;
 
   static styles = css`
     :host {
@@ -79,7 +81,7 @@ export class Details extends LitElement {
 
   render() {
     return html`
-      <details ?open=${this.open}>
+      <details ?open=${this.open} @toggle=${this.onToggle}>
         <summary>
           <div class="summary-content">
             <div class="title">
@@ -91,5 +93,17 @@ export class Details extends LitElement {
         <slot></slot>
       </details>
     `;
+  }
+
+  private onToggle(e: Event) {
+    const isOpen = (e.target as HTMLDetailsElement).open;
+
+    if (isOpen !== this.open) {
+      this.dispatchEvent(
+        new CustomEvent("on-toggle", {
+          detail: { open: isOpen },
+        })
+      );
+    }
   }
 }

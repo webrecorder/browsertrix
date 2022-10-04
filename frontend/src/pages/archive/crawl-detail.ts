@@ -542,7 +542,7 @@ export class CrawlDetail extends LiteElement {
         ${msg("Queue Exclusion Editor")}
       </h3>
 
-      <btrix-details class="mb-4" open>
+      <btrix-details class="mb-4" open @on-toggle=${console.log}>
         <div slot="title">${msg("Exclusion Table")}</div>
         <div slot="summary-description">
           <btrix-pagination
@@ -569,7 +569,7 @@ export class CrawlDetail extends LiteElement {
         ></btrix-queue-exclusion-table>
       </btrix-details>
 
-      <btrix-details class="mb-4" open>
+      <btrix-details class="mb-4" open @on-toggle=${console.log}>
         <div slot="title">
           <span>
             ${msg("Pending Exclusions")}
@@ -594,7 +594,7 @@ export class CrawlDetail extends LiteElement {
         ></btrix-numbered-list>
       </btrix-details>
 
-      <btrix-details open>
+      <btrix-details open @on-toggle=${console.log}>
         <div slot="title">
           <span>
             ${msg("Queue")}
