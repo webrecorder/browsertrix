@@ -11,6 +11,8 @@ type ResponseData = {
   matched: Pages;
 };
 
+const POLL_INTERVAL_SECONDS = 5;
+
 /**
  * Show real-time crawl queue results
  *
@@ -56,15 +58,14 @@ export class CrawlQueue extends LiteElement {
     super.disconnectedCallback();
   }
 
-  async firstUpdated() {
-    await this.performUpdate;
-    this.fetchQueue();
-  }
-
-  async updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("page")) {
-      await this.performUpdate;
-      this.fetchQueue();
+  updated(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("authState") ||
+      changedProperties.has("archiveId") ||
+      changedProperties.has("crawlId") ||
+      changedProperties.has("page")
+    ) {
+      this.fetchOnUpdate();
     }
   }
 
@@ -96,7 +97,9 @@ export class CrawlQueue extends LiteElement {
       </header>
 
       <btrix-numbered-list
-        class="text-xs transition-opacity${this.isLoading ? " opacity-60" : ""}"
+        class="text-xs break-all transition-opacity${this.isLoading
+          ? " opacity-60"
+          : ""}"
         .items=${this.results.map((url, idx) => ({
           order: idx + 1 + (this.page - 1) * this.pageSize,
           content: html`<a
@@ -111,14 +114,24 @@ export class CrawlQueue extends LiteElement {
     `;
   }
 
-  private async fetchQueue() {
+  private async fetchOnUpdate() {
+    window.clearInterval(this.timerId);
+    await this.performUpdate;
     this.isLoading = true;
+    await this.fetchQueue();
+    this.isLoading = false;
+  }
 
+  private async fetchQueue() {
     try {
       const { total, results } = await this.getQueue();
 
       this.total = total;
       this.results = results;
+
+      this.timerId = window.setTimeout(() => {
+        this.fetchQueue();
+      }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't fetch crawl queue at this time."),
@@ -126,8 +139,6 @@ export class CrawlQueue extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
-
-    this.isLoading = false;
   }
 
   private async getQueue(): Promise<ResponseData> {
