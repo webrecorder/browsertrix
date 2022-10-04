@@ -9,7 +9,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlTemplate } from "./types";
 
-type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
+type SectionName = "overview" | "watch" | "replay" | "files" | "logs" | "queue";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -111,7 +111,9 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "watch", "replay", "files", "logs"].includes(hash)) {
+    if (
+      ["overview", "watch", "replay", "files", "logs", "queue"].includes(hash)
+    ) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -145,6 +147,9 @@ export class CrawlDetail extends LiteElement {
       case "logs":
         sectionContent = this.renderLogs();
         break;
+      case "queue":
+        sectionContent = this.renderQueue();
+        break;
       default:
         sectionContent = this.renderOverview();
         break;
@@ -170,16 +175,15 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="grid grid-cols-6 md:gap-4 mb-4">
-          <div class="col-span-6 md:col-span-1">
-            <h3 class="font-medium p-2">${msg("Summary")}</h3>
-          </div>
-          <div class="col-span-6 md:col-span-5">${this.renderSummary()}</div>
+        <section class="rounded-lg border mb-4">
+          ${this.renderSummary()}
         </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+          <div class="col-span-6 md:col-span-5 md:rounded-lg md:border md:p-6">
+            ${sectionContent}
+          </div>
         </section>
       </main>
 
@@ -226,6 +230,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
+          ${/* renderNavItem({ section: "queue", label: msg("Queue") }) */ ""}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -234,7 +239,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
-          ${renderNavItem({ section: "logs", label: msg("Logs") })}
+          ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
         </ul>
       </nav>
     `;
@@ -376,13 +381,13 @@ export class CrawlDetail extends LiteElement {
 
   private renderSummary() {
     return html`
-      <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
+      <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
               ? html`
-                  <div class="flex items-baseline justify-between">
+                  <div class="inline-flex items-baseline justify-between">
                     <div
                       class="whitespace-nowrap capitalize${this.isActive
                         ? " motion-safe:animate-pulse"
@@ -470,7 +475,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Watch Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">
+          ${msg("Watch Crawl")}
+        </h3>
         ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
@@ -530,6 +537,114 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private renderQueue() {
+    return html`<h3 class="text-lg font-medium leading-none mb-4">
+        ${msg("Queue Exclusion Editor")}
+      </h3>
+
+      <btrix-details class="mb-4" open @on-toggle=${console.log}>
+        <div slot="title">${msg("Exclusion Table")}</div>
+        <div slot="summary-description">
+          <btrix-pagination
+            totalCount=${10}
+            size="1"
+            @page-change=${console.log}
+          ></btrix-pagination>
+        </div>
+        <btrix-queue-exclusion-table
+          .exclusions=${[
+            {
+              type: "text",
+              value: "https://example.com/login/",
+            },
+            {
+              type: "text",
+              value: "/users/",
+            },
+            {
+              type: "regex",
+              value: "example.com/admin.*",
+            },
+          ]}
+        ></btrix-queue-exclusion-table>
+      </btrix-details>
+
+      <btrix-details class="mb-4" open @on-toggle=${console.log}>
+        <div slot="title">
+          <span>
+            ${msg("Pending Exclusions")}
+            <span
+              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
+              aria-live="polite"
+            >
+              ${msg(str`+${2} URLs`)}
+            </span>
+          </span>
+        </div>
+        <div slot="summary-description">
+          <btrix-pagination></btrix-pagination>
+        </div>
+        <btrix-numbered-list
+          class="text-xs text-neutral-500"
+          .items=${[
+            { content: "https://example.com/a/" },
+            { content: "https://example.com/b/" },
+          ]}
+          aria-live="polite"
+        ></btrix-numbered-list>
+      </btrix-details>
+
+      <btrix-details open @on-toggle=${console.log}>
+        <div slot="title">
+          <span>
+            ${msg("Queue")}
+            <span
+              class="ml-2 px-2 py-0.5 leading-none font-mono text-xs rounded-sm text-white  bg-danger"
+              aria-live="polite"
+            >
+              ${msg(str`-${2} URLs`)}
+            </span>
+          </span>
+        </div>
+        <div slot="summary-description">
+          <btrix-pagination></btrix-pagination>
+        </div>
+
+        <btrix-numbered-list
+          class="text-xs"
+          .items=${[
+            {
+              content: html`<a href="#" style="color: var(--danger)"
+                >https://example.com/a/</a
+              >`,
+            },
+            {
+              content: html`<a href="#" style="color: var(--danger)"
+                >https://example.com/b/</a
+              >`,
+            },
+            {
+              content: html`<a href="#">https://example.com/c/</a>`,
+            },
+            {
+              content: html`<a href="#"
+                >https://example.com/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc//abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/abc/</a
+              >`,
+            },
+          ]}
+          aria-live="polite"
+          .innerStyle=${html`
+            <style>
+              li:first-child::marker,
+              li:nth-child(2)::marker {
+                color: var(--danger) !important;
+              }
+            </style>
+          `}
+        ></btrix-numbered-list>
+      </btrix-details> `;
+  }
+
   private renderReplay() {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
@@ -541,7 +656,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Replay Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">${msg(
+          "Replay Crawl"
+        )}</h3>
         ${
           document.fullscreenEnabled && canReplay
             ? html`
@@ -583,7 +700,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
+      <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
@@ -711,7 +828,9 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
+      <h3 class="text-lg font-medium leading-none mb-2">
+        ${msg("Download Files")}
+      </h3>
 
       ${this.hasFiles
         ? html`

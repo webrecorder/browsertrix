@@ -14,14 +14,14 @@ const primaryColor = Color(PRIMARY_COLOR);
 
 const theme = css`
   :root {
-    /* contextual variables */
+    /* Custom contextual variables */
     --primary: ${unsafeCSS(PRIMARY_COLOR)};
     --success: var(--sl-color-success-600);
     --warning: var(--sl-color-warning-600);
     --danger: var(--sl-color-danger-600);
 
     /*
-     * Theme Tokens
+     * Shoelace Theme Tokens
      */
     /* Primary */
     --sl-color-primary-50: ${unsafeCSS(primaryColor.lighten(0.54))};
@@ -52,7 +52,7 @@ const theme = css`
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /* Font weights */
-    --sl-font-weight-medium: 500;
+    --sl-font-weight-medium: 500; // doesn't exist in shoelace
     --sl-font-weight-semibold: 600;
 
     /*
@@ -60,12 +60,14 @@ const theme = css`
      */
 
     /* Buttons */
-    --sl-button-font-size-small: var(--sl-font-size-x-small);
+    --sl-button-font-size-small: var(--sl-font-size-small);
     --sl-button-font-size-medium: var(--sl-font-size-small);
     --sl-button-font-size-large: var(--sl-font-size-medium);
 
     /* Inputs */
-    --sl-input-font-size-small: var(--sl-font-size-x-small);
+    --sl-input-height-small: 2rem; /* 32px */
+
+    --sl-input-font-size-small: var(--sl-font-size-small);
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
@@ -78,6 +80,17 @@ const theme = css`
   .sl-toast-stack {
     bottom: 0;
     top: auto;
+  }
+
+  /* Elevate select and buttons */
+  sl-select::part(control),
+  sl-button::part(base) {
+    box-shadow: var(--sl-shadow-small);
+  }
+
+  /* Decrease control spacing on small select */
+  sl-select[size="small"]::part(control) {
+    --sl-input-spacing-small: var(--sl-spacing-x-small);
   }
 `;
 

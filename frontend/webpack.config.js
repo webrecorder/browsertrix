@@ -80,7 +80,7 @@ module.exports = {
         loader: "html-loader",
       },
       {
-        test: /\.(woff(2)?|ttf)(\?v=\d+\.\d+\.\d+)?$/,
+        test: /\.(woff(2)?|ttf|svg)(\?v=\d+\.\d+\.\d+)?$/,
         type: "asset/resource",
       },
     ],
