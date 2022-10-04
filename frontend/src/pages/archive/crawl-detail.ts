@@ -543,9 +543,8 @@ export class CrawlDetail extends LiteElement {
       </h3>
 
       <btrix-details class="mb-4" open>
-        <div slot="summary" class="flex items-center justify-between">
-          ${msg("Exclusion Table")}
-
+        <div slot="title">${msg("Exclusion Table")}</div>
+        <div slot="summary-description">
           <btrix-pagination
             totalCount=${10}
             size="1"
@@ -571,7 +570,7 @@ export class CrawlDetail extends LiteElement {
       </btrix-details>
 
       <btrix-details class="mb-4" open>
-        <div slot="summary" class="flex items-center justify-between">
+        <div slot="title">
           <span>
             ${msg("Pending Exclusions")}
             <span
@@ -581,7 +580,8 @@ export class CrawlDetail extends LiteElement {
               ${msg(str`+${2} URLs`)}
             </span>
           </span>
-
+        </div>
+        <div slot="summary-description">
           <btrix-pagination></btrix-pagination>
         </div>
         <btrix-numbered-list
@@ -595,7 +595,7 @@ export class CrawlDetail extends LiteElement {
       </btrix-details>
 
       <btrix-details open>
-        <div slot="summary" class="flex items-center justify-between">
+        <div slot="title">
           <span>
             ${msg("Queue")}
             <span
@@ -605,7 +605,8 @@ export class CrawlDetail extends LiteElement {
               ${msg(str`-${2} URLs`)}
             </span>
           </span>
-
+        </div>
+        <div slot="summary-description">
           <btrix-pagination></btrix-pagination>
         </div>
 

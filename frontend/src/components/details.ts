@@ -9,7 +9,8 @@ import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
  * Usage example:
  * ```ts
  * <btrix-details>
- *   <span slot="summary">Summary</span>
+ *   <span slot="title">Summary</span>
+ *   <span slot="summary-description">Summary</span>
  *   ${content}
  * </btrix-details>
  * ```
@@ -26,7 +27,7 @@ export class Details extends LitElement {
     summary {
       border-bottom: 1px solid var(--sl-panel-border-color);
       color: var(--sl-color-neutral-500);
-      padding: var(--sl-spacing-2x-small) 0;
+
       margin-bottom: var(--sl-spacing-x-small);
       line-height: 1;
       cursor: pointer;
@@ -53,7 +54,14 @@ export class Details extends LitElement {
     }
 
     .summary-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       flex: 1;
+    }
+
+    .title {
+      padding: var(--sl-spacing-x-small) 0;
     }
   `;
 
@@ -74,7 +82,10 @@ export class Details extends LitElement {
       <details ?open=${this.open}>
         <summary>
           <div class="summary-content">
-            <slot name="summary"></slot>
+            <div class="title">
+              <slot name="title"></slot>
+            </div>
+            <slot name="summary-description"></slot>
           </div>
         </summary>
         <slot></slot>
