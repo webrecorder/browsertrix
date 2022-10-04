@@ -87,7 +87,7 @@ export class CrawlQueue extends LiteElement {
     return html`
       <header class="flex items-center justify-end">
         <span class="text-neutral-500" aria-live="polite">
-          ${msg(str`${this.total} URLs in queue`)}
+          ${msg(str`${this.total.toLocaleString()} URLs in queue`)}
         </span>
         <btrix-pagination
           size=${this.pageSize}
