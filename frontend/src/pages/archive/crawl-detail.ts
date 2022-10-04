@@ -523,7 +523,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQueue() {
-    return html`<h3 class="text-lg font-medium leading-none">
+    return html`<h3 class="text-lg font-medium leading-none mb-4">
         ${msg("Crawl Queue")}
       </h3>
 

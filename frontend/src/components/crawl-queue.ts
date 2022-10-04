@@ -85,10 +85,7 @@ export class CrawlQueue extends LiteElement {
     }
 
     return html`
-      <header class="flex items-center justify-end">
-        <span class="text-neutral-500" aria-live="polite">
-          ${msg(str`${this.total.toLocaleString()} URLs in queue`)}
-        </span>
+      <header class="flex justify-end">
         <btrix-pagination
           size=${this.pageSize}
           totalCount=${this.total}
@@ -114,6 +111,16 @@ export class CrawlQueue extends LiteElement {
         }))}
         aria-live="polite"
       ></btrix-numbered-list>
+
+      <footer class="text-center">
+        <span class="text-xs text-neutral-400" aria-live="polite">
+          ${msg(
+            str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}-${(
+              this.page * this.pageSize
+            ).toLocaleString()} of ${this.total.toLocaleString()} URLs`
+          )}
+        </span>
+      </footer>
     `;
   }
 
