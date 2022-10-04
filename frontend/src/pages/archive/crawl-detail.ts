@@ -546,7 +546,11 @@ export class CrawlDetail extends LiteElement {
         <div slot="summary" class="flex items-center justify-between">
           ${msg("Exclusion Table")}
 
-          <btrix-pagination totalCount=${10}></btrix-pagination>
+          <btrix-pagination
+            totalCount=${10}
+            size="1"
+            @page-change=${console.log}
+          ></btrix-pagination>
         </div>
         <btrix-queue-exclusion-table
           .exclusions=${[

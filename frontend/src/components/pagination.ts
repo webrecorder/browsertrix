@@ -10,9 +10,11 @@ import chevronRight from "../assets/images/chevron-right.svg";
  *
  * Usage example:
  * ```ts
- * <btrix-pagination>
+ * <btrix-pagination page='2' totalCount='10'>
  * </btrix-pagination>
  * ```
+ *
+ * @event page-change
  */
 @localized()
 export class Pagination extends LitElement {
@@ -77,20 +79,25 @@ export class Pagination extends LitElement {
   `;
 
   @property({ type: Number })
-  page: number = 1;
-
-  @property({ type: Number })
   totalCount: number = 0;
 
   @property({ type: Number })
-  size: number = 1;
+  size: number = 10;
+
+  @state()
+  private page: number = 1;
 
   @state()
   private pages = 0;
 
-  updated(changedProperties: Map<string, any>) {
+  async updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
+      await this.performUpdate;
       this.calculatePages();
+    }
+
+    if (changedProperties.get("page") && this.page) {
+      this.onPageChange();
     }
   }
 
@@ -114,13 +121,7 @@ export class Pagination extends LitElement {
           </li>
           <li class="currentPage" role="presentation">
             ${msg(html`
-              <sl-dropdown
-                placement="bottom"
-                @sl-select=${(e: any) => {
-                  console.log(e.detail.item.value);
-                  this.page = +e.detail.item.value;
-                }}
-              >
+              <sl-dropdown placement="bottom" @sl-select=${this.onSelectPage}>
                 <sl-button
                   slot="trigger"
                   size="small"
@@ -156,12 +157,24 @@ export class Pagination extends LitElement {
     `;
   }
 
+  private onSelectPage(e: CustomEvent) {
+    this.page = +e.detail.item.value;
+  }
+
   private onPrev() {
     this.page = this.page > 1 ? this.page - 1 : 1;
   }
 
   private onNext() {
     this.page = this.page < this.pages ? this.page + 1 : this.pages;
+  }
+
+  private onPageChange() {
+    this.dispatchEvent(
+      new CustomEvent("page-change", {
+        detail: { page: this.page, pages: this.pages },
+      })
+    );
   }
 
   private calculatePages() {
