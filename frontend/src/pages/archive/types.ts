@@ -5,7 +5,8 @@ type CrawlState =
   | "failed"
   | "partial_complete"
   | "timed_out"
-  | "stopping";
+  | "stopping"
+  | "canceled";
 
 export type Crawl = {
   id: string;
