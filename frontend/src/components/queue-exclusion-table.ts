@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
+import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 
 type Exclusion = {
@@ -16,13 +17,24 @@ const MIN_LENGTH = 2;
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
-  exclusions: Exclusion[] = [];
+  exclude?: CrawlConfig["exclude"];
 
   @state()
   private selectValue = "text";
 
   @state()
   private inputValue = "";
+
+  private exclusions: Exclusion[] = [];
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("exclude") && this.exclude) {
+      this.exclusions = this.exclude.map((str) => ({
+        type: "regex",
+        value: str,
+      }));
+    }
+  }
 
   render() {
     return html`
