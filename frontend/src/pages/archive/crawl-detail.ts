@@ -535,22 +535,25 @@ export class CrawlDetail extends LiteElement {
         ${msg("Queue Exclusions")}
       </h3>
 
-      <btrix-queue-exclusion-table
-        .exclude=${this.crawlTemplate?.config?.exclude}
-      >
-      </btrix-queue-exclusion-table>
+      <btrix-details open disabled>
+        <h4 slot="title">${msg("Exclusion Table")}</h4>
+        <btrix-queue-exclusion-table
+          .exclude=${this.crawlTemplate?.config?.exclude}
+        >
+        </btrix-queue-exclusion-table>
+      </btrix-details>
 
-      ${!this.crawl
-        ? ""
-        : this.isActive
+      ${this.crawl && this.isActive
         ? html`
-            <btrix-crawl-queue
-              archiveId=${this.crawl!.aid}
-              crawlId=${this.crawl!.id}
-              .authState=${this.authState}
-            ></btrix-crawl-queue>
+            <div class="mt-5">
+              <btrix-crawl-queue
+                archiveId=${this.crawl!.aid}
+                crawlId=${this.crawl!.id}
+                .authState=${this.authState}
+              ></btrix-crawl-queue>
+            </div>
           `
-        : this.renderInactiveCrawlMessage()} `;
+        : ""} `;
   }
 
   private renderReplay() {

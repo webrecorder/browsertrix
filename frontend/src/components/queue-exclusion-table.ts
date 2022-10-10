@@ -11,6 +11,14 @@ type Exclusion = {
 
 /**
  * Crawl queue exclusion table
+ *
+ * Usage example:
+ * ```ts
+ * <btrix-queue-exclusion-table
+ *   .exclude=${this.crawlTemplate?.config?.exclude}
+ * >
+ * </btrix-queue-exclusion-table>
+ * ```
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
@@ -82,9 +90,7 @@ export class QueueExclusionTable extends LiteElement {
 
     return html`
       <tr class="even:bg-neutral-50">
-        <td
-          class="border-t border-x p-2 whitespace-nowrap bg-neutral-0${typeColClass}"
-        >
+        <td class="border-t border-x p-2 whitespace-nowrap${typeColClass}">
           ${typeLabel}
         </td>
         <td class="border-t border-r p-2 font-mono${valueColClass}">

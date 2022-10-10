@@ -21,6 +21,9 @@ export class Details extends LitElement {
   @property({ type: Boolean })
   open? = false;
 
+  @property({ type: Boolean })
+  disabled? = false;
+
   static styles = css`
     :host {
       display: block;
@@ -39,7 +42,7 @@ export class Details extends LitElement {
       user-select: none;
     }
 
-    summary::before {
+    summary:not([aria-disabled="true"])::before {
       display: block;
       width: 1rem;
       height: 1rem;
@@ -47,11 +50,11 @@ export class Details extends LitElement {
       flex: 0;
     }
 
-    details[open] summary::before {
+    details:not([aria-disabled="true"])[open] summary::before {
       content: url(${unsafeCSS(caretDownFillSvg)});
     }
 
-    details:not([open]) summary::before {
+    details:not([aria-disabled="true"]):not([open]) summary::before {
       content: url(${unsafeCSS(caretRightFillSvg)});
     }
 
@@ -81,7 +84,11 @@ export class Details extends LitElement {
 
   render() {
     return html`
-      <details ?open=${this.open} @toggle=${this.onToggle}>
+      <details
+        ?open=${this.open}
+        @toggle=${this.onToggle}
+        aria-disabled=${this.disabled ? "true" : "false"}
+      >
         <summary>
           <div class="summary-content">
             <div class="title">

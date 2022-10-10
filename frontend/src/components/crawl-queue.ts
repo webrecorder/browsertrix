@@ -85,42 +85,45 @@ export class CrawlQueue extends LiteElement {
     }
 
     return html`
-      <header class="flex justify-end">
-        <btrix-pagination
-          size=${this.pageSize}
-          totalCount=${this.total}
-          @page-change=${(e: CustomEvent) => {
-            this.page = e.detail.page;
-          }}
-        >
-        </btrix-pagination>
-      </header>
+      <btrix-details open disabled>
+        <span slot="title">${msg("Queued URLs")}</span>
+        <div slot="summary-description">
+          <btrix-pagination
+            size=${this.pageSize}
+            totalCount=${this.total}
+            @page-change=${(e: CustomEvent) => {
+              this.page = e.detail.page;
+            }}
+          >
+          </btrix-pagination>
+        </div>
 
-      <btrix-numbered-list
-        class="text-xs break-all transition-opacity${this.isLoading
-          ? " opacity-60"
-          : ""}"
-        .items=${this.results.map((url, idx) => ({
-          order: idx + 1 + (this.page - 1) * this.pageSize,
-          content: html`<a
-            href=${url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >${url}</a
-          >`,
-        }))}
-        aria-live="polite"
-      ></btrix-numbered-list>
+        <btrix-numbered-list
+          class="text-xs break-all transition-opacity${this.isLoading
+            ? " opacity-60"
+            : ""}"
+          .items=${this.results.map((url, idx) => ({
+            order: idx + 1 + (this.page - 1) * this.pageSize,
+            content: html`<a
+              href=${url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              >${url}</a
+            >`,
+          }))}
+          aria-live="polite"
+        ></btrix-numbered-list>
 
-      <footer class="text-center">
-        <span class="text-xs text-neutral-400" aria-live="polite">
-          ${msg(
-            str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}-${(
-              this.page * this.pageSize
-            ).toLocaleString()} of ${this.total.toLocaleString()} URLs`
-          )}
-        </span>
-      </footer>
+        <footer class="text-center">
+          <span class="text-xs text-neutral-400" aria-live="polite">
+            ${msg(
+              str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}-${(
+                this.page * this.pageSize
+              ).toLocaleString()} of ${this.total.toLocaleString()} URLs`
+            )}
+          </span>
+        </footer>
+      </btrix-details>
     `;
   }
 
