@@ -1,9 +1,5 @@
 ---
-# this playbook will set up a kubernetes cluster, a mongodb database, create a spaces instance to run browsertrix cloud
-# It is assumed that you have a digital ocean API in your environment and have ACCESS keys for your Spaces
-# the playbook also uses doctl
-# set your env variables to have `DO_API_TOKEN` `DO_AWS_ACCESS_KEY` and `DO_AWS_SECRET_KEY`
-- name: deploy browsertrix on  digital ocrean
+- name: deploy browsertrix on digital ocrean
   hosts: localhost
   connection: local
   gather_facts: false
@@ -23,6 +19,7 @@
     - name: d_ocean | install helm diff plugin
       ansible.builtin.command: helm plugin install https://github.com/databus23/helm-diff
       changed_when: false
+      ignore_errors: true
 
     - name: d_ocean | test for existing mongodb
       ansible.builtin.command: doctl db list
@@ -49,23 +46,20 @@
     - name: d_ocean | Print return information for db_url
       ansible.builtin.set_fact:
         btrix_db_url: "{{ webrecorder_database.stdout | from_json | json_query('[0].private_connection.uri') }}"
+      ignore_errors: true
 
-    - name: d_ocean | Print return information k8s cluster
+    - name: d_ocean | Print return mongodb private connection uri
       ansible.builtin.debug:
         var: btrix_db_url
         verbosity: 2
-
-    - name: d_ocean | copy the database info doctl created
-      ansible.builtin.copy:
-        content: "{{ webrecorder_database.stdout }}"
-        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_mongodb.txt"
-      delegate_to: localhost
       ignore_errors: true
 
-    - name: d_ocean | Gather all DigitalOcean databases
-      community.digitalocean.digital_ocean_database_info:
-        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-      register: ansible_database
+    - name: d_ocean | copy the mongodb info doctl created to tmp directory
+      ansible.builtin.copy:
+        content: "{{ webrecorder_database.stdout }}"
+        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_btrix_db_url.txt"
+      delegate_to: localhost
+      ignore_errors: true
 
     - name: d_ocean | Create new Space
       community.digitalocean.digital_ocean_spaces:
@@ -127,6 +121,8 @@
           mongo_local: false
           mongo_auth:
             db_url: "{{ btrix_db_url }}"
+            # determine why variable below does not "stick"
+            # db_url: "{{ webrecorder_database.stdout | from_json | json_query('[0].private_connection.uri') }}"
             username: root
             password: example
           minio_local: false
@@ -147,22 +143,29 @@
       ignore_errors: true
 
     - name: d_ocean | get loadbalancer info from doctl
-      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }}
+      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }} --format LoadBalancers --output json
       register: my_lb
 
-    - name: d_ocean | Print return information k8s cluster
-      ansible.builtin.debug:
-        var: my_lb.stdout_lines[1]
-        verbosity: 2
+    - name: d_ocean | copy the loadbalancer uuid info from doctl
+      ansible.builtin.copy:
+        content: "{{ my_ip.stdout }}"
+        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_lb_uuid.txt"
+      delegate_to: localhost
+      ignore_errors: true
 
-    - name: d_ocean | show loadbalancer ip
-      ansible.builtin.command: doctl compute load-balancer list
-      register: doc_lb_ip
+    - name: d_ocean | Print return information for loadbalancer
+      ansible.builtin.set_fact:
+        lb_info: "{{ my_lb.stdout | from_json }}"
+
+    - name: d_ocean | grab loadbalancer ip using doctl
+      ansible.builtin.command: doctl compute load-balancer get --format IP "{{ lb_uuid }}"
+      register: loadbalancer_ip
+      ignore_errors: true
 
     - name: d_ocean | copy the loadbalancer info doctl created
       ansible.builtin.copy:
-        content: "{{ doc_lb_ip.stdout }}"
-        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_loadbalancer.txt"
+        content: "{{ loadbalancer_ip.stdout }}"
+        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_loadbalancer_ip.txt"
       delegate_to: localhost
       ignore_errors: true
 
