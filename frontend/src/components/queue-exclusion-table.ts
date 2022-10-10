@@ -6,11 +6,7 @@ import RegexColorize from "regex-colorize";
 import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
-
-type Exclusion = {
-  type: "text" | "regex";
-  value: string;
-};
+import type { Exclusion } from "./queue-exclusion-form";
 
 /**
  * Crawl queue exclusion table

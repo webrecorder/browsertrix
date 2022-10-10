@@ -1,8 +1,13 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
+import { regexEscape } from "../utils/string";
+
+export type Exclusion = {
+  type: "text" | "regex";
+  value: string;
+};
 
 const MIN_LENGTH = 2;
 
@@ -12,22 +17,14 @@ const MIN_LENGTH = 2;
 @localized()
 export class QueueExclusionForm extends LiteElement {
   @state()
-  private selectValue = "text";
+  private selectValue: Exclusion["type"] = "text";
 
   @state()
   private inputValue = "";
 
   render() {
     return html`
-      <sl-form
-        @sl-submit=${(e: CustomEvent) => {
-          const { formData } = e.detail;
-          console.log(
-            formData.get("excludeType"),
-            formData.get("excludeValue")
-          );
-        }}
-      >
+      <sl-form @sl-submit=${this.onSubmit}>
         <div class="flex">
           <div class="pt-3 pr-1 flex-0 w-40">
             <sl-select
@@ -71,5 +68,22 @@ export class QueueExclusionForm extends LiteElement {
         </div>
       </sl-form>
     `;
+  }
+
+  private onSubmit(e: CustomEvent) {
+    const { formData } = e.detail;
+    let value = formData.get("excludeValue");
+
+    if (this.selectValue === "text") {
+      value = regexEscape(value);
+    } else {
+      try {
+        // Check if valid regex
+        new RegExp(value);
+      } catch (e) {
+        console.warn(e);
+        // TODO handle
+      }
+    }
   }
 }
