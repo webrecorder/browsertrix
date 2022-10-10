@@ -3,6 +3,7 @@ import { msg, localized } from "@lit/localize";
 
 import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
+import { regexEscape } from "../utils/string";
 
 type Exclusion = {
   type: "text" | "regex";
@@ -22,14 +23,6 @@ type Exclusion = {
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
-  /**
-   * Escape string to use as regex
-   * From https://github.com/tc39/proposal-regex-escaping/blob/main/polyfill.js#L3
-   */
-  static escape(s: any) {
-    return String(s).replace(/[\\^$*+?.()|[\]{}]/g, "\\$&");
-  }
-
   @property({ type: Array })
   exclude?: CrawlConfig["exclude"];
 
@@ -38,7 +31,7 @@ export class QueueExclusionTable extends LiteElement {
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("exclude") && this.exclude) {
       this.exclusions = this.exclude.map((str: any) => ({
-        type: QueueExclusionTable.escape(str) === str ? "text" : "regex",
+        type: regexEscape(str) === str ? "text" : "regex",
         value: str,
       }));
     }
