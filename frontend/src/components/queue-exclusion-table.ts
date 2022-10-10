@@ -30,10 +30,13 @@ export class QueueExclusionTable extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("exclude") && this.exclude) {
-      this.exclusions = this.exclude.map((str: any) => ({
-        type: regexEscape(str) === str ? "text" : "regex",
-        value: str,
-      }));
+      this.exclusions = this.exclude.map((str: any) => {
+        const unescaped = str.replace(/\\/g, "");
+        return {
+          type: regexEscape(unescaped) === str ? "text" : "regex",
+          value: unescaped,
+        };
+      });
     }
   }
 
