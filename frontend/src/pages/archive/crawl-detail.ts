@@ -533,6 +533,8 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQueue() {
+    const isActiveCrawl = this.crawl && this.isActive;
+
     return html`<h3 class="text-lg font-medium leading-none mb-4">
         ${msg("Queue Exclusions")}
       </h3>
@@ -543,9 +545,13 @@ export class CrawlDetail extends LiteElement {
           .exclude=${this.crawlTemplate?.config?.exclude}
         >
         </btrix-queue-exclusion-table>
+
+        ${isActiveCrawl
+          ? html`<btrix-queue-exclusion-form> </btrix-queue-exclusion-form>`
+          : ""}
       </btrix-details>
 
-      ${this.crawl && this.isActive
+      ${isActiveCrawl
         ? html`
             <div class="mt-5">
               <btrix-crawl-queue
