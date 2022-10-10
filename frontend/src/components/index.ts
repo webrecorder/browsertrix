@@ -42,6 +42,9 @@ import("./screencast").then(({ Screencast: Screencast }) => {
 import("./select-browser-profile").then(({ SelectBrowserProfile }) => {
   customElements.define("btrix-select-browser-profile", SelectBrowserProfile);
 });
+import("./queue-exclusion-form").then(({ QueueExclusionForm }) => {
+  customElements.define("btrix-queue-exclusion-form", QueueExclusionForm);
+});
 import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
   customElements.define("btrix-queue-exclusion-table", QueueExclusionTable);
 });
