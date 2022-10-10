@@ -9,7 +9,13 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlTemplate } from "./types";
 
-type SectionName = "overview" | "watch" | "replay" | "files" | "logs" | "queue";
+type SectionName =
+  | "overview"
+  | "watch"
+  | "replay"
+  | "files"
+  | "logs"
+  | "exclusions";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -111,7 +117,9 @@ export class CrawlDetail extends LiteElement {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
     if (
-      ["overview", "watch", "replay", "files", "logs", "queue"].includes(hash)
+      ["overview", "watch", "replay", "files", "logs", "exclusions"].includes(
+        hash
+      )
     ) {
       this.sectionName = hash as SectionName;
     }
@@ -146,7 +154,7 @@ export class CrawlDetail extends LiteElement {
       case "logs":
         sectionContent = this.renderLogs();
         break;
-      case "queue":
+      case "exclusions":
         sectionContent = this.renderQueue();
         break;
       default:
@@ -229,7 +237,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "queue", label: msg("Queue") })}
+          ${renderNavItem({ section: "exclusions", label: msg("Exclusions") })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -524,7 +532,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderQueue() {
     return html`<h3 class="text-lg font-medium leading-none mb-4">
-        ${msg("Crawl Queue")}
+        ${msg("Queue Exclusions")}
       </h3>
 
       ${!this.crawl
