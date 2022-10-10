@@ -20,6 +20,10 @@
         - helm
         - doctl
 
+    - name: d_ocean | install helm diff plugin
+      ansible.builtin.command: helm plugin install https://github.com/databus23/helm-diff
+      changed_when: false
+
     - name: d_ocean | test for existing mongodb
       ansible.builtin.command: doctl db list
       changed_when: false
@@ -41,6 +45,15 @@
         state: absent
         region: "{{ droplet_region }}"
       tags: never
+
+    - name: d_ocean | Print return information for db_url
+      ansible.builtin.set_fact:
+        btrix_db_url: "{{ webrecorder_database.stdout | from_json | json_query('[0].private_connection.uri') }}"
+
+    - name: d_ocean | Print return information k8s cluster
+      ansible.builtin.debug:
+        var: btrix_db_url
+        verbosity: 2
 
     - name: d_ocean | copy the database info doctl created
       ansible.builtin.copy:
@@ -113,7 +126,7 @@
         values:
           mongo_local: false
           mongo_auth:
-            db_url: "<enter mongodb uri from /tmp/ file>"
+            db_url: "{{ btrix_db_url }}"
             username: root
             password: example
           minio_local: false
@@ -134,8 +147,13 @@
       ignore_errors: true
 
     - name: d_ocean | get loadbalancer info from doctl
-      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }} --format LoadBalancers --output json
+      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }}
       register: my_lb
+
+    - name: d_ocean | Print return information k8s cluster
+      ansible.builtin.debug:
+        var: my_lb.stdout_lines[1]
+        verbosity: 2
 
     - name: d_ocean | show loadbalancer ip
       ansible.builtin.command: doctl compute load-balancer list
