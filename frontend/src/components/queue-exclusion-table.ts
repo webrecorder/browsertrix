@@ -14,7 +14,7 @@ import type { Exclusion } from "./queue-exclusion-form";
  * Usage example:
  * ```ts
  * <btrix-queue-exclusion-table
- *   .exclude=${this.crawlTemplate?.config?.exclude}
+ *   .config=${this.crawlTemplate.config}
  * >
  * </btrix-queue-exclusion-table>
  * ```
@@ -22,24 +22,58 @@ import type { Exclusion } from "./queue-exclusion-form";
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
-  exclude?: CrawlConfig["exclude"];
+  config?: CrawlConfig;
 
-  private exclusions: Exclusion[] = [];
+  @state()
+  private results: Exclusion[] = [];
+
+  @state()
+  private page: number = 1;
+
+  @state()
+  private pageSize: number = 5;
+
+  @state()
+  private total?: number;
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("exclude") && this.exclude) {
-      this.exclusions = this.exclude.map((str: any) => {
+    if (changedProperties.has("config") && this.config?.exclude) {
+      this.total = this.config.exclude.length;
+      this.updatePageResults();
+    } else if (changedProperties.has("page")) {
+      this.updatePageResults();
+    }
+  }
+
+  private updatePageResults() {
+    if (!this.config?.exclude) return;
+
+    this.results = this.config.exclude
+      .slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
+      .map((str: any) => {
         const unescaped = str.replace(/\\/g, "");
         return {
           type: regexEscape(unescaped) === str ? "text" : "regex",
           value: unescaped,
         };
       });
-    }
   }
 
   render() {
-    return html`
+    return html`<btrix-details open disabled>
+      <h4 slot="title">${msg("Exclusion Table")}</h4>
+      <div slot="summary-description">
+        ${this.total && this.total > this.pageSize
+          ? html`<btrix-pagination
+              size=${this.pageSize}
+              totalCount=${this.total}
+              @page-change=${(e: CustomEvent) => {
+                this.page = e.detail.page;
+              }}
+            >
+            </btrix-pagination>`
+          : ""}
+      </div>
       <table
         class="w-full leading-none border-separate"
         style="border-spacing: 0;"
@@ -51,20 +85,24 @@ export class QueueExclusionTable extends LiteElement {
           </tr>
         </thead>
         <tbody class="text-neutral-600">
-          ${this.exclusions.map(this.renderItem)}
+          ${this.results.map(this.renderItem)}
         </tbody>
       </table>
-    `;
+    </btrix-details> `;
   }
 
-  private renderItem = (exclusion: Exclusion, index: number) => {
+  private renderItem = (
+    exclusion: Exclusion,
+    index: number,
+    arr: Exclusion[]
+  ) => {
     let typeColClass = "";
     let valueColClass = "";
 
     if (index === 0) {
       typeColClass = " rounded-tl";
       valueColClass = " rounded-tr";
-    } else if (index === this.exclusions.length - 1) {
+    } else if (index === arr.length - 1) {
       typeColClass = " border-b rounded-bl";
       valueColClass = " border-b rounded-br";
     }
