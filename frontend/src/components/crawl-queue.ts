@@ -74,7 +74,7 @@ export class CrawlQueue extends LiteElement {
       <btrix-details open disabled>
         <span slot="title">${msg("Queued URLs")}</span>
         <div slot="summary-description">
-          ${this.total
+          ${this.total && this.total > this.pageSize
             ? html`<btrix-pagination
                 size=${this.pageSize}
                 totalCount=${this.total}

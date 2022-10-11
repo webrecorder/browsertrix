@@ -539,17 +539,11 @@ export class CrawlDetail extends LiteElement {
         ${msg("Queue Exclusions")}
       </h3>
 
-      <btrix-details open disabled>
-        <h4 slot="title">${msg("Exclusion Table")}</h4>
-        <btrix-queue-exclusion-table
-          .exclude=${this.crawlTemplate?.config?.exclude}
-        >
-        </btrix-queue-exclusion-table>
-
-        ${isActiveCrawl
-          ? html`<btrix-queue-exclusion-form> </btrix-queue-exclusion-form>`
-          : ""}
-      </btrix-details>
+      <btrix-exclusion-editor
+        .exclude=${this.crawlTemplate?.config?.exclude}
+        ?readOnly=${!isActiveCrawl}
+      >
+      </btrix-exclusion-editor>
 
       ${isActiveCrawl
         ? html`

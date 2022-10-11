@@ -57,6 +57,9 @@ import("./pagination").then(({ Pagination }) => {
 import("./crawl-queue").then(({ CrawlQueue }) => {
   customElements.define("btrix-crawl-queue", CrawlQueue);
 });
+import("./exclusion-editor").then(({ ExclusionEditor }) => {
+  customElements.define("btrix-exclusion-editor", ExclusionEditor);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
