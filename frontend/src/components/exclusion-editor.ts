@@ -10,6 +10,11 @@ import type { AuthState } from "../utils/AuthService";
  *
  * Usage example:
  * ```ts
+ * <btrix-exclusion-editor
+ *   .exclude=${this.crawlTemplate?.config?.exclude}
+ *   ?readOnly=${!isActiveCrawl}
+ * >
+ * </btrix-exclusion-editor>
  * ```
  */
 @localized()
@@ -24,7 +29,7 @@ export class ExclusionEditor extends LiteElement {
   crawlId?: string;
 
   @property({ type: Array })
-  exclude?: CrawlConfig["exclude"];
+  config?: CrawlConfig;
 
   @property({ type: Boolean })
   readOnly = false;
@@ -42,8 +47,8 @@ export class ExclusionEditor extends LiteElement {
   private total?: number;
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("exclude") && this.exclude) {
-      this.total = this.exclude.length;
+    if (changedProperties.has("config") && this.config?.exclude) {
+      this.total = this.config.exclude.length;
       this.updatePageResults();
     } else if (changedProperties.has("page")) {
       this.updatePageResults();
@@ -51,7 +56,9 @@ export class ExclusionEditor extends LiteElement {
   }
 
   private updatePageResults() {
-    this.results = this.exclude?.slice(
+    if (!this.config?.exclude) return;
+
+    this.results = this.config.exclude.slice(
       (this.page - 1) * this.pageSize,
       this.page * this.pageSize
     );
@@ -74,9 +81,14 @@ export class ExclusionEditor extends LiteElement {
             : ""}
         </div>
 
-        <btrix-queue-exclusion-table .exclude=${this.results}>
-        </btrix-queue-exclusion-table>
-
+        ${this.config
+          ? html`<btrix-queue-exclusion-table .exclude=${this.results}>
+            </btrix-queue-exclusion-table>`
+          : html`
+              <div class="flex items-center justify-center my-9 text-xl">
+                <sl-spinner></sl-spinner>
+              </div>
+            `}
         ${!this.readOnly
           ? html`<btrix-queue-exclusion-form> </btrix-queue-exclusion-form>`
           : ""}

@@ -87,7 +87,7 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return html`
-      <tr class="even:bg-neutral-50">
+      <tr class="even:bg-neutral-50 h-8">
         <td class="border-t border-x p-2 whitespace-nowrap${typeColClass}">
           ${typeLabel}
         </td>

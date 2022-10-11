@@ -540,7 +540,7 @@ export class CrawlDetail extends LiteElement {
       </h3>
 
       <btrix-exclusion-editor
-        .exclude=${this.crawlTemplate?.config?.exclude}
+        .config=${this.crawlTemplate?.config}
         ?readOnly=${!isActiveCrawl}
       >
       </btrix-exclusion-editor>
