@@ -11,8 +11,11 @@ import type { AuthState } from "../utils/AuthService";
  * Usage example:
  * ```ts
  * <btrix-exclusion-editor
- *   .exclude=${this.crawlTemplate?.config?.exclude}
- *   ?readOnly=${!isActiveCrawl}
+ *   archiveId=${this.crawl.aid}
+ *   crawlId=${this.crawl.id}
+ *   .config=${this.crawlTemplate.config}
+ *   .authState=${this.authState}
+ *   ?isActiveCrawl=${isActive}
  * >
  * </btrix-exclusion-editor>
  * ```
@@ -32,7 +35,7 @@ export class ExclusionEditor extends LiteElement {
   config?: CrawlConfig;
 
   @property({ type: Boolean })
-  readOnly = false;
+  isActiveCrawl = false;
 
   @state()
   private pendingURLs: string[] = [];
@@ -69,6 +72,19 @@ export class ExclusionEditor extends LiteElement {
 
   render() {
     return html`
+      ${this.renderTable()}
+      ${this.isActiveCrawl
+        ? html`
+            <section class="mt-5">${this.renderPending()}</section>
+
+            <section class="mt-5">${this.renderQueue()}</section>
+          `
+        : ""}
+    `;
+  }
+
+  private renderTable() {
+    return html`
       <btrix-details open disabled>
         <h4 slot="title">${msg("Exclusion Table")}</h4>
         <div slot="summary-description">
@@ -92,29 +108,39 @@ export class ExclusionEditor extends LiteElement {
                 <sl-spinner></sl-spinner>
               </div>
             `}
-        ${!this.readOnly
+        ${this.isActiveCrawl
           ? html`<btrix-queue-exclusion-form @on-regex=${this.handleRegex}>
             </btrix-queue-exclusion-form>`
           : ""}
       </btrix-details>
-
-      <btrix-details open disabled>
-        <h4 slot="title">${msg("Pending Exclusions")}</h4>
-
-        <btrix-numbered-list
-          class="text-xs break-all"
-          .items=${this.pendingURLs.map((url, idx) => ({
-            content: html`<a
-              href=${url}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              >${url}</a
-            >`,
-          }))}
-          aria-live="polite"
-        ></btrix-numbered-list>
-      </btrix-details>
     `;
+  }
+
+  private renderPending() {
+    return html`<btrix-details open disabled>
+      <h4 slot="title">${msg("Pending Exclusions")}</h4>
+
+      <btrix-numbered-list
+        class="text-xs break-all"
+        .items=${this.pendingURLs.map((url, idx) => ({
+          content: html`<a
+            href=${url}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            >${url}</a
+          >`,
+        }))}
+        aria-live="polite"
+      ></btrix-numbered-list>
+    </btrix-details>`;
+  }
+
+  private renderQueue() {
+    return html`<btrix-crawl-queue
+      archiveId=${this.archiveId!}
+      crawlId=${this.crawlId!}
+      .authState=${this.authState}
+    ></btrix-crawl-queue>`;
   }
 
   private handleRegex(e: CustomEvent) {

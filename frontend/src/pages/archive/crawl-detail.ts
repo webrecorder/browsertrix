@@ -155,7 +155,7 @@ export class CrawlDetail extends LiteElement {
         sectionContent = this.renderLogs();
         break;
       case "exclusions":
-        sectionContent = this.renderQueue();
+        sectionContent = this.renderExclusions();
         break;
       default:
         sectionContent = this.renderOverview();
@@ -532,30 +532,18 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderQueue() {
-    const isActiveCrawl = this.crawl && this.isActive;
-
+  private renderExclusions() {
     return html`<h3 class="text-lg font-medium leading-none mb-4">
         ${msg("Queue Exclusions")}
       </h3>
 
       <btrix-exclusion-editor
+        archiveId=${ifDefined(this.crawl?.aid)}
+        crawlId=${ifDefined(this.crawl?.id)}
         .config=${this.crawlTemplate?.config}
-        ?readOnly=${!isActiveCrawl}
-      >
-      </btrix-exclusion-editor>
-
-      ${isActiveCrawl
-        ? html`
-            <div class="mt-5">
-              <btrix-crawl-queue
-                archiveId=${this.crawl!.aid}
-                crawlId=${this.crawl!.id}
-                .authState=${this.authState}
-              ></btrix-crawl-queue>
-            </div>
-          `
-        : ""} `;
+        .authState=${this.authState}
+        ?isActiveCrawl=${this.crawl && this.isActive}
+      ></btrix-exclusion-editor> `;
   }
 
   private renderReplay() {
