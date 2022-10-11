@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
@@ -13,6 +14,14 @@ const MIN_LENGTH = 2;
 
 /**
  * Crawl queue exclusion form
+ *
+ * Usage example:
+ * ```ts
+ * <btrix-queue-exclusion-form @on-input=${this.handleInput}>
+ * </btrix-queue-exclusion-form>
+ * ```
+ *
+ * @event on-regex { value: string; isValid: boolean; }
  */
 @localized()
 export class QueueExclusionForm extends LiteElement {
@@ -23,7 +32,29 @@ export class QueueExclusionForm extends LiteElement {
   private inputValue = "";
 
   @state()
+  private isInputValid = false;
+
+  @state()
   private invalidRegexError = "";
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.get("selectValue") ||
+      changedProperties.get("inputValue")
+    ) {
+      this.invalidRegexError = "";
+      this.checkInputValidity();
+    }
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.get("selectValue") ||
+      changedProperties.get("inputValue")
+    ) {
+      this.dispatchRegexEvent();
+    }
+  }
 
   render() {
     return html`
@@ -37,7 +68,6 @@ export class QueueExclusionForm extends LiteElement {
               .value=${this.selectValue}
               @sl-select=${(e: any) => {
                 this.selectValue = e.target.value;
-                this.invalidRegexError = "";
               }}
             >
               <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
@@ -57,10 +87,7 @@ export class QueueExclusionForm extends LiteElement {
                   : "example.com/skip.*"}
                 .value=${this.inputValue}
                 required
-                @sl-input=${(e: any) => {
-                  this.inputValue = e.target.value;
-                  this.invalidRegexError = "";
-                }}
+                @sl-input=${this.onInput}
               >
                 ${this.invalidRegexError
                   ? html`
@@ -94,8 +121,7 @@ export class QueueExclusionForm extends LiteElement {
                 type="primary"
                 size="small"
                 submit
-                ?disabled=${!this.inputValue ||
-                this.inputValue.length < MIN_LENGTH}
+                ?disabled=${!this.isInputValid}
                 >${msg("Add Exclusion")}</sl-button
               >
             </div>
@@ -105,19 +131,48 @@ export class QueueExclusionForm extends LiteElement {
     `;
   }
 
+  private onInput = debounce(200)((e: any) => {
+    this.inputValue = e.target.value;
+  }) as any;
+
+  private checkInputValidity(): void {
+    let isValid = true;
+
+    if (!this.inputValue || this.inputValue.length < MIN_LENGTH) {
+      isValid = false;
+    } else if (this.selectValue === "regex") {
+      try {
+        // Check if valid regex
+        new RegExp(this.inputValue);
+      } catch (err: any) {
+        this.invalidRegexError = err.message;
+        isValid = false;
+      }
+    }
+
+    this.isInputValid = isValid;
+  }
+
+  private dispatchRegexEvent() {
+    this.dispatchEvent(
+      new CustomEvent("on-regex", {
+        detail: {
+          value:
+            this.selectValue === "text"
+              ? regexEscape(this.inputValue)
+              : this.inputValue,
+          isValid: this.isInputValid,
+        },
+      })
+    );
+  }
+
   private onSubmit(e: CustomEvent) {
     const { formData } = e.detail;
     let value = formData.get("excludeValue");
 
     if (this.selectValue === "text") {
       value = regexEscape(value);
-    } else {
-      try {
-        // Check if valid regex
-        new RegExp(value);
-      } catch (err: any) {
-        this.invalidRegexError = err.message;
-      }
     }
   }
 }

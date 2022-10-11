@@ -35,6 +35,9 @@ export class ExclusionEditor extends LiteElement {
   readOnly = false;
 
   @state()
+  private pendingURLs: string[] = [];
+
+  @state()
   private results: CrawlConfig["exclude"] = [];
 
   @state()
@@ -90,9 +93,31 @@ export class ExclusionEditor extends LiteElement {
               </div>
             `}
         ${!this.readOnly
-          ? html`<btrix-queue-exclusion-form> </btrix-queue-exclusion-form>`
+          ? html`<btrix-queue-exclusion-form @on-regex=${this.handleRegex}>
+            </btrix-queue-exclusion-form>`
           : ""}
       </btrix-details>
+
+      <btrix-details open disabled>
+        <h4 slot="title">${msg("Pending Exclusions")}</h4>
+
+        <btrix-numbered-list
+          class="text-xs break-all"
+          .items=${this.pendingURLs.map((url, idx) => ({
+            content: html`<a
+              href=${url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              >${url}</a
+            >`,
+          }))}
+          aria-live="polite"
+        ></btrix-numbered-list>
+      </btrix-details>
     `;
+  }
+
+  private handleRegex(e: CustomEvent) {
+    console.log(e.detail);
   }
 }
