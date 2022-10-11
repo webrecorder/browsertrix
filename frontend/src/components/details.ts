@@ -35,14 +35,17 @@ export class Details extends LitElement {
 
       margin-bottom: var(--sl-spacing-x-small);
       line-height: 1;
-      cursor: pointer;
       display: flex;
       align-items: center;
       list-style: none;
+    }
+
+    details[aria-disabled="false"] summary {
+      cursor: pointer;
       user-select: none;
     }
 
-    summary:not([aria-disabled="true"])::before {
+    details[aria-disabled="false"] summary::before {
       display: block;
       width: 1rem;
       height: 1rem;
@@ -50,11 +53,11 @@ export class Details extends LitElement {
       flex: 0;
     }
 
-    details:not([aria-disabled="true"])[open] summary::before {
+    details[aria-disabled="false"][open] summary::before {
       content: url(${unsafeCSS(caretDownFillSvg)});
     }
 
-    details:not([aria-disabled="true"]):not([open]) summary::before {
+    details[aria-disabled="false"]:not([open]) summary::before {
       content: url(${unsafeCSS(caretRightFillSvg)});
     }
 
@@ -86,6 +89,7 @@ export class Details extends LitElement {
     return html`
       <details
         ?open=${this.open}
+        @click=${this.onClick}
         @toggle=${this.onToggle}
         aria-disabled=${this.disabled ? "true" : "false"}
       >
@@ -100,6 +104,13 @@ export class Details extends LitElement {
         <slot></slot>
       </details>
     `;
+  }
+
+  private onClick(e: Event) {
+    if (this.disabled) {
+      e.preventDefault();
+      return;
+    }
   }
 
   private onToggle(e: Event) {
