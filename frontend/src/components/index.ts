@@ -60,6 +60,9 @@ import("./crawl-queue").then(({ CrawlQueue }) => {
 import("./exclusion-editor").then(({ ExclusionEditor }) => {
   customElements.define("btrix-exclusion-editor", ExclusionEditor);
 });
+import("./crawl-pending-exclusions").then(({ CrawlPendingExclusions }) => {
+  customElements.define("btrix-pending-exclusions", CrawlPendingExclusions);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

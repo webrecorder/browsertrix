@@ -37,21 +37,16 @@ export class QueueExclusionForm extends LiteElement {
   @state()
   private invalidRegexError = "";
 
-  willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.get("selectValue") ||
-      changedProperties.get("inputValue")
+      (changedProperties.has("inputValue") &&
+        changedProperties.get("inputValue") !== undefined)
     ) {
       this.invalidRegexError = "";
       this.checkInputValidity();
-    }
-  }
 
-  updated(changedProperties: Map<string, any>) {
-    if (
-      changedProperties.get("selectValue") ||
-      changedProperties.get("inputValue")
-    ) {
+      await this.updateComplete;
       this.dispatchRegexEvent();
     }
   }
@@ -60,7 +55,7 @@ export class QueueExclusionForm extends LiteElement {
     return html`
       <sl-form @sl-submit=${this.onSubmit}>
         <div class="flex">
-          <div class="pt-3 pr-1 flex-0 w-40">
+          <div class="pr-1 flex-0 w-40">
             <sl-select
               name="excludeType"
               placeholder=${msg("Select Type")}
@@ -74,7 +69,7 @@ export class QueueExclusionForm extends LiteElement {
               <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
             </sl-select>
           </div>
-          <div class="pt-3 pl-1 flex-1 md:flex">
+          <div class="pl-1 flex-1 md:flex">
             <div class="flex-1 mb-2 md:mb-0 md:mr-2">
               <sl-input
                 class=${this.invalidRegexError ? "invalid" : ""}

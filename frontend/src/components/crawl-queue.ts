@@ -71,8 +71,14 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-details open disabled>
-        <span slot="title">${msg("Queued URLs")}</span>
+      <btrix-details open>
+        <span slot="title">
+          ${msg("Queued URLs")}
+          <span
+            class="ml-1 inline-block rounded-sm px-1 text-xs bg-slate-200 text-slate-600"
+            >${msg(str`${this.total || "0"} URLs`)}</span
+          >
+        </span>
         <div slot="summary-description">
           ${this.total && this.total > this.pageSize
             ? html`<btrix-pagination
@@ -92,15 +98,15 @@ export class CrawlQueue extends LiteElement {
   }
 
   private renderContent() {
-    if (!this.total) {
-      if (this.isLoading) {
-        return html`
-          <div class="flex items-center justify-center text-3xl">
-            <sl-spinner></sl-spinner>
-          </div>
-        `;
-      }
+    if (this.isLoading) {
+      return html`
+        <div class="flex items-center justify-center text-3xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
 
+    if (!this.total) {
       return html`
         <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
       `;

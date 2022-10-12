@@ -13,13 +13,16 @@ type ListItem = {
  * ```ts
  * <btrix-numbered-list></btrix-numbered-list>
  * ```
+ *
+ * CSS variables:
+ * ```
+ * --link-color
+ * --link-hover-color
+ * ```
  */
 export class NumberedList extends LitElement {
   @property({ type: Array })
   items: ListItem[] = [];
-
-  @property({ type: Object })
-  innerStyle?: any;
 
   static styles = css`
     :host {
@@ -78,12 +81,12 @@ export class NumberedList extends LitElement {
     }
 
     a {
-      color: var(--sl-color-indigo-500);
+      color: var(--link-color, var(--sl-color-indigo-500));
       text-decoration: none;
     }
 
     a:hover {
-      color: var(--sl-color-indigo-400);
+      color: var(--link-hover-color, var(--sl-color-indigo-400));
     }
   `;
 
@@ -100,8 +103,6 @@ export class NumberedList extends LitElement {
             `
         )}
       </ol>
-
-      ${this.innerStyle}
     `;
   }
 }

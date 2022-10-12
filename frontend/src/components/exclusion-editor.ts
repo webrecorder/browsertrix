@@ -38,7 +38,7 @@ export class ExclusionEditor extends LiteElement {
   isActiveCrawl = false;
 
   @state()
-  private pendingURLs: string[] = [];
+  private regex: string = "";
 
   render() {
     return html`
@@ -46,7 +46,6 @@ export class ExclusionEditor extends LiteElement {
       ${this.isActiveCrawl
         ? html`
             <section class="mt-5">${this.renderPending()}</section>
-
             <section class="mt-5">${this.renderQueue()}</section>
           `
         : ""}
@@ -64,29 +63,23 @@ export class ExclusionEditor extends LiteElement {
             </div>
           `}
       ${this.isActiveCrawl
-        ? html`<btrix-queue-exclusion-form @on-regex=${this.handleRegex}>
-          </btrix-queue-exclusion-form>`
+        ? html`<div class="mt-2">
+            <btrix-queue-exclusion-form @on-regex=${this.handleRegex}>
+            </btrix-queue-exclusion-form>
+          </div>`
         : ""}
     `;
   }
 
   private renderPending() {
-    return html`<btrix-details open disabled>
-      <h4 slot="title">${msg("Pending Exclusions")}</h4>
-
-      <btrix-numbered-list
-        class="text-xs break-all"
-        .items=${this.pendingURLs.map((url, idx) => ({
-          content: html`<a
-            href=${url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >${url}</a
-          >`,
-        }))}
-        aria-live="polite"
-      ></btrix-numbered-list>
-    </btrix-details>`;
+    return html`
+      <btrix-pending-exclusions
+        archiveId=${this.archiveId!}
+        crawlId=${this.crawlId!}
+        .authState=${this.authState}
+        regex=${this.regex}
+      ></btrix-pending-exclusions>
+    `;
   }
 
   private renderQueue() {
@@ -98,6 +91,12 @@ export class ExclusionEditor extends LiteElement {
   }
 
   private handleRegex(e: CustomEvent) {
-    console.log(e.detail);
+    const { value, isValid } = e.detail;
+
+    if (isValid) {
+      this.regex = value;
+    } else {
+      this.regex = "";
+    }
   }
 }
