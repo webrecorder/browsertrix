@@ -42,10 +42,23 @@ export class CrawlPendingExclusions extends LiteElement {
   private results: URLs = [];
 
   @state()
-  private total?: number;
+  private isLoading = false;
 
   @state()
-  private isLoading = false;
+  private page: number = 1;
+
+  @state()
+  private pageSize: number = 10;
+
+  @state()
+  private total?: number;
+
+  private get pageResults(): URLs {
+    return this.results.slice(
+      (this.page - 1) * this.pageSize,
+      this.page * this.pageSize
+    );
+  }
 
   willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -62,9 +75,19 @@ export class CrawlPendingExclusions extends LiteElement {
     return html`
       <btrix-details>
         <span slot="title">
-          ${msg("Pending Exclusions")}
-          ${this.renderInfo()}
+          ${msg("Pending Exclusions")} ${this.renderInfo()}
         </span>
+        <div slot="summary-description">
+          ${this.total && this.total > this.pageSize
+            ? html`<btrix-pagination
+                size=${this.pageSize}
+                totalCount=${this.total}
+                @page-change=${(e: CustomEvent) => {
+                  this.page = e.detail.page;
+                }}
+              >
+              </btrix-pagination>`
+            : ""}
         </div>
         ${this.renderContent()}
       </btrix-details>
@@ -107,7 +130,8 @@ export class CrawlPendingExclusions extends LiteElement {
         class="text-xs break-all transition-opacity${this.isLoading
           ? " opacity-60"
           : ""}"
-        .items=${this.results.map((url, idx) => ({
+        .items=${this.pageResults.map((url, idx) => ({
+          order: idx + 1 + (this.page - 1) * this.pageSize,
           content: html`<a
             href=${url}
             target="_blank"

@@ -98,15 +98,15 @@ export class CrawlQueue extends LiteElement {
   }
 
   private renderContent() {
-    if (this.isLoading) {
-      return html`
-        <div class="flex items-center justify-center text-3xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
-    }
-
     if (!this.total) {
+      if (this.isLoading) {
+        return html`
+          <div class="flex items-center justify-center text-3xl">
+            <sl-spinner></sl-spinner>
+          </div>
+        `;
+      }
+
       return html`
         <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
       `;
