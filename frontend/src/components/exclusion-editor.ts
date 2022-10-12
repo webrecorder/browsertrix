@@ -67,11 +67,11 @@ export class ExclusionEditor extends LiteElement {
   render() {
     return html`
       ${this.renderTable()}
+      ${this.isActiveCrawl && this.regex
+        ? html` <section class="mt-5">${this.renderPending()}</section> `
+        : ""}
       ${this.isActiveCrawl
-        ? html`
-            <section class="mt-5">${this.renderPending()}</section>
-            <section class="mt-5">${this.renderQueue()}</section>
-          `
+        ? html` <section class="mt-5">${this.renderQueue()}</section> `
         : ""}
     `;
   }
