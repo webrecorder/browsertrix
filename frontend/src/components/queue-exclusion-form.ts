@@ -21,7 +21,7 @@ const MIN_LENGTH = 2;
  * </btrix-queue-exclusion-form>
  * ```
  *
- * @event on-regex { value: string; isValid: boolean; }
+ * @event on-regex { value: string; valid: boolean; }
  */
 @localized()
 export class QueueExclusionForm extends LiteElement {
@@ -156,7 +156,7 @@ export class QueueExclusionForm extends LiteElement {
             this.selectValue === "text"
               ? regexEscape(this.inputValue)
               : this.inputValue,
-          isValid: this.isInputValid,
+          valid: this.isInputValid,
         },
       })
     );

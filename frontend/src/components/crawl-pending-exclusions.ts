@@ -53,6 +53,9 @@ export class CrawlPendingExclusions extends LiteElement {
   @state()
   private total?: number;
 
+  @state()
+  private isOpen: boolean = false;
+
   private get pageResults(): URLs {
     return this.results.slice(
       (this.page - 1) * this.pageSize,
@@ -73,12 +76,15 @@ export class CrawlPendingExclusions extends LiteElement {
 
   render() {
     return html`
-      <btrix-details>
+      <btrix-details
+        ?open=${this.isOpen}
+        @on-toggle=${(e: CustomEvent) => (this.isOpen = e.detail.open)}
+      >
         <span slot="title">
           ${msg("Pending Exclusions")} ${this.renderInfo()}
         </span>
         <div slot="summary-description">
-          ${this.total && this.total > this.pageSize
+          ${this.isOpen && this.total && this.total > this.pageSize
             ? html`<btrix-pagination
                 size=${this.pageSize}
                 totalCount=${this.total}
@@ -98,7 +104,7 @@ export class CrawlPendingExclusions extends LiteElement {
     if (!this.regex) return "";
 
     return html`
-      <btrix-badge type=${this.total ? "danger" : ""} class="ml-1">
+      <btrix-badge type=${this.total ? "danger" : "neutral"} class="ml-1">
         ${this.total ? msg(str`+${this.total} URLs`) : msg("No matches")}
       </btrix-badge>
     `;

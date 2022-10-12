@@ -15,7 +15,7 @@ import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
  * </btrix-details>
  * ```
  *
- * @event on-toggle
+ * @event on-toggle { open: boolean; }
  */
 export class Details extends LitElement {
   @property({ type: Boolean })

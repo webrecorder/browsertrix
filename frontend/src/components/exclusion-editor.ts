@@ -91,9 +91,9 @@ export class ExclusionEditor extends LiteElement {
   }
 
   private handleRegex(e: CustomEvent) {
-    const { value, isValid } = e.detail;
+    const { value, valid } = e.detail;
 
-    if (isValid) {
+    if (valid) {
       this.regex = value;
     } else {
       this.regex = "";
