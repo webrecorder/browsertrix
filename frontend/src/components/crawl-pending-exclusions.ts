@@ -103,27 +103,45 @@ export class CrawlPendingExclusions extends LiteElement {
   private renderBadge() {
     if (!this.regex) return "";
 
+    let content = msg("No matches");
+    let className = "";
+
+    if (this.total) {
+      if (this.total > 1) {
+        content = msg(str`${this.total.toLocaleString()} URLs`);
+      } else {
+        content = msg(str`1 URL`);
+      }
+
+      if (this.isLoading) {
+        className = "opacity-80";
+      }
+    } else {
+      if (this.isLoading) {
+        className = "opacity-0";
+      }
+    }
+
     return html`
-      <btrix-badge type=${this.total ? "danger" : "neutral"} class="ml-1">
-        ${this.total
-          ? this.total > 1
-            ? msg(str`${this.total.toLocaleString()} URLs`)
-            : msg(str`1 URL`)
-          : msg("No matches")}
+      <btrix-badge
+        type=${this.total ? "danger" : "neutral"}
+        class="ml-1 transition-opacity ${className}"
+      >
+        ${content}
       </btrix-badge>
     `;
   }
 
   private renderContent() {
-    if (this.isLoading) {
-      return html`
-        <div class="flex items-center justify-center text-3xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
-    }
-
     if (!this.total) {
+      if (this.isLoading) {
+        return html`
+          <div class="flex items-center justify-center my-9 text-xl">
+            <sl-spinner></sl-spinner>
+          </div>
+        `;
+      }
+
       return html`<p class="px-5 text-sm text-neutral-400">
         ${this.regex
           ? msg("No matching URLs found in queue.")
@@ -160,6 +178,8 @@ export class CrawlPendingExclusions extends LiteElement {
       return;
     }
 
+    this.isLoading = true;
+
     try {
       const { matched } = await this.getQueueMatches();
 
@@ -172,6 +192,8 @@ export class CrawlPendingExclusions extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    this.isLoading = false;
   }
 
   private async getQueueMatches(): Promise<ResponseData> {
