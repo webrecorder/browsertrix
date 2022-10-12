@@ -53,9 +53,6 @@ export class CrawlQueue extends LiteElement {
   @state()
   private pageSize: number = 30;
 
-  @state()
-  private isOpen: boolean = true;
-
   private timerId?: number;
 
   disconnectedCallback() {
@@ -77,13 +74,10 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-details
-        ?open=${this.isOpen}
-        @on-toggle=${(e: CustomEvent) => (this.isOpen = e.detail.open)}
-      >
+      <btrix-details open disabled>
         <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
         <div slot="summary-description">
-          ${this.isOpen && this.queue?.total && this.queue.total > this.pageSize
+          ${this.queue?.total && this.queue.total > this.pageSize
             ? html`<btrix-pagination
                 size=${this.pageSize}
                 totalCount=${this.queue.total}
