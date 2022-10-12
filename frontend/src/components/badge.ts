@@ -11,7 +11,7 @@ import { property } from "lit/decorators.js";
  */
 export class Badge extends LitElement {
   @property({ type: String })
-  type: "danger" | "neutral" = "neutral";
+  type: "success" | "danger" | "neutral" = "neutral";
 
   static styles = css`
     :host > span {
@@ -24,6 +24,11 @@ export class Badge extends LitElement {
       padding: 0 0.5rem;
       border-radius: var(--sl-border-radius-small);
       vertical-align: 1px;
+    }
+
+    .success {
+      background-color: var(--sl-color-success-500);
+      color: var(--sl-color-neutral-0);
     }
 
     .danger {

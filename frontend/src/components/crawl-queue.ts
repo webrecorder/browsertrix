@@ -81,12 +81,7 @@ export class CrawlQueue extends LiteElement {
         ?open=${this.isOpen}
         @on-toggle=${(e: CustomEvent) => (this.isOpen = e.detail.open)}
       >
-        <span slot="title">
-          ${msg("Crawl Queue")}
-          <btrix-badge class="ml-1">
-            ${msg(str`${this.queue?.total || "0"} URLs`)}
-          </btrix-badge>
-        </span>
+        <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
         <div slot="summary-description">
           ${this.isOpen && this.queue?.total && this.queue.total > this.pageSize
             ? html`<btrix-pagination
@@ -155,6 +150,20 @@ export class CrawlQueue extends LiteElement {
           )}
         </span>
       </footer>
+    `;
+  }
+
+  private renderBadge() {
+    if (!this.queue) return "";
+
+    return html`
+      <btrix-badge class="ml-1">
+        ${this.queue.total
+          ? this.queue.total > 1
+            ? msg(str`${this.queue.total.toLocaleString()} URLs`)
+            : msg(str`1 URL`)
+          : msg("No queue")}
+      </btrix-badge>
     `;
   }
 

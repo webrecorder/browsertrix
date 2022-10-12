@@ -81,7 +81,7 @@ export class CrawlPendingExclusions extends LiteElement {
         @on-toggle=${(e: CustomEvent) => (this.isOpen = e.detail.open)}
       >
         <span slot="title">
-          ${msg("Pending Exclusions")} ${this.renderInfo()}
+          ${msg("Pending Exclusions")} ${this.renderBadge()}
         </span>
         <div slot="summary-description">
           ${this.isOpen && this.total && this.total > this.pageSize
@@ -100,12 +100,16 @@ export class CrawlPendingExclusions extends LiteElement {
     `;
   }
 
-  private renderInfo() {
+  private renderBadge() {
     if (!this.regex) return "";
 
     return html`
       <btrix-badge type=${this.total ? "danger" : "neutral"} class="ml-1">
-        ${this.total ? msg(str`+${this.total} URLs`) : msg("No matches")}
+        ${this.total
+          ? this.total > 1
+            ? msg(str`${this.total.toLocaleString()} URLs`)
+            : msg(str`1 URL`)
+          : msg("No matches")}
       </btrix-badge>
     `;
   }
