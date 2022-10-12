@@ -97,13 +97,11 @@ export class CrawlPendingExclusions extends LiteElement {
   private renderInfo() {
     if (!this.regex) return "";
 
-    return html`<span
-      class="ml-1 inline-block rounded-sm px-1 text-xs transition-colors ${this
-        .total
-        ? "bg-rose-500 text-white"
-        : "bg-slate-200 text-slate-600"}"
-      >${this.total ? msg(str`+${this.total} URLs`) : msg("No matches")}</span
-    >`;
+    return html`
+      <btrix-badge type=${this.total ? "danger" : ""} class="ml-1">
+        ${this.total ? msg(str`+${this.total} URLs`) : msg("No matches")}
+      </btrix-badge>
+    `;
   }
 
   private renderContent() {

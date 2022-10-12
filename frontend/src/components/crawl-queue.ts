@@ -74,10 +74,9 @@ export class CrawlQueue extends LiteElement {
       <btrix-details open>
         <span slot="title">
           ${msg("Crawl Queue")}
-          <span
-            class="ml-1 inline-block rounded-sm px-1 text-xs bg-slate-200 text-slate-600"
-            >${msg(str`${this.total || "0"} URLs`)}</span
-          >
+          <btrix-badge class="ml-1">
+            ${msg(str`${this.total || "0"} URLs`)}
+          </btrix-badge>
         </span>
         <div slot="summary-description">
           ${this.total && this.total > this.pageSize

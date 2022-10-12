@@ -73,12 +73,12 @@ export class ExclusionEditor extends LiteElement {
 
   private renderPending() {
     return html`
-      <btrix-pending-exclusions
+      <btrix-crawl-pending-exclusions
         archiveId=${this.archiveId!}
         crawlId=${this.crawlId!}
         .authState=${this.authState}
         regex=${this.regex}
-      ></btrix-pending-exclusions>
+      ></btrix-crawl-pending-exclusions>
     `;
   }
 

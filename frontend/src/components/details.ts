@@ -32,7 +32,6 @@ export class Details extends LitElement {
     summary {
       border-bottom: 1px solid var(--sl-panel-border-color);
       color: var(--sl-color-neutral-500);
-
       margin-bottom: var(--sl-spacing-x-small);
       line-height: 1;
       display: flex;
@@ -69,7 +68,8 @@ export class Details extends LitElement {
     }
 
     .title {
-      padding: var(--sl-spacing-x-small) 0;
+      line-height: 1.125rem;
+      padding: 0.375rem 0;
     }
   `;
 
