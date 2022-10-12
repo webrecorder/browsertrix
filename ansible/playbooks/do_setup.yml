@@ -5,7 +5,7 @@
   gather_facts: false
   vars_files:
    - "../group_vars/do/main.yml"
-    
+   - "../group_vars/do/private.yml"
   tasks:
 
     - name: d_ocean | install doctl and helm
@@ -15,11 +15,6 @@
       loop:
         - helm
         - doctl
-
-    - name: d_ocean | install helm diff plugin
-      ansible.builtin.command: helm plugin install https://github.com/databus23/helm-diff
-      changed_when: false
-      ignore_errors: true
 
     - name: d_ocean | test for existing mongodb
       ansible.builtin.command: doctl db list
@@ -42,17 +37,6 @@
         state: absent
         region: "{{ droplet_region }}"
       tags: never
-
-    - name: d_ocean | Print return information for db_url
-      ansible.builtin.set_fact:
-        btrix_db_url: "{{ webrecorder_database.stdout | from_json | json_query('[0].private_connection.uri') }}"
-      ignore_errors: true
-
-    - name: d_ocean | Print return mongodb private connection uri
-      ansible.builtin.debug:
-        var: btrix_db_url
-        verbosity: 2
-      ignore_errors: true
 
     - name: d_ocean | copy the mongodb info doctl created to tmp directory
       ansible.builtin.copy:
@@ -148,7 +132,7 @@
 
     - name: d_ocean | copy the loadbalancer uuid info from doctl
       ansible.builtin.copy:
-        content: "{{ my_ip.stdout }}"
+        content: "{{ my_lb.stdout }}"
         dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_lb_uuid.txt"
       delegate_to: localhost
       ignore_errors: true

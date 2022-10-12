@@ -10,3 +10,6 @@ btrix_db: "btrix-{{ my_name }}"
 k8s_cluster: "btrix-{{ my_name }}"
 domain_name: "{{ my_domain | default('example.edu')}}"
 email_address: "{{ my_email | default('superuser@example.com')}}"
+btrix_db_url: "{{ d_ocean_db_url }}"  # found /tmp/$date-d_ocean_btrix_db_url.txt
+lb_uuid: "{{ d_ocean_lb_uuid }}" # found /tmp/$date-d_ocean_lb_uuid.txt
+loadbalancer_ip: "{{ d_ocean_lb_ip }}" # found /tmp/$date-d_ocean_loadbalancer_ip.txt
