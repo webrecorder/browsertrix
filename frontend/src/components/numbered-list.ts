@@ -1,8 +1,10 @@
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 type ListItem = {
   order?: number;
+  style?: string; // inline styles
   content: any; // any lit template content
 };
 
@@ -16,6 +18,7 @@ type ListItem = {
  *
  * CSS variables:
  * ```
+ * --marker-color
  * --link-color
  * --link-hover-color
  * ```
@@ -71,7 +74,7 @@ export class NumberedList extends LitElement {
     }
 
     .item-marker {
-      color: var(--sl-color-neutral-400);
+      color: var(--marker-color, var(--sl-color-neutral-400));
       line-height: 1;
       font-size: var(--sl-font-size-medium);
       font-weight: var(--sl-font-weight-normal);
@@ -96,7 +99,7 @@ export class NumberedList extends LitElement {
         ${this.items.map(
           (item, idx) =>
             html`
-              <li>
+              <li style=${ifDefined(item.style)}>
                 <div class="item-marker">${item.order || idx + 1}.</div>
                 <div class="item-content">${item.content}</div>
               </li>

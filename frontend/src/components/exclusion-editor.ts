@@ -38,6 +38,7 @@ export class ExclusionEditor extends LiteElement {
   isActiveCrawl = false;
 
   @state()
+  /** `new RegExp` constructor string */
   private regex: string = "";
 
   render() {
@@ -87,6 +88,7 @@ export class ExclusionEditor extends LiteElement {
       archiveId=${this.archiveId!}
       crawlId=${this.crawlId!}
       .authState=${this.authState}
+      regex=${this.regex}
     ></btrix-crawl-queue>`;
   }
 

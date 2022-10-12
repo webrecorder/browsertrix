@@ -22,6 +22,7 @@ const POLL_INTERVAL_SECONDS = 5;
  *   archiveId=${this.crawl.aid}
  *   crawlId=${this.crawl.id}
  *   .authState=${this.authState}
+ *   regex="skip-me"
  * ></btrix-crawl-queue>
  * ```
  */
@@ -36,8 +37,12 @@ export class CrawlQueue extends LiteElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: String })
+  /** `new RegExp` constructor string */
+  regex: string = "";
+
   @state()
-  private results: Pages = [];
+  private queue?: ResponseData;
 
   @state()
   private isLoading = false;
@@ -49,9 +54,6 @@ export class CrawlQueue extends LiteElement {
   private pageSize: number = 30;
 
   @state()
-  private total?: number;
-
-  @state()
   private isOpen: boolean = true;
 
   private timerId?: number;
@@ -61,12 +63,13 @@ export class CrawlQueue extends LiteElement {
     super.disconnectedCallback();
   }
 
-  updated(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("authState") ||
       changedProperties.has("archiveId") ||
       changedProperties.has("crawlId") ||
-      changedProperties.has("page")
+      changedProperties.has("page") ||
+      changedProperties.has("regex")
     ) {
       this.fetchOnUpdate();
     }
@@ -81,14 +84,14 @@ export class CrawlQueue extends LiteElement {
         <span slot="title">
           ${msg("Crawl Queue")}
           <btrix-badge class="ml-1">
-            ${msg(str`${this.total || "0"} URLs`)}
+            ${msg(str`${this.queue?.total || "0"} URLs`)}
           </btrix-badge>
         </span>
         <div slot="summary-description">
-          ${this.isOpen && this.total && this.total > this.pageSize
+          ${this.isOpen && this.queue?.total && this.queue.total > this.pageSize
             ? html`<btrix-pagination
                 size=${this.pageSize}
-                totalCount=${this.total}
+                totalCount=${this.queue.total}
                 @page-change=${(e: CustomEvent) => {
                   this.page = e.detail.page;
                 }}
@@ -103,7 +106,7 @@ export class CrawlQueue extends LiteElement {
   }
 
   private renderContent() {
-    if (!this.total) {
+    if (!this.queue?.total) {
       if (this.isLoading) {
         return html`
           <div class="flex items-center justify-center text-3xl">
@@ -117,13 +120,22 @@ export class CrawlQueue extends LiteElement {
       `;
     }
 
+    const excludedURLStyles = [
+      "--marker-color: var(--sl-color-danger-500)",
+      "--link-color: var(--sl-color-danger-500)",
+      "--link-hover-color: var(--sl-color-danger-400)",
+    ].join(";");
+
     return html`
       <btrix-numbered-list
         class="text-xs break-all transition-opacity${this.isLoading
           ? " opacity-60"
           : ""}"
-        .items=${this.results.map((url, idx) => ({
+        .items=${this.queue?.results.map((url, idx) => ({
           order: idx + 1 + (this.page - 1) * this.pageSize,
+          style: this.queue?.matched.some((v) => v === url)
+            ? excludedURLStyles
+            : "",
           content: html`<a
             href=${url}
             target="_blank"
@@ -139,7 +151,7 @@ export class CrawlQueue extends LiteElement {
           ${msg(
             str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}⁠–⁠${(
               this.page * this.pageSize
-            ).toLocaleString()} of ${this.total.toLocaleString()} URLs`
+            ).toLocaleString()} of ${this.queue.total.toLocaleString()} URLs`
           )}
         </span>
       </footer>
@@ -156,11 +168,7 @@ export class CrawlQueue extends LiteElement {
 
   private async fetchQueue() {
     try {
-      const { total, results } = await this.getQueue();
-
-      this.total = total;
-      this.results = results;
-
+      this.queue = await this.getQueue();
       this.timerId = window.setTimeout(() => {
         this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
@@ -177,7 +185,7 @@ export class CrawlQueue extends LiteElement {
     const data: ResponseData = await this.apiFetch(
       `/archives/${this.archiveId}/crawls/${this.crawlId}/queue?offset=${
         (this.page - 1) * this.pageSize
-      }&count=${this.page * this.pageSize - 1}`,
+      }&count=${this.page * this.pageSize - 1}&regex=${this.regex}`,
       this.authState!
     );
 
