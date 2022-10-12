@@ -48,7 +48,7 @@ export class CrawlPendingExclusions extends LiteElement {
   private page: number = 1;
 
   @state()
-  private pageSize: number = 10;
+  private pageSize: number = 30;
 
   @state()
   private total?: number;
