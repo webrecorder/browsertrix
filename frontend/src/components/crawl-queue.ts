@@ -73,7 +73,7 @@ export class CrawlQueue extends LiteElement {
     return html`
       <btrix-details open>
         <span slot="title">
-          ${msg("Queued URLs")}
+          ${msg("Crawl Queue")}
           <span
             class="ml-1 inline-block rounded-sm px-1 text-xs bg-slate-200 text-slate-600"
             >${msg(str`${this.total || "0"} URLs`)}</span

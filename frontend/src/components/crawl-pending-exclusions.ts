@@ -47,7 +47,7 @@ export class CrawlPendingExclusions extends LiteElement {
   @state()
   private isLoading = false;
 
-  updated(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("authState") ||
       changedProperties.has("archiveId") ||
@@ -63,16 +63,24 @@ export class CrawlPendingExclusions extends LiteElement {
       <btrix-details>
         <span slot="title">
           ${msg("Pending Exclusions")}
-          <span class="ml-1 inline-block rounded-sm px-1 text-xs ${
-            this.total
-              ? "bg-rose-500 text-white"
-              : "bg-slate-200 text-slate-600"
-          }">${msg(str`${this.total ? `+${this.total}` : "0"} URLs`)}</span>
+          ${this.renderInfo()}
         </span>
         </div>
         ${this.renderContent()}
       </btrix-details>
     `;
+  }
+
+  private renderInfo() {
+    if (!this.regex) return "";
+
+    return html`<span
+      class="ml-1 inline-block rounded-sm px-1 text-xs transition-colors ${this
+        .total
+        ? "bg-rose-500 text-white"
+        : "bg-slate-200 text-slate-600"}"
+      >${this.total ? msg(str`+${this.total} URLs`) : msg("No matches")}</span
+    >`;
   }
 
   private renderContent() {
@@ -85,8 +93,12 @@ export class CrawlPendingExclusions extends LiteElement {
     }
 
     if (!this.total) {
-      return html`<p class="text-sm text-neutral-400">
-        ${msg("No pending exclusions.")}
+      return html`<p class="px-5 text-sm text-neutral-400">
+        ${this.regex
+          ? msg("No matching URLs found in queue.")
+          : msg(
+              "Start typing an exclusion to view matching URLs in the queue."
+            )}
       </p>`;
     }
 
