@@ -37,6 +37,9 @@ export class CrawlQueue extends LiteElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Number })
+  matchedTotal?: number;
+
   @property({ type: String })
   /** `new RegExp` constructor string */
   regex: string = "";
@@ -117,9 +120,7 @@ export class CrawlQueue extends LiteElement {
 
     return html`
       <btrix-numbered-list
-        class="text-xs break-all transition-opacity${this.isLoading
-          ? " opacity-60"
-          : ""}"
+        class="text-xs break-all"
         .items=${this.queue?.results.map((url, idx) => ({
           order: idx + 1 + (this.page - 1) * this.pageSize,
           style: this.queue?.matched.some((v) => v === url)
@@ -158,6 +159,16 @@ export class CrawlQueue extends LiteElement {
             : msg(str`1 URL`)
           : msg("No queue")}
       </btrix-badge>
+
+      ${this.matchedTotal
+        ? html`
+            <btrix-badge type="danger" class="ml-1">
+              ${this.matchedTotal > 1
+                ? msg(str`-${this.matchedTotal.toLocaleString()} URLs`)
+                : msg(str`-1 URL`)}
+            </btrix-badge>
+          `
+        : ""}
     `;
   }
 

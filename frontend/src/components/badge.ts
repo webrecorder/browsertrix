@@ -37,7 +37,7 @@ export class Badge extends LitElement {
     }
 
     .neutral {
-      background-color: var(--sl-color-neutral-50);
+      background-color: var(--sl-color-neutral-100);
       color: var(--sl-color-neutral-600);
     }
   `;

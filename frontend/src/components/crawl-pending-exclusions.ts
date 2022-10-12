@@ -2,14 +2,8 @@ import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import type { AuthState } from "../utils/AuthService";
 
 type URLs = string[];
-
-type ResponseData = {
-  total: number;
-  matched: URLs;
-};
 
 /**
  * Show pending exclusions in crawl queue
@@ -17,32 +11,14 @@ type ResponseData = {
  * Usage example:
  * ```ts
  * <btrix-crawl-pending-exclusions
- *   archiveId=${this.crawl.aid}
- *   crawlId=${this.crawl.id}
- *   .authState=${this.authState}
- *   regex=${this.regex}
+ *   .matchedURLs=${this.matchedURLs}
  * ></btrix-crawl-pending-exclusions>
  * ```
  */
 @localized()
 export class CrawlPendingExclusions extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: String })
-  archiveId?: string;
-
-  @property({ type: String })
-  crawlId?: string;
-
-  @property({ type: String })
-  regex: string = "";
-
-  @state()
-  private results: URLs = [];
-
-  @state()
-  private isLoading = false;
+  @property({ type: Array })
+  matchedURLs: URLs | null = null;
 
   @state()
   private page: number = 1;
@@ -51,27 +27,19 @@ export class CrawlPendingExclusions extends LiteElement {
   private pageSize: number = 30;
 
   @state()
-  private total?: number;
-
-  @state()
   private isOpen: boolean = false;
 
+  private get total(): number {
+    return this.matchedURLs?.length || 0;
+  }
+
   private get pageResults(): URLs {
-    return this.results.slice(
+    if (!this.matchedURLs) return [];
+
+    return this.matchedURLs.slice(
       (this.page - 1) * this.pageSize,
       this.page * this.pageSize
     );
-  }
-
-  willUpdate(changedProperties: Map<string, any>) {
-    if (
-      changedProperties.has("authState") ||
-      changedProperties.has("archiveId") ||
-      changedProperties.has("crawlId") ||
-      changedProperties.has("regex")
-    ) {
-      this.fetchQueueMatches();
-    }
   }
 
   render() {
@@ -101,49 +69,23 @@ export class CrawlPendingExclusions extends LiteElement {
   }
 
   private renderBadge() {
-    if (!this.regex) return "";
-
-    let content = msg("No matches");
-    let className = "";
-
-    if (this.total) {
-      if (this.total > 1) {
-        content = msg(str`${this.total.toLocaleString()} URLs`);
-      } else {
-        content = msg(str`1 URL`);
-      }
-
-      if (this.isLoading) {
-        className = "opacity-80";
-      }
-    } else {
-      if (this.isLoading) {
-        className = "opacity-0";
-      }
-    }
+    if (!this.matchedURLs) return "";
 
     return html`
-      <btrix-badge
-        type=${this.total ? "danger" : "neutral"}
-        class="ml-1 transition-opacity ${className}"
-      >
-        ${content}
+      <btrix-badge type=${this.total ? "danger" : "neutral"} class="ml-1">
+        ${this.total
+          ? this.total > 1
+            ? msg(str`+${this.total.toLocaleString()} URLs`)
+            : msg(str`+1 URL`)
+          : msg("No matches")}
       </btrix-badge>
     `;
   }
 
   private renderContent() {
     if (!this.total) {
-      if (this.isLoading) {
-        return html`
-          <div class="flex items-center justify-center my-9 text-xl">
-            <sl-spinner></sl-spinner>
-          </div>
-        `;
-      }
-
       return html`<p class="px-5 text-sm text-neutral-400">
-        ${this.regex
+        ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
           : msg(
               "Start typing an exclusion to view matching URLs in the queue."
@@ -153,9 +95,7 @@ export class CrawlPendingExclusions extends LiteElement {
 
     return html`
       <btrix-numbered-list
-        class="text-xs break-all transition-opacity${this.isLoading
-          ? " opacity-60"
-          : ""}"
+        class="text-xs break-all"
         .items=${this.pageResults.map((url, idx) => ({
           order: idx + 1 + (this.page - 1) * this.pageSize,
           content: html`<a
@@ -169,39 +109,5 @@ export class CrawlPendingExclusions extends LiteElement {
         style="--link-color: var(--sl-color-danger-600); --link-hover-color: var(--sl-color-danger-400);"
       ></btrix-numbered-list>
     `;
-  }
-
-  private async fetchQueueMatches() {
-    if (!this.regex) {
-      this.total = 0;
-      this.results = [];
-      return;
-    }
-
-    this.isLoading = true;
-
-    try {
-      const { matched } = await this.getQueueMatches();
-
-      this.total = matched.length;
-      this.results = matched;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't fetch pending exclusions at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isLoading = false;
-  }
-
-  private async getQueueMatches(): Promise<ResponseData> {
-    const data: ResponseData = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/queueMatchAll?regex=${this.regex}`,
-      this.authState!
-    );
-
-    return data;
   }
 }

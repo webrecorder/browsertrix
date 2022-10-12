@@ -5,6 +5,12 @@ import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
 
+type URLs = string[];
+type ResponseData = {
+  total: number;
+  matched: URLs;
+};
+
 /**
  * Crawl queue exclusion editor
  *
@@ -41,6 +47,23 @@ export class ExclusionEditor extends LiteElement {
   /** `new RegExp` constructor string */
   private regex: string = "";
 
+  @state()
+  matchedURLs: URLs | null = null;
+
+  @state()
+  private isLoading = false;
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("authState") ||
+      changedProperties.has("archiveId") ||
+      changedProperties.has("crawlId") ||
+      changedProperties.has("regex")
+    ) {
+      this.fetchQueueMatches();
+    }
+  }
+
   render() {
     return html`
       ${this.renderTable()}
@@ -75,10 +98,7 @@ export class ExclusionEditor extends LiteElement {
   private renderPending() {
     return html`
       <btrix-crawl-pending-exclusions
-        archiveId=${this.archiveId!}
-        crawlId=${this.crawlId!}
-        .authState=${this.authState}
-        regex=${this.regex}
+        .matchedURLs=${this.matchedURLs}
       ></btrix-crawl-pending-exclusions>
     `;
   }
@@ -89,6 +109,7 @@ export class ExclusionEditor extends LiteElement {
       crawlId=${this.crawlId!}
       .authState=${this.authState}
       regex=${this.regex}
+      matchedTotal=${this.matchedURLs?.length || 0}
     ></btrix-crawl-queue>`;
   }
 
@@ -100,5 +121,36 @@ export class ExclusionEditor extends LiteElement {
     } else {
       this.regex = "";
     }
+  }
+
+  private async fetchQueueMatches() {
+    if (!this.regex) {
+      this.matchedURLs = null;
+      return;
+    }
+
+    this.isLoading = true;
+
+    try {
+      const { matched } = await this.getQueueMatches();
+      this.matchedURLs = matched;
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't fetch pending exclusions at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isLoading = false;
+  }
+
+  private async getQueueMatches(): Promise<ResponseData> {
+    const data: ResponseData = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls/${this.crawlId}/queueMatchAll?regex=${this.regex}`,
+      this.authState!
+    );
+
+    return data;
   }
 }
