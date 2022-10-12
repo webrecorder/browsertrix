@@ -69,6 +69,7 @@ export class Details extends LitElement {
 
     .title {
       line-height: 1.125rem;
+      height: 1.125rem;
       padding: 0.375rem 0;
     }
   `;

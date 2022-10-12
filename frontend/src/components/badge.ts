@@ -15,11 +15,15 @@ export class Badge extends LitElement {
 
   static styles = css`
     :host > span {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-size: var(--sl-font-size-x-small);
       line-height: 1.125rem;
+      height: 1.125rem;
       padding: 0 0.5rem;
       border-radius: var(--sl-border-radius-small);
+      vertical-align: 1px;
     }
 
     .danger {
