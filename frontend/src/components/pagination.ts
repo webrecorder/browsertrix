@@ -41,15 +41,8 @@ export class Pagination extends LitElement {
     }
 
     sl-input::part(input) {
-      -moz-appearance: textfield;
       margin: 0 0.5ch;
       text-align: center;
-    }
-
-    sl-input::part(input)::-webkit-outer-spin-button,
-    sl-input::part(input)::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
     }
 
     .currentPage {
@@ -168,7 +161,6 @@ export class Pagination extends LitElement {
         <div class="totalPages" role="none">${this.pages}</div>
         <sl-input
           class="input"
-          type="number"
           inputmode="numeric"
           size="small"
           value=${this.inputValue}
@@ -184,7 +176,15 @@ export class Pagination extends LitElement {
             }
           }}
           @keyup=${(e: any) => {
-            this.inputValue = e.target.value;
+            const { key } = e;
+
+            if (key === "ArrowUp" || key === "ArrowRight") {
+              this.inputValue = `${Math.min(+this.inputValue + 1, this.pages)}`;
+            } else if (key === "ArrowDown" || key === "ArrowLeft") {
+              this.inputValue = `${Math.max(+this.inputValue - 1, 1)}`;
+            } else {
+              this.inputValue = e.target.value;
+            }
           }}
           @sl-change=${(e: any) => {
             const page = +e.target.value;
