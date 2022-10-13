@@ -15,7 +15,6 @@ volume_storage_class:
 registration_enabled: 0
 jwt_token_lifetime_minutes: 1440
 
-grace_period_secs: 1000
 # number of workers for backend api
 backend_workers: 4
 
@@ -143,7 +142,7 @@ no_delete_jobs: 0
 # Local Minio Pod (optional)
 # =========================================
 # set to true to use a local minio image
-minio_local: false
+minio_local: true
 
 minio_scheme: "http"
 minio_host: "local-minio.default:9000"
@@ -189,8 +188,8 @@ email:
 # Ingress (Optional)
 # Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
 ingress:
-  host: "kayiwa.info"
-  cert_email: "kayiwa@pobox.com"
+  host: "btrix.cloud"
+  cert_email: "test@example.com"
   scheme: "http"
   tls: false
 
