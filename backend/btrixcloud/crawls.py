@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, UUID4, conint
-from redis import asyncio as aioredis
+from redis import asyncio as aioredis, exceptions
 import pymongo
 
 
@@ -412,16 +412,21 @@ class CrawlOps:
     async def get_crawl_queue(self, crawl_id, offset, count, regex):
         """ get crawl queue """
 
-        # pylint: disable=line-too-long
-        redis_url = f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+        total = 0
+        results = []
+        redis = None
 
-        redis = await aioredis.from_url(
-            redis_url, encoding="utf-8", decode_responses=True
-        )
+        try:
+            redis = await aioredis.from_url(
+                self.get_redis_url(crawl_id), encoding="utf-8", decode_responses=True
+            )
 
-        total = await redis.llen(f"{crawl_id}:q")
-        results = await redis.lrange(f"{crawl_id}:q", offset, count)
-        results = [json.loads(result)["url"] for result in results]
+            total = await redis.llen(f"{crawl_id}:q")
+            results = await redis.lrange(f"{crawl_id}:q", offset, count)
+            results = [json.loads(result)["url"] for result in results]
+        except exceptions.ConnectionError:
+            # can't connect to redis, likely not initialized yet
+            pass
 
         matched = []
         if regex:
@@ -433,16 +438,19 @@ class CrawlOps:
     async def match_crawl_queue(self, crawl_id, regex):
         """ get crawl queue """
 
-        # pylint: disable=line-too-long
-        redis_url = f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+        total = 0
 
-        redis = await aioredis.from_url(
-            redis_url, encoding="utf-8", decode_responses=True
-        )
+        try:
+            redis = await aioredis.from_url(
+                self.get_redis_url(crawl_id), encoding="utf-8", decode_responses=True
+            )
 
-        total = await redis.llen(f"{crawl_id}:q")
+            total = await redis.llen(f"{crawl_id}:q")
+        except exceptions.ConnectionError:
+            # can't connect to redis, likely not initialized yet
+            pass
+
         matched = []
-
         regex = re.compile(regex)
 
         step = 50
@@ -455,6 +463,11 @@ class CrawlOps:
                     matched.append(url)
 
         return {"total": total, "matched": matched}
+
+    def get_redis_url(self, crawl_id):
+        """ get redis url for crawl id """
+        # pylint: disable=line-too-long
+        return f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
 
 
 # ============================================================================
