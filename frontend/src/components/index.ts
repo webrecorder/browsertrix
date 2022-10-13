@@ -42,6 +42,9 @@ import("./screencast").then(({ Screencast: Screencast }) => {
 import("./select-browser-profile").then(({ SelectBrowserProfile }) => {
   customElements.define("btrix-select-browser-profile", SelectBrowserProfile);
 });
+import("./queue-exclusion-form").then(({ QueueExclusionForm }) => {
+  customElements.define("btrix-queue-exclusion-form", QueueExclusionForm);
+});
 import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
   customElements.define("btrix-queue-exclusion-table", QueueExclusionTable);
 });
@@ -50,6 +53,9 @@ import("./numbered-list").then(({ NumberedList }) => {
 });
 import("./pagination").then(({ Pagination }) => {
   customElements.define("btrix-pagination", Pagination);
+});
+import("./crawl-queue").then(({ CrawlQueue }) => {
+  customElements.define("btrix-crawl-queue", CrawlQueue);
 });
 
 customElements.define("btrix-alert", Alert);

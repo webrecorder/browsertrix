@@ -90,7 +90,6 @@ export class CrawlsList extends LiteElement {
     shouldSort: false,
   });
 
-  // For long polling:
   private timerId?: number;
 
   // TODO localize

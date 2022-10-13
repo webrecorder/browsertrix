@@ -36,6 +36,7 @@ type SeedConfig = {
 
 export type CrawlConfig = {
   seeds: (string | ({ url: string } & SeedConfig))[];
+  exclude?: string[];
 } & SeedConfig;
 
 export type CrawlTemplate = {

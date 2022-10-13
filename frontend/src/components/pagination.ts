@@ -10,11 +10,11 @@ import chevronRight from "../assets/images/chevron-right.svg";
  *
  * Usage example:
  * ```ts
- * <btrix-pagination page='2' totalCount='10'>
+ * <btrix-pagination totalCount="11" @page-change=${this.console.log}>
  * </btrix-pagination>
  * ```
  *
- * @event page-change
+ * @event page-change { page: number; pages: number; }
  */
 @localized()
 export class Pagination extends LitElement {
@@ -35,18 +35,14 @@ export class Pagination extends LitElement {
 
     button {
       all: unset;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
     }
 
     sl-input::part(input) {
-      -moz-appearance: textfield;
       margin: 0 0.5ch;
       text-align: center;
-    }
-
-    sl-input::part(input)::-webkit-outer-spin-button,
-    sl-input::part(input)::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
     }
 
     .currentPage {
@@ -62,9 +58,10 @@ export class Pagination extends LitElement {
     }
 
     /* Use width of text to determine input width */
-    .inputValue {
+    .totalPages {
       padding: 0 1ch;
       height: var(--sl-input-height-small);
+      min-width: 1ch;
       visibility: hidden;
     }
 
@@ -116,6 +113,8 @@ export class Pagination extends LitElement {
     }
 
     if (changedProperties.get("page") && this.page) {
+      await this.performUpdate;
+      this.inputValue = `${this.page}`;
       this.onPageChange();
     }
   }
@@ -159,10 +158,9 @@ export class Pagination extends LitElement {
   private renderInput() {
     return html`
       <div class="pageInput">
-        <div class="inputValue" role="none">${this.inputValue}</div>
+        <div class="totalPages" role="none">${this.pages}</div>
         <sl-input
           class="input"
-          type="number"
           inputmode="numeric"
           size="small"
           value=${this.inputValue}
@@ -178,7 +176,15 @@ export class Pagination extends LitElement {
             }
           }}
           @keyup=${(e: any) => {
-            this.inputValue = e.target.value;
+            const { key } = e;
+
+            if (key === "ArrowUp" || key === "ArrowRight") {
+              this.inputValue = `${Math.min(+this.inputValue + 1, this.pages)}`;
+            } else if (key === "ArrowDown" || key === "ArrowLeft") {
+              this.inputValue = `${Math.max(+this.inputValue - 1, 1)}`;
+            } else {
+              this.inputValue = e.target.value;
+            }
           }}
           @sl-change=${(e: any) => {
             const page = +e.target.value;
