@@ -117,7 +117,7 @@ export class CrawlQueue extends LiteElement {
         <footer class="text-center">
           <span class="text-xs text-neutral-400" aria-live="polite">
             ${msg(
-              str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}-${(
+              str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}–${(
                 this.page * this.pageSize
               ).toLocaleString()} of ${this.total.toLocaleString()} URLs`
             )}
