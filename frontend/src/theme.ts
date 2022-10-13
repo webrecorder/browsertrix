@@ -1,5 +1,5 @@
 /**
- * Shoelace CSS theming variables
+ * Shoelace CSS theming variables and component overrides
  * https://github.com/shoelace-style/shoelace/blob/next/src/themes/light.css
  *
  * To make new variables available to Tailwind, update

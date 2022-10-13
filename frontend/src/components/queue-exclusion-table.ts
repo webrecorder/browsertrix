@@ -1,5 +1,7 @@
 import { state, property } from "lit/decorators.js";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { msg, localized } from "@lit/localize";
+import RegexColorize from "regex-colorize";
 
 import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
@@ -52,7 +54,7 @@ export class QueueExclusionTable extends LiteElement {
             <th class="font-normal px-2 pb-1">${msg("Exclusion Value")}</th>
           </tr>
         </thead>
-        <tbody class="text-neutral-500">
+        <tbody class="text-neutral-600">
           ${this.exclusions.map(this.renderItem)}
         </tbody>
       </table>
@@ -72,10 +74,14 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     let typeLabel: string = exclusion.type;
+    let value: any = exclusion.value;
 
     switch (exclusion.type) {
       case "regex":
         typeLabel = msg("Regex");
+        value = staticHtml`<span class="regex">${unsafeStatic(
+          new RegexColorize().colorizeText(exclusion.value)
+        )}</span>`;
         break;
       case "text":
         typeLabel = msg("Matches Text");
@@ -90,7 +96,7 @@ export class QueueExclusionTable extends LiteElement {
           ${typeLabel}
         </td>
         <td class="border-t border-r p-2 font-mono${valueColClass}">
-          ${exclusion.value}
+          ${value}
         </td>
       </tr>
     `;
