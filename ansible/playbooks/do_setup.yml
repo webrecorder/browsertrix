@@ -1,13 +1,11 @@
 ---
-- name: deploy browsertrix on digital ocrean
+- name: deploy browsertrix cloud on digital ocean
   hosts: localhost
   connection: local
   gather_facts: false
   vars_files:
-   - "../group_vars/do/main.yml"
-   - "../group_vars/do/private.yml"
+    - ../group_vars/do/main.yml
   tasks:
-
     - name: d_ocean | install doctl and helm
       ansible.builtin.package:
         name: "{{ item }}"
@@ -20,80 +18,137 @@
       ansible.builtin.command: doctl db list
       changed_when: false
       failed_when: false
-      tags: helm_upgrade
       register: db_check
 
     - name: d_ocean | create mongodb database
-      ansible.builtin.command: doctl databases create {{ btrix_db }} --region {{ droplet_region }} --engine mongodb --version 5 --output json
+      ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 5 --output json
       async: 1800
       poll: 60
-      register: webrecorder_database
-      tags: helm_upgrade
-      when: db_check.stdout.find('{{ btrix_db }}') == -1
+      register: db_create_result
+      when: db_check.stdout.find(db_name) == -1
 
-    - name: d_ocean | drop mongodb database
-      community.digitalocean.digital_ocean_database:
-        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-        state: absent
-        region: "{{ droplet_region }}"
-      tags: never
-
-    - name: d_ocean | copy the mongodb info doctl created to tmp directory
-      ansible.builtin.copy:
-        content: "{{ webrecorder_database.stdout }}"
-        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_btrix_db_url.txt"
-      delegate_to: localhost
-      ignore_errors: true
+    - name: set db url
+      ansible.builtin.set_fact:
+        db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
 
     - name: d_ocean | Create new Space
       community.digitalocean.digital_ocean_spaces:
-        name: "{{ space_name }}"
+        name: "{{ bucket_name }}"
         state: present
         oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-        aws_access_key_id: "{{ lookup('env', 'DO_AWS_ACCESS_KEY')}}"
-        aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
+        aws_access_key_id: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
+        aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
         region: "{{ droplet_region }}"
-      register: webrecorder_space
-      tags: helm_upgrade
+      register: db_space_result
       ignore_errors: true
 
-    - name: d_ocean | drop a Space
-      community.digitalocean.digital_ocean_spaces:
-        name: "{{ space_name }}"
-        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
-        state: absent
-      tags: never
+    - name: set space url
+      ansible.builtin.set_fact:
+        bucket_endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/{{ db_space_result.data.space.name }}/{{ bucket_path }}/"
 
     - name: d_ocean | test for existing k8s cluster
-      command: doctl k8s cluster list
+      ansible.builtin.command: doctl k8s cluster list
       changed_when: false
       failed_when: false
       register: cluster_check
 
     - name: d_ocean | create a kubernetes cluster in {{ droplet_region }}
-      command: doctl kubernetes cluster create {{ k8s_cluster }} --1-clicks ingress-nginx,cert-manager --node-pool "name=main-app;size={{ droplet_size }};label=nodeType=main;count=2,name=crawling;size=c-4;label=nodeType=crawling;taint=nodeType=crawling:NoSchedule;auto-scale=true;min-nodes=1;max-nodes=3;count=1" --region={{ droplet_region }}
+      # skip_ansible_lint
+      ansible.builtin.command: >-
+        doctl kubernetes cluster create {{ k8s_name }} --1-clicks ingress-nginx,cert-manager --node-pool
+        "{{ node_pools|join(',') }}"
+        --region={{ droplet_region }}
+
       async: 1800
       poll: 60
       changed_when: false
-      when: cluster_check.stdout.find('{{ k8s_cluster }}') == -1
+      when: cluster_check.stdout.find(k8s_name) == -1
 
     - name: d_ocean | Get information about our cluster
       community.digitalocean.digital_ocean_kubernetes_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
-        name: "{{ k8s_cluster }}"
+        name: "{{ k8s_name }}"
         return_kubeconfig: true
       register: my_cluster
-      tags: helm_upgrade
 
     - name: d_ocean | print information about an existing DigitalOcean Kubernetes cluster
       ansible.builtin.debug:
-        msg: "Cluster name is {{ my_cluster.data.name }}, ID is {{ my_cluster.data.id }}"
-      ignore_errors: true
+        msg: Cluster name is {{ my_cluster.data.name }}, ID is {{ my_cluster.data.id }}
+      failed_when: not my_cluster
 
     - name: d_ocean | save kubectl config to kube_dir
-      command: doctl kubernetes cluster kubeconfig save {{ my_cluster.data.id }}
+      ansible.builtin.command: doctl kubernetes cluster kubeconfig save {{ my_cluster.data.id }}
       changed_when: false
-      tags: helm_upgrade
+
+    - name: d_ocean | get loadbalancer info from doctl
+      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }} --format LoadBalancers --output json
+      register: lb_id_result
+      retries: 100
+      delay: 5
+      changed_when: lb_id_result.stdout | from_json | json_query('load_balancers') | length > 0
+      until: lb_id_result.stdout | from_json | json_query('load_balancers') | length > 0
+
+    - name: parse lb id
+      ansible.builtin.set_fact:
+        lb_id: "{{ lb_id_result.stdout | from_json | json_query('load_balancers[0].id') }}"
+
+    - name: d_ocean | grab loadbalancer ip using doctl
+      ansible.builtin.command: doctl compute load-balancer get --format IP "{{ lb_id }}"
+      register: loadbalancer_ip_result
+      retries: 100
+      delay: 5
+      changed_when: loadbalancer_ip_result.stdout_lines | length > 1
+      until: loadbalancer_ip_result.stdout_lines | length > 1
+
+    - name: parse ip
+      ansible.builtin.set_fact:
+        lb_ip: "{{ loadbalancer_ip_result.stdout_lines[1] }}"
+
+    - name: d_ocean | register the dns for browsertrix cloud
+      ansible.builtin.command: >-
+          doctl compute domain records create --record-type A --record-name "{{ subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
+
+      changed_when: dns_result.rc == 0
+      register: dns_result
+
+    - name: set full domain
+      ansible.builtin.set_fact:
+        full_domain: "{{ domain if subdomain == '@' else subdomain + '.' + domain }}"
+
+    - name: set signing domain + authtoken
+      ansible.builtin.set_fact:
+        full_signing_domain: "{{ signing_subdomain }}.{{ full_domain }}"
+        signing_authtoken: "{{ 99999999 | random | to_uuid }}"
+
+      when: enable_signing
+
+    - name: d_ocean | register the dns for signing subdomain
+      ansible.builtin.command: >-
+          doctl compute domain records create --record-type A --record-name "{{ signing_subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
+
+      register: signing_dns_result
+      when: enable_signing
+
+    - name: registry | get endpoint, if using registry
+      ansible.builtin.command: doctl registry get --format Endpoint
+      register: do_registry_result
+      when: use_do_registry
+      failed_when: do_registry_result.stdout_lines | length < 2
+
+    - name: registry | store registry endpoint
+      ansible.builtin.set_fact:
+        registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
+      when: use_do_registry
+
+    - name: registry | add to new k8s cluster
+      ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
+      when: use_do_registry
+
+    - name: output values yaml
+      ansible.builtin.template:
+        src: ../group_vars/do/do-values.j2.yaml
+        dest: ../deploys/{{ project_name }}-values.yaml
+        mode: u+rw
 
     - name: d_ocean | deploy btrix
       kubernetes.core.helm:
@@ -101,60 +156,8 @@
         release_namespace: default
         kubeconfig: ~/.kube/config
         chart_ref: ../../chart/
-        values:
-          mongo_local: false
-          mongo_auth:
-            db_url: "{{ btrix_db_url }}"
-            # determine why variable below does not "stick"
-            # db_url: "{{ webrecorder_database.stdout | from_json | json_query('[0].private_connection.uri') }}"
-            username: root
-            password: example
-          minio_local: false
-
-          storages:
-          - name: "default"
-            access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY')}}"
-            secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
-
-            endpoint_url: "{{ webrecorder_space.data.space.space_url }}"
-
-          rwp_base_url: "{{ domain_name }}"
-          superuser:
-            email: "{{ email_address }}"
         values_files:
           - ../../chart/values.yaml
+          - ../deploys/{{ project_name }}-values.yaml
+
       tags: helm_upgrade
-      ignore_errors: true
-
-    - name: d_ocean | get loadbalancer info from doctl
-      ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }} --format LoadBalancers --output json
-      register: my_lb
-
-    - name: d_ocean | copy the loadbalancer uuid info from doctl
-      ansible.builtin.copy:
-        content: "{{ my_lb.stdout }}"
-        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_lb_uuid.txt"
-      delegate_to: localhost
-      ignore_errors: true
-
-    - name: d_ocean | Print return information for loadbalancer
-      ansible.builtin.set_fact:
-        lb_info: "{{ my_lb.stdout | from_json }}"
-
-    - name: d_ocean | grab loadbalancer ip using doctl
-      ansible.builtin.command: doctl compute load-balancer get --format IP "{{ lb_uuid }}"
-      register: loadbalancer_ip
-      ignore_errors: true
-
-    - name: d_ocean | copy the loadbalancer info doctl created
-      ansible.builtin.copy:
-        content: "{{ loadbalancer_ip.stdout }}"
-        dest: "/tmp/{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}d_ocean_loadbalancer_ip.txt"
-      delegate_to: localhost
-      ignore_errors: true
-
-    - name: d_ocean | register the dns of your webrecorder
-      command: doctl compute domain records create --record-type A --record-name "btrixcloud-{{ ip_name | default('test1') }}" --record-data "{{ loadbalancer_ip }}" "{{ domain_name }}"
-      changed_when: false
-      failed_when: false
-      register: cluster_check

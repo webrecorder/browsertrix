@@ -1,9 +1,0 @@
----
-# the following variables are needed for the second playbook run
-#  modify the following
-# d_ocean_db_url: " " # copy from /tmp/YYYY-MM-DD@:HH:MMd_ocean_db_url.txt
-d_ocean_db_url: "mongodb+srv://doadmin:0Xs3cr3tp455wd7@private-btrix-demo-xxxx6789.mongo.ondigitalocean.com/admin?authSource=admin&tls=true"
-# d_ocean_lb_uuid: " " # copy from /tmp/YYYY-MM-DD@:HH:MMd_ocean_lb_uuid.txt
-d_ocean_lb_uuid: "11111111-2222-bbbb-cccc-44444444eeee"
-# d_ocean_lb_ip: " " # copy from /tmp/YYYY-MM-DD@:HH:MMd_ocean_loadbalancer_ip.txt
-d_ocean_lb_ip: "192.168.68.212"
