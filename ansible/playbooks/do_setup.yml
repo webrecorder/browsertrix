@@ -5,8 +5,12 @@
   gather_facts: false
   vars_files:
     - ../group_vars/do/main.yml
+
   tasks:
-    - name: d_ocean | install doctl and helm
+
+  # ===========================================
+  # Init
+    - name: d_ocean | init | install doctl and helm
       ansible.builtin.package:
         name: "{{ item }}"
         state: present
@@ -14,24 +18,33 @@
         - helm
         - doctl
 
-    - name: d_ocean | test for existing mongodb
+    - name: d_ocean | init | set full domain
+      ansible.builtin.set_fact:
+        full_domain: "{{ '' if subdomain == '@' else subdomain + '.' }}{{ domain }}"
+
+  # MongoDB
+  # ===========================================
+    - name: d_ocean | db | test for existing mongodb
       ansible.builtin.command: doctl db list
       changed_when: false
       failed_when: false
       register: db_check
 
-    - name: d_ocean | create mongodb database
+    - name: d_ocean | db | create mongodb database
       ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 5 --output json
       async: 1800
       poll: 60
       register: db_create_result
       when: db_check.stdout.find(db_name) == -1
 
-    - name: set db url
+    - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
         db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
 
-    - name: d_ocean | Create new Space
+
+  # Storage (Space)
+  # ===========================================
+    - name: d_ocean | space | create new
       community.digitalocean.digital_ocean_spaces:
         name: "{{ bucket_name }}"
         state: present
@@ -42,17 +55,41 @@
       register: db_space_result
       ignore_errors: true
 
-    - name: set space url
+    - name: d_ocean | space | set endpoint urls
       ansible.builtin.set_fact:
+        endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/"
         bucket_endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/{{ db_space_result.data.space.name }}/{{ bucket_path }}/"
 
-    - name: d_ocean | test for existing k8s cluster
+    - name: d_ocean | space | set bucket cors
+      community.aws.s3_cors:
+        name: "{{ bucket_name }}"
+        aws_access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
+        aws_secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
+        endpoint_url: "{{ endpoint_url }}"
+        region: "{{ droplet_region }}"
+        state: present
+        rules:
+          - allowed_origins:
+              - "https://{{ full_domain }}"
+            allowed_methods:
+              - GET
+              - HEAD
+            allowed_headers:
+              - "*"
+            expose_headers:
+              - Content-Range
+              - Content-Encoding
+              - Content-Length
+
+  # K8S
+  # ===========================================
+    - name: d_ocean | k8s | test for existing k8s cluster
       ansible.builtin.command: doctl k8s cluster list
       changed_when: false
       failed_when: false
       register: cluster_check
 
-    - name: d_ocean | create a kubernetes cluster in {{ droplet_region }}
+    - name: d_ocean | k8s | create a kubernetes cluster in {{ droplet_region }}
       # skip_ansible_lint
       ansible.builtin.command: >-
         doctl kubernetes cluster create {{ k8s_name }} --1-clicks ingress-nginx,cert-manager --node-pool
@@ -64,23 +101,23 @@
       changed_when: false
       when: cluster_check.stdout.find(k8s_name) == -1
 
-    - name: d_ocean | Get information about our cluster
+    - name: d_ocean | k8s | Get information about our cluster
       community.digitalocean.digital_ocean_kubernetes_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
         name: "{{ k8s_name }}"
         return_kubeconfig: true
       register: my_cluster
 
-    - name: d_ocean | print information about an existing DigitalOcean Kubernetes cluster
+    - name: d_ocean | k8s | print information about an existing DigitalOcean Kubernetes cluster
       ansible.builtin.debug:
         msg: Cluster name is {{ my_cluster.data.name }}, ID is {{ my_cluster.data.id }}
       failed_when: not my_cluster
 
-    - name: d_ocean | save kubectl config to kube_dir
+    - name: d_ocean | k8s | save kubectl config to kube_dir
       ansible.builtin.command: doctl kubernetes cluster kubeconfig save {{ my_cluster.data.id }}
       changed_when: false
 
-    - name: d_ocean | get loadbalancer info from doctl
+    - name: d_ocean | k8s | get loadbalancer info from doctl
       ansible.builtin.command: doctl k8s cluster list-associated-resources {{ my_cluster.data.id }} --format LoadBalancers --output json
       register: lb_id_result
       retries: 100
@@ -88,11 +125,13 @@
       changed_when: lb_id_result.stdout | from_json | json_query('load_balancers') | length > 0
       until: lb_id_result.stdout | from_json | json_query('load_balancers') | length > 0
 
-    - name: parse lb id
+    - name: d_ocean | k8s | parse lb id
       ansible.builtin.set_fact:
         lb_id: "{{ lb_id_result.stdout | from_json | json_query('load_balancers[0].id') }}"
 
-    - name: d_ocean | grab loadbalancer ip using doctl
+  # DNS
+  # ===========================================
+    - name: d_ocean | dns | grab loadbalancer ip using doctl
       ansible.builtin.command: doctl compute load-balancer get --format IP "{{ lb_id }}"
       register: loadbalancer_ip_result
       retries: 100
@@ -100,57 +139,63 @@
       changed_when: loadbalancer_ip_result.stdout_lines | length > 1
       until: loadbalancer_ip_result.stdout_lines | length > 1
 
-    - name: parse ip
+    - name: d_ocean | dns | parse ip
       ansible.builtin.set_fact:
         lb_ip: "{{ loadbalancer_ip_result.stdout_lines[1] }}"
 
-    - name: d_ocean | register the dns for browsertrix cloud
+    - name: d_ocean | dns | register the dns for browsertrix cloud
       ansible.builtin.command: >-
           doctl compute domain records create --record-type A --record-name "{{ subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
       changed_when: dns_result.rc == 0
       register: dns_result
 
-    - name: set full domain
-      ansible.builtin.set_fact:
-        full_domain: "{{ domain if subdomain == '@' else subdomain + '.' + domain }}"
 
-    - name: set signing domain + authtoken
+  # Signing + DNS
+  # ===========================================
+    - name: d_coean | signing | set signing domain + authtoken
       ansible.builtin.set_fact:
-        full_signing_domain: "{{ signing_subdomain }}.{{ full_domain }}"
+        full_signing_domain: "{{ signing_host }}.{{ full_domain }}"
+        signing_subdomain: "{{ signing_host }}{{ '' if subdomain == '@' else '.' + subdomain }}"
         signing_authtoken: "{{ 99999999 | random | to_uuid }}"
 
       when: enable_signing
 
-    - name: d_ocean | register the dns for signing subdomain
+    - name: d_ocean | signing | register the dns for signing subdomain
       ansible.builtin.command: >-
           doctl compute domain records create --record-type A --record-name "{{ signing_subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
       register: signing_dns_result
       when: enable_signing
 
-    - name: registry | get endpoint, if using registry
+
+  # Registry
+  # ===========================================
+    - name: d_ocean | registry | get endpoint, if using registry
       ansible.builtin.command: doctl registry get --format Endpoint
       register: do_registry_result
       when: use_do_registry
       failed_when: do_registry_result.stdout_lines | length < 2
 
-    - name: registry | store registry endpoint
+    - name: d_ocean | registry | store registry endpoint
       ansible.builtin.set_fact:
         registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
       when: use_do_registry
 
-    - name: registry | add to new k8s cluster
+    - name: d_ocean | registry | add to new k8s cluster
       ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
       when: use_do_registry
 
-    - name: output values yaml
+
+  # Helm Output + Deploy
+  # ===========================================
+    - name: d_ocean | helm | output values yaml
       ansible.builtin.template:
-        src: ../group_vars/do/do-values.j2.yaml
+        src: ../group_vars/do/do-values.template.yaml
         dest: ../deploys/{{ project_name }}-values.yaml
         mode: u+rw
 
-    - name: d_ocean | deploy btrix
+    - name: d_ocean | helm | deploy btrix
       kubernetes.core.helm:
         release_name: btrix
         release_namespace: default
@@ -160,4 +205,6 @@
           - ../../chart/values.yaml
           - ../deploys/{{ project_name }}-values.yaml
 
+      retries: 12
+      delay: 10
       tags: helm_upgrade

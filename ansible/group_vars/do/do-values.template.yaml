@@ -13,7 +13,7 @@ crawler_limits_memory: "3200Mi"
 {% if use_do_registry %}
 api_image: "{{ registry_endpoint }}/webrecorder/browsertrix-backend:{{ image_tag }}"
 nginx_image: "{{ registry_endpoint }}/webrecorder/browsertrix-frontend:{{ image_tag }}"
-crawler_image: "{{ registry_endpoint }}/browsertrix-crawler:{{ image_tag }}"
+crawler_image: "{{ registry_endpoint }}/webrecorder/browsertrix-crawler:{{ image_tag }}"
 {% endif %}
 
 # DB
