@@ -61,7 +61,7 @@
         bucket_endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/{{ db_space_result.data.space.name }}/{{ bucket_path }}/"
 
     - name: d_ocean | space | set bucket cors
-      community.aws.s3_cors:
+      community.aws.aws_s3_cors:
         name: "{{ bucket_name }}"
         aws_access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
         aws_secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
