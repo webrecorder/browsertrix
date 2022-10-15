@@ -16,7 +16,7 @@ bucket_name: "{{ project_name }}"
 bucket_path: "crawls"
 
 domain: "browsertrix.cloud"
-subdomain: "@"
+subdomain: "{{ project_name }}"
 
 use_do_registry: true
 image_tag: "dev"

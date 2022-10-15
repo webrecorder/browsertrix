@@ -20,7 +20,7 @@
 
     - name: d_ocean | init | set full domain
       ansible.builtin.set_fact:
-        full_domain: "{{ '' if subdomain == '@' else subdomain + '.' }}{{ domain }}"
+        full_domain: "{{ subdomain + '.' + domain if subdomain else domain }}"
 
   # MongoDB
   # ===========================================
@@ -145,7 +145,7 @@
 
     - name: d_ocean | dns | register the dns for browsertrix cloud
       ansible.builtin.command: >-
-          doctl compute domain records create --record-type A --record-name "{{ subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
+          doctl compute domain records create --record-type A --record-name "{{ subdomain if subdomain else '@' }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
       changed_when: dns_result.rc == 0
       register: dns_result
@@ -156,7 +156,7 @@
     - name: d_coean | signing | set signing domain + authtoken
       ansible.builtin.set_fact:
         full_signing_domain: "{{ signing_host }}.{{ full_domain }}"
-        signing_subdomain: "{{ signing_host }}{{ '' if subdomain == '@' else '.' + subdomain }}"
+        signing_subdomain: "{{ signing_host + '.' + subdomain if subdomain else signing_host }}"
         signing_authtoken: "{{ 99999999 | random | to_uuid }}"
 
       when: enable_signing
@@ -196,15 +196,8 @@
         mode: u+rw
 
     - name: d_ocean | helm | deploy btrix
-      kubernetes.core.helm:
-        release_name: btrix
-        release_namespace: default
-        kubeconfig: ~/.kube/config
-        chart_ref: ../../chart/
-        values_files:
-          - ../../chart/values.yaml
-          - ../deploys/{{ project_name }}-values.yaml
+      ansible.builtin.command: helm upgrade --install -f ../../chart/values.yaml -f ../deploys/{{ project_name }}-values.yaml btrix ../../chart/
+      register: helm_result
+      changed_when: helm_result.rc == 0
 
-      retries: 12
-      delay: 10
       tags: helm_upgrade
