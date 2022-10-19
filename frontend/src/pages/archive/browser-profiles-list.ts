@@ -47,20 +47,14 @@ export class BrowserProfilesList extends LiteElement {
 
   render() {
     return html`<header class="mb-3 text-right">
-        <a
+        <sl-button
           href=${`/archives/${this.archiveId}/browser-profiles/new`}
-          class="inline-block bg-indigo-500 hover:bg-indigo-400 text-white text-center font-medium leading-none rounded px-3 py-2 transition-colors"
-          role="button"
+          type="primary"
           @click=${this.navLink}
         >
-          <sl-icon
-            class="inline-block align-middle mr-2"
-            name="plus-lg"
-          ></sl-icon
-          ><span class="inline-block align-middle mr-2 text-sm"
-            >${msg("New Browser Profile")}</span
-          >
-        </a>
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          ${msg("New Browser Profile")}
+        </sl-button>
       </header>
 
       ${this.renderTable()}
@@ -90,18 +84,18 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <div role="table">
-        <div class="mb-2 px-4" role="rowgroup">
+        <div class="mb-2 px-1" role="rowgroup">
           <div
-            class="hidden md:grid grid-cols-7 gap-3 md:gap-5 text-sm text-neutral-500"
+            class="hidden md:grid grid-cols-8 gap-3 md:gap-5 text-sm text-neutral-500"
             role="row"
           >
-            <div class="col-span-3" role="columnheader" aria-sort="none">
+            <div class="col-span-3 px-2" role="columnheader" aria-sort="none">
               ${msg("Description")}
             </div>
-            <div class="col-span-1" role="columnheader" aria-sort="none">
+            <div class="col-span-1 px-2" role="columnheader" aria-sort="none">
               ${msg("Created")}
             </div>
-            <div class="col-span-3" role="columnheader" aria-sort="none">
+            <div class="col-span-2 px-2" role="columnheader" aria-sort="none">
               ${msg("Visited URLs")}
             </div>
           </div>
@@ -126,22 +120,22 @@ export class BrowserProfilesList extends LiteElement {
   private renderItem(data: Profile) {
     return html`
       <a
-        class="block p-4 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
+        class="block p-1 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
         href=${`/archives/${this.archiveId}/browser-profiles/profile/${data.id}`}
         @click=${this.navLink}
         title=${data.name}
       >
         <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
-          <div class="col-span-8 md:col-span-3" role="cell">
+          <div class="col-span-8 md:col-span-3 p-2" role="cell">
             <div class="font-medium mb-1">${data.name}</div>
             <div class="text-sm truncate" title=${data.description}>
               ${data.description}
             </div>
           </div>
-          <div class="col-span-8 md:col-span-1 text-sm" role="cell">
+          <div class="col-span-8 md:col-span-1 p-2 text-sm" role="cell">
             ${new Date(data.created).toLocaleDateString()}
           </div>
-          <div class="col-span-7 md:col-span-3 text-sm" role="cell">
+          <div class="col-span-7 md:col-span-3 p-2 text-sm" role="cell">
             ${data.origins.join(", ")}
           </div>
           <div class="col-span-1 md:col-span-1 flex items-center justify-end">

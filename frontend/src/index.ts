@@ -20,6 +20,8 @@ import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
 import "./components";
 import "./pages";
+import "./assets/fonts/Inter/inter.css";
+import "./assets/fonts/Recursive/recursive.css";
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -509,7 +511,7 @@ export class App extends LiteElement {
 
   renderSpinner() {
     return html`
-      <div class="w-full flex items-center justify-center text-4xl">
+      <div class="w-full flex items-center justify-center text-3xl">
         <sl-spinner></sl-spinner>
       </div>
     `;
@@ -684,7 +686,7 @@ export class App extends LiteElement {
       noHeader: true,
       body: html`
         <div class="grid gap-4 text-center">
-          <p class="mt-8 text-2xl font-medium">
+          <p class="mt-8 text-xl font-medium">
             ${msg("Welcome to Browsertrix Cloud!")}
           </p>
 

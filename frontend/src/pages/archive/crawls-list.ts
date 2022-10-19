@@ -1,4 +1,5 @@
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
@@ -89,7 +90,6 @@ export class CrawlsList extends LiteElement {
     shouldSort: false,
   });
 
-  // For long polling:
   private timerId?: number;
 
   // TODO localize
@@ -123,7 +123,7 @@ export class CrawlsList extends LiteElement {
   render() {
     if (!this.crawls) {
       return html`<div
-        class="w-full flex items-center justify-center my-24 text-4xl"
+        class="w-full flex items-center justify-center my-24 text-3xl"
       >
         <sl-spinner></sl-spinner>
       </div>`;
@@ -137,12 +137,14 @@ export class CrawlsList extends LiteElement {
             ? this.renderCrawlList()
             : html`
                 <div class="border-t border-b py-5">
-                  <p class="text-center text-0-500">${msg("No crawls yet.")}</p>
+                  <p class="text-center text-neutral-500">
+                    ${msg("No crawls yet.")}
+                  </p>
                 </div>
               `}
         </section>
         <footer class="mt-2">
-          <span class="text-0-400 text-sm">
+          <span class="text-0-400 text-xs">
             ${this.lastFetched
               ? msg(html`Last updated:
                   <sl-format-date
@@ -166,7 +168,6 @@ export class CrawlsList extends LiteElement {
       <div class="grid grid-cols-2 gap-3 items-center">
         <div class="col-span-2 md:col-span-1">
           <sl-input
-            size="small"
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by Crawl Template name or ID")}
@@ -178,7 +179,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+          <div class="whitespace-nowrap text-neutral-500 mr-2">
             ${msg("Sort By")}
           </div>
           <sl-dropdown
@@ -240,7 +241,7 @@ export class CrawlsList extends LiteElement {
         : map((crawl) => ({ item: crawl }));
 
     return html`
-      <ul class="border rounded text-sm md:text-base">
+      <ul class="border rounded">
         ${flow(
           filterResults,
           this.sortCrawls.bind(this),
@@ -255,7 +256,6 @@ export class CrawlsList extends LiteElement {
       <a
         href=${`${this.crawlsBaseUrl}/crawl/${crawl.id}`}
         class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary transition-colors"
-        title=${crawl.configName}
         @click=${this.navLink}
       >
         <div class="col-span-11 md:col-span-5">
@@ -379,7 +379,7 @@ export class CrawlsList extends LiteElement {
                 : crawl.state === "complete"
                 ? "text-emerald-500"
                 : isActive(crawl)
-                ? "text-purple-500"
+                ? "text-purple-500 motion-safe:animate-pulse"
                 : "text-zinc-300"}"
               style="font-size: 10px; vertical-align: 2px"
             >
@@ -394,16 +394,20 @@ export class CrawlsList extends LiteElement {
             >
               ${crawl.state.replace(/_/g, " ")}
             </div>
-            <div class="text-0-500 text-sm whitespace-nowrap truncate">
+            <div class="text-neutral-500 text-sm whitespace-nowrap truncate">
               ${crawl.finished
                 ? html`
                     <sl-relative-time
                       date=${`${crawl.finished}Z` /** Z for UTC */}
                     ></sl-relative-time>
                   `
-                : html`<btrix-relative-duration
-                    value=${`${crawl.started}Z`}
-                  ></btrix-relative-duration>`}
+                : ""}
+              ${!crawl.finished
+                ? html`
+                    ${crawl.state === "canceled" ? msg("Unknown") : ""}
+                    ${isActive(crawl) ? this.renderActiveDuration(crawl) : ""}
+                  `
+                : ""}
             </div>
           </div>
         </div>
@@ -417,17 +421,20 @@ export class CrawlsList extends LiteElement {
                       lang=${/* TODO localize: */ "en"}
                     ></sl-format-bytes>
                   </span>
-                  <span class="text-0-500">
+                  <span class="text-neutral-500">
                     (${crawl.fileCount === 1
                       ? msg(str`${crawl.fileCount} file`)
                       : msg(str`${crawl.fileCount} files`)})
                   </span>
                 </div>
-                <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg(
                     str`in ${RelativeDuration.humanize(
                       new Date(`${crawl.finished}Z`).valueOf() -
-                        new Date(`${crawl.started}Z`).valueOf()
+                        new Date(`${crawl.started}Z`).valueOf(),
+                      { compact: true }
                     )}`
                   )}
                 </div>
@@ -441,7 +448,9 @@ export class CrawlsList extends LiteElement {
                   <span class="text-0-400">/</span>
                   ${this.numberFormatter.format(+crawl.stats.found)}
                 </div>
-                <div class="text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg("pages crawled")}
                 </div>
               `
@@ -456,7 +465,9 @@ export class CrawlsList extends LiteElement {
                     >${msg("Manual Start")}</span
                   >
                 </div>
-                <div class="ml-1 text-0-500 text-sm whitespace-nowrap truncate">
+                <div
+                  class="ml-1 text-neutral-500 text-sm whitespace-nowrap truncate"
+                >
                   ${msg(str`by ${crawl.userName || crawl.userid}`)}
                 </div>
               `
@@ -472,6 +483,37 @@ export class CrawlsList extends LiteElement {
       </a>
     </li>`;
   };
+
+  private renderActiveDuration(crawl: Crawl) {
+    const endTime = this.lastFetched || Date.now();
+    const duration = endTime - new Date(`${crawl.started}Z`).valueOf();
+    let unitCount: number;
+    let tickSeconds: number | undefined = undefined;
+
+    // Show second unit if showing seconds or greater than 1 hr
+    const showSeconds = duration < 60 * 2 * 1000;
+    if (showSeconds || duration > 60 * 60 * 1000) {
+      unitCount = 2;
+    } else {
+      unitCount = 1;
+    }
+    // Tick if seconds are showing
+    if (showSeconds) {
+      tickSeconds = 1;
+    } else {
+      tickSeconds = undefined;
+    }
+
+    return html`
+      <btrix-relative-duration
+        class="text-purple-500"
+        value=${`${crawl.started}Z`}
+        endTime=${this.lastFetched || Date.now()}
+        unitCount=${unitCount}
+        tickSeconds=${ifDefined(tickSeconds)}
+      ></btrix-relative-duration>
+    `;
+  }
 
   private onSearchInput = debounce(200)((e: any) => {
     this.filterBy = e.target.value;

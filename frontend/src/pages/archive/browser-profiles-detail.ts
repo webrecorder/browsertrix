@@ -81,7 +81,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <header class="md:flex items-center justify-between mb-3">
-        <h2 class="text-xl md:text-3xl font-bold md:h-9 mb-1">
+        <h2 class="text-xl md:text-2xl font-semibold md:h-9 mb-1">
           ${this.profile?.name
             ? html`${this.profile?.name}
                 <sl-button
@@ -267,9 +267,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderMenu() {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" size="small" caret
-          >${msg("Actions")}</sl-button
-        >
+        <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
         <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
           <li

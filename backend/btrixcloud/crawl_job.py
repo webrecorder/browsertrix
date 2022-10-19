@@ -203,7 +203,7 @@ class CrawlJob(ABC):
 
         self.finished = dt_now()
 
-        completed = self.last_done and self.last_done == self.last_found
+        completed = self.last_done and self.last_done >= self.last_found
 
         state = "complete" if completed else "partial_complete"
         print("marking crawl as: " + state, flush=True)

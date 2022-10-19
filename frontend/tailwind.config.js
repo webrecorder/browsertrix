@@ -1,4 +1,8 @@
-// Use Shoelace CSS variables in Tailwind theme for consistency
+/**
+ * Use Shoelace CSS variables in Tailwind theme for consistency
+ *
+ * Customize Shoelace variables in `theme.ts`
+ */
 function makeTheme() {
   // Map color palettes:
   const colors = [
@@ -21,6 +25,7 @@ function makeTheme() {
     }));
 
   return {
+    // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
     colors: {
       current: "currentColor",
       ...colors.map(makeColorPalette),
@@ -28,10 +33,36 @@ function makeTheme() {
       success: `var(--success)`,
       warning: `var(--warning)`,
       danger: `var(--danger)`,
+      neutral: {
+        ...makeColorPalette("neutral"),
+        // Shoelace supports additional neutral variables:
+        0: `var(--sl-color-neutral-0)`,
+        950: `var(--sl-color-neutral-950)`,
+        1000: `var(--sl-color-neutral-1000)`,
+      },
     },
+
     fontFamily: {
       sans: `var(--sl-font-sans)`,
       serif: `var(--sl-font-serif)`,
+      mono: `var(--sl-font-mono)`,
+    },
+    fontSize: {
+      xs: ["var(--sl-font-size-x-small)", { lineHeight: "1.33" }],
+      sm: ["var(--sl-font-size-small)", { lineHeight: "1.25rem" }],
+      base: ["var(--sl-font-size-medium)", { lineHeight: "1.5" }],
+      lg: ["var(--sl-font-size-large)", { lineHeight: "1.6" }],
+      xl: ["var(--sl-font-size-x-large)", { lineHeight: "1.5" }],
+      "2xl": ["var(--sl-font-size-2x-large)", { lineHeight: "1.5" }],
+      "3xl": ["var(--sl-font-size-3x-large)", { lineHeight: "1" }],
+      "4xl": ["var(--sl-font-size-4x-large)", { lineHeight: "1" }],
+    },
+    fontWeight: {
+      light: "var(--sl-font-weight-light)",
+      normal: "var(--sl-font-weight-normal)",
+      medium: "var(--sl-font-weight-medium)",
+      semibold: "var(--sl-font-weight-semibold)",
+      bold: "var(--sl-font-weight-bold)",
     },
     borderRadius: {
       sm: `var(--sl-border-radius-small)`,
@@ -58,7 +89,7 @@ module.exports = {
     extend: makeTheme(),
   },
 
-  content: ["./**/*.html", "./src/**/*.{ts,js}"],
+  content: ["./**/*.html", "./src/**/*.{ts,js,ejs}"],
 
   extract: {
     include: ["./src/**/*.{ts,js}"],

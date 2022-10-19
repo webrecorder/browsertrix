@@ -15,12 +15,13 @@ COPY yarn.lock package.json ./
 RUN yarn --frozen-lockfile
 
 COPY lit-localize.json \
-     postcss.config.js \
-     tailwind.config.js \
-     tsconfig.json \
-     webpack.config.js \
-     webpack.prod.js \
-     ./
+    postcss.config.js \
+    tailwind.config.js \
+    tsconfig.json \
+    webpack.config.js \
+    webpack.prod.js \
+    index.d.ts \
+    ./
 
 COPY src ./src/
 

@@ -150,7 +150,7 @@ export class ProfileBrowser extends LiteElement {
     if (this.browserId && !this.isIframeLoaded) {
       return html`
         <div
-          class="w-full h-full flex items-center justify-center text-4xl"
+          class="w-full h-full flex items-center justify-center text-3xl"
           style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
         >
           <sl-spinner></sl-spinner>

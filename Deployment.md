@@ -22,8 +22,6 @@ as with multi-machine setups. Docker Swarm is part of Docker, so if you have Doc
 
 2.5. Optionally: Run `build-swarm.sh` to build images locally, such as if you've made any changes, otherwise can skip.
 
-2.5: Optionally: run `build-swarm.sh` to build the Docker images locally on your machine (eg. if you've made any changes).
-
 3. Run `run-swarm.sh` to initialize the cluster.
 
 4. Load `http://localhost:9871/` to see the Browsertrix Cloud login page. (The API is also available at: `http://localhost:9871/api/docs`).

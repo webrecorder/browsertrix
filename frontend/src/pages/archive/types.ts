@@ -5,7 +5,8 @@ type CrawlState =
   | "failed"
   | "partial_complete"
   | "timed_out"
-  | "stopping";
+  | "stopping"
+  | "canceled";
 
 export type Crawl = {
   id: string;
@@ -35,6 +36,7 @@ type SeedConfig = {
 
 export type CrawlConfig = {
   seeds: (string | ({ url: string } & SeedConfig))[];
+  exclude?: string[];
 } & SeedConfig;
 
 export type CrawlTemplate = {

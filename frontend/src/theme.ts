@@ -1,6 +1,6 @@
 /**
  * Shoelace CSS theming variables
- * https://github.com/shoelace-style/shoelace/blob/current/src/themes/light.styles.ts
+ * https://github.com/shoelace-style/shoelace/blob/next/src/themes/light.css
  *
  * To make new variables available to Tailwind, update
  * `theme` in tailwind.cofnig.js
@@ -14,14 +14,14 @@ const primaryColor = Color(PRIMARY_COLOR);
 
 const theme = css`
   :root {
-    /* contextual variables */
+    /* Custom contextual variables */
     --primary: ${unsafeCSS(PRIMARY_COLOR)};
     --success: var(--sl-color-success-600);
     --warning: var(--sl-color-warning-600);
     --danger: var(--sl-color-danger-600);
 
     /*
-     * Theme Tokens
+     * Shoelace Theme Tokens
      */
     /* Primary */
     --sl-color-primary-50: ${unsafeCSS(primaryColor.lighten(0.54))};
@@ -37,13 +37,39 @@ const theme = css`
     --sl-color-primary-950: ${unsafeCSS(primaryColor.darken(0.4))};
 
     /*
+     * Typography
+     */
+
+    /* Fonts */
+    --sl-font-mono: "Recursive var", SFMono-Regular, Consolas, "Liberation Mono",
+      Menlo, monospace;
+    --sl-font-sans: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol";
+
+    /* Font sizes */
+    --sl-font-size-medium: 0.875rem; /* 14px */
+    --sl-font-size-2x-large: 2rem; /* 32px */
+
+    /* Font weights */
+    --sl-font-weight-medium: 500; // doesn't exist in shoelace
+    --sl-font-weight-semibold: 600;
+
+    /*
      * Forms
      */
 
     /* Buttons */
     --sl-button-font-size-small: var(--sl-font-size-small);
-    --sl-button-font-size-medium: var(--sl-font-size-medium);
-    --sl-button-font-size-large: var(--sl-font-size-large);
+    --sl-button-font-size-medium: var(--sl-font-size-small);
+    --sl-button-font-size-large: var(--sl-font-size-medium);
+
+    /* Inputs */
+    --sl-input-height-small: 2rem; /* 32px */
+
+    --sl-input-font-size-small: var(--sl-font-size-small);
+    --sl-input-font-size-medium: var(--sl-font-size-small);
+    --sl-input-font-size-large: var(--sl-font-size-medium);
 
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
@@ -54,6 +80,18 @@ const theme = css`
   .sl-toast-stack {
     bottom: 0;
     top: auto;
+  }
+
+  /* Elevate select and buttons */
+  sl-select::part(control),
+  sl-button::part(base) {
+    box-shadow: var(--sl-shadow-small);
+  }
+
+  /* Decrease control spacing on small select */
+  sl-select[size="small"]::part(control) {
+    --sl-input-spacing-small: var(--sl-spacing-x-small);
+    line-height: 1.5;
   }
 `;
 
