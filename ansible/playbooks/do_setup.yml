@@ -41,6 +41,10 @@
       ansible.builtin.set_fact:
         db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
 
+    - name: d_ocean | check for mongodb
+      ansible.builtin.command: doctl db delete "{{ db_name }}
+      tags: never
+
 
   # Storage (Space)
   # ===========================================
@@ -128,6 +132,10 @@
     - name: d_ocean | k8s | parse lb id
       ansible.builtin.set_fact:
         lb_id: "{{ lb_id_result.stdout | from_json | json_query('load_balancers[0].id') }}"
+
+    - name: d_ocean | k8s | delete {{ k8s_name }}
+      ansible.builtin.command: doctl k8s cluster {{ my_cluster.data.id }}
+      tags: never
 
   # DNS
   # ===========================================
