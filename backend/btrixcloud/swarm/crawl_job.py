@@ -17,7 +17,7 @@ runner = get_runner()
 
 # =============================================================================
 class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
-    """ Crawl Job """
+    """Crawl Job"""
 
     async def _do_scale(self, new_scale):
         loop = asyncio.get_running_loop()

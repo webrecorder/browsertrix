@@ -33,7 +33,7 @@ class EmailSender:
             server.sendmail(self.sender, receiver, message)
 
     def get_origin(self, headers):
-        """ Return origin of the received request"""
+        """Return origin of the received request"""
         if not headers:
             return self.default_origin
 

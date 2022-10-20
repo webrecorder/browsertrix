@@ -17,7 +17,7 @@ from .archives import Archive
 
 # ============================================================================
 class Collection(BaseMongoModel):
-    """ Archive collection structure """
+    """Archive collection structure"""
 
     name: str
 
@@ -28,7 +28,7 @@ class Collection(BaseMongoModel):
 
 # ============================================================================
 class CollIn(BaseModel):
-    """ Collection Passed in By User """
+    """Collection Passed in By User"""
 
     name: str
     description: Optional[str]
@@ -36,7 +36,7 @@ class CollIn(BaseModel):
 
 # ============================================================================
 class CollectionOps:
-    """ ops for working with named collections of crawls """
+    """ops for working with named collections of crawls"""
 
     def __init__(self, mdb, crawls, crawl_manager):
         self.collections = mdb["collections"]
@@ -47,13 +47,13 @@ class CollectionOps:
         asyncio.create_task(self.init_index())
 
     async def init_index(self):
-        """ init lookup index """
+        """init lookup index"""
         await self.collections.create_index(
             [("aid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
         )
 
     async def add_collection(self, aid: uuid.UUID, name: str, description=None):
-        """ add new collection """
+        """add new collection"""
         coll = Collection(id=uuid.uuid4(), aid=aid, name=name, description=description)
         try:
             res = await self.collections.insert_one(coll.to_dict())
@@ -67,12 +67,12 @@ class CollectionOps:
             return str(res["_id"])
 
     async def find_collection(self, aid: uuid.UUID, name: str):
-        """ find collection by archive + name """
+        """find collection by archive + name"""
         res = await self.collections.find_one({"archive": aid, "name": name})
         return Collection.from_dict(res) if res else None
 
     async def find_collections(self, aid: uuid.UUID, names: List[str]):
-        """ find all collections for archive given a list of names """
+        """find all collections for archive given a list of names"""
         cursor = self.collections.find(
             {"aid": aid, "name": {"$in": names}}, projection=["_id", "name"]
         )
@@ -90,13 +90,13 @@ class CollectionOps:
         return [result["_id"] for result in results]
 
     async def list_collections(self, aid: uuid.UUID):
-        """ list all collections for archive """
+        """list all collections for archive"""
         cursor = self.collections.find({"archive": aid}, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
         return {result["name"]: result["_id"] for result in results}
 
     async def get_collection_crawls(self, aid: uuid.UUID, name: str = None):
-        """ fidn collection and get all crawls by collection name per archive """
+        """fidn collection and get all crawls by collection name per archive"""
         collid = None
         if name:
             coll = await self.find_collection(aid, name)
@@ -127,7 +127,7 @@ class CollectionOps:
 
 # ============================================================================
 def init_collections_api(mdb, crawls, archives, crawl_manager):
-    """ init collections api """
+    """init collections api"""
     colls = CollectionOps(mdb, crawls, crawl_manager)
 
     archive_crawl_dep = archives.archive_crawl_dep

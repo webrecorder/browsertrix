@@ -78,11 +78,11 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             )
 
     async def get_default_storage_access_endpoint(self, name):
-        """ Get access_endpoint for default storage """
+        """Get access_endpoint for default storage"""
         return (await self.get_default_storage(name)).access_endpoint_url
 
     async def get_default_storage(self, name):
-        """ get default storage """
+        """get default storage"""
         if name not in self._default_storages:
             storage_secret = await self._get_storage_secret(name)
 
@@ -105,7 +105,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         return self._default_storages[name]
 
     async def ping_profile_browser(self, browserid):
-        """ return ping profile browser """
+        """return ping profile browser"""
         pods = await self.core_api.list_namespaced_pod(
             namespace=self.namespace,
             label_selector=f"job-name=job-{browserid},btrix.profile=1",
@@ -119,7 +119,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         return True
 
     async def get_profile_browser_metadata(self, browserid):
-        """ get browser profile labels """
+        """get browser profile labels"""
         try:
             job = await self.batch_api.read_namespaced_job(
                 name=f"job-{browserid}", namespace=self.namespace
@@ -134,22 +134,22 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         return job.metadata.labels
 
     async def delete_profile_browser(self, browserid):
-        """ delete browser job, if it is a profile browser job """
+        """delete browser job, if it is a profile browser job"""
         return await self._delete_job(f"job-{browserid}")
 
     # ========================================================================
     # Internal Methods
 
     async def _create_from_yaml(self, _, yaml_data):
-        """ create from yaml """
+        """create from yaml"""
         await create_from_yaml(self.api_client, yaml_data, namespace=self.namespace)
 
     def _secret_data(self, secret, name):
-        """ decode secret data """
+        """decode secret data"""
         return base64.standard_b64decode(secret.data[name]).decode()
 
     async def _delete_job(self, name):
-        """ delete job """
+        """delete job"""
         try:
             await self.batch_api.delete_namespaced_job(
                 name=name,
@@ -163,7 +163,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             return False
 
     async def _create_config_map(self, crawlconfig, **kwargs):
-        """ Create Config Map based on CrawlConfig """
+        """Create Config Map based on CrawlConfig"""
         data = kwargs
         data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
         data["INITIAL_SCALE"] = str(crawlconfig.scale)
@@ -188,7 +188,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
     # pylint: disable=unused-argument
     async def _get_storage_secret(self, storage_name):
-        """ Check if storage_name is valid by checking existing secret """
+        """Check if storage_name is valid by checking existing secret"""
         try:
             return await self.core_api.read_namespaced_secret(
                 f"storage-{storage_name}",
@@ -245,7 +245,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         return {"error": "post_failed"}
 
     async def _update_scheduled_job(self, crawlconfig):
-        """ create or remove cron job based on crawlconfig schedule """
+        """create or remove cron job based on crawlconfig schedule"""
         cid = str(crawlconfig.id)
 
         cron_job_id = f"sched-{cid[:12]}"
@@ -318,7 +318,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 # ============================================================================
 # pylint: disable=too-few-public-methods
 class FakeKubeResponse:
-    """ wrap k8s response for decoding """
+    """wrap k8s response for decoding"""
 
     def __init__(self, obj):
         self.data = json.dumps(obj)

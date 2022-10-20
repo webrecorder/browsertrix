@@ -48,7 +48,7 @@ class InviteToArchiveRequest(InviteRequest):
 
 # ============================================================================
 class InviteOps:
-    """ invite users (optionally to an archive), send emails and delete invites """
+    """invite users (optionally to an archive), send emails and delete invites"""
 
     def __init__(self, mdb, email):
         self.invites = mdb["invites"]
@@ -79,7 +79,7 @@ class InviteOps:
         )
 
     async def get_valid_invite(self, invite_token: uuid.UUID, email):
-        """ Retrieve a valid invite data from db, or throw if invalid"""
+        """Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
@@ -92,11 +92,11 @@ class InviteOps:
         return new_user_invite
 
     async def remove_invite(self, invite_token: str):
-        """ remove invite from invite list """
+        """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 
     def accept_user_invite(self, user, invite_token: str):
-        """ remove invite from user, if valid token, throw if not """
+        """remove invite from user, if valid token, throw if not"""
         invite = user.invites.pop(invite_token, "")
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
@@ -167,5 +167,5 @@ class InviteOps:
 
 
 def init_invites(mdb, email):
-    """ init InviteOps"""
+    """init InviteOps"""
     return InviteOps(mdb, email)

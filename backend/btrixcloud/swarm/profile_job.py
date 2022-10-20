@@ -7,7 +7,7 @@ from ..profile_job import ProfileJob
 # =============================================================================
 class SwarmProfileJob(SwarmJobMixin, ProfileJob):
     # class SwarmProfileJob(ProfileJob, SwarmBaseJob):
-    """ Browser run job """
+    """Browser run job"""
 
 
 if __name__ == "__main__":

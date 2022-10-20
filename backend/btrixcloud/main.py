@@ -38,7 +38,7 @@ app_root = FastAPI(
 # ============================================================================
 # pylint: disable=too-many-locals
 def main():
-    """ init browsertrix cloud api """
+    """init browsertrix cloud api"""
 
     app = APIRouter()
 
@@ -136,6 +136,6 @@ async def startup():
 
 
 def exit_handler():
-    """ sigterm handler """
+    """sigterm handler"""
     print("SIGTERM received, exiting")
     sys.exit(1)

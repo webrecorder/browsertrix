@@ -48,7 +48,7 @@ class BaseMongoModel(BaseModel):
 
     @property
     def id_str(self):
-        """ Return id as str """
+        """Return id as str"""
         return str(self.id)
 
     @classmethod

@@ -26,7 +26,7 @@ class UpdateRole(InviteToArchiveRequest):
 
 # ============================================================================
 class DefaultStorage(BaseModel):
-    """ Storage reference """
+    """Storage reference"""
 
     type: Literal["default"] = "default"
     name: str
@@ -190,7 +190,7 @@ class ArchiveOps:
     async def update_storage(
         self, archive: Archive, storage: Union[S3Storage, DefaultStorage]
     ):
-        """ Update storage on an existing archive """
+        """Update storage on an existing archive"""
         return await self.archives.find_one_and_update(
             {"_id": archive.id}, {"$set": {"storage": storage.dict()}}
         )

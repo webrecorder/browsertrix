@@ -7,12 +7,12 @@ from kubernetes_asyncio.utils import create_from_dict
 
 
 def get_templates_dir():
-    """ return directory containing templates for loading """
+    """return directory containing templates for loading"""
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
 async def create_from_yaml(k8s_client, doc, namespace):
-    """ init k8s objects from yaml """
+    """init k8s objects from yaml"""
     yml_document_all = yaml.safe_load_all(doc)
     k8s_objects = []
     for yml_document in yml_document_all:
@@ -25,7 +25,7 @@ async def create_from_yaml(k8s_client, doc, namespace):
 
 
 async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
-    """ send signal to all pods """
+    """send signal to all pods"""
     command = ["kill", "-s", signame, "1"]
     signaled = False
 

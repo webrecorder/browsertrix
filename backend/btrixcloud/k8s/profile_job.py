@@ -6,7 +6,7 @@ from ..profile_job import ProfileJob
 
 # =============================================================================
 class K8SProfileJob(K8SJobMixin, ProfileJob):
-    """ Browser run job """
+    """Browser run job"""
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 
 # =============================================================================
 class ProfileJob(ABC):
-    """ Browser run job """
+    """Browser run job"""
 
     job_id = None
 
@@ -37,31 +37,31 @@ class ProfileJob(ABC):
         signal.setitimer(signal.ITIMER_REAL, self.idle_timeout, 0)
 
     async def async_init(self, template, params):
-        """ async init, overridable by subclass """
+        """async init, overridable by subclass"""
         await self.init_job_objects(template, params)
 
     @abstractmethod
     async def init_job_objects(self, filename, params):
-        """ base for creating objects """
+        """base for creating objects"""
 
     @abstractmethod
     async def delete_job_objects(self, job_id):
-        """ base for deleting objects """
+        """base for deleting objects"""
 
     def ping_handler(self, *_args):
-        """ handle custom signal as ping, extend shutdown timer """
+        """handle custom signal as ping, extend shutdown timer"""
 
         print(f"signal received, extending timer {self.idle_timeout} secs", flush=True)
 
         signal.setitimer(signal.ITIMER_REAL, self.idle_timeout, 0)
 
     def exit_handler(self):
-        """ handle SIGTERM  """
+        """handle SIGTERM"""
         print("sigterm: shutting down browser...", flush=True)
         self._do_exit()
 
     def timeout_handler(self):
-        """ handle SIGALRM """
+        """handle SIGALRM"""
         print("sigalrm: timer expired ending idle browser...", flush=True)
         self._do_exit()
 

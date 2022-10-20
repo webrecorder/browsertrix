@@ -10,13 +10,13 @@ from python_on_whales.exceptions import DockerException
 
 # ============================================================================
 def get_templates_dir():
-    """ return directory containing templates for loading """
+    """return directory containing templates for loading"""
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
 # ============================================================================
 def get_runner(runtime=None):
-    """ return either Swarm or Podman Runner based on env setting """
+    """return either Swarm or Podman Runner based on env setting"""
     if runtime is None:
         runtime = os.environ.get("RUNTIME", "")
 
@@ -28,13 +28,13 @@ def get_runner(runtime=None):
 
 # ============================================================================
 class SwarmRunner:
-    """ Run in Swarm """
+    """Run in Swarm"""
 
     def __init__(self):
         self.client = DockerClient()
 
     def run_service_stack(self, name, data):
-        """ run compose/swarm stack via interpolated file """
+        """run compose/swarm stack via interpolated file"""
         with tempfile.NamedTemporaryFile("wt") as fh_io:
             fh_io.write(data)
             fh_io.flush()
@@ -52,7 +52,7 @@ class SwarmRunner:
         return name
 
     def delete_service_stack(self, name):
-        """ remove stack """
+        """remove stack"""
         try:
             self.client.stack.remove(name)
             return True
@@ -61,7 +61,7 @@ class SwarmRunner:
             return False
 
     def delete_volumes(self, names):
-        """ remove stack """
+        """remove stack"""
         try:
             self.client.volume.remove(names)
             return True
@@ -70,7 +70,7 @@ class SwarmRunner:
             return False
 
     def create_secret(self, name, data, labels=None):
-        """ create secret from specified data """
+        """create secret from specified data"""
         with tempfile.NamedTemporaryFile("wt") as fh_io:
             fh_io.write(data)
             fh_io.flush()
@@ -81,7 +81,7 @@ class SwarmRunner:
                 print(exc, flush=True)
 
     def delete_secret(self, name):
-        """ remove secret by name """
+        """remove secret by name"""
         try:
             self.client.secret.remove(name)
             return True
@@ -90,7 +90,7 @@ class SwarmRunner:
             return False
 
     def delete_secrets(self, label):
-        """ delete secret with specified label """
+        """delete secret with specified label"""
         try:
             configs = self.client.secret.list(filters={"label": label})
             for config in configs:
@@ -102,7 +102,7 @@ class SwarmRunner:
             return False
 
     def get_service(self, service_name):
-        """ get a swarm service """
+        """get a swarm service"""
         try:
             res = self.client.service.inspect(service_name)
             return res
@@ -110,12 +110,12 @@ class SwarmRunner:
             return None
 
     def get_service_labels(self, service_name):
-        """ get labels from a swarm service """
+        """get labels from a swarm service"""
         service = self.get_service(service_name)
         return service.spec.labels if service else {}
 
     def set_service_label(self, service_name, label):
-        """ update label """
+        """update label"""
         exe_file = client_config.get_docker_binary_path_in_cache()
 
         try:
@@ -136,7 +136,7 @@ class SwarmRunner:
             print(exc, flush=True)
 
     def ping_containers(self, value, signal_="SIGTERM"):
-        """ ping running containers with given service name with signal """
+        """ping running containers with given service name with signal"""
         try:
             count = 0
             conts = self.client.container.list(filters={"name": value})
@@ -152,7 +152,7 @@ class SwarmRunner:
 
 # ============================================================================
 class PodmanComposeRunner(SwarmRunner):
-    """ Run via Docker Compose """
+    """Run via Docker Compose"""
 
     def __init__(self):
         # pylint: disable=super-init-not-called
@@ -162,7 +162,7 @@ class PodmanComposeRunner(SwarmRunner):
         self.client = DockerClient(client_call=[self.podman_exe])
 
     def run_service_stack(self, name, data):
-        """ run compose/swarm stack via interpolated file """
+        """run compose/swarm stack via interpolated file"""
         with tempfile.NamedTemporaryFile("wt") as fh_io:
             fh_io.write(data)
             fh_io.flush()
@@ -194,7 +194,7 @@ class PodmanComposeRunner(SwarmRunner):
                 print(exc, flush=True)
 
     def delete_service_stack(self, name):
-        """ delete compose stack """
+        """delete compose stack"""
         print("Deleting Stack: " + name, flush=True)
 
         for container in self.client.container.list(
@@ -209,7 +209,7 @@ class PodmanComposeRunner(SwarmRunner):
             volume.remove()
 
     def create_secret(self, name, data, labels=None):
-        """ create secret from specified data """
+        """create secret from specified data"""
         with tempfile.NamedTemporaryFile("wt") as fh_io:
             fh_io.write(data)
             fh_io.flush()
@@ -221,7 +221,7 @@ class PodmanComposeRunner(SwarmRunner):
                 print(exc, flush=True)
 
     def delete_secret(self, name):
-        """ remove secret by name """
+        """remove secret by name"""
         # python-on-whale calls 'remove' but podman only supports 'rm', so call directly
         try:
             subprocess.run([self.podman_exe, "secret", "rm", name], check=True)
@@ -232,7 +232,7 @@ class PodmanComposeRunner(SwarmRunner):
             return False
 
     def get_service(self, service_name):
-        """ get a swarm service """
+        """get a swarm service"""
         try:
             res = self.client.container.inspect(service_name)
             return res

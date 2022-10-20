@@ -410,7 +410,7 @@ class CrawlOps:
         raise HTTPException(status_code=400, detail=result.get("error"))
 
     async def get_crawl_queue(self, crawl_id, offset, count, regex):
-        """ get crawl queue """
+        """get crawl queue"""
 
         total = 0
         results = []
@@ -436,7 +436,7 @@ class CrawlOps:
         return {"total": total, "results": results, "matched": matched}
 
     async def match_crawl_queue(self, crawl_id, regex):
-        """ get crawl queue """
+        """get crawl queue"""
 
         total = 0
 
@@ -465,7 +465,7 @@ class CrawlOps:
         return {"total": total, "matched": matched}
 
     def get_redis_url(self, crawl_id):
-        """ get redis url for crawl id """
+        """get redis url for crawl id"""
         # pylint: disable=line-too-long
         return f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
 

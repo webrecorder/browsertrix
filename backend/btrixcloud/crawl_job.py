@@ -26,7 +26,7 @@ SHUTDOWN_ATTEMPT_WAIT = 60
 # =============================================================================
 # pylint: disable=too-many-instance-attributes,bare-except
 class CrawlJob(ABC):
-    """ Crawl Job """
+    """Crawl Job"""
 
     started: datetime
     finished: datetime
@@ -76,7 +76,7 @@ class CrawlJob(ABC):
         asyncio.create_task(self.async_init("crawler.yaml", params))
 
     async def async_init(self, template, params):
-        """ async init for k8s job """
+        """async init for k8s job"""
         crawl = await self._get_crawl()
 
         self.scale = await self.load_initial_scale(crawl)
@@ -135,7 +135,7 @@ class CrawlJob(ABC):
                 await asyncio.sleep(10)
 
     async def check_crawl_status(self):
-        """ check if crawl is done if all crawl workers have set their done state """
+        """check if crawl is done if all crawl workers have set their done state"""
         results = await self.redis.hvals(f"{self.job_id}:status")
 
         # check if done / failed
@@ -163,13 +163,13 @@ class CrawlJob(ABC):
             await self.delete_crawl()
 
     async def delete_crawl(self):
-        """ delete crawl stateful sets, services and pvcs """
+        """delete crawl stateful sets, services and pvcs"""
         self._delete_pending = True
 
         await self.delete_job_objects(f"crawl={self.job_id}")
 
     async def scale_to(self, scale):
-        """ scale to 'scale' """
+        """scale to 'scale'"""
         try:
             await self._do_scale(scale)
         # pylint: disable=broad-except
@@ -182,7 +182,7 @@ class CrawlJob(ABC):
         return {"success": True}
 
     async def fail_crawl(self):
-        """ mark crawl as failed """
+        """mark crawl as failed"""
         if self.finished:
             return
 
@@ -191,7 +191,7 @@ class CrawlJob(ABC):
         await self.update_crawl(state="failed", finished=self.finished)
 
     async def finish_crawl(self):
-        """ finish crawl """
+        """finish crawl"""
         if self.finished:
             return
 
@@ -214,7 +214,7 @@ class CrawlJob(ABC):
             await self.inc_crawl_complete_stats(state)
 
     async def inc_crawl_complete_stats(self, state):
-        """ Increment Crawl Stats """
+        """Increment Crawl Stats"""
 
         duration = int((self.finished - self.started).total_seconds())
 
@@ -240,7 +240,7 @@ class CrawlJob(ABC):
         )
 
     async def update_running_crawl_stats(self, crawl_id):
-        """ update stats for running crawl """
+        """update stats for running crawl"""
         done = await self.redis.llen(f"{crawl_id}:d")
         found = await self.redis.scard(f"{crawl_id}:s")
 
@@ -258,11 +258,11 @@ class CrawlJob(ABC):
         self.last_done = done
 
     async def update_crawl(self, **kwargs):
-        """ update crawl state, and optionally mark as finished """
+        """update crawl state, and optionally mark as finished"""
         await self.crawls.find_one_and_update({"_id": self.job_id}, {"$set": kwargs})
 
     async def init_crawl(self):
-        """ create crawl, doesn't exist, mark as starting """
+        """create crawl, doesn't exist, mark as starting"""
         try:
             crawl = self._make_crawl("starting", self.scale)
             await self.crawls.insert_one(crawl.to_dict())
@@ -270,7 +270,7 @@ class CrawlJob(ABC):
             await self.update_crawl(state="starting", scale=self.scale)
 
     async def add_file_to_crawl(self, cc_data):
-        """ Handle finished CrawlFile to db """
+        """Handle finished CrawlFile to db"""
 
         filecomplete = CrawlCompleteIn(**cc_data)
 
@@ -301,7 +301,7 @@ class CrawlJob(ABC):
         return True
 
     async def graceful_shutdown(self):
-        """ attempt to graceful stop the crawl, all data should be uploaded """
+        """attempt to graceful stop the crawl, all data should be uploaded"""
         if (
             self._graceful_shutdown_pending
             and (time.time() - self._graceful_shutdown_pending) < SHUTDOWN_ATTEMPT_WAIT
@@ -323,7 +323,7 @@ class CrawlJob(ABC):
         return {"success": True}
 
     async def cancel(self):
-        """ cancel the crawl immediately """
+        """cancel the crawl immediately"""
         print("Canceling crawl", flush=True)
 
         self.finished = dt_now()
@@ -335,7 +335,7 @@ class CrawlJob(ABC):
 
     # pylint: disable=unused-argument
     async def load_initial_scale(self, crawl=None):
-        """ load scale from config or crawl object if not set """
+        """load scale from config or crawl object if not set"""
         if self.scale:
             return self.scale
 
@@ -350,7 +350,7 @@ class CrawlJob(ABC):
             return 1
 
     def _make_crawl(self, state, scale):
-        """ Create crawl object for partial or fully complete crawl """
+        """Create crawl object for partial or fully complete crawl"""
         return Crawl(
             id=self.job_id,
             state=state,
@@ -364,7 +364,7 @@ class CrawlJob(ABC):
         )
 
     def register_handlers(self, app):
-        """ register signal and app handlers """
+        """register signal and app handlers"""
 
         def sig_handler():
             if self._delete_pending:
@@ -396,25 +396,25 @@ class CrawlJob(ABC):
 
     @abstractmethod
     async def init_job_objects(self, template, params):
-        """ base for creating objects """
+        """base for creating objects"""
 
     @abstractmethod
     async def delete_job_objects(self, job_id):
-        """ base for deleting objects """
+        """base for deleting objects"""
 
     @abstractmethod
     async def _get_crawl(self):
-        """ get runnable object represnting this crawl """
+        """get runnable object represnting this crawl"""
 
     @abstractmethod
     async def _do_scale(self, new_scale):
-        """ set number of replicas """
+        """set number of replicas"""
 
     @abstractmethod
     async def _send_shutdown_signal(self, signame):
-        """ gracefully shutdown crawl """
+        """gracefully shutdown crawl"""
 
     @property
     @abstractmethod
     def redis_url(self):
-        """ get redis url """
+        """get redis url"""

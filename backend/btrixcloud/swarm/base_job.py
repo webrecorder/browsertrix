@@ -18,7 +18,7 @@ runner = get_runner()
 # =============================================================================
 # pylint: disable=too-many-instance-attributes,bare-except,broad-except
 class SwarmJobMixin:
-    """ Crawl Job State """
+    """Crawl Job State"""
 
     def __init__(self):
         self.secrets_prefix = "/var/run/secrets/"
@@ -56,7 +56,7 @@ class SwarmJobMixin:
                 os.environ[key] = val
 
     async def init_job_objects(self, template, extra_params=None):
-        """ init swarm objects from specified template with given extra_params """
+        """init swarm objects from specified template with given extra_params"""
         loop = asyncio.get_running_loop()
         loop.add_signal_handler(signal.SIGUSR1, self.unschedule_job)
 
@@ -71,7 +71,7 @@ class SwarmJobMixin:
         await self._do_create(loop, template, params)
 
     async def delete_job_objects(self, _):
-        """ remove swarm service stack """
+        """remove swarm service stack"""
         loop = asyncio.get_running_loop()
         await self._do_delete(loop)
 
@@ -86,7 +86,7 @@ class SwarmJobMixin:
         return True
 
     def unschedule_job(self):
-        """ mark job as unscheduled """
+        """mark job as unscheduled"""
         print("Unscheduled, will delete when finished", flush=True)
         self.remove_schedule = True
 

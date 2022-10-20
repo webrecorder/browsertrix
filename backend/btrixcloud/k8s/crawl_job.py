@@ -12,7 +12,7 @@ app = FastAPI()
 
 # =============================================================================
 class K8SCrawlJob(K8SJobMixin, CrawlJob):
-    """ Crawl Job State """
+    """Crawl Job State"""
 
     async def _do_scale(self, new_scale):
         crawl = await self._get_crawl()
@@ -39,7 +39,7 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
         )
 
     async def load_initial_scale(self, crawl=None):
-        """ load scale from crawl, if available """
+        """load scale from crawl, if available"""
         if crawl:
             return crawl.spec.replicas
 

@@ -22,7 +22,7 @@ BROWSER_EXPIRE = 300
 
 # ============================================================================
 class ProfileFile(BaseModel):
-    """ file from a crawl """
+    """file from a crawl"""
 
     filename: str
     hash: str
@@ -31,7 +31,7 @@ class ProfileFile(BaseModel):
 
 # ============================================================================
 class Profile(BaseMongoModel):
-    """ Browser profile """
+    """Browser profile"""
 
     name: str
     description: Optional[str] = ""
@@ -47,35 +47,35 @@ class Profile(BaseMongoModel):
 
 # ============================================================================
 class ProfileWithCrawlConfigs(Profile):
-    """ Profile with list of crawlconfigs useing this profile """
+    """Profile with list of crawlconfigs useing this profile"""
 
     crawlconfigs: List[CrawlConfigIdNameOut] = []
 
 
 # ============================================================================
 class UrlIn(BaseModel):
-    """ Request to set url """
+    """Request to set url"""
 
     url: HttpUrl
 
 
 # ============================================================================
 class ProfileLaunchBrowserIn(UrlIn):
-    """ Request to launch new browser for creating profile """
+    """Request to launch new browser for creating profile"""
 
     profileId: Optional[UUID4]
 
 
 # ============================================================================
 class BrowserId(BaseModel):
-    """ Profile id on newly created profile """
+    """Profile id on newly created profile"""
 
     browserid: str
 
 
 # ============================================================================
 class ProfileCreateUpdate(BaseModel):
-    """ Profile metadata for committing current browser to profile """
+    """Profile metadata for committing current browser to profile"""
 
     browserid: Optional[str]
     name: str
@@ -84,7 +84,7 @@ class ProfileCreateUpdate(BaseModel):
 
 # ============================================================================
 class ProfileOps:
-    """ Profile management """
+    """Profile management"""
 
     def __init__(self, mdb, crawl_manager):
         self.profiles = mdb["profiles"]
@@ -103,13 +103,13 @@ class ProfileOps:
         self.shared_profile_storage = os.environ.get("SHARED_PROFILE_STORAGE")
 
     def set_crawlconfigs(self, crawlconfigs):
-        """ set crawlconfigs ops """
+        """set crawlconfigs ops"""
         self.crawlconfigs = crawlconfigs
 
     async def create_new_browser(
         self, archive: Archive, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
-        """ Create new profile """
+        """Create new profile"""
         if self.shared_profile_storage:
             storage_name = self.shared_profile_storage
             storage = None
@@ -145,7 +145,7 @@ class ProfileOps:
         return BrowserId(browserid=browserid)
 
     async def get_profile_browser_url(self, browserid, aid, headers):
-        """ get profile browser url """
+        """get profile browser url"""
         json = await self._send_browser_req(browserid, "/target")
 
         target_id = json.get("targetId")
@@ -170,7 +170,7 @@ class ProfileOps:
         return {"url": f"{scheme}://{prefix}/inspector.html?{urlencode(params)}"}
 
     async def ping_profile_browser(self, browserid):
-        """ ping profile browser to keep it running """
+        """ping profile browser to keep it running"""
         await self.crawl_manager.ping_profile_browser(browserid)
 
         json = await self._send_browser_req(browserid, "/ping")
@@ -178,7 +178,7 @@ class ProfileOps:
         return {"success": True, "origins": json.get("origins") or []}
 
     async def navigate_profile_browser(self, browserid, urlin: UrlIn):
-        """ ping profile browser to keep it running """
+        """ping profile browser to keep it running"""
         await self._send_browser_req(browserid, "/navigate", "POST", json=urlin.dict())
 
         return {"success": True}
@@ -189,7 +189,7 @@ class ProfileOps:
         metadata: dict,
         profileid: uuid.UUID = None,
     ):
-        """ commit profile and shutdown profile browser """
+        """commit profile and shutdown profile browser"""
 
         if not profileid:
             profileid = uuid.uuid4()
@@ -240,7 +240,7 @@ class ProfileOps:
     async def update_profile_metadata(
         self, profileid: UUID4, update: ProfileCreateUpdate
     ):
-        """ Update name and description metadata only on existing profile """
+        """Update name and description metadata only on existing profile"""
         query = {"name": update.name}
         if update.description is not None:
             query["description"] = update.description
@@ -253,7 +253,7 @@ class ProfileOps:
         return {"success": True}
 
     async def list_profiles(self, archive: Archive):
-        """ list all profiles"""
+        """list all profiles"""
         cursor = self.profiles.find({"aid": archive.id})
         results = await cursor.to_list(length=1000)
         return [Profile.from_dict(res) for res in results]
@@ -261,7 +261,7 @@ class ProfileOps:
     async def get_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ get profile by id and archive """
+        """get profile by id and archive"""
         query = {"_id": profileid}
         if archive:
             query["aid"] = archive.id
@@ -275,7 +275,7 @@ class ProfileOps:
     async def get_profile_with_configs(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ get profile for api output, with crawlconfigs """
+        """get profile for api output, with crawlconfigs"""
 
         profile = await self.get_profile(profileid, archive)
 
@@ -286,7 +286,7 @@ class ProfileOps:
     async def get_profile_storage_path(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ return profile path filename (relative path) for given profile id and archive """
+        """return profile path filename (relative path) for given profile id and archive"""
         try:
             profile = await self.get_profile(profileid, archive)
             return profile.resource.filename
@@ -297,7 +297,7 @@ class ProfileOps:
     async def get_profile_name(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ return profile for given profile id and archive """
+        """return profile for given profile id and archive"""
         try:
             profile = await self.get_profile(profileid, archive)
             return profile.name
@@ -308,7 +308,7 @@ class ProfileOps:
     async def get_crawl_configs_for_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ Get list of crawl config id, names for that use a particular profile """
+        """Get list of crawl config id, names for that use a particular profile"""
 
         crawlconfig_names = await self.crawlconfigs.get_crawl_config_ids_for_profile(
             profileid, archive
@@ -319,7 +319,7 @@ class ProfileOps:
     async def delete_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ delete profile, if not used in active crawlconfig """
+        """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile_with_configs(profileid, archive)
 
         if len(profile.crawlconfigs) > 0:
@@ -340,14 +340,14 @@ class ProfileOps:
         return {"success": True}
 
     async def delete_profile_browser(self, browserid):
-        """ delete profile browser immediately """
+        """delete profile browser immediately"""
         if not await self.crawl_manager.delete_profile_browser(browserid):
             raise HTTPException(status_code=404, detail="browser_not_found")
 
         return {"success": True}
 
     async def _send_browser_req(self, browserid, path, method="GET", json=None):
-        """ make request to browser api to get state """
+        """make request to browser api to get state"""
         browser_host = f"browser-{browserid}-0.browser-{browserid}"
         try:
             async with aiohttp.ClientSession() as session:
@@ -368,7 +368,7 @@ class ProfileOps:
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
-    """ init profile ops system """
+    """init profile ops system"""
     ops = ProfileOps(mdb, crawl_manager)
 
     router = ops.router

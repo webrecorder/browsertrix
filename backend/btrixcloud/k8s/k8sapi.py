@@ -6,7 +6,7 @@ from kubernetes_asyncio.client.api_client import ApiClient
 
 # pylint: disable=too-few-public-methods
 class K8sAPI:
-    """ K8S API accessors """
+    """K8S API accessors"""
 
     def __init__(self):
         super().__init__()

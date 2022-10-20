@@ -14,7 +14,7 @@ from .db import resolve_db_url
 
 # ============================================================================
 class BaseCrawlManager(ABC):
-    """ abstract crawl manager """
+    """abstract crawl manager"""
 
     def __init__(self, templates):
         super().__init__()
@@ -40,7 +40,7 @@ class BaseCrawlManager(ABC):
         baseprofile=None,
         profile_path=None,
     ):
-        """run browser for profile creation """
+        """run browser for profile creation"""
 
         # if default storage, use name and path + profiles/
         if storage:
@@ -123,7 +123,7 @@ class BaseCrawlManager(ABC):
     async def update_crawlconfig_schedule_or_scale(
         self, crawlconfig, scale=None, schedule=None
     ):
-        """ Update the schedule or scale for existing crawl config """
+        """Update the schedule or scale for existing crawl config"""
 
         if schedule is not None:
             await self._update_scheduled_job(crawlconfig)
@@ -141,7 +141,7 @@ class BaseCrawlManager(ABC):
         )
 
     async def scale_crawl(self, crawl_id, aid, scale=1):
-        """ Set the crawl scale (job parallelism) on the specified job """
+        """Set the crawl scale (job parallelism) on the specified job"""
 
         return await self._post_to_job(crawl_id, aid, f"/scale/{scale}")
 
@@ -182,28 +182,28 @@ class BaseCrawlManager(ABC):
         return self.templates.env.get_template("crawl_job.yaml").render(params)
 
     async def _update_config_initial_scale(self, crawlconfig, scale):
-        """ update initial scale in config, if needed (k8s only) """
+        """update initial scale in config, if needed (k8s only)"""
 
     @abstractmethod
     async def check_storage(self, storage_name, is_default=False):
-        """ check if given storage is valid """
+        """check if given storage is valid"""
 
     @abstractmethod
     async def _create_from_yaml(self, id_, yaml_data):
-        """ check if given storage is valid """
+        """check if given storage is valid"""
 
     @abstractmethod
     async def _create_config_map(self, crawlconfig, **kwargs):
-        """ create config map for config """
+        """create config map for config"""
 
     @abstractmethod
     async def _update_scheduled_job(self, crawlconfig):
-        """ update schedule on crawl job """
+        """update schedule on crawl job"""
 
     @abstractmethod
     async def _post_to_job(self, crawl_id, aid, path, data=None):
-        """ make a POST request to the container for specified crawl job """
+        """make a POST request to the container for specified crawl job"""
 
     @abstractmethod
     async def _delete_crawl_configs(self, label):
-        """ delete crawl configs by specified label """
+        """delete crawl configs by specified label"""

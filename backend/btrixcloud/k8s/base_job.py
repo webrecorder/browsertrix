@@ -16,7 +16,7 @@ from .k8sapi import K8sAPI
 # =============================================================================
 # pylint: disable=too-many-instance-attributes,bare-except,broad-except
 class K8SJobMixin(K8sAPI):
-    """ Crawl Job State """
+    """Crawl Job State"""
 
     def __init__(self):
         self.namespace = os.environ.get("CRAWL_NAMESPACE") or "crawlers"
@@ -31,7 +31,7 @@ class K8SJobMixin(K8sAPI):
         super().__init__()
 
     async def init_job_objects(self, template, extra_params=None):
-        """ init k8s objects from specified template with given extra_params """
+        """init k8s objects from specified template with given extra_params"""
         with open(self.config_file, encoding="utf-8") as fh_config:
             params = yaml.safe_load(fh_config)
 
@@ -49,7 +49,7 @@ class K8SJobMixin(K8sAPI):
             return
 
     async def delete_job_objects(self, selector):
-        """ delete crawl stateful sets, services and pvcs """
+        """delete crawl stateful sets, services and pvcs"""
         kwargs = {
             "namespace": self.namespace,
             "label_selector": selector,
@@ -90,7 +90,7 @@ class K8SJobMixin(K8sAPI):
         asyncio.create_task(self.exit_soon(5))
 
     async def exit_soon(self, timeout):
-        """ exit soon """
+        """exit soon"""
         print("k8s objects deleted, job complete, exiting", flush=True)
         await asyncio.sleep(timeout)
         sys.exit(0)

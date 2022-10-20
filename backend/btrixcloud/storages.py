@@ -19,7 +19,7 @@ sign_access_endpoint = os.environ.get("SIGN_ACCESS_ENDPOINT")
 
 # ============================================================================
 def init_storages_api(archive_ops, crawl_manager, user_dep):
-    """ API for updating storage for an archive """
+    """API for updating storage for an archive"""
 
     router = archive_ops.router
     archive_owner_dep = archive_ops.archive_owner_dep
@@ -60,7 +60,7 @@ def init_storages_api(archive_ops, crawl_manager, user_dep):
 # ============================================================================
 @asynccontextmanager
 async def get_s3_client(storage, use_access=False):
-    """ context manager for s3 client"""
+    """context manager for s3 client"""
     endpoint_url = (
         storage.endpoint_url if not use_access else storage.access_endpoint_url
     )
@@ -86,7 +86,7 @@ async def get_s3_client(storage, use_access=False):
 
 # ============================================================================
 async def verify_storage_upload(storage, filename):
-    """ Test credentials and storage endpoint by uploading an empty test file """
+    """Test credentials and storage endpoint by uploading an empty test file"""
 
     async with get_s3_client(storage) as (client, bucket, key):
         key += filename
@@ -98,7 +98,7 @@ async def verify_storage_upload(storage, filename):
 
 # ============================================================================
 async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
-    """ generate pre-signed url for crawl file """
+    """generate pre-signed url for crawl file"""
     if crawlfile.def_storage_name:
         s3storage = await crawl_manager.get_default_storage(crawlfile.def_storage_name)
 

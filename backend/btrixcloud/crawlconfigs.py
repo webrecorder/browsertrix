@@ -131,7 +131,7 @@ class CrawlConfig(BaseMongoModel):
     inactive: Optional[bool] = False
 
     def get_raw_config(self):
-        """ serialize config for browsertrix-crawler """
+        """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
 
 
@@ -146,21 +146,21 @@ class CrawlConfigOut(CrawlConfig):
 
 # ============================================================================
 class CrawlConfigIdNameOut(BaseMongoModel):
-    """ Crawl Config id and name output only """
+    """Crawl Config id and name output only"""
 
     name: str
 
 
 # ============================================================================
 class CrawlConfigsResponse(BaseModel):
-    """ model for crawl configs response """
+    """model for crawl configs response"""
 
     crawlConfigs: List[CrawlConfigOut]
 
 
 # ============================================================================
 class UpdateCrawlConfig(BaseModel):
-    """ Update crawl config name or crawl schedule """
+    """Update crawl config name or crawl schedule"""
 
     name: Optional[str]
     schedule: Optional[str]
@@ -197,21 +197,21 @@ class CrawlConfigOps:
         asyncio.create_task(self.init_index())
 
     def set_crawl_ops(self, ops):
-        """ set crawl ops reference """
+        """set crawl ops reference"""
         self.crawl_ops = ops
 
     async def init_index(self):
-        """ init index for crawls db """
+        """init index for crawls db"""
         await self.crawl_configs.create_index(
             [("aid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )
 
     def set_coll_ops(self, coll_ops):
-        """ set collection ops """
+        """set collection ops"""
         self.coll_ops = coll_ops
 
     def sanitize(self, string=""):
-        """ sanitize string for use in wacz filename"""
+        """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
 
     async def add_crawl_config(
@@ -277,7 +277,7 @@ class CrawlConfigOps:
         return result, crawl_id
 
     async def add_new_crawl(self, crawl_id, crawlconfig):
-        """ increments crawl count for this config and adds new crawl """
+        """increments crawl count for this config and adds new crawl"""
         inc = self.crawl_configs.find_one_and_update(
             {"_id": crawlconfig.id, "inactive": {"$ne": True}},
             {"$inc": {"crawlAttemptCount": 1}},
@@ -287,7 +287,7 @@ class CrawlConfigOps:
         await asyncio.gather(inc, add)
 
     async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
-        """ Update name, scale and/or schedule for an existing crawl config """
+        """Update name, scale and/or schedule for an existing crawl config"""
 
         # set update query
         query = update.dict(
@@ -374,7 +374,7 @@ class CrawlConfigOps:
     async def get_crawl_config_ids_for_profile(
         self, profileid: uuid.UUID, archive: Optional[Archive] = None
     ):
-        """ Return all crawl configs that are associated with a given profileid"""
+        """Return all crawl configs that are associated with a given profileid"""
         query = {"profileid": profileid, "inactive": {"$ne": True}}
         if archive:
             query["aid"] = archive.id
@@ -386,7 +386,7 @@ class CrawlConfigOps:
         return results
 
     async def get_running_crawl(self, crawlconfig: CrawlConfig):
-        """ Return the id of currently running crawl for this config, if any """
+        """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id, running_only=True)
 
@@ -487,7 +487,7 @@ class CrawlConfigOps:
         return status
 
     async def do_make_inactive(self, crawlconfig: CrawlConfig):
-        """ perform make_inactive in a transaction """
+        """perform make_inactive in a transaction"""
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():

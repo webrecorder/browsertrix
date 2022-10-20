@@ -17,7 +17,7 @@ from ..crawlmanager import BaseCrawlManager
 
 # ============================================================================
 class SwarmManager(BaseCrawlManager):
-    """ Docker Crawl Manager Interface"""
+    """Docker Crawl Manager Interface"""
 
     # pylint: disable=too-many-instance-attributes,too-many-public-methods
     def __init__(self):
@@ -36,7 +36,7 @@ class SwarmManager(BaseCrawlManager):
         self.runner = get_runner()
 
     async def check_storage(self, storage_name, is_default=False):
-        """ check if storage_name is valid storage """
+        """check if storage_name is valid storage"""
         # if not default, don't validate
         if not is_default:
             return True
@@ -45,7 +45,7 @@ class SwarmManager(BaseCrawlManager):
         return self.storages[storage_name]
 
     async def get_default_storage(self, name):
-        """ return default storage by name """
+        """return default storage by name"""
         return self.storages[name]
 
     async def _create_from_yaml(self, id_, yaml_data):
@@ -54,7 +54,7 @@ class SwarmManager(BaseCrawlManager):
         )
 
     async def ping_profile_browser(self, browserid):
-        """ return ping profile browser """
+        """return ping profile browser"""
         return await self.loop.run_in_executor(
             None,
             self.runner.ping_containers,
@@ -63,19 +63,19 @@ class SwarmManager(BaseCrawlManager):
         )
 
     async def get_profile_browser_metadata(self, browserid):
-        """ get browser profile labels """
+        """get browser profile labels"""
         return await self.loop.run_in_executor(
             None, self.runner.get_service_labels, f"job-{browserid}_job"
         )
 
     async def delete_profile_browser(self, browserid):
-        """ delete browser job, if it is a profile browser job """
+        """delete browser job, if it is a profile browser job"""
         return await self.loop.run_in_executor(
             None, self.runner.delete_service_stack, f"job-{browserid}"
         )
 
     async def delete_crawl_config_by_id(self, cid):
-        """ delete crawl configs for crawlconfig id """
+        """delete crawl configs for crawlconfig id"""
 
         cid = str(cid)
 
@@ -94,11 +94,11 @@ class SwarmManager(BaseCrawlManager):
     # internal methods
     # ----------------------------------------------
     def _add_extra_crawl_job_params(self, params):
-        """ add extra crawl job params """
+        """add extra crawl job params"""
         params["env"] = os.environ
 
     async def _create_config_map(self, crawlconfig, **kwargs):
-        """ create config map for config """
+        """create config map for config"""
 
         data = json.dumps(crawlconfig.get_raw_config())
 
@@ -126,7 +126,7 @@ class SwarmManager(BaseCrawlManager):
         )
 
     async def _update_scheduled_job(self, crawlconfig):
-        """ update schedule on crawl job """
+        """update schedule on crawl job"""
 
         cid = str(crawlconfig.id)
 
@@ -179,7 +179,7 @@ class SwarmManager(BaseCrawlManager):
             )
 
     async def _post_to_job(self, crawl_id, aid, path, data=None):
-        """ make a POST request to the container for specified crawl job """
+        """make a POST request to the container for specified crawl job"""
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 "POST", f"http://job-{crawl_id}_job:8000{path}", json=data
@@ -191,5 +191,5 @@ class SwarmManager(BaseCrawlManager):
                     return {"error": "post_failed"}
 
     async def _delete_crawl_configs(self, label):
-        """ delete crawl configs by specified label """
+        """delete crawl configs by specified label"""
         await self.loop.run_in_executor(None, self.runner.delete_secrets, label)

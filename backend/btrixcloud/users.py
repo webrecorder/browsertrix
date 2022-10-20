@@ -97,12 +97,12 @@ class UserDB(User, models.BaseUserDB):
 # ============================================================================
 # pylint: disable=too-few-public-methods
 class UserDBOps(MongoDBUserDatabase):
-    """ User DB Operations wrapper """
+    """User DB Operations wrapper"""
 
 
 # ============================================================================
 class UserManager(BaseUserManager[UserCreate, UserDB]):
-    """ Browsertrix UserManager """
+    """Browsertrix UserManager"""
 
     user_db_model = UserDB
     reset_password_token_secret = PASSWORD_SECRET
@@ -117,13 +117,13 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         self.registration_enabled = os.environ.get("REGISTRATION_ENABLED") == "1"
 
     def set_archive_ops(self, ops):
-        """ set archive ops """
+        """set archive ops"""
         self.archive_ops = ops
 
     async def create(
         self, user: UserCreate, safe: bool = False, request: Optional[Request] = None
     ):
-        """ override user creation to check if invite token is present"""
+        """override user creation to check if invite token is present"""
         user.name = user.name or user.email
 
         # if open registration not enabled, can only register with an invite
@@ -145,7 +145,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         return created_user
 
     async def get_user_names_by_ids(self, user_ids):
-        """ return list of user names for given ids """
+        """return list of user names for given ids"""
         user_ids = [UUID4(id_) for id_ in user_ids]
         cursor = self.user_db.collection.find(
             {"id": {"$in": user_ids}}, projection=["id", "name"]
@@ -153,7 +153,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         return await cursor.to_list(length=1000)
 
     async def create_super_user(self):
-        """ Initialize a super user from env vars """
+        """Initialize a super user from env vars"""
         email = os.environ.get("SUPERUSER_EMAIL")
         password = os.environ.get("SUPERUSER_PASSWORD")
         if not email:
@@ -182,7 +182,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
     ):
-        """ custom post registration callback, also receive the UserCreate object """
+        """custom post registration callback, also receive the UserCreate object"""
 
         print(f"User {user.id} has registered.")
 
@@ -233,7 +233,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         self.email.send_user_validation(user.email, token, request and request.headers)
 
     async def format_invite(self, invite):
-        """ format an InvitePending to return via api, resolve name of inviter """
+        """format an InvitePending to return via api, resolve name of inviter"""
         inviter = await self.get_by_email(invite.inviterEmail)
         result = invite.serialize()
         result["inviterName"] = inviter.name
@@ -261,7 +261,7 @@ def init_user_manager(mdb, emailsender, invites):
 
 # ============================================================================
 class OA2BearerOrQuery(OAuth2PasswordBearer):
-    """ Override bearer check to also test query """
+    """Override bearer check to also test query"""
 
     async def __call__(
         self, request: Request = None, websocket: WebSocket = None
@@ -292,7 +292,7 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
 # ============================================================================
 class BearerOrQueryTransport(BearerTransport):
-    """ Bearer or Query Transport """
+    """Bearer or Query Transport"""
 
     scheme: OA2BearerOrQuery
 
@@ -303,7 +303,7 @@ class BearerOrQueryTransport(BearerTransport):
 
 # ============================================================================
 def init_users_api(app, user_manager):
-    """ init fastapi_users """
+    """init fastapi_users"""
     bearer_transport = BearerOrQueryTransport(tokenUrl="auth/jwt/login")
 
     def get_jwt_strategy() -> JWTStrategy:
