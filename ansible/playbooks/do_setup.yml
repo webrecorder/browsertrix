@@ -29,6 +29,7 @@
       changed_when: false
       failed_when: false
       register: db_check
+      tags: db_destroy
 
     - name: d_ocean | db | create mongodb database
       ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 5 --output json
@@ -36,14 +37,21 @@
       poll: 60
       register: db_create_result
       when: db_check.stdout.find(db_name) == -1
+      tags: db_destroy
 
     - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
         db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
+      tags: destroy
+
+    - name: d_ocean | db | set db id
+      ansible.builtin.set_fact:
+        db_uuid: db_create_result.stdout | from_json | json_query('[0].id')
+      tags: db_destroy
 
     - name: d_ocean | check for mongodb
-      ansible.builtin.command: doctl db delete "{{ db_name }}
-      tags: never
+      ansible.builtin.command: doctl db delete  "{{ db_uuid }}"
+      tags: db_destroy
 
 
   # Storage (Space)
