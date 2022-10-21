@@ -394,6 +394,10 @@ class CrawlJob(ABC):
         async def healthz():
             return {}
 
+        @app.post("/change_config/{cid}")
+        async def change_config(cid: str):
+            return await self._change_crawl_config(cid)
+
     @abstractmethod
     async def init_job_objects(self, template, params):
         """base for creating objects"""
@@ -413,6 +417,10 @@ class CrawlJob(ABC):
     @abstractmethod
     async def _send_shutdown_signal(self, signame):
         """gracefully shutdown crawl"""
+
+    @abstractmethod
+    async def _change_crawl_config(self, cid):
+        """change crawl config for this crawl"""
 
     @property
     @abstractmethod

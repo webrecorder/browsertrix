@@ -292,22 +292,13 @@ spec:
               value: {{ redis_url }}/crawls-done
 
             - name: STORE_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: crawl-config-{{ cid }}
-                  key: STORE_PATH
+              value: {{ env.STORE_PATH }}
 
             - name: STORE_FILENAME
-              valueFrom:
-                configMapKeyRef:
-                  name: crawl-config-{{ cid }}
-                  key: STORE_FILENAME
+              value: {{ env.STORAGE_FILENAME }}
 
             - name: STORE_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: crawl-config-{{ cid }}
-                  key: USER_ID
+              value: {{ env.USER_ID }}
 
           resources:
             limits:

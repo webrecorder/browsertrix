@@ -145,6 +145,11 @@ class BaseCrawlManager(ABC):
 
         return await self._post_to_job(crawl_id, aid, f"/scale/{scale}")
 
+    async def change_crawl_config(self, crawl_id, aid, new_cid):
+        """Change crawl config and restart"""
+
+        return await self._post_to_job(crawl_id, aid, f"/change_config/{new_cid}")
+
     async def delete_crawl_configs_for_archive(self, archive):
         """Delete all crawl configs for given archive"""
         return await self._delete_crawl_configs(f"btrix.archive={archive}")

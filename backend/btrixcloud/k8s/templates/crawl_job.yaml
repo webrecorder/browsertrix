@@ -80,7 +80,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: crawl-config-{{ cid }}
-                  key: STORE_PATH
+                  key: STORE_FILENAME
 
             - name: STORAGE_NAME
               valueFrom:
