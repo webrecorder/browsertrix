@@ -42,7 +42,7 @@
     - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
         db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
-      tags: destroy
+      tags: db_destroy
 
     - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
@@ -92,6 +92,17 @@
               - Content-Range
               - Content-Encoding
               - Content-Length
+
+    - name: d_ocean | space | destroy space
+      community.digitalocean.digital_ocean_spaces:
+        name: "{{ bucket_name }}"
+        state: absent
+        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
+        aws_access_key_id: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
+        aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
+        region: "{{ droplet_region }}"
+      tags: space_destroy
+      ignore_errors: true
 
   # K8S
   # ===========================================
@@ -144,6 +155,11 @@
     - name: d_ocean | k8s | delete {{ k8s_name }}
       ansible.builtin.command: doctl k8s cluster {{ my_cluster.data.id }}
       tags: never
+
+    - name: d_ocean | k8s | destroy a kubernetes cluster in {{ droplet_region }}
+      # skip_ansible_lint
+      ansible.builtin.command: doctl k8s cluster destroy {{ k8s_name }}
+      tags: space_destroy
 
   # DNS
   # ===========================================
