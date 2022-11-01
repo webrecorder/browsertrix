@@ -102,7 +102,8 @@ export class QueueExclusionTable extends LiteElement {
     if (index === 0) {
       typeColClass = " rounded-tl";
       valueColClass = " rounded-tr";
-    } else if (index === arr.length - 1) {
+    }
+    if (index === arr.length - 1) {
       typeColClass = " border-b rounded-bl";
       valueColClass = " border-b rounded-br";
     }
