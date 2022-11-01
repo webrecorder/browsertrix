@@ -22,6 +22,7 @@ import "./components";
 import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
+import "./styles.css";
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -188,10 +189,6 @@ export class App extends LiteElement {
   render() {
     return html`
       <style>
-        .uppercase {
-          letter-spacing: 0.06em;
-        }
-
         ${theme}
       </style>
 

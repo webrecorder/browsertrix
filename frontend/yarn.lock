@@ -4571,6 +4571,11 @@ reduce-flatten@^2.0.0:
   resolved "https://registry.yarnpkg.com/reduce-flatten/-/reduce-flatten-2.0.0.tgz#734fd84e65f375d7ca4465c69798c25c9d10ae27"
   integrity sha512-EJ4UNY/U1t2P/2k6oqotuX2Cc3T6nxJwsM0N0asT7dhrtH1ltUxDn4NalSYmPE2rCkVpcf/X6R0wDwcFpzhd4w==
 
+regex-colorize@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/regex-colorize/-/regex-colorize-0.0.3.tgz#33aabc607b08aa45f26e70c03b7f4066d6fff441"
+  integrity sha512-y+GIlZUqhLQ48T1dZ/FRax14lkVZD1NE3/f7xKuBaasiiMLF5T26Ahjym+vswKPDrtMSfElRr+XPAIHx0AT2Hw==
+
 regexp.prototype.flags@^1.2.0:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/regexp.prototype.flags/-/regexp.prototype.flags-1.3.1.tgz#7ef352ae8d159e758c0eadca6f8fcb4eef07be26"
