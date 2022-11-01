@@ -186,12 +186,10 @@ export class ExclusionEditor extends LiteElement {
           icon: "check2-circle",
         });
 
-        this.dispatchEvent(new CustomEvent("on-success"));
+        this.regex = "";
+        this.matchedURLs = null;
 
-        // this.config = {
-        //   ...this.config,
-        //   exclude: [...(this.config?.exclude || []), regex],
-        // } as any;
+        this.dispatchEvent(new CustomEvent("on-success"));
       } else {
         throw data;
       }

@@ -165,5 +165,6 @@ export class QueueExclusionForm extends LiteElement {
 
   private onSubmit(event: any) {
     this.dispatchEvent(new CustomEvent("submit", event));
+    this.inputValue = "";
   }
 }
