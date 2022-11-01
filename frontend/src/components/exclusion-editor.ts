@@ -26,6 +26,8 @@ type ResponseData = {
  * >
  * </btrix-exclusion-editor>
  * ```
+ *
+ * @event on-success On successful edit
  */
 @localized()
 export class ExclusionEditor extends LiteElement {
@@ -184,7 +186,12 @@ export class ExclusionEditor extends LiteElement {
           icon: "check2-circle",
         });
 
-        // TODO fetch config
+        this.dispatchEvent(new CustomEvent("on-success"));
+
+        // this.config = {
+        //   ...this.config,
+        //   exclude: [...(this.config?.exclude || []), regex],
+        // } as any;
       } else {
         throw data;
       }

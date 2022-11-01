@@ -543,6 +543,7 @@ export class CrawlDetail extends LiteElement {
         .config=${this.crawlTemplate?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
+        @on-success=${() => this.fetchData()}
       ></btrix-exclusion-editor> `;
   }
 
