@@ -22,6 +22,7 @@ const MIN_LENGTH = 2;
  * ```
  *
  * @event on-regex { value: string; valid: boolean; }
+ * @event submit
  */
 @localized()
 export class QueueExclusionForm extends LiteElement {
@@ -162,12 +163,7 @@ export class QueueExclusionForm extends LiteElement {
     );
   }
 
-  private onSubmit(e: CustomEvent) {
-    const { formData } = e.detail;
-    let value = formData.get("excludeValue");
-
-    if (this.selectValue === "text") {
-      value = regexEscape(value);
-    }
+  private onSubmit(event: any) {
+    this.dispatchEvent(new CustomEvent("submit", event));
   }
 }

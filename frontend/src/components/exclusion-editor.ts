@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
+import { regexEscape } from "../utils/string";
 
 type URLs = string[];
 type ResponseData = {
@@ -88,7 +89,10 @@ export class ExclusionEditor extends LiteElement {
           `}
       ${this.isActiveCrawl
         ? html`<div class="mt-2">
-            <btrix-queue-exclusion-form @on-regex=${this.handleRegex}>
+            <btrix-queue-exclusion-form
+              @on-regex=${this.handleRegex}
+              @submit=${this.onSubmit}
+            >
             </btrix-queue-exclusion-form>
           </div>`
         : ""}
@@ -152,5 +156,44 @@ export class ExclusionEditor extends LiteElement {
     );
 
     return data;
+  }
+
+  private async onSubmit(e: CustomEvent) {
+    const { formData } = e.detail;
+    const excludeType = formData.get("excludeType");
+    const excludeValue = formData.get("excludeValue");
+    let regex = excludeValue;
+
+    if (excludeType === "text") {
+      regex = regexEscape(excludeValue);
+    }
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/addExclusion?regex=${regex}`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+
+      if (data.success === true) {
+        this.notify({
+          message: msg("Exclusion added."),
+          type: "success",
+          icon: "check2-circle",
+        });
+
+        // TODO fetch config
+      } else {
+        throw data;
+      }
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't add exclusion at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
