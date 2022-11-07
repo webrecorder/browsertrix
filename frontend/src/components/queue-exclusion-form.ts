@@ -26,6 +26,9 @@ const MIN_LENGTH = 2;
  */
 @localized()
 export class QueueExclusionForm extends LiteElement {
+  @property({ type: Boolean })
+  isSubmitting = false;
+
   @state()
   private selectValue: Exclusion["type"] = "text";
 
@@ -82,6 +85,7 @@ export class QueueExclusionForm extends LiteElement {
                   ? "/skip-this-page"
                   : "example.com/skip.*"}
                 .value=${this.inputValue}
+                ?disabled=${this.isSubmitting}
                 required
                 @sl-input=${this.onInput}
               >
@@ -117,7 +121,8 @@ export class QueueExclusionForm extends LiteElement {
                 type="primary"
                 size="small"
                 submit
-                ?disabled=${!this.isInputValid}
+                ?disabled=${!this.isInputValid || this.isSubmitting}
+                ?loading=${this.isSubmitting}
                 >${msg("Add Exclusion")}</sl-button
               >
             </div>

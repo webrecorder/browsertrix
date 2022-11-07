@@ -47,6 +47,9 @@ export class ExclusionEditor extends LiteElement {
   isActiveCrawl = false;
 
   @state()
+  private isSubmitting = false;
+
+  @state()
   /** `new RegExp` constructor string */
   private regex: string = "";
 
@@ -92,6 +95,7 @@ export class ExclusionEditor extends LiteElement {
       ${this.isActiveCrawl
         ? html`<div class="mt-2">
             <btrix-queue-exclusion-form
+              ?isSubmitting=${this.isSubmitting}
               @on-regex=${this.handleRegex}
               @submit=${this.onSubmit}
             >
@@ -161,6 +165,8 @@ export class ExclusionEditor extends LiteElement {
   }
 
   private async onSubmit(e: CustomEvent) {
+    this.isSubmitting = true;
+
     const { formData } = e.detail;
     const excludeType = formData.get("excludeType");
     const excludeValue = formData.get("excludeValue");
@@ -200,5 +206,7 @@ export class ExclusionEditor extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    this.isSubmitting = false;
   }
 }
