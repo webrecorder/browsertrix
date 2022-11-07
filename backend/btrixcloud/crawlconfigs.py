@@ -513,18 +513,26 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def copy_add_exclusion(self, regex, cid, archive, user):
+    async def copy_add_remove_exclusion(self, regex, cid, archive, user, add=True):
         """create a copy of existing crawl config, with added exclusion regex"""
         # get crawl config
-        print(cid, archive.id)
         crawl_config = await self.get_crawl_config(cid, archive, active_only=False)
 
         # update exclusion
         exclude = crawl_config.config.exclude or []
-        print("curr", exclude)
         if isinstance(exclude, str):
             exclude = [exclude]
-        exclude.append(regex)
+
+        if add:
+            if regex in exclude:
+                raise HTTPException(status_code=400, detail="exclusion_already_exists")
+
+            exclude.append(regex)
+        else:
+            if regex not in exclude:
+                raise HTTPException(status_code=400, detail="exclusion_not_found")
+
+            exclude.remove(regex)
 
         crawl_config.config.exclude = exclude
 

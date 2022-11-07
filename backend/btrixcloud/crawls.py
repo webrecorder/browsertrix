@@ -518,7 +518,9 @@ class CrawlOps:
 
         cid = raw.get("cid")
 
-        new_cid = await self.crawl_configs.copy_add_exclusion(regex, cid, archive, user)
+        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
+            regex, cid, archive, user, add=True
+        )
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$set": {"cid": new_cid}}
@@ -532,6 +534,26 @@ class CrawlOps:
         _, num_removed = await asyncio.gather(change_c, filter_q)
 
         return {"new_cid": new_cid, "num_removed": num_removed}
+
+    async def remove_exclusion(self, crawl_id, regex, archive, user):
+        """create new config with exclusion removed, copying existing config"""
+
+        raw = await self.get_crawl_raw(crawl_id, archive)
+
+        cid = raw.get("cid")
+
+        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
+            regex, cid, archive, user, add=False
+        )
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$set": {"cid": new_cid}}
+        )
+
+        # restart crawl pods
+        await self.crawl_manager.change_crawl_config(crawl_id, archive.id, new_cid)
+
+        return {"new_cid": new_cid}
 
 
 # ============================================================================
@@ -660,7 +682,7 @@ def init_crawls_api(
         return await ops.match_crawl_queue(crawl_id, regex)
 
     @app.post(
-        "/archives/{aid}/crawls/{crawl_id}/addExclusion",
+        "/archives/{aid}/crawls/{crawl_id}/exclusions",
         tags=["crawls"],
     )
     async def add_exclusion(
@@ -671,6 +693,19 @@ def init_crawls_api(
     ):
 
         return await ops.add_exclusion(crawl_id, regex, archive, user)
+
+    @app.delete(
+        "/archives/{aid}/crawls/{crawl_id}/exclusions",
+        tags=["crawls"],
+    )
+    async def remove_exclusion(
+        crawl_id,
+        regex: str,
+        archive: Archive = Depends(archive_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+
+        return await ops.remove_exclusion(crawl_id, regex, archive, user)
 
     return ops
 
