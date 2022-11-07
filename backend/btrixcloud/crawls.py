@@ -417,8 +417,8 @@ class CrawlOps:
         try:
             redis = await self.get_redis(crawl_id)
             total = await redis.llen(f"{crawl_id}:q")
-            results = await redis.lrange(f"{crawl_id}:q", offset, count)
-            results = [json.loads(result)["url"] for result in results]
+            results = await redis.lrange(f"{crawl_id}:q", -offset - count, -offset - 1)
+            results = [json.loads(result)["url"] for result in reversed(results)]
         except exceptions.ConnectionError:
             # can't connect to redis, likely not initialized yet
             pass
@@ -450,8 +450,8 @@ class CrawlOps:
         step = 50
 
         for count in range(0, total, step):
-            results = await redis.lrange(f"{crawl_id}:q", count, count + step)
-            for result in results:
+            results = await redis.lrange(f"{crawl_id}:q", -count - step, -count - 1)
+            for result in reversed(results):
                 url = json.loads(result)["url"]
                 if regex.search(url):
                     matched.append(url)
@@ -473,7 +473,7 @@ class CrawlOps:
             # can't connect to redis, likely not initialized yet
             pass
 
-        dircount = 1
+        dircount = -1
         regex = re.compile(regex)
         step = 50
 
@@ -486,11 +486,11 @@ class CrawlOps:
         # to atomically check and remove value from list
         # so removing each jsob block by value
         while count < total:
-            if dircount == 1 and count > total / 2:
-                dircount = -1
-            results = await redis.lrange(q_key, count, count + step)
+            if dircount == -1 and count > total / 2:
+                dircount = 1
+            results = await redis.lrange(q_key, -count - step, -count - 1)
             count += step
-            for result in results:
+            for result in reversed(results):
                 url = json.loads(result)["url"]
                 if regex.search(url):
                     await redis.srem(s_key, url)
