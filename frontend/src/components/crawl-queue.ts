@@ -199,7 +199,7 @@ export class CrawlQueue extends LiteElement {
     const data: ResponseData = await this.apiFetch(
       `/archives/${this.archiveId}/crawls/${this.crawlId}/queue?offset=${
         (this.page - 1) * this.pageSize
-      }&count=${this.page * this.pageSize - 1}&regex=${this.regex}`,
+      }&count=${this.pageSize}&regex=${this.regex}`,
       this.authState!
     );
 
