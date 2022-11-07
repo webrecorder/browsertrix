@@ -178,7 +178,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/addExclusion?regex=${regex}`,
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
         this.authState!,
         {
           method: "POST",
