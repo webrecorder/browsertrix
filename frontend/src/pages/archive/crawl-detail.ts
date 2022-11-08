@@ -241,7 +241,10 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
-          ${renderNavItem({ section: "exclusions", label: msg("Exclusions") })}
+          ${renderNavItem({
+            section: "exclusions",
+            label: msg("Crawl Queue & Exclusions"),
+          })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
