@@ -36,11 +36,27 @@ export class QueueExclusionTable extends LiteElement {
   private pageSize: number = 5;
 
   @state()
-  private total?: number;
+  private exclusionToRemove?: string;
+
+  private get total() {
+    return this.config?.exclude?.length;
+  }
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("config") && this.config?.exclude) {
-      this.total = this.config.exclude.length;
+      this.exclusionToRemove = "";
+
+      const prevConfig = changedProperties.get("config");
+      if (prevConfig) {
+        const prevTotal = prevConfig.exclude?.length;
+        const lastPage = Math.ceil(this.total! / this.pageSize);
+        if (this.total! < prevTotal) {
+          this.page = Math.min(this.page, lastPage);
+        } else if (this.total! > prevTotal) {
+          this.page = lastPage;
+        }
+      }
+
       this.updatePageResults();
     } else if (changedProperties.has("page")) {
       this.updatePageResults();
@@ -70,6 +86,7 @@ export class QueueExclusionTable extends LiteElement {
       <div slot="summary-description">
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination
+              page=${this.page}
               size=${this.pageSize}
               totalCount=${this.total}
               @page-change=${(e: CustomEvent) => {
@@ -100,7 +117,7 @@ export class QueueExclusionTable extends LiteElement {
             </th>
           </tr>
         </thead>
-        <tbody class="text-neutral-600">
+        <tbody>
           ${this.results.map(this.renderItem)}
         </tbody>
       </table>
@@ -133,7 +150,11 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return html`
-      <tr class="h-10">
+      <tr
+        class="h-10 ${this.exclusionToRemove === value
+          ? "text-neutral-200"
+          : "text-neutral-600"}"
+      >
         <td class="py-2 px-3 whitespace-nowrap ${typeColClass}">
           ${typeLabel}
         </td>
@@ -163,6 +184,8 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   private removeExclusion(exclusion: Exclusion) {
+    this.exclusionToRemove = exclusion.value;
+
     this.dispatchEvent(
       new CustomEvent("on-remove", {
         detail: exclusion,

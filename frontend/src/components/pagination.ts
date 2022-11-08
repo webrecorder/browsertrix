@@ -87,6 +87,9 @@ export class Pagination extends LitElement {
   `;
 
   @property({ type: Number })
+  page: number = 1;
+
+  @property({ type: Number })
   totalCount: number = 0;
 
   @property({ type: Number })
@@ -94,9 +97,6 @@ export class Pagination extends LitElement {
 
   @state()
   private inputValue = "";
-
-  @state()
-  private page: number = 1;
 
   @state()
   private pages = 0;
