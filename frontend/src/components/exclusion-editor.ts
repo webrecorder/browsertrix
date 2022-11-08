@@ -90,7 +90,7 @@ export class ExclusionEditor extends LiteElement {
       ${this.config
         ? html`<btrix-queue-exclusion-table
             .config=${this.config}
-            @on-remove=${this.handleRemoveExclusion}
+            @on-remove=${this.deleteExclusion}
           >
           </btrix-queue-exclusion-table>`
         : html`
@@ -140,7 +140,7 @@ export class ExclusionEditor extends LiteElement {
     }
   }
 
-  private async handleRemoveExclusion(e: CustomEvent) {
+  private async deleteExclusion(e: CustomEvent) {
     const { value } = e.detail;
 
     try {
@@ -169,7 +169,10 @@ export class ExclusionEditor extends LiteElement {
       }
     } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't remove exclusion at this time."),
+        message:
+          e.message === "crawl_running_cant_deactivate"
+            ? msg("Cannot remove exclusion when crawl is no longer running.")
+            : msg("Sorry, couldn't remove exclusion at this time."),
         type: "danger",
         icon: "exclamation-octagon",
       });
