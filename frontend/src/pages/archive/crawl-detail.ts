@@ -45,6 +45,9 @@ export class CrawlDetail extends LiteElement {
   crawlId?: string;
 
   @state()
+  private crawlTemplateId?: string;
+
+  @state()
   private crawl?: Crawl;
 
   @state()
@@ -92,11 +95,12 @@ export class CrawlDetail extends LiteElement {
     this.fetchData();
   }
 
-  updated(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     const prevId = changedProperties.get("crawlId");
 
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
+      this.crawlTemplateId = "";
       this.stopPollTimer();
       this.fetchData();
     } else {
@@ -312,7 +316,6 @@ export class CrawlDetail extends LiteElement {
     if (!this.crawl) return;
 
     const crawlId = this.crawl.id;
-    const crawlTemplateId = this.crawl.cid;
 
     const closeDropdown = (e: any) => {
       e.target.closest("sl-dropdown").hide();
@@ -363,7 +366,7 @@ export class CrawlDetail extends LiteElement {
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
             @click=${(e: any) => {
-              CopyButton.copyToClipboard(crawlId);
+              CopyButton.copyToClipboard(this.crawlTemplateId || "");
               closeDropdown(e);
             }}
           >
@@ -375,7 +378,7 @@ export class CrawlDetail extends LiteElement {
             role="menuitem"
             @click=${() => {
               this.navTo(
-                `/archives/${this.crawl?.aid}/crawl-templates/config/${crawlTemplateId}`
+                `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}`
               );
             }}
           >
@@ -543,7 +546,7 @@ export class CrawlDetail extends LiteElement {
         .config=${this.crawlTemplate?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
-        @on-success=${() => this.fetchData()}
+        @on-success=${this.handleExclusionChange}
       ></btrix-exclusion-editor> `;
   }
 
@@ -665,7 +668,7 @@ export class CrawlDetail extends LiteElement {
               ? html`
                   <a
                     class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawl.cid}`}
+                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawlTemplateId}`}
                     @click=${this.navLink}
                   >
                     <sl-icon
@@ -835,8 +838,12 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private async fetchData() {
-    await this.fetchCrawl();
+  private async fetchData({ parallel }: { parallel?: boolean } = {}) {
+    if (parallel) {
+      this.fetchCrawl();
+    } else {
+      await this.fetchCrawl();
+    }
     this.fetchCrawlTemplate();
   }
 
@@ -846,6 +853,7 @@ export class CrawlDetail extends LiteElement {
   private async fetchCrawl(): Promise<void> {
     try {
       this.crawl = await this.getCrawl();
+      this.crawlTemplateId = this.crawlTemplateId || this.crawl.cid;
 
       if (this.isActive) {
         // Restart timer for next poll
@@ -891,7 +899,7 @@ export class CrawlDetail extends LiteElement {
     }
 
     const data: CrawlTemplate = await this.apiFetch(
-      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}`,
+      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}`,
       this.authState!
     );
 
@@ -1009,7 +1017,7 @@ export class CrawlDetail extends LiteElement {
       }
 
       const data = await this.apiFetch(
-        `/archives/${this.crawl.aid}/crawlconfigs/${this.crawl.cid}/run`,
+        `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}/run`,
         this.authState!,
         {
           method: "POST",
@@ -1035,6 +1043,12 @@ export class CrawlDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private handleExclusionChange(e: CustomEvent) {
+    const { cid } = e.detail;
+    this.crawlTemplateId = cid;
+    this.fetchData({ parallel: true });
   }
 
   private stopPollTimer() {

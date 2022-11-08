@@ -201,7 +201,11 @@ export class ExclusionEditor extends LiteElement {
         await this.updateComplete;
 
         onSuccess();
-        this.dispatchEvent(new CustomEvent("on-success"));
+        this.dispatchEvent(
+          new CustomEvent("on-success", {
+            detail: { cid: data.new_cid },
+          })
+        );
       } else {
         throw data;
       }
