@@ -20,9 +20,20 @@ export class IconButton extends LitElement {
   @property({ type: String })
   variant: "primary" | "danger" | "neutral" = "neutral";
 
+  @property({ type: Boolean })
+  disabled: boolean = false;
+
+  @property({ type: Boolean })
+  loading: boolean = false;
+
   static styles = css`
+    :host {
+      display: inline-block;
+    }
+
     button {
       all: unset;
+      display: block;
       width: 1.5rem;
       height: 1.5rem;
       padding: 0.25rem;
@@ -35,6 +46,12 @@ export class IconButton extends LitElement {
         transform 0.15s;
     }
 
+    button[disabled] {
+      cursor: not-allowed;
+      background-color: var(--sl-color-neutral-100) !important;
+      color: var(--sl-color-neutral-300) !important;
+    }
+
     sl-icon {
       display: block;
       font-size: 1rem;
@@ -45,19 +62,19 @@ export class IconButton extends LitElement {
       box-shadow: var(--sl-shadow-x-small);
     }
 
-    .primary:hover,
-    .danger:hover {
+    .primary:not([disabled]):hover,
+    .dangery:not([disabled]):hover {
       box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
       transform: translateY(1px);
     }
 
     .primary {
-      background-color: var(--sl-color-primary-50);
-      color: var(--sl-color-primary-600);
+      background-color: var(--sl-color-blue-50);
+      color: var(--sl-color-blue-600);
     }
 
     .primary:hover {
-      background-color: var(--sl-color-primary-100);
+      background-color: var(--sl-color-blue-100);
     }
 
     .danger {
@@ -70,19 +87,23 @@ export class IconButton extends LitElement {
     }
 
     .neutral {
-      background-color: var(--sl-color-neutral-0);
       color: var(--sl-color-neutral-500);
     }
 
     .neutral:hover {
-      background-color: var(--sl-color-neutral-50);
-      color: var(--sl-color-neutral-700);
+      color: var(--sl-color-blue-500);
     }
   `;
 
   render() {
-    return html`<button type=${this.type} class=${this.variant}>
-      <sl-icon name=${this.name}></sl-icon>
+    return html`<button
+      type=${this.type}
+      class=${this.variant}
+      ?disabled=${this.disabled}
+    >
+      ${this.loading
+        ? html`<sl-spinner></sl-spinner>`
+        : html`<sl-icon name=${this.name}></sl-icon>`}
     </button>`;
   }
 }
