@@ -134,8 +134,8 @@ export class QueueExclusionTable extends LiteElement {
       <tr class="h-8">
         <td class="p-2 whitespace-nowrap ${typeColClass}">${typeLabel}</td>
         <td class="p-2 font-mono ${valueColClass}">${value}</td>
-        <td class="text-lg ${actionColClass}">
-          <sl-icon-button name="trash3"></sl-icon-button>
+        <td class="text-[1rem] ${actionColClass}">
+          <sl-icon-button name="trash"></sl-icon-button>
         </td>
       </tr>
     `;
