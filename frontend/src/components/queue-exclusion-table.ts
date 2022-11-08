@@ -18,6 +18,8 @@ import type { Exclusion } from "./queue-exclusion-form";
  * >
  * </btrix-queue-exclusion-table>
  * ```
+ *
+ * @event on-remove { value: string; }
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
@@ -137,18 +139,16 @@ export class QueueExclusionTable extends LiteElement {
         </td>
         <td class="p-2 font-mono ${valueColClass}">${value}</td>
         <td class="text-[1rem] text-center ${actionColClass}">
-          <sl-tooltip content=${msg("Remove exclusion")}>
-            <btrix-icon-button
-              name="trash"
-              @click=${console.log}
-            ></btrix-icon-button>
-          </sl-tooltip>
+          <btrix-icon-button
+            name="trash"
+            @click=${() => this.removeExclusion(exclusion)}
+          ></btrix-icon-button>
         </td>
       </tr>
     `;
   };
 
-  getColumnClassNames(index: number, count: number) {
+  private getColumnClassNames(index: number, count: number) {
     let typeColClass = "border-t border-x";
     let valueColClass = "border-t border-r";
     let actionColClass = "border-t border-r";
@@ -160,5 +160,13 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return [typeColClass, valueColClass, actionColClass];
+  }
+
+  private removeExclusion(exclusion: Exclusion) {
+    this.dispatchEvent(
+      new CustomEvent("on-remove", {
+        detail: exclusion,
+      })
+    );
   }
 }
