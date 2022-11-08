@@ -30,9 +30,8 @@ export class Details extends LitElement {
     }
 
     summary {
-      border-bottom: 1px solid var(--sl-panel-border-color);
       color: var(--sl-color-neutral-500);
-      margin-bottom: var(--sl-spacing-x-small);
+      margin-bottom: var(--sl-spacing-2x-small);
       line-height: 1;
       display: flex;
       align-items: center;
@@ -40,6 +39,8 @@ export class Details extends LitElement {
     }
 
     details[aria-disabled="false"] summary {
+      border-bottom: 1px solid var(--sl-panel-border-color);
+      margin-bottom: var(--sl-spacing-x-small);
       cursor: pointer;
       user-select: none;
     }

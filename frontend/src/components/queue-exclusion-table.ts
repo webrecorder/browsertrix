@@ -78,10 +78,24 @@ export class QueueExclusionTable extends LiteElement {
         class="w-full leading-none border-separate"
         style="border-spacing: 0;"
       >
-        <thead class="text-xs text-neutral-700">
-          <tr class="text-left">
-            <th class="font-normal px-2 pb-1 w-40">${msg("Exclusion Type")}</th>
-            <th class="font-normal px-2 pb-1">${msg("Exclusion Value")}</th>
+        <thead class="text-xs font-mono text-neutral-600 uppercase">
+          <tr class="h-8 text-left">
+            <th
+              class="font-normal px-2 w-40 bg-slate-50 rounded-tl border-t border-x${this
+                .results.length === 0
+                ? " border-b rounded-bl"
+                : ""}"
+            >
+              ${msg("Exclusion Type")}
+            </th>
+            <th
+              class="font-normal px-2 bg-slate-50 rounded-tr border-t border-r${this
+                .results.length === 0
+                ? " border-b rounded-br"
+                : ""}"
+            >
+              ${msg("Exclusion Value")}
+            </th>
           </tr>
         </thead>
         <tbody class="text-neutral-600">
@@ -99,10 +113,6 @@ export class QueueExclusionTable extends LiteElement {
     let typeColClass = "";
     let valueColClass = "";
 
-    if (index === 0) {
-      typeColClass = " rounded-tl";
-      valueColClass = " rounded-tr";
-    }
     if (index === arr.length - 1) {
       typeColClass = " border-b rounded-bl";
       valueColClass = " border-b rounded-br";
@@ -126,7 +136,7 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return html`
-      <tr class="even:bg-neutral-50 h-8">
+      <tr class="h-8">
         <td class="border-t border-x p-2 whitespace-nowrap${typeColClass}">
           ${typeLabel}
         </td>

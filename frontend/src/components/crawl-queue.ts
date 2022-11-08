@@ -77,7 +77,7 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-details open disabled>
+      <btrix-details open>
         <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
         <div slot="summary-description">
           ${this.queue?.total && this.queue.total > this.pageSize
@@ -139,8 +139,12 @@ export class CrawlQueue extends LiteElement {
       <footer class="text-center">
         <span class="text-xs text-neutral-400" aria-live="polite">
           ${msg(
-            str`${((this.page - 1) * this.pageSize + 1).toLocaleString()}⁠–⁠${(
-              this.page * this.pageSize
+            str`${(
+              (this.page - 1) * this.pageSize +
+              1
+            ).toLocaleString()}⁠–⁠${Math.min(
+              this.page * this.pageSize,
+              this.queue.total
             ).toLocaleString()} of ${this.queue.total.toLocaleString()} URLs`
           )}
         </span>
