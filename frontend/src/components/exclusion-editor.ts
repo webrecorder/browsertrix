@@ -89,6 +89,7 @@ export class ExclusionEditor extends LiteElement {
     return html`
       ${this.config
         ? html`<btrix-queue-exclusion-table
+            ?isActiveCrawl=${this.isActiveCrawl}
             .config=${this.config}
             @on-remove=${this.deleteExclusion}
           >

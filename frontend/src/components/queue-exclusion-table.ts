@@ -26,6 +26,9 @@ export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
   config?: CrawlConfig;
 
+  @property({ type: Boolean })
+  isActiveCrawl = false;
+
   @state()
   private results: Exclusion[] = [];
 
@@ -102,17 +105,13 @@ export class QueueExclusionTable extends LiteElement {
       >
         <thead class="text-xs font-mono text-neutral-600 uppercase">
           <tr class="h-10 text-left">
-            <th
-              class="font-normal px-2 w-40 bg-slate-50 rounded-tl ${typeColClass}"
-            >
+            <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
               ${msg("Exclusion Type")}
             </th>
             <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
               ${msg("Exclusion Value")}
             </th>
-            <th
-              class="font-normal px-2 w-10 bg-slate-50 rounded-tr ${actionColClass}"
-            >
+            <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
               <span class="sr-only">Row actions</span>
             </th>
           </tr>
@@ -130,7 +129,7 @@ export class QueueExclusionTable extends LiteElement {
     arr: Exclusion[]
   ) => {
     const [typeColClass, valueColClass, actionColClass] =
-      this.getColumnClassNames(index, arr.length - 1);
+      this.getColumnClassNames(index + 1, arr.length);
 
     let typeLabel: string = exclusion.type;
     let value: any = exclusion.value;
@@ -174,10 +173,29 @@ export class QueueExclusionTable extends LiteElement {
     let valueColClass = "border-t border-r";
     let actionColClass = "border-t border-r";
 
+    if (index === 0) {
+      typeColClass += " rounded-tl";
+
+      if (this.isActiveCrawl) {
+        actionColClass += " rounded-tr";
+      } else {
+        valueColClass += " rounded-tr";
+      }
+    }
+
     if (index === count) {
       typeColClass += " border-b rounded-bl";
-      valueColClass += " border-b";
-      actionColClass += " border-b rounded-br";
+
+      if (this.isActiveCrawl) {
+        valueColClass += " border-b";
+        actionColClass += " border-b rounded-br";
+      } else {
+        valueColClass += " border-b rounded-br";
+      }
+    }
+
+    if (!this.isActiveCrawl) {
+      actionColClass += " hidden";
     }
 
     return [typeColClass, valueColClass, actionColClass];
