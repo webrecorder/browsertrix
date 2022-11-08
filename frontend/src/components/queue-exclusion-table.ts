@@ -60,6 +60,9 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   render() {
+    const [typeColClass, valueColClass, actionColClass] =
+      this.getColumnClassNames(0, this.results.length);
+
     return html`<btrix-details open disabled>
       <h4 slot="title">${msg("Exclusion Table")}</h4>
       <div slot="summary-description">
@@ -81,20 +84,17 @@ export class QueueExclusionTable extends LiteElement {
         <thead class="text-xs font-mono text-neutral-600 uppercase">
           <tr class="h-8 text-left">
             <th
-              class="font-normal px-2 w-40 bg-slate-50 rounded-tl border-t border-x${this
-                .results.length === 0
-                ? " border-b rounded-bl"
-                : ""}"
+              class="font-normal px-2 w-40 bg-slate-50 rounded-tl ${typeColClass}"
             >
               ${msg("Exclusion Type")}
             </th>
-            <th
-              class="font-normal px-2 bg-slate-50 rounded-tr border-t border-r${this
-                .results.length === 0
-                ? " border-b rounded-br"
-                : ""}"
-            >
+            <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
               ${msg("Exclusion Value")}
+            </th>
+            <th
+              class="font-normal px-2 w-0 bg-slate-50 rounded-tr ${actionColClass}"
+            >
+              <span class="sr-only">Row actions</span>
             </th>
           </tr>
         </thead>
@@ -110,13 +110,8 @@ export class QueueExclusionTable extends LiteElement {
     index: number,
     arr: Exclusion[]
   ) => {
-    let typeColClass = "";
-    let valueColClass = "";
-
-    if (index === arr.length - 1) {
-      typeColClass = " border-b rounded-bl";
-      valueColClass = " border-b rounded-br";
-    }
+    const [typeColClass, valueColClass, actionColClass] =
+      this.getColumnClassNames(index, arr.length - 1);
 
     let typeLabel: string = exclusion.type;
     let value: any = exclusion.value;
@@ -137,13 +132,26 @@ export class QueueExclusionTable extends LiteElement {
 
     return html`
       <tr class="h-8">
-        <td class="border-t border-x p-2 whitespace-nowrap${typeColClass}">
-          ${typeLabel}
-        </td>
-        <td class="border-t border-r p-2 font-mono${valueColClass}">
-          ${value}
+        <td class="p-2 whitespace-nowrap ${typeColClass}">${typeLabel}</td>
+        <td class="p-2 font-mono ${valueColClass}">${value}</td>
+        <td class="text-lg ${actionColClass}">
+          <sl-icon-button name="trash3"></sl-icon-button>
         </td>
       </tr>
     `;
   };
+
+  getColumnClassNames(index: number, count: number) {
+    let typeColClass = "border-t border-x";
+    let valueColClass = "border-t border-r";
+    let actionColClass = "border-t border-r";
+
+    if (index === count) {
+      typeColClass += " border-b rounded-bl";
+      valueColClass += " border-b";
+      actionColClass += " border-b rounded-br";
+    }
+
+    return [typeColClass, valueColClass, actionColClass];
+  }
 }
