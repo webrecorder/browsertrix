@@ -82,7 +82,7 @@ export class QueueExclusionTable extends LiteElement {
         style="border-spacing: 0;"
       >
         <thead class="text-xs font-mono text-neutral-600 uppercase">
-          <tr class="h-8 text-left">
+          <tr class="h-10 text-left">
             <th
               class="font-normal px-2 w-40 bg-slate-50 rounded-tl ${typeColClass}"
             >
@@ -92,7 +92,7 @@ export class QueueExclusionTable extends LiteElement {
               ${msg("Exclusion Value")}
             </th>
             <th
-              class="font-normal px-2 w-9 bg-slate-50 rounded-tr ${actionColClass}"
+              class="font-normal px-2 w-10 bg-slate-50 rounded-tr ${actionColClass}"
             >
               <span class="sr-only">Row actions</span>
             </th>
@@ -131,11 +131,18 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return html`
-      <tr class="h-8">
-        <td class="p-2 whitespace-nowrap ${typeColClass}">${typeLabel}</td>
+      <tr class="h-10">
+        <td class="py-2 px-3 whitespace-nowrap ${typeColClass}">
+          ${typeLabel}
+        </td>
         <td class="p-2 font-mono ${valueColClass}">${value}</td>
         <td class="text-[1rem] text-center ${actionColClass}">
-          <btrix-icon-button name="trash"></btrix-icon-button>
+          <sl-tooltip content=${msg("Remove exclusion")}>
+            <btrix-icon-button
+              name="trash"
+              @click=${console.log}
+            ></btrix-icon-button>
+          </sl-tooltip>
         </td>
       </tr>
     `;

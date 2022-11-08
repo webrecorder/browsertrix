@@ -59,7 +59,7 @@ export class QueueExclusionForm extends LiteElement {
     return html`
       <sl-form @sl-submit=${this.onSubmit}>
         <div class="flex">
-          <div class="pr-1 flex-0 w-40">
+          <div class="px-1 flex-0 w-40">
             <sl-select
               name="excludeType"
               placeholder=${msg("Select Type")}
@@ -122,7 +122,7 @@ export class QueueExclusionForm extends LiteElement {
                   : ""}
               </sl-input>
             </div>
-            <div class="flex-0 w-9 pt-1 text-center">
+            <div class="flex-0 w-10 pt-1 text-center">
               <btrix-icon-button
                 type="submit"
                 variant="primary"
