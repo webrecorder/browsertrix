@@ -50,6 +50,9 @@ export class ExclusionEditor extends LiteElement {
   private isSubmitting = false;
 
   @state()
+  private exclusionFieldErrorMessage = "";
+
+  @state()
   /** `new RegExp` constructor string */
   private regex: string = "";
 
@@ -96,6 +99,7 @@ export class ExclusionEditor extends LiteElement {
         ? html`<div class="mt-2">
             <btrix-queue-exclusion-form
               ?isSubmitting=${this.isSubmitting}
+              fieldErrorMessage=${this.exclusionFieldErrorMessage}
               @on-regex=${this.handleRegex}
               @submit=${this.onSubmit}
             >
@@ -167,7 +171,7 @@ export class ExclusionEditor extends LiteElement {
   private async onSubmit(e: CustomEvent) {
     this.isSubmitting = true;
 
-    const { formData } = e.detail;
+    const { formData, onSuccess } = e.detail;
     const excludeType = formData.get("excludeType");
     const excludeValue = formData.get("excludeValue");
     let regex = excludeValue;
@@ -185,7 +189,7 @@ export class ExclusionEditor extends LiteElement {
         }
       );
 
-      if (data.success === true) {
+      if (data.new_cid) {
         this.notify({
           message: msg("Exclusion added."),
           type: "success",
@@ -194,17 +198,23 @@ export class ExclusionEditor extends LiteElement {
 
         this.regex = "";
         this.matchedURLs = null;
+        await this.updateComplete;
 
+        onSuccess();
         this.dispatchEvent(new CustomEvent("on-success"));
       } else {
         throw data;
       }
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't add exclusion at this time."),
-        type: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.message === "exclusion_already_exists") {
+        this.exclusionFieldErrorMessage = msg("Exclusion already exists");
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't add exclusion at this time."),
+          type: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     this.isSubmitting = false;

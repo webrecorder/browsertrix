@@ -29,6 +29,9 @@ export class QueueExclusionForm extends LiteElement {
   @property({ type: Boolean })
   isSubmitting = false;
 
+  @property({ type: String })
+  fieldErrorMessage = "";
+
   @state()
   private selectValue: Exclusion["type"] = "text";
 
@@ -36,10 +39,7 @@ export class QueueExclusionForm extends LiteElement {
   private inputValue = "";
 
   @state()
-  private isInputValid = false;
-
-  @state()
-  private invalidRegexError = "";
+  private isRegexInvalid = false;
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -47,7 +47,7 @@ export class QueueExclusionForm extends LiteElement {
       (changedProperties.has("inputValue") &&
         changedProperties.get("inputValue") !== undefined)
     ) {
-      this.invalidRegexError = "";
+      this.fieldErrorMessage = "";
       this.checkInputValidity();
 
       await this.updateComplete;
@@ -76,7 +76,7 @@ export class QueueExclusionForm extends LiteElement {
           <div class="pl-1 flex-1 md:flex">
             <div class="flex-1 mb-2 md:mb-0 md:mr-2">
               <sl-input
-                class=${this.invalidRegexError ? "invalid" : ""}
+                class=${this.fieldErrorMessage ? "invalid" : ""}
                 name="excludeValue"
                 size="small"
                 autocomplete="off"
@@ -89,28 +89,34 @@ export class QueueExclusionForm extends LiteElement {
                 required
                 @sl-input=${this.onInput}
               >
-                ${this.invalidRegexError
+                ${this.fieldErrorMessage
                   ? html`
                       <div slot="help-text">
-                        <p class="text-danger">
-                          ${msg(
-                            html`Regular Expression syntax error:
-                              <code>${this.invalidRegexError}</code>`
-                          )}
-                        </p>
-                        <p>
-                          ${msg(
-                            html`Please enter a valid constructor string
-                              pattern. See
-                              <a
-                                class="underline hover:no-underline"
-                                href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp"
-                                target="_blank"
-                                rel="noopener noreferrer nofollow"
-                                ><code>RegExp</code> docs</a
-                              >.`
-                          )}
-                        </p>
+                        ${this.isRegexInvalid
+                          ? html`
+                              <p class="text-danger">
+                                ${msg(
+                                  html`Regular Expression syntax error:
+                                    <code>${this.fieldErrorMessage}</code>`
+                                )}
+                              </p>
+                              <p>
+                                ${msg(
+                                  html`Please enter a valid constructor string
+                                    pattern. See
+                                    <a
+                                      class="underline hover:no-underline"
+                                      href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp"
+                                      target="_blank"
+                                      rel="noopener noreferrer nofollow"
+                                      ><code>RegExp</code> docs</a
+                                    >.`
+                                )}
+                              </p>
+                            `
+                          : html`<p class="text-danger">
+                              ${this.fieldErrorMessage}
+                            </p>`}
                       </div>
                     `
                   : ""}
@@ -121,7 +127,7 @@ export class QueueExclusionForm extends LiteElement {
                 type="primary"
                 size="small"
                 submit
-                ?disabled=${!this.isInputValid || this.isSubmitting}
+                ?disabled=${this.isRegexInvalid || this.isSubmitting}
                 ?loading=${this.isSubmitting}
                 >${msg("Add Exclusion")}</sl-button
               >
@@ -146,12 +152,12 @@ export class QueueExclusionForm extends LiteElement {
         // Check if valid regex
         new RegExp(this.inputValue);
       } catch (err: any) {
-        this.invalidRegexError = err.message;
+        this.fieldErrorMessage = err.message;
         isValid = false;
       }
     }
 
-    this.isInputValid = isValid;
+    this.isRegexInvalid = !isValid;
   }
 
   private dispatchRegexEvent() {
@@ -162,14 +168,22 @@ export class QueueExclusionForm extends LiteElement {
             this.selectValue === "text"
               ? regexEscape(this.inputValue)
               : this.inputValue,
-          valid: this.isInputValid,
+          valid: !this.isRegexInvalid,
         },
       })
     );
   }
 
-  private onSubmit(event: any) {
-    this.dispatchEvent(new CustomEvent("submit", event));
-    this.inputValue = "";
+  private onSubmit(event: CustomEvent) {
+    this.dispatchEvent(
+      new CustomEvent("submit", {
+        detail: {
+          formData: event.detail.formData,
+          onSuccess: () => {
+            this.inputValue = "";
+          },
+        },
+      })
+    );
   }
 }
