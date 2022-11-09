@@ -33,6 +33,7 @@ const initialValues = {
   config: {
     seeds: [],
     scopeType: "prefix",
+    exclude: [],
   },
 };
 const hours = Array.from({ length: 12 }).map((x, i) => ({
@@ -380,6 +381,7 @@ export class CrawlTemplatesNew extends LiteElement {
           class="col-span-1 grid gap-5${this.isConfigCodeView ? " hidden" : ""}"
         >
           ${this.renderSeedsForm()}
+          <div>${this.renderExclusionEditor()}</div>
         </div>
       </section>
     `;
@@ -427,6 +429,26 @@ export class CrawlTemplatesNew extends LiteElement {
       >
         <span slot="suffix">${msg("pages")}</span>
       </sl-input>
+    `;
+  }
+
+  private renderExclusionEditor() {
+    if (!this.initialCrawlTemplate?.config) {
+      return;
+    }
+
+    return html`
+      <btrix-queue-exclusion-table
+        .config=${this.initialCrawlTemplate.config}
+        @on-remove=${console.debug}
+      ></btrix-queue-exclusion-table>
+      <div class="mt-2">
+        <btrix-queue-exclusion-form
+          @on-regex=${console.debug}
+          @submit=${console.debug}
+        >
+        </btrix-queue-exclusion-form>
+      </div>
     `;
   }
 
