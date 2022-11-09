@@ -57,6 +57,18 @@ import("./pagination").then(({ Pagination }) => {
 import("./crawl-queue").then(({ CrawlQueue }) => {
   customElements.define("btrix-crawl-queue", CrawlQueue);
 });
+import("./exclusion-editor").then(({ ExclusionEditor }) => {
+  customElements.define("btrix-exclusion-editor", ExclusionEditor);
+});
+import("./crawl-pending-exclusions").then(({ CrawlPendingExclusions }) => {
+  customElements.define(
+    "btrix-crawl-pending-exclusions",
+    CrawlPendingExclusions
+  );
+});
+import("./badge").then(({ Badge }) => {
+  customElements.define("btrix-badge", Badge);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

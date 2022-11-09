@@ -93,6 +93,15 @@ const theme = css`
     --sl-input-spacing-small: var(--sl-spacing-x-small);
     line-height: 1.5;
   }
+
+  /* Validation styles */
+  sl-input.invalid:not([disabled])::part(base) {
+    border-color: var(--sl-color-danger-400);
+  }
+
+  sl-input.invalid:focus-within::part(base) {
+    box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
+  }
 `;
 
 export default theme;

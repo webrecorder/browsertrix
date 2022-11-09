@@ -1,8 +1,10 @@
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 type ListItem = {
   order?: number;
+  style?: string; // inline styles
   content: any; // any lit template content
 };
 
@@ -13,13 +15,17 @@ type ListItem = {
  * ```ts
  * <btrix-numbered-list></btrix-numbered-list>
  * ```
+ *
+ * CSS variables:
+ * ```
+ * --marker-color
+ * --link-color
+ * --link-hover-color
+ * ```
  */
 export class NumberedList extends LitElement {
   @property({ type: Array })
   items: ListItem[] = [];
-
-  @property({ type: Object })
-  innerStyle?: any;
 
   static styles = css`
     :host {
@@ -68,7 +74,7 @@ export class NumberedList extends LitElement {
     }
 
     .item-marker {
-      color: var(--sl-color-neutral-400);
+      color: var(--marker-color, var(--sl-color-neutral-400));
       line-height: 1;
       font-size: var(--sl-font-size-medium);
       font-weight: var(--sl-font-weight-normal);
@@ -78,12 +84,12 @@ export class NumberedList extends LitElement {
     }
 
     a {
-      color: var(--sl-color-indigo-500);
+      color: var(--link-color, var(--sl-color-indigo-500));
       text-decoration: none;
     }
 
     a:hover {
-      color: var(--sl-color-indigo-400);
+      color: var(--link-hover-color, var(--sl-color-indigo-400));
     }
   `;
 
@@ -93,15 +99,13 @@ export class NumberedList extends LitElement {
         ${this.items.map(
           (item, idx) =>
             html`
-              <li>
+              <li style=${ifDefined(item.style)}>
                 <div class="item-marker">${item.order || idx + 1}.</div>
                 <div class="item-content">${item.content}</div>
               </li>
             `
         )}
       </ol>
-
-      ${this.innerStyle}
     `;
   }
 }
