@@ -101,6 +101,9 @@ class SwarmCrawlJob(SwarmJobMixin, CrawlJob):
         # likely fails as containers still shutting down
         # await loop.run_in_executor(None, delete_volumes, volumes)
 
+    async def _change_crawl_config(self, cid):
+        raise NotImplementedError("Not Supported")
+
 
 # ============================================================================
 @app.on_event("startup")

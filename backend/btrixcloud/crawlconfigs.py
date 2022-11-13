@@ -54,8 +54,8 @@ class RawCrawlConfig(BaseModel):
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
-    include: Union[str, List[str], None]
-    exclude: Union[str, List[str], None]
+    include: Union[str, List[str], None] = None
+    exclude: Union[str, List[str], None] = None
 
     depth: Optional[int] = -1
     limit: Optional[int] = 0
@@ -215,7 +215,11 @@ class CrawlConfigOps:
         return self._file_rx.sub("-", string.lower())
 
     async def add_crawl_config(
-        self, config: CrawlConfigIn, archive: Archive, user: User
+        self,
+        config: CrawlConfigIn,
+        archive: Archive,
+        user: User,
+        for_running_crawl=False,
     ):
         """Add new crawl config"""
         data = config.dict()
@@ -223,6 +227,9 @@ class CrawlConfigOps:
         data["userid"] = user.id
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        if for_running_crawl:
+            data["crawlAttemptCount"] = 1
 
         profile_filename = None
         if config.profileid:
@@ -244,7 +251,9 @@ class CrawlConfigOps:
             async with await self.dbclient.start_session() as sesh:
                 async with sesh.start_transaction():
                     if (
-                        await self.make_inactive_or_delete(old_config, data["_id"])
+                        await self.make_inactive_or_delete(
+                            old_config, data["_id"], for_running_crawl=for_running_crawl
+                        )
                         == "deleted"
                     ):
                         data["oldId"] = old_config.oldId
@@ -365,7 +374,6 @@ class CrawlConfigOps:
         for res in results:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
-            print("config", config.id, flush=True)
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 
@@ -440,7 +448,10 @@ class CrawlConfigOps:
         return config_cls.from_dict(res)
 
     async def make_inactive_or_delete(
-        self, crawlconfig: CrawlConfig, new_id: uuid.UUID = None
+        self,
+        crawlconfig: CrawlConfig,
+        new_id: uuid.UUID = None,
+        for_running_crawl=False,
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
@@ -449,14 +460,21 @@ class CrawlConfigOps:
         if new_id:
             crawlconfig.newId = query["newId"] = new_id
 
-        if await self.get_running_crawl(crawlconfig):
+        is_running = await self.get_running_crawl(crawlconfig) is not None
+
+        if is_running != for_running_crawl:
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
 
         # set to either "deleted" or "deactivated"
         status = None
 
+        other_crawl_count = crawlconfig.crawlAttemptCount
+        # don't count current crawl, if for running crawl
+        if for_running_crawl:
+            other_crawl_count -= 1
+
         # if no crawls have been run, actually delete
-        if not crawlconfig.crawlAttemptCount and not crawlconfig.crawlCount:
+        if not other_crawl_count:
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "aid": crawlconfig.aid}
             )
@@ -494,6 +512,41 @@ class CrawlConfigOps:
                 status = await self.make_inactive_or_delete(crawlconfig)
 
         return {"success": True, "status": status}
+
+    async def copy_add_remove_exclusion(self, regex, cid, archive, user, add=True):
+        """create a copy of existing crawl config, with added exclusion regex"""
+        # get crawl config
+        crawl_config = await self.get_crawl_config(cid, archive, active_only=False)
+
+        # update exclusion
+        exclude = crawl_config.config.exclude or []
+        if isinstance(exclude, str):
+            exclude = [exclude]
+
+        if add:
+            if regex in exclude:
+                raise HTTPException(status_code=400, detail="exclusion_already_exists")
+
+            exclude.append(regex)
+        else:
+            if regex not in exclude:
+                raise HTTPException(status_code=400, detail="exclusion_not_found")
+
+            exclude.remove(regex)
+
+        crawl_config.config.exclude = exclude
+
+        # create new config
+        new_config = CrawlConfigIn(**crawl_config.serialize())
+
+        # pylint: disable=invalid-name
+        new_config.oldId = crawl_config.id
+
+        result, _ = await self.add_crawl_config(
+            new_config, archive, user, for_running_crawl=True
+        )
+
+        return result.inserted_id
 
 
 # ============================================================================

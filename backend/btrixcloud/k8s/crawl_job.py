@@ -45,6 +45,30 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
 
         return await super().load_initial_scale()
 
+    async def _change_crawl_config(self, cid):
+        """patch existing crawl statefulset to use new crawlconfig id
+        this will cause the crawl to restart with new config"""
+        patch_config = {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "volumes": [
+                            {
+                                "name": "crawl-config",
+                                "configMap": {"name": f"crawl-config-{cid}"},
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        await self.apps_api.patch_namespaced_stateful_set(
+            name=f"crawl-{self.job_id}", namespace=self.namespace, body=patch_config
+        )
+
+        return {"success": True}
+
     async def _get_crawl(self):
         try:
             return await self.apps_api.read_namespaced_stateful_set(

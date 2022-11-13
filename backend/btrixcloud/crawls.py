@@ -94,8 +94,6 @@ class CrawlOut(Crawl):
     configName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
 
-    watchIPs: Optional[List[str]] = []
-
 
 # ============================================================================
 class ListCrawlOut(BaseMongoModel):
@@ -264,9 +262,6 @@ class CrawlOps:
 
         crawl = CrawlOut.from_dict(res)
 
-        # pylint: disable=invalid-name
-        crawl.watchIPs = [str(i) for i in range(crawl.scale)]
-
         return await self._resolve_crawl_refs(crawl, archive)
 
     async def _resolve_crawl_refs(
@@ -288,6 +283,7 @@ class CrawlOps:
 
     async def _resolve_signed_urls(self, files, archive: Archive):
         if not files:
+            print("no files")
             return
 
         delta = timedelta(seconds=self.presign_duration)
@@ -327,6 +323,8 @@ class CrawlOps:
 
         if updates:
             asyncio.create_task(self._update_presigned(updates))
+
+        print("presigned", out_files)
 
         return out_files
 
@@ -417,13 +415,10 @@ class CrawlOps:
         redis = None
 
         try:
-            redis = await aioredis.from_url(
-                self.get_redis_url(crawl_id), encoding="utf-8", decode_responses=True
-            )
-
+            redis = await self.get_redis(crawl_id)
             total = await redis.llen(f"{crawl_id}:q")
-            results = await redis.lrange(f"{crawl_id}:q", offset, count)
-            results = [json.loads(result)["url"] for result in results]
+            results = await redis.lrange(f"{crawl_id}:q", -offset - count, -offset - 1)
+            results = [json.loads(result)["url"] for result in reversed(results)]
         except exceptions.ConnectionError:
             # can't connect to redis, likely not initialized yet
             pass
@@ -435,39 +430,130 @@ class CrawlOps:
 
         return {"total": total, "results": results, "matched": matched}
 
-    async def match_crawl_queue(self, crawl_id, regex):
-        """get crawl queue"""
+    async def iter_crawl_queue(self, regex, redis, crawl_id, total, step=50):
+        """iterate over urls that match regex in crawl queue list"""
 
+    async def match_crawl_queue(self, crawl_id, regex):
+        """get list of urls that match regex"""
         total = 0
+        redis = None
 
         try:
-            redis = await aioredis.from_url(
-                self.get_redis_url(crawl_id), encoding="utf-8", decode_responses=True
-            )
-
+            redis = await self.get_redis(crawl_id)
             total = await redis.llen(f"{crawl_id}:q")
         except exceptions.ConnectionError:
             # can't connect to redis, likely not initialized yet
             pass
 
-        matched = []
         regex = re.compile(regex)
-
+        matched = []
         step = 50
 
         for count in range(0, total, step):
-            results = await redis.lrange(f"{crawl_id}:q", count, count + step)
-            for result in results:
+            results = await redis.lrange(f"{crawl_id}:q", -count - step, -count - 1)
+            for result in reversed(results):
                 url = json.loads(result)["url"]
                 if regex.search(url):
                     matched.append(url)
 
         return {"total": total, "matched": matched}
 
-    def get_redis_url(self, crawl_id):
+    async def filter_crawl_queue(self, crawl_id, regex):
+        """filter out urls that match regex"""
+        total = 0
+        redis = None
+
+        q_key = f"{crawl_id}:q"
+        s_key = f"{crawl_id}:s"
+
+        try:
+            redis = await self.get_redis(crawl_id)
+            total = await redis.llen(q_key)
+        except exceptions.ConnectionError:
+            # can't connect to redis, likely not initialized yet
+            pass
+
+        dircount = -1
+        regex = re.compile(regex)
+        step = 50
+
+        count = 0
+        num_removed = 0
+
+        # pylint: disable=fixme
+        # todo: do this in a more efficient way?
+        # currently quite inefficient as redis does not have a way
+        # to atomically check and remove value from list
+        # so removing each jsob block by value
+        while count < total:
+            if dircount == -1 and count > total / 2:
+                dircount = 1
+            results = await redis.lrange(q_key, -count - step, -count - 1)
+            count += step
+            for result in reversed(results):
+                url = json.loads(result)["url"]
+                if regex.search(url):
+                    await redis.srem(s_key, url)
+                    res = await redis.lrem(q_key, dircount, result)
+                    if res:
+                        count -= res
+                        num_removed += res
+                        print(f"Removed {result}: {res}", flush=True)
+
+        return num_removed
+
+    async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
         # pylint: disable=line-too-long
-        return f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+        redis_url = f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+
+        return await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
+
+    async def add_exclusion(self, crawl_id, regex, archive, user):
+        """create new config with additional exclusion, copying existing config"""
+
+        raw = await self.get_crawl_raw(crawl_id, archive)
+
+        cid = raw.get("cid")
+
+        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
+            regex, cid, archive, user, add=True
+        )
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$set": {"cid": new_cid}}
+        )
+
+        # restart crawl pods
+        change_c = self.crawl_manager.change_crawl_config(crawl_id, archive.id, new_cid)
+
+        filter_q = self.filter_crawl_queue(crawl_id, regex)
+
+        _, num_removed = await asyncio.gather(change_c, filter_q)
+
+        return {"new_cid": new_cid, "num_removed": num_removed}
+
+    async def remove_exclusion(self, crawl_id, regex, archive, user):
+        """create new config with exclusion removed, copying existing config"""
+
+        raw = await self.get_crawl_raw(crawl_id, archive)
+
+        cid = raw.get("cid")
+
+        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
+            regex, cid, archive, user, add=False
+        )
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$set": {"cid": new_cid}}
+        )
+
+        # restart crawl pods
+        await self.crawl_manager.change_crawl_config(crawl_id, archive.id, new_cid)
+
+        return {"new_cid": new_cid}
 
 
 # ============================================================================
@@ -594,6 +680,32 @@ def init_crawls_api(
         await ops.get_crawl_raw(crawl_id, archive)
 
         return await ops.match_crawl_queue(crawl_id, regex)
+
+    @app.post(
+        "/archives/{aid}/crawls/{crawl_id}/exclusions",
+        tags=["crawls"],
+    )
+    async def add_exclusion(
+        crawl_id,
+        regex: str,
+        archive: Archive = Depends(archive_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+
+        return await ops.add_exclusion(crawl_id, regex, archive, user)
+
+    @app.delete(
+        "/archives/{aid}/crawls/{crawl_id}/exclusions",
+        tags=["crawls"],
+    )
+    async def remove_exclusion(
+        crawl_id,
+        regex: str,
+        archive: Archive = Depends(archive_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+
+        return await ops.remove_exclusion(crawl_id, regex, archive, user)
 
     return ops
 
