@@ -8,6 +8,10 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
 
+export type ExclusionRemoveEvent = CustomEvent<{
+  value: string;
+}>;
+
 /**
  * Crawl queue exclusion table
  *
@@ -19,7 +23,7 @@ import type { Exclusion } from "./queue-exclusion-form";
  * </btrix-queue-exclusion-table>
  * ```
  *
- * @event on-remove { value: string; }
+ * @event on-remove ExclusionRemoveEvent
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
@@ -207,7 +211,7 @@ export class QueueExclusionTable extends LiteElement {
     this.dispatchEvent(
       new CustomEvent("on-remove", {
         detail: exclusion,
-      })
+      }) as ExclusionRemoveEvent
     );
   }
 }

@@ -5,6 +5,7 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import merge from "lodash/fp/merge";
 
 import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
+import type { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
@@ -104,6 +105,9 @@ export class CrawlTemplatesNew extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  @state()
+  private exclusionFieldErrorMessage?: string;
 
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
@@ -446,10 +450,13 @@ export class CrawlTemplatesNew extends LiteElement {
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
         editable
-        @on-remove=${console.debug}
+        @on-remove=${this.handleRemoveRegex}
       ></btrix-queue-exclusion-table>
       <div class="mt-2">
-        <btrix-queue-exclusion-form @on-add=${this.handleAddRegex}>
+        <btrix-queue-exclusion-form
+          fieldErrorMessage=${this.exclusionFieldErrorMessage || ""}
+          @on-add=${this.handleAddRegex}
+        >
         </btrix-queue-exclusion-form>
       </div>
     `;
@@ -507,15 +514,29 @@ export class CrawlTemplatesNew extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
+        exclude: this.exclusions,
       };
     }
 
     return template;
   }
 
+  private handleRemoveRegex(e: ExclusionRemoveEvent) {
+    const { value } = e.detail;
+    if (!this.exclusions || !value) return;
+    this.exclusions = this.exclusions.filter((v) => v !== value);
+  }
+
   private handleAddRegex(e: ExclusionAddEvent) {
-    const { regex } = e.detail;
-    console.log(regex);
+    this.exclusionFieldErrorMessage = "";
+    const { regex, onSuccess } = e.detail;
+    if (this.exclusions && this.exclusions.indexOf(regex) > -1) {
+      this.exclusionFieldErrorMessage = msg("Exclusion already exists");
+      return;
+    }
+
+    this.exclusions = [...(this.exclusions || []), regex];
+    onSuccess();
   }
 
   private async onSubmit(event: {
