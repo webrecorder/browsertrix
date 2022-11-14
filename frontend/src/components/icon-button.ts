@@ -97,13 +97,35 @@ export class IconButton extends LitElement {
 
   render() {
     return html`<button
-      type=${this.type}
+      type="submit"
       class=${this.variant}
       ?disabled=${this.disabled}
+      @click=${this.handleClick}
     >
       ${this.loading
         ? html`<sl-spinner></sl-spinner>`
         : html`<sl-icon name=${this.name}></sl-icon>`}
     </button>`;
+  }
+
+  private handleClick(e: MouseEvent) {
+    if (this.disabled || this.loading) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (this.type === "submit") {
+      this.submit();
+    }
+  }
+
+  private submit() {
+    const form = (this.closest("form") ||
+      this.closest("sl-form")) as HTMLFormElement;
+
+    if (form) {
+      form.submit();
+    }
   }
 }
