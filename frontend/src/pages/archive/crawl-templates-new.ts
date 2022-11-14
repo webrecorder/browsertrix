@@ -445,6 +445,7 @@ export class CrawlTemplatesNew extends LiteElement {
     return html`
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
+        editable
         @on-remove=${console.debug}
       ></btrix-queue-exclusion-table>
       <div class="mt-2">
