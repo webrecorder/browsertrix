@@ -75,6 +75,7 @@ const theme = css`
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
     --sl-input-label-font-size-medium: var(--sl-font-size-small);
     --sl-input-label-font-size-large: var(--sl-font-size-medium);
+    --sl-input-label-color: var(--sl-color-neutral-800);
   }
 
   .sl-toast-stack {
