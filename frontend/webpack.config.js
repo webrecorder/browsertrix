@@ -5,6 +5,7 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const childProcess = require("child_process");
+const packageJSON = require("./package.json");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -24,7 +25,7 @@ const WEBSOCKET_HOST =
     ? new URL(process.env.API_BASE_URL).host
     : process.env.WEBSOCKET_HOST || "";
 
-// Get git info to use as Glitchtip release version
+// Get git info for release version info
 
 const execCommand = (cmd, defValue) => {
   try {
@@ -101,7 +102,9 @@ module.exports = {
         rwp_base_url: RWP_BASE_URL,
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
-        commit_hash: `${gitBranch} (${commitHash})`,
+        version: packageJSON.version,
+        gitBranch,
+        commitHash,
       },
       // Need to block during local development for HMR:
       inject: isDevServer ? "head" : true,

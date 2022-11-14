@@ -15,7 +15,9 @@
     ></script>
   </head>
   <body class="text-base">
-    <browsertrix-app></browsertrix-app>
+    <browsertrix-app
+      version="v<%= version %>-<%= commitHash %>"
+    ></browsertrix-app>
 
     <script>
       const isDev = "<%= environment %>" === "development";
@@ -24,7 +26,7 @@
       if (isDev && dsn) {
         Sentry.init({
           dsn: dsn,
-          release: "<%= commit_hash %>",
+          release: "<%= gitBranch %> (<%= commitHash %>) v<%= version %>",
           environment: "<%= environment %>",
           debug: isDev,
           autoSessionTracking: false, // Turn off unsupported page/session tracking
