@@ -94,6 +94,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private configCode: string = "";
 
   @state()
+  private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
+
+  @state()
   private isSubmitting: boolean = false;
 
   @state()
@@ -119,6 +122,7 @@ export class CrawlTemplatesNew extends LiteElement {
       this.isConfigCodeView = true;
     }
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
+    this.exclusions = this.initialCrawlTemplate.config.exclude;
     this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
   }
@@ -440,7 +444,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
     return html`
       <btrix-queue-exclusion-table
-        .config=${this.initialCrawlTemplate.config}
+        .exclusions=${this.exclusions}
         @on-remove=${console.debug}
       ></btrix-queue-exclusion-table>
       <div class="mt-2">
