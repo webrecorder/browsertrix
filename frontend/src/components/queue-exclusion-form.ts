@@ -67,6 +67,11 @@ export class QueueExclusionForm extends LiteElement {
     }
   }
 
+  disconnectedCallback(): void {
+    this.onInput.cancel();
+    super.disconnectedCallback();
+  }
+
   render() {
     return html`
       <fieldset>
@@ -197,7 +202,9 @@ export class QueueExclusionForm extends LiteElement {
     );
   }
 
-  private handleAdd() {
+  private async handleAdd() {
+    this.onInput.flush();
+    await this.updateComplete;
     if (!this.inputValue) return;
 
     let regex = this.inputValue;
