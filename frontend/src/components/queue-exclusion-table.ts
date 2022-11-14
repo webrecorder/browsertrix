@@ -89,7 +89,7 @@ export class QueueExclusionTable extends LiteElement {
       this.getColumnClassNames(0, this.results.length);
 
     return html`<btrix-details open disabled>
-      <h4 slot="title">${msg("Exclusion Table")}</h4>
+      <h4 slot="title">${msg("Exclusions")}</h4>
       <div slot="summary-description">
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination

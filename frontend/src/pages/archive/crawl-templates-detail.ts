@@ -607,6 +607,17 @@ export class CrawlTemplatesDetail extends LiteElement {
             `
           : ""}
       </div>
+      <div class="mb-5">
+        ${this.crawlTemplate?.config.exclude?.length
+          ? html`
+              <btrix-queue-exclusion-table
+                .exclusions=${this.crawlTemplate.config.exclude}
+              >
+              </btrix-queue-exclusion-table>
+            `
+          : html` <div class="text-sm text-0-600">${msg("Exclusions")}</div>
+              ${msg("None")}`}
+      </div>
 
       <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
         <span slot="summary" class="text-sm">
