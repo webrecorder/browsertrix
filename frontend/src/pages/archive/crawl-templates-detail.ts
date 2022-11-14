@@ -3,6 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import merge from "lodash/fp/merge";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -10,6 +11,8 @@ import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule, humanizeSchedule } from "../../utils/cron";
 import "../../components/crawl-scheduler";
+import { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
+import { ExclusionAddEvent } from "../../components/queue-exclusion-form";
 
 const SEED_URLS_MAX = 3;
 
@@ -44,6 +47,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   private configCode: string = "";
 
   @state()
+  private exclusions: CrawlConfig["exclude"] = [];
+
+  @state()
   private isSubmittingUpdate: boolean = false;
 
   @state()
@@ -52,9 +58,22 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  updated(changedProperties: any) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("crawlConfigId")) {
       this.initializeCrawlTemplate();
+    } else if (this.crawlTemplate) {
+      if (changedProperties.get("isConfigCodeView") !== undefined) {
+        if (this.isConfigCodeView) {
+          this.configCode = jsonToYaml(
+            merge(this.crawlTemplate.config, {
+              exclude: this.exclusions,
+            })
+          );
+        } else if (this.isConfigCodeView === false) {
+          this.exclusions =
+            (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+        }
+      }
     }
   }
 
@@ -72,6 +91,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.isConfigCodeView = true;
       }
       this.configCode = jsonToYaml(this.crawlTemplate.config);
+      this.exclusions = this.crawlTemplate.config.exclude || [];
     } catch (e: any) {
       this.notify({
         message:
@@ -686,6 +706,8 @@ export class CrawlTemplatesDetail extends LiteElement {
             ></btrix-select-browser-profile>
           </div>
 
+          <div>${this.renderExclusionEditor()}</div>
+
           <div class="text-right">
             <sl-button
               type="text"
@@ -1032,6 +1054,30 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderExclusionEditor() {
+    return html`
+      <btrix-queue-exclusion-table
+        .exclusions=${this.exclusions}
+        editable
+        @on-remove=${(e: ExclusionRemoveEvent) => {
+          if (!this.exclusions) return;
+          const { value } = e.detail;
+          this.exclusions = this.exclusions.filter((v) => v !== value);
+        }}
+      ></btrix-queue-exclusion-table>
+      <div class="mt-2">
+        <btrix-queue-exclusion-form
+          @on-add=${(e: ExclusionAddEvent) => {
+            const { regex, onSuccess } = e.detail;
+            this.exclusions = [...(this.exclusions || []), regex];
+            onSuccess();
+          }}
+        >
+        </btrix-queue-exclusion-form>
+      </div>
+    `;
+  }
+
   async getCrawlTemplate(): Promise<CrawlTemplate> {
     const data: CrawlTemplate = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs/${this.crawlConfigId}`,
@@ -1103,6 +1149,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
+        exclude: this.exclusions,
       };
     }
 
