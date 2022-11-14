@@ -330,7 +330,8 @@ export class App extends LiteElement {
           ></sl-icon-button>
         </div>
         <div>
-          <btrix-locale-picker></btrix-locale-picker>
+          <!-- TODO re-enable when translations are added -->
+          <!-- <btrix-locale-picker></btrix-locale-picker> -->
         </div>
       </footer>
     `;
