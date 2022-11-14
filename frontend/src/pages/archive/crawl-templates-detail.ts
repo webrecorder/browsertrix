@@ -538,6 +538,29 @@ export class CrawlTemplatesDetail extends LiteElement {
     const configCodeYaml = jsonToYaml(this.crawlTemplate?.config || {});
 
     return html`
+      <div class="mb-5">
+        <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
+        ${this.crawlTemplate
+          ? html`
+              ${this.crawlTemplate.profileid
+                ? html`<a
+                    class="font-medium text-neutral-700 hover:text-neutral-900"
+                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle"
+                      >${this.crawlTemplate.profileName}</span
+                    >
+                  </a>`
+                : html`<span class="text-0-400">${msg("None")}</span>`}
+            `
+          : ""}
+      </div>
+
       <div class="mb-5" role="table">
         <div
           class="hidden md:grid grid-cols-5 gap-4 items-end text-xs md:text-sm text-0-600"
@@ -606,28 +629,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       </div>
 
       <div class="mb-5">
-        <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
-        ${this.crawlTemplate
-          ? html`
-              ${this.crawlTemplate.profileid
-                ? html`<a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle"
-                      >${this.crawlTemplate.profileName}</span
-                    >
-                  </a>`
-                : html`<span class="text-0-400">${msg("None")}</span>`}
-            `
-          : ""}
-      </div>
-      <div class="mb-5">
         ${this.crawlTemplate?.config.exclude?.length
           ? html`
               <btrix-queue-exclusion-table
@@ -676,6 +677,13 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             : ""}
 
+          <div>
+            <btrix-select-browser-profile
+              archiveId=${this.archiveId}
+              .profileId=${this.crawlTemplate.profileid || null}
+              .authState=${this.authState}
+            ></btrix-select-browser-profile>
+          </div>
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
               ${this.isConfigCodeView
@@ -697,16 +705,9 @@ export class CrawlTemplatesDetail extends LiteElement {
           <div class="grid gap-5${this.isConfigCodeView ? " hidden" : ""}">
             ${this.renderSeedsForm()}
           </div>
-
-          <div>
-            <btrix-select-browser-profile
-              archiveId=${this.archiveId}
-              .profileId=${this.crawlTemplate.profileid || null}
-              .authState=${this.authState}
-            ></btrix-select-browser-profile>
+          <div class="${this.isConfigCodeView ? " hidden" : ""}">
+            ${this.renderExclusionEditor()}
           </div>
-
-          <div>${this.renderExclusionEditor()}</div>
 
           <div class="text-right">
             <sl-button
