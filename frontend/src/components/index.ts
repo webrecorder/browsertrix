@@ -69,6 +69,9 @@ import("./crawl-pending-exclusions").then(({ CrawlPendingExclusions }) => {
 import("./badge").then(({ Badge }) => {
   customElements.define("btrix-badge", Badge);
 });
+import("./icon-button").then(({ IconButton }) => {
+  customElements.define("btrix-icon-button", IconButton);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

@@ -88,7 +88,11 @@ export class ExclusionEditor extends LiteElement {
   private renderTable() {
     return html`
       ${this.config
-        ? html`<btrix-queue-exclusion-table .config=${this.config}>
+        ? html`<btrix-queue-exclusion-table
+            ?isActiveCrawl=${this.isActiveCrawl}
+            .config=${this.config}
+            @on-remove=${this.deleteExclusion}
+          >
           </btrix-queue-exclusion-table>`
         : html`
             <div class="flex items-center justify-center my-9 text-xl">
@@ -134,6 +138,45 @@ export class ExclusionEditor extends LiteElement {
       this.regex = value;
     } else {
       this.regex = "";
+    }
+  }
+
+  private async deleteExclusion(e: CustomEvent) {
+    const { value } = e.detail;
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${value}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (data.new_cid) {
+        this.notify({
+          message: msg(html`Removed exclusion: <code>${value}</code>`),
+          type: "success",
+          icon: "check2-circle",
+        });
+
+        this.dispatchEvent(
+          new CustomEvent("on-success", {
+            detail: { cid: data.new_cid },
+          })
+        );
+      } else {
+        throw data;
+      }
+    } catch (e: any) {
+      this.notify({
+        message:
+          e.message === "crawl_running_cant_deactivate"
+            ? msg("Cannot remove exclusion when crawl is no longer running.")
+            : msg("Sorry, couldn't remove exclusion at this time."),
+        type: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 

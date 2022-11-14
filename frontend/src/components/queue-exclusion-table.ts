@@ -18,11 +18,16 @@ import type { Exclusion } from "./queue-exclusion-form";
  * >
  * </btrix-queue-exclusion-table>
  * ```
+ *
+ * @event on-remove { value: string; }
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
   config?: CrawlConfig;
+
+  @property({ type: Boolean })
+  isActiveCrawl = false;
 
   @state()
   private results: Exclusion[] = [];
@@ -34,11 +39,27 @@ export class QueueExclusionTable extends LiteElement {
   private pageSize: number = 5;
 
   @state()
-  private total?: number;
+  private exclusionToRemove?: string;
+
+  private get total() {
+    return this.config?.exclude?.length;
+  }
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("config") && this.config?.exclude) {
-      this.total = this.config.exclude.length;
+      this.exclusionToRemove = "";
+
+      const prevConfig = changedProperties.get("config");
+      if (prevConfig) {
+        const prevTotal = prevConfig.exclude?.length;
+        const lastPage = Math.ceil(this.total! / this.pageSize);
+        if (this.total! < prevTotal) {
+          this.page = Math.min(this.page, lastPage);
+        } else if (this.total! > prevTotal) {
+          this.page = lastPage;
+        }
+      }
+
       this.updatePageResults();
     } else if (changedProperties.has("page")) {
       this.updatePageResults();
@@ -60,11 +81,15 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   render() {
+    const [typeColClass, valueColClass, actionColClass] =
+      this.getColumnClassNames(0, this.results.length);
+
     return html`<btrix-details open disabled>
       <h4 slot="title">${msg("Exclusion Table")}</h4>
       <div slot="summary-description">
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination
+              page=${this.page}
               size=${this.pageSize}
               totalCount=${this.total}
               @page-change=${(e: CustomEvent) => {
@@ -78,13 +103,20 @@ export class QueueExclusionTable extends LiteElement {
         class="w-full leading-none border-separate"
         style="border-spacing: 0;"
       >
-        <thead class="text-xs text-neutral-700">
-          <tr class="text-left">
-            <th class="font-normal px-2 pb-1 w-40">${msg("Exclusion Type")}</th>
-            <th class="font-normal px-2 pb-1">${msg("Exclusion Value")}</th>
+        <thead class="text-xs font-mono text-neutral-600 uppercase">
+          <tr class="h-10 text-left">
+            <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
+              ${msg("Exclusion Type")}
+            </th>
+            <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
+              ${msg("Exclusion Value")}
+            </th>
+            <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
+              <span class="sr-only">Row actions</span>
+            </th>
           </tr>
         </thead>
-        <tbody class="text-neutral-600">
+        <tbody>
           ${this.results.map(this.renderItem)}
         </tbody>
       </table>
@@ -96,17 +128,8 @@ export class QueueExclusionTable extends LiteElement {
     index: number,
     arr: Exclusion[]
   ) => {
-    let typeColClass = "";
-    let valueColClass = "";
-
-    if (index === 0) {
-      typeColClass = " rounded-tl";
-      valueColClass = " rounded-tr";
-    }
-    if (index === arr.length - 1) {
-      typeColClass = " border-b rounded-bl";
-      valueColClass = " border-b rounded-br";
-    }
+    const [typeColClass, valueColClass, actionColClass] =
+      this.getColumnClassNames(index + 1, arr.length);
 
     let typeLabel: string = exclusion.type;
     let value: any = exclusion.value;
@@ -126,14 +149,65 @@ export class QueueExclusionTable extends LiteElement {
     }
 
     return html`
-      <tr class="even:bg-neutral-50 h-8">
-        <td class="border-t border-x p-2 whitespace-nowrap${typeColClass}">
+      <tr
+        class="h-10 ${this.exclusionToRemove === value
+          ? "text-neutral-200"
+          : "text-neutral-600"}"
+      >
+        <td class="py-2 px-3 whitespace-nowrap ${typeColClass}">
           ${typeLabel}
         </td>
-        <td class="border-t border-r p-2 font-mono${valueColClass}">
-          ${value}
+        <td class="p-2 font-mono ${valueColClass}">${value}</td>
+        <td class="text-[1rem] text-center ${actionColClass}">
+          <btrix-icon-button
+            name="trash"
+            @click=${() => this.removeExclusion(exclusion)}
+          ></btrix-icon-button>
         </td>
       </tr>
     `;
   };
+
+  private getColumnClassNames(index: number, count: number) {
+    let typeColClass = "border-t border-x";
+    let valueColClass = "border-t border-r";
+    let actionColClass = "border-t border-r";
+
+    if (index === 0) {
+      typeColClass += " rounded-tl";
+
+      if (this.isActiveCrawl) {
+        actionColClass += " rounded-tr";
+      } else {
+        valueColClass += " rounded-tr";
+      }
+    }
+
+    if (index === count) {
+      typeColClass += " border-b rounded-bl";
+
+      if (this.isActiveCrawl) {
+        valueColClass += " border-b";
+        actionColClass += " border-b rounded-br";
+      } else {
+        valueColClass += " border-b rounded-br";
+      }
+    }
+
+    if (!this.isActiveCrawl) {
+      actionColClass += " hidden";
+    }
+
+    return [typeColClass, valueColClass, actionColClass];
+  }
+
+  private removeExclusion(exclusion: Exclusion) {
+    this.exclusionToRemove = exclusion.value;
+
+    this.dispatchEvent(
+      new CustomEvent("on-remove", {
+        detail: exclusion,
+      })
+    );
+  }
 }

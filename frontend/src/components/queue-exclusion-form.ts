@@ -59,7 +59,7 @@ export class QueueExclusionForm extends LiteElement {
     return html`
       <sl-form @sl-submit=${this.onSubmit}>
         <div class="flex">
-          <div class="pr-1 flex-0 w-40">
+          <div class="px-1 flex-0 w-40">
             <sl-select
               name="excludeType"
               placeholder=${msg("Select Type")}
@@ -73,8 +73,8 @@ export class QueueExclusionForm extends LiteElement {
               <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
             </sl-select>
           </div>
-          <div class="pl-1 flex-1 md:flex">
-            <div class="flex-1 mb-2 md:mb-0 md:mr-2">
+          <div class="pl-1 flex-1 flex">
+            <div class="flex-1 mr-1 mb-2 md:mb-0">
               <sl-input
                 class=${this.fieldErrorMessage ? "invalid" : ""}
                 name="excludeValue"
@@ -122,15 +122,15 @@ export class QueueExclusionForm extends LiteElement {
                   : ""}
               </sl-input>
             </div>
-            <div class="flex-0">
-              <sl-button
-                type="primary"
-                size="small"
-                submit
+            <div class="flex-0 w-10 pt-1 text-center">
+              <btrix-icon-button
+                type="submit"
+                variant="primary"
+                name="plus-lg"
                 ?disabled=${this.isRegexInvalid || this.isSubmitting}
                 ?loading=${this.isSubmitting}
-                >${msg("Add Exclusion")}</sl-button
               >
+              </btrix-icon-button>
             </div>
           </div>
         </div>
