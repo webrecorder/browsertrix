@@ -131,6 +131,21 @@ export class CrawlTemplatesNew extends LiteElement {
     super.connectedCallback();
   }
 
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.get("isConfigCodeView") !== undefined) {
+      if (this.isConfigCodeView) {
+        this.configCode = jsonToYaml(
+          merge(this.initialCrawlTemplate.config, {
+            exclude: this.exclusions,
+          })
+        );
+      } else if (this.isConfigCodeView === false) {
+        this.exclusions =
+          (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+      }
+    }
+  }
+
   render() {
     return html`
       <nav class="mb-5">
