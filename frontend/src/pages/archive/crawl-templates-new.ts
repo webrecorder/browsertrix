@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 
+import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
@@ -443,10 +444,7 @@ export class CrawlTemplatesNew extends LiteElement {
         @on-remove=${console.debug}
       ></btrix-queue-exclusion-table>
       <div class="mt-2">
-        <btrix-queue-exclusion-form
-          @on-regex=${console.debug}
-          @submit=${console.debug}
-        >
+        <btrix-queue-exclusion-form @on-add=${this.handleAddRegex}>
         </btrix-queue-exclusion-form>
       </div>
     `;
@@ -508,6 +506,11 @@ export class CrawlTemplatesNew extends LiteElement {
     }
 
     return template;
+  }
+
+  private handleAddRegex(e: ExclusionAddEvent) {
+    const { regex } = e.detail;
+    console.log(regex);
   }
 
   private async onSubmit(event: {

@@ -10,6 +10,16 @@ export type Exclusion = {
   value: string;
 };
 
+export type ExclusionChangeEvent = CustomEvent<{
+  value: string;
+  valid: boolean;
+}>;
+
+export type ExclusionAddEvent = CustomEvent<{
+  regex: string;
+  onSuccess: () => void;
+}>;
+
 const MIN_LENGTH = 2;
 
 /**
@@ -17,12 +27,14 @@ const MIN_LENGTH = 2;
  *
  * Usage example:
  * ```ts
- * <btrix-queue-exclusion-form @on-input=${this.handleInput}>
- * </btrix-queue-exclusion-form>
+ * <btrix-queue-exclusion-form
+ *  @on-change=${this.handleExclusionChange}
+ *  @on-add=${this.handleExclusionAdd}
+ * ></btrix-queue-exclusion-form>
  * ```
  *
- * @event on-regex { value: string; valid: boolean; }
- * @event submit
+ * @event on-change ExclusionChangeEvent
+ * @event on-add ExclusionAddEvent
  */
 @localized()
 export class QueueExclusionForm extends LiteElement {
@@ -51,17 +63,16 @@ export class QueueExclusionForm extends LiteElement {
       this.checkInputValidity();
 
       await this.updateComplete;
-      this.dispatchRegexEvent();
+      this.dispatchChangeEvent();
     }
   }
 
   render() {
     return html`
-      <sl-form @sl-submit=${this.onSubmit}>
+      <fieldset>
         <div class="flex">
           <div class="px-1 flex-0 w-40">
             <sl-select
-              name="excludeType"
               placeholder=${msg("Select Type")}
               size="small"
               .value=${this.selectValue}
@@ -77,7 +88,6 @@ export class QueueExclusionForm extends LiteElement {
             <div class="flex-1 mr-1 mb-2 md:mb-0">
               <sl-input
                 class=${this.fieldErrorMessage ? "invalid" : ""}
-                name="excludeValue"
                 size="small"
                 autocomplete="off"
                 minlength=${MIN_LENGTH}
@@ -86,7 +96,7 @@ export class QueueExclusionForm extends LiteElement {
                   : "example.com/skip.*"}
                 .value=${this.inputValue}
                 ?disabled=${this.isSubmitting}
-                required
+                @keydown=${this.onKeyDown}
                 @sl-input=${this.onInput}
               >
                 ${this.fieldErrorMessage
@@ -124,23 +134,36 @@ export class QueueExclusionForm extends LiteElement {
             </div>
             <div class="flex-0 w-10 pt-1 text-center">
               <btrix-icon-button
-                type="submit"
                 variant="primary"
                 name="plus-lg"
-                ?disabled=${this.isRegexInvalid || this.isSubmitting}
+                ?disabled=${!this.inputValue ||
+                this.isRegexInvalid ||
+                this.isSubmitting}
                 ?loading=${this.isSubmitting}
+                @click=${this.onButtonClick}
               >
               </btrix-icon-button>
             </div>
           </div>
         </div>
-      </sl-form>
+      </fieldset>
     `;
   }
 
   private onInput = debounce(200)((e: any) => {
     this.inputValue = e.target.value;
   }) as any;
+
+  private onButtonClick() {
+    this.handleAdd();
+  }
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    e.stopPropagation();
+    if (e.key === "Enter") {
+      this.handleAdd();
+    }
+  };
 
   private checkInputValidity(): void {
     let isValid = true;
@@ -160,9 +183,9 @@ export class QueueExclusionForm extends LiteElement {
     this.isRegexInvalid = !isValid;
   }
 
-  private dispatchRegexEvent() {
+  private dispatchChangeEvent() {
     this.dispatchEvent(
-      new CustomEvent("on-regex", {
+      new CustomEvent("on-change", {
         detail: {
           value:
             this.selectValue === "text"
@@ -170,20 +193,27 @@ export class QueueExclusionForm extends LiteElement {
               : this.inputValue,
           valid: !this.isRegexInvalid,
         },
-      })
+      }) as ExclusionChangeEvent
     );
   }
 
-  private onSubmit(event: CustomEvent) {
+  private handleAdd() {
+    if (!this.inputValue) return;
+
+    let regex = this.inputValue;
+    if (this.selectValue === "text") {
+      regex = regexEscape(this.inputValue);
+    }
+
     this.dispatchEvent(
-      new CustomEvent("submit", {
+      new CustomEvent("on-add", {
         detail: {
-          formData: event.detail.formData,
+          regex,
           onSuccess: () => {
             this.inputValue = "";
           },
         },
-      })
+      }) as ExclusionAddEvent
     );
   }
 }
