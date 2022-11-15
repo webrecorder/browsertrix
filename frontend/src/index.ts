@@ -728,6 +728,10 @@ export class App extends LiteElement {
   }
 
   private startSyncBrowserTabs() {
+    // TODO remove this line after this change has been deployed
+    // for more than 24 hours
+    window.localStorage.removeItem(AuthService.storageKey);
+
     // Sync local auth state across window/tabs
     // Notify any already open windows that new window is open
     AuthService.broadcastChannel.postMessage({ name: "need_auth" });
