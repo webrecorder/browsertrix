@@ -12,6 +12,7 @@ yamllint = "==1.27.1"
 ansible-core = "==2.13"
 docker = "*"
 boto3 = "*"
+jmespath = "*"
 
 [dev-packages]
 
