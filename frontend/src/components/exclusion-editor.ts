@@ -1,10 +1,13 @@
 import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
+import type {
+  ExclusionAddEvent,
+  ExclusionChangeEvent,
+} from "./queue-exclusion-form";
 import type { CrawlConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
-import { regexEscape } from "../utils/string";
 
 type URLs = string[];
 type ResponseData = {
@@ -89,8 +92,8 @@ export class ExclusionEditor extends LiteElement {
     return html`
       ${this.config
         ? html`<btrix-queue-exclusion-table
-            ?isActiveCrawl=${this.isActiveCrawl}
-            .config=${this.config}
+            ?editable=${this.isActiveCrawl}
+            .exclusions=${this.config.exclude || []}
             @on-remove=${this.deleteExclusion}
           >
           </btrix-queue-exclusion-table>`
@@ -104,8 +107,8 @@ export class ExclusionEditor extends LiteElement {
             <btrix-queue-exclusion-form
               ?isSubmitting=${this.isSubmitting}
               fieldErrorMessage=${this.exclusionFieldErrorMessage}
-              @on-regex=${this.handleRegex}
-              @submit=${this.onSubmit}
+              @on-change=${this.handleRegexChange}
+              @on-add=${this.handleAddRegex}
             >
             </btrix-queue-exclusion-form>
           </div>`
@@ -131,7 +134,7 @@ export class ExclusionEditor extends LiteElement {
     ></btrix-crawl-queue>`;
   }
 
-  private handleRegex(e: CustomEvent) {
+  private handleRegexChange(e: ExclusionChangeEvent) {
     const { value, valid } = e.detail;
 
     if (valid) {
@@ -211,17 +214,10 @@ export class ExclusionEditor extends LiteElement {
     return data;
   }
 
-  private async onSubmit(e: CustomEvent) {
+  private async handleAddRegex(e: ExclusionAddEvent) {
     this.isSubmitting = true;
 
-    const { formData, onSuccess } = e.detail;
-    const excludeType = formData.get("excludeType");
-    const excludeValue = formData.get("excludeValue");
-    let regex = excludeValue;
-
-    if (excludeType === "text") {
-      regex = regexEscape(excludeValue);
-    }
+    const { regex, onSuccess } = e.detail;
 
     try {
       const data = await this.apiFetch(

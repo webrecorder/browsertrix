@@ -2,7 +2,10 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import merge from "lodash/fp/merge";
 
+import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
+import type { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
@@ -26,15 +29,15 @@ export type InitialCrawlTemplate = Pick<
   "name" | "config" | "profileid"
 >;
 
-const initialValues = {
+const defaultValue = {
   name: "",
-  runNow: true,
-  scale: "1",
+  profileid: null,
   config: {
     seeds: [],
     scopeType: "prefix",
+    exclude: [],
   },
-};
+} as InitialCrawlTemplate;
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,
   label: `${i + 1}`,
@@ -58,11 +61,19 @@ export class CrawlTemplatesNew extends LiteElement {
   @property({ type: String })
   archiveId!: string;
 
+  // Use custom property accessor to prevent
+  // overriding default crawl template values
   @property({ type: Object })
-  initialCrawlTemplate?: InitialCrawlTemplate;
+  get initialCrawlTemplate() {
+    return this._initialCrawlTemplate;
+  }
+  private _initialCrawlTemplate: InitialCrawlTemplate = defaultValue;
+  set initialCrawlTemplate(val: any) {
+    this._initialCrawlTemplate = merge(this._initialCrawlTemplate, val);
+  }
 
   @state()
-  private isRunNow: boolean = initialValues.runNow;
+  private isRunNow: boolean = true;
 
   @state()
   private scheduleInterval: ScheduleInterval | "" = "";
@@ -84,6 +95,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private configCode: string = "";
 
   @state()
+  private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
+
+  @state()
   private isSubmitting: boolean = false;
 
   @state()
@@ -91,6 +105,9 @@ export class CrawlTemplatesNew extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  @state()
+  private exclusionFieldErrorMessage?: string;
 
   private get formattededNextCrawlDate() {
     const utcSchedule = this.getUTCSchedule();
@@ -102,23 +119,31 @@ export class CrawlTemplatesNew extends LiteElement {
     // Show JSON editor view if complex initial config is specified
     // (e.g. cloning a template) since form UI doesn't support
     // all available fields in the config
-    const isComplexConfig = this.initialCrawlTemplate?.config.seeds.some(
+    const isComplexConfig = this.initialCrawlTemplate.config.seeds.some(
       (seed: any) => typeof seed !== "string"
     );
     if (isComplexConfig) {
       this.isConfigCodeView = true;
     }
-    this.initialCrawlTemplate = {
-      name: this.initialCrawlTemplate?.name || initialValues.name,
-      profileid: this.initialCrawlTemplate?.profileid || null,
-      config: {
-        ...initialValues.config,
-        ...this.initialCrawlTemplate?.config,
-      },
-    };
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
+    this.exclusions = this.initialCrawlTemplate.config.exclude;
     this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.get("isConfigCodeView") !== undefined) {
+      if (this.isConfigCodeView) {
+        this.configCode = jsonToYaml(
+          merge(this.initialCrawlTemplate.config, {
+            exclude: this.exclusions,
+          })
+        );
+      } else if (this.isConfigCodeView === false) {
+        this.exclusions =
+          (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+      }
+    }
   }
 
   render() {
@@ -158,7 +183,7 @@ export class CrawlTemplatesNew extends LiteElement {
               <div>
                 <sl-checkbox
                   name="runNow"
-                  ?checked=${initialValues.runNow}
+                  ?checked=${this.isRunNow}
                   @sl-change=${(e: any) => (this.isRunNow = e.target.checked)}
                   >${msg("Run immediately on save")}
                 </sl-checkbox>
@@ -202,14 +227,14 @@ export class CrawlTemplatesNew extends LiteElement {
             desc: "Example crawl template name",
           })}
           autocomplete="off"
-          value=${this.initialCrawlTemplate!.name}
+          value=${this.initialCrawlTemplate.name}
           required
         ></sl-input>
 
         <div>
           <btrix-select-browser-profile
             archiveId=${this.archiveId}
-            .profileId=${this.initialCrawlTemplate?.profileid || null}
+            .profileId=${this.initialCrawlTemplate.profileid}
             .authState=${this.authState}
             @on-change=${(e: any) =>
               (this.browserProfileId = e.detail.value
@@ -339,7 +364,7 @@ export class CrawlTemplatesNew extends LiteElement {
         class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid grid-cols-1 gap-5"
       >
         <div class="col-span-1">
-          <sl-select name="scale" value=${initialValues.scale}>
+          <sl-select name="scale" value="1">
             <label slot="label">
               <span class="inline-block align-middle">
                 ${msg("Crawler Instances")}
@@ -380,6 +405,7 @@ export class CrawlTemplatesNew extends LiteElement {
           class="col-span-1 grid gap-5${this.isConfigCodeView ? " hidden" : ""}"
         >
           ${this.renderSeedsForm()}
+          <div>${this.renderExclusionEditor()}</div>
         </div>
       </section>
     `;
@@ -397,13 +423,13 @@ export class CrawlTemplatesNew extends LiteElement {
           "Required. Separate URLs with a new line, space or comma."
         )}
         rows="3"
-        value=${this.initialCrawlTemplate!.config.seeds.join("\n")}
+        value=${this.initialCrawlTemplate.config.seeds.join("\n")}
         ?required=${!this.isConfigCodeView}
       ></sl-textarea>
       <sl-select
         name="scopeType"
         label=${msg("Scope Type")}
-        value=${this.initialCrawlTemplate!.config.scopeType!}
+        value=${this.initialCrawlTemplate.config.scopeType!}
       >
         <sl-menu-item value="page">Page</sl-menu-item>
         <sl-menu-item value="page-spa">Page SPA</sl-menu-item>
@@ -415,18 +441,39 @@ export class CrawlTemplatesNew extends LiteElement {
 
       <sl-checkbox
         name="extraHopsOne"
-        ?checked=${this.initialCrawlTemplate!.config.extraHops === 1}
+        ?checked=${this.initialCrawlTemplate.config.extraHops === 1}
         >${msg("Include External Links (“one hop out”)")}
       </sl-checkbox>
       <sl-input
         name="limit"
         label=${msg("Page Limit")}
         type="number"
-        value=${ifDefined(this.initialCrawlTemplate!.config.limit)}
+        value=${ifDefined(this.initialCrawlTemplate.config.limit)}
         placeholder=${msg("unlimited")}
       >
         <span slot="suffix">${msg("pages")}</span>
       </sl-input>
+    `;
+  }
+
+  private renderExclusionEditor() {
+    if (!this.initialCrawlTemplate.config) {
+      return;
+    }
+
+    return html`
+      <btrix-queue-exclusion-table
+        .exclusions=${this.exclusions}
+        editable
+        @on-remove=${this.handleRemoveRegex}
+      ></btrix-queue-exclusion-table>
+      <div class="mt-2">
+        <btrix-queue-exclusion-form
+          fieldErrorMessage=${this.exclusionFieldErrorMessage || ""}
+          @on-add=${this.handleAddRegex}
+        >
+        </btrix-queue-exclusion-form>
+      </div>
     `;
   }
 
@@ -482,10 +529,29 @@ export class CrawlTemplatesNew extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
+        exclude: this.exclusions,
       };
     }
 
     return template;
+  }
+
+  private handleRemoveRegex(e: ExclusionRemoveEvent) {
+    const { value } = e.detail;
+    if (!this.exclusions || !value) return;
+    this.exclusions = this.exclusions.filter((v) => v !== value);
+  }
+
+  private handleAddRegex(e: ExclusionAddEvent) {
+    this.exclusionFieldErrorMessage = "";
+    const { regex, onSuccess } = e.detail;
+    if (this.exclusions && this.exclusions.indexOf(regex) > -1) {
+      this.exclusionFieldErrorMessage = msg("Exclusion already exists");
+      return;
+    }
+
+    this.exclusions = [...(this.exclusions || []), regex];
+    onSuccess();
   }
 
   private async onSubmit(event: {

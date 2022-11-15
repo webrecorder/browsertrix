@@ -8,26 +8,30 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
 
+export type ExclusionRemoveEvent = CustomEvent<{
+  value: string;
+}>;
+
 /**
  * Crawl queue exclusion table
  *
  * Usage example:
  * ```ts
  * <btrix-queue-exclusion-table
- *   .config=${this.crawlTemplate.config}
+ *   .exclusions=${this.crawlTemplate.config.exclude}
  * >
  * </btrix-queue-exclusion-table>
  * ```
  *
- * @event on-remove { value: string; }
+ * @event on-remove ExclusionRemoveEvent
  */
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
-  config?: CrawlConfig;
+  exclusions?: CrawlConfig["exclude"];
 
   @property({ type: Boolean })
-  isActiveCrawl = false;
+  editable = false;
 
   @state()
   private results: Exclusion[] = [];
@@ -42,16 +46,16 @@ export class QueueExclusionTable extends LiteElement {
   private exclusionToRemove?: string;
 
   private get total() {
-    return this.config?.exclude?.length;
+    return this.exclusions?.length;
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("config") && this.config?.exclude) {
+    if (changedProperties.has("exclusions") && this.exclusions) {
       this.exclusionToRemove = "";
 
-      const prevConfig = changedProperties.get("config");
-      if (prevConfig) {
-        const prevTotal = prevConfig.exclude?.length;
+      const prevVal = changedProperties.get("exclusions");
+      if (prevVal) {
+        const prevTotal = prevVal.length;
         const lastPage = Math.ceil(this.total! / this.pageSize);
         if (this.total! < prevTotal) {
           this.page = Math.min(this.page, lastPage);
@@ -67,9 +71,9 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   private updatePageResults() {
-    if (!this.config?.exclude) return;
+    if (!this.exclusions) return;
 
-    this.results = this.config.exclude
+    this.results = this.exclusions
       .slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
       .map((str: any) => {
         const unescaped = str.replace(/\\/g, "");
@@ -85,7 +89,7 @@ export class QueueExclusionTable extends LiteElement {
       this.getColumnClassNames(0, this.results.length);
 
     return html`<btrix-details open disabled>
-      <h4 slot="title">${msg("Exclusion Table")}</h4>
+      <h4 slot="title">${msg("Exclusions")}</h4>
       <div slot="summary-description">
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination
@@ -176,7 +180,7 @@ export class QueueExclusionTable extends LiteElement {
     if (index === 0) {
       typeColClass += " rounded-tl";
 
-      if (this.isActiveCrawl) {
+      if (this.editable) {
         actionColClass += " rounded-tr";
       } else {
         valueColClass += " rounded-tr";
@@ -186,7 +190,7 @@ export class QueueExclusionTable extends LiteElement {
     if (index === count) {
       typeColClass += " border-b rounded-bl";
 
-      if (this.isActiveCrawl) {
+      if (this.editable) {
         valueColClass += " border-b";
         actionColClass += " border-b rounded-br";
       } else {
@@ -194,7 +198,7 @@ export class QueueExclusionTable extends LiteElement {
       }
     }
 
-    if (!this.isActiveCrawl) {
+    if (!this.editable) {
       actionColClass += " hidden";
     }
 
@@ -207,7 +211,7 @@ export class QueueExclusionTable extends LiteElement {
     this.dispatchEvent(
       new CustomEvent("on-remove", {
         detail: exclusion,
-      })
+      }) as ExclusionRemoveEvent
     );
   }
 }
