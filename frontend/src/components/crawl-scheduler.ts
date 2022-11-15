@@ -215,6 +215,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
 
   private onSubmit(event: SubmitEvent) {
     event.preventDefault();
+    event.stopPropagation();
     this.dispatchEvent(
       new CustomEvent("submit", {
         detail: {

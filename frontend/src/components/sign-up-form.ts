@@ -119,6 +119,7 @@ export class SignUpForm extends LiteElement {
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
+    event.stopPropagation();
     this.dispatchEvent(new CustomEvent("submit"));
 
     this.serverError = undefined;
