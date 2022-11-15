@@ -309,7 +309,7 @@ export class CrawlsList extends LiteElement {
                     >
                       <sl-icon
                         class="inline-block align-middle"
-                        name="trash"
+                        name="trash3"
                       ></sl-icon>
                       <span class="inline-block align-middle">
                         ${msg("Cancel immediately")}

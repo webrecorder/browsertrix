@@ -297,7 +297,7 @@ export class CrawlDetail extends LiteElement {
                   <sl-button size="small" @click=${this.cancel}>
                     <sl-icon
                       class="text-danger"
-                      name="trash"
+                      name="trash3"
                       slot="prefix"
                     ></sl-icon>
                     <span class="text-danger"> ${msg("Cancel")} </span>
