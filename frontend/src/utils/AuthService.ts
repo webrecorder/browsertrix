@@ -38,6 +38,33 @@ export default class AuthService {
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
 
+  static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+  static storage = {
+    getItem() {
+      return window.sessionStorage.getItem(AuthService.storageKey);
+    },
+    setItem(newValue: string) {
+      const oldValue = AuthService.storage.getItem();
+      window.sessionStorage.setItem(AuthService.storageKey, newValue);
+      AuthService.broadcastChannel.postMessage({
+        name: "storage",
+        key: AuthService.storageKey,
+        oldValue,
+        newValue,
+      });
+    },
+    removeItem() {
+      const oldValue = AuthService.storage.getItem();
+      window.sessionStorage.removeItem(AuthService.storageKey);
+      AuthService.broadcastChannel.postMessage({
+        name: "storage",
+        key: AuthService.storageKey,
+        oldValue,
+        newValue: null,
+      });
+    },
+  };
+
   get authState() {
     return this._authState;
   }
@@ -107,7 +134,7 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const auth = window.localStorage.getItem(AuthService.storageKey);
+    const auth = AuthService.storage.getItem();
 
     if (auth) {
       this._authState = JSON.parse(auth);
@@ -143,7 +170,7 @@ export default class AuthService {
 
   private revoke() {
     this._authState = null;
-    window.localStorage.removeItem(AuthService.storageKey);
+    AuthService.storage.removeItem();
   }
 
   private persist(auth: Auth) {
@@ -153,10 +180,7 @@ export default class AuthService {
       tokenExpiresAt: auth.tokenExpiresAt,
     };
 
-    window.localStorage.setItem(
-      AuthService.storageKey,
-      JSON.stringify(this._authState)
-    );
+    AuthService.storage.setItem(JSON.stringify(this._authState));
   }
 
   private async checkFreshness() {

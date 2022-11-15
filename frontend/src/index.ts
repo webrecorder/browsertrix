@@ -728,18 +728,34 @@ export class App extends LiteElement {
   }
 
   private startSyncBrowserTabs() {
-    // Sync auth state across tabs
-    window.addEventListener("storage", ({ key, newValue, oldValue }) => {
-      if (key === AuthService.storageKey && newValue !== oldValue) {
-        if (oldValue && newValue === null) {
-          // Logged out from another tab
-          this.onLogOut(
-            new CustomEvent("log-out", { detail: { redirect: true } })
-          );
-        } else if (!oldValue && newValue) {
-          // Logged in from another tab
-          const auth = JSON.parse(newValue);
-          this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+    // Sync local auth state across window/tabs
+    // Notify any already open windows that new window is open
+    AuthService.broadcastChannel.postMessage({ name: "need_auth" });
+    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
+      if (data.name === "need_auth") {
+        // Share auth with newly opened tab
+        const auth = AuthService.storage.getItem();
+        if (auth) {
+          AuthService.broadcastChannel.postMessage({
+            name: "storage",
+            key: AuthService.storageKey,
+            newValue: auth,
+          });
+        }
+      }
+      if (data.name === "storage") {
+        const { key, oldValue, newValue } = data;
+        if (key === AuthService.storageKey && newValue !== oldValue) {
+          if (oldValue && newValue === null) {
+            // Logged out from another tab
+            this.onLogOut(
+              new CustomEvent("log-out", { detail: { redirect: true } })
+            );
+          } else if (!oldValue && newValue) {
+            // Logged in from another tab
+            const auth = JSON.parse(newValue);
+            this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+          }
         }
       }
     });
