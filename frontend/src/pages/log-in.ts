@@ -231,20 +231,6 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
-      <style>
-        input {
-          transition: var(--sl-transition-fast) color,
-            var(--sl-transition-fast) border,
-            var(--sl-transition-fast) box-shadow,
-            var(--sl-transition-fast) background-color;
-        }
-
-        input:focus {
-          border-color: var(--sl-input-border-color-focus);
-          box-shadow: var(--sl-focus-ring);
-          outline: 0;
-        }
-      </style>
       <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
           <btrix-input

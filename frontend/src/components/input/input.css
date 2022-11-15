@@ -37,7 +37,8 @@
 
 .sl-input:focus {
   border-color: var(--sl-input-border-color-focus);
-  box-shadow: var(--sl-focus-ring);
+  box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-input-focus-ring-color);
+  outline: 0;
 }
 
 .sl-input:not(:only-child) {
