@@ -1,6 +1,6 @@
 import type { TemplateResult } from "lit";
 import { render } from "lit";
-import { state, query } from "lit/decorators.js";
+import { property, state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
@@ -40,6 +40,9 @@ type DialogContent = {
  */
 @localized()
 export class App extends LiteElement {
+  @property({ type: String })
+  version?: string;
+
   private router: APIRouter = new APIRouter(ROUTES);
   authService: AuthService = new AuthService();
 
@@ -320,17 +323,31 @@ export class App extends LiteElement {
   renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-between"
+        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-end"
       >
         <div>
-          <sl-icon-button
-            name="github"
+          <a
+            class="text-neutral-400"
             href="https://github.com/webrecorder/browsertrix-cloud"
             target="_blank"
-          ></sl-icon-button>
+            rel="noopener"
+          >
+            ${this.version
+              ? html`
+                  <span class="inline-block align-middle text-mono text-xs">
+                    ${this.version}
+                  </span>
+                `
+              : ""}
+            <sl-icon
+              name="github"
+              class="inline-block align-middle ml-1"
+            ></sl-icon>
+          </a>
         </div>
         <div>
-          <btrix-locale-picker></btrix-locale-picker>
+          <!-- TODO re-enable when translations are added -->
+          <!-- <btrix-locale-picker></btrix-locale-picker> -->
         </div>
       </footer>
     `;
