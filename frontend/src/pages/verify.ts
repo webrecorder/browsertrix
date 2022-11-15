@@ -23,7 +23,9 @@ export class Verify extends LiteElement {
 
   render() {
     if (this.serverError) {
-      return html`<btrix-alert type="danger">${this.serverError}</btrix-alert>`;
+      return html`<btrix-alert variant="danger"
+        >${this.serverError}</btrix-alert
+      >`;
     }
     return html` <div class="text-3xl"><sl-spinner></sl-spinner></div> `;
   }
@@ -68,7 +70,7 @@ export class Verify extends LiteElement {
     this.notify({
       title: msg("Email address verified"),
       message: isLoggedIn && !shouldLogOut ? "" : msg("Log in to continue."),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
       duration: 10000,
     });

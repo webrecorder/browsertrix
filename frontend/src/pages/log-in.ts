@@ -188,7 +188,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.successMessage) {
       successMessage = html`
         <div>
-          <btrix-alert type="success"
+          <btrix-alert variant="success"
             >${this.formState.context.successMessage}</btrix-alert
           >
         </div>
@@ -223,7 +223,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.formState.context.serverError}</btrix-alert
           >
         </div>
@@ -274,7 +274,7 @@ export class LogInPage extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.formState.value === "signingIn"}
           submit
           >${msg("Log in")}</sl-button
@@ -289,7 +289,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.formState.context.serverError}</btrix-alert
           >
         </div>
@@ -317,7 +317,7 @@ export class LogInPage extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.formState.value === "submittingForgotPassword"}
           submit
           >${msg("Request password reset")}</sl-button

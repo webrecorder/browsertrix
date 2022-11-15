@@ -540,7 +540,7 @@ export class CrawlsList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -581,7 +581,7 @@ export class CrawlsList extends LiteElement {
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't cancel crawl."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -603,7 +603,7 @@ export class CrawlsList extends LiteElement {
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't stop crawl."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -626,7 +626,7 @@ export class CrawlsList extends LiteElement {
               >View crawl</a
             >`
         ),
-        type: "warning",
+        variant: "warning",
         icon: "exclamation-triangle",
       });
 
@@ -657,7 +657,7 @@ export class CrawlsList extends LiteElement {
               >Watch crawl</a
             >`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
@@ -674,14 +674,14 @@ export class CrawlsList extends LiteElement {
                 Duplicate crawl template
               </button>`
           ),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
           duration: 8000,
         });
       } else {
         this.notify({
           message: msg("Sorry, couldn't run crawl at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -713,7 +713,7 @@ export class CrawlsList extends LiteElement {
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
   }

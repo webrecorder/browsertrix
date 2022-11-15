@@ -201,7 +201,7 @@ export class AccountSettings extends LiteElement {
     if (this.formState.context.successMessage) {
       successMessage = html`
         <div>
-          <btrix-alert type="success"
+          <btrix-alert variant="success"
             >${this.formState.context.successMessage}</btrix-alert
           >
         </div>
@@ -211,7 +211,7 @@ export class AccountSettings extends LiteElement {
     if (this.userInfo) {
       if (this.userInfo.isVerified) {
         verificationMessage = html`
-          <sl-tag type="success" size="small"
+          <sl-tag variant="success" size="small"
             >${msg("verified", {
               desc: "Status text when user email is verified",
             })}</sl-tag
@@ -219,7 +219,7 @@ export class AccountSettings extends LiteElement {
         `;
       } else {
         verificationMessage = html`
-          <sl-tag class="mr-2" type="warning" size="small"
+          <sl-tag class="mr-2" variant="warning" size="small"
             >${msg("unverified", {
               desc: "Status text when user email is not yet verified",
             })}</sl-tag
@@ -251,7 +251,7 @@ export class AccountSettings extends LiteElement {
           : html`
               <div>
                 <sl-button
-                  type="primary"
+                  variant="primary"
                   outline
                   @click=${() => this.formStateService.send("EDIT")}
                   >${msg("Change password")}</sl-button
@@ -269,7 +269,7 @@ export class AccountSettings extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.formState.context.serverError}</btrix-alert
           >
         </div>
@@ -315,13 +315,13 @@ export class AccountSettings extends LiteElement {
 
         <div>
           <sl-button
-            type="primary"
+            variant="primary"
             ?loading=${this.formState.value === "submittingForm"}
             submit
             >${msg("Update password")}</sl-button
           >
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => this.formStateService.send("CANCEL")}
             >${msg("Cancel")}</sl-button
           >

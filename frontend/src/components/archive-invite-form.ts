@@ -25,7 +25,7 @@ export class ArchiveInviteForm extends LiteElement {
     if (this.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -74,14 +74,14 @@ export class ArchiveInviteForm extends LiteElement {
 
         <div>
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?loading=${this.isSubmitting}
             ?disabled=${this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => this.dispatchEvent(new CustomEvent("cancel"))}
             >${msg("Cancel")}</sl-button
           >

@@ -190,14 +190,14 @@ export class CrawlTemplatesNew extends LiteElement {
               </div>
 
               ${this.serverError
-                ? html`<btrix-alert id="formError" type="danger"
+                ? html`<btrix-alert id="formError" variant="danger"
                     >${this.serverError}</btrix-alert
                   >`
                 : ""}
 
               <div>
                 <sl-button
-                  type="primary"
+                  variant="primary"
                   submit
                   ?loading=${this.isSubmitting}
                   ?disabled=${this.isSubmitting}
@@ -581,7 +581,7 @@ export class CrawlTemplatesNew extends LiteElement {
         message: crawlId
           ? msg("Crawl started with new template.")
           : msg("Crawl template created."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });

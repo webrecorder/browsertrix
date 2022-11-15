@@ -515,7 +515,7 @@ export class CrawlDetail extends LiteElement {
             ${isStopping
               ? html`
                   <div class="mb-4">
-                    <btrix-alert type="warning" class="text-sm">
+                    <btrix-alert variant="warning" class="text-sm">
                       ${msg("Crawl stopping...")}
                     </btrix-alert>
                   </div>
@@ -682,7 +682,7 @@ export class CrawlDetail extends LiteElement {
                       ${this.crawl.configName}
                     </span>
                     ${this.crawlTemplate?.inactive
-                      ? html`<sl-tag type="warning" size="small"
+                      ? html`<sl-tag variant="warning" size="small"
                           >${msg("Inactive")}</sl-tag
                         >`
                       : ""}
@@ -803,7 +803,7 @@ export class CrawlDetail extends LiteElement {
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-button
-                type=${value === this.crawl?.scale ? "neutral" : "default"}
+                variant=${value === this.crawl?.scale ? "neutral" : "default"}
                 aria-selected=${value === this.crawl?.scale}
                 pill
                 @click=${() => this.scale(value)}
@@ -816,7 +816,9 @@ export class CrawlDetail extends LiteElement {
       </div>
 
       <div class="mt-5 text-right">
-        <sl-button type="text" @click=${() => (this.openDialogName = undefined)}
+        <sl-button
+          variant="text"
+          @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
         >
       </div>
@@ -870,7 +872,7 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -924,7 +926,7 @@ export class CrawlDetail extends LiteElement {
       } else {
         this.notify({
           message: msg("Sorry, couldn't cancel crawl at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -946,7 +948,7 @@ export class CrawlDetail extends LiteElement {
       } else {
         this.notify({
           message: msg("Sorry, couldn't stop crawl at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -971,7 +973,7 @@ export class CrawlDetail extends LiteElement {
 
         this.notify({
           message: msg("Updated crawl scale."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
       } else {
@@ -983,7 +985,7 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't change crawl scale at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1012,7 +1014,7 @@ export class CrawlDetail extends LiteElement {
                 >View crawl</a
               >`
           ),
-          type: "warning",
+          variant: "warning",
           icon: "exclamation-triangle",
         });
 
@@ -1035,14 +1037,14 @@ export class CrawlDetail extends LiteElement {
         message: msg(
           html`Started crawl from <strong>${this.crawl.configName}</strong>.`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1066,7 +1068,7 @@ export class CrawlDetail extends LiteElement {
       message: msg(
         html`Done crawling <strong>${this.crawl.configName}</strong>.`
       ),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
 

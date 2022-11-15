@@ -38,7 +38,7 @@ export class SignUpForm extends LiteElement {
     if (this.serverError) {
       serverError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -108,7 +108,7 @@ export class SignUpForm extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.isSubmitting}
           submit
           >${msg("Sign up")}</sl-button

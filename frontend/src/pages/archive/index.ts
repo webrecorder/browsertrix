@@ -87,7 +87,7 @@ export class Archive extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't retrieve archive at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -297,7 +297,7 @@ export class Archive extends LiteElement {
     if (this.successfullyInvitedEmail) {
       successMessage = html`
         <div class="my-3">
-          <btrix-alert type="success"
+          <btrix-alert variant="success"
             >${msg(
               str`Successfully invited ${this.successfullyInvitedEmail}`
             )}</btrix-alert
@@ -310,7 +310,7 @@ export class Archive extends LiteElement {
       <div class="text-right">
         <sl-button
           href=${`/archives/${this.archiveId}/members/add-member`}
-          type="primary"
+          variant="primary"
           @click=${this.navLink}
           >${msg("Add Member")}</sl-button
         >

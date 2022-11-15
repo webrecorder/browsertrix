@@ -182,7 +182,7 @@ export class SelectBrowserProfile extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

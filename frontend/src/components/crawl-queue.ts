@@ -166,7 +166,7 @@ export class CrawlQueue extends LiteElement {
 
       ${this.matchedTotal
         ? html`
-            <btrix-badge type="danger" class="ml-1">
+            <btrix-badge variant="danger" class="ml-1">
               ${this.matchedTotal > 1
                 ? msg(str`-${this.matchedTotal.toLocaleString()} URLs`)
                 : msg(str`-1 URL`)}
@@ -193,7 +193,7 @@ export class CrawlQueue extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't fetch crawl queue at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

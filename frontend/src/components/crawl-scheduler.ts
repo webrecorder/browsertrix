@@ -144,7 +144,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
             />
             <sl-button-group>
               <sl-button
-                type=${this.scheduleTime.period === "AM"
+                variant=${this.scheduleTime.period === "AM"
                   ? "neutral"
                   : "default"}
                 aria-selected=${this.scheduleTime.period === "AM"}
@@ -157,7 +157,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
                 >${msg("AM", { desc: "Time AM/PM" })}</sl-button
               >
               <sl-button
-                type=${this.scheduleTime.period === "PM"
+                variant=${this.scheduleTime.period === "PM"
                   ? "neutral"
                   : "default"}
                 aria-selected=${this.scheduleTime.period === "PM"}
@@ -191,14 +191,14 @@ export class CrawlTemplatesScheduler extends LiteElement {
         <div class="mt-5${this.cancelable ? " text-right" : ""}">
           ${this.cancelable
             ? html`
-                <sl-button type="text" @click=${this.onCancel}
+                <sl-button variant="text" @click=${this.onCancel}
                   >${msg("Cancel")}</sl-button
                 >
               `
             : ""}
 
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}

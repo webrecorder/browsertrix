@@ -79,7 +79,7 @@ export class BrowserProfilesNew extends LiteElement {
       ${this.params.profileId
         ? html`
             <div class="mb-2">
-              <btrix-alert class="text-sm" type="info"
+              <btrix-alert class="text-sm" variant="info"
                 >${msg(
                   html`Extending <strong>${this.params.name}</strong>`
                 )}</btrix-alert
@@ -95,7 +95,10 @@ export class BrowserProfilesNew extends LiteElement {
           )}
         </p>
 
-        <sl-button type="primary" @click=${() => (this.isDialogVisible = true)}>
+        <sl-button
+          variant="primary"
+          @click=${() => (this.isDialogVisible = true)}
+        >
           ${msg("Next")}
         </sl-button>
       </div>
@@ -146,12 +149,15 @@ export class BrowserProfilesNew extends LiteElement {
         ></sl-textarea>
 
         <div class="text-right">
-          <sl-button type="text" @click=${() => (this.isDialogVisible = false)}>
+          <sl-button
+            variant="text"
+            @click=${() => (this.isDialogVisible = false)}
+          >
             ${msg("Back")}
           </sl-button>
 
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
@@ -185,7 +191,7 @@ export class BrowserProfilesNew extends LiteElement {
 
       this.notify({
         message: msg("Successfully created browser profile."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -197,7 +203,7 @@ export class BrowserProfilesNew extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

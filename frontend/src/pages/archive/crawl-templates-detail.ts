@@ -98,7 +98,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           e.statusCode === 404
             ? msg("Crawl template not found.")
             : msg("Sorry, couldn't retrieve crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -138,7 +138,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                       : html`
                           <sl-button
                             size="small"
-                            type="text"
+                            variant="text"
                             @click=${() => (this.openDialogName = "name")}
                           >
                             ${msg("Edit")}
@@ -206,7 +206,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   : html`
                       <sl-button
                         size="small"
-                        type="text"
+                        variant="text"
                         @click=${() => (this.openDialogName = "config")}
                       >
                         ${msg("Edit")}
@@ -228,7 +228,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   : html`
                       <sl-button
                         size="small"
-                        type="text"
+                        variant="text"
                         @click=${() => (this.openDialogName = "schedule")}
                       >
                         ${msg("Edit")}
@@ -415,7 +415,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlTemplate?.inactive) {
       if (this.crawlTemplate?.newId) {
         return html`
-          <btrix-alert type="info">
+          <btrix-alert variant="info">
             <sl-icon
               name="exclamation-octagon"
               class="inline-block align-middle mr-2"
@@ -434,7 +434,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       }
 
       return html`
-        <btrix-alert type="warning">
+        <btrix-alert variant="warning">
           <sl-icon
             name="exclamation-octagon"
             class="inline-block align-middle mr-2"
@@ -517,12 +517,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <div class="mt-5 text-right">
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
@@ -608,7 +608,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         ${seeds.length > SEED_URLS_MAX
           ? html`<sl-button
               class="mt-2"
-              type="neutral"
+              variant="neutral"
               size="small"
               @click=${() => (this.showAllSeedURLs = !this.showAllSeedURLs)}
             >
@@ -711,12 +711,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           <div class="text-right">
             <sl-button
-              type="text"
+              variant="text"
               @click=${() => (this.openDialogName = undefined)}
               >${msg("Cancel")}</sl-button
             >
             <sl-button
-              type="primary"
+              variant="primary"
               submit
               ?disabled=${this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
@@ -915,12 +915,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <div class="mt-5 text-right">
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
@@ -1106,7 +1106,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
   }
@@ -1206,13 +1206,13 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: msg(
           html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1238,7 +1238,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: isDeactivating
           ? msg(html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`)
           : msg(html`Deleted <strong>${this.crawlTemplate.name}</strong>.`),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch {
@@ -1246,7 +1246,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: isDeactivating
           ? msg("Sorry, couldn't deactivate crawl template at this time.")
           : msg("Sorry, couldn't delete crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1283,14 +1283,14 @@ export class CrawlTemplatesDetail extends LiteElement {
               >Watch crawl</a
             >`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1333,7 +1333,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Crawl template updated."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch (e: any) {
@@ -1341,7 +1341,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Something went wrong, couldn't update crawl template."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1374,7 +1374,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         this.notify({
           message: msg("Successfully saved changes."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
       } else {
@@ -1385,7 +1385,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Something went wrong, couldn't update crawl template."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

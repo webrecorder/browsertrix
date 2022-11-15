@@ -20,7 +20,7 @@ export class UsersInvite extends LiteElement {
     if (this.invitedEmail) {
       successMessage = html`
         <div>
-          <btrix-alert type="success"
+          <btrix-alert variant="success"
             >${msg(str`Sent invite to ${this.invitedEmail}`)}</btrix-alert
           >
         </div>
@@ -29,7 +29,7 @@ export class UsersInvite extends LiteElement {
     return html`<div class="grid gap-4">
       <header class="text-xl font-semibold">
         <h1 class="inline-block mr-2">${msg("Users")}</h1>
-        <sl-tag class="uppercase" type="primary" size="small"
+        <sl-tag class="uppercase" variant="primary" size="small"
           >${msg("admin")}</sl-tag
         >
       </header>

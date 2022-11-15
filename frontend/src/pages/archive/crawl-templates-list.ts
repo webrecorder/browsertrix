@@ -90,7 +90,7 @@ export class CrawlTemplatesList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl templates at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -157,7 +157,7 @@ export class CrawlTemplatesList extends LiteElement {
         <div class="grow-0 mb-4">
           <sl-button
             href=${`/archives/${this.archiveId}/crawl-templates/new`}
-            type="primary"
+            variant="primary"
             @click=${this.navLink}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -584,7 +584,7 @@ export class CrawlTemplatesList extends LiteElement {
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
   }
@@ -601,7 +601,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(html`Deactivated <strong>${template.name}</strong>.`),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -611,7 +611,7 @@ export class CrawlTemplatesList extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -629,7 +629,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(html`Deleted <strong>${template.name}</strong>.`),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -639,7 +639,7 @@ export class CrawlTemplatesList extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -673,14 +673,14 @@ export class CrawlTemplatesList extends LiteElement {
               >Watch crawl</a
             >`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -728,7 +728,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg("Successfully saved new schedule."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch (e: any) {
@@ -736,7 +736,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg("Something went wrong, couldn't update schedule."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

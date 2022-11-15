@@ -21,7 +21,7 @@ export class ResetPassword extends LiteElement {
     if (this.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -49,7 +49,7 @@ export class ResetPassword extends LiteElement {
 
             <sl-button
               class="w-full"
-              type="primary"
+              variant="primary"
               ?loading=${this.isSubmitting}
               submit
               >${msg("Change password")}</sl-button

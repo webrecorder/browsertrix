@@ -49,7 +49,7 @@ export class BrowserProfilesList extends LiteElement {
     return html`<header class="mb-3 text-right">
         <sl-button
           href=${`/archives/${this.archiveId}/browser-profiles/new`}
-          type="primary"
+          variant="primary"
           @click=${this.navLink}
         >
           <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -70,7 +70,7 @@ export class BrowserProfilesList extends LiteElement {
           ? ""
           : html`
               <div class="mb-4">
-                <btrix-alert type="warning" class="text-sm">
+                <btrix-alert variant="warning" class="text-sm">
                   ${msg(
                     "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
                   )}
@@ -233,7 +233,7 @@ export class BrowserProfilesList extends LiteElement {
         <div class="text-right">
           <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
           <sl-button
-            type="primary"
+            variant="primary"
             submit
             ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
             ?loading=${this.isSubmitting}
@@ -264,7 +264,7 @@ export class BrowserProfilesList extends LiteElement {
 
       this.notify({
         message: msg("Starting up browser for profile creation."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -280,7 +280,7 @@ export class BrowserProfilesList extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -294,7 +294,7 @@ export class BrowserProfilesList extends LiteElement {
 
       this.notify({
         message: msg("Starting up browser with selected profile..."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -310,7 +310,7 @@ export class BrowserProfilesList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -336,14 +336,14 @@ export class BrowserProfilesList extends LiteElement {
                   .join(", ")}</strong
               >. Please remove browser profile from crawl template to continue.`
           ),
-          type: "warning",
+          variant: "warning",
           icon: "exclamation-triangle",
           duration: 15000,
         });
       } else {
         this.notify({
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
 
@@ -354,7 +354,7 @@ export class BrowserProfilesList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -386,7 +386,7 @@ export class BrowserProfilesList extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

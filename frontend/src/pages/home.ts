@@ -93,7 +93,7 @@ export class Home extends LiteElement {
                 ></sl-input>
               </div>
               <div class="grow-0 mt-2 md:mt-0 text-right">
-                <sl-button type="neutral" submit>
+                <sl-button variant="neutral" submit>
                   <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
                   ${msg("Go")}</sl-button
                 >

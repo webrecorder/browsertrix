@@ -159,7 +159,7 @@ export class ExclusionEditor extends LiteElement {
       if (data.new_cid) {
         this.notify({
           message: msg(html`Removed exclusion: <code>${value}</code>`),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
 
@@ -177,7 +177,7 @@ export class ExclusionEditor extends LiteElement {
           e.message === "crawl_running_cant_deactivate"
             ? msg("Cannot remove exclusion when crawl is no longer running.")
             : msg("Sorry, couldn't remove exclusion at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -197,7 +197,7 @@ export class ExclusionEditor extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't fetch pending exclusions at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -231,7 +231,7 @@ export class ExclusionEditor extends LiteElement {
       if (data.new_cid) {
         this.notify({
           message: msg("Exclusion added."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
 
@@ -254,7 +254,7 @@ export class ExclusionEditor extends LiteElement {
       } else {
         this.notify({
           message: msg("Sorry, couldn't add exclusion at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
