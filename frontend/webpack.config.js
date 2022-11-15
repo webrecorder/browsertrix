@@ -106,9 +106,12 @@ module.exports = {
         gitBranch,
         commitHash,
       },
-      // Need to block during local development for HMR:
-      inject: isDevServer ? "head" : true,
-      scriptLoading: isDevServer ? "blocking" : "defer",
+      // TODO this breaks shoelace forms, but seems HMR is broken anyway?
+      // // Need to block during local development for HMR:
+      // inject: isDevServer ? "head" : true,
+      // scriptLoading: isDevServer ? "blocking" : "defer",
+      inject: true,
+      scriptLoading: "defer",
     }),
 
     // Lint js files

@@ -278,7 +278,7 @@ export class AccountSettings extends LiteElement {
 
     return html` <div class="max-w-sm">
       <h3 class="font-semibold mb-3">${msg("Change password")}</h3>
-      <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
+      <form @submit=${this.onSubmit} aria-describedby="formError">
         <div class="mb-5">
           <sl-input
             id="password"
@@ -326,16 +326,17 @@ export class AccountSettings extends LiteElement {
             >${msg("Cancel")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     </div>`;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: any) {
+    event.preventDefault();
     if (!this.authState) return;
 
     this.formStateService.send("SUBMIT");
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target);
     let nextAuthState: Auth | null = null;
 
     try {

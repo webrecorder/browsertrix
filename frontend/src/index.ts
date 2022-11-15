@@ -559,13 +559,13 @@ export class App extends LiteElement {
         </button>
 
         <div class="p-2">
-          <sl-form
-            @sl-submit=${(e: any) => {
-              const id = e.detail.formData.get("crawlId");
+          <form
+            @submit=${(e: any) => {
+              e.preventDefault();
+              const id = new FormData(e.target).get("crawlId");
               this.navigate(`/crawls/crawl/${id}`);
               e.target.closest("sl-dropdown").hide();
             }}
-            lab
           >
             <div class="flex flex-wrap items-center">
               <div class="mr-2 w-90">
@@ -583,7 +583,7 @@ export class App extends LiteElement {
                 >
               </div>
             </div>
-          </sl-form>
+          </form>
         </div>
       </sl-dropdown>
     `;

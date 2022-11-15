@@ -5,26 +5,21 @@
 import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.js";
 import "@shoelace-style/shoelace/dist/themes/light.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/button/button"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/button-group/button-group"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/checkbox/checkbox"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/details/details"
-);
+import "@shoelace-style/shoelace/dist/components/button/button";
+import "@shoelace-style/shoelace/dist/components/input/input";
+import "@shoelace-style/shoelace/dist/components/checkbox/checkbox";
+import "@shoelace-style/shoelace/dist/components/details/details";
+import "@shoelace-style/shoelace/dist/components/button-group/button-group";
+import "@shoelace-style/shoelace/dist/components/radio/radio";
+import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
+import "@shoelace-style/shoelace/dist/components/select/select";
+import "@shoelace-style/shoelace/dist/components/switch/switch";
+import "@shoelace-style/shoelace/dist/components/textarea/textarea";
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/divider/divider"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/form/form"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-bytes/format-bytes"
@@ -36,34 +31,19 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/icon/icon"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/input/input"
-);
-import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu/menu"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-item/menu-item"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/radio/radio"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/radio-group/radio-group"
-);
-import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/select/select"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/skeleton/skeleton"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/spinner/spinner"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/switch/switch"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab/tab"
@@ -73,9 +53,6 @@ import(
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/textarea/textarea"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tooltip/tooltip"

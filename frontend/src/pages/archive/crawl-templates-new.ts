@@ -173,7 +173,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
       <main class="mt-6">
         <div class="md:border md:rounded-lg">
-          <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
+          <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
               ${this.renderScheduleSettings()}
@@ -207,7 +207,7 @@ export class CrawlTemplatesNew extends LiteElement {
                 >
               </div>
             </div>
-          </sl-form>
+          </form>
         </div>
       </main>
     `;
@@ -554,13 +554,12 @@ export class CrawlTemplatesNew extends LiteElement {
     onSuccess();
   }
 
-  private async onSubmit(event: {
-    detail: { formData: FormData };
-    target: any;
-  }) {
+  private async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     if (!this.authState) return;
 
-    const params = this.parseTemplate(event.detail.formData);
+    const formData = new FormData(event.target as HTMLFormElement);
+    const params = this.parseTemplate(formData);
 
     this.serverError = undefined;
     this.isSubmitting = true;

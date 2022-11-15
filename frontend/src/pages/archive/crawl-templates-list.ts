@@ -688,7 +688,6 @@ export class CrawlTemplatesList extends LiteElement {
 
   private async onSubmitSchedule(event: {
     detail: { formData: FormData };
-    target: any;
   }): Promise<void> {
     if (!this.selectedTemplateForEdit) return;
 

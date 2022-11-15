@@ -322,7 +322,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (!this.profile) return;
 
     return html`
-      <sl-form @sl-submit=${this.onSubmitEdit}>
+      <form @submit=${this.onSubmitEdit}>
         <div class="mb-5">
           <sl-input
             name="name"
@@ -357,7 +357,7 @@ export class BrowserProfilesDetail extends LiteElement {
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -584,10 +584,11 @@ export class BrowserProfilesDetail extends LiteElement {
     this.isSubmittingBrowserChange = false;
   }
 
-  private async onSubmitEdit(e: { detail: { formData: FormData } }) {
+  private async onSubmitEdit(e: SubmitEvent) {
+    e.preventDefault;
     this.isSubmittingProfileChange = true;
 
-    const { formData } = e.detail;
+    const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
 

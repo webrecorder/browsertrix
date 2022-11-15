@@ -71,7 +71,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
     const utcSchedule = this.getUTCSchedule();
 
     return html`
-      <sl-form @sl-submit=${this.onSubmit}>
+      <form @submit=${this.onSubmit}>
         <div class="flex items-end">
           <div class="pr-2 flex-1">
             <sl-select
@@ -205,7 +205,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -213,8 +213,15 @@ export class CrawlTemplatesScheduler extends LiteElement {
     this.dispatchEvent(new CustomEvent("cancel", event));
   }
 
-  private onSubmit(event: any) {
-    this.dispatchEvent(new CustomEvent("submit", event));
+  private onSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    this.dispatchEvent(
+      new CustomEvent("submit", {
+        detail: {
+          formData: new FormData(event.target as HTMLFormElement),
+        },
+      })
+    );
   }
 
   /**

@@ -31,7 +31,7 @@ export class ResetPassword extends LiteElement {
     return html`
       <div class="w-full max-w-sm grid gap-5">
         <div class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
-          <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
+          <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="mb-5">
               <btrix-input
                 id="password"
@@ -54,7 +54,7 @@ export class ResetPassword extends LiteElement {
               type="submit"
               >${msg("Change password")}</sl-button
             >
-          </sl-form>
+          </form>
         </div>
 
         <div class="text-center">
@@ -69,10 +69,11 @@ export class ResetPassword extends LiteElement {
     `;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const password = formData.get("password") as string;
 
     const resp = await fetch("/api/auth/reset-password", {

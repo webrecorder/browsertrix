@@ -33,9 +33,9 @@ export class ArchiveInviteForm extends LiteElement {
     }
 
     return html`
-      <sl-form
+      <form
         class="max-w-md"
-        @sl-submit=${this.onSubmit}
+        @submit=${this.onSubmit}
         aria-describedby="formError"
       >
         <div class="mb-5">
@@ -86,16 +86,17 @@ export class ArchiveInviteForm extends LiteElement {
             >${msg("Cancel")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     if (!this.authState) return;
 
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {

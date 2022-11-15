@@ -194,7 +194,7 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private renderCreateForm() {
-    return html`<sl-form @sl-submit=${this.onSubmit}>
+    return html`<form @submit=${this.onSubmit}>
       <div class="grid gap-5">
         <div>
           <label
@@ -242,17 +242,18 @@ export class BrowserProfilesList extends LiteElement {
           </sl-button>
         </div>
       </div>
-    </sl-form>`;
+    </form>`;
   }
 
   private hideDialog() {
     this.navTo(`/archives/${this.archiveId}/browser-profiles`);
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const url = formData.get("url") as string;
 
     try {

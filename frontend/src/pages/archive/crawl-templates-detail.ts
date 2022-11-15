@@ -503,7 +503,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditName}>
+      <form @submit=${this.handleSubmitEditName}>
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -529,7 +529,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -663,7 +663,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     const shouldReplacingTemplate = this.crawlTemplate.crawlCount > 0;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
+      <form @submit=${this.handleSubmitEditConfiguration}>
         <div class="grid gap-5">
           ${shouldReplacingTemplate
             ? html`
@@ -724,7 +724,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             >
           </div>
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -885,7 +885,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditScale}>
+      <form @submit=${this.handleSubmitEditScale}>
         <sl-select
           name="scale"
           value=${this.crawlTemplate.scale}
@@ -927,7 +927,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -1111,8 +1111,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     });
   }
 
-  private async handleSubmitEditName(e: { detail: { formData: FormData } }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditName(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get("name") as string;
 
     await this.updateTemplate({ name });
@@ -1120,8 +1121,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     this.openDialogName = undefined;
   }
 
-  private async handleSubmitEditScale(e: { detail: { formData: FormData } }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditScale(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const scale = formData.get("scale") as string;
 
     await this.updateTemplate({ scale: +scale });
@@ -1129,10 +1131,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     this.openDialogName = undefined;
   }
 
-  private async handleSubmitEditConfiguration(e: {
-    detail: { formData: FormData };
-  }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditConfiguration(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;

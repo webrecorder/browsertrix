@@ -73,9 +73,10 @@ export class Home extends LiteElement {
     if (this.archiveList!.length) {
       return html`
         <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
-          <sl-form
-            @sl-submit=${(e: CustomEvent) => {
-              const id = e.detail.formData.get("crawlId");
+          <form
+            @submit=${(e: SubmitEvent) => {
+              const formData = new FormData(e.target as HTMLFormElement);
+              const id = formData.get("crawlId");
               this.navTo(`/crawls/crawl/${id}`);
             }}
           >
@@ -99,7 +100,7 @@ export class Home extends LiteElement {
                 >
               </div>
             </div>
-          </sl-form>
+          </form>
         </section>
 
         <div class="grid grid-cols-3 gap-8">
