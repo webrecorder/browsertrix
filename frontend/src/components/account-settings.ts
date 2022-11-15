@@ -288,7 +288,7 @@ export class AccountSettings extends LiteElement {
             label="${msg("Current password")}"
             aria-describedby="passwordError"
             autocomplete="current-password"
-            toggle-password
+            password-toggle
             required
           >
           </sl-input>
@@ -305,7 +305,7 @@ export class AccountSettings extends LiteElement {
             type="password"
             label="${msg("New password")}"
             autocomplete="new-password"
-            toggle-password
+            password-toggle
             required
           >
           </sl-input>

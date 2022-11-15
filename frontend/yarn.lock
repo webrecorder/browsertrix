@@ -293,10 +293,10 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.0.1.tgz#a6eda8ae29ac32fb59df50f3db14652a23f492c9"
   integrity sha512-nmv1syJ3ormbGq29GsuxGRK6BFq7Jhx+kVFyuuozz0Pckkvk1SGk2vpZZcdnj2vRZCETvlVB7KYgakUwgGmn+A==
 
-"@shoelace-style/shoelace@2.0.0-beta.80":
-  version "2.0.0-beta.80"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.80.tgz#f26fe6ed9e0bbacdfd3c45e6a49779d1460274f2"
-  integrity sha512-xSAak4FK2zWgAsINyul4k8DMiKPyyWS65VaM3DaTW7+feC/OL6jnTHHjkzmxZXoMoEaR9zB9NrBql6NSPtS5pA==
+"@shoelace-style/shoelace@2.0.0-beta.83":
+  version "2.0.0-beta.83"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.83.tgz#9ea923e969a2cfc7c0b8ad46c81822b04a1c1520"
+  integrity sha512-dHVBtapuqxSRu3klBZhf9/LtEtircaLLnDajNbhuiBiY7PVCxjjf/9Kyd/S/BpbhKwMICqJr+PaKoCTd2iWDJA==
   dependencies:
     "@floating-ui/dom" "^1.0.0"
     "@lit-labs/react" "^1.0.7"
