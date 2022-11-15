@@ -12,6 +12,7 @@ import "@shoelace-style/shoelace/dist/components/details/details";
 import "@shoelace-style/shoelace/dist/components/button-group/button-group";
 import "@shoelace-style/shoelace/dist/components/radio/radio";
 import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
+import "@shoelace-style/shoelace/dist/components/radio-button/radio-button";
 import "@shoelace-style/shoelace/dist/components/select/select";
 import "@shoelace-style/shoelace/dist/components/switch/switch";
 import "@shoelace-style/shoelace/dist/components/textarea/textarea";

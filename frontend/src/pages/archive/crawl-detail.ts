@@ -199,7 +199,7 @@ export class CrawlDetail extends LiteElement {
       </main>
 
       <sl-dialog
-        label=${msg(str`Change Crawl Scale`)}
+        label=${msg(str`Change Crawler Instances`)}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -802,20 +802,18 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div class="text-center">
-        <sl-button-group>
+        <sl-radio-group value=${this.crawl.scale}>
           ${scaleOptions.map(
             ({ value, label }) => html`
-              <sl-button
-                variant=${value === this.crawl?.scale ? "neutral" : "default"}
-                aria-selected=${value === this.crawl?.scale}
-                pill
+              <sl-radio-button
+                value=${value}
                 @click=${() => this.scale(value)}
                 ?disabled=${this.isSubmittingUpdate}
-                >${label}</sl-button
+                >${label}</sl-radio-button
               >
             `
           )}
-        </sl-button-group>
+        </sl-radio-group>
       </div>
 
       <div class="mt-5 text-right">

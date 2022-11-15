@@ -142,34 +142,28 @@ export class CrawlTemplatesScheduler extends LiteElement {
               type="hidden"
               value=${this.scheduleTime.period}
             />
-            <sl-button-group>
-              <sl-button
-                variant=${this.scheduleTime.period === "AM"
-                  ? "neutral"
-                  : "default"}
-                aria-selected=${this.scheduleTime.period === "AM"}
+            <sl-radio-group value=${this.scheduleTime.period}>
+              <sl-radio-button
+                value="AM"
                 ?disabled=${this.isScheduleDisabled}
                 @click=${() =>
                   (this.scheduleTime = {
                     ...this.scheduleTime,
                     period: "AM",
                   })}
-                >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+                >${msg("AM", { desc: "Time AM/PM" })}</sl-radio-button
               >
-              <sl-button
-                variant=${this.scheduleTime.period === "PM"
-                  ? "neutral"
-                  : "default"}
-                aria-selected=${this.scheduleTime.period === "PM"}
+              <sl-radio-button
+                value="PM"
                 ?disabled=${this.isScheduleDisabled}
                 @click=${() =>
                   (this.scheduleTime = {
                     ...this.scheduleTime,
                     period: "PM",
                   })}
-                >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+                >${msg("PM", { desc: "Time AM/PM" })}</sl-radio-button
               >
-            </sl-button-group>
+            </sl-radio-group>
           </div>
         </fieldset>
 
