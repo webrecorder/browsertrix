@@ -41,8 +41,8 @@ export class Pagination extends LitElement {
     }
 
     sl-input::part(input) {
-      margin: 0 0.5ch;
       text-align: center;
+      padding: 0 0.5ch;
     }
 
     .currentPage {
