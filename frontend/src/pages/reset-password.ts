@@ -39,7 +39,7 @@ export class ResetPassword extends LiteElement {
                 type="password"
                 label="${msg("New password")}"
                 autocomplete="new-password"
-                togglePassword
+                passwordToggle
                 required
               >
               </btrix-input>

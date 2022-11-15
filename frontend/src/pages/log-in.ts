@@ -250,7 +250,7 @@ export class LogInPage extends LiteElement {
             label=${msg("Password")}
             type="password"
             autocomplete="current-password"
-            togglePassword
+            passwordToggle
             required
           >
           </btrix-input>

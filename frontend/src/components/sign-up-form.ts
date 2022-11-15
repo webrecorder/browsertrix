@@ -81,7 +81,7 @@ export class SignUpForm extends LiteElement {
             type="password"
             label=${msg("Create a password")}
             autocomplete="new-password"
-            togglePassword
+            passwordToggle
             required
           >
           </btrix-input>

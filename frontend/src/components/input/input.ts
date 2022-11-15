@@ -43,7 +43,7 @@ export class Input extends LiteElement {
   required?: any;
 
   @property({ type: Boolean })
-  togglePassword?: boolean;
+  passwordToggle?: boolean;
 
   @state()
   isPasswordVisible: boolean = false;
@@ -66,7 +66,7 @@ export class Input extends LiteElement {
           value=${ifDefined(this.value)}
           ?required=${Boolean(this.required)}
         />
-        ${this.togglePassword
+        ${this.passwordToggle
           ? html`
               <sl-icon-button
                 class="sl-input-icon-button"
