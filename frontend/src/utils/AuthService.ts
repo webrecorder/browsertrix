@@ -9,11 +9,7 @@ export type Auth = {
   tokenExpiresAt: number;
 };
 
-type Session = {
-  sessionExpiresAt: number;
-};
-
-export type AuthState = (Auth & Session) | null;
+export type AuthState = Auth | null;
 
 type JWT = {
   user_id: string;
@@ -33,8 +29,6 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
-// Hardcode 24h expiry for now
-const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
 export default class AuthService {
   private timerId?: number;
@@ -147,7 +141,6 @@ export default class AuthService {
       username: auth.username,
       headers: auth.headers,
       tokenExpiresAt: auth.tokenExpiresAt,
-      sessionExpiresAt: Date.now() + SESSION_LIFETIME,
     };
 
     window.localStorage.setItem(
@@ -164,44 +157,39 @@ export default class AuthService {
     if (!this._authState) return;
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL - 500; // tweak padding to account for API fetch time
 
-    if (this._authState.sessionExpiresAt > paddedNow) {
-      if (this._authState.tokenExpiresAt > paddedNow) {
+    if (this._authState.tokenExpiresAt > paddedNow) {
+      // console.debug(
+      //   "fresh! restart timer tokenExpiresAt:",
+      //   new Date(this._authState.tokenExpiresAt)
+      // );
+      // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
+      // Restart timer
+      this.timerId = window.setTimeout(() => {
+        this.checkFreshness();
+      }, FRESHNESS_TIMER_INTERVAL);
+    } else {
+      try {
+        const auth = await this.refresh();
+        this._authState.headers = auth.headers;
+        this._authState.tokenExpiresAt = auth.tokenExpiresAt;
+        this.persist(this._authState);
+
         // console.debug(
-        //   "fresh! restart timer tokenExpiresAt:",
+        //   "refreshed. restart timer tokenExpiresAt:",
         //   new Date(this._authState.tokenExpiresAt)
         // );
-        // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
+        // console.debug(
+        //   "refreshed. restart timer paddedNow:",
+        //   new Date(paddedNow)
+        // );
+
         // Restart timer
         this.timerId = window.setTimeout(() => {
           this.checkFreshness();
         }, FRESHNESS_TIMER_INTERVAL);
-      } else {
-        try {
-          const auth = await this.refresh();
-          this._authState.headers = auth.headers;
-          this._authState.tokenExpiresAt = auth.tokenExpiresAt;
-          this.persist(this._authState);
-
-          // console.debug(
-          //   "refreshed. restart timer tokenExpiresAt:",
-          //   new Date(this._authState.tokenExpiresAt)
-          // );
-          // console.debug(
-          //   "refreshed. restart timer paddedNow:",
-          //   new Date(paddedNow)
-          // );
-
-          // Restart timer
-          this.timerId = window.setTimeout(() => {
-            this.checkFreshness();
-          }, FRESHNESS_TIMER_INTERVAL);
-        } catch (e) {
-          console.debug(e);
-        }
+      } catch (e) {
+        console.debug(e);
       }
-    } else {
-      console.info("Session expired, logging out");
-      this.logout();
     }
   }
 
