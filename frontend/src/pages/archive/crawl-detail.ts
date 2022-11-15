@@ -332,7 +332,10 @@ export class CrawlDetail extends LiteElement {
             : msg("Actions")}</sl-button
         >
 
-        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
             ? html`
                 <li

@@ -498,7 +498,10 @@ export class CrawlTemplatesList extends LiteElement {
           style="font-size: 1rem"
         ></sl-icon-button>
 
-        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           ${menuItems.map((item: HTMLTemplateResult) => item)}
         </ul>
       </sl-dropdown>

@@ -269,7 +269,10 @@ export class BrowserProfilesDetail extends LiteElement {
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
-        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"

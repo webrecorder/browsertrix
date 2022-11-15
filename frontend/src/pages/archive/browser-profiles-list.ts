@@ -155,7 +155,10 @@ export class BrowserProfilesList extends LiteElement {
           label=${msg("More")}
           style="font-size: 1rem"
         ></sl-icon-button>
-        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
