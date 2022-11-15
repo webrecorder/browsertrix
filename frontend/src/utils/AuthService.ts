@@ -163,7 +163,7 @@ export default class AuthService {
     console.debug("checkFreshness authState:", this._authState);
 
     if (!this._authState) return;
-    const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL;
+    const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL - 500; // tweak padding to account for API fetch time
 
     if (this._authState.sessionExpiresAt > paddedNow) {
       if (this._authState.tokenExpiresAt > paddedNow) {
