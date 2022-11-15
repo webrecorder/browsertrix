@@ -32,7 +32,8 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 }
 
 // Check for token freshness every 5 minutes
-const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
+// const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
+const FRESHNESS_TIMER_INTERVAL = 10 * 1000;
 // Hardcode 24h expiry for now
 const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
@@ -180,6 +181,7 @@ export default class AuthService {
           const auth = await this.refresh();
           this._authState.headers = auth.headers;
           this._authState.tokenExpiresAt = auth.tokenExpiresAt;
+          this.persist(this._authState);
 
           console.debug(
             "refreshed. restart timer tokenExpiresAt:",
