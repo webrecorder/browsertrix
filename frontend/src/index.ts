@@ -100,21 +100,7 @@ export class App extends LiteElement {
       this.syncViewState();
     });
 
-    // Sync auth state across tabs
-    window.addEventListener("storage", ({ key, newValue, oldValue }) => {
-      if (key === AuthService.storageKey && newValue !== oldValue) {
-        if (oldValue && newValue === null) {
-          // Logged out from another tab
-          this.onLogOut(
-            new CustomEvent("log-out", { detail: { redirect: true } })
-          );
-        } else if (!oldValue && newValue) {
-          // Logged in from another tab
-          const auth = JSON.parse(newValue);
-          this.onLoggedIn(AuthService.createLoggedInEvent(auth));
-        }
-      }
-    });
+    this.startSyncBrowserTabs();
   }
 
   async firstUpdated() {
@@ -738,6 +724,34 @@ export class App extends LiteElement {
           >
         </div>
       `,
+    });
+  }
+
+  private startSyncBrowserTabs() {
+    // Sync auth state across tabs
+    window.addEventListener("storage", ({ key, newValue, oldValue }) => {
+      if (key === AuthService.storageKey && newValue !== oldValue) {
+        if (oldValue && newValue === null) {
+          // Logged out from another tab
+          this.onLogOut(
+            new CustomEvent("log-out", { detail: { redirect: true } })
+          );
+        } else if (!oldValue && newValue) {
+          // Logged in from another tab
+          const auth = JSON.parse(newValue);
+          this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+        }
+      }
+    });
+
+    // Only have freshness check run in visible tab(s)
+    document.addEventListener("visibilitychange", () => {
+      if (!this.authService.authState) return;
+      if (document.visibilityState === "visible") {
+        this.authService.startFreshnessCheck();
+      } else {
+        this.authService.cancelFreshnessCheck();
+      }
     });
   }
 }

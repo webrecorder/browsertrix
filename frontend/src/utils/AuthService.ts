@@ -120,15 +120,24 @@ export default class AuthService {
   startPersist(auth: Auth) {
     if (auth) {
       this.persist(auth);
-      this.checkFreshness();
+      this.startFreshnessCheck();
     } else {
       console.warn("No authState to persist");
     }
   }
 
-  logout() {
+  startFreshnessCheck() {
+    window.clearTimeout(this.timerId);
+    this.checkFreshness();
+  }
+
+  cancelFreshnessCheck() {
     window.clearTimeout(this.timerId);
     this.timerId = undefined;
+  }
+
+  logout() {
+    this.cancelFreshnessCheck();
     this.revoke();
   }
 
@@ -151,8 +160,6 @@ export default class AuthService {
   }
 
   private async checkFreshness() {
-    window.clearTimeout(this.timerId);
-
     // console.debug("checkFreshness authState:", this._authState);
 
     if (!this._authState) return;
