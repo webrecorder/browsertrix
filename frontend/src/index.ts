@@ -206,7 +206,7 @@ export class App extends LiteElement {
       <sl-dialog
         id="globalDialog"
         ?no-header=${this.globalDialogContent?.noHeader === true}
-        label=${ifDefined(this.globalDialogContent?.label)}
+        label=${this.globalDialogContent?.label || msg("Message")}
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent?.body}</sl-dialog
       >
