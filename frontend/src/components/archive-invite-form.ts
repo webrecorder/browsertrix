@@ -52,20 +52,19 @@ export class ArchiveInviteForm extends LiteElement {
           </sl-input>
         </div>
         <div class="mb-5">
-          <sl-radio-group label="Select an option">
-            <sl-radio name="role" value=${AccessCode.owner}>
-              ${msg("Admin")}
-              <span class="text-gray-500">
-                - ${msg("Can manage crawls and invite others")}</span
-              >
+          <sl-radio-group
+            name="role"
+            label="Select an option"
+            value=${AccessCode.viewer}
+          >
+            <sl-radio value=${AccessCode.owner}>
+              ${msg("Admin")} - ${msg("Can manage crawls and invite others")}
             </sl-radio>
-            <sl-radio name="role" value=${AccessCode.crawler}>
-              ${msg("Crawler")}
-              <span class="text-gray-500"> - ${msg("Can manage crawls")}</span>
+            <sl-radio value=${AccessCode.crawler}>
+              ${msg("Crawler")} - ${msg("Can manage crawls")}
             </sl-radio>
-            <sl-radio name="role" value=${AccessCode.viewer} checked>
-              ${msg("Viewer")}
-              <span class="text-gray-500"> - ${msg("Can view crawls")}</span>
+            <sl-radio value=${AccessCode.viewer}>
+              ${msg("Viewer")} - ${msg("Can view crawls")}
             </sl-radio>
           </sl-radio-group>
         </div>
