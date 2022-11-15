@@ -51,7 +51,7 @@ export class ResetPassword extends LiteElement {
               class="w-full"
               variant="primary"
               ?loading=${this.isSubmitting}
-              submit
+              type="submit"
               >${msg("Change password")}</sl-button
             >
           </sl-form>

@@ -276,7 +276,7 @@ export class LogInPage extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.formState.value === "signingIn"}
-          submit
+          type="submit"
           >${msg("Log in")}</sl-button
         >
       </sl-form>
@@ -319,7 +319,7 @@ export class LogInPage extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.formState.value === "submittingForgotPassword"}
-          submit
+          type="submit"
           >${msg("Request password reset")}</sl-button
         >
       </sl-form>

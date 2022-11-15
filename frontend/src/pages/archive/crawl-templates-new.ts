@@ -198,7 +198,7 @@ export class CrawlTemplatesNew extends LiteElement {
               <div>
                 <sl-button
                   variant="primary"
-                  submit
+                  type="submit"
                   ?loading=${this.isSubmitting}
                   ?disabled=${this.isSubmitting}
                   >${this.isRunNow
@@ -306,7 +306,7 @@ export class CrawlTemplatesNew extends LiteElement {
               </sl-select>
               <sl-button-group>
                 <sl-button
-                  type=${this.scheduleTime.period === "AM"
+                  variant=${this.scheduleTime.period === "AM"
                     ? "neutral"
                     : "default"}
                   aria-selected=${this.scheduleTime.period === "AM"}
@@ -319,7 +319,7 @@ export class CrawlTemplatesNew extends LiteElement {
                   >${msg("AM", { desc: "Time AM/PM" })}</sl-button
                 >
                 <sl-button
-                  type=${this.scheduleTime.period === "PM"
+                  variant=${this.scheduleTime.period === "PM"
                     ? "neutral"
                     : "default"}
                   aria-selected=${this.scheduleTime.period === "PM"}

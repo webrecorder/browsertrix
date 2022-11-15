@@ -110,7 +110,7 @@ export class SignUpForm extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.isSubmitting}
-          submit
+          type="submit"
           >${msg("Sign up")}</sl-button
         >
       </sl-form>

@@ -9,7 +9,7 @@
     "@formatjs/intl-displaynames": "^5.2.5",
     "@formatjs/intl-getcanonicallocales": "^1.8.0",
     "@lit/localize": "^0.11.1",
-    "@shoelace-style/shoelace": "2.0.0-beta.63",
+    "@shoelace-style/shoelace": "2.0.0-beta.64",
     "@xstate/fsm": "^1.6.2",
     "axios": "^0.22.0",
     "color": "^4.0.1",

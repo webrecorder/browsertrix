@@ -577,7 +577,7 @@ export class App extends LiteElement {
                 ></sl-input>
               </div>
               <div class="grow-0">
-                <sl-button size="small" variant="neutral" submit>
+                <sl-button size="small" variant="neutral" type="submit">
                   <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
                   ${msg("Go")}</sl-button
                 >

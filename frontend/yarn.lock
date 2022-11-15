@@ -250,7 +250,7 @@
     "@types/sinon-chai" "^3.2.3"
     chai-a11y-axe "^1.3.2"
 
-"@popperjs/core@^2.7.0":
+"@popperjs/core@^2.11.2":
   version "2.11.6"
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.6.tgz#cee20bd55e68a1720bdab363ecf0c821ded4cd45"
   integrity sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==
@@ -286,17 +286,17 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-2.2.1.tgz#f3c7a81662091e9a3a96298765037f933a75a577"
   integrity sha512-bzKaqla+yF4qQhgZAaURq1HKtTP8fwIvIxcDw9JqHjophuMR1MI2xl1SnhFTYJhlQRctdKs2imZvFVtg5WERjQ==
 
-"@shoelace-style/shoelace@2.0.0-beta.63":
-  version "2.0.0-beta.63"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.63.tgz#592917cd58450bddaabc1b1a1f3967cd54d156ff"
-  integrity sha512-gG61J7+tV+4dq+TNfHUQPAgZQ7Pd3pOLPmr520A8nPmXX+5k1qSJlZPDBBBS0F+aRo7ady/GuU29+Y5IHHuRcQ==
+"@shoelace-style/shoelace@2.0.0-beta.64":
+  version "2.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.64.tgz#7713fc801917b434bf5d2f4ae4f4e0f7cb0fce36"
+  integrity sha512-hI8Aiu3DRAAJoyFoKy/lpl1uEbe/s086iZh9GYCkZ4bqIyGHo/lHtPy7L6kNaLA4eNj+c/luxiji5qLDbpY2ag==
   dependencies:
     "@lit-labs/react" "^1.0.1"
-    "@popperjs/core" "^2.7.0"
+    "@popperjs/core" "^2.11.2"
     "@shoelace-style/animations" "^1.1.0"
     "@shoelace-style/localize" "^2.1.3"
     color "4.1"
-    lit "^2.0.2"
+    lit "^2.1.0"
     qr-creator "^1.0.0"
 
 "@sinonjs/commons@^1.6.0", "@sinonjs/commons@^1.7.0", "@sinonjs/commons@^1.8.3":
@@ -3525,7 +3525,7 @@ lit@^2.0.0:
     lit-element "^3.0.0"
     lit-html "^2.0.0"
 
-lit@^2.0.2:
+lit@^2.1.0:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/lit/-/lit-2.4.1.tgz#21251ac14eb1ec8ca7cd15c9ac3564359809f7b5"
   integrity sha512-qohSgLiyN1cFnJG26dIiY03S4F49857A0AHQfnS0zYtnUVnD2MFvx+UT52rtXsIuNFQrnUupX+zyGSATlk1f/A==

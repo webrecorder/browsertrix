@@ -523,7 +523,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           >
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
             >${msg("Save Changes")}</sl-button
@@ -717,7 +717,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             >
             <sl-button
               variant="primary"
-              submit
+              type="submit"
               ?disabled=${this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
               >${msg("Save Changes")}</sl-button
@@ -921,7 +921,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           >
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
             >${msg("Save Changes")}</sl-button

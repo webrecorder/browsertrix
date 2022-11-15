@@ -317,7 +317,7 @@ export class AccountSettings extends LiteElement {
           <sl-button
             variant="primary"
             ?loading=${this.formState.value === "submittingForm"}
-            submit
+            type="submit"
             >${msg("Update password")}</sl-button
           >
           <sl-button

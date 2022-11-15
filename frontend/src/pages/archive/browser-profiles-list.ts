@@ -234,7 +234,7 @@ export class BrowserProfilesList extends LiteElement {
           <sl-button @click=${this.hideDialog}>${msg("Cancel")}</sl-button>
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
             ?loading=${this.isSubmitting}
           >

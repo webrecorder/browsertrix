@@ -75,7 +75,7 @@ export class ArchiveInviteForm extends LiteElement {
         <div>
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?loading=${this.isSubmitting}
             ?disabled=${this.isSubmitting}
             >${msg("Invite")}</sl-button

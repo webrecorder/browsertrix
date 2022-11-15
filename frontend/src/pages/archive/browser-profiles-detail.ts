@@ -351,7 +351,7 @@ export class BrowserProfilesDetail extends LiteElement {
           >
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?disabled=${this.isSubmittingProfileChange}
             ?loading=${this.isSubmittingProfileChange}
             >${msg("Save Changes")}</sl-button

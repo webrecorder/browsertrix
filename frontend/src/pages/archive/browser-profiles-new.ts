@@ -158,7 +158,7 @@ export class BrowserProfilesNew extends LiteElement {
 
           <sl-button
             variant="primary"
-            submit
+            type="submit"
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
