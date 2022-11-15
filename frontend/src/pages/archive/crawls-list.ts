@@ -418,7 +418,6 @@ export class CrawlsList extends LiteElement {
                   <span class="font-mono text-0-800 tracking-tighter">
                     <sl-format-bytes
                       value=${crawl.fileSize || 0}
-                      lang=${/* TODO localize: */ "en"}
                     ></sl-format-bytes>
                   </span>
                   <span class="text-neutral-500">

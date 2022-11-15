@@ -128,7 +128,7 @@
   resolved "https://registry.yarnpkg.com/@import-maps/resolve/-/resolve-1.0.1.tgz#1e9fcadcf23aa0822256a329aabca241879d37c9"
   integrity sha512-tWZNBIS1CoekcwlMuyG2mr0a1Wo5lb5lEHwwWvZo+5GLgr3e9LLDTtmgtCWEwBpXMkxn9D+2W9j2FY6eZQq0tA==
 
-"@lit-labs/react@^1.0.1":
+"@lit-labs/react@^1.0.2":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@lit-labs/react/-/react-1.1.0.tgz#665cf27cc83c5d0c6782ead5b906bd250619442b"
   integrity sha512-uvdOtzACm1WzTySpKnqXth62iPL+4yDow7cSZH7m7jHbDr+tZVXn44DJ5IoJuMjEevORRe57lNrOywFW6d4Fyg==
@@ -286,17 +286,17 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-2.2.1.tgz#f3c7a81662091e9a3a96298765037f933a75a577"
   integrity sha512-bzKaqla+yF4qQhgZAaURq1HKtTP8fwIvIxcDw9JqHjophuMR1MI2xl1SnhFTYJhlQRctdKs2imZvFVtg5WERjQ==
 
-"@shoelace-style/shoelace@2.0.0-beta.64":
-  version "2.0.0-beta.64"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.64.tgz#7713fc801917b434bf5d2f4ae4f4e0f7cb0fce36"
-  integrity sha512-hI8Aiu3DRAAJoyFoKy/lpl1uEbe/s086iZh9GYCkZ4bqIyGHo/lHtPy7L6kNaLA4eNj+c/luxiji5qLDbpY2ag==
+"@shoelace-style/shoelace@2.0.0-beta.65":
+  version "2.0.0-beta.65"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.65.tgz#4c46597459b92e465177138fadc1a85737fb2c49"
+  integrity sha512-8ijZWMv12rNrawVviaNRMDkk10zkKQFFRiRmvxs7b3ODfw2cJ9tf/uBiw97Sk4A70Efztzhyknimiz4gaeSb5A==
   dependencies:
-    "@lit-labs/react" "^1.0.1"
+    "@lit-labs/react" "^1.0.2"
     "@popperjs/core" "^2.11.2"
     "@shoelace-style/animations" "^1.1.0"
     "@shoelace-style/localize" "^2.1.3"
-    color "4.1"
-    lit "^2.1.0"
+    color "4.2"
+    lit "^2.1.2"
     qr-creator "^1.0.0"
 
 "@sinonjs/commons@^1.6.0", "@sinonjs/commons@^1.7.0", "@sinonjs/commons@^1.8.3":
@@ -1657,10 +1657,10 @@ color-string@^1.9.0:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
 
-color@4.1:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/color/-/color-4.1.0.tgz#9502e6a2dcacb26adf4c60910a27628d010b3de3"
-  integrity sha512-o2rkkxyLGgYoeUy1OodXpbPAQNmlNBrirQ8ODO8QutzDiDMNdezSOZLNnusQ6pUpCQJUsaJIo9DZJKqa2HgH7A==
+color@4.2:
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/color/-/color-4.2.3.tgz#d781ecb5e57224ee43ea9627560107c0e0c6463a"
+  integrity sha512-1rXeuUUiGGrykh+CeBdu5Ie7OJwinCgQY0bc7GCRxy5xVHy+moaqkpL/jqQq0MtQOeYcrqEz4abc5f0KtU7W4A==
   dependencies:
     color-convert "^2.0.1"
     color-string "^1.9.0"
@@ -3525,7 +3525,7 @@ lit@^2.0.0:
     lit-element "^3.0.0"
     lit-html "^2.0.0"
 
-lit@^2.1.0:
+lit@^2.1.2:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/lit/-/lit-2.4.1.tgz#21251ac14eb1ec8ca7cd15c9ac3564359809f7b5"
   integrity sha512-qohSgLiyN1cFnJG26dIiY03S4F49857A0AHQfnS0zYtnUVnD2MFvx+UT52rtXsIuNFQrnUupX+zyGSATlk1f/A==
