@@ -128,6 +128,7 @@ export default class AuthService {
 
   logout() {
     window.clearTimeout(this.timerId);
+    this.timerId = undefined;
     this.revoke();
   }
 

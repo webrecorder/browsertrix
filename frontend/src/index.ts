@@ -99,6 +99,22 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
+
+    // Sync auth state across tabs
+    window.addEventListener("storage", ({ key, newValue, oldValue }) => {
+      if (key === AuthService.storageKey && newValue !== oldValue) {
+        if (oldValue && newValue === null) {
+          // Logged out from another tab
+          this.onLogOut(
+            new CustomEvent("log-out", { detail: { redirect: true } })
+          );
+        } else if (!oldValue && newValue) {
+          // Logged in from another tab
+          const auth = JSON.parse(newValue);
+          this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+        }
+      }
+    });
   }
 
   async firstUpdated() {
@@ -475,6 +491,7 @@ export class App extends LiteElement {
         return html`<btrix-account-settings
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
+          @logged-in=${this.onLoggedIn}
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
