@@ -1,0 +1,70 @@
+# Resources / Node Types
+main_node_type: main
+ 
+crawler_node_type: crawling
+redis_node_type: crawling
+
+crawler_requests_cpu: "1200m"
+crawler_limits_cpu: "2200m"
+crawler_requests_memory: "1200Mi"
+crawler_limits_memory: "3200Mi"
+
+# Registry
+{% if use_do_registry %}
+api_image: "{{ registry_endpoint }}/webrecorder/browsertrix-backend:{{ image_tag }}"
+nginx_image: "{{ registry_endpoint }}/webrecorder/browsertrix-frontend:{{ image_tag }}"
+crawler_image: "{{ registry_endpoint }}/webrecorder/browsertrix-crawler:{{ image_tag }}"
+{% endif %}
+
+# DB
+mongo_local: false
+
+mongo_auth:
+  db_url: "{{ db_url }}"
+
+# Storage
+minio_local: false
+
+storages:
+  - name: "default"
+    access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY')}}"
+    secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY')}}"
+
+    endpoint_url: "{{ bucket_endpoint_url }}"
+
+
+# Domain
+ingress:
+  host: {{ full_domain }}
+  cert_email: {{ cert_email }}
+  scheme: "https"
+  tls: true
+
+
+# Signing
+{% if enable_signing %}
+signer:
+  enabled: true
+  host: {{ full_signing_domain }}
+  cert_email: {{ cert_email }}
+  image_pull_policy: "IfNotPresent"
+  auth_token: {{ signing_authtoken }}
+{% endif %}
+
+
+# User Auth
+superuser:
+  email: {{ superuser_email }}
+  password: {{ superuser_password }}
+
+registration_enabled: "{{ '1' if registration_enabled else '0' }}"
+
+
+# Admin Send Email Options
+email:
+  smtp_port: {{ smtp_port }}
+  smtp_host: {{ smtp_host }}
+  sender_email: {{ sender_email }}
+  password: {{ sender_password }}
+
+

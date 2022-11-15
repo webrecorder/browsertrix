@@ -4,3 +4,5 @@
 **/config.yaml
 **/signing.yaml
 .DS_Store
+# digital ocean custom values
+private.yml

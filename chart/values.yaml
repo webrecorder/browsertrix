@@ -12,7 +12,7 @@ volume_storage_class:
 # if set, set the node selector 'nodeType' to this crawling pods
 # crawler_node_type:
 
-registration_enabled: 0
+registration_enabled: "0"
 jwt_token_lifetime_minutes: 1440
 
 # number of workers for backend api
@@ -118,7 +118,7 @@ crawler_namespace: "crawlers"
 crawl_retries: 1000
 
 # browsertrix-crawler args:
-crawler_args: "--timeout 90 --logging stats,behaviors,debug --generateWACZ --text --workers 4 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
+crawler_args: "--timeout 120 --logging stats,behaviors,debug --generateWACZ --text --workers 4 --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone --behaviorTimeout 300"
 
 crawler_requests_cpu: "800m"
 crawler_limits_cpu: "1200m"
@@ -199,9 +199,9 @@ ingress:
 # optionally enable signer
 signer:
   enabled: false
+  image: webrecorder/authsign:0.5.0
   # host: <set to signer domain>
   # cert_email: "test@example.com
-  # image: webrecorder/authsign:0.4.0
   # image_pull_policy: "IfNotPresent"
   # auth_token: <set to custom value>
 
