@@ -1062,7 +1062,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         editable
         @on-remove=${(e: ExclusionRemoveEvent) => {
           if (!this.exclusions) return;
-          const { value } = e.detail;
+          const { regex: value } = e.detail;
           this.exclusions = this.exclusions.filter((v) => v !== value);
         }}
       ></btrix-queue-exclusion-table>
