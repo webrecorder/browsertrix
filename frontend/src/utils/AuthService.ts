@@ -9,11 +9,7 @@ export type Auth = {
   tokenExpiresAt: number;
 };
 
-type Session = {
-  sessionExpiresAt: number;
-};
-
-export type AuthState = (Auth & Session) | null;
+export type AuthState = Auth | null;
 
 type JWT = {
   user_id: string;
@@ -33,8 +29,6 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
-// Hardcode 24h expiry for now
-const SESSION_LIFETIME = 1000 * 60 * 60 * 24;
 
 export default class AuthService {
   private timerId?: number;
@@ -43,6 +37,33 @@ export default class AuthService {
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
+
+  static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+  static storage = {
+    getItem() {
+      return window.sessionStorage.getItem(AuthService.storageKey);
+    },
+    setItem(newValue: string) {
+      const oldValue = AuthService.storage.getItem();
+      window.sessionStorage.setItem(AuthService.storageKey, newValue);
+      AuthService.broadcastChannel.postMessage({
+        name: "storage",
+        key: AuthService.storageKey,
+        oldValue,
+        newValue,
+      });
+    },
+    removeItem() {
+      const oldValue = AuthService.storage.getItem();
+      window.sessionStorage.removeItem(AuthService.storageKey);
+      AuthService.broadcastChannel.postMessage({
+        name: "storage",
+        key: AuthService.storageKey,
+        oldValue,
+        newValue: null,
+      });
+    },
+  };
 
   get authState() {
     return this._authState;
@@ -113,7 +134,7 @@ export default class AuthService {
   }
 
   retrieve(): AuthState {
-    const auth = window.localStorage.getItem(AuthService.storageKey);
+    const auth = AuthService.storage.getItem();
 
     if (auth) {
       this._authState = JSON.parse(auth);
@@ -126,20 +147,30 @@ export default class AuthService {
   startPersist(auth: Auth) {
     if (auth) {
       this.persist(auth);
-      this.checkFreshness();
+      this.startFreshnessCheck();
     } else {
       console.warn("No authState to persist");
     }
   }
 
-  logout() {
+  startFreshnessCheck() {
     window.clearTimeout(this.timerId);
+    this.checkFreshness();
+  }
+
+  cancelFreshnessCheck() {
+    window.clearTimeout(this.timerId);
+    this.timerId = undefined;
+  }
+
+  logout() {
+    this.cancelFreshnessCheck();
     this.revoke();
   }
 
   private revoke() {
     this._authState = null;
-    window.localStorage.removeItem(AuthService.storageKey);
+    AuthService.storage.removeItem();
   }
 
   private persist(auth: Auth) {
@@ -147,61 +178,50 @@ export default class AuthService {
       username: auth.username,
       headers: auth.headers,
       tokenExpiresAt: auth.tokenExpiresAt,
-      sessionExpiresAt: Date.now() + SESSION_LIFETIME,
     };
 
-    window.localStorage.setItem(
-      AuthService.storageKey,
-      JSON.stringify(this._authState)
-    );
+    AuthService.storage.setItem(JSON.stringify(this._authState));
   }
 
   private async checkFreshness() {
-    window.clearTimeout(this.timerId);
-
     // console.debug("checkFreshness authState:", this._authState);
 
     if (!this._authState) return;
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL - 500; // tweak padding to account for API fetch time
 
-    if (this._authState.sessionExpiresAt > paddedNow) {
-      if (this._authState.tokenExpiresAt > paddedNow) {
+    if (this._authState.tokenExpiresAt > paddedNow) {
+      // console.debug(
+      //   "fresh! restart timer tokenExpiresAt:",
+      //   new Date(this._authState.tokenExpiresAt)
+      // );
+      // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
+      // Restart timer
+      this.timerId = window.setTimeout(() => {
+        this.checkFreshness();
+      }, FRESHNESS_TIMER_INTERVAL);
+    } else {
+      try {
+        const auth = await this.refresh();
+        this._authState.headers = auth.headers;
+        this._authState.tokenExpiresAt = auth.tokenExpiresAt;
+        this.persist(this._authState);
+
         // console.debug(
-        //   "fresh! restart timer tokenExpiresAt:",
+        //   "refreshed. restart timer tokenExpiresAt:",
         //   new Date(this._authState.tokenExpiresAt)
         // );
-        // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
+        // console.debug(
+        //   "refreshed. restart timer paddedNow:",
+        //   new Date(paddedNow)
+        // );
+
         // Restart timer
         this.timerId = window.setTimeout(() => {
           this.checkFreshness();
         }, FRESHNESS_TIMER_INTERVAL);
-      } else {
-        try {
-          const auth = await this.refresh();
-          this._authState.headers = auth.headers;
-          this._authState.tokenExpiresAt = auth.tokenExpiresAt;
-          this.persist(this._authState);
-
-          // console.debug(
-          //   "refreshed. restart timer tokenExpiresAt:",
-          //   new Date(this._authState.tokenExpiresAt)
-          // );
-          // console.debug(
-          //   "refreshed. restart timer paddedNow:",
-          //   new Date(paddedNow)
-          // );
-
-          // Restart timer
-          this.timerId = window.setTimeout(() => {
-            this.checkFreshness();
-          }, FRESHNESS_TIMER_INTERVAL);
-        } catch (e) {
-          console.debug(e);
-        }
+      } catch (e) {
+        console.debug(e);
       }
-    } else {
-      console.info("Session expired, logging out");
-      this.logout();
     }
   }
 

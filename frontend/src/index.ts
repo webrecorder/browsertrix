@@ -99,6 +99,8 @@ export class App extends LiteElement {
     window.addEventListener("popstate", (event) => {
       this.syncViewState();
     });
+
+    this.startSyncBrowserTabs();
   }
 
   async firstUpdated() {
@@ -475,6 +477,7 @@ export class App extends LiteElement {
         return html`<btrix-account-settings
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
+          @logged-in=${this.onLoggedIn}
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
@@ -721,6 +724,54 @@ export class App extends LiteElement {
           >
         </div>
       `,
+    });
+  }
+
+  private startSyncBrowserTabs() {
+    // TODO remove this line after this change has been deployed
+    // for more than 24 hours
+    window.localStorage.removeItem(AuthService.storageKey);
+
+    // Sync local auth state across window/tabs
+    // Notify any already open windows that new window is open
+    AuthService.broadcastChannel.postMessage({ name: "need_auth" });
+    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
+      if (data.name === "need_auth") {
+        // Share auth with newly opened tab
+        const auth = AuthService.storage.getItem();
+        if (auth) {
+          AuthService.broadcastChannel.postMessage({
+            name: "storage",
+            key: AuthService.storageKey,
+            newValue: auth,
+          });
+        }
+      }
+      if (data.name === "storage") {
+        const { key, oldValue, newValue } = data;
+        if (key === AuthService.storageKey && newValue !== oldValue) {
+          if (oldValue && newValue === null) {
+            // Logged out from another tab
+            this.onLogOut(
+              new CustomEvent("log-out", { detail: { redirect: true } })
+            );
+          } else if (!oldValue && newValue) {
+            // Logged in from another tab
+            const auth = JSON.parse(newValue);
+            this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+          }
+        }
+      }
+    });
+
+    // Only have freshness check run in visible tab(s)
+    document.addEventListener("visibilitychange", () => {
+      if (!this.authService.authState) return;
+      if (document.visibilityState === "visible") {
+        this.authService.startFreshnessCheck();
+      } else {
+        this.authService.cancelFreshnessCheck();
+      }
     });
   }
 }
