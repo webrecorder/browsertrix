@@ -81,6 +81,8 @@ export class QueueExclusionForm extends LiteElement {
               placeholder=${msg("Select Type")}
               size="small"
               .value=${this.selectValue}
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
               @sl-select=${(e: any) => {
                 this.selectValue = e.target.value;
               }}
@@ -222,5 +224,14 @@ export class QueueExclusionForm extends LiteElement {
         },
       }) as ExclusionAddEvent
     );
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
