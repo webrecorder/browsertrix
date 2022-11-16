@@ -61,6 +61,9 @@ class RawCrawlConfig(BaseModel):
     limit: Optional[int] = 0
     extraHops: Optional[int] = 0
 
+    lang: Optional[str]
+    blockAds: Optional[bool] = False
+
     behaviorTimeout: Optional[int]
 
     workers: Optional[int]
