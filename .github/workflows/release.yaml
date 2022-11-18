@@ -1,0 +1,52 @@
+name: Browsertrix Cloud Integration Test (for Swarm)
+
+on: [push, pull_request]
+
+jobs:
+  btrix-release:
+    runs-on: ubuntu-22.04
+    env:
+      REPO_PREFIX: ${{ secrets.REPO_PREFIX || "" }}
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      -
+        name: Read Version
+        run: |
+          echo VERSION=`cat version.txt` >> $GITHUB_ENV
+          echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
+          echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
+
+      -
+        name: Build Backend
+        uses: docker/build-push-action@v3
+        with:
+          context: backend
+          push: true
+          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-backend:${{ env.VERSION }}, webrecorder/browsertrix-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      -
+        name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          push: true
+          build_args:
+            - GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            - GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+
+          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
