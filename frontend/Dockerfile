@@ -1,5 +1,5 @@
 # central place to configure the production replayweb.page loading prefix
-ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage@1.5.8/
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
 FROM node:16 as build
 

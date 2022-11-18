@@ -51,6 +51,8 @@ const shoelaceAssetsSrcPath = path.resolve(
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
 
+const version = process.env.VERSION || packageJSON.version;
+
 module.exports = {
   entry: "./src/index.ts",
   output: {
@@ -102,7 +104,7 @@ module.exports = {
         rwp_base_url: RWP_BASE_URL,
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
-        version: packageJSON.version,
+        version,
         gitBranch,
         commitHash,
       },
