@@ -1,4 +1,4 @@
-# Browsertrix Cloud frontend
+# Front-End Development
 
 ## Quickstart
 

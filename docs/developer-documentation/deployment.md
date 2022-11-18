@@ -1,4 +1,4 @@
-# Deploying Browsertrix Cloud
+# Deployment
 
 Browsertrix Cloud can be deployed anywhere from single-node isolated environments, multi-machine setups and cloud-native Kubernetes!
 
