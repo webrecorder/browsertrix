@@ -1,6 +1,8 @@
-name: Browsertrix Cloud Integration Test (for Swarm)
+name: Browsertrix Cloud Release Build
 
-on: [push, pull_request]
+on:
+  release:
+    types: [published]
 
 jobs:
   btrix-release:
