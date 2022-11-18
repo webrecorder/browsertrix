@@ -9,7 +9,7 @@ import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
 
 export type ExclusionRemoveEvent = CustomEvent<{
-  value: string;
+  regex: string;
 }>;
 
 /**
@@ -205,12 +205,14 @@ export class QueueExclusionTable extends LiteElement {
     return [typeColClass, valueColClass, actionColClass];
   }
 
-  private removeExclusion(exclusion: Exclusion) {
-    this.exclusionToRemove = exclusion.value;
+  private removeExclusion({ value, type }: Exclusion) {
+    this.exclusionToRemove = value;
 
     this.dispatchEvent(
       new CustomEvent("on-remove", {
-        detail: exclusion,
+        detail: {
+          regex: type == "text" ? regexEscape(value) : value,
+        },
       }) as ExclusionRemoveEvent
     );
   }

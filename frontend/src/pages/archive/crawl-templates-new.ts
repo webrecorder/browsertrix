@@ -537,9 +537,9 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
-    const { value } = e.detail;
-    if (!this.exclusions || !value) return;
-    this.exclusions = this.exclusions.filter((v) => v !== value);
+    const { regex } = e.detail;
+    if (!this.exclusions || !regex) return;
+    this.exclusions = this.exclusions.filter((v) => v !== regex);
   }
 
   private handleAddRegex(e: ExclusionAddEvent) {
