@@ -1,13 +1,15 @@
 # central place to configure the production replayweb.page loading prefix
-ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage@1.5.8/
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
 FROM node:16 as build
 
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
+ARG VERSION
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
-    GIT_BRANCH_NAME=${GIT_BRANCH_NAME}
+    GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
+    VERSION=${VERSION}
 
 
 WORKDIR /app

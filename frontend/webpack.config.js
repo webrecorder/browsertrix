@@ -6,6 +6,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const childProcess = require("child_process");
 const packageJSON = require("./package.json");
+const fs = require("fs");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -50,6 +51,18 @@ const shoelaceAssetsSrcPath = path.resolve(
   "node_modules/@shoelace-style/shoelace/dist/assets"
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
+
+const version = (() => {
+  if (process.env.VERSION) {
+    return process.env.VERSION;
+  }
+
+  try {
+    return fs.readFileSync("../version.txt", {encoding: "utf-8"}).trim();
+  } catch(e) {}
+
+  return packageJSON.version;
+})();
 
 module.exports = {
   entry: "./src/index.ts",
@@ -102,7 +115,7 @@ module.exports = {
         rwp_base_url: RWP_BASE_URL,
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
-        version: packageJSON.version,
+        version,
         gitBranch,
         commitHash,
       },
