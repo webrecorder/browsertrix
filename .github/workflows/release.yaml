@@ -48,6 +48,7 @@ jobs:
           context: frontend
           push: true
           build-args: |
+            VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
 
