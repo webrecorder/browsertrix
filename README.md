@@ -14,11 +14,24 @@ The system is designed to run in both Kubernetes and Docker Swarm, as well as lo
 
 See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
 
+
 ## Development Status
 
 Browsertrix Cloud is currently in an alpha stage and not ready for production. This is an ambitious project and there's a lot to be done!
 
 If you would like to help in a particular way, please open an issue or reach out to us in other ways.
+
+## Documentation
+
+User and developer docs are located in /docs. We use [MkDocs](https://squidfunk.github.io/mkdocs-material/) with the [Material theme](https://squidfunk.github.io/mkdocs-material/).
+
+To build the documentation locally, install Material for MkDocs with pip:
+
+```shell
+pip install mkdocs-material
+```
+
+In the project root directory run `mkdocs serve` to run a local version of the documentation site.
 
 ## License
 
