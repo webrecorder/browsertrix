@@ -1,4 +1,4 @@
-# Front-End Development
+# Frontend Development
 
 ## Quickstart
 
