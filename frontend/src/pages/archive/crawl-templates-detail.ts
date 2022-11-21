@@ -5,6 +5,8 @@ import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
+import flow from "lodash/fp/flow";
+import uniq from "lodash/fp/uniq";
 import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -22,6 +24,8 @@ const SEED_URLS_MAX = 3;
 
 // Show default empty editable rows
 const defaultExclusions = [""];
+
+const trimExclusions = flow(uniq, compact);
 
 /**
  * Usage:
@@ -75,7 +79,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         if (this.isConfigCodeView) {
           this.configCode = jsonToYaml(
             merge(this.crawlTemplate.config, {
-              exclude: compact(this.exclusions),
+              exclude: trimExclusions(this.exclusions),
             })
           );
         } else if (this.isConfigCodeView === false) {
@@ -1220,7 +1224,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
-        exclude: compact(this.exclusions),
+        exclude: trimExclusions(this.exclusions),
         lang: this.browserLanguage,
       };
     }

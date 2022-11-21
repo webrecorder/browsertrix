@@ -4,6 +4,8 @@ import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
+import flow from "lodash/fp/flow";
+import uniq from "lodash/fp/uniq";
 
 import type {
   ExclusionRemoveEvent,
@@ -51,6 +53,8 @@ const minutes = Array.from({ length: 60 }).map((x, i) => ({
   value: i,
   label: `${i}`.padStart(2, "0"),
 }));
+
+const trimExclusions = flow(uniq, compact);
 
 /**
  * Usage:
@@ -145,7 +149,7 @@ export class CrawlTemplatesNew extends LiteElement {
       if (this.isConfigCodeView) {
         this.configCode = jsonToYaml(
           merge(this.initialCrawlTemplate.config, {
-            exclude: compact(this.exclusions),
+            exclude: trimExclusions(this.exclusions),
           })
         );
       } else if (this.isConfigCodeView === false) {
@@ -559,7 +563,7 @@ export class CrawlTemplatesNew extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
-        exclude: compact(this.exclusions),
+        exclude: trimExclusions(this.exclusions),
       };
     }
 
