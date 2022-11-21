@@ -95,7 +95,7 @@ export class Details extends LitElement {
         @toggle=${this.onToggle}
         aria-disabled=${this.disabled ? "true" : "false"}
       >
-        <summary>
+        <summary tabindex=${this.disabled ? "-1" : "0"}>
           <div class="summary-content">
             <div class="title">
               <slot name="title"></slot>

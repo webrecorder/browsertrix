@@ -5,8 +5,10 @@ import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
 
-import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
-import type { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
+import type {
+  ExclusionRemoveEvent,
+  ExclusionChangeEvent,
+} from "../../components/queue-exclusion-table";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
@@ -495,14 +497,8 @@ export class CrawlTemplatesNew extends LiteElement {
         .exclusions=${this.exclusions}
         editable
         @on-remove=${this.handleRemoveRegex}
+        @on-change=${this.handleChangeRegex}
       ></btrix-queue-exclusion-table>
-      <div class="mt-2">
-        <btrix-queue-exclusion-form
-          fieldErrorMessage=${this.exclusionFieldErrorMessage || ""}
-          @on-add=${this.handleAddRegex}
-        >
-        </btrix-queue-exclusion-form>
-      </div>
     `;
   }
 
@@ -572,16 +568,12 @@ export class CrawlTemplatesNew extends LiteElement {
     this.exclusions = this.exclusions.filter((v) => v !== regex);
   }
 
-  private handleAddRegex(e: ExclusionAddEvent) {
-    this.exclusionFieldErrorMessage = "";
-    const { regex, onSuccess } = e.detail;
-    if (this.exclusions && compact(this.exclusions).indexOf(regex) > -1) {
-      this.exclusionFieldErrorMessage = msg("Exclusion already exists");
-      return;
-    }
+  private handleChangeRegex(e: ExclusionChangeEvent) {
+    const { regex, index } = e.detail;
 
-    this.exclusions = [...(this.exclusions || []), regex];
-    onSuccess();
+    const nextExclusions = [...this.exclusions!];
+    nextExclusions[index] = regex;
+    this.exclusions = nextExclusions;
   }
 
   private async onSubmit(event: SubmitEvent) {

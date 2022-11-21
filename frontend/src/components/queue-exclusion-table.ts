@@ -8,6 +8,11 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
 
+export type ExclusionChangeEvent = CustomEvent<{
+  index: number;
+  regex: string;
+}>;
+
 export type ExclusionRemoveEvent = CustomEvent<{
   regex: string;
 }>;
@@ -23,6 +28,7 @@ export type ExclusionRemoveEvent = CustomEvent<{
  * </btrix-queue-exclusion-table>
  * ```
  *
+ * @event on-change ExclusionChangeEvent
  * @event on-remove ExclusionRemoveEvent
  */
 @localized()
@@ -89,7 +95,7 @@ export class QueueExclusionTable extends LiteElement {
 
   render() {
     const [typeColClass, valueColClass, actionColClass] =
-      this.getColumnClassNames(0, this.results.length);
+      this.getColumnClassNames(0, this.results.length, true);
 
     return html`<btrix-details open disabled>
       <h4 slot="title">${msg("Exclusions")}</h4>
@@ -144,11 +150,11 @@ export class QueueExclusionTable extends LiteElement {
           ? "text-neutral-200"
           : "text-neutral-600"}"
       >
-        <td class="py-2 px-3 whitespace-nowrap ${typeColClass}">
-          ${this.renderType(exclusion)}
+        <td class="whitespace-nowrap ${typeColClass}">
+          ${this.renderType({ exclusion, index })}
         </td>
-        <td class="p-2 font-mono ${valueColClass}">
-          ${this.renderValue(exclusion)}
+        <td class="font-mono ${valueColClass}">
+          ${this.renderValue({ exclusion, index })}
         </td>
         <td class="text-[1rem] text-center ${actionColClass}">
           <btrix-icon-button
@@ -160,24 +166,61 @@ export class QueueExclusionTable extends LiteElement {
     `;
   };
 
-  private renderType(exclusion: Exclusion) {
+  private renderType({
+    exclusion,
+    index,
+  }: {
+    exclusion: Exclusion;
+    index: number;
+  }) {
     let typeLabel: string = exclusion.type;
 
-    if (exclusion.type === "regex") typeLabel = msg("Regex");
     if (exclusion.type === "text") typeLabel = msg("Matches Text");
+    if (exclusion.type === "regex") typeLabel = msg("Regex");
 
     if (this.editable) {
-      return html`TODO`;
+      return html`
+        <sl-select
+          placeholder=${msg("Select Type")}
+          size="small"
+          .value=${exclusion.type}
+          @sl-hide=${this.stopProp}
+          @sl-after-hide=${this.stopProp}
+          @sl-select=${(e: any) => {
+            exclusion.type = e.target.value;
+            this.updateExclusion({
+              type: exclusion.type,
+              value: e.target.value,
+              index,
+            });
+          }}
+          hoist
+        >
+          <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
+          <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
+        </sl-select>
+      `;
     }
 
     return typeLabel;
   }
 
-  private renderValue(exclusion: Exclusion) {
+  private renderValue({
+    exclusion,
+    index,
+  }: {
+    exclusion: Exclusion;
+    index: number;
+  }) {
     let value: any = exclusion.value;
 
     if (this.editable) {
-      return html`TODO`;
+      return html`
+        <input
+          placeholder=${msg("Enter value")}
+          class="styledInput block w-full h-9 px-2"
+        />
+      `;
     }
 
     if (exclusion.type === "regex") {
@@ -189,7 +232,11 @@ export class QueueExclusionTable extends LiteElement {
     return value;
   }
 
-  private getColumnClassNames(index: number, count: number) {
+  private getColumnClassNames(
+    index: number,
+    count: number,
+    isHeader?: boolean
+  ) {
     let typeColClass = "border-t border-x";
     let valueColClass = "border-t border-r";
     let actionColClass = "border-t border-r";
@@ -219,6 +266,15 @@ export class QueueExclusionTable extends LiteElement {
       actionColClass += " hidden";
     }
 
+    if (!isHeader) {
+      if (this.editable) {
+        typeColClass += " px-[3px]";
+      } else {
+        typeColClass += " py-2 px-3";
+        valueColClass += " p-2";
+      }
+    }
+
     return [typeColClass, valueColClass, actionColClass];
   }
 
@@ -232,5 +288,33 @@ export class QueueExclusionTable extends LiteElement {
         },
       }) as ExclusionRemoveEvent
     );
+  }
+
+  private updateExclusion({
+    type,
+    value,
+    index,
+  }: {
+    type: Exclusion["type"];
+    value: Exclusion["value"];
+    index: number;
+  }) {
+    this.dispatchEvent(
+      new CustomEvent("on-change", {
+        detail: {
+          index,
+          regex: type == "text" ? regexEscape(value) : value,
+        },
+      }) as ExclusionChangeEvent
+    );
+  }
+
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }
