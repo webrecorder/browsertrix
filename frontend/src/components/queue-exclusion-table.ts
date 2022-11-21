@@ -97,43 +97,76 @@ export class QueueExclusionTable extends LiteElement {
     const [typeColClass, valueColClass, actionColClass] =
       this.getColumnClassNames(0, this.results.length, true);
 
-    return html`<btrix-details open disabled>
-      <h4 slot="title">${msg("Exclusions")}</h4>
-      <div slot="summary-description">
-        ${this.total && this.total > this.pageSize
-          ? html`<btrix-pagination
-              page=${this.page}
-              size=${this.pageSize}
-              totalCount=${this.total}
-              @page-change=${(e: CustomEvent) => {
-                this.page = e.detail.page;
-              }}
-            >
-            </btrix-pagination>`
-          : ""}
-      </div>
-      <table
-        class="w-full leading-none border-separate"
-        style="border-spacing: 0;"
-      >
-        <thead class="text-xs font-mono text-neutral-600 uppercase">
-          <tr class="h-10 text-left">
-            <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
-              ${msg("Exclusion Type")}
-            </th>
-            <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
-              ${msg("Exclusion Value")}
-            </th>
-            <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
-              <span class="sr-only">Row actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          ${this.results.map(this.renderItem)}
-        </tbody>
-      </table>
-    </btrix-details> `;
+    return html`
+      <style>
+        ::-moz-placeholder {
+          opacity: 0.5 !important;
+        }
+
+        .inputCell::placeholder {
+          color: var(--sl-input-placeholder-color) !important;
+          font-weight: inherit;
+        }
+
+        .inputCell {
+          outline: 0;
+          transition: var(--sl-transition-fast) color,
+            var(--sl-transition-fast) border,
+            var(--sl-transition-fast) box-shadow,
+            var(--sl-transition-fast) background-color;
+        }
+
+        .inputCell:hover {
+          background-color: var(--sl-input-background-color-hover);
+          border-color: var(--sl-input-border-color-hover);
+        }
+
+        .inputCell:focus {
+          background-color: var(--sl-input-background-color-focus);
+          border-color: var(--sl-input-border-color-focus);
+          box-shadow: 0 0 0 var(--sl-focus-ring-width)
+            var(--sl-input-focus-ring-color);
+        }
+      </style>
+
+      <btrix-details open disabled>
+        <h4 slot="title">${msg("Exclusions")}</h4>
+        <div slot="summary-description">
+          ${this.total && this.total > this.pageSize
+            ? html`<btrix-pagination
+                page=${this.page}
+                size=${this.pageSize}
+                totalCount=${this.total}
+                @page-change=${(e: CustomEvent) => {
+                  this.page = e.detail.page;
+                }}
+              >
+              </btrix-pagination>`
+            : ""}
+        </div>
+        <table
+          class="w-full leading-none border-separate"
+          style="border-spacing: 0;"
+        >
+          <thead class="text-xs font-mono text-neutral-600 uppercase">
+            <tr class="h-10 text-left">
+              <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
+                ${msg("Exclusion Type")}
+              </th>
+              <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
+                ${msg("Exclusion Value")}
+              </th>
+              <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
+                <span class="sr-only">Row actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            ${this.results.map(this.renderItem)}
+          </tbody>
+        </table>
+      </btrix-details>
+    `;
   }
 
   private renderItem = (
@@ -217,7 +250,7 @@ export class QueueExclusionTable extends LiteElement {
       return html`
         <input
           placeholder=${msg("Enter value")}
-          class="styledInput block w-full h-9 px-2"
+          class="inputCell block w-full h-9 px-2"
           value=${exclusion.value}
           @change=${(e: InputEvent) => {
             const inputElem = e.target as HTMLInputElement;

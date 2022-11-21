@@ -103,35 +103,6 @@ const theme = css`
   sl-input.invalid:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
-
-  /* Harmonize with native HTML */
-  ::-moz-placeholder {
-    opacity: 0.5 !important;
-  }
-
-  .styledInput::placeholder {
-    color: var(--sl-input-placeholder-color) !important;
-    font-weight: inherit;
-  }
-
-  .styledInput {
-    outline: 0;
-    transition: var(--sl-transition-fast) color,
-      var(--sl-transition-fast) border, var(--sl-transition-fast) box-shadow,
-      var(--sl-transition-fast) background-color;
-  }
-
-  .styledInput:hover {
-    background-color: var(--sl-input-background-color-hover);
-    border-color: var(--sl-input-border-color-hover);
-  }
-
-  .styledInput:focus {
-    background-color: var(--sl-input-background-color-focus);
-    border-color: var(--sl-input-border-color-focus);
-    box-shadow: 0 0 0 var(--sl-focus-ring-width)
-      var(--sl-input-focus-ring-color);
-  }
 `;
 
 export default theme;
