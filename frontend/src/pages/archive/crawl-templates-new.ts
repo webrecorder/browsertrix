@@ -501,7 +501,7 @@ export class CrawlTemplatesNew extends LiteElement {
         @click=${() => (this.exclusions = [...(this.exclusions || []), ""])}
       >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-        <span class="text-neutral-600">${msg("Add Row")}</span>
+        <span class="text-neutral-600">${msg("Add More")}</span>
       </sl-button>
     `;
   }
