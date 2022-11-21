@@ -1111,7 +1111,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
-        editable
+        removable
         @on-remove=${(e: ExclusionRemoveEvent) => {
           if (!this.exclusions) return;
           const { regex: value } = e.detail;

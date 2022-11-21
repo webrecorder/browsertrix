@@ -33,6 +33,9 @@ export class QueueExclusionTable extends LiteElement {
   @property({ type: Boolean })
   editable = false;
 
+  @property({ type: Boolean })
+  removable = false;
+
   @state()
   private results: Exclusion[] = [];
 
@@ -180,7 +183,7 @@ export class QueueExclusionTable extends LiteElement {
     if (index === 0) {
       typeColClass += " rounded-tl";
 
-      if (this.editable) {
+      if (this.removable) {
         actionColClass += " rounded-tr";
       } else {
         valueColClass += " rounded-tr";
@@ -190,7 +193,7 @@ export class QueueExclusionTable extends LiteElement {
     if (index === count) {
       typeColClass += " border-b rounded-bl";
 
-      if (this.editable) {
+      if (this.removable) {
         valueColClass += " border-b";
         actionColClass += " border-b rounded-br";
       } else {
@@ -198,7 +201,7 @@ export class QueueExclusionTable extends LiteElement {
       }
     }
 
-    if (!this.editable) {
+    if (!this.removable) {
       actionColClass += " hidden";
     }
 
