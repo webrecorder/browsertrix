@@ -2,6 +2,7 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
 
 import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
@@ -36,7 +37,12 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    exclude: [],
+    exclude: [
+      // Show default empty editable rows
+      "",
+      "",
+      "",
+    ],
   },
 } as InitialCrawlTemplate;
 const hours = Array.from({ length: 12 }).map((x, i) => ({
@@ -129,7 +135,9 @@ export class CrawlTemplatesNew extends LiteElement {
       this.isConfigCodeView = true;
     }
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
-    this.exclusions = this.initialCrawlTemplate.config.exclude;
+    if (this.initialCrawlTemplate.config.exclude?.length) {
+      this.exclusions = this.initialCrawlTemplate.config.exclude;
+    }
     this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
   }
@@ -139,12 +147,14 @@ export class CrawlTemplatesNew extends LiteElement {
       if (this.isConfigCodeView) {
         this.configCode = jsonToYaml(
           merge(this.initialCrawlTemplate.config, {
-            exclude: this.exclusions,
+            exclude: compact(this.exclusions),
           })
         );
       } else if (this.isConfigCodeView === false) {
-        this.exclusions =
-          (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+        const exclude = (yamlToJson(this.configCode) as CrawlConfig).exclude;
+        this.exclusions = exclude?.length
+          ? exclude
+          : defaultValue.config.exclude;
       }
     }
   }
@@ -549,7 +559,7 @@ export class CrawlTemplatesNew extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
-        exclude: this.exclusions,
+        exclude: compact(this.exclusions),
       };
     }
 
@@ -565,7 +575,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private handleAddRegex(e: ExclusionAddEvent) {
     this.exclusionFieldErrorMessage = "";
     const { regex, onSuccess } = e.detail;
-    if (this.exclusions && this.exclusions.indexOf(regex) > -1) {
+    if (this.exclusions && compact(this.exclusions).indexOf(regex) > -1) {
       this.exclusionFieldErrorMessage = msg("Exclusion already exists");
       return;
     }

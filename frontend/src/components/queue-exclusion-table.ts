@@ -54,7 +54,7 @@ export class QueueExclusionTable extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("exclusions") && this.exclusions) {
-      this.exclusionToRemove = "";
+      this.exclusionToRemove = undefined;
 
       const prevVal = changedProperties.get("exclusions");
       if (prevVal) {
@@ -138,33 +138,18 @@ export class QueueExclusionTable extends LiteElement {
     const [typeColClass, valueColClass, actionColClass] =
       this.getColumnClassNames(index + 1, arr.length);
 
-    let typeLabel: string = exclusion.type;
-    let value: any = exclusion.value;
-
-    switch (exclusion.type) {
-      case "regex":
-        typeLabel = msg("Regex");
-        value = staticHtml`<span class="regex">${unsafeStatic(
-          new RegexColorize().colorizeText(exclusion.value)
-        )}</span>`;
-        break;
-      case "text":
-        typeLabel = msg("Matches Text");
-        break;
-      default:
-        break;
-    }
-
     return html`
       <tr
-        class="h-10 ${this.exclusionToRemove === value
+        class="h-10 ${this.exclusionToRemove === exclusion.value
           ? "text-neutral-200"
           : "text-neutral-600"}"
       >
         <td class="py-2 px-3 whitespace-nowrap ${typeColClass}">
-          ${typeLabel}
+          ${this.renderType(exclusion)}
         </td>
-        <td class="p-2 font-mono ${valueColClass}">${value}</td>
+        <td class="p-2 font-mono ${valueColClass}">
+          ${this.renderValue(exclusion)}
+        </td>
         <td class="text-[1rem] text-center ${actionColClass}">
           <btrix-icon-button
             name="trash3"
@@ -174,6 +159,35 @@ export class QueueExclusionTable extends LiteElement {
       </tr>
     `;
   };
+
+  private renderType(exclusion: Exclusion) {
+    let typeLabel: string = exclusion.type;
+
+    if (exclusion.type === "regex") typeLabel = msg("Regex");
+    if (exclusion.type === "text") typeLabel = msg("Matches Text");
+
+    if (this.editable) {
+      return html`TODO`;
+    }
+
+    return typeLabel;
+  }
+
+  private renderValue(exclusion: Exclusion) {
+    let value: any = exclusion.value;
+
+    if (this.editable) {
+      return html`TODO`;
+    }
+
+    if (exclusion.type === "regex") {
+      value = staticHtml`<span class="regex">${unsafeStatic(
+        new RegexColorize().colorizeText(exclusion.value)
+      )}</span>`;
+    }
+
+    return value;
+  }
 
   private getColumnClassNames(index: number, count: number) {
     let typeColClass = "border-t border-x";
