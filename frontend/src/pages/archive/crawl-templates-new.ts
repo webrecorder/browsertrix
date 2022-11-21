@@ -39,12 +39,8 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    exclude: [
-      // Show default empty editable rows
-      "",
-      "",
-      "",
-    ],
+    // Show default empty editable rows
+    exclude: Array.from({ length: 3 }).map(() => ""),
   },
 } as InitialCrawlTemplate;
 const hours = Array.from({ length: 12 }).map((x, i) => ({
@@ -495,10 +491,18 @@ export class CrawlTemplatesNew extends LiteElement {
     return html`
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
+        pageSize="50"
         editable
         @on-remove=${this.handleRemoveRegex}
         @on-change=${this.handleChangeRegex}
       ></btrix-queue-exclusion-table>
+      <sl-button
+        class="w-full mt-1"
+        @click=${() => (this.exclusions = [...(this.exclusions || []), ""])}
+      >
+        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+        <span class="text-neutral-600">${msg("Add Row")}</span>
+      </sl-button>
     `;
   }
 

@@ -36,6 +36,9 @@ export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
   exclusions?: CrawlConfig["exclude"];
 
+  @property({ type: Number })
+  pageSize: number = 5;
+
   @property({ type: Boolean })
   editable = false;
 
@@ -47,9 +50,6 @@ export class QueueExclusionTable extends LiteElement {
 
   @state()
   private page: number = 1;
-
-  @state()
-  private pageSize: number = 5;
 
   @state()
   private exclusionToRemove?: string;
