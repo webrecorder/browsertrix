@@ -58,6 +58,7 @@ export type CrawlTemplate = {
   scale: number;
   profileid: string | null;
   profileName: string | null;
+  lang: string | null;
 };
 
 export type Profile = {
