@@ -1,6 +1,4 @@
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { localized, msg } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 
@@ -8,6 +6,13 @@ const languages = ISO6391.getLanguages(ISO6391.getAllCodes());
 
 /**
  * Choose language from dropdown
+ *
+ * Usage:
+ * ```ts
+ * <btrix-language-select @sl-select=${console.debug}>
+ *   <span slot="label">Label</span>
+ * </btrix-language-select>
+ * ```
  */
 @localized()
 export class LanguageSelect extends LitElement {
@@ -21,16 +26,9 @@ export class LanguageSelect extends LitElement {
     }
   `;
 
-  @property({ type: String })
-  name?: string;
-
   render() {
     return html`
-      <sl-select
-        name=${ifDefined(this.name)}
-        clearable
-        placeholder=${msg("Default")}
-      >
+      <sl-select clearable placeholder=${msg("Default")}>
         <div slot="label"><slot name="label"></slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`

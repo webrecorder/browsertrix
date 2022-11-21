@@ -22,6 +22,7 @@ type NewCrawlTemplate = {
   scale: number;
   config: CrawlConfig;
   profileid: string | null;
+  lang: string | null;
 };
 
 export type InitialCrawlTemplate = Pick<
@@ -96,6 +97,8 @@ export class CrawlTemplatesNew extends LiteElement {
 
   @state()
   private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
+
+  private browserLanguage: string | null = null;
 
   @state()
   private isSubmitting: boolean = false;
@@ -379,7 +382,11 @@ export class CrawlTemplatesNew extends LiteElement {
           </sl-select>
         </div>
         <div class="col-span-1">
-          <btrix-language-select>
+          <btrix-language-select
+            @sl-select=${(e: CustomEvent) =>
+              (this.browserLanguage = e.detail.item.value)}
+            @sl-clear=${() => (this.browserLanguage = null)}
+          >
             <div slot="label">
               <span class="inline-block align-middle">
                 ${msg("Language")}
@@ -531,6 +538,7 @@ export class CrawlTemplatesNew extends LiteElement {
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
       profileid: this.browserProfileId,
+      lang: this.browserLanguage || null,
     };
 
     if (this.isConfigCodeView) {
