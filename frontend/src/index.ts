@@ -743,6 +743,7 @@ export class App extends LiteElement {
           AuthService.broadcastChannel.postMessage({
             name: "storage",
             key: AuthService.storageKey,
+            oldValue: auth,
             newValue: auth,
           });
         }
