@@ -99,36 +99,13 @@ export class QueueExclusionTable extends LiteElement {
 
     return html`
       <style>
-        ::-moz-placeholder {
-          opacity: 0.5 !important;
-        }
-
-        .inputCell::placeholder {
-          color: var(--sl-input-placeholder-color) !important;
-          font-weight: inherit;
-        }
-
-        .inputCell {
-          outline: 0;
-          transition: var(--sl-transition-fast) color,
-            var(--sl-transition-fast) border,
-            var(--sl-transition-fast) box-shadow,
-            var(--sl-transition-fast) background-color;
-        }
-
-        .inputCell:hover {
-          background-color: var(--sl-input-background-color-hover);
-          border-color: var(--sl-input-border-color-hover);
-        }
-
-        .inputCell:focus {
-          background-color: var(--sl-input-background-color-focus);
-          border-color: var(--sl-input-border-color-focus);
-          box-shadow: 0 0 0 var(--sl-focus-ring-width)
-            var(--sl-input-focus-ring-color);
+        btrix-queue-exclusion-table sl-input {
+          --sl-input-border-width: 0;
+          --sl-input-border-radius-medium: 0;
+          --sl-input-font-family: var(--sl-font-mono);
+          --sl-input-spacing-medium: var(--sl-spacing-small);
         }
       </style>
-
       <btrix-details open disabled>
         <h4 slot="title">${msg("Exclusions")}</h4>
         <div slot="summary-description">
@@ -248,10 +225,11 @@ export class QueueExclusionTable extends LiteElement {
 
     if (this.editable) {
       return html`
-        <input
+        <sl-input
           placeholder=${msg("Enter value")}
-          class="inputCell block w-full h-9 px-2"
+          class="m-0"
           value=${exclusion.value}
+          clearable
           @change=${(e: InputEvent) => {
             const inputElem = e.target as HTMLInputElement;
             // Get latest exclusion type value from select
@@ -266,7 +244,7 @@ export class QueueExclusionTable extends LiteElement {
               index,
             });
           }}
-        />
+        ></sl-input>
       `;
     }
 
