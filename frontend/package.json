@@ -2,7 +2,7 @@
   "name": "browsertrix-frontend",
   "version": "1.1.0-beta.0",
   "main": "index.ts",
-  "license": "AGPLv3",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
     "@formatjs/intl-displaynames": "^5.2.5",
