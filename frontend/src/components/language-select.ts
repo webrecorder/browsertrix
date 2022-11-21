@@ -32,11 +32,7 @@ export class LanguageSelect extends LitElement {
 
   render() {
     return html`
-      <sl-select
-        clearable
-        placeholder=${msg("Default")}
-        ?hoist=${Boolean(this.hoist)}
-      >
+      <sl-select clearable placeholder=${msg("Default")} ?hoist=${this.hoist}>
         <div slot="label"><slot name="label"></slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`
