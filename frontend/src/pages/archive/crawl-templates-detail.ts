@@ -4,6 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import merge from "lodash/fp/merge";
+import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -572,19 +573,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           ${this.crawlTemplate
             ? html`
                 ${this.crawlTemplate.config.lang
-                  ? html`<a
-                      class="font-medium text-neutral-700 hover:text-neutral-900"
-                      href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
-                      @click=${this.navLink}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle"
-                        name="link-45deg"
-                      ></sl-icon>
-                      <span class="inline-block align-middle"
-                        >${this.crawlTemplate.config.lang}</span
-                      >
-                    </a>`
+                  ? html`${ISO6391.getName(this.crawlTemplate.config.lang)}`
                   : html`<span class="text-neutral-400"
                       >${msg("Default")}</span
                     >`}
