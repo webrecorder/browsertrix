@@ -85,7 +85,7 @@ const theme = css`
 
   /* Elevate select and buttons */
   sl-select::part(control),
-  sl-button::part(base) {
+  sl-button:not([variant="text"])::part(base) {
     box-shadow: var(--sl-shadow-small);
   }
 

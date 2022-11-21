@@ -18,6 +18,10 @@ const languages = ISO6391.getLanguages(ISO6391.getAllCodes());
 @localized()
 export class LanguageSelect extends LitElement {
   static styles = css`
+    sl-select::part(control) {
+      box-shadow: var(--sl-shadow-small);
+    }
+
     sl-menu-item:not(:hover) .nativeName {
       color: var(--sl-color-neutral-400);
     }
