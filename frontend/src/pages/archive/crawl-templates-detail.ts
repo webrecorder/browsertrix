@@ -537,39 +537,104 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderConfiguration() {
-    const seeds = this.crawlTemplate?.config.seeds || [];
     const configCodeYaml = jsonToYaml(this.crawlTemplate?.config || {});
 
     return html`
-      <div class="mb-5">
-        <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
-        ${this.crawlTemplate
-          ? html`
-              ${this.crawlTemplate.profileid
-                ? html`<a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle"
-                      >${this.crawlTemplate.profileName}</span
+      ${this.renderSeedsTable()}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 mb-5">
+        <div class="col-span-1">
+          <div class="text-sm text-neutral-600">${msg("Browser Profile")}</div>
+          ${this.crawlTemplate
+            ? html`
+                ${this.crawlTemplate.profileid
+                  ? html`<a
+                      class="font-medium text-neutral-700 hover:text-neutral-900"
+                      href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                      @click=${this.navLink}
                     >
-                  </a>`
-                : html`<span class="text-0-400">${msg("None")}</span>`}
-            `
-          : ""}
+                      <sl-icon
+                        class="inline-block align-middle"
+                        name="link-45deg"
+                      ></sl-icon>
+                      <span class="inline-block align-middle"
+                        >${this.crawlTemplate.profileName}</span
+                      >
+                    </a>`
+                  : html`<span class="text-neutral-400">${msg("None")}</span>`}
+              `
+            : ""}
+        </div>
+        <div class="col-span-1">
+          <div class="text-sm text-neutral-600">${msg("Language")}</div>
+          ${this.crawlTemplate
+            ? html`
+                ${this.crawlTemplate.config.lang
+                  ? html`<a
+                      class="font-medium text-neutral-700 hover:text-neutral-900"
+                      href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                      @click=${this.navLink}
+                    >
+                      <sl-icon
+                        class="inline-block align-middle"
+                        name="link-45deg"
+                      ></sl-icon>
+                      <span class="inline-block align-middle"
+                        >${this.crawlTemplate.config.lang}</span
+                      >
+                    </a>`
+                  : html`<span class="text-neutral-400"
+                      >${msg("Default")}</span
+                    >`}
+              `
+            : ""}
+        </div>
       </div>
 
+      <div class="mb-5">
+        <div class="text-sm text-0-600">${msg("Include External Links")}</div>
+        ${this.crawlTemplate?.config.extraHops ? msg("Yes") : msg("No")}
+      </div>
+
+      <div class="mb-5">
+        ${this.crawlTemplate?.config.exclude?.length
+          ? html`
+              <btrix-queue-exclusion-table
+                .exclusions=${this.crawlTemplate.config.exclude}
+              >
+              </btrix-queue-exclusion-table>
+            `
+          : html` <div class="text-sm text-0-600">${msg("Exclusions")}</div>
+              ${msg("None")}`}
+      </div>
+
+      <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
+        <span slot="summary" class="text-sm">
+          <span class="font-medium">${msg("Advanced Configuration")}</span>
+        </span>
+        <div class="relative">
+          <pre
+            class="language-yaml text-neutral-600 p-4 rounded font-mono leading-relaxed text-xs overflow-auto"
+          ><code>${configCodeYaml}</code></pre>
+
+          <div class="absolute top-2 right-2">
+            <btrix-copy-button .value=${configCodeYaml}></btrix-copy-button>
+          </div>
+        </div>
+      </sl-details>
+    `;
+  }
+
+  private renderSeedsTable() {
+    const seeds = this.crawlTemplate?.config.seeds || [];
+
+    return html`
       <div class="mb-5" role="table">
         <div
-          class="hidden md:grid grid-cols-5 gap-4 items-end text-xs md:text-sm text-0-600"
+          class="hidden md:grid grid-cols-4 items-end text-xs md:text-sm text-0-600"
           role="row"
         >
-          <span class="col-span-3" role="columnheader">${msg("Seed URL")}</span>
+          <span class="col-span-2" role="columnheader">${msg("Seed URL")}</span>
           <span class="col-span-1" role="columnheader"
             >${msg("Scope Type")}</span
           >
@@ -583,13 +648,13 @@ export class CrawlTemplatesDetail extends LiteElement {
             .map(
               (seed, i) =>
                 html`<li
-                  class="grid grid-cols-5 gap-4 items-baseline py-1 border-zinc-100${i
+                  class="grid grid-cols-4 items-baseline py-1 border-zinc-100${i
                     ? " border-t"
                     : ""}"
                   role="row"
                   title=${typeof seed === "string" ? seed : seed.url}
                 >
-                  <div class="col-span-3 break-all leading-tight" role="cell">
+                  <div class="col-span-2 break-all leading-tight" role="cell">
                     ${typeof seed === "string" ? seed : seed.url}
                   </div>
                   <span
@@ -625,38 +690,6 @@ export class CrawlTemplatesDetail extends LiteElement {
             </sl-button>`
           : ""}
       </div>
-
-      <div class="mb-5">
-        <div class="text-sm text-0-600">${msg("Include External Links")}</div>
-        ${this.crawlTemplate?.config.extraHops ? msg("Yes") : msg("No")}
-      </div>
-
-      <div class="mb-5">
-        ${this.crawlTemplate?.config.exclude?.length
-          ? html`
-              <btrix-queue-exclusion-table
-                .exclusions=${this.crawlTemplate.config.exclude}
-              >
-              </btrix-queue-exclusion-table>
-            `
-          : html` <div class="text-sm text-0-600">${msg("Exclusions")}</div>
-              ${msg("None")}`}
-      </div>
-
-      <sl-details style="--sl-spacing-medium: var(--sl-spacing-small)">
-        <span slot="summary" class="text-sm">
-          <span class="font-medium">${msg("Advanced Configuration")}</span>
-        </span>
-        <div class="relative">
-          <pre
-            class="language-yaml text-neutral-600 p-4 rounded font-mono leading-relaxed text-xs overflow-auto"
-          ><code>${configCodeYaml}</code></pre>
-
-          <div class="absolute top-2 right-2">
-            <btrix-copy-button .value=${configCodeYaml}></btrix-copy-button>
-          </div>
-        </div>
-      </sl-details>
     `;
   }
 
