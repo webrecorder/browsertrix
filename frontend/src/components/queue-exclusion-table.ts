@@ -218,6 +218,7 @@ export class QueueExclusionTable extends LiteElement {
         <input
           placeholder=${msg("Enter value")}
           class="styledInput block w-full h-9 px-2"
+          value=${exclusion.value}
           @change=${(e: InputEvent) => {
             const inputElem = e.target as HTMLInputElement;
             // Get latest exclusion type value from select
