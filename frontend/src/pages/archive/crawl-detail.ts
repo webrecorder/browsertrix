@@ -199,7 +199,7 @@ export class CrawlDetail extends LiteElement {
       </main>
 
       <sl-dialog
-        label=${msg(str`Change Crawl Scale`)}
+        label=${msg(str`Change Crawler Instances`)}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -297,7 +297,7 @@ export class CrawlDetail extends LiteElement {
                   <sl-button size="small" @click=${this.cancel}>
                     <sl-icon
                       class="text-danger"
-                      name="trash"
+                      name="trash3"
                       slot="prefix"
                     ></sl-icon>
                     <span class="text-danger"> ${msg("Cancel")} </span>
@@ -332,7 +332,10 @@ export class CrawlDetail extends LiteElement {
             : msg("Actions")}</sl-button
         >
 
-        <ul class="text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
             ? html`
                 <li
@@ -515,7 +518,7 @@ export class CrawlDetail extends LiteElement {
             ${isStopping
               ? html`
                   <div class="mb-4">
-                    <btrix-alert type="warning" class="text-sm">
+                    <btrix-alert variant="warning" class="text-sm">
                       ${msg("Crawl stopping...")}
                     </btrix-alert>
                   </div>
@@ -682,7 +685,7 @@ export class CrawlDetail extends LiteElement {
                       ${this.crawl.configName}
                     </span>
                     ${this.crawlTemplate?.inactive
-                      ? html`<sl-tag type="warning" size="small"
+                      ? html`<sl-tag variant="warning" size="small"
                           >${msg("Inactive")}</sl-tag
                         >`
                       : ""}
@@ -799,24 +802,24 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div class="text-center">
-        <sl-button-group>
+        <sl-radio-group value=${this.crawl.scale}>
           ${scaleOptions.map(
             ({ value, label }) => html`
-              <sl-button
-                type=${value === this.crawl?.scale ? "neutral" : "default"}
-                aria-selected=${value === this.crawl?.scale}
-                pill
+              <sl-radio-button
+                value=${value}
                 @click=${() => this.scale(value)}
                 ?disabled=${this.isSubmittingUpdate}
-                >${label}</sl-button
+                >${label}</sl-radio-button
               >
             `
           )}
-        </sl-button-group>
+        </sl-radio-group>
       </div>
 
       <div class="mt-5 text-right">
-        <sl-button type="text" @click=${() => (this.openDialogName = undefined)}
+        <sl-button
+          variant="text"
+          @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
         >
       </div>
@@ -870,7 +873,7 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -924,7 +927,7 @@ export class CrawlDetail extends LiteElement {
       } else {
         this.notify({
           message: msg("Sorry, couldn't cancel crawl at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -946,7 +949,7 @@ export class CrawlDetail extends LiteElement {
       } else {
         this.notify({
           message: msg("Sorry, couldn't stop crawl at this time."),
-          type: "danger",
+          variant: "danger",
           icon: "exclamation-octagon",
         });
       }
@@ -971,7 +974,7 @@ export class CrawlDetail extends LiteElement {
 
         this.notify({
           message: msg("Updated crawl scale."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
       } else {
@@ -983,7 +986,7 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't change crawl scale at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1012,7 +1015,7 @@ export class CrawlDetail extends LiteElement {
                 >View crawl</a
               >`
           ),
-          type: "warning",
+          variant: "warning",
           icon: "exclamation-triangle",
         });
 
@@ -1035,14 +1038,14 @@ export class CrawlDetail extends LiteElement {
         message: msg(
           html`Started crawl from <strong>${this.crawl.configName}</strong>.`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1066,7 +1069,7 @@ export class CrawlDetail extends LiteElement {
       message: msg(
         html`Done crawling <strong>${this.crawl.configName}</strong>.`
       ),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
 

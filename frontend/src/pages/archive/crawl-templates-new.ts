@@ -173,7 +173,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
       <main class="mt-6">
         <div class="md:border md:rounded-lg">
-          <sl-form @sl-submit=${this.onSubmit} aria-describedby="formError">
+          <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="grid grid-cols-3">
               ${this.renderBasicSettings()} ${this.renderCrawlConfigSettings()}
               ${this.renderScheduleSettings()}
@@ -190,15 +190,15 @@ export class CrawlTemplatesNew extends LiteElement {
               </div>
 
               ${this.serverError
-                ? html`<btrix-alert id="formError" type="danger"
+                ? html`<btrix-alert id="formError" variant="danger"
                     >${this.serverError}</btrix-alert
                   >`
                 : ""}
 
               <div>
                 <sl-button
-                  type="primary"
-                  submit
+                  variant="primary"
+                  type="submit"
                   ?loading=${this.isSubmitting}
                   ?disabled=${this.isSubmitting}
                   >${this.isRunNow
@@ -207,7 +207,7 @@ export class CrawlTemplatesNew extends LiteElement {
                 >
               </div>
             </div>
-          </sl-form>
+          </form>
         </div>
       </main>
     `;
@@ -304,34 +304,28 @@ export class CrawlTemplatesNew extends LiteElement {
                     html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
                 )}
               </sl-select>
-              <sl-button-group>
-                <sl-button
-                  type=${this.scheduleTime.period === "AM"
-                    ? "neutral"
-                    : "default"}
-                  aria-selected=${this.scheduleTime.period === "AM"}
+              <sl-radio-group value=${this.scheduleTime.period}>
+                <sl-radio-button
+                  value="AM"
                   ?disabled=${!this.scheduleInterval}
                   @click=${() =>
                     (this.scheduleTime = {
                       ...this.scheduleTime,
                       period: "AM",
                     })}
-                  >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+                  >${msg("AM", { desc: "Time AM/PM" })}</sl-radio-button
                 >
-                <sl-button
-                  type=${this.scheduleTime.period === "PM"
-                    ? "neutral"
-                    : "default"}
-                  aria-selected=${this.scheduleTime.period === "PM"}
+                <sl-radio-button
+                  value="PM"
                   ?disabled=${!this.scheduleInterval}
                   @click=${() =>
                     (this.scheduleTime = {
                       ...this.scheduleTime,
                       period: "PM",
                     })}
-                  >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+                  >${msg("PM", { desc: "Time AM/PM" })}</sl-radio-button
                 >
-              </sl-button-group>
+              </sl-radio-group>
             </div>
           </fieldset>
           <div class="text-sm text-neutral-500 mt-2">
@@ -554,13 +548,12 @@ export class CrawlTemplatesNew extends LiteElement {
     onSuccess();
   }
 
-  private async onSubmit(event: {
-    detail: { formData: FormData };
-    target: any;
-  }) {
+  private async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     if (!this.authState) return;
 
-    const params = this.parseTemplate(event.detail.formData);
+    const formData = new FormData(event.target as HTMLFormElement);
+    const params = this.parseTemplate(formData);
 
     this.serverError = undefined;
     this.isSubmitting = true;
@@ -581,7 +574,7 @@ export class CrawlTemplatesNew extends LiteElement {
         message: crawlId
           ? msg("Crawl started with new template.")
           : msg("Crawl template created."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });

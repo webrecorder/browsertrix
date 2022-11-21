@@ -188,7 +188,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.successMessage) {
       successMessage = html`
         <div>
-          <btrix-alert type="success"
+          <btrix-alert variant="success"
             >${this.formState.context.successMessage}</btrix-alert
           >
         </div>
@@ -223,7 +223,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.formState.context.serverError}</btrix-alert
           >
         </div>
@@ -231,21 +231,7 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
-      <style>
-        input {
-          transition: var(--sl-transition-fast) color,
-            var(--sl-transition-fast) border,
-            var(--sl-transition-fast) box-shadow,
-            var(--sl-transition-fast) background-color;
-        }
-
-        input:focus {
-          border-color: var(--sl-input-border-color-focus);
-          box-shadow: var(--sl-focus-ring);
-          outline: 0;
-        }
-      </style>
-      <sl-form @sl-submit="${this.onSubmitLogIn}" aria-describedby="formError">
+      <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
           <btrix-input
             id="email"
@@ -264,7 +250,7 @@ export class LogInPage extends LiteElement {
             label=${msg("Password")}
             type="password"
             autocomplete="current-password"
-            togglePassword
+            passwordToggle
             required
           >
           </btrix-input>
@@ -274,12 +260,12 @@ export class LogInPage extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.formState.value === "signingIn"}
-          submit
+          type="submit"
           >${msg("Log in")}</sl-button
         >
-      </sl-form>
+      </form>
     `;
   }
 
@@ -289,7 +275,7 @@ export class LogInPage extends LiteElement {
     if (this.formState.context.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.formState.context.serverError}</btrix-alert
           >
         </div>
@@ -297,10 +283,7 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
-      <sl-form
-        @sl-submit="${this.onSubmitResetPassword}"
-        aria-describedby="formError"
-      >
+      <form @submit=${this.onSubmitResetPassword} aria-describedby="formError">
         <div class="mb-5">
           <btrix-input
             id="email"
@@ -317,19 +300,20 @@ export class LogInPage extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.formState.value === "submittingForgotPassword"}
-          submit
+          type="submit"
           >${msg("Request password reset")}</sl-button
         >
-      </sl-form>
+      </form>
     `;
   }
 
-  async onSubmitLogIn(event: { detail: { formData: FormData } }) {
+  async onSubmitLogIn(event: SubmitEvent) {
+    event.preventDefault();
     this.formStateService.send("SUBMIT");
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
@@ -362,10 +346,11 @@ export class LogInPage extends LiteElement {
     }
   }
 
-  async onSubmitResetPassword(event: { detail: { formData: FormData } }) {
+  async onSubmitResetPassword(event: SubmitEvent) {
+    event.preventDefault();
     this.formStateService.send("SUBMIT");
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get("email") as string;
 
     const resp = await fetch("/api/auth/forgot-password", {

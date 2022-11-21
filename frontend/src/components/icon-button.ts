@@ -122,7 +122,7 @@ export class IconButton extends LitElement {
 
   private submit() {
     const form = (this.closest("form") ||
-      this.closest("sl-form")) as HTMLFormElement;
+      this.closest("form")) as HTMLFormElement;
 
     if (form) {
       form.submit();

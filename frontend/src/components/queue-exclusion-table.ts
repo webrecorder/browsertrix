@@ -164,7 +164,7 @@ export class QueueExclusionTable extends LiteElement {
         <td class="p-2 font-mono ${valueColClass}">${value}</td>
         <td class="text-[1rem] text-center ${actionColClass}">
           <btrix-icon-button
-            name="trash"
+            name="trash3"
             @click=${() => this.removeExclusion(exclusion)}
           ></btrix-icon-button>
         </td>

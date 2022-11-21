@@ -38,7 +38,7 @@ export class SignUpForm extends LiteElement {
     if (this.serverError) {
       serverError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -46,7 +46,7 @@ export class SignUpForm extends LiteElement {
     }
 
     return html`
-      <sl-form @sl-submit="${this.onSubmit}" aria-describedby="formError">
+      <form @submit=${this.onSubmit} aria-describedby="formError">
         <div class="mb-5">
           ${this.email
             ? html`
@@ -81,7 +81,7 @@ export class SignUpForm extends LiteElement {
             type="password"
             label=${msg("Create a password")}
             autocomplete="new-password"
-            togglePassword
+            passwordToggle
             required
           >
           </btrix-input>
@@ -108,22 +108,24 @@ export class SignUpForm extends LiteElement {
 
         <sl-button
           class="w-full"
-          type="primary"
+          variant="primary"
           ?loading=${this.isSubmitting}
-          submit
+          type="submit"
           >${msg("Sign up")}</sl-button
         >
-      </sl-form>
+      </form>
     `;
   }
 
-  private async onSubmit(event: { detail: { formData: FormData } }) {
+  private async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    event.stopPropagation();
     this.dispatchEvent(new CustomEvent("submit"));
 
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;

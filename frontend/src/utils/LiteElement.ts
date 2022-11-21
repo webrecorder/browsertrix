@@ -37,7 +37,7 @@ export interface NotifyEvent extends CustomEvent {
     title?: string;
     /** Shoelace icon name */
     icon?: string;
-    type?: "success" | "warning" | "danger" | "primary" | "info";
+    variant?: "success" | "warning" | "danger" | "primary" | "info";
     duration?: number;
   };
 }

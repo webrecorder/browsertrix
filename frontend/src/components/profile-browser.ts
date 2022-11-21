@@ -115,7 +115,7 @@ export class ProfileBrowser extends LiteElement {
     if (!ProfileBrowser.isBrowserCompatible) {
       return html`
         <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
-          <btrix-alert type="warning" class="text-sm">
+          <btrix-alert variant="warning" class="text-sm">
             ${msg(
               "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
             )}
@@ -128,7 +128,7 @@ export class ProfileBrowser extends LiteElement {
       return html`
         <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
           <btrix-alert
-            type="danger"
+            variant="danger"
             style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
           >
             ${msg(`The interactive browser is not available.`)}
@@ -267,7 +267,7 @@ export class ProfileBrowser extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

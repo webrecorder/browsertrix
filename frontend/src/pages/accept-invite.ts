@@ -50,7 +50,7 @@ export class AcceptInvite extends LiteElement {
     } else {
       this.notify({
         message: msg("Log in to continue."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 10000,
       });
@@ -69,7 +69,7 @@ export class AcceptInvite extends LiteElement {
     if (this.serverError) {
       serverError = html`
         <div>
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -110,7 +110,7 @@ export class AcceptInvite extends LiteElement {
           </p>
 
           <div class="text-center">
-            <sl-button class="mr-2" type="primary" @click=${this.onAccept}
+            <sl-button class="mr-2" variant="primary" @click=${this.onAccept}
               >${msg("Accept invitation")}</sl-button
             >
             <sl-button @click=${this.onDecline}>${msg("Decline")}</sl-button>
@@ -158,7 +158,7 @@ export class AcceptInvite extends LiteElement {
 
       this.notify({
         message: msg(str`You've joined ${this.inviteInfo.archiveName}.`),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -177,7 +177,7 @@ export class AcceptInvite extends LiteElement {
       message: msg(
         str`You've declined to join ${this.inviteInfo.archiveName}.`
       ),
-      type: "info",
+      variant: "info",
       icon: "info-circle",
     });
 

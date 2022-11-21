@@ -70,7 +70,7 @@ export class ConfigEditor extends LiteElement {
 
         <div class="text-sm">
           ${this.errorMessage
-            ? html`<btrix-alert type="danger">
+            ? html`<btrix-alert variant="danger">
                 <div class="whitespace-pre-wrap">${this.errorMessage}</div>
               </btrix-alert> `
             : ""}

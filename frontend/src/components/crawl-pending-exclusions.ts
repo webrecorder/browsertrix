@@ -72,7 +72,7 @@ export class CrawlPendingExclusions extends LiteElement {
     if (!this.matchedURLs) return "";
 
     return html`
-      <btrix-badge type=${this.total ? "danger" : "neutral"} class="ml-1">
+      <btrix-badge variant=${this.total ? "danger" : "neutral"} class="ml-1">
         ${this.total
           ? this.total > 1
             ? msg(str`+${this.total.toLocaleString()} URLs`)

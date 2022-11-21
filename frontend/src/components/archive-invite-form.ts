@@ -25,7 +25,7 @@ export class ArchiveInviteForm extends LiteElement {
     if (this.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -33,9 +33,9 @@ export class ArchiveInviteForm extends LiteElement {
     }
 
     return html`
-      <sl-form
+      <form
         class="max-w-md"
-        @sl-submit=${this.onSubmit}
+        @submit=${this.onSubmit}
         aria-describedby="formError"
       >
         <div class="mb-5">
@@ -52,20 +52,19 @@ export class ArchiveInviteForm extends LiteElement {
           </sl-input>
         </div>
         <div class="mb-5">
-          <sl-radio-group label="Select an option">
-            <sl-radio name="role" value=${AccessCode.owner}>
-              ${msg("Admin")}
-              <span class="text-gray-500">
-                - ${msg("Can manage crawls and invite others")}</span
-              >
+          <sl-radio-group
+            name="role"
+            label="Select an option"
+            value=${AccessCode.viewer}
+          >
+            <sl-radio value=${AccessCode.owner}>
+              ${msg("Admin")} - ${msg("Can manage crawls and invite others")}
             </sl-radio>
-            <sl-radio name="role" value=${AccessCode.crawler}>
-              ${msg("Crawler")}
-              <span class="text-gray-500"> - ${msg("Can manage crawls")}</span>
+            <sl-radio value=${AccessCode.crawler}>
+              ${msg("Crawler")} - ${msg("Can manage crawls")}
             </sl-radio>
-            <sl-radio name="role" value=${AccessCode.viewer} checked>
-              ${msg("Viewer")}
-              <span class="text-gray-500"> - ${msg("Can view crawls")}</span>
+            <sl-radio value=${AccessCode.viewer}>
+              ${msg("Viewer")} - ${msg("Can view crawls")}
             </sl-radio>
           </sl-radio-group>
         </div>
@@ -74,28 +73,29 @@ export class ArchiveInviteForm extends LiteElement {
 
         <div>
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?loading=${this.isSubmitting}
             ?disabled=${this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => this.dispatchEvent(new CustomEvent("cancel"))}
             >${msg("Cancel")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     if (!this.authState) return;
 
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {

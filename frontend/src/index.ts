@@ -206,7 +206,7 @@ export class App extends LiteElement {
       <sl-dialog
         id="globalDialog"
         ?no-header=${this.globalDialogContent?.noHeader === true}
-        label=${ifDefined(this.globalDialogContent?.label)}
+        label=${this.globalDialogContent?.label || msg("Message")}
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent?.body}</sl-dialog
       >
@@ -267,7 +267,7 @@ export class App extends LiteElement {
                             <div class="mb-2">
                               <sl-tag
                                 class="uppercase"
-                                type="primary"
+                                variant="primary"
                                 size="small"
                                 >${msg("admin")}</sl-tag
                               >
@@ -308,7 +308,7 @@ export class App extends LiteElement {
                   ${this.isRegistrationEnabled
                     ? html`
                         <sl-button
-                          type="text"
+                          variant="text"
                           @click="${() => this.navigate("/sign-up")}"
                         >
                           ${msg("Sign up")}
@@ -559,13 +559,13 @@ export class App extends LiteElement {
         </button>
 
         <div class="p-2">
-          <sl-form
-            @sl-submit=${(e: any) => {
-              const id = e.detail.formData.get("crawlId");
+          <form
+            @submit=${(e: any) => {
+              e.preventDefault();
+              const id = new FormData(e.target).get("crawlId");
               this.navigate(`/crawls/crawl/${id}`);
               e.target.closest("sl-dropdown").hide();
             }}
-            lab
           >
             <div class="flex flex-wrap items-center">
               <div class="mr-2 w-90">
@@ -577,13 +577,13 @@ export class App extends LiteElement {
                 ></sl-input>
               </div>
               <div class="grow-0">
-                <sl-button size="small" type="neutral" submit>
+                <sl-button size="small" variant="neutral" type="submit">
                   <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
                   ${msg("Go")}</sl-button
                 >
               </div>
             </div>
-          </sl-form>
+          </form>
         </div>
       </sl-dropdown>
     `;
@@ -654,14 +654,14 @@ export class App extends LiteElement {
     const {
       title,
       message,
-      type = "primary",
+      variant = "primary",
       icon = "info-circle",
       duration = 5000,
     } = event.detail;
 
     const container = document.createElement("sl-alert");
     const alert = Object.assign(container, {
-      type: type,
+      variant,
       closable: true,
       duration: duration,
       style: [
@@ -719,7 +719,7 @@ export class App extends LiteElement {
         </div>
 
         <div class="mb-4 mt-8 text-center">
-          <sl-button type="primary" @click=${() => this.closeDialog()}
+          <sl-button variant="primary" @click=${() => this.closeDialog()}
             >${msg("Got it, go to dashboard")}</sl-button
           >
         </div>

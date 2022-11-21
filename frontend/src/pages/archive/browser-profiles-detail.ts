@@ -86,7 +86,7 @@ export class BrowserProfilesDetail extends LiteElement {
             ? html`${this.profile?.name}
                 <sl-button
                   size="small"
-                  type="text"
+                  variant="text"
                   @click=${() => (this.isEditDialogOpen = true)}
                 >
                   ${msg("Edit")}
@@ -194,7 +194,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       >${msg("Cancel")}</sl-button
                     >
                     <sl-button
-                      type="primary"
+                      variant="primary"
                       size="small"
                       ?loading=${this.isSubmittingBrowserChange}
                       ?disabled=${this.isSubmittingBrowserChange ||
@@ -237,7 +237,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       )}
                     </p>
                     <sl-button
-                      type="primary"
+                      variant="primary"
                       outline
                       ?disabled=${!ProfileBrowser.isBrowserCompatible}
                       @click=${this.startBrowserPreview}
@@ -269,7 +269,10 @@ export class BrowserProfilesDetail extends LiteElement {
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
-        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
@@ -322,7 +325,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (!this.profile) return;
 
     return html`
-      <sl-form @sl-submit=${this.onSubmitEdit}>
+      <form @submit=${this.onSubmitEdit}>
         <div class="mb-5">
           <sl-input
             name="name"
@@ -344,18 +347,20 @@ export class BrowserProfilesDetail extends LiteElement {
         </div>
 
         <div class="text-right">
-          <sl-button type="text" @click=${() => (this.isEditDialogOpen = false)}
+          <sl-button
+            variant="text"
+            @click=${() => (this.isEditDialogOpen = false)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?disabled=${this.isSubmittingProfileChange}
             ?loading=${this.isSubmittingProfileChange}
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -376,7 +381,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't preview browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -410,7 +415,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.notify({
         message: msg("Starting up browser with current profile..."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
 
@@ -428,7 +433,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -456,7 +461,7 @@ export class BrowserProfilesDetail extends LiteElement {
                   .join(", ")}</strong
               >. Please remove browser profile from crawl template to continue.`
           ),
-          type: "warning",
+          variant: "warning",
           icon: "exclamation-triangle",
           duration: 15000,
         });
@@ -465,14 +470,14 @@ export class BrowserProfilesDetail extends LiteElement {
 
         this.notify({
           message: msg(html`Deleted <strong>${profileName}</strong>.`),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
       }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -515,7 +520,7 @@ export class BrowserProfilesDetail extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -563,7 +568,7 @@ export class BrowserProfilesDetail extends LiteElement {
       if (data.success === true) {
         this.notify({
           message: msg("Successfully saved browser profile."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
 
@@ -574,7 +579,7 @@ export class BrowserProfilesDetail extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -582,10 +587,11 @@ export class BrowserProfilesDetail extends LiteElement {
     this.isSubmittingBrowserChange = false;
   }
 
-  private async onSubmitEdit(e: { detail: { formData: FormData } }) {
+  private async onSubmitEdit(e: SubmitEvent) {
+    e.preventDefault;
     this.isSubmittingProfileChange = true;
 
-    const { formData } = e.detail;
+    const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
 
@@ -607,7 +613,7 @@ export class BrowserProfilesDetail extends LiteElement {
       if (data.success === true) {
         this.notify({
           message: msg("Successfully saved browser profile."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
 
@@ -622,7 +628,7 @@ export class BrowserProfilesDetail extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

@@ -98,7 +98,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           e.statusCode === 404
             ? msg("Crawl template not found.")
             : msg("Sorry, couldn't retrieve crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -138,7 +138,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                       : html`
                           <sl-button
                             size="small"
-                            type="text"
+                            variant="text"
                             @click=${() => (this.openDialogName = "name")}
                           >
                             ${msg("Edit")}
@@ -206,7 +206,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   : html`
                       <sl-button
                         size="small"
-                        type="text"
+                        variant="text"
                         @click=${() => (this.openDialogName = "config")}
                       >
                         ${msg("Edit")}
@@ -228,7 +228,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   : html`
                       <sl-button
                         size="small"
-                        type="text"
+                        variant="text"
                         @click=${() => (this.openDialogName = "schedule")}
                       >
                         ${msg("Edit")}
@@ -404,7 +404,10 @@ export class CrawlTemplatesDetail extends LiteElement {
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
 
-        <ul class="text-left text-sm text-0-800 whitespace-nowrap" role="menu">
+        <ul
+          class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
+          role="menu"
+        >
           ${menuItems.map((item: HTMLTemplateResult) => item)}
         </ul>
       </sl-dropdown>
@@ -415,7 +418,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlTemplate?.inactive) {
       if (this.crawlTemplate?.newId) {
         return html`
-          <btrix-alert type="info">
+          <btrix-alert variant="info">
             <sl-icon
               name="exclamation-octagon"
               class="inline-block align-middle mr-2"
@@ -434,7 +437,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       }
 
       return html`
-        <btrix-alert type="warning">
+        <btrix-alert variant="warning">
           <sl-icon
             name="exclamation-octagon"
             class="inline-block align-middle mr-2"
@@ -503,7 +506,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditName}>
+      <form @submit=${this.handleSubmitEditName}>
         <sl-input
           name="name"
           label=${msg("Name")}
@@ -517,19 +520,19 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <div class="mt-5 text-right">
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -608,7 +611,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         ${seeds.length > SEED_URLS_MAX
           ? html`<sl-button
               class="mt-2"
-              type="neutral"
+              variant="neutral"
               size="small"
               @click=${() => (this.showAllSeedURLs = !this.showAllSeedURLs)}
             >
@@ -663,7 +666,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     const shouldReplacingTemplate = this.crawlTemplate.crawlCount > 0;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditConfiguration}>
+      <form @submit=${this.handleSubmitEditConfiguration}>
         <div class="grid gap-5">
           ${shouldReplacingTemplate
             ? html`
@@ -711,20 +714,20 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           <div class="text-right">
             <sl-button
-              type="text"
+              variant="text"
               @click=${() => (this.openDialogName = undefined)}
               >${msg("Cancel")}</sl-button
             >
             <sl-button
-              type="primary"
-              submit
+              variant="primary"
+              type="submit"
               ?disabled=${this.isSubmittingUpdate}
               ?loading=${this.isSubmittingUpdate}
               >${msg("Save Changes")}</sl-button
             >
           </div>
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -885,7 +888,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlTemplate) return;
 
     return html`
-      <sl-form @sl-submit=${this.handleSubmitEditScale}>
+      <form @submit=${this.handleSubmitEditScale}>
         <sl-select
           name="scale"
           value=${this.crawlTemplate.scale}
@@ -915,19 +918,19 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <div class="mt-5 text-right">
           <sl-button
-            type="text"
+            variant="text"
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?disabled=${this.isSubmittingUpdate}
             ?loading=${this.isSubmittingUpdate}
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -1106,13 +1109,14 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),
-      type: "success",
+      variant: "success",
       icon: "check2-circle",
     });
   }
 
-  private async handleSubmitEditName(e: { detail: { formData: FormData } }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditName(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get("name") as string;
 
     await this.updateTemplate({ name });
@@ -1120,8 +1124,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     this.openDialogName = undefined;
   }
 
-  private async handleSubmitEditScale(e: { detail: { formData: FormData } }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditScale(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const scale = formData.get("scale") as string;
 
     await this.updateTemplate({ scale: +scale });
@@ -1129,10 +1134,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     this.openDialogName = undefined;
   }
 
-  private async handleSubmitEditConfiguration(e: {
-    detail: { formData: FormData };
-  }) {
-    const { formData } = e.detail;
+  private async handleSubmitEditConfiguration(e: SubmitEvent) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
     const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;
@@ -1206,13 +1210,13 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: msg(
           html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1238,7 +1242,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: isDeactivating
           ? msg(html`Deactivated <strong>${this.crawlTemplate.name}</strong>.`)
           : msg(html`Deleted <strong>${this.crawlTemplate.name}</strong>.`),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch {
@@ -1246,7 +1250,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         message: isDeactivating
           ? msg("Sorry, couldn't deactivate crawl template at this time.")
           : msg("Sorry, couldn't delete crawl template at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1283,14 +1287,14 @@ export class CrawlTemplatesDetail extends LiteElement {
               >Watch crawl</a
             >`
         ),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1333,7 +1337,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Crawl template updated."),
-        type: "success",
+        variant: "success",
         icon: "check2-circle",
       });
     } catch (e: any) {
@@ -1341,7 +1345,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Something went wrong, couldn't update crawl template."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }
@@ -1374,7 +1378,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         this.notify({
           message: msg("Successfully saved changes."),
-          type: "success",
+          variant: "success",
           icon: "check2-circle",
         });
       } else {
@@ -1385,7 +1389,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg("Something went wrong, couldn't update crawl template."),
-        type: "danger",
+        variant: "danger",
         icon: "exclamation-octagon",
       });
     }

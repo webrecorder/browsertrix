@@ -43,7 +43,7 @@ export class Input extends LiteElement {
   required?: any;
 
   @property({ type: Boolean })
-  togglePassword?: boolean;
+  passwordToggle?: boolean;
 
   @state()
   isPasswordVisible: boolean = false;
@@ -65,8 +65,9 @@ export class Input extends LiteElement {
           placeholder=${ifDefined(this.placeholder)}
           value=${ifDefined(this.value)}
           ?required=${Boolean(this.required)}
+          @keydown=${this.handleKeyDown}
         />
-        ${this.togglePassword
+        ${this.passwordToggle
           ? html`
               <sl-icon-button
                 class="sl-input-icon-button"
@@ -81,5 +82,20 @@ export class Input extends LiteElement {
 
   private onTogglePassword() {
     this.isPasswordVisible = !this.isPasswordVisible;
+  }
+
+  handleKeyDown(event: KeyboardEvent) {
+    // Enable submit on enter when using <sl-button type="submit">
+    if (event.key === "Enter") {
+      const form = this.closest("form") as HTMLFormElement;
+      if (form) {
+        const submitButton = form.querySelector(
+          'sl-button[type="submit"]'
+        ) as HTMLButtonElement;
+        if (submitButton) {
+          submitButton.click();
+        }
+      }
+    }
   }
 }

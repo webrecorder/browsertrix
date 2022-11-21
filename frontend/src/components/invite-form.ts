@@ -24,7 +24,7 @@ export class InviteForm extends LiteElement {
     if (this.serverError) {
       formError = html`
         <div class="mb-5">
-          <btrix-alert id="formError" type="danger"
+          <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
         </div>
@@ -32,9 +32,9 @@ export class InviteForm extends LiteElement {
     }
 
     return html`
-      <sl-form
+      <form
         class="max-w-md"
-        @sl-submit=${this.onSubmit}
+        @submit=${this.onSubmit}
         aria-describedby="formError"
       >
         <div class="mb-5">
@@ -55,24 +55,25 @@ export class InviteForm extends LiteElement {
 
         <div>
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?loading=${this.isSubmitting}
             ?disabled=${this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
-  async onSubmit(event: { detail: { formData: FormData } }) {
+  async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
     if (!this.authState) return;
 
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const { formData } = event.detail;
+    const formData = new FormData(event.target as HTMLFormElement);
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {

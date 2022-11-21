@@ -41,7 +41,9 @@ export class Join extends LiteElement {
 
   render() {
     if (this.serverError) {
-      return html`<btrix-alert type="danger">${this.serverError}</btrix-alert>`;
+      return html`<btrix-alert variant="danger"
+        >${this.serverError}</btrix-alert
+      >`;
     }
 
     const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);

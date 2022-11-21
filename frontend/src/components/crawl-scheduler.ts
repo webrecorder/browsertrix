@@ -71,7 +71,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
     const utcSchedule = this.getUTCSchedule();
 
     return html`
-      <sl-form @sl-submit=${this.onSubmit}>
+      <form @submit=${this.onSubmit}>
         <div class="flex items-end">
           <div class="pr-2 flex-1">
             <sl-select
@@ -142,34 +142,28 @@ export class CrawlTemplatesScheduler extends LiteElement {
               type="hidden"
               value=${this.scheduleTime.period}
             />
-            <sl-button-group>
-              <sl-button
-                type=${this.scheduleTime.period === "AM"
-                  ? "neutral"
-                  : "default"}
-                aria-selected=${this.scheduleTime.period === "AM"}
+            <sl-radio-group value=${this.scheduleTime.period}>
+              <sl-radio-button
+                value="AM"
                 ?disabled=${this.isScheduleDisabled}
                 @click=${() =>
                   (this.scheduleTime = {
                     ...this.scheduleTime,
                     period: "AM",
                   })}
-                >${msg("AM", { desc: "Time AM/PM" })}</sl-button
+                >${msg("AM", { desc: "Time AM/PM" })}</sl-radio-button
               >
-              <sl-button
-                type=${this.scheduleTime.period === "PM"
-                  ? "neutral"
-                  : "default"}
-                aria-selected=${this.scheduleTime.period === "PM"}
+              <sl-radio-button
+                value="PM"
                 ?disabled=${this.isScheduleDisabled}
                 @click=${() =>
                   (this.scheduleTime = {
                     ...this.scheduleTime,
                     period: "PM",
                   })}
-                >${msg("PM", { desc: "Time AM/PM" })}</sl-button
+                >${msg("PM", { desc: "Time AM/PM" })}</sl-radio-button
               >
-            </sl-button-group>
+            </sl-radio-group>
           </div>
         </fieldset>
 
@@ -191,21 +185,21 @@ export class CrawlTemplatesScheduler extends LiteElement {
         <div class="mt-5${this.cancelable ? " text-right" : ""}">
           ${this.cancelable
             ? html`
-                <sl-button type="text" @click=${this.onCancel}
+                <sl-button variant="text" @click=${this.onCancel}
                   >${msg("Cancel")}</sl-button
                 >
               `
             : ""}
 
           <sl-button
-            type="primary"
-            submit
+            variant="primary"
+            type="submit"
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
             >${msg("Save Changes")}</sl-button
           >
         </div>
-      </sl-form>
+      </form>
     `;
   }
 
@@ -213,8 +207,16 @@ export class CrawlTemplatesScheduler extends LiteElement {
     this.dispatchEvent(new CustomEvent("cancel", event));
   }
 
-  private onSubmit(event: any) {
-    this.dispatchEvent(new CustomEvent("submit", event));
+  private onSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("submit", {
+        detail: {
+          formData: new FormData(event.target as HTMLFormElement),
+        },
+      })
+    );
   }
 
   /**

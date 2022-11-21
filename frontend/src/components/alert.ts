@@ -12,7 +12,7 @@ import { property } from "lit/decorators.js";
  */
 export class Alert extends LitElement {
   @property({ type: String })
-  type: "success" | "warning" | "danger" | "info" = "info";
+  variant: "success" | "warning" | "danger" | "info" = "info";
 
   static styles = css`
     :host > div {
@@ -43,7 +43,7 @@ export class Alert extends LitElement {
 
   render() {
     return html`
-      <div class="${this.type}" role="alert">
+      <div class="${this.variant}" role="alert">
         <slot></slot>
       </div>
     `;
