@@ -186,11 +186,10 @@ export class QueueExclusionTable extends LiteElement {
           .value=${exclusion.type}
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
-          @sl-select=${(e: any) => {
-            exclusion.type = e.target.value;
+          @sl-select=${(e: Event) => {
             this.updateExclusion({
-              type: exclusion.type,
-              value: e.target.value,
+              type: (e.target as HTMLSelectElement).value as Exclusion["type"],
+              value: exclusion.value,
               index,
             });
           }}
@@ -219,6 +218,20 @@ export class QueueExclusionTable extends LiteElement {
         <input
           placeholder=${msg("Enter value")}
           class="styledInput block w-full h-9 px-2"
+          @change=${(e: InputEvent) => {
+            const inputElem = e.target as HTMLInputElement;
+            // Get latest exclusion type value from select
+            const typeSelectElem = inputElem
+              .closest("tr")
+              ?.querySelector("sl-select");
+            const exclusionType = typeSelectElem?.value || exclusion.type;
+
+            this.updateExclusion({
+              type: exclusionType as Exclusion["type"],
+              value: inputElem.value,
+              index,
+            });
+          }}
         />
       `;
     }
