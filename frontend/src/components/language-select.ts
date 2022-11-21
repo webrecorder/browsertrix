@@ -1,4 +1,5 @@
 import { LitElement, html, css } from "lit";
+import { state, property } from "lit/decorators.js";
 import { localized, msg } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 
@@ -26,9 +27,16 @@ export class LanguageSelect extends LitElement {
     }
   `;
 
+  @property({ type: Boolean })
+  hoist = false;
+
   render() {
     return html`
-      <sl-select clearable placeholder=${msg("Default")}>
+      <sl-select
+        clearable
+        placeholder=${msg("Default")}
+        ?hoist=${Boolean(this.hoist)}
+      >
         <div slot="label"><slot name="label"></slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`

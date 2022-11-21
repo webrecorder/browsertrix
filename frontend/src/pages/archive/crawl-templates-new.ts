@@ -98,7 +98,7 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
 
-  private browserLanguage: string | null = null;
+  private browserLanguage: CrawlConfig["lang"] = null;
 
   @state()
   private isSubmitting: boolean = false;

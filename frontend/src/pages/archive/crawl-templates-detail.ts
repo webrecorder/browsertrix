@@ -49,6 +49,8 @@ export class CrawlTemplatesDetail extends LiteElement {
   @state()
   private exclusions: CrawlConfig["exclude"] = [];
 
+  private browserLanguage: CrawlConfig["lang"] = null;
+
   @state()
   private isSubmittingUpdate: boolean = false;
 
@@ -720,6 +722,31 @@ export class CrawlTemplatesDetail extends LiteElement {
               .authState=${this.authState}
             ></btrix-select-browser-profile>
           </div>
+          <div>
+            <btrix-language-select
+              @sl-select=${(e: CustomEvent) =>
+                (this.browserLanguage = e.detail.item.value)}
+              @sl-clear=${() => (this.browserLanguage = null)}
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+              hoist
+            >
+              <div slot="label">
+                <span class="inline-block align-middle">
+                  ${msg("Language")}
+                </span>
+                <sl-tooltip
+                  content=${msg(
+                    "The browser language setting used when crawling."
+                  )}
+                  ><sl-icon
+                    class="inline-block align-middle ml-1 text-neutral-500"
+                    name="info-circle"
+                  ></sl-icon
+                ></sl-tooltip>
+              </div>
+            </btrix-language-select>
+          </div>
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
               ${this.isConfigCodeView
@@ -1188,6 +1215,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: this.exclusions,
+        lang: this.browserLanguage,
       };
     }
 
