@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { APIError } from "./api";
 
 export type Auth = {
@@ -40,9 +41,9 @@ type AuthResponseEventData = {
   auth: AuthState;
 };
 
-type AuthUpdateEventData = {
-  name: "updated_auth";
-  auth: AuthState;
+export type AuthStorageEventData = {
+  name: "auth_storage";
+  value: string | null;
 };
 
 // Check for token freshness every 5 minutes
@@ -52,6 +53,7 @@ export default class AuthService {
   private timerId?: number;
   private _authState: AuthState = null;
 
+  static id = nanoid();
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
@@ -65,18 +67,18 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage(<AuthUpdateEventData>{
-        name: "updated_auth",
-        auth: JSON.parse(newValue),
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+        name: "auth_storage",
+        value: newValue,
       });
     },
     removeItem() {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage(<AuthUpdateEventData>{
-        name: "updated_auth",
-        auth: null,
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+        name: "auth_storage",
+        value: null,
       });
     },
   };
@@ -158,15 +160,26 @@ export default class AuthService {
       AuthService.getCurrentTabAuth() ||
       (await AuthService.getSharedSessionAuth());
 
-    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
-      if (data.name === "requesting_auth") {
-        // A new tab/window opened and is requesting shared auth
-        AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
-          name: "responding_auth",
-          auth: AuthService.getCurrentTabAuth(),
-        });
+    AuthService.broadcastChannel.addEventListener(
+      "message",
+      ({ data }: { data: AuthRequestEventData | AuthStorageEventData }) => {
+        if (data.name === "requesting_auth") {
+          // A new tab/window opened and is requesting shared auth
+          AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
+            name: "responding_auth",
+            auth: AuthService.getCurrentTabAuth(),
+          });
+        }
+        // if (data.name === "updated_auth") {
+        //   // Update own session storage
+        //   if (data.auth) {
+        //     AuthService.storage.setItem(JSON.stringify(data.auth));
+        //   } else {
+        //     AuthService.storage.removeItem();
+        //   }
+        // }
       }
-    });
+    );
 
     window.addEventListener("beforeunload", () => {
       window.localStorage.removeItem(AuthService.storageKey);
@@ -212,18 +225,6 @@ export default class AuthService {
   }
 
   constructor() {
-    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
-      if (data.name === "updated_auth") {
-        // Another tab/window updated its auth state
-        this.cancelFreshnessCheck();
-        if (data.auth) {
-          this.saveLogin(data.auth);
-        } else if (this._authState) {
-          this.revoke();
-        }
-      }
-    });
-
     // Only have freshness check run in visible tab(s)
     document.addEventListener("visibilitychange", () => {
       if (!this._authState) return;

@@ -4,7 +4,6 @@ import { property, state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
-import { nanoid } from "nanoid";
 import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
@@ -15,7 +14,7 @@ import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
-import type { AuthState } from "./utils/AuthService";
+import type { AuthStorageEventData } from "./utils/AuthService";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -41,8 +40,6 @@ type DialogContent = {
  */
 @localized()
 export class App extends LiteElement {
-  static tabId = nanoid();
-
   @property({ type: String })
   version?: string;
 
@@ -68,36 +65,34 @@ export class App extends LiteElement {
   private isRegistrationEnabled?: boolean;
 
   async connectedCallback() {
-    const syncViewState = () => {
-      if (
-        this.authService.authState &&
-        (window.location.pathname === "/log-in" ||
-          window.location.pathname === "/reset-password")
-      ) {
-        // Redirect to logged in home page
-        this.viewState = this.router.match(DASHBOARD_ROUTE);
-        window.history.replaceState(
-          this.viewState,
-          "",
-          this.viewState.pathname
-        );
-      } else {
-        this.viewState = this.router.match(
-          `${window.location.pathname}${window.location.search}`
-        );
-      }
-    };
-
     const authState = await AuthService.initSessionStorage();
     if (authState) {
       this.authService.saveLogin(authState);
     }
-    syncViewState();
+    this.syncViewState();
     super.connectedCallback();
 
     window.addEventListener("popstate", () => {
-      syncViewState();
+      this.syncViewState();
     });
+
+    this.startSyncBrowserTabs();
+  }
+
+  private syncViewState() {
+    if (
+      this.authService.authState &&
+      (window.location.pathname === "/log-in" ||
+        window.location.pathname === "/reset-password")
+    ) {
+      // Redirect to logged in home page
+      this.viewState = this.router.match(DASHBOARD_ROUTE);
+      window.history.replaceState(this.viewState, "", this.viewState.pathname);
+    } else {
+      this.viewState = this.router.match(
+        `${window.location.pathname}${window.location.search}`
+      );
+    }
   }
 
   async firstUpdated() {
@@ -722,6 +717,26 @@ export class App extends LiteElement {
         </div>
       `,
     });
+  }
+
+  private startSyncBrowserTabs() {
+    AuthService.broadcastChannel.addEventListener(
+      "message",
+      ({ data }: { data: AuthStorageEventData }) => {
+        if (data.name === "auth_storage") {
+          if (data.value !== AuthService.storage.getItem()) {
+            if (data.value) {
+              this.authService.saveLogin(JSON.parse(data.value));
+              this.updateUserInfo();
+              this.syncViewState();
+            } else {
+              this.authService.logout();
+              this.navigate(ROUTES.login);
+            }
+          }
+        }
+      }
+    );
   }
 }
 
