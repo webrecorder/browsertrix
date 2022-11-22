@@ -1,6 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 
 import type { CrawlConfig } from "../pages/archive/types";
@@ -16,6 +16,12 @@ export type ExclusionChangeEvent = CustomEvent<{
 export type ExclusionRemoveEvent = CustomEvent<{
   regex: string;
 }>;
+
+const MIN_LENGTH = 2;
+
+function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
+  return type == "text" ? regexEscape(value) : value;
+}
 
 /**
  * Crawl queue exclusion table
@@ -100,10 +106,13 @@ export class QueueExclusionTable extends LiteElement {
     return html`
       <style>
         btrix-queue-exclusion-table sl-input {
-          --sl-input-border-width: 0;
           --sl-input-border-radius-medium: 0;
           --sl-input-font-family: var(--sl-font-mono);
           --sl-input-spacing-medium: var(--sl-spacing-small);
+        }
+
+        btrix-queue-exclusion-table sl-input:not([invalid]) {
+          --sl-input-border-width: 0;
         }
       </style>
       <btrix-details open disabled>
@@ -226,23 +235,51 @@ export class QueueExclusionTable extends LiteElement {
     if (this.editable) {
       return html`
         <sl-input
+          name="exclusion-${index}"
           placeholder=${msg("Enter value")}
           class="m-0"
           value=${exclusion.value}
+          autocomplete="off"
+          autocorrect="off"
+          minlength=${MIN_LENGTH}
           clearable
-          @change=${(e: InputEvent) => {
-            const inputElem = e.target as HTMLInputElement;
-            // Get latest exclusion type value from select
-            const typeSelectElem = inputElem
-              .closest("tr")
-              ?.querySelector("sl-select");
-            const exclusionType = typeSelectElem?.value || exclusion.type;
-
+          @sl-clear=${() => {
             this.updateExclusion({
-              type: exclusionType as Exclusion["type"],
-              value: inputElem.value,
+              type: exclusion.type,
+              value: "",
               index,
             });
+          }}
+          @sl-input=${(e: CustomEvent) => {
+            const inputElem = e.target as HTMLInputElement & { invalid: any };
+            const values = this.getCurrentValues(e);
+            const params = {
+              type: values.type || exclusion.type,
+              value: values.value,
+              index,
+            };
+
+            const validityMessage = this.getInputValidity(params) || "";
+
+            inputElem.classList.remove("invalid");
+            inputElem.invalid = Boolean(validityMessage);
+            inputElem.setCustomValidity(validityMessage);
+          }}
+          @sl-change=${(e: CustomEvent) => {
+            const inputElem = e.target as HTMLInputElement & { invalid: any };
+            const values = this.getCurrentValues(e);
+            const params = {
+              type: values.type || exclusion.type,
+              value: values.value,
+              index,
+            };
+
+            if (inputElem.invalid) {
+              inputElem.classList.add("invalid");
+            }
+            inputElem.reportValidity();
+
+            this.updateExclusion(params);
           }}
         ></sl-input>
       `;
@@ -303,13 +340,54 @@ export class QueueExclusionTable extends LiteElement {
     return [typeColClass, valueColClass, actionColClass];
   }
 
+  private getCurrentValues(e: CustomEvent) {
+    const inputElem = e.target as HTMLInputElement & { invalid: any };
+    // Get latest exclusion type value from select
+    const typeSelectElem = inputElem.closest("tr")?.querySelector("sl-select");
+    const exclusionType = typeSelectElem?.value;
+    return {
+      type: exclusionType as Exclusion["type"],
+      value: inputElem.value,
+    };
+  }
+
+  private getInputValidity({
+    type,
+    value,
+  }: {
+    type: Exclusion["type"];
+    value: Exclusion["value"];
+    index: number;
+  }): string | void {
+    if (!value) return;
+
+    if (value.length < MIN_LENGTH) {
+      return msg(str`Please enter ${MIN_LENGTH} or more characters`);
+    }
+
+    if (this.exclusions?.includes(formatValue(type, value))) {
+      return msg("Exclusion already exists. Please remove to continue");
+    }
+
+    if (type === "regex") {
+      try {
+        // Check if valid regex
+        new RegExp(value);
+      } catch (err: any) {
+        return msg(
+          "Please enter a valid Regular Expression constructor pattern"
+        );
+      }
+    }
+  }
+
   private removeExclusion({ value, type }: Exclusion) {
     this.exclusionToRemove = value;
 
     this.dispatchEvent(
       new CustomEvent("on-remove", {
         detail: {
-          regex: type == "text" ? regexEscape(value) : value,
+          regex: formatValue(type, value),
         },
       }) as ExclusionRemoveEvent
     );
@@ -328,7 +406,7 @@ export class QueueExclusionTable extends LiteElement {
       new CustomEvent("on-change", {
         detail: {
           index,
-          regex: type == "text" ? regexEscape(value) : value,
+          regex: formatValue(type, value),
         },
       }) as ExclusionChangeEvent
     );

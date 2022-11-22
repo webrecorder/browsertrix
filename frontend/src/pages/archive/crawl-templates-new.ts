@@ -587,6 +587,11 @@ export class CrawlTemplatesNew extends LiteElement {
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     if (!this.authState) return;
+    const form = event.target as HTMLFormElement;
+
+    if (form.querySelector("[invalid]")) {
+      return;
+    }
 
     const formData = new FormData(event.target as HTMLFormElement);
     const params = this.parseTemplate(formData);
