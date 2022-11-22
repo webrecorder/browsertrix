@@ -383,6 +383,7 @@ export class QueueExclusionTable extends LiteElement {
 
   private removeExclusion({ value, type }: Exclusion) {
     this.exclusionToRemove = value;
+    console.log(value);
 
     this.dispatchEvent(
       new CustomEvent("on-remove", {
