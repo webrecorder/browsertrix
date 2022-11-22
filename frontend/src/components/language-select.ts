@@ -1,9 +1,17 @@
 import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
 import { localized, msg } from "@lit/localize";
+import sortBy from "lodash/fp/sortBy";
 import ISO6391 from "iso-639-1";
+import type { LanguageCode } from "iso-639-1";
 
-const languages = ISO6391.getLanguages(ISO6391.getAllCodes());
+const languages = sortBy("name")(
+  ISO6391.getLanguages(ISO6391.getAllCodes())
+) as unknown as Array<{
+  code: LanguageCode;
+  name: string;
+  nativeName: string;
+}>;
 
 /**
  * Choose language from dropdown
