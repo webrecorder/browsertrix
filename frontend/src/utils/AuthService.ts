@@ -168,14 +168,6 @@ export default class AuthService {
             auth: AuthService.getCurrentTabAuth(),
           });
         }
-        // if (data.name === "updated_auth") {
-        //   // Update own session storage
-        //   if (data.auth) {
-        //     AuthService.storage.setItem(JSON.stringify(data.auth));
-        //   } else {
-        //     AuthService.storage.removeItem();
-        //   }
-        // }
       }
     );
 
