@@ -27,6 +27,24 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
+type HasAuthStorageData = {
+  auth: boolean;
+};
+
+type AuthRequestEventData = {
+  name: "requesting_auth";
+};
+
+type AuthResponseEventData = {
+  name: "responding_auth";
+  auth: AuthState;
+};
+
+type AuthUpdateEventData = {
+  name: "updated_auth";
+  auth: AuthState;
+};
+
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 
@@ -45,22 +63,20 @@ export default class AuthService {
     },
     setItem(newValue: string) {
       const oldValue = AuthService.storage.getItem();
+      if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage({
-        name: "storage",
-        key: AuthService.storageKey,
-        oldValue,
-        newValue,
+      AuthService.broadcastChannel.postMessage(<AuthUpdateEventData>{
+        name: "updated_auth",
+        auth: JSON.parse(newValue),
       });
     },
     removeItem() {
       const oldValue = AuthService.storage.getItem();
+      if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage({
-        name: "storage",
-        key: AuthService.storageKey,
-        oldValue,
-        newValue: null,
+      AuthService.broadcastChannel.postMessage(<AuthUpdateEventData>{
+        name: "updated_auth",
+        auth: null,
       });
     },
   };
@@ -133,39 +149,118 @@ export default class AuthService {
     throw new Error(AuthService.unsupportedAuthErrorCode);
   }
 
-  retrieve(): AuthState {
+  /**
+   * Retrieve or set auth data from shared session
+   * and set up session syncing
+   */
+  async init() {
+    const authState =
+      this.getCurrentTabAuth() || (await this.getSharedSessionAuth());
+
+    if (authState) {
+      this.saveLogin(authState);
+    }
+    this.setupSharedSession();
+
+    window.addEventListener("beforeunload", () => {
+      window.localStorage.removeItem(AuthService.storageKey);
+    });
+
+    // Only have freshness check run in visible tab(s)
+    document.addEventListener("visibilitychange", () => {
+      if (!this._authState) return;
+      if (document.visibilityState === "visible") {
+        this.startFreshnessCheck();
+      } else {
+        this.cancelFreshnessCheck();
+      }
+    });
+  }
+
+  private getCurrentTabAuth(): AuthState {
     const auth = AuthService.storage.getItem();
 
     if (auth) {
-      this._authState = JSON.parse(auth);
-      this.checkFreshness();
+      return JSON.parse(auth);
     }
 
-    return this._authState;
+    return null;
   }
 
-  startPersist(auth: Auth) {
-    if (auth) {
-      this.persist(auth);
-      this.startFreshnessCheck();
-    } else {
-      console.warn("No authState to persist");
-    }
+  /**
+   * Retrieve shared session from another tab/window
+   **/
+  private async getSharedSessionAuth(): Promise<AuthState> {
+    return new Promise((resolve) => {
+      // Check if there's any authenticated tabs
+      const value = window.localStorage.getItem(AuthService.storageKey);
+      if (value && (JSON.parse(value) as HasAuthStorageData).auth) {
+        // Ask for auth
+        AuthService.broadcastChannel.postMessage(<AuthRequestEventData>{
+          name: "requesting_auth",
+        });
+        // Wait for another tab to respond
+        const cb = ({ data }: any) => {
+          if (data.name === "responding_auth") {
+            AuthService.broadcastChannel.removeEventListener("message", cb);
+            resolve(data.auth);
+          }
+        };
+        AuthService.broadcastChannel.addEventListener("message", cb);
+      } else {
+        resolve(null);
+      }
+    });
   }
 
-  startFreshnessCheck() {
+  /**
+   * Set up sharing auth info between tab/windows
+   **/
+  private setupSharedSession() {
+    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
+      if (data.name === "requesting_auth") {
+        // A new tab/window opened and is requesting shared auth
+        AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
+          name: "responding_auth",
+          auth: this._authState,
+        });
+      }
+
+      if (data.name === "updated_auth") {
+        // Another tab/window updated its auth state
+        this.cancelFreshnessCheck();
+        if (data.auth) {
+          this.saveLogin(data.auth);
+        } else if (this._authState) {
+          this.revoke();
+        }
+      }
+    });
+  }
+
+  saveLogin(auth: Auth) {
+    window.localStorage.setItem(
+      AuthService.storageKey,
+      JSON.stringify(<HasAuthStorageData>{ auth: true })
+    );
+    this.persist(auth);
+    this.startFreshnessCheck();
+  }
+
+  logout() {
+    window.localStorage.removeItem(AuthService.storageKey);
+    this.cancelFreshnessCheck();
+    this.revoke();
+  }
+
+  private startFreshnessCheck() {
     window.clearTimeout(this.timerId);
     this.checkFreshness();
   }
 
-  cancelFreshnessCheck() {
+  private cancelFreshnessCheck() {
     window.clearTimeout(this.timerId);
     this.timerId = undefined;
-  }
-
-  logout() {
-    this.cancelFreshnessCheck();
-    this.revoke();
   }
 
   private revoke() {
@@ -179,7 +274,6 @@ export default class AuthService {
       headers: auth.headers,
       tokenExpiresAt: auth.tokenExpiresAt,
     };
-
     AuthService.storage.setItem(JSON.stringify(this._authState));
   }
 

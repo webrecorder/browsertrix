@@ -41,6 +41,8 @@ type DialogContent = {
  */
 @localized()
 export class App extends LiteElement {
+  static tabId = nanoid();
+
   @property({ type: String })
   version?: string;
 
@@ -65,43 +67,34 @@ export class App extends LiteElement {
   @state()
   private isRegistrationEnabled?: boolean;
 
-  constructor() {
-    super();
-
-    const authState = this.authService.retrieve();
-
-    if (authState) {
+  async connectedCallback() {
+    const syncViewState = () => {
       if (
-        window.location.pathname === "/log-in" ||
-        window.location.pathname === "/reset-password"
+        this.authService.authState &&
+        (window.location.pathname === "/log-in" ||
+          window.location.pathname === "/reset-password")
       ) {
         // Redirect to logged in home page
-        this.viewState = this.router.match(ROUTES.myAccount);
+        this.viewState = this.router.match(DASHBOARD_ROUTE);
         window.history.replaceState(
           this.viewState,
           "",
           this.viewState.pathname
         );
+      } else {
+        this.viewState = this.router.match(
+          `${window.location.pathname}${window.location.search}`
+        );
       }
-    }
+    };
 
-    this.syncViewState();
-  }
-
-  private syncViewState() {
-    this.viewState = this.router.match(
-      `${window.location.pathname}${window.location.search}`
-    );
-  }
-
-  connectedCallback() {
+    await this.authService.init();
+    syncViewState();
     super.connectedCallback();
 
-    window.addEventListener("popstate", (event) => {
-      this.syncViewState();
+    window.addEventListener("popstate", () => {
+      syncViewState();
     });
-
-    this.startSyncBrowserTabs();
   }
 
   async firstUpdated() {
@@ -606,7 +599,7 @@ export class App extends LiteElement {
   onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
 
-    this.authService.startPersist({
+    this.authService.saveLogin({
       username: detail.username,
       headers: detail.headers,
       tokenExpiresAt: detail.tokenExpiresAt,
@@ -725,53 +718,6 @@ export class App extends LiteElement {
           >
         </div>
       `,
-    });
-  }
-
-  private startSyncBrowserTabs() {
-    // Sync local auth state across window/tabs
-    // Notify any already open windows that new window is open
-    const tabId = nanoid();
-    AuthService.broadcastChannel.postMessage({ name: "need_auth", tabId });
-    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
-      if (data.name === "need_auth") {
-        // Share auth with newly opened tab
-        const auth = AuthService.storage.getItem();
-        if (auth) {
-          AuthService.broadcastChannel.postMessage({
-            name: "storage",
-            tabId,
-            key: AuthService.storageKey,
-            oldValue: auth,
-            newValue: auth,
-          });
-        }
-      }
-      if (data.name === "storage" && data.tabId !== tabId) {
-        const { key, oldValue, newValue } = data;
-        if (key === AuthService.storageKey && newValue !== oldValue) {
-          if (oldValue && newValue === null) {
-            // Logged out from another tab
-            this.onLogOut(
-              new CustomEvent("log-out", { detail: { redirect: true } })
-            );
-          } else if (!oldValue && newValue) {
-            // Logged in from another tab
-            const auth = JSON.parse(newValue);
-            this.onLoggedIn(AuthService.createLoggedInEvent(auth));
-          }
-        }
-      }
-    });
-
-    // Only have freshness check run in visible tab(s)
-    document.addEventListener("visibilitychange", () => {
-      if (!this.authService.authState) return;
-      if (document.visibilityState === "visible") {
-        this.authService.startFreshnessCheck();
-      } else {
-        this.authService.cancelFreshnessCheck();
-      }
     });
   }
 }

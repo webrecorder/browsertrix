@@ -8,7 +8,6 @@ export const ROUTES = {
   loginWithRedirect: "/log-in?redirectUrl",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password?token",
-  myAccount: "/my-account",
   accountSettings: "/account/settings",
   archives: "/archives",
   archive: "/archives/:id/:tab",
