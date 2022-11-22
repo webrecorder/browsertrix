@@ -14,6 +14,7 @@ export type ExclusionChangeEvent = CustomEvent<{
 }>;
 
 export type ExclusionRemoveEvent = CustomEvent<{
+  index: number;
   regex: string;
 }>;
 
@@ -178,7 +179,7 @@ export class QueueExclusionTable extends LiteElement {
         <td class="text-[1rem] text-center ${actionColClass}">
           <btrix-icon-button
             name="trash3"
-            @click=${() => this.removeExclusion(exclusion)}
+            @click=${() => this.removeExclusion(exclusion, index)}
           ></btrix-icon-button>
         </td>
       </tr>
@@ -381,14 +382,14 @@ export class QueueExclusionTable extends LiteElement {
     }
   }
 
-  private removeExclusion({ value, type }: Exclusion) {
+  private removeExclusion({ value, type }: Exclusion, index: number) {
     this.exclusionToRemove = value;
-    console.log(value);
 
     this.dispatchEvent(
       new CustomEvent("on-remove", {
         detail: {
           regex: formatValue(type, value),
+          index,
         },
       }) as ExclusionRemoveEvent
     );

@@ -1125,6 +1125,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         .exclusions=${this.exclusions}
         pageSize="50"
         editable
+        removable
         @on-remove=${this.handleRemoveRegex}
         @on-change=${this.handleChangeRegex}
       ></btrix-queue-exclusion-table>
@@ -1171,9 +1172,15 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
-    const { regex } = e.detail;
-    if (!this.exclusions || !regex) return;
-    this.exclusions = this.exclusions.filter((v) => v !== regex);
+    const { index } = e.detail;
+    if (!this.exclusions) {
+      this.exclusions = defaultExclusions;
+    } else {
+      this.exclusions = [
+        ...this.exclusions.slice(0, index),
+        ...this.exclusions.slice(index + 1),
+      ];
+    }
   }
 
   private handleChangeRegex(e: ExclusionChangeEvent) {
