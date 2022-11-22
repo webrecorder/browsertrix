@@ -30,12 +30,8 @@ export class LanguageSelect extends LitElement {
       box-shadow: var(--sl-shadow-small);
     }
 
-    sl-menu-item:not(:hover) .nativeName {
+    sl-menu-item:not(:hover) .secondaryText {
       color: var(--sl-color-neutral-400);
-    }
-
-    sl-menu-item:not(:hover) .code {
-      color: var(--sl-color-neutral-600);
     }
   `;
 
@@ -49,8 +45,8 @@ export class LanguageSelect extends LitElement {
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-menu-item value=${code}>
-              ${name} <span class="nativeName">(${nativeName})</span>
-              <code slot="suffix" class="code">${code}</code>
+              ${name} <span class="secondaryText">(${nativeName})</span>
+              <code slot="suffix" class="secondaryText">${code}</code>
             </sl-menu-item>
           `
         )}
