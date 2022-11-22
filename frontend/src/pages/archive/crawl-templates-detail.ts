@@ -4,6 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import merge from "lodash/fp/merge";
+import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -48,6 +49,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   @state()
   private exclusions: CrawlConfig["exclude"] = [];
+
+  private browserLanguage: CrawlConfig["lang"] = null;
 
   @state()
   private isSubmittingUpdate: boolean = false;
@@ -537,93 +540,46 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderConfiguration() {
-    const seeds = this.crawlTemplate?.config.seeds || [];
     const configCodeYaml = jsonToYaml(this.crawlTemplate?.config || {});
 
     return html`
-      <div class="mb-5">
-        <div class="text-sm text-0-600">${msg("Browser Profile")}</div>
-        ${this.crawlTemplate
-          ? html`
-              ${this.crawlTemplate.profileid
-                ? html`<a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle"
-                      >${this.crawlTemplate.profileName}</span
+      ${this.renderSeedsTable()}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 mb-5">
+        <div class="col-span-1">
+          <div class="text-sm text-neutral-600">${msg("Browser Profile")}</div>
+          ${this.crawlTemplate
+            ? html`
+                ${this.crawlTemplate.profileid
+                  ? html`<a
+                      class="font-medium text-neutral-700 hover:text-neutral-900"
+                      href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.crawlTemplate.profileid}`}
+                      @click=${this.navLink}
                     >
-                  </a>`
-                : html`<span class="text-0-400">${msg("None")}</span>`}
-            `
-          : ""}
-      </div>
-
-      <div class="mb-5" role="table">
-        <div
-          class="hidden md:grid grid-cols-5 gap-4 items-end text-xs md:text-sm text-0-600"
-          role="row"
-        >
-          <span class="col-span-3" role="columnheader">${msg("Seed URL")}</span>
-          <span class="col-span-1" role="columnheader"
-            >${msg("Scope Type")}</span
-          >
-          <span class="col-span-1" role="columnheader"
-            >${msg("Page Limit")}</span
-          >
+                      <sl-icon
+                        class="inline-block align-middle"
+                        name="link-45deg"
+                      ></sl-icon>
+                      <span class="inline-block align-middle"
+                        >${this.crawlTemplate.profileName}</span
+                      >
+                    </a>`
+                  : html`<span class="text-neutral-400">${msg("None")}</span>`}
+              `
+            : ""}
         </div>
-        <ul role="rowgroup">
-          ${seeds
-            .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
-            .map(
-              (seed, i) =>
-                html`<li
-                  class="grid grid-cols-5 gap-4 items-baseline py-1 border-zinc-100${i
-                    ? " border-t"
-                    : ""}"
-                  role="row"
-                  title=${typeof seed === "string" ? seed : seed.url}
-                >
-                  <div class="col-span-3 break-all leading-tight" role="cell">
-                    ${typeof seed === "string" ? seed : seed.url}
-                  </div>
-                  <span
-                    class="col-span-1 uppercase text-0-500 text-xs"
-                    role="cell"
-                    >${(typeof seed !== "string" && seed.scopeType) ||
-                    this.crawlTemplate?.config.scopeType}</span
-                  >
-                  <span
-                    class="col-span-1 uppercase text-0-500 text-xs font-mono"
-                    role="cell"
-                    >${(typeof seed !== "string" && seed.limit) ||
-                    this.crawlTemplate?.config.limit}</span
-                  >
-                </li>`
-            )}
-        </ul>
-
-        ${seeds.length > SEED_URLS_MAX
-          ? html`<sl-button
-              class="mt-2"
-              variant="neutral"
-              size="small"
-              @click=${() => (this.showAllSeedURLs = !this.showAllSeedURLs)}
-            >
-              <span class="text-sm">
-                ${this.showAllSeedURLs
-                  ? msg("Show less")
-                  : msg(str`Show
-                    ${seeds.length - SEED_URLS_MAX}
-                    more`)}
-              </span>
-            </sl-button>`
-          : ""}
+        <div class="col-span-1">
+          <div class="text-sm text-neutral-600">${msg("Language")}</div>
+          ${this.crawlTemplate
+            ? html`
+                ${this.crawlTemplate.config.lang
+                  ? html`${ISO6391.getName(this.crawlTemplate.config.lang)}`
+                  : html`<span class="text-neutral-400"
+                      >${msg("Default")}</span
+                    >`}
+              `
+            : ""}
+        </div>
       </div>
 
       <div class="mb-5">
@@ -660,6 +616,74 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderSeedsTable() {
+    const seeds = this.crawlTemplate?.config.seeds || [];
+
+    return html`
+      <div class="mb-5" role="table">
+        <div
+          class="hidden md:grid grid-cols-4 items-end text-xs md:text-sm text-0-600"
+          role="row"
+        >
+          <span class="col-span-2" role="columnheader">${msg("Seed URL")}</span>
+          <span class="col-span-1" role="columnheader"
+            >${msg("Scope Type")}</span
+          >
+          <span class="col-span-1" role="columnheader"
+            >${msg("Page Limit")}</span
+          >
+        </div>
+        <ul role="rowgroup">
+          ${seeds
+            .slice(0, this.showAllSeedURLs ? undefined : SEED_URLS_MAX)
+            .map(
+              (seed, i) =>
+                html`<li
+                  class="grid grid-cols-4 items-baseline py-1 border-zinc-100${i
+                    ? " border-t"
+                    : ""}"
+                  role="row"
+                  title=${typeof seed === "string" ? seed : seed.url}
+                >
+                  <div class="col-span-2 break-all leading-tight" role="cell">
+                    ${typeof seed === "string" ? seed : seed.url}
+                  </div>
+                  <span
+                    class="col-span-1 uppercase text-0-500 text-xs"
+                    role="cell"
+                    >${(typeof seed !== "string" && seed.scopeType) ||
+                    this.crawlTemplate?.config.scopeType}</span
+                  >
+                  <span
+                    class="col-span-1 uppercase text-0-500 text-xs font-mono"
+                    role="cell"
+                    >${(typeof seed !== "string" && seed.limit) ||
+                    this.crawlTemplate?.config.limit}</span
+                  >
+                </li>`
+            )}
+        </ul>
+
+        ${seeds.length > SEED_URLS_MAX
+          ? html`<sl-button
+              class="mt-2"
+              variant="neutral"
+              size="small"
+              @click=${() => (this.showAllSeedURLs = !this.showAllSeedURLs)}
+            >
+              <span class="text-sm">
+                ${this.showAllSeedURLs
+                  ? msg("Show less")
+                  : msg(str`Show
+                    ${seeds.length - SEED_URLS_MAX}
+                    more`)}
+              </span>
+            </sl-button>`
+          : ""}
+      </div>
+    `;
+  }
+
   private renderEditConfiguration() {
     if (!this.crawlTemplate) return;
 
@@ -686,6 +710,31 @@ export class CrawlTemplatesDetail extends LiteElement {
               .profileId=${this.crawlTemplate.profileid || null}
               .authState=${this.authState}
             ></btrix-select-browser-profile>
+          </div>
+          <div>
+            <btrix-language-select
+              @sl-select=${(e: CustomEvent) =>
+                (this.browserLanguage = e.detail.item.value)}
+              @sl-clear=${() => (this.browserLanguage = null)}
+              @sl-hide=${this.stopProp}
+              @sl-after-hide=${this.stopProp}
+              hoist
+            >
+              <div slot="label">
+                <span class="inline-block align-middle">
+                  ${msg("Language")}
+                </span>
+                <sl-tooltip
+                  content=${msg(
+                    "The browser language setting used when crawling."
+                  )}
+                  ><sl-icon
+                    class="inline-block align-middle ml-1 text-neutral-500"
+                    name="info-circle"
+                  ></sl-icon
+                ></sl-tooltip>
+              </div>
+            </btrix-language-select>
           </div>
           <div class="flex flex-wrap justify-between">
             <h4 class="font-medium">
@@ -1155,6 +1204,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: this.exclusions,
+        lang: this.browserLanguage,
       };
     }
 

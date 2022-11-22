@@ -72,6 +72,9 @@ import("./badge").then(({ Badge }) => {
 import("./icon-button").then(({ IconButton }) => {
   customElements.define("btrix-icon-button", IconButton);
 });
+import("./language-select").then(({ LanguageSelect }) => {
+  customElements.define("btrix-language-select", LanguageSelect);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

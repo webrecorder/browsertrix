@@ -22,6 +22,7 @@ type NewCrawlTemplate = {
   scale: number;
   config: CrawlConfig;
   profileid: string | null;
+  lang: string | null;
 };
 
 export type InitialCrawlTemplate = Pick<
@@ -96,6 +97,8 @@ export class CrawlTemplatesNew extends LiteElement {
 
   @state()
   private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
+
+  private browserLanguage: CrawlConfig["lang"] = null;
 
   @state()
   private isSubmitting: boolean = false;
@@ -340,7 +343,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Time Limit")}
-          placeholder=${msg("unlimited")}
+          placeholder=${msg("Unlimited")}
           type="number"
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -359,7 +362,7 @@ export class CrawlTemplatesNew extends LiteElement {
       >
         <div class="col-span-1">
           <sl-select name="scale" value="1">
-            <label slot="label">
+            <div slot="label">
               <span class="inline-block align-middle">
                 ${msg("Crawler Instances")}
               </span>
@@ -372,11 +375,33 @@ export class CrawlTemplatesNew extends LiteElement {
                   name="info-circle"
                 ></sl-icon
               ></sl-tooltip>
-            </label>
+            </div>
             <sl-menu-item value="1">${msg("1")}</sl-menu-item>
             <sl-menu-item value="2">${msg("2")}</sl-menu-item>
             <sl-menu-item value="3">${msg("3")}</sl-menu-item>
           </sl-select>
+        </div>
+        <div class="col-span-1">
+          <btrix-language-select
+            @sl-select=${(e: CustomEvent) =>
+              (this.browserLanguage = e.detail.item.value)}
+            @sl-clear=${() => (this.browserLanguage = null)}
+          >
+            <div slot="label">
+              <span class="inline-block align-middle">
+                ${msg("Language")}
+              </span>
+              <sl-tooltip
+                content=${msg(
+                  "The browser language setting used when crawling."
+                )}
+                ><sl-icon
+                  class="inline-block align-middle ml-1 text-neutral-500"
+                  name="info-circle"
+                ></sl-icon
+              ></sl-tooltip>
+            </div>
+          </btrix-language-select>
         </div>
         <div class="col-span-1 flex justify-between">
           <h4 class="font-medium">
@@ -443,7 +468,7 @@ export class CrawlTemplatesNew extends LiteElement {
         label=${msg("Page Limit")}
         type="number"
         value=${ifDefined(this.initialCrawlTemplate.config.limit)}
-        placeholder=${msg("unlimited")}
+        placeholder=${msg("Unlimited")}
       >
         <span slot="suffix">${msg("pages")}</span>
       </sl-input>
@@ -513,6 +538,7 @@ export class CrawlTemplatesNew extends LiteElement {
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
       profileid: this.browserProfileId,
+      lang: this.browserLanguage || null,
     };
 
     if (this.isConfigCodeView) {
