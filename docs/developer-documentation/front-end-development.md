@@ -2,6 +2,8 @@
 
 ## Quickstart
 
+Ensure the current working directory is set to the `/frontend` folder.
+
 Install dependencies:
 
 ```sh
