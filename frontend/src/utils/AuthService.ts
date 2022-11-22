@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid";
 import { APIError } from "./api";
 
 export type Auth = {
@@ -53,7 +52,6 @@ export default class AuthService {
   private timerId?: number;
   private _authState: AuthState = null;
 
-  static id = nanoid();
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
