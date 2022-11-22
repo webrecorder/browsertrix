@@ -88,7 +88,10 @@ export class App extends LiteElement {
       }
     };
 
-    await this.authService.init();
+    const authState = await AuthService.initSessionStorage();
+    if (authState) {
+      this.authService.saveLogin(authState);
+    }
     syncViewState();
     super.connectedCallback();
 

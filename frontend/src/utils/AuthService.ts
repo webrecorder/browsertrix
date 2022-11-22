@@ -153,31 +153,29 @@ export default class AuthService {
    * Retrieve or set auth data from shared session
    * and set up session syncing
    */
-  async init() {
+  static async initSessionStorage(): Promise<AuthState> {
     const authState =
-      this.getCurrentTabAuth() || (await this.getSharedSessionAuth());
+      AuthService.getCurrentTabAuth() ||
+      (await AuthService.getSharedSessionAuth());
 
-    if (authState) {
-      this.saveLogin(authState);
-    }
-    this.setupSharedSession();
+    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
+      if (data.name === "requesting_auth") {
+        // A new tab/window opened and is requesting shared auth
+        AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
+          name: "responding_auth",
+          auth: AuthService.getCurrentTabAuth(),
+        });
+      }
+    });
 
     window.addEventListener("beforeunload", () => {
       window.localStorage.removeItem(AuthService.storageKey);
     });
 
-    // Only have freshness check run in visible tab(s)
-    document.addEventListener("visibilitychange", () => {
-      if (!this._authState) return;
-      if (document.visibilityState === "visible") {
-        this.startFreshnessCheck();
-      } else {
-        this.cancelFreshnessCheck();
-      }
-    });
+    return authState;
   }
 
-  private getCurrentTabAuth(): AuthState {
+  private static getCurrentTabAuth(): AuthState {
     const auth = AuthService.storage.getItem();
 
     if (auth) {
@@ -190,7 +188,7 @@ export default class AuthService {
   /**
    * Retrieve shared session from another tab/window
    **/
-  private async getSharedSessionAuth(): Promise<AuthState> {
+  private static async getSharedSessionAuth(): Promise<AuthState> {
     return new Promise((resolve) => {
       // Check if there's any authenticated tabs
       const value = window.localStorage.getItem(AuthService.storageKey);
@@ -213,19 +211,8 @@ export default class AuthService {
     });
   }
 
-  /**
-   * Set up sharing auth info between tab/windows
-   **/
-  private setupSharedSession() {
+  constructor() {
     AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
-      if (data.name === "requesting_auth") {
-        // A new tab/window opened and is requesting shared auth
-        AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
-          name: "responding_auth",
-          auth: this._authState,
-        });
-      }
-
       if (data.name === "updated_auth") {
         // Another tab/window updated its auth state
         this.cancelFreshnessCheck();
@@ -234,6 +221,16 @@ export default class AuthService {
         } else if (this._authState) {
           this.revoke();
         }
+      }
+    });
+
+    // Only have freshness check run in visible tab(s)
+    document.addEventListener("visibilitychange", () => {
+      if (!this._authState) return;
+      if (document.visibilityState === "visible") {
+        this.startFreshnessCheck();
+      } else {
+        this.cancelFreshnessCheck();
       }
     });
   }
