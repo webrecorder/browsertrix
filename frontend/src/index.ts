@@ -4,6 +4,7 @@ import { property, state, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
+import { nanoid } from "nanoid";
 import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
@@ -734,7 +735,8 @@ export class App extends LiteElement {
 
     // Sync local auth state across window/tabs
     // Notify any already open windows that new window is open
-    AuthService.broadcastChannel.postMessage({ name: "need_auth" });
+    const tabId = nanoid();
+    AuthService.broadcastChannel.postMessage({ name: "need_auth", tabId });
     AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
       if (data.name === "need_auth") {
         // Share auth with newly opened tab
@@ -742,13 +744,14 @@ export class App extends LiteElement {
         if (auth) {
           AuthService.broadcastChannel.postMessage({
             name: "storage",
+            tabId,
             key: AuthService.storageKey,
             oldValue: auth,
             newValue: auth,
           });
         }
       }
-      if (data.name === "storage") {
+      if (data.name === "storage" && data.tabId !== tabId) {
         const { key, oldValue, newValue } = data;
         if (key === AuthService.storageKey && newValue !== oldValue) {
           if (oldValue && newValue === null) {
