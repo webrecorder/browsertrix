@@ -58,8 +58,8 @@ const version = (() => {
   }
 
   try {
-    return fs.readFileSync("../version.txt", {encoding: "utf-8"}).trim();
-  } catch(e) {}
+    return fs.readFileSync("../version.txt", { encoding: "utf-8" }).trim();
+  } catch (e) {}
 
   return packageJSON.version;
 })();
@@ -70,6 +70,9 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`,
     publicPath: "/",
+    // Fix node >v16 compatibility issues
+    // https://stackoverflow.com/a/73465262
+    hashFunction: "xxhash64",
   },
 
   devtool: "inline-source-map",
