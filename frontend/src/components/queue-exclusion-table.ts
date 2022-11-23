@@ -18,6 +18,8 @@ export type ExclusionRemoveEvent = CustomEvent<{
   regex: string;
 }>;
 
+type SLInputElement = HTMLInputElement & { invalid: boolean };
+
 const MIN_LENGTH = 2;
 
 function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
@@ -251,23 +253,17 @@ export class QueueExclusionTable extends LiteElement {
             });
           }}
           @sl-input=${(e: CustomEvent) => {
-            const inputElem = e.target as HTMLInputElement & { invalid: any };
-            const values = this.getCurrentValues(e);
-            const params = {
-              type: values.type || exclusion.type,
-              value: values.value,
-              index,
-            };
-
-            const validityMessage = this.getInputValidity(params) || "";
+            const inputElem = e.target as SLInputElement;
+            const validityMessage = this.getInputValidity(inputElem) || "";
 
             inputElem.classList.remove("invalid");
-            inputElem.invalid = Boolean(validityMessage);
             inputElem.setCustomValidity(validityMessage);
+
+            this.checkSiblingRowValidity(e);
           }}
           @sl-change=${(e: CustomEvent) => {
-            const inputElem = e.target as HTMLInputElement & { invalid: any };
-            const values = this.getCurrentValues(e);
+            const inputElem = e.target as SLInputElement;
+            const values = this.getCurrentValues(inputElem);
             const params = {
               type: values.type || exclusion.type,
               value: values.value,
@@ -340,8 +336,7 @@ export class QueueExclusionTable extends LiteElement {
     return [typeColClass, valueColClass, actionColClass];
   }
 
-  private getCurrentValues(e: CustomEvent) {
-    const inputElem = e.target as HTMLInputElement & { invalid: any };
+  private getCurrentValues(inputElem: SLInputElement) {
     // Get latest exclusion type value from select
     const typeSelectElem = inputElem.closest("tr")?.querySelector("sl-select");
     const exclusionType = typeSelectElem?.value;
@@ -351,22 +346,30 @@ export class QueueExclusionTable extends LiteElement {
     };
   }
 
-  private getInputValidity({
-    type,
-    value,
-  }: {
-    type: Exclusion["type"];
-    value: Exclusion["value"];
-    index: number;
-  }): string | void {
+  private getInputDuplicateValidity(inputElem: SLInputElement) {
+    const siblingElems = inputElem
+      .closest("table")
+      ?.querySelectorAll(`sl-input:not([name="${inputElem.name}"])`);
+    if (!siblingElems) {
+      console.debug("getInputDuplicateValidity no matching siblings");
+      return;
+    }
+    const siblingValues = Array.from(siblingElems).map(
+      (elem) => (elem as SLInputElement).value
+    );
+    const { type, value } = this.getCurrentValues(inputElem);
+    const formattedValue = formatValue(type, value);
+    if (siblingValues.includes(formattedValue)) {
+      return msg("Exclusion already exists. Please edit or remove to continue");
+    }
+  }
+
+  private getInputValidity(inputElem: SLInputElement): string | void {
+    const { type, value } = this.getCurrentValues(inputElem);
     if (!value) return;
 
     if (value.length < MIN_LENGTH) {
       return msg(str`Please enter ${MIN_LENGTH} or more characters`);
-    }
-
-    if (this.exclusions?.includes(formatValue(type, value))) {
-      return msg("Exclusion already exists. Please remove to continue");
     }
 
     if (type === "regex") {
@@ -379,6 +382,23 @@ export class QueueExclusionTable extends LiteElement {
         );
       }
     }
+
+    return this.getInputDuplicateValidity(inputElem);
+  }
+
+  private checkSiblingRowValidity(e: CustomEvent) {
+    // Check if any sibling inputs are now valid
+    // after fixing duplicate values
+    const inputElem = e.target as HTMLInputElement;
+    const table = inputElem.closest("table") as HTMLTableElement;
+    Array.from(table?.querySelectorAll("sl-input[invalid]")).map((elem) => {
+      if (elem !== inputElem) {
+        const validityMessage =
+          this.getInputDuplicateValidity(elem as SLInputElement) || "";
+        (elem as SLInputElement).setCustomValidity(validityMessage);
+        (elem as SLInputElement).reportValidity();
+      }
+    });
   }
 
   private removeExclusion({ value, type }: Exclusion, index: number) {
