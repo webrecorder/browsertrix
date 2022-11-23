@@ -84,12 +84,12 @@ export class Home extends LiteElement {
               <div
                 class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
               >
-                ${msg("Go to Crawl")}
+                ${msg("Go to Crawl Job")}
               </div>
               <div class="grow mt-2 md:mt-0 md:mr-2">
                 <sl-input
                   name="crawlId"
-                  placeholder=${msg("Enter Crawl ID")}
+                  placeholder=${msg("Enter Crawl Job ID")}
                   required
                 ></sl-input>
               </div>

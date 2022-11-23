@@ -236,7 +236,7 @@ export class App extends LiteElement {
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/crawls"
                     @click=${this.navLink}
-                    >${msg("Running Crawls")}</a
+                    >${msg("Running Crawl Jobs")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
                 </div>
@@ -547,7 +547,7 @@ export class App extends LiteElement {
           slot="trigger"
           class="text-primary hover:text-indigo-400 font-medium"
         >
-          ${msg("Jump to Crawl")}
+          ${msg("Jump to Crawl Job")}
         </button>
 
         <div class="p-2">
@@ -564,7 +564,7 @@ export class App extends LiteElement {
                 <sl-input
                   size="small"
                   name="crawlId"
-                  placeholder=${msg("Enter Crawl ID")}
+                  placeholder=${msg("Enter Crawl Job ID")}
                   required
                 ></sl-input>
               </div>

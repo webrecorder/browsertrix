@@ -29,8 +29,8 @@ const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),
   created_asc: msg("Oldest"),
-  lastCrawlTime_desc: msg("Newest Crawl"),
-  lastCrawlTime_asc: msg("Oldest Crawl"),
+  lastCrawlTime_desc: msg("Newest Crawl Job"),
+  lastCrawlTime_asc: msg("Oldest Crawl Job"),
 };
 
 /**
@@ -117,7 +117,7 @@ export class CrawlTemplatesList extends LiteElement {
           </div>`}
 
       <sl-dialog
-        label=${msg(str`Edit Crawl Schedule`)}
+        label=${msg(str`Edit Crawl Job Schedule`)}
         ?open=${this.showEditDialog}
         @sl-request-close=${() => (this.showEditDialog = false)}
         @sl-after-hide=${() => (this.selectedTemplateForEdit = undefined)}
@@ -324,7 +324,7 @@ export class CrawlTemplatesList extends LiteElement {
               ? html`<sl-tooltip>
                   <span slot="content" class="capitalize">
                     ${msg(
-                      str`Last Crawl: ${
+                      str`Last Crawl Job: ${
                         t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")
                       }`
                     )}

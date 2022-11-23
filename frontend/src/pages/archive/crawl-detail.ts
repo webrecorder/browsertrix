@@ -178,7 +178,7 @@ export class CrawlDetail extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
+            >${msg("Back to Crawl Jobs")}</span
           >
         </a>
       </div>
@@ -243,7 +243,7 @@ export class CrawlDetail extends LiteElement {
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
           ${renderNavItem({
             section: "exclusions",
-            label: msg("Crawl Queue & Exclusions"),
+            label: msg("Crawl Job Queue & Exclusions"),
           })}
           ${this.isActive
             ? renderNavItem({
@@ -264,7 +264,7 @@ export class CrawlDetail extends LiteElement {
       <header class="md:flex justify-between">
         <h2 class="text-xl font-medium mb-3 md:h-8">
           ${msg(
-            html`<span class="font-normal">Crawl of</span> ${this.crawl
+            html`<span class="font-normal">Crawl Job of</span> ${this.crawl
                 ? this.crawl.configName
                 : html`<sl-skeleton
                     class="inline-block"
@@ -366,7 +366,7 @@ export class CrawlDetail extends LiteElement {
               closeDropdown(e);
             }}
           >
-            ${msg("Copy Crawl ID")}
+            ${msg("Copy Crawl Job ID")}
           </li>
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -695,7 +695,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
+          <dt class="text-sm text-0-600">${msg("Crawl Job ID")}</dt>
           <dd class="truncate">
             ${this.crawl
               ? html`<btrix-copy-button
@@ -830,7 +830,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <div class="rounded border bg-neutral-50 p-3">
         <p class="text-sm text-neutral-600">
-          ${msg("Crawl is not running.")}
+          ${msg("Crawl job is not running.")}
           ${this.hasFiles
             ? html`<a
                 href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
@@ -1004,8 +1004,8 @@ export class CrawlDetail extends LiteElement {
       if (crawlTemplate.currCrawlId) {
         this.notify({
           message: msg(
-            html`Crawl of <strong>${this.crawl.configName}</strong> is already
-              running.
+            html`Crawl Job of <strong>${this.crawl.configName}</strong> is
+              already running.
               <br />
               <a
                 class="underline hover:no-underline"

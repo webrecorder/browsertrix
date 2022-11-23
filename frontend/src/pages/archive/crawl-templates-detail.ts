@@ -111,8 +111,8 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.notify({
         message:
           e.statusCode === 404
-            ? msg("Crawl template not found.")
-            : msg("Sorry, couldn't retrieve crawl template at this time."),
+            ? msg("Job config not found.")
+            : msg("Sorry, couldn't retrieve job config this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -255,7 +255,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
           <section class="grid grid-cols-4">
             <div class="col-span-4 md:col-span-1 pt-4 pb-2 md:p-8">
-              <h3 class="font-medium">${msg("Crawls")}</h3>
+              <h3 class="font-medium">${msg("Crawl Jobs")}</h3>
             </div>
             <div class="col-span-4 md:col-span-3 pb-6 md:p-8">
               ${this.renderCrawls()}
@@ -830,7 +830,9 @@ export class CrawlTemplatesDetail extends LiteElement {
       <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-1">
           <dt class="text-sm text-0-600">
-            <span class="inline-block align-middle">${msg("# of Crawls")}</span>
+            <span class="inline-block align-middle"
+              >${msg("# of Crawl Jobs")}</span
+            >
             <sl-tooltip
               content=${msg(
                 "Number of completed crawls using current version of the crawl configuration"
@@ -868,7 +870,9 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-sm text-0-600">${msg("Currently Running Crawl")}</dt>
+          <dt class="text-sm text-0-600">
+            ${msg("Currently Running Crawl Job")}
+          </dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
           >
@@ -898,7 +902,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-sm text-0-600">${msg("Latest Crawl")}</dt>
+          <dt class="text-sm text-0-600">${msg("Latest Crawl Job")}</dt>
           <dd
             class="flex items-center justify-between border border-zinc-100 rounded p-1 mt-1"
           >

@@ -170,7 +170,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
         <div class="mt-5 bg-neutral-50 rounded p-3 text-sm text-neutral-800">
           ${this.isScheduleDisabled
             ? html`<span class="font-medium"
-                >${msg("Crawls will not repeat.")}</span
+                >${msg("Crawl jobs will not repeat.")}</span
               >`
             : html`
                 <p>${msg(str`Schedule: ${humanizeSchedule(utcSchedule)}.`)}</p>

@@ -264,7 +264,7 @@ export class CrawlTemplatesNew extends LiteElement {
   private renderScheduleSettings() {
     return html`
       <div class="col-span-3 md:col-span-1 py-2 md:p-8 md:border-b">
-        <h3 class="font-medium">${msg("Crawl Schedule")}</h3>
+        <h3 class="font-medium">${msg("Crawl Job Schedule")}</h3>
       </div>
       <section class="col-span-3 md:col-span-2 pb-6 md:p-8 border-b grid gap-5">
         <div>
@@ -272,7 +272,7 @@ export class CrawlTemplatesNew extends LiteElement {
             <div class="pr-2 flex-1">
               <sl-select
                 name="schedule"
-                label=${msg("Recurring Crawls")}
+                label=${msg("Recurring Crawl Jobs")}
                 value=${this.scheduleInterval}
                 @sl-select=${(e: any) =>
                   (this.scheduleInterval = e.target.value)}
@@ -620,8 +620,8 @@ export class CrawlTemplatesNew extends LiteElement {
 
       this.notify({
         message: crawlId
-          ? msg("Crawl started with new template.")
-          : msg("Crawl template created."),
+          ? msg("Crawl job started with new config.")
+          : msg("Job config created."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,

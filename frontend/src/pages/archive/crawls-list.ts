@@ -347,7 +347,7 @@ export class CrawlsList extends LiteElement {
                   e.target.closest("sl-dropdown").hide();
                 }}
               >
-                ${msg("Copy Crawl ID")}
+                ${msg("Copy Crawl Job ID")}
               </li>
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -619,7 +619,8 @@ export class CrawlsList extends LiteElement {
     if (crawlTemplate?.currCrawlId) {
       this.notify({
         message: msg(
-          html`Crawl of <strong>${crawl.configName}</strong> is already running.
+          html`Crawl Job of <strong>${crawl.configName}</strong> is already
+            running.
             <br />
             <a
               class="underline hover:no-underline"

@@ -78,7 +78,9 @@ export class CrawlQueue extends LiteElement {
   render() {
     return html`
       <btrix-details open>
-        <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
+        <span slot="title">
+          ${msg("Crawl Job Queue")} ${this.renderBadge()}
+        </span>
         <div slot="summary-description">
           ${this.queue?.total && this.queue.total > this.pageSize
             ? html`<btrix-pagination
