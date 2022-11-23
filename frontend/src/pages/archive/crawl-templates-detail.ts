@@ -1213,7 +1213,13 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async handleSubmitEditConfiguration(e: SubmitEvent) {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+
+    if (form.querySelector("[invalid]")) {
+      return;
+    }
+
+    const formData = new FormData(form);
     const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;
