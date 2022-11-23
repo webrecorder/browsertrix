@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -16,7 +17,9 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
-import { TemplateResult } from "lit";
+import "./new-job-config";
+
+const NEW_JOB_CONFIG = true;
 
 type NewCrawlTemplate = {
   id?: string;
@@ -169,7 +172,7 @@ export class CrawlTemplatesNew extends LiteElement {
     }
   }
 
-  render() {
+  private renderHeader() {
     return html`
       <nav class="mb-5">
         <a
@@ -186,14 +189,25 @@ export class CrawlTemplatesNew extends LiteElement {
           >
         </a>
       </nav>
+      <h2 class="text-xl font-medium mb-3">${msg("New Job Config")}</h2>
+    `;
+  }
 
-      <h2 class="text-xl font-medium mb-3">${msg("New Crawl Template")}</h2>
+  render() {
+    if (NEW_JOB_CONFIG) {
+      return html`
+        ${this.renderHeader()}
+        <btrix-new-job-config></btrix-new-job-config>
+      `;
+    }
+    return html`
+      ${this.renderHeader()}
+
       <p class="text-neutral-500 text-sm">
         ${msg(
           "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
         )}
       </p>
-
       <main class="mt-6">
         <div class="md:border md:rounded-lg">
           <form @submit=${this.onSubmit} aria-describedby="formError">
