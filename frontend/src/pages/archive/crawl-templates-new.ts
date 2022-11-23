@@ -2,10 +2,15 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
+import flow from "lodash/fp/flow";
+import uniq from "lodash/fp/uniq";
 
-import type { ExclusionAddEvent } from "../../components/queue-exclusion-form";
-import type { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
+import type {
+  ExclusionRemoveEvent,
+  ExclusionChangeEvent,
+} from "../../components/queue-exclusion-table";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
@@ -36,7 +41,8 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    exclude: [],
+    // Show default empty editable rows
+    exclude: Array.from({ length: 3 }).map(() => ""),
   },
 } as InitialCrawlTemplate;
 const hours = Array.from({ length: 12 }).map((x, i) => ({
@@ -47,6 +53,8 @@ const minutes = Array.from({ length: 60 }).map((x, i) => ({
   value: i,
   label: `${i}`.padStart(2, "0"),
 }));
+
+const trimExclusions = flow(uniq, compact);
 
 /**
  * Usage:
@@ -129,7 +137,9 @@ export class CrawlTemplatesNew extends LiteElement {
       this.isConfigCodeView = true;
     }
     this.configCode = jsonToYaml(this.initialCrawlTemplate.config);
-    this.exclusions = this.initialCrawlTemplate.config.exclude;
+    if (this.initialCrawlTemplate.config.exclude?.length) {
+      this.exclusions = this.initialCrawlTemplate.config.exclude;
+    }
     this.browserProfileId = this.initialCrawlTemplate.profileid;
     super.connectedCallback();
   }
@@ -139,12 +149,14 @@ export class CrawlTemplatesNew extends LiteElement {
       if (this.isConfigCodeView) {
         this.configCode = jsonToYaml(
           merge(this.initialCrawlTemplate.config, {
-            exclude: this.exclusions,
+            exclude: trimExclusions(this.exclusions),
           })
         );
       } else if (this.isConfigCodeView === false) {
-        this.exclusions =
-          (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+        const exclude = (yamlToJson(this.configCode) as CrawlConfig).exclude;
+        this.exclusions = exclude?.length
+          ? exclude
+          : defaultValue.config.exclude;
       }
     }
   }
@@ -483,16 +495,19 @@ export class CrawlTemplatesNew extends LiteElement {
     return html`
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
+        pageSize="50"
         editable
+        removable
         @on-remove=${this.handleRemoveRegex}
+        @on-change=${this.handleChangeRegex}
       ></btrix-queue-exclusion-table>
-      <div class="mt-2">
-        <btrix-queue-exclusion-form
-          fieldErrorMessage=${this.exclusionFieldErrorMessage || ""}
-          @on-add=${this.handleAddRegex}
-        >
-        </btrix-queue-exclusion-form>
-      </div>
+      <sl-button
+        class="w-full mt-1"
+        @click=${() => (this.exclusions = [...(this.exclusions || []), ""])}
+      >
+        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+        <span class="text-neutral-600">${msg("Add More")}</span>
+      </sl-button>
     `;
   }
 
@@ -549,7 +564,7 @@ export class CrawlTemplatesNew extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
-        exclude: this.exclusions,
+        exclude: trimExclusions(this.exclusions),
       };
     }
 
@@ -557,26 +572,33 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
-    const { regex } = e.detail;
-    if (!this.exclusions || !regex) return;
-    this.exclusions = this.exclusions.filter((v) => v !== regex);
+    const { index } = e.detail;
+    if (!this.exclusions) {
+      this.exclusions = defaultValue.config.exclude;
+    } else {
+      this.exclusions = [
+        ...this.exclusions.slice(0, index),
+        ...this.exclusions.slice(index + 1),
+      ];
+    }
   }
 
-  private handleAddRegex(e: ExclusionAddEvent) {
-    this.exclusionFieldErrorMessage = "";
-    const { regex, onSuccess } = e.detail;
-    if (this.exclusions && this.exclusions.indexOf(regex) > -1) {
-      this.exclusionFieldErrorMessage = msg("Exclusion already exists");
-      return;
-    }
+  private handleChangeRegex(e: ExclusionChangeEvent) {
+    const { regex, index } = e.detail;
 
-    this.exclusions = [...(this.exclusions || []), regex];
-    onSuccess();
+    const nextExclusions = [...this.exclusions!];
+    nextExclusions[index] = regex;
+    this.exclusions = nextExclusions;
   }
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     if (!this.authState) return;
+    const form = event.target as HTMLFormElement;
+
+    if (form.querySelector("[invalid]")) {
+      return;
+    }
 
     const formData = new FormData(event.target as HTMLFormElement);
     const params = this.parseTemplate(formData);

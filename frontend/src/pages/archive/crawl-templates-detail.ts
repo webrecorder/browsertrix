@@ -3,7 +3,10 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import compact from "lodash/fp/compact";
 import merge from "lodash/fp/merge";
+import flow from "lodash/fp/flow";
+import uniq from "lodash/fp/uniq";
 import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -12,10 +15,17 @@ import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlTemplate, CrawlConfig } from "./types";
 import { getUTCSchedule, humanizeSchedule } from "../../utils/cron";
 import "../../components/crawl-scheduler";
-import { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
-import { ExclusionAddEvent } from "../../components/queue-exclusion-form";
+import {
+  ExclusionRemoveEvent,
+  ExclusionChangeEvent,
+} from "../../components/queue-exclusion-table";
 
 const SEED_URLS_MAX = 3;
+
+// Show default empty editable rows
+const defaultExclusions = [""];
+
+const trimExclusions = flow(uniq, compact);
 
 /**
  * Usage:
@@ -48,7 +58,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private configCode: string = "";
 
   @state()
-  private exclusions: CrawlConfig["exclude"] = [];
+  private exclusions: CrawlConfig["exclude"] = defaultExclusions;
 
   private browserLanguage: CrawlConfig["lang"] = null;
 
@@ -69,12 +79,12 @@ export class CrawlTemplatesDetail extends LiteElement {
         if (this.isConfigCodeView) {
           this.configCode = jsonToYaml(
             merge(this.crawlTemplate.config, {
-              exclude: this.exclusions,
+              exclude: trimExclusions(this.exclusions),
             })
           );
         } else if (this.isConfigCodeView === false) {
-          this.exclusions =
-            (yamlToJson(this.configCode) as CrawlConfig).exclude || [];
+          const exclude = (yamlToJson(this.configCode) as CrawlConfig).exclude;
+          this.exclusions = exclude?.length ? exclude : defaultExclusions;
         }
       }
     }
@@ -94,7 +104,9 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.isConfigCodeView = true;
       }
       this.configCode = jsonToYaml(this.crawlTemplate.config);
-      this.exclusions = this.crawlTemplate.config.exclude || [];
+      if (this.crawlTemplate.config.exclude?.length) {
+        this.exclusions = this.crawlTemplate.config.exclude;
+      }
     } catch (e: any) {
       this.notify({
         message:
@@ -1111,23 +1123,19 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <btrix-queue-exclusion-table
         .exclusions=${this.exclusions}
+        pageSize="50"
         editable
-        @on-remove=${(e: ExclusionRemoveEvent) => {
-          if (!this.exclusions) return;
-          const { regex: value } = e.detail;
-          this.exclusions = this.exclusions.filter((v) => v !== value);
-        }}
+        removable
+        @on-remove=${this.handleRemoveRegex}
+        @on-change=${this.handleChangeRegex}
       ></btrix-queue-exclusion-table>
-      <div class="mt-2">
-        <btrix-queue-exclusion-form
-          @on-add=${(e: ExclusionAddEvent) => {
-            const { regex, onSuccess } = e.detail;
-            this.exclusions = [...(this.exclusions || []), regex];
-            onSuccess();
-          }}
-        >
-        </btrix-queue-exclusion-form>
-      </div>
+      <sl-button
+        class="w-full mt-1"
+        @click=${() => (this.exclusions = [...(this.exclusions || []), ""])}
+      >
+        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+        <span class="text-neutral-600">${msg("Add More")}</span>
+      </sl-button>
     `;
   }
 
@@ -1163,6 +1171,26 @@ export class CrawlTemplatesDetail extends LiteElement {
     });
   }
 
+  private handleRemoveRegex(e: ExclusionRemoveEvent) {
+    const { index } = e.detail;
+    if (!this.exclusions) {
+      this.exclusions = defaultExclusions;
+    } else {
+      this.exclusions = [
+        ...this.exclusions.slice(0, index),
+        ...this.exclusions.slice(index + 1),
+      ];
+    }
+  }
+
+  private handleChangeRegex(e: ExclusionChangeEvent) {
+    const { regex, index } = e.detail;
+
+    const nextExclusions = [...this.exclusions!];
+    nextExclusions[index] = regex;
+    this.exclusions = nextExclusions;
+  }
+
   private async handleSubmitEditName(e: SubmitEvent) {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
@@ -1185,7 +1213,13 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async handleSubmitEditConfiguration(e: SubmitEvent) {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+
+    if (form.querySelector("[invalid]")) {
+      return;
+    }
+
+    const formData = new FormData(form);
     const profileId = (formData.get("browserProfile") as string) || null;
 
     let config: CrawlConfig;
@@ -1203,7 +1237,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         scopeType: formData.get("scopeType") as string,
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
-        exclude: this.exclusions,
+        exclude: trimExclusions(this.exclusions),
         lang: this.browserLanguage,
       };
     }

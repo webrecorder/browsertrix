@@ -1,6 +1,7 @@
 import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
+import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
@@ -92,7 +93,7 @@ export class ExclusionEditor extends LiteElement {
     return html`
       ${this.config
         ? html`<btrix-queue-exclusion-table
-            ?editable=${this.isActiveCrawl}
+            ?removable=${this.isActiveCrawl}
             .exclusions=${this.config.exclude || []}
             @on-remove=${this.deleteExclusion}
           >
@@ -144,12 +145,12 @@ export class ExclusionEditor extends LiteElement {
     }
   }
 
-  private async deleteExclusion(e: CustomEvent) {
-    const { value } = e.detail;
+  private async deleteExclusion(e: ExclusionRemoveEvent) {
+    const { regex } = e.detail;
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${value}`,
+        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
         this.authState!,
         {
           method: "DELETE",
@@ -158,7 +159,7 @@ export class ExclusionEditor extends LiteElement {
 
       if (data.new_cid) {
         this.notify({
-          message: msg(html`Removed exclusion: <code>${value}</code>`),
+          message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
         });
