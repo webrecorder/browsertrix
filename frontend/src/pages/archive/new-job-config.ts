@@ -16,7 +16,7 @@ type State =
   | "jobScheduling"
   | "jobInformation";
 const machineConfig = {
-  initial: "chooseJobType",
+  initial: "urListSetup",
   states: {
     chooseJobType: {
       on: {
@@ -125,16 +125,22 @@ export class NewJobConfig extends LiteElement {
         <div class="col-span-5 md:col-span-1">sidebar</div>
         <div class="col-span-5 md:col-span-4">
           <h3 class="text-lg font-medium mb-3">${heading}</h3>
-          <div>${this.stateValue}</div>
-          <div class="border rounded p-4">
-            <div>${content}</div>
-
-            <sl-button @click=${() => stateService.send("BACK")}>
-              ${msg("Previous Step")}
-            </sl-button>
-            <sl-button @click=${() => stateService.send("CONTINUE")}>
-              ${msg("Next Step")}
-            </sl-button>
+          <div class="border rounded">
+            <div class="p-4">${content}</div>
+            <div class="p-4 border-t flex justify-between">
+              <sl-button size="small" @click=${() => stateService.send("BACK")}>
+                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                ${msg("Previous Step")}
+              </sl-button>
+              <sl-button
+                size="small"
+                variant="primary"
+                @click=${() => stateService.send("CONTINUE")}
+              >
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                ${msg("Next Step")}
+              </sl-button>
+            </div>
           </div>
         </div>
       </div>
