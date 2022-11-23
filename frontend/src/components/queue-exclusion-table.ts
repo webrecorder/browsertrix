@@ -243,7 +243,6 @@ export class QueueExclusionTable extends LiteElement {
           autocomplete="off"
           autocorrect="off"
           minlength=${MIN_LENGTH}
-          clearable
           @sl-clear=${() => {
             this.updateExclusion({
               type: exclusion.type,
