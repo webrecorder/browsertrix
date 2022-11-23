@@ -122,9 +122,13 @@ export class NewJobConfig extends LiteElement {
 
     return html`
       <div class="grid grid-cols-5">
-        <div class="col-span-5 md:col-span-1">sidebar</div>
-        <div class="col-span-5 md:col-span-4">
+        <div class="col-start-1 md:col-start-2 col-end-6">
           <h3 class="text-lg font-medium mb-3">${heading}</h3>
+        </div>
+        <div class="col-start-1 col-end-6 md:col-end-2">
+          ${this.renderNav()}
+        </div>
+        <div class="col-start-1 md:col-start-2 col-end-6">
           <div class="border rounded">
             <div class="p-4">${content}</div>
             <div class="p-4 border-t flex justify-between">
@@ -188,6 +192,35 @@ export class NewJobConfig extends LiteElement {
           </figure>
         </div>
       </div>
+    `;
+  }
+
+  private renderNav() {
+    return html`
+      <nav class="relative">
+        <div
+          class="absolute top-0 bottom-0 w-1 bg-neutral-100 rounded-full shadow-inner"
+        ></div>
+        <ul>
+          ${this.renderNavItem(false)} ${this.renderNavItem(true)}
+          ${this.renderNavItem(false)} ${this.renderNavItem(false)}
+          ${this.renderNavItem(false)}
+        </ul>
+      </nav>
+    `;
+  }
+
+  private renderNavItem(isActive: boolean) {
+    return html`
+      <li class="relative" role="menuitem" aria-selected=${isActive}>
+        <div
+          class="absolute top-0 bottom-0 rounded-full transition-all ${isActive
+            ? "w-1 bg-primary"
+            : "w-0"}"
+          role="presentation"
+        ></div>
+        <span class="inline-block px-4 py-2">item</span>
+      </li>
     `;
   }
 
