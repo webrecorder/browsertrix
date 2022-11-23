@@ -161,7 +161,7 @@ export class CrawlTemplatesList extends LiteElement {
             @click=${this.navLink}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Template")}
+            ${msg("New Job Config")}
           </sl-button>
         </div>
       </div>
@@ -613,7 +613,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        message: msg("Sorry, couldn't deactivate job config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -641,7 +641,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete crawl template at this time."),
+        message: msg("Sorry, couldn't delete job config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

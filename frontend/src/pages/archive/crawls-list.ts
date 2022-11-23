@@ -26,8 +26,8 @@ const sortableFieldLabels = {
   finished_desc: msg("Recently Updated"),
   finished_asc: msg("Oldest Finished"),
   state: msg("Status"),
-  configName: msg("Crawl Template Name"),
-  cid: msg("Crawl Template ID"),
+  configName: msg("Job Config Name"),
+  cid: msg("Job Config ID"),
   fileSize_asc: msg("Smallest Files"),
   fileSize_desc: msg("Largest Files"),
 };
@@ -170,7 +170,7 @@ export class CrawlsList extends LiteElement {
           <sl-input
             class="w-full"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Template name or ID")}
+            placeholder=${msg("Search by Job Config name or ID")}
             clearable
             ?disabled=${!this.crawls?.length}
             @sl-input=${this.onSearchInput}
@@ -357,7 +357,7 @@ export class CrawlsList extends LiteElement {
                   e.target.closest("sl-dropdown").hide();
                 }}
               >
-                ${msg("Copy Crawl Template ID")}
+                ${msg("Copy Job Config ID")}
               </li>
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -368,7 +368,7 @@ export class CrawlsList extends LiteElement {
                   );
                 }}
               >
-                ${msg("View Crawl Template")}
+                ${msg("View Job Config")}
               </li>
             </ul>
           </sl-dropdown>
@@ -667,13 +667,13 @@ export class CrawlsList extends LiteElement {
       if (e.isApiError && e.statusCode === 404) {
         this.notify({
           message: msg(
-            html`Sorry, cannot rerun crawl from a deactivated crawl template.
+            html`Sorry, cannot rerun crawl from a deactivated job config.
               <br />
               <button
                 class="underline hover:no-underline"
                 @click=${() => this.duplicateConfig(crawl, crawlTemplate)}
               >
-                Duplicate crawl template
+                Duplicate job config
               </button>`
           ),
           variant: "danger",

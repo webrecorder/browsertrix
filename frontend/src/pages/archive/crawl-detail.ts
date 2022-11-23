@@ -376,7 +376,7 @@ export class CrawlDetail extends LiteElement {
               closeDropdown(e);
             }}
           >
-            ${msg("Copy Crawl Template ID")}
+            ${msg("Copy Job Config ID")}
           </li>
 
           <li
@@ -388,7 +388,7 @@ export class CrawlDetail extends LiteElement {
               );
             }}
           >
-            ${msg("View Crawl Template")}
+            ${msg("View Job Config")}
           </li>
         </ul>
       </sl-dropdown>
@@ -668,7 +668,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
+          <dt class="text-sm text-0-600">${msg("Job Config")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -889,7 +889,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   /**
-   * Fetch crawl template and update internal state
+   * Fetch job config and update internal state
    */
   private async fetchCrawlTemplate(): Promise<void> {
     try {
