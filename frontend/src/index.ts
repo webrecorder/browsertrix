@@ -14,7 +14,7 @@ import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
-import type { AuthState } from "./utils/AuthService";
+import type { AuthStorageEventData } from "./utils/AuthService";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -64,43 +64,35 @@ export class App extends LiteElement {
   @state()
   private isRegistrationEnabled?: boolean;
 
-  constructor() {
-    super();
-
-    const authState = this.authService.retrieve();
-
+  async connectedCallback() {
+    const authState = await AuthService.initSessionStorage();
     if (authState) {
-      if (
-        window.location.pathname === "/log-in" ||
-        window.location.pathname === "/reset-password"
-      ) {
-        // Redirect to logged in home page
-        this.viewState = this.router.match(ROUTES.myAccount);
-        window.history.replaceState(
-          this.viewState,
-          "",
-          this.viewState.pathname
-        );
-      }
+      this.authService.saveLogin(authState);
     }
-
     this.syncViewState();
-  }
-
-  private syncViewState() {
-    this.viewState = this.router.match(
-      `${window.location.pathname}${window.location.search}`
-    );
-  }
-
-  connectedCallback() {
     super.connectedCallback();
 
-    window.addEventListener("popstate", (event) => {
+    window.addEventListener("popstate", () => {
       this.syncViewState();
     });
 
     this.startSyncBrowserTabs();
+  }
+
+  private syncViewState() {
+    if (
+      this.authService.authState &&
+      (window.location.pathname === "/log-in" ||
+        window.location.pathname === "/reset-password")
+    ) {
+      // Redirect to logged in home page
+      this.viewState = this.router.match(DASHBOARD_ROUTE);
+      window.history.replaceState(this.viewState, "", this.viewState.pathname);
+    } else {
+      this.viewState = this.router.match(
+        `${window.location.pathname}${window.location.search}`
+      );
+    }
   }
 
   async firstUpdated() {
@@ -605,7 +597,7 @@ export class App extends LiteElement {
   onLoggedIn(event: LoggedInEvent) {
     const { detail } = event;
 
-    this.authService.startPersist({
+    this.authService.saveLogin({
       username: detail.username,
       headers: detail.headers,
       tokenExpiresAt: detail.tokenExpiresAt,
@@ -728,52 +720,23 @@ export class App extends LiteElement {
   }
 
   private startSyncBrowserTabs() {
-    // TODO remove this line after this change has been deployed
-    // for more than 24 hours
-    window.localStorage.removeItem(AuthService.storageKey);
-
-    // Sync local auth state across window/tabs
-    // Notify any already open windows that new window is open
-    AuthService.broadcastChannel.postMessage({ name: "need_auth" });
-    AuthService.broadcastChannel.addEventListener("message", ({ data }) => {
-      if (data.name === "need_auth") {
-        // Share auth with newly opened tab
-        const auth = AuthService.storage.getItem();
-        if (auth) {
-          AuthService.broadcastChannel.postMessage({
-            name: "storage",
-            key: AuthService.storageKey,
-            oldValue: auth,
-            newValue: auth,
-          });
-        }
-      }
-      if (data.name === "storage") {
-        const { key, oldValue, newValue } = data;
-        if (key === AuthService.storageKey && newValue !== oldValue) {
-          if (oldValue && newValue === null) {
-            // Logged out from another tab
-            this.onLogOut(
-              new CustomEvent("log-out", { detail: { redirect: true } })
-            );
-          } else if (!oldValue && newValue) {
-            // Logged in from another tab
-            const auth = JSON.parse(newValue);
-            this.onLoggedIn(AuthService.createLoggedInEvent(auth));
+    AuthService.broadcastChannel.addEventListener(
+      "message",
+      ({ data }: { data: AuthStorageEventData }) => {
+        if (data.name === "auth_storage") {
+          if (data.value !== AuthService.storage.getItem()) {
+            if (data.value) {
+              this.authService.saveLogin(JSON.parse(data.value));
+              this.updateUserInfo();
+              this.syncViewState();
+            } else {
+              this.authService.logout();
+              this.navigate(ROUTES.login);
+            }
           }
         }
       }
-    });
-
-    // Only have freshness check run in visible tab(s)
-    document.addEventListener("visibilitychange", () => {
-      if (!this.authService.authState) return;
-      if (document.visibilityState === "visible") {
-        this.authService.startFreshnessCheck();
-      } else {
-        this.authService.cancelFreshnessCheck();
-      }
-    });
+    );
   }
 }
 
