@@ -113,63 +113,67 @@ export class NewJobConfig extends LiteElement {
     }
 
     let heading: TemplateResult | string;
-    let content: TemplateResult | string;
 
     switch (this.stateValue) {
       case "urListSetup":
         heading = msg("Crawler Setup");
-        content = this.renderUrlListSetup();
+
         break;
       case "seededCrawlSetup":
         heading = msg("Crawler Setup");
-        content = this.renderSeededCrawlSetup();
+
         break;
       case "crawlBehaviors":
         heading = msg("Crawl Behaviors");
-        content = this.renderCrawlBehaviors();
+
         break;
       case "jobScheduling":
         heading = msg("Job Scheduling");
-        content = this.renderJobScheduling();
+
         break;
       case "jobInformation":
         heading = msg("Job Information");
-        content = this.renderJobInformation();
+
         break;
       default:
         heading = "";
-        content = "";
         break;
     }
 
     return html`
-      <div class="grid grid-cols-5">
-        <div class="col-start-1 md:col-start-2 col-end-6">
-          <h3 class="text-lg font-medium mb-3">${heading}</h3>
-        </div>
-        <div class="col-start-1 col-end-6 md:col-end-2">
-          ${this.renderNav()}
-        </div>
-        <div class="col-start-1 md:col-start-2 col-end-6">
-          <div class="border rounded">
-            <div class="p-4">${content}</div>
-            <div class="p-4 border-t flex justify-between">
-              <sl-button size="small" @click=${() => stateService.send("BACK")}>
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Previous Step")}
-              </sl-button>
-              <sl-button
-                size="small"
-                variant="primary"
-                @click=${() => stateService.send("CONTINUE")}
-              >
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                ${msg("Next Step")}
-              </sl-button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <h3 class="ml-52 text-lg font-medium mb-3">${heading}</h3>
+
+      <btrix-tab-list
+        activePanel="newJobConfig-${this.stateValue}"
+        progressPanel="newJobConfig-urListSetup"
+      >
+        ${this.renderNavItem("URL_LIST", msg("Crawler Setup (URL)"))}
+        ${this.renderNavItem("SEEDED_CRAWL", msg("Crawler Setup (Seed)"))}
+        ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
+        ${this.renderNavItem("JOB_SCHEDULING", msg("Job Scheduling"))}
+        ${this.renderNavItem("JOB_INFORMATION", msg("Job Information"))}
+
+        <btrix-tab-panel name="newJobConfig-urListSetup">
+          <div class="p-4">${this.renderUrlListSetup()}</div>
+          ${this.renderFooter()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="newJobConfig-seededCrawlSetup">
+          <div class="p-4">${this.renderSeededCrawlSetup()}</div>
+          ${this.renderFooter()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="newJobConfig-crawlBehaviors">
+          <div class="p-4">${this.renderCrawlBehaviors()}</div>
+          ${this.renderFooter()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="newJobConfig-jobScheduling">
+          <div class="p-4">${this.renderJobScheduling()}</div>
+          ${this.renderFooter()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="newJobConfig-jobInformation">
+          <div class="p-4">${this.renderJobInformation()}</div>
+          ${this.renderFooter()}
+        </btrix-tab-panel>
+      </btrix-tab-list>
     `;
   }
 
@@ -217,50 +221,38 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderNav() {
-    return html`
-      <nav class="relative">
-        <div
-          class="absolute top-0 bottom-0 w-1 bg-neutral-100 rounded-full shadow-inner"
-        ></div>
-        <ul>
-          ${this.renderNavItem("URL_LIST", msg("Crawler Setup (URL)"))}
-          ${this.renderNavItem("SEEDED_CRAWL", msg("Crawler Setup (Seed)"))}
-          ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
-          ${this.renderNavItem("JOB_SCHEDULING", msg("Job Scheduling"))}
-          ${this.renderNavItem("JOB_INFORMATION", msg("Job Information"))}
-        </ul>
-      </nav>
-    `;
-  }
-
   private renderNavItem(
     eventName: StepEventName,
     content: TemplateResult | string
   ) {
-    const isActive = this.stateValue === stepStateConfig[eventName];
     return html`
-      <li
-        class="relative cursor-pointer font-medium"
-        role="menuitem"
-        aria-selected=${isActive}
+      <btrix-tab
+        slot="nav"
+        name="newJobConfig-${stepStateConfig[eventName]}"
         @click=${() => {
           stateService.send(eventName);
         }}
+        >${content}</btrix-tab
       >
-        <div
-          class="absolute top-0 bottom-0 rounded-full transition-all ${isActive
-            ? "w-1 bg-primary"
-            : "w-0"}"
-          role="presentation"
-        ></div>
-        <span
-          class="inline-block px-4 py-2 ${isActive
-            ? "text-primary"
-            : "text-neutral-500"}"
-          >${content}</span
+    `;
+  }
+
+  private renderFooter() {
+    return html`
+      <div class="p-4 border-t flex justify-between">
+        <sl-button size="small" @click=${() => stateService.send("BACK")}>
+          <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+          ${msg("Previous Step")}
+        </sl-button>
+        <sl-button
+          size="small"
+          variant="primary"
+          @click=${() => stateService.send("CONTINUE")}
         >
-      </li>
+          <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+          ${msg("Next Step")}
+        </sl-button>
+      </div>
     `;
   }
 

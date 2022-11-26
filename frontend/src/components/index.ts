@@ -75,6 +75,11 @@ import("./icon-button").then(({ IconButton }) => {
 import("./language-select").then(({ LanguageSelect }) => {
   customElements.define("btrix-language-select", LanguageSelect);
 });
+import("./tab-list").then(({ Tab, TabList, TabPanel }) => {
+  customElements.define("btrix-tab", Tab);
+  customElements.define("btrix-tab-list", TabList);
+  customElements.define("btrix-tab-panel", TabPanel);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
