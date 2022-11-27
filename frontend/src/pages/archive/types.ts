@@ -1,4 +1,4 @@
-type CrawlState =
+export type CrawlState =
   | "starting"
   | "running"
   | "complete"
@@ -28,22 +28,31 @@ export type Crawl = {
   completions?: number;
 };
 
-type SeedConfig = {
-  scopeType?: string;
-  limit?: number;
-  extraHops?: number;
+export type SeedConfig = {
+  scopeType: string;
+  limit: number | null;
+  extraHops: number | null;
+  lang: string | null;
+  blockAds: string | null;
+  behaviors: string | null;
+  include?: string[];
+  exclude?: string[];
 };
 
-export type CrawlConfig = {
+export type CrawlConfig = SeedConfig & {
   seeds: (string | ({ url: string } & SeedConfig))[];
-  exclude?: string[];
-  lang?: string | null;
-} & SeedConfig;
+};
 
-export type CrawlTemplate = {
-  id: string;
+export type JobConfig = {
   name: string;
   schedule: string;
+  scale: number;
+  profileid: string | null;
+  config: CrawlConfig;
+};
+
+export type CrawlTemplate = JobConfig & {
+  id: string;
   userid: string;
   userName: string | null;
   created: string;
@@ -55,9 +64,6 @@ export type CrawlTemplate = {
   newId: string | null;
   oldId: string | null;
   inactive: boolean;
-  config: CrawlConfig;
-  scale: number;
-  profileid: string | null;
   profileName: string | null;
 };
 

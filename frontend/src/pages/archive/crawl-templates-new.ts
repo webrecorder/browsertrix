@@ -28,14 +28,19 @@ type NewCrawlTemplate = {
   runNow: boolean;
   crawlTimeout?: number;
   scale: number;
-  config: CrawlConfig;
+  config: Pick<
+    CrawlConfig,
+    "seeds" | "scopeType" | "limit" | "extraHops" | "exclude"
+  >;
   profileid: string | null;
 };
 
 export type InitialCrawlTemplate = Pick<
   NewCrawlTemplate,
-  "name" | "config" | "profileid"
->;
+  "name" | "profileid"
+> & {
+  config: Pick<CrawlConfig, "seeds" | "scopeType" | "exclude">;
+};
 
 const defaultValue = {
   name: "",

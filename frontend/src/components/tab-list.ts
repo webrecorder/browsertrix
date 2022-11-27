@@ -59,7 +59,7 @@ export class Tab extends LitElement {
 
   static styles = css`
     .tab {
-      padding: 0.85rem;
+      padding: 1rem 0.75rem;
       line-height: 1.2;
       font-weight: 600;
       color: var(--sl-color-neutral-500);
@@ -108,7 +108,7 @@ export class TabList extends LitElement {
     .container {
       display: grid;
       grid-template-columns: 11rem 1fr;
-      grid-gap: 2rem;
+      grid-gap: 1rem;
     }
 
     .content {

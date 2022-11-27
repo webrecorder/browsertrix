@@ -20,6 +20,11 @@ import {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 
+type EditCrawlConfig = Pick<
+  CrawlConfig,
+  "seeds" | "scopeType" | "limit" | "extraHops" | "exclude" | "lang"
+>;
+
 const SEED_URLS_MAX = 3;
 
 // Show default empty editable rows
@@ -1224,12 +1229,12 @@ export class CrawlTemplatesDetail extends LiteElement {
     const formData = new FormData(form);
     const profileId = (formData.get("browserProfile") as string) || null;
 
-    let config: CrawlConfig;
+    let config: EditCrawlConfig;
 
     if (this.isConfigCodeView) {
       if (!this.configCode) return;
 
-      config = yamlToJson(this.configCode) as CrawlConfig;
+      config = yamlToJson(this.configCode) as EditCrawlConfig;
     } else {
       const pageLimit = formData.get("limit") as string;
       const seedUrlsStr = formData.get("seedUrls") as string;
@@ -1394,7 +1399,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     config,
     profileId,
   }: {
-    config?: CrawlConfig;
+    config?: EditCrawlConfig;
     profileId: CrawlTemplate["profileid"];
   }) {
     this.isSubmittingUpdate = true;

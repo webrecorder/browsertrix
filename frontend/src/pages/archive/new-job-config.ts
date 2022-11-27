@@ -1,7 +1,12 @@
 import type { TemplateResult } from "lit";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import compact from "lodash/fp/compact";
+import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
+import pickBy from "lodash/fp/pickBy";
 
 import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
@@ -12,7 +17,7 @@ import type {
   ExclusionRemoveEvent,
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
-import type { CrawlConfig } from "./types";
+import type { JobConfig } from "./types";
 
 type JobType = null | "urlList" | "seeded";
 type TabName =
@@ -35,7 +40,9 @@ type ProgressState = {
   tabs: Tabs;
 };
 type FormState = {
-  exclude: CrawlConfig["exclude"];
+  urlList: string;
+  includeLinkedPages: boolean;
+  exclusions: JobConfig["config"]["exclude"];
 };
 const initialJobType: JobType = "urlList";
 const initialProgressState: ProgressState = {
@@ -49,7 +56,24 @@ const initialProgressState: ProgressState = {
   },
 };
 const initialFormState: FormState = {
-  exclude: [""], // Empty slots for adding exclusions
+  urlList: "",
+  includeLinkedPages: true,
+  exclusions: [""], // Empty slots for adding exclusions
+};
+const defaultFormValues: JobConfig = {
+  name: "",
+  schedule: "",
+  scale: 1,
+  profileid: null,
+  config: {
+    seeds: [],
+    scopeType: "prefix",
+    limit: null,
+    extraHops: 0,
+    lang: null,
+    blockAds: null,
+    behaviors: null,
+  },
 };
 const stepOrder: StepName[] = [
   "chooseJobType",
@@ -98,11 +122,11 @@ export class NewJobConfig extends LiteElement {
       jobInformation: msg("Job Information"),
     };
 
-    const contentClassName = "p-5 grid grid-cols-1 md:grid-cols-5 gap-5";
+    const contentClassName = "p-5 grid grid-cols-1 md:grid-cols-5 gap-6";
     const formColClassName = "col-span-1 md:col-span-3";
 
     return html`
-      <h3 class="ml-52 text-lg font-medium mb-3">
+      <h3 class="ml-48 text-lg font-medium mb-3">
         ${tabLabels[this.progressState.activeTab]}
       </h3>
 
@@ -236,11 +260,14 @@ export class NewJobConfig extends LiteElement {
       <btrix-tab
         slot="nav"
         name="newJobConfig-${tabName}"
+        class="whitespace-nowrap"
         ?disabled=${!this.progressState.tabs[tabName].enabled}
         @click=${this.tabClickHandler(tabName)}
       >
         ${icon}
-        <span class="inline-block align-middle">${content}</span>
+        <span class="inline-block align-middle whitespace-normal">
+          ${content}
+        </span>
       </btrix-tab>
     `;
   }
@@ -279,7 +306,7 @@ export class NewJobConfig extends LiteElement {
 
   private renderHelpText(content: TemplateResult) {
     return html`
-      <div class="colspan-1 md:col-span-2 mt-5 flex">
+      <div class="colspan-1 md:col-span-2 mt-0.5 flex">
         <div class="text-base mr-1">
           <sl-icon name="info-circle"></sl-icon>
         </div>
@@ -292,10 +319,11 @@ export class NewJobConfig extends LiteElement {
     return html`
       <div class="${formColClassName}">
         <sl-textarea
-          name="urls"
+          name="urlList"
           label=${msg("List of URLs")}
           rows="6"
           autocomplete="off"
+          defaultValue=${initialFormState.urlList}
           ?required=${this.jobType === "urlList"}
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
@@ -306,7 +334,7 @@ export class NewJobConfig extends LiteElement {
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
-          value="1"
+          value=${defaultFormValues.scale}
         >
           <sl-radio-button value="1" size="small">1</sl-radio-button>
           <sl-radio-button value="2" size="small">2</sl-radio-button>
@@ -314,6 +342,37 @@ export class NewJobConfig extends LiteElement {
         </sl-radio-group>
       </div>
       ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <sl-checkbox
+          name="includeLinkedPages"
+          ?defaultChecked=${initialFormState.includeLinkedPages}
+          ?checked=${this.formState.includeLinkedPages}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              includeLinkedPages: (e.target as SlCheckbox).checked,
+            })}
+        >
+          ${msg("Include Linked Pages")}
+        </sl-checkbox>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+      ${this.formState.includeLinkedPages
+        ? html`
+            <div class="${formColClassName}">
+              <sl-input
+                name="limit"
+                label=${msg("Additional Page Limit")}
+                type="number"
+                defaultValue=${defaultFormValues.config.limit || ""}
+                placeholder=${msg("Unlimited")}
+              >
+                <span slot="suffix">${msg("pages")}</span>
+              </sl-input>
+            </div>
+            ${this.renderHelpText(html`TODO`)}
+          `
+        : ""}
 
       <div class="${formColClassName}">${this.renderExclusionEditor()}</div>
       ${this.renderHelpText(html`TODO`)}
@@ -339,7 +398,7 @@ export class NewJobConfig extends LiteElement {
   private renderExclusionEditor() {
     return html`
       <btrix-queue-exclusion-table
-        .exclusions=${this.formState.exclude}
+        .exclusions=${this.formState.exclusions}
         pageSize="50"
         editable
         removable
@@ -350,7 +409,7 @@ export class NewJobConfig extends LiteElement {
         class="w-full mt-1"
         @click=${() =>
           this.updateFormState({
-            exclude: [...(this.formState.exclude || []), ""],
+            exclusions: [...(this.formState.exclusions || []), ""],
           })}
       >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -361,18 +420,18 @@ export class NewJobConfig extends LiteElement {
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
     const { index } = e.detail;
-    if (!this.formState.exclude) {
+    if (!this.formState.exclusions) {
       this.updateFormState(
         {
-          exclude: initialFormState.exclude,
+          exclusions: initialFormState.exclusions,
         },
         true
       );
     } else {
-      const { exclude } = this.formState;
+      const { exclusions: exclude } = this.formState;
       this.updateFormState(
         {
-          exclude: [...exclude.slice(0, index), ...exclude.slice(index + 1)],
+          exclusions: [...exclude.slice(0, index), ...exclude.slice(index + 1)],
         },
         true
       );
@@ -382,11 +441,11 @@ export class NewJobConfig extends LiteElement {
   private handleChangeRegex(e: ExclusionChangeEvent) {
     const { regex, index } = e.detail;
 
-    const nextExclusions = [...this.formState.exclude!];
+    const nextExclusions = [...this.formState.exclusions!];
     nextExclusions[index] = regex;
     this.updateFormState(
       {
-        exclude: nextExclusions,
+        exclusions: nextExclusions,
       },
       true
     );
@@ -501,7 +560,25 @@ export class NewJobConfig extends LiteElement {
       return;
     }
 
-    console.log(new FormData(form));
+    const values = this.parseConfig(form);
+
+    console.log(values);
+  }
+
+  private parseConfig(form: HTMLFormElement): JobConfig {
+    const formValues = flow(
+      merge({ ...defaultFormValues }),
+      pickBy((v, key) => key in defaultFormValues)
+    )(serialize(form)) as JobConfig;
+
+    const params = merge(formValues, {
+      scale: +formValues.scale,
+      config: {
+        exclude: compact(this.formState.exclusions),
+      },
+    });
+
+    return params;
   }
 
   private updateProgressState(
