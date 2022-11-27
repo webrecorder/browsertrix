@@ -37,7 +37,7 @@ type ProgressState = {
 type FormState = {
   exclude: CrawlConfig["exclude"];
 };
-const initialJobType: JobType = null;
+const initialJobType: JobType = "urlList";
 const initialProgressState: ProgressState = {
   activeTab: "crawlerSetup",
   currentStep: "crawlerSetup",
@@ -117,16 +117,16 @@ export class NewJobConfig extends LiteElement {
 
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             <div
-              class="${contentClassName}${this.jobType === "seeded"
-                ? " hidden"
-                : ""}"
+              class="${contentClassName}${this.jobType === "urlList"
+                ? ""
+                : " hidden"}"
             >
               ${this.renderUrlListSetup(formColClassName)}
             </div>
             <div
-              class="${contentClassName}${this.jobType === "urlList"
-                ? " hidden"
-                : ""}"
+              class="${contentClassName}${this.jobType === "seeded"
+                ? ""
+                : " hidden"}"
             >
               ${this.renderSeededCrawlSetup(formColClassName)}
             </div>
@@ -445,7 +445,7 @@ export class NewJobConfig extends LiteElement {
       });
     } else {
       // Reset to job type selection
-      this.updateProgressState(initialProgressState);
+      this.updateProgressState(initialProgressState, true);
     }
   }
 
@@ -453,11 +453,9 @@ export class NewJobConfig extends LiteElement {
     const isValid = this.checkCurrentPanelValidity();
 
     if (isValid) {
-      const nextTab = stepOrder[
-        stepOrder.indexOf(this.progressState.activeTab!) + 1
-      ] as TabName;
+      const { activeTab, tabs, currentStep } = this.progressState;
+      const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as TabName;
 
-      const { tabs, currentStep } = this.progressState;
       const isFirstEnabled = !tabs[nextTab].enabled;
       let nextTabs = tabs;
       let nextCurrentStep = currentStep;
@@ -467,6 +465,7 @@ export class NewJobConfig extends LiteElement {
         nextCurrentStep = nextTab;
       }
 
+      nextTabs[activeTab!].completed = true;
       this.updateProgressState({
         activeTab: nextTab,
         currentStep: nextCurrentStep,
@@ -505,11 +504,21 @@ export class NewJobConfig extends LiteElement {
     console.log(new FormData(form));
   }
 
-  private updateProgressState(nextState: Partial<ProgressState>) {
-    this.progressState = merge(
-      <ProgressState>this.progressState,
-      <Partial<ProgressState>>nextState
-    );
+  private updateProgressState(
+    nextState: Partial<ProgressState>,
+    shallowMerge = false
+  ) {
+    if (shallowMerge) {
+      this.progressState = {
+        ...this.progressState,
+        ...nextState,
+      };
+    } else {
+      this.progressState = merge(
+        <ProgressState>this.progressState,
+        <Partial<ProgressState>>nextState
+      );
+    }
   }
 
   private updateFormState(nextState: Partial<FormState>, shallowMerge = false) {
