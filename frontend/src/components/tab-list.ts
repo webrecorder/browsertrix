@@ -64,10 +64,11 @@ export class Tab extends LitElement {
       font-weight: 600;
       color: var(--sl-color-neutral-600);
       cursor: pointer;
+      transition: var(--sl-transition-fast) color;
     }
 
     .tab[aria-selected="true"] {
-      color: var(--sl-color-blue-500);
+      color: var(--sl-color-blue-600);
     }
 
     .tab[aria-disabled="true"] {

@@ -1,7 +1,8 @@
 import type { TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
+import type { StateMachine } from "@xstate/fsm";
 
 import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
@@ -20,54 +21,52 @@ type StepEventName =
   | "JOB_SCHEDULING"
   | "JOB_INFORMATION";
 type JobType = null | "urlList" | "seeded";
-
-const stepStateConfig: Record<StepEventName, State> = {
+type JobSelectEvent = {
+  type: "CRAWLER_SETUP";
+  jobType: JobType;
+};
+type Context = {
+  jobType: JobType;
+  enabledSteps: Record<State, boolean>;
+  currentProgress: State;
+};
+const tabEventTarget: Record<StepEventName, State> = {
   CRAWLER_SETUP: "crawlerSetup",
   CRAWL_BEHAVIORS: "crawlBehaviors",
   JOB_SCHEDULING: "jobScheduling",
   JOB_INFORMATION: "jobInformation",
 };
-
-const machineConfig = {
-  initial: "crawlerSetup",
-  states: {
-    chooseJobType: {
-      on: {
-        CRAWLER_SETUP: "crawlerSetup",
+const tabNavStates = Object.keys(tabEventTarget).reduce((acc, eventName) => {
+  const stateValue = tabEventTarget[eventName as StepEventName];
+  return {
+    ...acc,
+    [eventName]: [
+      {
+        cond: (ctx: Context) => ctx.enabledSteps[stateValue],
+        target: stateValue,
       },
-    },
-    crawlerSetup: {
-      on: {
-        ...stepStateConfig,
-        BACK: "chooseJobType",
-        CONTINUE: "crawlBehaviors",
-      },
-    },
-    crawlBehaviors: {
-      on: {
-        ...stepStateConfig,
-        BACK: "crawlerSetup",
-        CONTINUE: "jobScheduling",
-      },
-    },
-    jobScheduling: {
-      on: {
-        ...stepStateConfig,
-        BACK: "crawlBehaviors",
-        CONTINUE: "jobInformation",
-      },
-    },
-    jobInformation: {
-      on: {
-        ...stepStateConfig,
-        BACK: "jobScheduling",
-        // CONTINUE: "", TODO
-      },
-    },
+    ],
+  };
+}, {});
+const stepOrder = [
+  "chooseJobType",
+  "crawlerSetup",
+  "crawlBehaviors",
+  "jobScheduling",
+  "jobInformation",
+];
+const initialState = "crawlerSetup";
+const initialContext: Context = {
+  jobType: "urlList",
+  enabledSteps: {
+    chooseJobType: true,
+    crawlerSetup: false,
+    crawlBehaviors: false,
+    jobScheduling: false,
+    jobInformation: false,
   },
+  currentProgress: "crawlerSetup",
 };
-const stateMachine = createMachine(<any>machineConfig);
-const stateService = interpret(stateMachine);
 
 @localized()
 export class NewJobConfig extends LiteElement {
@@ -78,23 +77,113 @@ export class NewJobConfig extends LiteElement {
   archiveId!: string;
 
   @state()
-  private stateValue: State = machineConfig.initial as State;
+  private stateValue: State = initialState;
 
   @state()
-  private jobType: JobType = "urlList";
+  private stateContext: Context = initialContext;
+
+  private stateService: StateMachine.Service<any, any, any>;
+
+  @query('form[name="newJobConfig"]')
+  formElem?: HTMLFormElement;
+
+  constructor() {
+    super();
+    const makeStepActions = (stepState: State) =>
+      assign({
+        enabledSteps: (ctx: Context): any => ({
+          ...ctx.enabledSteps,
+          [stepState]: true,
+        }),
+        currentProgress: (ctx: Context): any =>
+          stepOrder.indexOf(stepState) > stepOrder.indexOf(ctx.currentProgress)
+            ? stepState
+            : ctx.currentProgress,
+      });
+    const stateMachine = createMachine({
+      initial: initialState,
+      context: initialContext,
+      states: {
+        chooseJobType: {
+          on: {
+            CRAWLER_SETUP: {
+              target: "crawlerSetup",
+              actions: assign({
+                jobType: (ctx, evt: any) => evt.jobType,
+              }),
+            },
+          },
+        },
+        crawlerSetup: {
+          entry: makeStepActions("crawlerSetup"),
+          on: {
+            ...tabNavStates,
+            BACK: "chooseJobType",
+            CONTINUE: [
+              {
+                cond: this.formValid,
+                target: "crawlBehaviors",
+              },
+            ],
+          },
+        },
+        crawlBehaviors: {
+          entry: makeStepActions("crawlBehaviors"),
+          on: {
+            ...tabNavStates,
+            BACK: "crawlerSetup",
+            CONTINUE: [
+              {
+                cond: this.formValid,
+                target: "jobScheduling",
+              },
+            ],
+          },
+        },
+        jobScheduling: {
+          entry: makeStepActions("jobScheduling"),
+          on: {
+            ...tabNavStates,
+            BACK: "crawlBehaviors",
+            CONTINUE: [
+              {
+                cond: this.formValid,
+                target: "jobInformation",
+              },
+            ],
+          },
+        },
+        jobInformation: {
+          entry: makeStepActions("jobInformation"),
+          on: {
+            ...tabNavStates,
+            BACK: "jobScheduling",
+            CONTINUE: [
+              {
+                cond: this.formValid,
+                target: "jobInformation",
+              },
+            ],
+          },
+        },
+      },
+    });
+    this.stateService = interpret(stateMachine);
+  }
 
   connectedCallback() {
     super.connectedCallback();
 
-    stateService.start();
-    stateService.subscribe((state) => {
+    this.stateService.start();
+    this.stateService.subscribe((state) => {
       this.stateValue = state.value;
-      console.log("state change:", state);
+      this.stateContext = state.context as Context;
+      console.log("enabledSteps:", this.stateContext.enabledSteps);
     });
   }
 
   disconnectedCallback() {
-    stateService.stop();
+    this.stateService.stop();
     super.disconnectedCallback();
   }
 
@@ -129,10 +218,10 @@ export class NewJobConfig extends LiteElement {
     return html`
       <h3 class="ml-52 text-lg font-medium mb-3">${heading}</h3>
 
-      <form @submit=${this.onSubmit}>
+      <form name="newJobConfig" @submit=${this.onSubmit}>
         <btrix-tab-list
           activePanel="newJobConfig-${this.stateValue}"
-          progressPanel="newJobConfig-${this.stateValue}"
+          progressPanel="newJobConfig-${this.stateContext.currentProgress}"
         >
           ${this.renderNavItem("CRAWLER_SETUP", msg("Crawler Setup"))}
           ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
@@ -141,14 +230,15 @@ export class NewJobConfig extends LiteElement {
 
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             <div
-              class="${contentClassName}${this.jobType === "seeded"
+              class="${contentClassName}${this.stateContext.jobType === "seeded"
                 ? " hidden"
                 : ""}"
             >
               ${this.renderUrlListSetup(formColClassName)}
             </div>
             <div
-              class="${contentClassName}${this.jobType === "urlList"
+              class="${contentClassName}${this.stateContext.jobType ===
+              "urlList"
                 ? " hidden"
                 : ""}"
             >
@@ -197,8 +287,10 @@ export class NewJobConfig extends LiteElement {
           role="button"
           class="block"
           @click=${() => {
-            this.jobType = "urlList";
-            this.stateSend("CRAWLER_SETUP");
+            this.stateSend({
+              type: "CRAWLER_SETUP",
+              jobType: "urlList",
+            });
           }}
         >
           <figure class="w-64 m-4">
@@ -217,8 +309,10 @@ export class NewJobConfig extends LiteElement {
           role="button"
           class="block"
           @click=${() => {
-            this.jobType = "seeded";
-            this.stateSend("CRAWLER_SETUP");
+            this.stateSend({
+              type: "CRAWLER_SETUP",
+              jobType: "seeded",
+            });
           }}
         >
           <figure class="w-64 m-4">
@@ -241,10 +335,12 @@ export class NewJobConfig extends LiteElement {
     eventName: StepEventName,
     content: TemplateResult | string
   ) {
+    const stateValue = tabEventTarget[eventName];
     return html`
       <btrix-tab
         slot="nav"
-        name="newJobConfig-${stepStateConfig[eventName]}"
+        name="newJobConfig-${stateValue}"
+        ?disabled=${!this.stateContext.enabledSteps[stateValue]}
         @click=${() => {
           this.stateSend(eventName);
         }}
@@ -291,7 +387,7 @@ export class NewJobConfig extends LiteElement {
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
-          ?required=${this.jobType === "urlList"}
+          ?required=${this.stateContext.jobType === "urlList"}
         ></sl-textarea>
       </div>
 
@@ -315,15 +411,29 @@ export class NewJobConfig extends LiteElement {
     return html`TODO`;
   }
 
-  private stateSend(event: StepEventName | "BACK" | "CONTINUE") {
-    stateService.send(event as any);
+  private stateSend(
+    event: StepEventName | JobSelectEvent | "BACK" | "CONTINUE"
+  ) {
+    this.stateService.send(event as any);
   }
+
+  private formValid = (): boolean => {
+    if (!this.formElem) return false;
+
+    const invalidElems = [...this.formElem.querySelectorAll("[invalid]")];
+
+    invalidElems.forEach((el) => {
+      (el as HTMLInputElement).reportValidity();
+    });
+
+    return !invalidElems.length;
+  };
 
   private onSubmit(event: SubmitEvent) {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
 
-    if (form.querySelector("[invalid]")) return;
+    if (!this.formValid()) return;
 
     console.log(new FormData(form));
   }
