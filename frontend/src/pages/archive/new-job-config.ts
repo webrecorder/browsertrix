@@ -6,8 +6,9 @@ import type { StateMachine } from "@xstate/fsm";
 
 import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
-import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "../../utils/AuthService";
+import type { Tab } from "../../components/tab-list";
 
 type State =
   | "chooseJobType"
@@ -25,10 +26,20 @@ type JobSelectEvent = {
   type: "CRAWLER_SETUP";
   jobType: JobType;
 };
+type ValidityChangeEvent = {
+  type: "VALIDITY_CHANGE";
+  valid: boolean;
+};
 type Context = {
   jobType: JobType;
-  enabledSteps: Record<State, boolean>;
   currentProgress: State;
+  steps: Record<
+    State,
+    {
+      enabled: boolean;
+      error: boolean;
+    }
+  >;
 };
 const tabEventTarget: Record<StepEventName, State> = {
   CRAWLER_SETUP: "crawlerSetup",
@@ -42,7 +53,7 @@ const tabNavStates = Object.keys(tabEventTarget).reduce((acc, eventName) => {
     ...acc,
     [eventName]: [
       {
-        cond: (ctx: Context) => ctx.enabledSteps[stateValue],
+        cond: (ctx: Context) => ctx.steps[stateValue].enabled,
         target: stateValue,
       },
     ],
@@ -58,14 +69,14 @@ const stepOrder = [
 const initialState = "crawlerSetup";
 const initialContext: Context = {
   jobType: "urlList",
-  enabledSteps: {
-    chooseJobType: true,
-    crawlerSetup: false,
-    crawlBehaviors: false,
-    jobScheduling: false,
-    jobInformation: false,
-  },
   currentProgress: "crawlerSetup",
+  steps: {
+    chooseJobType: { enabled: true, error: false },
+    crawlerSetup: { enabled: false, error: false },
+    crawlBehaviors: { enabled: false, error: false },
+    jobScheduling: { enabled: false, error: false },
+    jobInformation: { enabled: false, error: false },
+  },
 };
 
 @localized()
@@ -89,13 +100,13 @@ export class NewJobConfig extends LiteElement {
 
   constructor() {
     super();
-    const makeStepActions = (stepState: State) =>
+    const makeStepEntryActions = (stepState: State) =>
       assign({
-        enabledSteps: (ctx: Context): any => ({
-          ...ctx.enabledSteps,
-          [stepState]: true,
+        steps: (ctx: Pick<Context, "steps">) => ({
+          ...ctx.steps,
+          [stepState]: { ...ctx.steps[stepState], enabled: true },
         }),
-        currentProgress: (ctx: Context): any =>
+        currentProgress: (ctx: Pick<Context, "currentProgress">) =>
           stepOrder.indexOf(stepState) > stepOrder.indexOf(ctx.currentProgress)
             ? stepState
             : ctx.currentProgress,
@@ -115,55 +126,99 @@ export class NewJobConfig extends LiteElement {
           },
         },
         crawlerSetup: {
-          entry: makeStepActions("crawlerSetup"),
+          entry: makeStepEntryActions("crawlerSetup"),
           on: {
             ...tabNavStates,
             BACK: "chooseJobType",
             CONTINUE: [
               {
-                cond: this.formValid,
+                cond: this.checkValidity,
                 target: "crawlBehaviors",
               },
             ],
+            VALIDITY_CHANGE: {
+              actions: assign({
+                steps: (ctx: Pick<Context, "steps">, evt: any) => ({
+                  ...ctx.steps,
+                  crawlerSetup: {
+                    ...ctx.steps.crawlerSetup,
+                    error: !(evt as ValidityChangeEvent).valid,
+                  },
+                }),
+              }),
+            },
           },
         },
         crawlBehaviors: {
-          entry: makeStepActions("crawlBehaviors"),
+          entry: makeStepEntryActions("crawlBehaviors"),
           on: {
             ...tabNavStates,
             BACK: "crawlerSetup",
             CONTINUE: [
               {
-                cond: this.formValid,
+                cond: this.checkValidity,
                 target: "jobScheduling",
               },
             ],
+            VALIDITY_CHANGE: {
+              actions: assign({
+                steps: (ctx: Pick<Context, "steps">, evt: any) => ({
+                  ...ctx.steps,
+                  crawlBehaviors: {
+                    ...ctx.steps.crawlBehaviors,
+                    error: !(evt as ValidityChangeEvent).valid,
+                  },
+                }),
+              }),
+            },
           },
         },
         jobScheduling: {
-          entry: makeStepActions("jobScheduling"),
+          entry: makeStepEntryActions("jobScheduling"),
           on: {
             ...tabNavStates,
             BACK: "crawlBehaviors",
             CONTINUE: [
               {
-                cond: this.formValid,
+                cond: this.checkValidity,
                 target: "jobInformation",
               },
             ],
+            VALIDITY_CHANGE: {
+              actions: assign({
+                steps: (ctx: Pick<Context, "steps">, evt: any) => ({
+                  ...ctx.steps,
+                  jobScheduling: {
+                    ...ctx.steps.jobScheduling,
+                    error: !(evt as ValidityChangeEvent).valid,
+                  },
+                }),
+              }),
+            },
           },
         },
         jobInformation: {
-          entry: makeStepActions("jobInformation"),
+          entry: makeStepEntryActions("jobInformation"),
           on: {
             ...tabNavStates,
             BACK: "jobScheduling",
             CONTINUE: [
               {
-                cond: this.formValid,
+                cond: this.checkValidity,
                 target: "jobInformation",
               },
             ],
+            VALIDITY_CHANGE: {
+              actions: assign({
+                steps: (ctx: Pick<Context, "steps">, evt: any) => ({
+                  ...ctx.steps,
+                  jobInformation: {
+                    ...ctx.steps.jobInformation,
+                    error: !(evt as ValidityChangeEvent).valid,
+                  },
+                }),
+              }),
+            },
           },
         },
       },
@@ -178,7 +233,7 @@ export class NewJobConfig extends LiteElement {
     this.stateService.subscribe((state) => {
       this.stateValue = state.value;
       this.stateContext = state.context as Context;
-      console.log("enabledSteps:", this.stateContext.enabledSteps);
+      console.log("state change:", state);
     });
   }
 
@@ -212,7 +267,7 @@ export class NewJobConfig extends LiteElement {
         break;
     }
 
-    const contentClassName = "p-4 grid grid-cols-1 md:grid-cols-5 gap-5";
+    const contentClassName = "p-5 grid grid-cols-1 md:grid-cols-5 gap-5";
     const formColClassName = "col-span-1 md:col-span-3";
 
     return html`
@@ -336,22 +391,25 @@ export class NewJobConfig extends LiteElement {
     content: TemplateResult | string
   ) {
     const stateValue = tabEventTarget[eventName];
+    const isInvalid = this.stateContext.steps[stateValue].error;
     return html`
       <btrix-tab
         slot="nav"
         name="newJobConfig-${stateValue}"
-        ?disabled=${!this.stateContext.enabledSteps[stateValue]}
-        @click=${() => {
-          this.stateSend(eventName);
+        ?disabled=${!this.stateContext.steps[stateValue].enabled}
+        @click=${(e: MouseEvent) => {
+          if (!(e.target as Tab).disabled && !(e.target as Tab).active) {
+            this.stateSend(eventName);
+          }
         }}
-        >${content}</btrix-tab
+        >${content} (${isInvalid ? "invalid" : "valid"})</btrix-tab
       >
     `;
   }
 
   private renderFooter() {
     return html`
-      <div class="p-4 border-t flex justify-between">
+      <div class="px-5 py-4 border-t flex justify-between">
         <sl-button size="small" @click=${() => this.stateSend("BACK")}>
           <sl-icon slot="prefix" name="arrow-left"></sl-icon>
           ${msg("Previous Step")}
@@ -388,9 +446,23 @@ export class NewJobConfig extends LiteElement {
           rows="10"
           autocomplete="off"
           ?required=${this.stateContext.jobType === "urlList"}
+          @sl-change=${this.onFieldChange}
         ></sl-textarea>
       </div>
+      ${this.renderHelpText(html`TODO`)}
 
+      <div>
+        <sl-radio-group
+          name="scale"
+          label=${msg("Crawler Instances")}
+          value="1"
+          size="small"
+        >
+          <sl-radio-button value="1">1</sl-radio-button>
+          <sl-radio-button value="2">2</sl-radio-button>
+          <sl-radio-button value="3">3</sl-radio-button>
+        </sl-radio-group>
+      </div>
       ${this.renderHelpText(html`TODO`)}
     `;
   }
@@ -411,29 +483,64 @@ export class NewJobConfig extends LiteElement {
     return html`TODO`;
   }
 
+  private onFieldChange = (e: Event) => {
+    const el = e.target as HTMLInputElement & {
+      invalid: boolean;
+    };
+    if (el.invalid) {
+      el.classList.add("invalid");
+      this.stateSend({
+        type: "VALIDITY_CHANGE",
+        valid: false,
+      });
+    } else if (this.stateContext.steps[this.stateValue].error) {
+      el.classList.remove("invalid");
+      const hasInvalid = el
+        .closest("btrix-tab-panel")
+        ?.querySelector("[invalid]");
+      if (!hasInvalid) {
+        this.stateSend({
+          type: "VALIDITY_CHANGE",
+          valid: true,
+        });
+      }
+    }
+  };
+
   private stateSend(
-    event: StepEventName | JobSelectEvent | "BACK" | "CONTINUE"
+    event:
+      | StepEventName
+      | JobSelectEvent
+      | ValidityChangeEvent
+      | "BACK"
+      | "CONTINUE"
   ) {
     this.stateService.send(event as any);
   }
 
-  private formValid = (): boolean => {
+  private checkValidity = (): boolean => {
     if (!this.formElem) return false;
 
-    const invalidElems = [...this.formElem.querySelectorAll("[invalid]")];
+    const activePanel = this.formElem.querySelector(
+      `btrix-tab-panel[name="newJobConfig-${this.stateValue}"]`
+    );
+    const invalidElems = [...activePanel!.querySelectorAll("[invalid]")];
 
-    invalidElems.forEach((el) => {
-      (el as HTMLInputElement).reportValidity();
-    });
+    const hasInvalid = Boolean(invalidElems.length);
+    if (hasInvalid) {
+      invalidElems.forEach((el) => {
+        (el as HTMLInputElement).reportValidity();
+      });
+    }
 
-    return !invalidElems.length;
+    return !hasInvalid;
   };
 
   private onSubmit(event: SubmitEvent) {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
 
-    if (!this.formValid()) return;
+    if (this.formElem!.querySelector("[invalid]")) return;
 
     console.log(new FormData(form));
   }

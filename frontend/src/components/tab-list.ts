@@ -62,8 +62,7 @@ export class Tab extends LitElement {
       padding: 0.85rem;
       line-height: 1.2;
       font-weight: 600;
-      color: var(--sl-color-neutral-600);
-      cursor: pointer;
+      color: var(--sl-color-neutral-500);
       transition: var(--sl-transition-fast) color;
     }
 
@@ -71,8 +70,13 @@ export class Tab extends LitElement {
       color: var(--sl-color-blue-600);
     }
 
+    .tab[aria-disabled="false"] {
+      cursor: pointer;
+    }
+
     .tab[aria-disabled="true"] {
       color: var(--sl-color-neutral-300);
+      cursor: default;
     }
   `;
 

@@ -100,11 +100,11 @@ const theme = css`
   }
 
   /* Validation styles */
-  sl-input.invalid:not([disabled])::part(base) {
+  .invalid:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
-  sl-input.invalid:focus-within::part(base) {
+  .invalid:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
 `;
