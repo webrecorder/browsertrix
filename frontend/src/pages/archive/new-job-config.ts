@@ -1,7 +1,7 @@
 import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import { createMachine, interpret } from "@xstate/fsm";
+import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
@@ -10,45 +10,33 @@ import LiteElement, { html } from "../../utils/LiteElement";
 
 type State =
   | "chooseJobType"
-  | "urListSetup"
-  | "seededCrawlSetup"
+  | "crawlerSetup"
   | "crawlBehaviors"
   | "jobScheduling"
   | "jobInformation";
 type StepEventName =
-  | "URL_LIST"
-  | "SEEDED_CRAWL"
+  | "CRAWLER_SETUP"
   | "CRAWL_BEHAVIORS"
   | "JOB_SCHEDULING"
   | "JOB_INFORMATION";
+type JobType = null | "urlList" | "seeded";
 
-const jobTypeStateConfig = {
-  URL_LIST: "urListSetup",
-  SEEDED_CRAWL: "seededCrawlSetup",
-} as Record<StepEventName, State>;
 const stepStateConfig: Record<StepEventName, State> = {
-  ...jobTypeStateConfig,
+  CRAWLER_SETUP: "crawlerSetup",
   CRAWL_BEHAVIORS: "crawlBehaviors",
   JOB_SCHEDULING: "jobScheduling",
   JOB_INFORMATION: "jobInformation",
 };
 
 const machineConfig = {
-  initial: "urListSetup",
+  initial: "chooseJobType",
   states: {
     chooseJobType: {
       on: {
-        ...jobTypeStateConfig,
+        CRAWLER_SETUP: "crawlerSetup",
       },
     },
-    urListSetup: {
-      on: {
-        ...stepStateConfig,
-        BACK: "chooseJobType",
-        CONTINUE: "crawlBehaviors",
-      },
-    },
-    seededCrawlSetup: {
+    crawlerSetup: {
       on: {
         ...stepStateConfig,
         BACK: "chooseJobType",
@@ -58,7 +46,7 @@ const machineConfig = {
     crawlBehaviors: {
       on: {
         ...stepStateConfig,
-        BACK: "urListSetup", // TODO
+        BACK: "crawlerSetup",
         CONTINUE: "jobScheduling",
       },
     },
@@ -78,7 +66,7 @@ const machineConfig = {
     },
   },
 };
-const stateMachine = createMachine(machineConfig);
+const stateMachine = createMachine(<any>machineConfig);
 const stateService = interpret(stateMachine);
 
 @localized()
@@ -91,6 +79,9 @@ export class NewJobConfig extends LiteElement {
 
   @state()
   private stateValue: State = machineConfig.initial as State;
+
+  @state()
+  private jobType: JobType = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -115,25 +106,17 @@ export class NewJobConfig extends LiteElement {
     let heading: TemplateResult | string;
 
     switch (this.stateValue) {
-      case "urListSetup":
+      case "crawlerSetup":
         heading = msg("Crawler Setup");
-
-        break;
-      case "seededCrawlSetup":
-        heading = msg("Crawler Setup");
-
         break;
       case "crawlBehaviors":
         heading = msg("Crawl Behaviors");
-
         break;
       case "jobScheduling":
         heading = msg("Job Scheduling");
-
         break;
       case "jobInformation":
         heading = msg("Job Information");
-
         break;
       default:
         heading = "";
@@ -145,20 +128,20 @@ export class NewJobConfig extends LiteElement {
 
       <btrix-tab-list
         activePanel="newJobConfig-${this.stateValue}"
-        progressPanel="newJobConfig-urListSetup"
+        progressPanel="newJobConfig-${this.stateValue}"
       >
-        ${this.renderNavItem("URL_LIST", msg("Crawler Setup (URL)"))}
-        ${this.renderNavItem("SEEDED_CRAWL", msg("Crawler Setup (Seed)"))}
+        ${this.renderNavItem("CRAWLER_SETUP", msg("Crawler Setup"))}
         ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
         ${this.renderNavItem("JOB_SCHEDULING", msg("Job Scheduling"))}
         ${this.renderNavItem("JOB_INFORMATION", msg("Job Information"))}
 
-        <btrix-tab-panel name="newJobConfig-urListSetup">
-          <div class="p-4">${this.renderUrlListSetup()}</div>
-          ${this.renderFooter()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="newJobConfig-seededCrawlSetup">
-          <div class="p-4">${this.renderSeededCrawlSetup()}</div>
+        <btrix-tab-panel name="newJobConfig-crawlerSetup">
+          <div class="p-4${this.jobType === "seeded" ? " hidden" : ""}">
+            ${this.renderUrlListSetup()}
+          </div>
+          <div class="p-4${this.jobType === "urlList" ? " hidden" : ""}">
+            ${this.renderSeededCrawlSetup()}
+          </div>
           ${this.renderFooter()}
         </btrix-tab-panel>
         <btrix-tab-panel name="newJobConfig-crawlBehaviors">
@@ -186,7 +169,10 @@ export class NewJobConfig extends LiteElement {
         <div
           role="button"
           class="block"
-          @click=${() => stateService.send("URL_LIST")}
+          @click=${() => {
+            this.jobType = "urlList";
+            this.stateSend("CRAWLER_SETUP");
+          }}
         >
           <figure class="w-64 m-4">
             <img src=${urlListSvg} />
@@ -203,7 +189,10 @@ export class NewJobConfig extends LiteElement {
         <div
           role="button"
           class="block"
-          @click=${() => stateService.send("SEEDED_CRAWL")}
+          @click=${() => {
+            this.jobType = "seeded";
+            this.stateSend("CRAWLER_SETUP");
+          }}
         >
           <figure class="w-64 m-4">
             <img src=${seededCrawlSvg} />
@@ -230,7 +219,7 @@ export class NewJobConfig extends LiteElement {
         slot="nav"
         name="newJobConfig-${stepStateConfig[eventName]}"
         @click=${() => {
-          stateService.send(eventName);
+          this.stateSend(eventName);
         }}
         >${content}</btrix-tab
       >
@@ -240,14 +229,14 @@ export class NewJobConfig extends LiteElement {
   private renderFooter() {
     return html`
       <div class="p-4 border-t flex justify-between">
-        <sl-button size="small" @click=${() => stateService.send("BACK")}>
+        <sl-button size="small" @click=${() => this.stateSend("BACK")}>
           <sl-icon slot="prefix" name="arrow-left"></sl-icon>
           ${msg("Previous Step")}
         </sl-button>
         <sl-button
           size="small"
           variant="primary"
-          @click=${() => stateService.send("CONTINUE")}
+          @click=${() => this.stateSend("CONTINUE")}
         >
           <sl-icon slot="suffix" name="arrow-right"></sl-icon>
           ${msg("Next Step")}
@@ -274,6 +263,10 @@ export class NewJobConfig extends LiteElement {
 
   private renderJobInformation() {
     return html`TODO`;
+  }
+
+  private stateSend(event: StepEventName | "BACK" | "CONTINUE") {
+    stateService.send(event as any);
   }
 }
 
