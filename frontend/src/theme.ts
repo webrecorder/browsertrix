@@ -100,11 +100,13 @@ const theme = css`
   }
 
   /* Validation styles */
-  .invalid:not([disabled])::part(base) {
+  .invalid:not([disabled])::part(base),
+  [data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
-  .invalid:focus-within::part(base) {
+  .invalid:focus-within::part(base),
+  [data-user-invalid]:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
 `;

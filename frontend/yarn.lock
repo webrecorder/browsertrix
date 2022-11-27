@@ -71,17 +71,17 @@
   dependencies:
     "@types/chai" "^4.2.12"
 
-"@floating-ui/core@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@floating-ui/core/-/core-1.0.1.tgz#00e64d74e911602c8533957af0cce5af6b2e93c8"
-  integrity sha512-bO37brCPfteXQfFY0DyNDGB3+IMe4j150KFQcgJ5aBP295p9nBGeHEs/p0czrRbtlHq4Px/yoPXO/+dOCcF4uA==
+"@floating-ui/core@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@floating-ui/core/-/core-1.0.2.tgz#d06a66d3ad8214186eda2432ac8b8d81868a571f"
+  integrity sha512-Skfy0YS3NJ5nV9us0uuPN0HDk1Q4edljaOhRBJGDWs9EBa7ZVMYBHRFlhLvvmwEoaIM9BlH6QJFn9/uZg0bACg==
 
-"@floating-ui/dom@^1.0.0":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@floating-ui/dom/-/dom-1.0.4.tgz#cc0f2a03db7193b1b932b90d09c5c81235682a60"
-  integrity sha512-maYJRv+sAXTy4K9mzdv0JPyNW5YPVHrqtY90tEdI6XNpuLOP26Ci2pfwPsKBA/Wh4Z3FX5sUrtUFTdMYj9v+ug==
+"@floating-ui/dom@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@floating-ui/dom/-/dom-1.0.7.tgz#9e8e6615ce03e5ebc6a4ae879640a199a366f86d"
+  integrity sha512-6RsqvCYe0AYWtsGvuWqCm7mZytnXAZCjWtsWu1Kg8dI3INvj/DbKlDsZO+mKSaQdPT12uxIW9W2dAWJkPx4Y5g==
   dependencies:
-    "@floating-ui/core" "^1.0.1"
+    "@floating-ui/core" "^1.0.2"
 
 "@formatjs/ecma402-abstract@1.10.0":
   version "1.10.0"
@@ -133,7 +133,7 @@
   resolved "https://registry.yarnpkg.com/@import-maps/resolve/-/resolve-1.0.1.tgz#1e9fcadcf23aa0822256a329aabca241879d37c9"
   integrity sha512-tWZNBIS1CoekcwlMuyG2mr0a1Wo5lb5lEHwwWvZo+5GLgr3e9LLDTtmgtCWEwBpXMkxn9D+2W9j2FY6eZQq0tA==
 
-"@lit-labs/react@^1.0.7":
+"@lit-labs/react@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@lit-labs/react/-/react-1.1.0.tgz#665cf27cc83c5d0c6782ead5b906bd250619442b"
   integrity sha512-uvdOtzACm1WzTySpKnqXth62iPL+4yDow7cSZH7m7jHbDr+tZVXn44DJ5IoJuMjEevORRe57lNrOywFW6d4Fyg==
@@ -289,22 +289,22 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/animations/-/animations-1.1.0.tgz#17539abafd6dcbf2a79e089e1593175e9f7835b5"
   integrity sha512-Be+cahtZyI2dPKRm8EZSx3YJQ+jLvEcn3xzRP7tM4tqBnvd/eW/64Xh0iOf0t2w5P8iJKfdBbpVNE9naCaOf2g==
 
-"@shoelace-style/localize@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.0.1.tgz#a6eda8ae29ac32fb59df50f3db14652a23f492c9"
-  integrity sha512-nmv1syJ3ormbGq29GsuxGRK6BFq7Jhx+kVFyuuozz0Pckkvk1SGk2vpZZcdnj2vRZCETvlVB7KYgakUwgGmn+A==
+"@shoelace-style/localize@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.0.3.tgz#d69e1f0e547799ecd5deb5e6ed9c8c78b4d01eb6"
+  integrity sha512-BVYDsMTpSCjvC8akhTkcnl4WIgAv7AnRq8fSuNhdGDLjkpmN1ARdAXic5luAozoMVjft85ocOmEdT8z7MbXdmQ==
 
-"@shoelace-style/shoelace@2.0.0-beta.83":
-  version "2.0.0-beta.83"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.83.tgz#9ea923e969a2cfc7c0b8ad46c81822b04a1c1520"
-  integrity sha512-dHVBtapuqxSRu3klBZhf9/LtEtircaLLnDajNbhuiBiY7PVCxjjf/9Kyd/S/BpbhKwMICqJr+PaKoCTd2iWDJA==
+"@shoelace-style/shoelace@2.0.0-beta.85":
+  version "2.0.0-beta.85"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.85.tgz#57156a41aa366b9a8241cc47b127d2b663555e8a"
+  integrity sha512-Kq4BUEtB2tNlBPx97qM1/UQDBFYINMnlL4qNAHs0cCZF6q4J6U1NHot8TzWO83G4ufPHzNtjz9gaJLgzGWnNOA==
   dependencies:
-    "@floating-ui/dom" "^1.0.0"
-    "@lit-labs/react" "^1.0.7"
+    "@floating-ui/dom" "^1.0.7"
+    "@lit-labs/react" "^1.1.0"
     "@shoelace-style/animations" "^1.1.0"
-    "@shoelace-style/localize" "^3.0.1"
+    "@shoelace-style/localize" "^3.0.3"
     color "4.2"
-    lit "^2.2.8"
+    lit "^2.4.1"
     qr-creator "^1.0.0"
 
 "@sinonjs/commons@^1.6.0", "@sinonjs/commons@^1.7.0", "@sinonjs/commons@^1.8.3":
@@ -3602,7 +3602,7 @@ lit@^2.0.0:
     lit-element "^3.0.0"
     lit-html "^2.0.0"
 
-lit@^2.2.0, lit@^2.2.8, lit@^2.3.0, lit@^2.4.1:
+lit@^2.2.0, lit@^2.3.0, lit@^2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/lit/-/lit-2.4.1.tgz#21251ac14eb1ec8ca7cd15c9ac3564359809f7b5"
   integrity sha512-qohSgLiyN1cFnJG26dIiY03S4F49857A0AHQfnS0zYtnUVnD2MFvx+UT52rtXsIuNFQrnUupX+zyGSATlk1f/A==

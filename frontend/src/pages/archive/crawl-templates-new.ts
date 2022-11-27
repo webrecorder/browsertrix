@@ -619,7 +619,7 @@ export class CrawlTemplatesNew extends LiteElement {
     if (!this.authState) return;
     const form = event.target as HTMLFormElement;
 
-    if (form.querySelector("[invalid]")) {
+    if (form.querySelector("[data-invalid]")) {
       return;
     }
 

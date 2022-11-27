@@ -114,7 +114,7 @@ export class QueueExclusionTable extends LiteElement {
           --sl-input-spacing-medium: var(--sl-spacing-small);
         }
 
-        btrix-queue-exclusion-table sl-input:not([invalid]) {
+        btrix-queue-exclusion-table sl-input:not([data-invalid]) {
           --sl-input-border-width: 0;
         }
       </style>
@@ -391,14 +391,16 @@ export class QueueExclusionTable extends LiteElement {
     // after fixing duplicate values
     const inputElem = e.target as HTMLInputElement;
     const table = inputElem.closest("table") as HTMLTableElement;
-    Array.from(table?.querySelectorAll("sl-input[invalid]")).map((elem) => {
-      if (elem !== inputElem) {
-        const validityMessage =
-          this.getInputDuplicateValidity(elem as SLInputElement) || "";
-        (elem as SLInputElement).setCustomValidity(validityMessage);
-        (elem as SLInputElement).reportValidity();
+    Array.from(table?.querySelectorAll("sl-input[data-invalid]")).map(
+      (elem) => {
+        if (elem !== inputElem) {
+          const validityMessage =
+            this.getInputDuplicateValidity(elem as SLInputElement) || "";
+          (elem as SLInputElement).setCustomValidity(validityMessage);
+          (elem as SLInputElement).reportValidity();
+        }
       }
-    });
+    );
   }
 
   private removeExclusion({ value, type }: Exclusion, index: number) {

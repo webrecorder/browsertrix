@@ -1217,7 +1217,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
 
-    if (form.querySelector("[invalid]")) {
+    if (form.querySelector("[data-invalid]")) {
       return;
     }
 

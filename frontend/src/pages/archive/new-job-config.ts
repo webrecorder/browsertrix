@@ -95,6 +95,10 @@ export class NewJobConfig extends LiteElement {
 
   private stateService: StateMachine.Service<any, any, any>;
 
+  private get formHasError() {
+    return Object.values(this.stateContext.steps).some(({ error }) => error);
+  }
+
   @query('form[name="newJobConfig"]')
   formElem?: HTMLFormElement;
 
@@ -443,7 +447,7 @@ export class NewJobConfig extends LiteElement {
         <sl-textarea
           name="urls"
           label=${msg("List of URLs")}
-          rows="10"
+          rows="6"
           autocomplete="off"
           ?required=${this.stateContext.jobType === "urlList"}
           @sl-change=${this.onFieldChange}
@@ -451,16 +455,15 @@ export class NewJobConfig extends LiteElement {
       </div>
       ${this.renderHelpText(html`TODO`)}
 
-      <div>
+      <div class="${formColClassName}">
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
           value="1"
-          size="small"
         >
-          <sl-radio-button value="1">1</sl-radio-button>
-          <sl-radio-button value="2">2</sl-radio-button>
-          <sl-radio-button value="3">3</sl-radio-button>
+          <sl-radio-button value="1" size="small">1</sl-radio-button>
+          <sl-radio-button value="2" size="small">2</sl-radio-button>
+          <sl-radio-button value="3" size="small">3</sl-radio-button>
         </sl-radio-group>
       </div>
       ${this.renderHelpText(html`TODO`)}
@@ -488,16 +491,14 @@ export class NewJobConfig extends LiteElement {
       invalid: boolean;
     };
     if (el.invalid) {
-      el.classList.add("invalid");
       this.stateSend({
         type: "VALIDITY_CHANGE",
         valid: false,
       });
     } else if (this.stateContext.steps[this.stateValue].error) {
-      el.classList.remove("invalid");
       const hasInvalid = el
         .closest("btrix-tab-panel")
-        ?.querySelector("[invalid]");
+        ?.querySelector("[data-invalid]");
       if (!hasInvalid) {
         this.stateSend({
           type: "VALIDITY_CHANGE",
@@ -524,7 +525,7 @@ export class NewJobConfig extends LiteElement {
     const activePanel = this.formElem.querySelector(
       `btrix-tab-panel[name="newJobConfig-${this.stateValue}"]`
     );
-    const invalidElems = [...activePanel!.querySelectorAll("[invalid]")];
+    const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
 
     const hasInvalid = Boolean(invalidElems.length);
     if (hasInvalid) {
@@ -540,7 +541,10 @@ export class NewJobConfig extends LiteElement {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
 
-    if (this.formElem!.querySelector("[invalid]")) return;
+    if (this.formHasError) {
+      console.log("form has error");
+      return;
+    }
 
     console.log(new FormData(form));
   }
