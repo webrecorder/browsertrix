@@ -37,6 +37,7 @@ type Context = {
     State,
     {
       enabled: boolean;
+      completed: boolean;
       error: boolean;
     }
   >;
@@ -71,11 +72,11 @@ const initialContext: Context = {
   jobType: "urlList",
   currentProgress: "crawlerSetup",
   steps: {
-    chooseJobType: { enabled: true, error: false },
-    crawlerSetup: { enabled: false, error: false },
-    crawlBehaviors: { enabled: false, error: false },
-    jobScheduling: { enabled: false, error: false },
-    jobInformation: { enabled: false, error: false },
+    chooseJobType: { enabled: true, error: false, completed: false },
+    crawlerSetup: { enabled: false, error: false, completed: false },
+    crawlBehaviors: { enabled: false, error: false, completed: false },
+    jobScheduling: { enabled: false, error: false, completed: false },
+    jobInformation: { enabled: false, error: false, completed: false },
   },
 };
 
@@ -138,6 +139,15 @@ export class NewJobConfig extends LiteElement {
               {
                 cond: this.checkValidity,
                 target: "crawlBehaviors",
+                actions: assign({
+                  steps: (ctx: Pick<Context, "steps">) => ({
+                    ...ctx.steps,
+                    crawlerSetup: {
+                      ...ctx.steps["crawlerSetup"],
+                      completed: true,
+                    },
+                  }),
+                }),
               },
             ],
             VALIDITY_CHANGE: {
@@ -162,6 +172,15 @@ export class NewJobConfig extends LiteElement {
               {
                 cond: this.checkValidity,
                 target: "jobScheduling",
+                actions: assign({
+                  steps: (ctx: Pick<Context, "steps">) => ({
+                    ...ctx.steps,
+                    crawlBehaviors: {
+                      ...ctx.steps["crawlBehaviors"],
+                      completed: true,
+                    },
+                  }),
+                }),
               },
             ],
             VALIDITY_CHANGE: {
@@ -186,6 +205,15 @@ export class NewJobConfig extends LiteElement {
               {
                 cond: this.checkValidity,
                 target: "jobInformation",
+                actions: assign({
+                  steps: (ctx: Pick<Context, "steps">) => ({
+                    ...ctx.steps,
+                    jobScheduling: {
+                      ...ctx.steps["jobScheduling"],
+                      completed: true,
+                    },
+                  }),
+                }),
               },
             ],
             VALIDITY_CHANGE: {
@@ -210,6 +238,15 @@ export class NewJobConfig extends LiteElement {
               {
                 cond: this.checkValidity,
                 target: "jobInformation",
+                actions: assign({
+                  steps: (ctx: Pick<Context, "steps">) => ({
+                    ...ctx.steps,
+                    jobInformation: {
+                      ...ctx.steps["jobInformation"],
+                      completed: true,
+                    },
+                  }),
+                }),
               },
             ],
             VALIDITY_CHANGE: {
@@ -395,7 +432,38 @@ export class NewJobConfig extends LiteElement {
     content: TemplateResult | string
   ) {
     const stateValue = tabEventTarget[eventName];
-    const isInvalid = this.stateContext.steps[stateValue].error;
+    const isActive = stateValue === this.stateValue;
+    const { error: isInvalid, completed } = this.stateContext.steps[stateValue];
+    let icon = html`
+      <sl-icon
+        name="circle"
+        class="inline-block align-middle mr-1 text-base text-neutral-300"
+      ></sl-icon>
+    `;
+    if (isInvalid) {
+      icon = html`
+        <sl-icon
+          name="exclamation-circle"
+          class="inline-block align-middle mr-1 text-base text-danger"
+        ></sl-icon>
+      `;
+    } else if (isActive) {
+      icon = html`
+        <sl-icon
+          library="app"
+          name="pencil-circle-dashed"
+          class="inline-block align-middle mr-1 text-base"
+        ></sl-icon>
+      `;
+    } else if (completed) {
+      icon = html`
+        <sl-icon
+          name="check-circle"
+          class="inline-block align-middle mr-1 text-base text-success"
+        ></sl-icon>
+      `;
+    }
+
     return html`
       <btrix-tab
         slot="nav"
@@ -406,8 +474,10 @@ export class NewJobConfig extends LiteElement {
             this.stateSend(eventName);
           }
         }}
-        >${content} (${isInvalid ? "invalid" : "valid"})</btrix-tab
       >
+        ${icon}
+        <span class="inline-block align-middle">${content}</span>
+      </btrix-tab>
     `;
   }
 
