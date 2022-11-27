@@ -168,7 +168,9 @@ export class TabList extends LitElement {
     }
   }
 
-  private async repositionIndicator(activeTab: TabElement, animate = true) {
+  private async repositionIndicator(activeTab?: TabElement, animate = true) {
+    if (!activeTab) return;
+
     const trackElem = await this.trackElem;
     const indicatorElem = await this.indicatorElem;
     const { top: tabTop, height: tabHeight } =
@@ -203,15 +205,20 @@ export class TabList extends LitElement {
 
   renderNav() {
     return html`
-      <div class="nav">
-        <div class="track" role="presentation">
-          <div class="indicator" role="presentation"></div>
-        </div>
+      <sl-resize-observer
+        @sl-resize=${() =>
+          this.repositionIndicator(this.getTab(this.progressPanel))}
+      >
+        <div class="nav">
+          <div class="track" role="presentation">
+            <div class="indicator" role="presentation"></div>
+          </div>
 
-        <ul role="tablist">
-          <slot name="nav"></slot>
-        </ul>
-      </div>
+          <ul role="tablist">
+            <slot name="nav"></slot>
+          </ul>
+        </div>
+      </sl-resize-observer>
     `;
   }
 
@@ -233,6 +240,12 @@ export class TabList extends LitElement {
     return ([...slotElems] as TabElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab"
     );
+  }
+
+  private getTab(tabName?: string): TabElement | undefined {
+    if (!tabName) return;
+    const tabs = this.getTabs();
+    return tabs.find(({ name }) => name === tabName);
   }
 
   private onProgressChange(isFirstChange: boolean) {
