@@ -40,11 +40,14 @@ type ProgressState = {
   tabs: Tabs;
 };
 type FormState = {
+  primarySeedUrl: string;
   urlList: string;
   includeLinkedPages: boolean;
+  includeExternalLinks: boolean;
+  scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
 };
-const initialJobType: JobType = "urlList";
+const initialJobType: JobType = "seeded";
 const initialProgressState: ProgressState = {
   activeTab: "crawlerSetup",
   currentStep: "crawlerSetup",
@@ -55,11 +58,6 @@ const initialProgressState: ProgressState = {
     jobInformation: { enabled: false, error: false, completed: false },
   },
 };
-const initialFormState: FormState = {
-  urlList: "",
-  includeLinkedPages: true,
-  exclusions: [""], // Empty slots for adding exclusions
-};
 const defaultFormValues: JobConfig = {
   name: "",
   schedule: "",
@@ -67,13 +65,21 @@ const defaultFormValues: JobConfig = {
   profileid: null,
   config: {
     seeds: [],
-    scopeType: "prefix",
+    scopeType: "domain",
     limit: null,
     extraHops: 0,
     lang: null,
     blockAds: null,
     behaviors: null,
   },
+};
+const initialFormState: FormState = {
+  primarySeedUrl: "",
+  urlList: "",
+  includeLinkedPages: false,
+  includeExternalLinks: false,
+  scopeType: defaultFormValues.config.scopeType,
+  exclusions: [""], // Empty slots for adding exclusions
 };
 const stepOrder: StepName[] = [
   "chooseJobType",
@@ -140,19 +146,13 @@ export class NewJobConfig extends LiteElement {
           )}
 
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
-            <div
-              class="${contentClassName}${this.jobType === "urlList"
-                ? ""
-                : " hidden"}"
-            >
-              ${this.renderUrlListSetup(formColClassName)}
-            </div>
-            <div
-              class="${contentClassName}${this.jobType === "seeded"
-                ? ""
-                : " hidden"}"
-            >
-              ${this.renderSeededCrawlSetup(formColClassName)}
+            <div class=${contentClassName}>
+              ${this.jobType === "urlList"
+                ? this.renderUrlListSetup(formColClassName)
+                : ""}
+              ${this.jobType === "seeded"
+                ? this.renderSeededCrawlSetup(formColClassName)
+                : ""}
             </div>
             ${this.renderFooter({ isFirst: true })}
           </btrix-tab-panel>
@@ -324,7 +324,7 @@ export class NewJobConfig extends LiteElement {
           rows="6"
           autocomplete="off"
           defaultValue=${initialFormState.urlList}
-          ?required=${this.jobType === "urlList"}
+          required
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
       </div>
@@ -358,29 +358,143 @@ export class NewJobConfig extends LiteElement {
       </div>
       ${this.renderHelpText(html`TODO`)}
       ${this.formState.includeLinkedPages
+        ? this.renderCrawlLimits(formColClassName)
+        : ""}
+    `;
+  }
+
+  private renderSeededCrawlSetup(formColClassName: string) {
+    return html`<div class="${formColClassName}">
+        <sl-input
+          name="primarySeedUrl"
+          label=${msg("Primary Seed URL")}
+          type="url"
+          autocomplete="off"
+          placeholder="https://example.com"
+          defaultValue=${initialFormState.primarySeedUrl}
+          required
+          @sl-change=${this.onFieldChange}
+        ></sl-input>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <sl-radio-group
+          name="scale"
+          label=${msg("Crawler Instances")}
+          value=${defaultFormValues.scale}
+        >
+          <sl-radio-button value="1" size="small">1</sl-radio-button>
+          <sl-radio-button value="2" size="small">2</sl-radio-button>
+          <sl-radio-button value="3" size="small">3</sl-radio-button>
+        </sl-radio-group>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <sl-select
+          name="scopeType"
+          label=${msg("Crawl Scope")}
+          defaultValue=${initialFormState.scopeType}
+          value=${this.formState.scopeType}
+          @sl-select=${(e: Event) =>
+            this.updateFormState({
+              scopeType: (e.target as HTMLSelectElement).value,
+            })}
+        >
+          <sl-menu-item value="page">
+            ${msg("Click on ID Links (Hashtags)")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item value="prefix">
+            ${msg("Pages Under This Path")}
+          </sl-menu-item>
+          <sl-menu-item value="host">
+            ${msg("Pages On This Domain")}
+          </sl-menu-item>
+          <sl-menu-item value="domain">
+            ${msg("Pages On This Domain and Subdomains")}
+          </sl-menu-item>
+          <sl-menu-item value="any">
+            ${msg("Pages On This Domain, Subdomains, and Additional URLs")}
+          </sl-menu-item>
+        </sl-select>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+      ${this.formState.scopeType == "any"
         ? html`
             <div class="${formColClassName}">
-              <sl-input
-                name="limit"
-                label=${msg("Additional Page Limit")}
-                type="number"
-                defaultValue=${defaultFormValues.config.limit || ""}
-                placeholder=${msg("Unlimited")}
-              >
-                <span slot="suffix">${msg("pages")}</span>
-              </sl-input>
+              <sl-textarea
+                name="urlList"
+                label=${msg("Additional URLs")}
+                rows="6"
+                autocomplete="off"
+                defaultValue=${initialFormState.urlList}
+              ></sl-textarea>
             </div>
             ${this.renderHelpText(html`TODO`)}
           `
         : ""}
 
-      <div class="${formColClassName}">${this.renderExclusionEditor()}</div>
+      <div class="${formColClassName}">
+        <sl-checkbox
+          name="includeExternalLinks"
+          ?defaultChecked=${initialFormState.includeExternalLinks}
+          ?checked=${this.formState.includeExternalLinks}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              includeExternalLinks: (e.target as SlCheckbox).checked,
+            })}
+        >
+          ${msg("Include External Links (“one hop out”)")}
+        </sl-checkbox>
+      </div>
       ${this.renderHelpText(html`TODO`)}
-    `;
+      ${this.renderCrawlLimits(formColClassName)} `;
   }
 
-  private renderSeededCrawlSetup(formColClassName: string) {
-    return html`TODO`;
+  private renderCrawlLimits(formColClassName: string) {
+    return html`
+      <h4
+        class="col-span-1 md:col-span-5 text-neutral-500 leading-none pb-2 border-b"
+      >
+        ${msg("Crawl Limits")}
+      </h4>
+      <div class="${formColClassName}">
+        <sl-input
+          name="limit"
+          label=${msg("Page Limit")}
+          type="number"
+          defaultValue=${defaultFormValues.config.limit || ""}
+          placeholder=${msg("Unlimited")}
+        >
+          <span slot="suffix">${msg("pages")}</span>
+        </sl-input>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <btrix-queue-exclusion-table
+          .exclusions=${this.formState.exclusions}
+          pageSize="50"
+          editable
+          removable
+          @on-remove=${this.handleRemoveRegex}
+          @on-change=${this.handleChangeRegex}
+        ></btrix-queue-exclusion-table>
+        <sl-button
+          class="w-full mt-1"
+          @click=${() =>
+            this.updateFormState({
+              exclusions: [...(this.formState.exclusions || []), ""],
+            })}
+        >
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          <span class="text-neutral-600">${msg("Add More")}</span>
+        </sl-button>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+    `;
   }
 
   private renderCrawlBehaviors(formColClassName: string) {
@@ -393,29 +507,6 @@ export class NewJobConfig extends LiteElement {
 
   private renderJobInformation(formColClassName: string) {
     return html`TODO`;
-  }
-
-  private renderExclusionEditor() {
-    return html`
-      <btrix-queue-exclusion-table
-        .exclusions=${this.formState.exclusions}
-        pageSize="50"
-        editable
-        removable
-        @on-remove=${this.handleRemoveRegex}
-        @on-change=${this.handleChangeRegex}
-      ></btrix-queue-exclusion-table>
-      <sl-button
-        class="w-full mt-1"
-        @click=${() =>
-          this.updateFormState({
-            exclusions: [...(this.formState.exclusions || []), ""],
-          })}
-      >
-        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-        <span class="text-neutral-600">${msg("Add More")}</span>
-      </sl-button>
-    `;
   }
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {

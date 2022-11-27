@@ -109,6 +109,11 @@ const theme = css`
   [data-user-invalid]:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
+
+  /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
+  sl-divider {
+    border-top-width: var(--sl-panel-border-width);
+  }
 `;
 
 export default theme;
