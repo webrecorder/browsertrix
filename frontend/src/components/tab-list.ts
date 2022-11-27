@@ -63,6 +63,7 @@ export class Tab extends LitElement {
       line-height: 1.2;
       font-weight: 600;
       color: var(--sl-color-neutral-600);
+      cursor: pointer;
     }
 
     .tab[aria-selected="true"] {

@@ -29,7 +29,7 @@ const stepStateConfig: Record<StepEventName, State> = {
 };
 
 const machineConfig = {
-  initial: "chooseJobType",
+  initial: "crawlerSetup",
   states: {
     chooseJobType: {
       on: {
@@ -81,7 +81,7 @@ export class NewJobConfig extends LiteElement {
   private stateValue: State = machineConfig.initial as State;
 
   @state()
-  private jobType: JobType = null;
+  private jobType: JobType = "urlList";
 
   connectedCallback() {
     super.connectedCallback();
@@ -123,40 +123,67 @@ export class NewJobConfig extends LiteElement {
         break;
     }
 
+    const contentClassName = "p-4 grid grid-cols-1 md:grid-cols-5 gap-5";
+    const formColClassName = "col-span-1 md:col-span-3";
+
     return html`
       <h3 class="ml-52 text-lg font-medium mb-3">${heading}</h3>
 
-      <btrix-tab-list
-        activePanel="newJobConfig-${this.stateValue}"
-        progressPanel="newJobConfig-${this.stateValue}"
-      >
-        ${this.renderNavItem("CRAWLER_SETUP", msg("Crawler Setup"))}
-        ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
-        ${this.renderNavItem("JOB_SCHEDULING", msg("Job Scheduling"))}
-        ${this.renderNavItem("JOB_INFORMATION", msg("Job Information"))}
+      <form @submit=${this.onSubmit}>
+        <btrix-tab-list
+          activePanel="newJobConfig-${this.stateValue}"
+          progressPanel="newJobConfig-${this.stateValue}"
+        >
+          ${this.renderNavItem("CRAWLER_SETUP", msg("Crawler Setup"))}
+          ${this.renderNavItem("CRAWL_BEHAVIORS", msg("Crawl Behaviors"))}
+          ${this.renderNavItem("JOB_SCHEDULING", msg("Job Scheduling"))}
+          ${this.renderNavItem("JOB_INFORMATION", msg("Job Information"))}
 
-        <btrix-tab-panel name="newJobConfig-crawlerSetup">
-          <div class="p-4${this.jobType === "seeded" ? " hidden" : ""}">
-            ${this.renderUrlListSetup()}
-          </div>
-          <div class="p-4${this.jobType === "urlList" ? " hidden" : ""}">
-            ${this.renderSeededCrawlSetup()}
-          </div>
-          ${this.renderFooter()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="newJobConfig-crawlBehaviors">
-          <div class="p-4">${this.renderCrawlBehaviors()}</div>
-          ${this.renderFooter()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="newJobConfig-jobScheduling">
-          <div class="p-4">${this.renderJobScheduling()}</div>
-          ${this.renderFooter()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="newJobConfig-jobInformation">
-          <div class="p-4">${this.renderJobInformation()}</div>
-          ${this.renderFooter()}
-        </btrix-tab-panel>
-      </btrix-tab-list>
+          <btrix-tab-panel name="newJobConfig-crawlerSetup">
+            <div
+              class="${contentClassName}${this.jobType === "seeded"
+                ? " hidden"
+                : ""}"
+            >
+              ${this.renderUrlListSetup(formColClassName)}
+            </div>
+            <div
+              class="${contentClassName}${this.jobType === "urlList"
+                ? " hidden"
+                : ""}"
+            >
+              ${this.renderSeededCrawlSetup(formColClassName)}
+            </div>
+            ${this.renderFooter()}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-crawlBehaviors">
+            <div class=${contentClassName}>
+              ${this.renderCrawlBehaviors(formColClassName)}
+            </div>
+            ${this.renderFooter()}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-jobScheduling">
+            <div class=${contentClassName}>
+              ${this.renderJobScheduling(formColClassName)}
+            </div>
+            ${this.renderFooter()}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-jobInformation">
+            <div class=${contentClassName}>
+              ${this.renderJobInformation(formColClassName)}
+            </div>
+            <div class="p-4 border-t flex justify-between">
+              <sl-button size="small" @click=${() => this.stateSend("BACK")}>
+                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                ${msg("Previous Step")}
+              </sl-button>
+              <sl-button type="submit" size="small" variant="primary">
+                ${msg("Save")}
+              </sl-button>
+            </div>
+          </btrix-tab-panel>
+        </btrix-tab-list>
+      </form>
     `;
   }
 
@@ -245,28 +272,60 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderUrlListSetup() {
+  private renderHelpText(content: TemplateResult) {
+    return html`
+      <div class="colspan-1 md:col-span-2 mt-5 flex">
+        <div class="text-base mr-1">
+          <sl-icon name="info-circle"></sl-icon>
+        </div>
+        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
+      </div>
+    `;
+  }
+
+  private renderUrlListSetup(formColClassName: string) {
+    return html`
+      <div class="${formColClassName}">
+        <sl-textarea
+          name="urls"
+          label=${msg("List of URLs")}
+          rows="10"
+          autocomplete="off"
+          ?required=${this.jobType === "urlList"}
+        ></sl-textarea>
+      </div>
+
+      ${this.renderHelpText(html`TODO`)}
+    `;
+  }
+
+  private renderSeededCrawlSetup(formColClassName: string) {
     return html`TODO`;
   }
 
-  private renderSeededCrawlSetup() {
+  private renderCrawlBehaviors(formColClassName: string) {
     return html`TODO`;
   }
 
-  private renderCrawlBehaviors() {
+  private renderJobScheduling(formColClassName: string) {
     return html`TODO`;
   }
 
-  private renderJobScheduling() {
-    return html`TODO`;
-  }
-
-  private renderJobInformation() {
+  private renderJobInformation(formColClassName: string) {
     return html`TODO`;
   }
 
   private stateSend(event: StepEventName | "BACK" | "CONTINUE") {
     stateService.send(event as any);
+  }
+
+  private onSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+
+    if (form.querySelector("[invalid]")) return;
+
+    console.log(new FormData(form));
   }
 }
 

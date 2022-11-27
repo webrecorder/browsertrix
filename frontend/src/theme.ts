@@ -78,6 +78,10 @@ const theme = css`
     --sl-input-label-color: var(--sl-color-neutral-800);
   }
 
+  body {
+    font-size: var(--sl-font-size-medium);
+  }
+
   .sl-toast-stack {
     bottom: 0;
     top: auto;
