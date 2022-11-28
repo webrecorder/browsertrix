@@ -76,6 +76,9 @@ const theme = css`
     --sl-input-label-font-size-medium: var(--sl-font-size-small);
     --sl-input-label-font-size-large: var(--sl-font-size-medium);
     --sl-input-label-color: var(--sl-color-neutral-800);
+
+    /* Help text */
+    --sl-input-help-text-font-size-medium: var(--sl-font-size-x-small);
   }
 
   body {
@@ -99,6 +102,11 @@ const theme = css`
     line-height: 1.5;
   }
 
+  /* Align left edge with menu item */
+  sl-select sl-menu-label::part(base) {
+    padding-left: calc(var(--sl-spacing-2x-small) + 1.5em);
+  }
+
   /* Validation styles */
   .invalid:not([disabled])::part(base),
   [data-user-invalid]:not([disabled])::part(base) {
@@ -113,6 +121,11 @@ const theme = css`
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
   sl-divider {
     border-top-width: var(--sl-panel-border-width);
+  }
+
+  [slot="help-text"] {
+    margin-top: var(--sl-spacing-x-small);
+    font-weight: 400;
   }
 `;
 

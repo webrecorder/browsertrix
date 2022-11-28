@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox, SlInput } from "@shoelace-style/shoelace";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -128,7 +128,8 @@ export class NewJobConfig extends LiteElement {
       jobInformation: msg("Job Information"),
     };
 
-    const contentClassName = "p-5 grid grid-cols-1 md:grid-cols-5 gap-6";
+    const contentClassName =
+      "p-5 grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-5";
     const formColClassName = "col-span-1 md:col-span-3";
 
     return html`
@@ -364,17 +365,100 @@ export class NewJobConfig extends LiteElement {
   }
 
   private renderSeededCrawlSetup(formColClassName: string) {
+    const urlPlaceholder = "https://example.com";
+    let exampleUrl = new URL(urlPlaceholder);
+    if (this.formState.primarySeedUrl) {
+      try {
+        exampleUrl = new URL(this.formState.primarySeedUrl);
+      } catch {}
+    }
+    const exampleDomain = exampleUrl.hostname;
+
+    let helpText: TemplateResult | string;
+
+    switch (this.formState.scopeType) {
+      case "prefix":
+        helpText = msg(
+          html`Will recursively crawl all pages in path: if
+            <span class="text-blue-400">${exampleDomain}/path/</span> is the
+            Primary Seed URL, the crawler will also crawl
+            <span class="text-blue-400">${exampleDomain}/path/subpath/</span>
+            and deeper subpaths.`
+        );
+        break;
+      case "host":
+        helpText = msg(
+          html`Will crawl all pages on
+            <span class="text-blue-400">${exampleDomain}</span> and ignore pages
+            on any subdomains.`
+        );
+        break;
+      case "domain":
+        helpText = msg(
+          html`Will crawl all pages on
+            <span class="text-blue-400">${exampleDomain}</span> and
+            <span class="text-blue-400">subdomain.${exampleDomain}</span>.`
+        );
+        break;
+      case "page-spa":
+        helpText = msg(
+          html`Will only visit
+            <span class="text-blue-400">${exampleUrl.href}</span> and links that
+            stay within the same URL, e.g. hash anchor links:
+            <span class="text-blue-400">${exampleUrl.href}#page</span>`
+        );
+        break;
+      default:
+        helpText = "";
+        break;
+    }
+
     return html`<div class="${formColClassName}">
         <sl-input
           name="primarySeedUrl"
           label=${msg("Primary Seed URL")}
-          type="url"
           autocomplete="off"
-          placeholder="https://example.com"
+          placeholder=${urlPlaceholder}
           defaultValue=${initialFormState.primarySeedUrl}
           required
-          @sl-change=${this.onFieldChange}
+          @sl-change=${(e: Event) => {
+            this.updateFormState({
+              primarySeedUrl: (e.target as SlInput).value,
+            });
+            // TODO validate URL
+            this.onFieldChange(e);
+          }}
         ></sl-input>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <sl-select
+          name="scopeType"
+          label=${msg("Crawl Scope")}
+          defaultValue=${initialFormState.scopeType}
+          value=${this.formState.scopeType}
+          @sl-select=${(e: Event) =>
+            this.updateFormState({
+              scopeType: (e.target as HTMLSelectElement).value,
+            })}
+        >
+          <div slot="help-text">${helpText}</div>
+          <sl-menu-item value="prefix">
+            ${msg("Pages in This Path")}
+          </sl-menu-item>
+          <sl-menu-item value="host">
+            ${msg("Pages on This Domain")}
+          </sl-menu-item>
+          <sl-menu-item value="domain">
+            ${msg("Pages on This Domain & Subdomains")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-label>${msg("Advanced")}</sl-menu-label>
+          <sl-menu-item value="page-spa">
+            ${msg("Single Page App (In-Page Links Only)")}
+          </sl-menu-item>
+        </sl-select>
       </div>
       ${this.renderHelpText(html`TODO`)}
 
@@ -390,51 +474,6 @@ export class NewJobConfig extends LiteElement {
         </sl-radio-group>
       </div>
       ${this.renderHelpText(html`TODO`)}
-
-      <div class="${formColClassName}">
-        <sl-select
-          name="scopeType"
-          label=${msg("Crawl Scope")}
-          defaultValue=${initialFormState.scopeType}
-          value=${this.formState.scopeType}
-          @sl-select=${(e: Event) =>
-            this.updateFormState({
-              scopeType: (e.target as HTMLSelectElement).value,
-            })}
-        >
-          <sl-menu-item value="page">
-            ${msg("Click on ID Links (Hashtags)")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item value="prefix">
-            ${msg("Pages Under This Path")}
-          </sl-menu-item>
-          <sl-menu-item value="host">
-            ${msg("Pages On This Domain")}
-          </sl-menu-item>
-          <sl-menu-item value="domain">
-            ${msg("Pages On This Domain and Subdomains")}
-          </sl-menu-item>
-          <sl-menu-item value="any">
-            ${msg("Pages On This Domain, Subdomains, and Additional URLs")}
-          </sl-menu-item>
-        </sl-select>
-      </div>
-      ${this.renderHelpText(html`TODO`)}
-      ${this.formState.scopeType == "any"
-        ? html`
-            <div class="${formColClassName}">
-              <sl-textarea
-                name="urlList"
-                label=${msg("Additional URLs")}
-                rows="6"
-                autocomplete="off"
-                defaultValue=${initialFormState.urlList}
-              ></sl-textarea>
-            </div>
-            ${this.renderHelpText(html`TODO`)}
-          `
-        : ""}
 
       <div class="${formColClassName}">
         <sl-checkbox
@@ -456,7 +495,7 @@ export class NewJobConfig extends LiteElement {
   private renderCrawlLimits(formColClassName: string) {
     return html`
       <h4
-        class="col-span-1 md:col-span-5 text-neutral-500 leading-none pb-2 border-b"
+        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
       >
         ${msg("Crawl Limits")}
       </h4>
