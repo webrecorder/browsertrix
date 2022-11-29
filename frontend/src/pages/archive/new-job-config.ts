@@ -44,6 +44,7 @@ type FormState = {
   urlList: string;
   includeLinkedPages: boolean;
   includeExternalLinks: boolean;
+  allowedExternalUrlList: string;
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
 };
@@ -78,6 +79,7 @@ const initialFormState: FormState = {
   urlList: "",
   includeLinkedPages: false,
   includeExternalLinks: false,
+  allowedExternalUrlList: "",
   scopeType: defaultFormValues.config.scopeType,
   exclusions: [""], // Empty slots for adding exclusions
 };
@@ -307,8 +309,8 @@ export class NewJobConfig extends LiteElement {
 
   private renderHelpText(content: TemplateResult) {
     return html`
-      <div class="colspan-1 md:col-span-2 mt-0.5 flex">
-        <div class="text-base mr-1">
+      <div class="colspan-1 md:col-span-2 flex">
+        <div class="text-base mr-2">
           <sl-icon name="info-circle"></sl-icon>
         </div>
         <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
@@ -321,15 +323,22 @@ export class NewJobConfig extends LiteElement {
       <div class="${formColClassName}">
         <sl-textarea
           name="urlList"
-          label=${msg("List of URLs")}
+          label=${msg("Crawl URLs")}
           rows="6"
           autocomplete="off"
           defaultValue=${initialFormState.urlList}
+          placeholder=${`https://example.com
+https://example.com/path
+https://example.com/page.html
+https://example.org`}
           required
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(
+        html`The crawler will visit and record each URL listed in the order
+        defined here.`
+      )}
 
       <div class="${formColClassName}">
         <sl-radio-group
@@ -357,9 +366,59 @@ export class NewJobConfig extends LiteElement {
           ${msg("Include Linked Pages")}
         </sl-checkbox>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(
+        html`If checked, the crawler will follow and record links it finds on
+        the page, even if the URL is not included in Crawl URLs.`
+      )}
       ${this.formState.includeLinkedPages
-        ? this.renderCrawlLimits(formColClassName)
+        ? html`
+            <h4
+              class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
+            >
+              ${msg("Limit Linked Pages")}
+            </h4>
+            <div class="${formColClassName}">
+              <sl-input
+                name="limit"
+                label=${msg("Page Limit")}
+                type="number"
+                defaultValue=${defaultFormValues.config.limit || ""}
+                placeholder=${msg("Unlimited")}
+              >
+                <span slot="suffix">${msg("pages")}</span>
+              </sl-input>
+            </div>
+            ${this.renderHelpText(
+              html`Adds a hard limit on the number of linked pages that will be
+              crawled for this job.`
+            )}
+
+            <div class="${formColClassName}">
+              <btrix-queue-exclusion-table
+                .exclusions=${this.formState.exclusions}
+                pageSize="50"
+                editable
+                removable
+                @on-remove=${this.handleRemoveRegex}
+                @on-change=${this.handleChangeRegex}
+              ></btrix-queue-exclusion-table>
+              <sl-button
+                class="w-full mt-1"
+                @click=${() =>
+                  this.updateFormState({
+                    exclusions: [...(this.formState.exclusions || []), ""],
+                  })}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                <span class="text-neutral-600">${msg("Add More")}</span>
+              </sl-button>
+            </div>
+            ${this.renderHelpText(
+              html`Specify exclusion rules for what pages should not be visited.
+              For “Matches Text” any URL that contains matching text will be
+              excluded from crawling.`
+            )}
+          `
         : ""}
     `;
   }
@@ -372,40 +431,54 @@ export class NewJobConfig extends LiteElement {
         exampleUrl = new URL(this.formState.primarySeedUrl);
       } catch {}
     }
-    const exampleDomain = exampleUrl.hostname;
+    const exampleHost = exampleUrl.host;
+    const exampleProtocol = exampleUrl.protocol;
+    const examplePathname = exampleUrl.pathname.replace(/\/$/, "");
+    const exampleDomain = `${exampleProtocol}//${exampleHost}`;
 
     let helpText: TemplateResult | string;
 
     switch (this.formState.scopeType) {
       case "prefix":
         helpText = msg(
-          html`Will recursively crawl all pages in path: if
-            <span class="text-blue-400">${exampleDomain}/path/</span> is the
-            Primary Seed URL, the crawler will also crawl
-            <span class="text-blue-400">${exampleDomain}/path/subpath/</span>
-            and deeper subpaths.`
+          html`Will crawl all page URLs that begin with
+            <span class="text-blue-500 break-word"
+              >${exampleDomain}${examplePathname}</span
+            >, e.g.
+            <span class="text-blue-500 break-word break-word"
+              >${exampleDomain}${examplePathname}</span
+            ><span class="text-blue-500 font-medium break-word"
+              >/path/page.html</span
+            >`
         );
         break;
       case "host":
         helpText = msg(
           html`Will crawl all pages on
-            <span class="text-blue-400">${exampleDomain}</span> and ignore pages
+            <span class="text-blue-500">${exampleHost}</span> and ignore pages
             on any subdomains.`
         );
         break;
       case "domain":
         helpText = msg(
           html`Will crawl all pages on
-            <span class="text-blue-400">${exampleDomain}</span> and
-            <span class="text-blue-400">subdomain.${exampleDomain}</span>.`
+            <span class="text-blue-500">${exampleHost}</span> and
+            <span class="text-blue-500">subdomain.${exampleHost}</span>.`
         );
         break;
       case "page-spa":
         helpText = msg(
           html`Will only visit
-            <span class="text-blue-400">${exampleUrl.href}</span> and links that
-            stay within the same URL, e.g. hash anchor links:
-            <span class="text-blue-400">${exampleUrl.href}#page</span>`
+            <span class="text-blue-500 break-word"
+              >${exampleDomain}${examplePathname}</span
+            >
+            and links that stay within the same URL, e.g. hash anchor links:
+            <span class="text-blue-500 break-word"
+              >${exampleDomain}${examplePathname}</span
+            ><span class="text-blue-500 font-medium break-word"
+              >#example-page</span
+            >
+            >`
         );
         break;
       default:
@@ -413,10 +486,11 @@ export class NewJobConfig extends LiteElement {
         break;
     }
 
-    return html`<div class="${formColClassName}">
+    return html`
+      <div class="${formColClassName}">
         <sl-input
           name="primarySeedUrl"
-          label=${msg("Primary Seed URL")}
+          label=${msg("Crawl Start URL")}
           autocomplete="off"
           placeholder=${urlPlaceholder}
           defaultValue=${initialFormState.primarySeedUrl}
@@ -430,7 +504,7 @@ export class NewJobConfig extends LiteElement {
           }}
         ></sl-input>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(html`The starting point of your crawl.`)}
 
       <div class="${formColClassName}">
         <sl-select
@@ -445,7 +519,7 @@ export class NewJobConfig extends LiteElement {
         >
           <div slot="help-text">${helpText}</div>
           <sl-menu-item value="prefix">
-            ${msg("Pages in This Path")}
+            ${msg("Path Begins with This URL")}
           </sl-menu-item>
           <sl-menu-item value="host">
             ${msg("Pages on This Domain")}
@@ -460,7 +534,42 @@ export class NewJobConfig extends LiteElement {
           </sl-menu-item>
         </sl-select>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(html`Tells the crawler which pages it can visit.`)}
+
+      <h4
+        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
+      >
+        ${msg("Additional Pages")}
+      </h4>
+      <div class="${formColClassName}">
+        <sl-textarea
+          name="allowedExternalUrlList"
+          label=${msg("Allowed URL Prefixes")}
+          rows="3"
+          autocomplete="off"
+          defaultValue=${initialFormState.allowedExternalUrlList}
+          placeholder=${`https://example.org/page/
+https://example.net`}
+          @sl-change=${this.onFieldChange}
+        ></sl-textarea>
+      </div>
+      ${this.renderHelpText(
+        html`Crawl pages outside of Crawl Scope that begin with these URLs.`
+      )}
+
+      <div class="${formColClassName}">
+        <sl-checkbox
+          name="extraHops"
+          ?checked=${defaultFormValues.config.extraHops === 1 ||
+          this.formState.includeExternalLinks}
+        >
+          ${msg("Include Any Linked Page (“one hop out”)")}
+        </sl-checkbox>
+      </div>
+      ${this.renderHelpText(
+        html`Automatically follow linked pages regardless of scope, but do not
+        follow any links within pages outside of Crawl Scope.`
+      )}
 
       <div class="${formColClassName}">
         <sl-radio-group
@@ -475,25 +584,6 @@ export class NewJobConfig extends LiteElement {
       </div>
       ${this.renderHelpText(html`TODO`)}
 
-      <div class="${formColClassName}">
-        <sl-checkbox
-          name="includeExternalLinks"
-          ?defaultChecked=${initialFormState.includeExternalLinks}
-          ?checked=${this.formState.includeExternalLinks}
-          @sl-change=${(e: Event) =>
-            this.updateFormState({
-              includeExternalLinks: (e.target as SlCheckbox).checked,
-            })}
-        >
-          ${msg("Include External Links (“one hop out”)")}
-        </sl-checkbox>
-      </div>
-      ${this.renderHelpText(html`TODO`)}
-      ${this.renderCrawlLimits(formColClassName)} `;
-  }
-
-  private renderCrawlLimits(formColClassName: string) {
-    return html`
       <h4
         class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
       >
@@ -534,6 +624,10 @@ export class NewJobConfig extends LiteElement {
       </div>
       ${this.renderHelpText(html`TODO`)}
     `;
+  }
+
+  private renderExternalURLs(formColClassName: string) {
+    return html``;
   }
 
   private renderCrawlBehaviors(formColClassName: string) {
