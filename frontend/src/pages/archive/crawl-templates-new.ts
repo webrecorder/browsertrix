@@ -17,7 +17,10 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
+import type { JobType } from "./new-job-config";
 import "./new-job-config";
+import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
+import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
 
 const NEW_JOB_CONFIG = true;
 
@@ -42,6 +45,7 @@ export type InitialCrawlTemplate = Pick<
   config: Pick<CrawlConfig, "seeds" | "scopeType" | "exclude">;
 };
 
+const initialJobType: JobType | undefined = undefined;
 const defaultValue = {
   name: "",
   profileid: null,
@@ -87,6 +91,9 @@ export class CrawlTemplatesNew extends LiteElement {
   set initialCrawlTemplate(val: any) {
     this._initialCrawlTemplate = merge(this._initialCrawlTemplate, val);
   }
+
+  @state()
+  private jobType?: JobType = initialJobType;
 
   @state()
   private isRunNow: boolean = true;
@@ -194,18 +201,35 @@ export class CrawlTemplatesNew extends LiteElement {
           >
         </a>
       </nav>
-      <h2 class="text-xl font-medium mb-3">${msg("New Job Config")}</h2>
     `;
   }
 
   render() {
     if (NEW_JOB_CONFIG) {
+      const jobTypeLabels: Record<JobType, string> = {
+        urlList: msg("URL List"),
+        seeded: msg("Seeded Crawl"),
+      };
+
+      if (this.jobType) {
+        return html`
+          ${this.renderHeader()}
+          <h2 class="text-xl font-medium mb-6">
+            ${msg(html`New Job Config &mdash; ${jobTypeLabels[this.jobType]}`)}
+          </h2>
+          <btrix-new-job-config
+            jobType=${this.jobType}
+            archiveId=${this.archiveId}
+            .authState=${this.authState}
+            @reset=${() => (this.jobType = undefined)}
+          ></btrix-new-job-config>
+        `;
+      }
+
       return html`
         ${this.renderHeader()}
-        <btrix-new-job-config
-          archiveId=${this.archiveId}
-          .authState=${this.authState}
-        ></btrix-new-job-config>
+        <h2 class="text-xl font-medium mb-6">${msg("New Job Config")}</h2>
+        ${this.renderChooseJobType()}
       `;
     }
     return html`
@@ -255,6 +279,55 @@ export class CrawlTemplatesNew extends LiteElement {
           </form>
         </div>
       </main>
+    `;
+  }
+
+  private renderChooseJobType() {
+    return html`
+      <style>
+        .jobTypeButton:hover img {
+          transform: scale(1.05);
+        }
+      </style>
+      <h3 class="text-lg font-medium mb-3">${msg("Choose Job Type")}</h3>
+      <div
+        class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-start justify-evenly"
+      >
+        <div
+          role="button"
+          class="jobTypeButton"
+          @click=${() => (this.jobType = "urlList")}
+        >
+          <figure class="w-64 m-4">
+            <img class="transition-transform" src=${urlListSvg} />
+            <figcaption>
+              <div class="text-lg font-medium my-3">${msg("URL List")}</div>
+              <p class="text-sm text-neutral-500">
+                ${msg(
+                  "The crawler visits every URL you tell it to and optionally every URL linked on those pages."
+                )}
+              </p>
+            </figcaption>
+          </figure>
+        </div>
+        <div
+          role="button"
+          class="jobTypeButton"
+          @click=${() => (this.jobType = "seeded")}
+        >
+          <figure class="w-64 m-4">
+            <img class="transition-transform" src=${seededCrawlSvg} />
+            <figcaption>
+              <div class="text-lg font-medium my-3">${msg("Seeded Crawl")}</div>
+              <p class="text-sm text-neutral-500">
+                ${msg(
+                  "The crawler automatically finds new pages and archives them."
+                )}
+              </p>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
     `;
   }
 

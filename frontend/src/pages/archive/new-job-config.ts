@@ -8,8 +8,6 @@ import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
 import pickBy from "lodash/fp/pickBy";
 
-import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
-import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
 import type { Tab } from "../../components/tab-list";
@@ -19,24 +17,23 @@ import type {
 } from "../../components/queue-exclusion-table";
 import type { JobConfig } from "./types";
 
-type JobType = null | "urlList" | "seeded";
-type TabName =
+export type JobType = "urlList" | "seeded";
+type StepName =
   | "crawlerSetup"
   | "browserSettings"
   | "jobScheduling"
   | "jobInformation";
 type Tabs = Record<
-  TabName,
+  StepName,
   {
     enabled: boolean;
     completed: boolean;
     error: boolean;
   }
 >;
-type StepName = "chooseJobType" | TabName;
 type ProgressState = {
   currentStep: StepName;
-  activeTab: TabName | null;
+  activeTab: StepName;
   tabs: Tabs;
 };
 type FormState = {
@@ -48,13 +45,12 @@ type FormState = {
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
 };
-const initialJobType: JobType = null;
 const initialProgressState: ProgressState = {
-  activeTab: null,
-  currentStep: "chooseJobType",
+  activeTab: "crawlerSetup",
+  currentStep: "crawlerSetup",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: true },
-    browserSettings: { enabled: true, error: false, completed: false },
+    crawlerSetup: { enabled: true, error: false, completed: false },
+    browserSettings: { enabled: false, error: false, completed: false },
     jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
@@ -84,15 +80,14 @@ const initialFormState: FormState = {
   exclusions: [""], // Empty slots for adding exclusions
 };
 const stepOrder: StepName[] = [
-  "chooseJobType",
   "crawlerSetup",
   "browserSettings",
   "jobScheduling",
   "jobInformation",
 ];
 const orderedTabNames = stepOrder.filter(
-  (stepName) => initialProgressState.tabs[stepName as TabName]
-) as TabName[];
+  (stepName) => initialProgressState.tabs[stepName as StepName]
+) as StepName[];
 
 @localized()
 export class NewJobConfig extends LiteElement {
@@ -102,14 +97,14 @@ export class NewJobConfig extends LiteElement {
   @property({ type: String })
   archiveId!: string;
 
+  @property({ type: String })
+  jobType?: JobType;
+
   @state()
   private progressState: ProgressState = initialProgressState;
 
   @state()
   private formState: FormState = initialFormState;
-
-  @state()
-  private jobType: JobType = initialJobType;
 
   private get formHasError() {
     return Object.values(this.progressState.tabs).some(({ error }) => error);
@@ -119,11 +114,7 @@ export class NewJobConfig extends LiteElement {
   formElem?: HTMLFormElement;
 
   render() {
-    if (!this.progressState.activeTab) {
-      return this.renderChooseJobType();
-    }
-
-    const tabLabels = {
+    const tabLabels: Record<StepName, string> = {
       crawlerSetup: msg("Crawler Setup"),
       browserSettings: msg("Browser Settings"),
       jobScheduling: msg("Job Scheduling"),
@@ -182,51 +173,7 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderChooseJobType() {
-    return html`
-      <h3 class="text-lg font-medium mb-3">${msg("Choose Job Type")}</h3>
-      <div
-        class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-center justify-evenly"
-      >
-        <div
-          role="button"
-          class="block"
-          @click=${() => this.selectJobType("urlList")}
-        >
-          <figure class="w-64 m-4">
-            <img src=${urlListSvg} />
-            <figcaption>
-              <div class="text-lg font-medium my-3">${msg("URL List")}</div>
-              <p class="text-sm text-neutral-500">
-                ${msg(
-                  "The crawler visits every URL you tell it to and optionally every URL linked on those pages."
-                )}
-              </p>
-            </figcaption>
-          </figure>
-        </div>
-        <div
-          role="button"
-          class="block"
-          @click=${() => this.selectJobType("seeded")}
-        >
-          <figure class="w-64 m-4">
-            <img src=${seededCrawlSvg} />
-            <figcaption>
-              <div class="text-lg font-medium my-3">${msg("Seeded Crawl")}</div>
-              <p class="text-sm text-neutral-500">
-                ${msg(
-                  "The crawler automatically finds new pages and archives them."
-                )}
-              </p>
-            </figcaption>
-          </figure>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderNavItem(tabName: TabName, content: TemplateResult | string) {
+  private renderNavItem(tabName: StepName, content: TemplateResult | string) {
     const isActive = tabName === this.progressState.activeTab;
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
     let icon = html`
@@ -280,7 +227,7 @@ export class NewJobConfig extends LiteElement {
       <div class="px-5 py-4 border-t flex justify-between">
         ${isFirst
           ? html`
-              <sl-button size="small" @click=${this.backStep}>
+              <sl-button size="small" type="reset">
                 <sl-icon slot="prefix" name="arrow-left"></sl-icon>
                 ${msg("Start Over")}
               </sl-button>
@@ -317,9 +264,9 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderHelpText(content: TemplateResult) {
+  private renderHelpTextCol(content: TemplateResult) {
     return html`
-      <div class="colspan-1 md:col-span-2 flex">
+      <div class="col-span-1 md:col-span-2 flex">
         <div class="text-base mr-2">
           <sl-icon name="info-circle"></sl-icon>
         </div>
@@ -333,7 +280,7 @@ export class NewJobConfig extends LiteElement {
       <div class="${formColClassName}">
         <sl-textarea
           name="urlList"
-          label=${msg("Crawl URLs")}
+          label=${msg("List of URLs")}
           rows="6"
           autocomplete="off"
           defaultValue=${initialFormState.urlList}
@@ -345,7 +292,7 @@ https://example.org`}
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`The crawler will visit and record each URL listed in the order
         defined here.`
       )}
@@ -363,7 +310,7 @@ https://example.org`}
           ${msg("Include Linked Pages")}
         </sl-checkbox>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away from a Crawl
         URL.`
       )}
@@ -390,13 +337,13 @@ https://example.org`}
                 <span class="text-neutral-600">${msg("Add More")}</span>
               </sl-button>
             </div>
-            ${this.renderHelpText(
+            ${this.renderHelpTextCol(
               html`Specify exclusion rules for what pages should not be visited.
-              Exclusions apply to all URLs, including Crawl URLs.`
+              Exclusions apply to all URLs.`
             )}
           `
         : ""}
-      ${this.renderSectionHeading("Advanced Options")}
+
       <div class="${formColClassName}">
         <sl-radio-group
           name="scale"
@@ -408,7 +355,7 @@ https://example.org`}
           <sl-radio-button value="3" size="small">3</sl-radio-button>
         </sl-radio-group>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`The number of crawler instances that will run in parallel for this
         job.`
       )}
@@ -495,7 +442,7 @@ https://example.org`}
           }}
         ></sl-input>
       </div>
-      ${this.renderHelpText(html`The starting point of your crawl.`)}
+      ${this.renderHelpTextCol(html`The starting point of your crawl.`)}
 
       <div class="${formColClassName}">
         <sl-select
@@ -525,7 +472,9 @@ https://example.org`}
           </sl-menu-item>
         </sl-select>
       </div>
-      ${this.renderHelpText(html`Tells the crawler which pages it can visit.`)}
+      ${this.renderHelpTextCol(
+        html`Tells the crawler which pages it can visit.`
+      )}
       ${this.renderSectionHeading(msg("Additional Pages"))}
       <div class="${formColClassName}">
         <sl-textarea
@@ -539,7 +488,7 @@ https://example.net`}
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`Crawl pages outside of Crawl Scope that begin with these URLs.`
       )}
 
@@ -552,7 +501,7 @@ https://example.net`}
           ${msg("Include Any Linked Page (“one hop out”)")}
         </sl-checkbox>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away outside of
         Crawl Scope.`
       )}
@@ -568,8 +517,8 @@ https://example.net`}
           <span slot="suffix">${msg("pages")}</span>
         </sl-input>
       </div>
-      ${this.renderHelpText(html`Adds a hard limit on the number of pages that
-      will be crawled for this job.`)}
+      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
+      that will be crawled for this job.`)}
 
       <div class="${formColClassName}">
         <btrix-queue-exclusion-table
@@ -591,10 +540,10 @@ https://example.net`}
           <span class="text-neutral-600">${msg("Add More")}</span>
         </sl-button>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`Specify exclusion rules for what pages should not be visited.`
       )}
-      ${this.renderSectionHeading("Advanced Options")}
+
       <div class="${formColClassName}">
         <sl-radio-group
           name="scale"
@@ -606,7 +555,7 @@ https://example.net`}
           <sl-radio-button value="3" size="small">3</sl-radio-button>
         </sl-radio-group>
       </div>
-      ${this.renderHelpText(
+      ${this.renderHelpTextCol(
         html`The number of crawler instances that will run in parallel for this
         job.`
       )}
@@ -623,7 +572,7 @@ https://example.net`}
           @on-change=${(e: any) => console.log(e.detail.value)}
         ></btrix-select-browser-profile>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpTextCol(html`TODO`)}
 
       <div class="${formColClassName}">
         <sl-checkbox
@@ -633,7 +582,7 @@ https://example.net`}
           ${msg("Block Ads by Domain")}
         </sl-checkbox>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpTextCol(html`TODO`)}
 
       <div class="${formColClassName}">
         <btrix-language-select
@@ -643,7 +592,7 @@ https://example.net`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpTextCol(html`TODO`)}
     `;
   }
 
@@ -692,7 +641,7 @@ https://example.net`}
     const el = e.target as HTMLInputElement & {
       invalid: boolean;
     };
-    const currentTab = this.progressState.activeTab as TabName;
+    const currentTab = this.progressState.activeTab as StepName;
     if (el.invalid) {
       const tabs = this.progressState.tabs;
       tabs[currentTab].error = true;
@@ -709,7 +658,7 @@ https://example.net`}
     }
   };
 
-  private tabClickHandler = (step: TabName) => (e: MouseEvent) => {
+  private tabClickHandler = (step: StepName) => (e: MouseEvent) => {
     const tab = e.currentTarget as Tab;
     if (tab.disabled || tab.active) {
       e.preventDefault();
@@ -719,25 +668,13 @@ https://example.net`}
     this.updateProgressState({ activeTab: step });
   };
 
-  private selectJobType(jobType: JobType) {
-    this.jobType = jobType;
-    const activeTab = "crawlerSetup";
-    const tabs = this.progressState.tabs;
-    tabs[activeTab].enabled = true;
-    this.updateProgressState({
-      activeTab,
-      currentStep: activeTab,
-      tabs,
-    });
-  }
-
   private backStep() {
     const targetTabIdx = stepOrder.indexOf(this.progressState.activeTab!) - 1;
     if (targetTabIdx) {
       this.updateProgressState({
         activeTab: stepOrder[
           stepOrder.indexOf(this.progressState.activeTab!) - 1
-        ] as TabName,
+        ] as StepName,
       });
     } else {
       // Reset to job type selection
@@ -750,7 +687,7 @@ https://example.net`}
 
     if (isValid) {
       const { activeTab, tabs, currentStep } = this.progressState;
-      const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as TabName;
+      const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as StepName;
 
       const isFirstEnabled = !tabs[nextTab].enabled;
       let nextTabs = tabs;
