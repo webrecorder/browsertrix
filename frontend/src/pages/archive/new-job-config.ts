@@ -48,10 +48,10 @@ type FormState = {
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
 };
-const initialJobType: JobType = "urlList";
+const initialJobType: JobType = null;
 const initialProgressState: ProgressState = {
-  activeTab: "browserSettings",
-  currentStep: "browserSettings",
+  activeTab: null,
+  currentStep: "chooseJobType",
   tabs: {
     crawlerSetup: { enabled: true, error: false, completed: true },
     browserSettings: { enabled: true, error: false, completed: false },
@@ -469,7 +469,6 @@ https://example.org`}
               >${exampleDomain}${examplePathname}</span
             ><span class="text-blue-500 font-medium break-word"
               >#example-page</span
-            >
             >`
         );
         break;
