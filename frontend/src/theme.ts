@@ -127,6 +127,14 @@ const theme = css`
     margin-top: var(--sl-spacing-x-small);
     font-weight: 400;
   }
+
+  /* Add more spacing between radio options */
+  sl-radio-group sl-radio:first-of-type {
+    margin-top: var(--sl-spacing-x-small);
+  }
+  sl-radio-group sl-radio:not(:first-of-type) {
+    margin-top: var(--sl-spacing-small);
+  }
 `;
 
 export default theme;

@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import type { SlCheckbox, SlInput } from "@shoelace-style/shoelace";
+import type { SlCheckbox, SlInput, SlRadio } from "@shoelace-style/shoelace";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -51,21 +51,23 @@ type FormState = {
   blockAds: JobConfig["config"]["blockAds"];
   lang: JobConfig["config"]["lang"];
   name: JobConfig["name"];
-  schedule: JobConfig["schedule"];
+  scheduleType: "now" | "date" | "cron";
+  scheduleFrequency: "daily" | "weekly" | "monthly";
+  scheduleDayOfMonth: number;
+  scheduleDayOfWeek: number;
 };
 const initialProgressState: ProgressState = {
-  activeTab: "browserSettings",
+  activeTab: "jobScheduling",
   currentStep: "browserSettings",
   tabs: {
     crawlerSetup: { enabled: true, error: false, completed: true },
-    browserSettings: { enabled: true, error: false, completed: false },
-    jobScheduling: { enabled: false, error: false, completed: false },
+    browserSettings: { enabled: true, error: false, completed: true },
+    jobScheduling: { enabled: true, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
 };
 const initialFormState: FormState = {
   name: "",
-  schedule: "",
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
@@ -79,6 +81,10 @@ const initialFormState: FormState = {
   profileid: null,
   blockAds: true,
   lang: null,
+  scheduleType: "now",
+  scheduleFrequency: "weekly",
+  scheduleDayOfMonth: 1,
+  scheduleDayOfWeek: 1,
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -89,6 +95,15 @@ const stepOrder: StepName[] = [
 const orderedTabNames = stepOrder.filter(
   (stepName) => initialProgressState.tabs[stepName as StepName]
 ) as StepName[];
+
+function getLocalizedWeekDays() {
+  const now = new Date();
+  // TODO accept locale from locale-picker
+  const { format } = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+  return Array.from({ length: 7 }).map((x, day) =>
+    format(Date.now() - (now.getDay() - day) * 86400000)
+  );
+}
 
 @localized()
 export class NewJobConfig extends LiteElement {
@@ -110,6 +125,8 @@ export class NewJobConfig extends LiteElement {
   private get formHasError() {
     return Object.values(this.progressState.tabs).some(({ error }) => error);
   }
+
+  private daysOfWeek = getLocalizedWeekDays();
 
   @query('form[name="newJobConfig"]')
   formElem?: HTMLFormElement;
@@ -627,7 +644,81 @@ https://example.net`}
   }
 
   private renderJobScheduling(formColClassName: string) {
-    return html`TODO`;
+    return html`
+      <div class="${formColClassName}">
+        <sl-radio-group
+          label=${msg("Job Schedule Type")}
+          name="scheduleType"
+          defaultValue="now"
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              scheduleType: (e.target as SlRadio)
+                .value as FormState["scheduleType"],
+            })}
+        >
+          <sl-radio value="now">${msg("Run Immediately on Save")}</sl-radio>
+          <sl-radio value="date"
+            >${msg("Run on a Specific Date & Time")}</sl-radio
+          >
+          <sl-radio value="crol">${msg("Run on a Recurring Basis")}</sl-radio>
+        </sl-radio-group>
+      </div>
+      ${this.renderHelpTextCol(
+        html`Should this job run immediately when setup is complete, on a set
+        day, or on a recurring schedule?`
+      )}
+      ${this.renderSectionHeading(msg("Set Schedule"))}
+      <div class="${formColClassName}">
+        <sl-select
+          name="scheduleFrequency"
+          label=${msg("Frequency")}
+          value=${initialFormState.scheduleFrequency}
+          @sl-select=${(e: Event) =>
+            this.updateFormState({
+              scheduleFrequency: (e.target as HTMLSelectElement)
+                .value as FormState["scheduleFrequency"],
+            })}
+        >
+          <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
+          <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
+          <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
+        </sl-select>
+      </div>
+      ${this.renderHelpTextCol(
+        html`Limit the frequency for how often the job will run.`
+      )}
+      <div class="${formColClassName}">
+        <sl-input
+          name="scheduleDayOfMonth"
+          label=${msg("Date")}
+          type="number"
+          min="1"
+          max="31"
+          defaultValue=${initialFormState.scheduleDayOfMonth}
+        >
+        </sl-input>
+      </div>
+      ${this.renderHelpTextCol(
+        html`What day of the month should the job run on?`
+      )}
+      <div class="${formColClassName}">
+        <sl-radio-group
+          name="scheduleDayOfWeek"
+          label=${msg("Day")}
+          defaultValue=${initialFormState.scheduleDayOfWeek}
+        >
+          ${this.daysOfWeek.map(
+            (label, day) =>
+              html`<sl-radio-button value=${day} size="small"
+                >${label}</sl-radio-button
+              >`
+          )}
+        </sl-radio-group>
+      </div>
+      ${this.renderHelpTextCol(
+        html`What day of the week should the job run on?`
+      )}
+    `;
   }
 
   private renderJobInformation(formColClassName: string) {
@@ -774,7 +865,7 @@ https://example.net`}
 
     const config = {
       name: formValues.name,
-      schedule: formValues.schedule,
+      schedule: "", // TODO
       scale: +formValues.scale,
       profileid: formValues.profileid,
       config: {
