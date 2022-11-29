@@ -364,8 +364,8 @@ https://example.org`}
         </sl-checkbox>
       </div>
       ${this.renderHelpText(
-        html`If checked, the crawler will follow and record links it finds on
-        the page, even if the URL is not included in Crawl URLs.`
+        html`If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.`
       )}
       ${this.formState.includeLinkedPages
         ? html`
@@ -571,8 +571,8 @@ https://example.net`}
         </sl-checkbox>
       </div>
       ${this.renderHelpText(
-        html`Automatically follow linked pages regardless of scope, but do not
-        follow any links within pages outside of Crawl Scope.`
+        html`If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.`
       )}
       ${this.renderSectionHeading(msg("Crawl Limits"))}
       <div class="${formColClassName}">
@@ -586,7 +586,8 @@ https://example.net`}
           <span slot="suffix">${msg("pages")}</span>
         </sl-input>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(html`Adds a hard limit on the number of pages that
+      will be crawled for this job.`)}
 
       <div class="${formColClassName}">
         <btrix-queue-exclusion-table
@@ -608,7 +609,9 @@ https://example.net`}
           <span class="text-neutral-600">${msg("Add More")}</span>
         </sl-button>
       </div>
-      ${this.renderHelpText(html`TODO`)}
+      ${this.renderHelpText(
+        html`Specify exclusion rules for what pages should not be visited.`
+      )}
       ${this.renderSectionHeading("Advanced Options")}
       <div class="${formColClassName}">
         <sl-radio-group
