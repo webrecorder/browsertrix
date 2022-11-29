@@ -34,7 +34,7 @@ export type SeedConfig = {
   extraHops: number | null;
   lang: string | null;
   blockAds: boolean;
-  behaviors: string | null;
+  behaviors?: string | null;
   include?: string[];
   exclude?: string[];
 };

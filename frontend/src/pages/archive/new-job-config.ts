@@ -40,10 +40,17 @@ type FormState = {
   primarySeedUrl: string;
   urlList: string;
   includeLinkedPages: boolean;
-  includeExternalLinks: boolean;
   allowedExternalUrlList: string;
+  crawlTimeoutMinutes: number | null;
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
+  pageLimit: JobConfig["config"]["limit"];
+  scale: JobConfig["scale"];
+  profileid: JobConfig["profileid"];
+  blockAds: JobConfig["config"]["blockAds"];
+  lang: JobConfig["config"]["lang"];
+  name: JobConfig["name"];
+  schedule: JobConfig["schedule"];
 };
 const initialProgressState: ProgressState = {
   activeTab: "crawlerSetup",
@@ -55,29 +62,21 @@ const initialProgressState: ProgressState = {
     jobInformation: { enabled: false, error: false, completed: false },
   },
 };
-const defaultFormValues: JobConfig = {
+const initialFormState: FormState = {
   name: "",
   schedule: "",
-  scale: 1,
-  profileid: null,
-  config: {
-    seeds: [],
-    scopeType: "domain",
-    limit: null,
-    extraHops: 0,
-    lang: null,
-    blockAds: true,
-    behaviors: null,
-  },
-};
-const initialFormState: FormState = {
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
-  includeExternalLinks: false,
   allowedExternalUrlList: "",
-  scopeType: defaultFormValues.config.scopeType,
+  crawlTimeoutMinutes: null,
+  scopeType: "host",
   exclusions: [""], // Empty slots for adding exclusions
+  pageLimit: null,
+  scale: 1,
+  profileid: null,
+  blockAds: true,
+  lang: null,
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -281,13 +280,11 @@ export class NewJobConfig extends LiteElement {
         <sl-textarea
           name="urlList"
           label=${msg("List of URLs")}
-          rows="6"
+          rows="10"
           autocomplete="off"
           defaultValue=${initialFormState.urlList}
           placeholder=${`https://example.com
-https://example.com/path
-https://example.com/page.html
-https://example.org`}
+https://example.com/path`}
           required
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
@@ -343,22 +340,7 @@ https://example.org`}
             )}
           `
         : ""}
-
-      <div class="${formColClassName}">
-        <sl-radio-group
-          name="scale"
-          label=${msg("Crawler Instances")}
-          value=${defaultFormValues.scale}
-        >
-          <sl-radio-button value="1" size="small">1</sl-radio-button>
-          <sl-radio-button value="2" size="small">2</sl-radio-button>
-          <sl-radio-button value="3" size="small">3</sl-radio-button>
-        </sl-radio-group>
-      </div>
-      ${this.renderHelpTextCol(
-        html`The number of crawler instances that will run in parallel for this
-        job.`
-      )}
+      ${this.renderCrawlScale(formColClassName)}
     `;
   }
 
@@ -494,9 +476,8 @@ https://example.net`}
 
       <div class="${formColClassName}">
         <sl-checkbox
-          name="config.extraHops"
-          ?checked=${defaultFormValues.config.extraHops === 1 ||
-          this.formState.includeExternalLinks}
+          name="includeLinkedPages"
+          ?checked=${this.formState.includeLinkedPages}
         >
           ${msg("Include Any Linked Page (“one hop out”)")}
         </sl-checkbox>
@@ -508,10 +489,10 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawl Limits"))}
       <div class="${formColClassName}">
         <sl-input
-          name="limit"
+          name="pageLimit"
           label=${msg("Page Limit")}
           type="number"
-          defaultValue=${defaultFormValues.config.limit || ""}
+          defaultValue=${initialFormState.pageLimit || ""}
           placeholder=${msg("Unlimited")}
         >
           <span slot="suffix">${msg("pages")}</span>
@@ -543,12 +524,32 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Specify exclusion rules for what pages should not be visited.`
       )}
+      ${this.renderCrawlScale(formColClassName)}
+    `;
+  }
+
+  private renderCrawlScale(formColClassName: string) {
+    return html`
+      ${this.renderSectionHeading(msg("Crawler Limits"))}
+      <div class="${formColClassName}">
+        <sl-input
+          name="crawlTimeoutMinutes"
+          label=${msg("Crawl Time Limit")}
+          placeholder=${msg("Unlimited")}
+          type="number"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      </div>
+      ${this.renderHelpTextCol(
+        html`Gracefully stop the crawler after a specified time limit.`
+      )}
 
       <div class="${formColClassName}">
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
-          value=${defaultFormValues.scale}
+          value=${initialFormState.scale}
         >
           <sl-radio-button value="1" size="small">1</sl-radio-button>
           <sl-radio-button value="2" size="small">2</sl-radio-button>
@@ -556,8 +557,8 @@ https://example.net`}
         </sl-radio-group>
       </div>
       ${this.renderHelpTextCol(
-        html`The number of crawler instances that will run in parallel for this
-        job.`
+        html`Increasing parallel crawler instances will speed up crawls, but
+        take up more system resources.`
       )}
     `;
   }
@@ -567,7 +568,7 @@ https://example.net`}
       <div class="${formColClassName}">
         <btrix-select-browser-profile
           archiveId=${this.archiveId}
-          .profileId=${defaultFormValues.profileid}
+          .profileId=${initialFormState.profileid}
           .authState=${this.authState}
           @on-change=${(e: any) => console.log(e.detail.value)}
         ></btrix-select-browser-profile>
@@ -575,10 +576,7 @@ https://example.net`}
       ${this.renderHelpTextCol(html`TODO`)}
 
       <div class="${formColClassName}">
-        <sl-checkbox
-          name="config.blockAds"
-          ?checked=${defaultFormValues.config.blockAds}
-        >
+        <sl-checkbox name="blockAds" ?checked=${initialFormState.blockAds}>
           ${msg("Block Ads by Domain")}
         </sl-checkbox>
       </div>
@@ -740,19 +738,24 @@ https://example.net`}
   }
 
   private parseConfig(form: HTMLFormElement): JobConfig {
-    const formValues = flow(
-      merge({ ...defaultFormValues }),
-      pickBy((v, key) => key in defaultFormValues)
-    )(serialize(form)) as JobConfig;
+    const formValues = serialize(form) as FormState;
 
-    const params = merge(formValues, {
+    const config = {
+      name: formValues.name,
+      schedule: formValues.schedule,
       scale: +formValues.scale,
+      profileid: formValues.profileid,
       config: {
-        exclude: compact(this.formState.exclusions),
+        seeds: [], // TODO
+        scopeType: formValues.scopeType,
+        limit: formValues.pageLimit || null,
+        extraHops: formValues.includeLinkedPages ? 1 : 0,
+        lang: formValues.lang,
+        blockAds: formValues.blockAds,
       },
-    });
+    };
 
-    return params;
+    return config;
   }
 
   private updateProgressState(
