@@ -48,7 +48,7 @@ type FormState = {
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
 };
-const initialJobType: JobType = "seeded";
+const initialJobType: JobType = "urlList";
 const initialProgressState: ProgressState = {
   activeTab: "crawlerSetup",
   currentStep: "crawlerSetup",
@@ -364,28 +364,12 @@ https://example.org`}
         </sl-checkbox>
       </div>
       ${this.renderHelpText(
-        html`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`
+        html`If checked, the crawler will visit pages one link away from a Crawl
+        URL.`
       )}
       ${this.formState.includeLinkedPages
         ? html`
-            ${this.renderSectionHeading(msg("Limit Linked Pages"))}
-            <div class="${formColClassName}">
-              <sl-input
-                name="limit"
-                label=${msg("Page Limit")}
-                type="number"
-                defaultValue=${defaultFormValues.config.limit || ""}
-                placeholder=${msg("Unlimited")}
-              >
-                <span slot="suffix">${msg("pages")}</span>
-              </sl-input>
-            </div>
-            ${this.renderHelpText(
-              html`Adds a hard limit on the number of linked pages that will be
-              crawled for this job.`
-            )}
-
+            ${this.renderSectionHeading(msg("Crawl Limits"))}
             <div class="${formColClassName}">
               <btrix-queue-exclusion-table
                 .exclusions=${this.formState.exclusions}
@@ -408,8 +392,7 @@ https://example.org`}
             </div>
             ${this.renderHelpText(
               html`Specify exclusion rules for what pages should not be visited.
-              For “Matches Text” any URL that contains matching text will be
-              excluded from crawling.`
+              Exclusions apply to all URLs, including Crawl URLs.`
             )}
           `
         : ""}
