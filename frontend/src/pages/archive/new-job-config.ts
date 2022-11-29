@@ -22,7 +22,7 @@ import type { JobConfig } from "./types";
 type JobType = null | "urlList" | "seeded";
 type TabName =
   | "crawlerSetup"
-  | "crawlBehaviors"
+  | "browserSettings"
   | "jobScheduling"
   | "jobInformation";
 type Tabs = Record<
@@ -50,11 +50,11 @@ type FormState = {
 };
 const initialJobType: JobType = "urlList";
 const initialProgressState: ProgressState = {
-  activeTab: "crawlerSetup",
-  currentStep: "crawlerSetup",
+  activeTab: "browserSettings",
+  currentStep: "browserSettings",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: false },
-    crawlBehaviors: { enabled: false, error: false, completed: false },
+    crawlerSetup: { enabled: true, error: false, completed: true },
+    browserSettings: { enabled: true, error: false, completed: false },
     jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
@@ -86,7 +86,7 @@ const initialFormState: FormState = {
 const stepOrder: StepName[] = [
   "chooseJobType",
   "crawlerSetup",
-  "crawlBehaviors",
+  "browserSettings",
   "jobScheduling",
   "jobInformation",
 ];
@@ -125,7 +125,7 @@ export class NewJobConfig extends LiteElement {
 
     const tabLabels = {
       crawlerSetup: msg("Crawler Setup"),
-      crawlBehaviors: msg("Crawl Behaviors"),
+      browserSettings: msg("Browser Settings"),
       jobScheduling: msg("Job Scheduling"),
       jobInformation: msg("Job Information"),
     };
@@ -159,7 +159,7 @@ export class NewJobConfig extends LiteElement {
             </div>
             ${this.renderFooter({ isFirst: true })}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlBehaviors">
+          <btrix-tab-panel name="newJobConfig-browserSettings">
             <div class=${contentClassName}>
               ${this.renderCrawlBehaviors(formColClassName)}
             </div>
