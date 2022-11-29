@@ -1107,7 +1107,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         name="limit"
         label=${msg("Page Limit")}
         type="number"
-        value=${ifDefined(this.crawlTemplate!.config.limit)}
+        value=${ifDefined(this.crawlTemplate!.config.limit || undefined)}
         placeholder=${msg("unlimited")}
       >
         <span slot="suffix" class="hidden md:block">${msg("pages")}</span>
@@ -1227,7 +1227,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     const formData = new FormData(form);
-    const profileId = (formData.get("browserProfile") as string) || null;
+    const profileId = (formData.get("profileid") as string) || null;
 
     let config: EditCrawlConfig;
 

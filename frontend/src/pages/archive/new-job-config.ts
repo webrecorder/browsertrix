@@ -70,7 +70,7 @@ const defaultFormValues: JobConfig = {
     limit: null,
     extraHops: 0,
     lang: null,
-    blockAds: null,
+    blockAds: true,
     behaviors: null,
   },
 };
@@ -546,7 +546,7 @@ https://example.net`}
 
       <div class="${formColClassName}">
         <sl-checkbox
-          name="extraHops"
+          name="config.extraHops"
           ?checked=${defaultFormValues.config.extraHops === 1 ||
           this.formState.includeExternalLinks}
         >
@@ -615,7 +615,37 @@ https://example.net`}
   }
 
   private renderCrawlBehaviors(formColClassName: string) {
-    return html`TODO`;
+    return html`
+      <div class="${formColClassName}">
+        <btrix-select-browser-profile
+          archiveId=${this.archiveId}
+          .profileId=${defaultFormValues.profileid}
+          .authState=${this.authState}
+          @on-change=${(e: any) => console.log(e.detail.value)}
+        ></btrix-select-browser-profile>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <sl-checkbox
+          name="config.blockAds"
+          ?checked=${defaultFormValues.config.blockAds}
+        >
+          ${msg("Block Ads by Domain")}
+        </sl-checkbox>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+
+      <div class="${formColClassName}">
+        <btrix-language-select
+          @sl-select=${(e: CustomEvent) => console.log(e.detail.item.value)}
+          @sl-clear=${() => {}}
+        >
+          <span slot="label">${msg("Language")}</span>
+        </btrix-language-select>
+      </div>
+      ${this.renderHelpText(html`TODO`)}
+    `;
   }
 
   private renderJobScheduling(formColClassName: string) {

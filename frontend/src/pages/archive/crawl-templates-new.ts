@@ -202,7 +202,10 @@ export class CrawlTemplatesNew extends LiteElement {
     if (NEW_JOB_CONFIG) {
       return html`
         ${this.renderHeader()}
-        <btrix-new-job-config></btrix-new-job-config>
+        <btrix-new-job-config
+          archiveId=${this.archiveId}
+          .authState=${this.authState}
+        ></btrix-new-job-config>
       `;
     }
     return html`
