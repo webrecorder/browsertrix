@@ -307,6 +307,16 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
+  private renderSectionHeading(content: TemplateResult | string) {
+    return html`
+      <h4
+        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
+      >
+        ${content}
+      </h4>
+    `;
+  }
+
   private renderHelpText(content: TemplateResult) {
     return html`
       <div class="colspan-1 md:col-span-2 flex">
@@ -341,19 +351,6 @@ https://example.org`}
       )}
 
       <div class="${formColClassName}">
-        <sl-radio-group
-          name="scale"
-          label=${msg("Crawler Instances")}
-          value=${defaultFormValues.scale}
-        >
-          <sl-radio-button value="1" size="small">1</sl-radio-button>
-          <sl-radio-button value="2" size="small">2</sl-radio-button>
-          <sl-radio-button value="3" size="small">3</sl-radio-button>
-        </sl-radio-group>
-      </div>
-      ${this.renderHelpText(html`TODO`)}
-
-      <div class="${formColClassName}">
         <sl-checkbox
           name="includeLinkedPages"
           ?defaultChecked=${initialFormState.includeLinkedPages}
@@ -372,11 +369,7 @@ https://example.org`}
       )}
       ${this.formState.includeLinkedPages
         ? html`
-            <h4
-              class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
-            >
-              ${msg("Limit Linked Pages")}
-            </h4>
+            ${this.renderSectionHeading(msg("Limit Linked Pages"))}
             <div class="${formColClassName}">
               <sl-input
                 name="limit"
@@ -420,6 +413,22 @@ https://example.org`}
             )}
           `
         : ""}
+      ${this.renderSectionHeading("Advanced Options")}
+      <div class="${formColClassName}">
+        <sl-radio-group
+          name="scale"
+          label=${msg("Crawler Instances")}
+          value=${defaultFormValues.scale}
+        >
+          <sl-radio-button value="1" size="small">1</sl-radio-button>
+          <sl-radio-button value="2" size="small">2</sl-radio-button>
+          <sl-radio-button value="3" size="small">3</sl-radio-button>
+        </sl-radio-group>
+      </div>
+      ${this.renderHelpText(
+        html`The number of crawler instances that will run in parallel for this
+        job.`
+      )}
     `;
   }
 
@@ -528,19 +537,14 @@ https://example.org`}
             ${msg("Pages on This Domain & Subdomains")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Advanced")}</sl-menu-label>
+          <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
           <sl-menu-item value="page-spa">
             ${msg("Single Page App (In-Page Links Only)")}
           </sl-menu-item>
         </sl-select>
       </div>
       ${this.renderHelpText(html`Tells the crawler which pages it can visit.`)}
-
-      <h4
-        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
-      >
-        ${msg("Additional Pages")}
-      </h4>
+      ${this.renderSectionHeading(msg("Additional Pages"))}
       <div class="${formColClassName}">
         <sl-textarea
           name="allowedExternalUrlList"
@@ -570,25 +574,7 @@ https://example.net`}
         html`Automatically follow linked pages regardless of scope, but do not
         follow any links within pages outside of Crawl Scope.`
       )}
-
-      <div class="${formColClassName}">
-        <sl-radio-group
-          name="scale"
-          label=${msg("Crawler Instances")}
-          value=${defaultFormValues.scale}
-        >
-          <sl-radio-button value="1" size="small">1</sl-radio-button>
-          <sl-radio-button value="2" size="small">2</sl-radio-button>
-          <sl-radio-button value="3" size="small">3</sl-radio-button>
-        </sl-radio-group>
-      </div>
-      ${this.renderHelpText(html`TODO`)}
-
-      <h4
-        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
-      >
-        ${msg("Crawl Limits")}
-      </h4>
+      ${this.renderSectionHeading(msg("Crawl Limits"))}
       <div class="${formColClassName}">
         <sl-input
           name="limit"
@@ -623,11 +609,23 @@ https://example.net`}
         </sl-button>
       </div>
       ${this.renderHelpText(html`TODO`)}
+      ${this.renderSectionHeading("Advanced Options")}
+      <div class="${formColClassName}">
+        <sl-radio-group
+          name="scale"
+          label=${msg("Crawler Instances")}
+          value=${defaultFormValues.scale}
+        >
+          <sl-radio-button value="1" size="small">1</sl-radio-button>
+          <sl-radio-button value="2" size="small">2</sl-radio-button>
+          <sl-radio-button value="3" size="small">3</sl-radio-button>
+        </sl-radio-group>
+      </div>
+      ${this.renderHelpText(
+        html`The number of crawler instances that will run in parallel for this
+        job.`
+      )}
     `;
-  }
-
-  private renderExternalURLs(formColClassName: string) {
-    return html``;
   }
 
   private renderCrawlBehaviors(formColClassName: string) {
