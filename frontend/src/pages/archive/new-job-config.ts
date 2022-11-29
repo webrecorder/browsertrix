@@ -41,7 +41,8 @@ type FormState = {
   urlList: string;
   includeLinkedPages: boolean;
   allowedExternalUrlList: string;
-  crawlTimeoutMinutes: number | null;
+  jobTimeoutMinutes: number | null;
+  pageTimeoutMinutes: number | null;
   scopeType: JobConfig["config"]["scopeType"];
   exclusions: JobConfig["config"]["exclude"];
   pageLimit: JobConfig["config"]["limit"];
@@ -53,11 +54,11 @@ type FormState = {
   schedule: JobConfig["schedule"];
 };
 const initialProgressState: ProgressState = {
-  activeTab: "crawlerSetup",
-  currentStep: "crawlerSetup",
+  activeTab: "browserSettings",
+  currentStep: "browserSettings",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: false },
-    browserSettings: { enabled: false, error: false, completed: false },
+    crawlerSetup: { enabled: true, error: false, completed: true },
+    browserSettings: { enabled: true, error: false, completed: false },
     jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
@@ -69,7 +70,8 @@ const initialFormState: FormState = {
   urlList: "",
   includeLinkedPages: false,
   allowedExternalUrlList: "",
-  crawlTimeoutMinutes: null,
+  jobTimeoutMinutes: null,
+  pageTimeoutMinutes: null,
   scopeType: "host",
   exclusions: [""], // Empty slots for adding exclusions
   pageLimit: null,
@@ -313,7 +315,7 @@ https://example.com/path`}
       )}
       ${this.formState.includeLinkedPages
         ? html`
-            ${this.renderSectionHeading(msg("Crawl Limits"))}
+            ${this.renderSectionHeading(msg("Crawl URL Limits"))}
             <div class="${formColClassName}">
               <btrix-queue-exclusion-table
                 .exclusions=${this.formState.exclusions}
@@ -530,11 +532,11 @@ https://example.net`}
 
   private renderCrawlScale(formColClassName: string) {
     return html`
-      ${this.renderSectionHeading(msg("Crawler Limits"))}
+      ${this.renderSectionHeading(msg("Crawl Job Limits"))}
       <div class="${formColClassName}">
         <sl-input
-          name="crawlTimeoutMinutes"
-          label=${msg("Crawl Time Limit")}
+          name="jobTimeoutMinutes"
+          label=${msg("Total Job Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
         >
@@ -573,14 +575,26 @@ https://example.net`}
           @on-change=${(e: any) => console.log(e.detail.value)}
         ></btrix-select-browser-profile>
       </div>
-      ${this.renderHelpTextCol(html`TODO`)}
+      ${this.renderHelpTextCol(
+        html`Choose a custom profile to make use of saved cookies and logged-in
+        accounts.`
+      )}
 
       <div class="${formColClassName}">
         <sl-checkbox name="blockAds" ?checked=${initialFormState.blockAds}>
           ${msg("Block Ads by Domain")}
         </sl-checkbox>
       </div>
-      ${this.renderHelpTextCol(html`TODO`)}
+      ${this.renderHelpTextCol(
+        html`Blocks advertising content from being loaded. Uses
+          <a
+            href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+            class="text-blue-600 hover:text-blue-500"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            >Steven Black’s Hosts file</a
+          >.`
+      )}
 
       <div class="${formColClassName}">
         <btrix-language-select
@@ -590,7 +604,25 @@ https://example.net`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       </div>
-      ${this.renderHelpTextCol(html`TODO`)}
+      ${this.renderHelpTextCol(
+        html`Websites that observe the browser’s language setting may serve
+        content in that language if available.`
+      )}
+      ${this.renderSectionHeading(msg("On-Page Behavior"))}
+      <div class="${formColClassName}">
+        <sl-input
+          name="pageTimeoutMinutes"
+          label=${msg("Page Time Limit")}
+          placeholder=${msg("Unlimited")}
+          type="number"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      </div>
+      ${this.renderHelpTextCol(
+        html`Adds a hard time limit for how long the crawler can spend on a
+        single webpage.`
+      )}
     `;
   }
 
