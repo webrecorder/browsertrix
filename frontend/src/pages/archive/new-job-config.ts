@@ -1,5 +1,11 @@
 import type { TemplateResult } from "lit";
-import type { SlCheckbox, SlInput, SlRadio } from "@shoelace-style/shoelace";
+import type {
+  SlCheckbox,
+  SlInput,
+  SlRadio,
+  SlSelect,
+  SlTextarea,
+} from "@shoelace-style/shoelace";
 import { state, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
@@ -151,11 +157,27 @@ export class NewJobConfig extends LiteElement {
     };
 
     return html`
-      <h3 class="ml-48 text-lg font-medium mb-3">
-        ${tabLabels[this.progressState.activeTab]}
-      </h3>
+      <header class="ml-48 mb-3 flex justify-between items-baseline">
+        <h3 class="text-lg font-medium">
+          ${tabLabels[this.progressState.activeTab]}
+        </h3>
+        <p class="text-xs text-neutral-500">
+          ${msg(
+            html`Fields marked with
+              <span style="color:var(--sl-input-required-content-color)"
+                >*</span
+              >
+              are required`
+          )}
+        </p>
+      </header>
 
-      <form name="newJobConfig" @submit=${this.onSubmit}>
+      <form
+        name="newJobConfig"
+        @submit=${this.onSubmit}
+        @keydown=${this.preventSubmit}
+        @sl-blur=${this.validateOnBlur}
+      >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
           progressPanel="newJobConfig-${this.progressState.currentStep}"
@@ -323,8 +345,6 @@ export class NewJobConfig extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
-          @keydown=${this.preventSubmit}
-          @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -451,11 +471,12 @@ https://example.com/path`}
           placeholder=${urlPlaceholder}
           defaultValue=${initialFormState.primarySeedUrl}
           required
-          @keydown=${this.preventSubmit}
-          @sl-input=${(e: Event) => {
+          @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
+            await inputEl.updateComplete;
             if (inputEl.invalid && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
+              inputEl.helpText = "";
             }
           }}
           @sl-change=${(e: Event) => {
@@ -464,17 +485,15 @@ https://example.com/path`}
               primarySeedUrl: inputEl.value,
             });
           }}
-          @sl-blur=${(e: Event) => {
+          @sl-blur=${async (e: Event) => {
             const inputEl = e.target as SlInput;
-            let text = "";
-            if (validURL(inputEl.value)) {
-            } else {
-              text = msg("Please enter a valid URL.");
+            await inputEl.updateComplete;
+            if (inputEl.value && !validURL(inputEl.value)) {
+              const text = msg("Please enter a valid URL.");
               inputEl.invalid = true;
+              inputEl.helpText = text;
+              inputEl.setCustomValidity(text);
             }
-            inputEl.helpText = text;
-            inputEl.setCustomValidity(text);
-            this.validateOnBlur(e);
           }}
         ></sl-input>
       `)}
@@ -520,8 +539,6 @@ https://example.com/path`}
           defaultValue=${initialFormState.allowedExternalUrlList}
           placeholder=${`https://example.org/page/
 https://example.net`}
-          @keydown=${this.preventSubmit}
-          @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -547,7 +564,6 @@ https://example.net`}
           type="number"
           defaultValue=${initialFormState.pageLimit || ""}
           placeholder=${msg("Unlimited")}
-          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("pages")}</span>
         </sl-input>
@@ -590,7 +606,6 @@ https://example.net`}
           label=${msg("Total Job Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
-          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -664,7 +679,6 @@ https://example.net`}
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
-          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -763,8 +777,6 @@ https://example.net`}
               max="31"
               value=${initialFormState.scheduleDayOfMonth}
               required
-              @keydown=${this.preventSubmit}
-              @sl-blur=${this.validateOnBlur}
             >
             </sl-input>
           `)}
@@ -815,13 +827,11 @@ https://example.net`}
           })}
           defaultValue=${defaultValue}
           required
-          @keydown=${this.preventSubmit}
           @sl-change=${(e: Event) => {
             this.updateFormState({
               jobName: (e.target as SlInput).value,
             });
           }}
-          @sl-blur=${this.validateOnBlur}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -864,15 +874,25 @@ https://example.net`}
     );
   }
 
-  private validateOnBlur = (e: Event) => {
-    const el = e.target as HTMLInputElement & {
-      invalid: boolean;
-    };
+  private validateOnBlur = async (e: Event) => {
+    const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
+    const tagName = el.tagName.toLowerCase();
+    if (
+      !["sl-input", "sl-textarea", "sl-select", "sl-checkbox"].includes(tagName)
+    ) {
+      return;
+    }
+    await el.updateComplete;
+    await this.updateComplete;
+
     const currentTab = this.progressState.activeTab as StepName;
-    if (el.invalid) {
+    // Check [data-user-invalid] instead of .invalid property
+    // to validate only touched inputs
+    if ("userInvalid" in el.dataset) {
       const tabs = this.progressState.tabs;
       tabs[currentTab].error = true;
       this.updateProgressState({ tabs });
+      console.log(el.checkValidity());
     } else if (this.progressState.tabs[currentTab].error) {
       const hasInvalid = el
         .closest("btrix-tab-panel")
@@ -954,12 +974,16 @@ https://example.net`}
   };
 
   private preventSubmit(event: KeyboardEvent) {
-    if (
-      event.key === "Enter" &&
-      this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
-    ) {
-      // Prevent submission by "Enter" keypress if not on last tab
-      event.preventDefault();
+    const el = event.target as HTMLElement;
+    const tagName = el.tagName.toLowerCase();
+    if (tagName === "sl-input" || tagName === "sl-textarea") {
+      if (
+        event.key === "Enter" &&
+        this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
+      ) {
+        // Prevent submission by "Enter" keypress if not on last tab
+        event.preventDefault();
+      }
     }
   }
 

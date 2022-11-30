@@ -71,6 +71,8 @@ const theme = css`
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
+    --sl-input-required-content-color: var(--sl-color-neutral-400);
+
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
     --sl-input-label-font-size-medium: var(--sl-font-size-small);
@@ -88,6 +90,14 @@ const theme = css`
   .sl-toast-stack {
     bottom: 0;
     top: auto;
+  }
+
+  /* Add more spacing between input and help text */
+  sl-input::part(form-control-help-text),
+  sl-textarea::part(form-control-help-text),
+  sl-select::part(form-control-help-text) {
+    margin-top: var(--sl-spacing-2x-small);
+    font-weight: 400;
   }
 
   /* Elevate select and buttons */
@@ -108,24 +118,26 @@ const theme = css`
   }
 
   /* Validation styles */
-  .invalid:not([disabled])::part(base),
   [data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
-  .invalid:focus-within::part(base),
   [data-user-invalid]:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
+  }
+
+  [data-user-invalid]:not([disabled])::part(form-control-label):after {
+    /* Required asterisk color */
+    color: var(--sl-color-danger-500);
+  }
+
+  [data-user-invalid]:not([disabled])::part(form-control-help-text) {
+    color: var(--sl-color-danger-500);
   }
 
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
   sl-divider {
     border-top-width: var(--sl-panel-border-width);
-  }
-
-  [slot="help-text"] {
-    margin-top: var(--sl-spacing-x-small);
-    font-weight: 400;
   }
 
   /* Add more spacing between radio options */
