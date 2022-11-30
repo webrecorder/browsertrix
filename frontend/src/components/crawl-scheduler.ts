@@ -93,6 +93,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
           </div>
         </div>
         <fieldset class="mt-2">
+          <!-- TODO use btrix-time-input -->
           <label class="text-sm">${msg("Time")} </label>
           <div class="md:flex">
             <div class="flex items-center mb-2 md:mb-0 md:mr-2">

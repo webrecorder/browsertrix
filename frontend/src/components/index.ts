@@ -1,5 +1,6 @@
 import { Alert } from "./alert";
 import { Input } from "./input/input";
+import { TimeInput } from "./time-input";
 import("./details").then(({ Details }) => {
   customElements.define("btrix-details", Details);
 });
@@ -83,3 +84,4 @@ import("./tab-list").then(({ Tab, TabList, TabPanel }) => {
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
+customElements.define("btrix-time-input", TimeInput);

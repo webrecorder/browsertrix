@@ -1,6 +1,7 @@
 import type { TemplateResult } from "lit";
 import type { SlCheckbox, SlInput, SlRadio } from "@shoelace-style/shoelace";
 import { state, property, query } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import compact from "lodash/fp/compact";
@@ -55,6 +56,7 @@ type FormState = {
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
   scheduleDayOfWeek: number;
+  runNow: boolean;
 };
 const initialProgressState: ProgressState = {
   activeTab: "jobScheduling",
@@ -83,8 +85,9 @@ const initialFormState: FormState = {
   lang: null,
   scheduleType: "now",
   scheduleFrequency: "weekly",
-  scheduleDayOfMonth: 1,
-  scheduleDayOfWeek: 1,
+  scheduleDayOfMonth: new Date().getDate(),
+  scheduleDayOfWeek: new Date().getDay(),
+  runNow: false,
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -141,7 +144,6 @@ export class NewJobConfig extends LiteElement {
 
     const contentClassName =
       "p-5 grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-5";
-    const formColClassName = "col-span-1 md:col-span-3";
 
     return html`
       <h3 class="ml-48 text-lg font-medium mb-3">
@@ -159,31 +161,21 @@ export class NewJobConfig extends LiteElement {
 
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             <div class=${contentClassName}>
-              ${this.jobType === "urlList"
-                ? this.renderUrlListSetup(formColClassName)
-                : ""}
-              ${this.jobType === "seeded"
-                ? this.renderSeededCrawlSetup(formColClassName)
-                : ""}
+              ${when(this.jobType === "urlList", this.renderUrlListSetup)}
+              ${when(this.jobType === "seeded", this.renderSeededCrawlSetup)}
             </div>
             ${this.renderFooter({ isFirst: true })}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-browserSettings">
-            <div class=${contentClassName}>
-              ${this.renderCrawlBehaviors(formColClassName)}
-            </div>
+            <div class=${contentClassName}>${this.renderCrawlBehaviors()}</div>
             ${this.renderFooter()}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-jobScheduling">
-            <div class=${contentClassName}>
-              ${this.renderJobScheduling(formColClassName)}
-            </div>
+            <div class=${contentClassName}>${this.renderJobScheduling()}</div>
             ${this.renderFooter()}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-jobInformation">
-            <div class=${contentClassName}>
-              ${this.renderJobInformation(formColClassName)}
-            </div>
+            <div class=${contentClassName}>${this.renderJobInformation()}</div>
             ${this.renderFooter({ isLast: true })}
           </btrix-tab-panel>
         </btrix-tab-list>
@@ -282,6 +274,10 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
+  private renderFormCol = (content: TemplateResult) => {
+    return html` <div class="col-span-1 md:col-span-3">${content}</div> `;
+  };
+
   private renderHelpTextCol(content: TemplateResult) {
     return html`
       <div class="col-span-1 md:col-span-2 flex">
@@ -293,9 +289,9 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderUrlListSetup(formColClassName: string) {
+  private renderUrlListSetup = () => {
     return html`
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-textarea
           name="urlList"
           label=${msg("List of URLs")}
@@ -307,63 +303,61 @@ https://example.com/path`}
           required
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`The crawler will visit and record each URL listed in the order
         defined here.`
       )}
-
-      <div class="${formColClassName}">
-        <sl-checkbox
-          name="includeLinkedPages"
-          ?defaultChecked=${initialFormState.includeLinkedPages}
-          ?checked=${this.formState.includeLinkedPages}
-          @sl-change=${(e: Event) =>
-            this.updateFormState({
-              includeLinkedPages: (e.target as SlCheckbox).checked,
-            })}
-        >
-          ${msg("Include Linked Pages")}
-        </sl-checkbox>
-      </div>
+      ${this.renderFormCol(html`<sl-checkbox
+        name="includeLinkedPages"
+        ?defaultChecked=${initialFormState.includeLinkedPages}
+        ?checked=${this.formState.includeLinkedPages}
+        @sl-change=${(e: Event) =>
+          this.updateFormState({
+            includeLinkedPages: (e.target as SlCheckbox).checked,
+          })}
+      >
+        ${msg("Include Linked Pages")}
+      </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away from a Crawl
         URL.`
       )}
-      ${this.formState.includeLinkedPages
-        ? html`
-            ${this.renderSectionHeading(msg("Crawl URL Limits"))}
-            <div class="${formColClassName}">
-              <btrix-queue-exclusion-table
-                .exclusions=${this.formState.exclusions}
-                pageSize="50"
-                editable
-                removable
-                @on-remove=${this.handleRemoveRegex}
-                @on-change=${this.handleChangeRegex}
-              ></btrix-queue-exclusion-table>
-              <sl-button
-                class="w-full mt-1"
-                @click=${() =>
-                  this.updateFormState({
-                    exclusions: [...(this.formState.exclusions || []), ""],
-                  })}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                <span class="text-neutral-600">${msg("Add More")}</span>
-              </sl-button>
-            </div>
-            ${this.renderHelpTextCol(
-              html`Specify exclusion rules for what pages should not be visited.
-              Exclusions apply to all URLs.`
-            )}
-          `
-        : ""}
-      ${this.renderCrawlScale(formColClassName)}
+      ${when(
+        this.formState.includeLinkedPages,
+        () => html`
+          ${this.renderSectionHeading(msg("Crawl URL Limits"))}
+          ${this.renderFormCol(html`
+            <btrix-queue-exclusion-table
+              .exclusions=${this.formState.exclusions}
+              pageSize="50"
+              editable
+              removable
+              @on-remove=${this.handleRemoveRegex}
+              @on-change=${this.handleChangeRegex}
+            ></btrix-queue-exclusion-table>
+            <sl-button
+              class="w-full mt-1"
+              @click=${() =>
+                this.updateFormState({
+                  exclusions: [...(this.formState.exclusions || []), ""],
+                })}
+            >
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              <span class="text-neutral-600">${msg("Add More")}</span>
+            </sl-button>
+          `)}
+          ${this.renderHelpTextCol(
+            html`Specify exclusion rules for what pages should not be visited.
+            Exclusions apply to all URLs.`
+          )}
+        `
+      )}
+      ${this.renderCrawlScale()}
     `;
-  }
+  };
 
-  private renderSeededCrawlSetup(formColClassName: string) {
+  private renderSeededCrawlSetup = () => {
     const urlPlaceholder = "https://example.com";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
@@ -426,7 +420,7 @@ https://example.com/path`}
     }
 
     return html`
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-input
           name="primarySeedUrl"
           label=${msg("Crawl Start URL")}
@@ -442,10 +436,9 @@ https://example.com/path`}
             this.onFieldChange(e);
           }}
         ></sl-input>
-      </div>
+      `)}
       ${this.renderHelpTextCol(html`The starting point of your crawl.`)}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-select
           name="scopeType"
           label=${msg("Crawl Scope")}
@@ -472,12 +465,12 @@ https://example.com/path`}
             ${msg("Single Page App (In-Page Links Only)")}
           </sl-menu-item>
         </sl-select>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Tells the crawler which pages it can visit.`
       )}
       ${this.renderSectionHeading(msg("Additional Pages"))}
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-textarea
           name="allowedExternalUrlList"
           label=${msg("Allowed URL Prefixes")}
@@ -488,25 +481,24 @@ https://example.com/path`}
 https://example.net`}
           @sl-change=${this.onFieldChange}
         ></sl-textarea>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Crawl pages outside of Crawl Scope that begin with these URLs.`
       )}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-checkbox
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
         >
           ${msg("Include Any Linked Page (“one hop out”)")}
         </sl-checkbox>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away outside of
         Crawl Scope.`
       )}
       ${this.renderSectionHeading(msg("Crawl Limits"))}
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-input
           name="pageLimit"
           label=${msg("Page Limit")}
@@ -516,11 +508,10 @@ https://example.net`}
         >
           <span slot="suffix">${msg("pages")}</span>
         </sl-input>
-      </div>
+      `)}
       ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
       that will be crawled for this job.`)}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <btrix-queue-exclusion-table
           .exclusions=${this.formState.exclusions}
           pageSize="50"
@@ -539,18 +530,18 @@ https://example.net`}
           <sl-icon slot="prefix" name="plus-lg"></sl-icon>
           <span class="text-neutral-600">${msg("Add More")}</span>
         </sl-button>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Specify exclusion rules for what pages should not be visited.`
       )}
-      ${this.renderCrawlScale(formColClassName)}
+      ${this.renderCrawlScale()}
     `;
-  }
+  };
 
-  private renderCrawlScale(formColClassName: string) {
+  private renderCrawlScale() {
     return html`
       ${this.renderSectionHeading(msg("Crawl Job Limits"))}
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-input
           name="jobTimeoutMinutes"
           label=${msg("Total Job Time Limit")}
@@ -559,12 +550,11 @@ https://example.net`}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Gracefully stop the crawler after a specified time limit.`
       )}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
@@ -574,7 +564,7 @@ https://example.net`}
           <sl-radio-button value="2" size="small">2</sl-radio-button>
           <sl-radio-button value="3" size="small">3</sl-radio-button>
         </sl-radio-group>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Increasing parallel crawler instances will speed up crawls, but
         take up more system resources.`
@@ -582,26 +572,25 @@ https://example.net`}
     `;
   }
 
-  private renderCrawlBehaviors(formColClassName: string) {
+  private renderCrawlBehaviors() {
     return html`
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <btrix-select-browser-profile
           archiveId=${this.archiveId}
           .profileId=${initialFormState.profileid}
           .authState=${this.authState}
           @on-change=${(e: any) => console.log(e.detail.value)}
         ></btrix-select-browser-profile>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Choose a custom profile to make use of saved cookies and logged-in
         accounts.`
       )}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${initialFormState.blockAds}>
           ${msg("Block Ads by Domain")}
         </sl-checkbox>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Blocks advertising content from being loaded. Uses
           <a
@@ -612,21 +601,20 @@ https://example.net`}
             >Steven Black’s Hosts file</a
           >.`
       )}
-
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <btrix-language-select
           @sl-select=${(e: CustomEvent) => console.log(e.detail.item.value)}
           @sl-clear=${() => {}}
         >
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Websites that observe the browser’s language setting may serve
         content in that language if available.`
       )}
       ${this.renderSectionHeading(msg("On-Page Behavior"))}
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
           label=${msg("Page Time Limit")}
@@ -635,7 +623,7 @@ https://example.net`}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Adds a hard time limit for how long the crawler can spend on a
         single webpage.`
@@ -643,13 +631,13 @@ https://example.net`}
     `;
   }
 
-  private renderJobScheduling(formColClassName: string) {
+  private renderJobScheduling() {
     return html`
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-radio-group
           label=${msg("Job Schedule Type")}
           name="scheduleType"
-          defaultValue="now"
+          value=${this.formState.scheduleType}
           @sl-change=${(e: Event) =>
             this.updateFormState({
               scheduleType: (e.target as SlRadio)
@@ -657,18 +645,28 @@ https://example.net`}
             })}
         >
           <sl-radio value="now">${msg("Run Immediately on Save")}</sl-radio>
-          <sl-radio value="date"
+          <!-- <sl-radio value="date"
             >${msg("Run on a Specific Date & Time")}</sl-radio
-          >
-          <sl-radio value="crol">${msg("Run on a Recurring Basis")}</sl-radio>
+          > -->
+          <sl-radio value="cron">${msg("Run on a Recurring Basis")}</sl-radio>
         </sl-radio-group>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Should this job run immediately when setup is complete, on a set
         day, or on a recurring schedule?`
       )}
+      ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
+    `;
+  }
+
+  private renderScheduleDateTime() {
+    return html``;
+  }
+
+  private renderScheduleCron = () => {
+    return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
-      <div class="${formColClassName}">
+      ${this.renderFormCol(html`
         <sl-select
           name="scheduleFrequency"
           label=${msg("Frequency")}
@@ -683,45 +681,78 @@ https://example.net`}
           <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
           <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
         </sl-select>
-      </div>
+      `)}
       ${this.renderHelpTextCol(
         html`Limit the frequency for how often the job will run.`
       )}
-      <div class="${formColClassName}">
-        <sl-input
-          name="scheduleDayOfMonth"
-          label=${msg("Date")}
-          type="number"
-          min="1"
-          max="31"
-          defaultValue=${initialFormState.scheduleDayOfMonth}
-        >
-        </sl-input>
-      </div>
-      ${this.renderHelpTextCol(
-        html`What day of the month should the job run on?`
-      )}
-      <div class="${formColClassName}">
-        <sl-radio-group
-          name="scheduleDayOfWeek"
-          label=${msg("Day")}
-          defaultValue=${initialFormState.scheduleDayOfWeek}
-        >
-          ${this.daysOfWeek.map(
-            (label, day) =>
-              html`<sl-radio-button value=${day} size="small"
-                >${label}</sl-radio-button
-              >`
+      ${when(
+        this.formState.scheduleFrequency === "weekly",
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-radio-group
+              name="scheduleDayOfWeek"
+              label=${msg("Day")}
+              value=${initialFormState.scheduleDayOfWeek}
+            >
+              ${this.daysOfWeek.map(
+                (label, day) =>
+                  html`<sl-radio-button value=${day}>${label}</sl-radio-button>`
+              )}
+            </sl-radio-group>
+          `)}
+          ${this.renderHelpTextCol(
+            html`What day of the week should the job run on?`
           )}
-        </sl-radio-group>
-      </div>
+        `
+      )}
+      ${when(
+        this.formState.scheduleFrequency === "monthly",
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-input
+              name="scheduleDayOfMonth"
+              label=${msg("Date")}
+              type="number"
+              min="1"
+              max="31"
+              value=${initialFormState.scheduleDayOfMonth}
+              required
+            >
+            </sl-input>
+          `)}
+          ${this.renderHelpTextCol(
+            html`What day of the month should the job run on?`
+          )}
+        `
+      )}
+      ${this.renderFormCol(html`
+        <btrix-time-input @time-change=${console.log}>
+          <span slot="label">${msg("Start Time")}</span>
+        </btrix-time-input>
+      `)}
       ${this.renderHelpTextCol(
-        html`What day of the week should the job run on?`
+        html`Job will run at this time using the timezone specified in your user
+        settings.`
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="runNow"
+        ?defaultChecked=${initialFormState.runNow}
+        ?checked=${this.formState.runNow}
+        @sl-change=${(e: Event) =>
+          this.updateFormState({
+            runNow: (e.target as SlCheckbox).checked,
+          })}
+      >
+        ${msg("Also run job immediately on save")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        html`If checked, the job will run at the time specified above and also
+        once when setup is complete.`
       )}
     `;
-  }
+  };
 
-  private renderJobInformation(formColClassName: string) {
+  private renderJobInformation() {
     return html`TODO`;
   }
 
