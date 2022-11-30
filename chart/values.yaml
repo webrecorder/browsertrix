@@ -59,6 +59,10 @@ nginx_limits_cpu: "10m"
 nginx_requests_memory: "12Mi"
 nginx_limits_memory: "12Mi"
 
+# if true, will use node port to make the service directly available
+# for testing / local deployments only
+nginx_service_use_node_port: false
+
 
 # MongoDB Image
 # =========================================

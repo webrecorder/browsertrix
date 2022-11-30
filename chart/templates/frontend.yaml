@@ -87,7 +87,7 @@ spec:
     app: {{ .Values.name }}
     role: frontend
 
-  {{- if .Values.nginx_service_export_port }}
+  {{- if .Values.nginx_service_use_node_port }}
   type: NodePort
   {{- end }}
 
