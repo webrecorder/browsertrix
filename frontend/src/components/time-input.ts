@@ -3,6 +3,12 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 
+export type TimeInputChangeEvent = CustomEvent<{
+  hour: number;
+  minute: number;
+  period: "AM" | "PM";
+}>;
+
 /**
  * Usage:
  * ```ts
@@ -13,6 +19,9 @@ import type { SlInput } from "@shoelace-style/shoelace";
  *   @time-change=${console.log}
  * ></btrix-time-input>
  * ```
+ *
+ * @events
+ * time-change TimeInputChangeEvent
  */
 @localized()
 export class TimeInput extends LitElement {
@@ -74,10 +83,15 @@ export class TimeInput extends LitElement {
               maxlength="2"
               value=${this.hour}
               ?disabled=${this.disabled}
+              required
               @keyup=${(e: KeyboardEvent) => {
                 const input = e.target as SlInput;
-                const int = +input.value.replace(/[^0-9]/g, "");
-                input.value = `${Math.min(12, Math.max(1, int))}`;
+                if (input.value) {
+                  const int = +input.value.replace(/[^0-9]/g, "");
+                  input.value = `${Math.min(12, Math.max(1, int))}`;
+                } else {
+                  input.value = "12";
+                }
               }}
               @sl-change=${async (e: Event) => {
                 e.stopPropagation();
@@ -97,10 +111,15 @@ export class TimeInput extends LitElement {
                 ? `${0}${this.minute}`
                 : this.minute}
               ?disabled=${this.disabled}
+              required
               @keyup=${(e: KeyboardEvent) => {
                 const input = e.target as SlInput;
-                const int = +input.value.replace(/[^0-9]/g, "");
-                input.value = `${Math.min(59, Math.max(0, int))}`;
+                if (input.value) {
+                  const int = +input.value.replace(/[^0-9]/g, "");
+                  input.value = `${Math.min(59, Math.max(0, int))}`;
+                } else {
+                  input.value = "00";
+                }
               }}
               @sl-change=${async (e: Event) => {
                 e.stopPropagation();
@@ -140,7 +159,7 @@ export class TimeInput extends LitElement {
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent("time-change", {
+      <TimeInputChangeEvent>new CustomEvent("time-change", {
         detail: {
           hour: this.hour,
           minute: this.minute,

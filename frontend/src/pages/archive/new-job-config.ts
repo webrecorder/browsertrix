@@ -10,6 +10,7 @@ import { state, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
@@ -17,11 +18,17 @@ import pickBy from "lodash/fp/pickBy";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
+import {
+  getUTCSchedule,
+  humanizeSchedule,
+  humanizeNextDate,
+} from "../../utils/cron";
 import type { Tab } from "../../components/tab-list";
 import type {
   ExclusionRemoveEvent,
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
+import type { TimeInputChangeEvent } from "../../components/time-input";
 import type { JobConfig } from "./types";
 
 export type JobType = "urlList" | "seeded";
@@ -62,6 +69,11 @@ type FormState = {
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
   scheduleDayOfWeek: number;
+  scheduleTime: {
+    hour: number;
+    minute: number;
+    period: "AM" | "PM";
+  };
   runNow: boolean;
   jobName: string;
 };
@@ -94,6 +106,11 @@ const initialFormState: FormState = {
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
+  scheduleTime: {
+    hour: 12,
+    minute: 0,
+    period: "AM",
+  },
   runNow: false,
   jobName: "",
 };
@@ -717,6 +734,10 @@ https://example.net`}
   }
 
   private renderScheduleCron = () => {
+    const utcSchedule = getUTCSchedule({
+      interval: this.formState.scheduleFrequency,
+      ...this.formState.scheduleTime,
+    });
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
       ${this.renderFormCol(html`
@@ -779,9 +800,34 @@ https://example.net`}
         `
       )}
       ${this.renderFormCol(html`
-        <btrix-time-input @time-change=${console.log}>
+        <btrix-time-input
+          hour=${ifDefined(this.formState.scheduleTime.hour)}
+          minute=${ifDefined(this.formState.scheduleTime.minute)}
+          period=${ifDefined(this.formState.scheduleTime.period)}
+          @time-change=${(e: TimeInputChangeEvent) => {
+            this.updateFormState({
+              scheduleTime: e.detail,
+            });
+          }}
+        >
           <span slot="label">${msg("Start Time")}</span>
         </btrix-time-input>
+        <div class="text-xs text-neutral-500 mt-3">
+          <p class="mb-1">
+            ${msg(
+              html`Schedule:
+                <span class="text-blue-500"
+                  >${humanizeSchedule(utcSchedule)}</span
+                >.`
+            )}
+          </p>
+          <p>
+            ${msg(
+              html`Next scheduled run:
+                <span>${humanizeNextDate(utcSchedule)}</span>.`
+            )}
+          </p>
+        </div>
       `)}
       ${this.renderHelpTextCol(
         html`Job will run at this time in your current timezone.`
