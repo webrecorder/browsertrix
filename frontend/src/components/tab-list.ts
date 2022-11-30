@@ -26,9 +26,14 @@ export class TabPanel extends LitElement {
       min-height: 100%;
     }
 
+    .panel[aria-hidden="false"] {
+      flex: 1;
+    }
+
     .panel[aria-hidden="true"] {
       display: none;
       height: 0;
+      width: 0;
     }
   `;
 

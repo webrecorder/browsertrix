@@ -43,7 +43,8 @@ type StepName =
   | "crawlerSetup"
   | "browserSettings"
   | "jobScheduling"
-  | "jobInformation";
+  | "jobInformation"
+  | "confirmSettings";
 type Tabs = Record<
   StepName,
   {
@@ -91,6 +92,7 @@ const getDefaultProgressState = (): ProgressState => ({
     browserSettings: { enabled: false, error: false, completed: false },
     jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
+    confirmSettings: { enabled: true, error: false, completed: false },
   },
 });
 const getDefaultFormState = (): FormState => ({
@@ -124,6 +126,7 @@ const stepOrder: StepName[] = [
   "browserSettings",
   "jobScheduling",
   "jobInformation",
+  "confirmSettings",
 ];
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = stepOrder.filter(
@@ -226,8 +229,9 @@ export class NewJobConfig extends LiteElement {
     const tabLabels: Record<StepName, string> = {
       crawlerSetup: msg("Crawler Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Crawl Scheduling"),
-      jobInformation: msg("Crawl Information"),
+      jobScheduling: msg("Job Scheduling"),
+      jobInformation: msg("Job Information"),
+      confirmSettings: msg("Confirm Settings"),
     };
 
     return html`
@@ -277,7 +281,10 @@ export class NewJobConfig extends LiteElement {
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-jobInformation">
-            ${this.renderPanelContent(this.renderJobInformation(), {
+            ${this.renderPanelContent(this.renderJobInformation())}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-confirmSettings">
+            ${this.renderPanelContent(this.renderConfirmSettings(), {
               isLast: true,
             })}
           </btrix-tab-panel>
@@ -400,7 +407,7 @@ export class NewJobConfig extends LiteElement {
   }
 
   private renderFormCol = (content: TemplateResult) => {
-    return html` <div class="col-span-1 md:col-span-3">${content}</div> `;
+    return html`<div class="col-span-1 md:col-span-3">${content}</div> `;
   };
 
   private renderHelpTextCol(content: TemplateResult) {
@@ -975,6 +982,35 @@ https://example.net`}
       </div>
     `;
   }
+
+  private renderConfirmSettings() {
+    return html`
+      <div class="col-span-1 md:col-span-5">
+        <btrix-details open>
+          <span slot="title">${msg("Crawler Setup")}</span>
+          ${when(this.jobType === "urlList", this.renderConfirmUrlListSettings)}
+          ${when(this.jobType === "seeded", this.renderConfirmSeededSettings)}
+        </btrix-details>
+        <btrix-details open>
+          <span slot="title">${msg("Browser Settings")}</span>
+        </btrix-details>
+        <btrix-details open>
+          <span slot="title">${msg("Job Scheduling")}</span>
+        </btrix-details>
+        <btrix-details open>
+          <span slot="title">${msg("Job Information")}</span>
+        </btrix-details>
+      </div>
+    `;
+  }
+
+  private renderConfirmUrlListSettings = () => {
+    return html``;
+  };
+
+  private renderConfirmSeededSettings = () => {
+    return html``;
+  };
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
     const { index } = e.detail;
