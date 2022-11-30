@@ -266,7 +266,7 @@ export class NewJobConfig extends LiteElement {
   ) {
     return html`
       <div class="flex flex-col h-full">
-        <div class="flex-1 p-5 grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-5">
+        <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
           ${content}
         </div>
         ${this.renderFooter({ isFirst, isLast })}
@@ -276,7 +276,7 @@ export class NewJobConfig extends LiteElement {
 
   private renderFooter({ isFirst = false, isLast = false }) {
     return html`
-      <div class="px-5 py-4 border-t flex justify-between">
+      <div class="px-6 py-4 border-t flex justify-between">
         ${isFirst
           ? html`
               <sl-button size="small" type="reset">
