@@ -15,11 +15,12 @@ const languages = sortBy("name")(
 }>;
 
 /**
- * Choose language from dropdown
+ * Choose language from dropdown.
+ * Uses ISO 639-1 codes (2 letters representing macrolanguages.)
  *
  * Usage:
  * ```ts
- * <btrix-language-select @sl-select=${console.debug}>
+ * <btrix-language-select value=${defaultValue} @sl-select=${console.debug}>
  *   <span slot="label">Label</span>
  * </btrix-language-select>
  * ```
@@ -42,15 +43,31 @@ export class LanguageSelect extends LitElement {
   @property({ type: Boolean })
   hoist = false;
 
+  private browserLanguage?: string;
+
+  connectedCallback() {
+    const browserLanguage = navigator.languages?.length
+      ? navigator.languages[0]
+      : navigator.language;
+    if (browserLanguage) {
+      this.browserLanguage = browserLanguage.slice(
+        0,
+        browserLanguage.indexOf("-")
+      );
+    }
+
+    super.connectedCallback();
+  }
+
   render() {
     return html`
       <sl-select
         clearable
         placeholder=${msg("Default")}
-        value=${ifDefined(this.value)}
+        value=${ifDefined(this.value || this.browserLanguage)}
         ?hoist=${this.hoist}
       >
-        <div slot="label"><slot name="label"></slot></div>
+        <div slot="label"><slot name="label">${msg("Language")}</slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-menu-item value=${code}>
