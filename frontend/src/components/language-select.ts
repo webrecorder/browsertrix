@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { localized, msg } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
 import ISO6391 from "iso-639-1";
@@ -35,12 +36,20 @@ export class LanguageSelect extends LitElement {
     }
   `;
 
+  @property({ type: String })
+  value?: LanguageCode;
+
   @property({ type: Boolean })
   hoist = false;
 
   render() {
     return html`
-      <sl-select clearable placeholder=${msg("Default")} ?hoist=${this.hoist}>
+      <sl-select
+        clearable
+        placeholder=${msg("Default")}
+        value=${ifDefined(this.value)}
+        ?hoist=${this.hoist}
+      >
         <div slot="label"><slot name="label"></slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`

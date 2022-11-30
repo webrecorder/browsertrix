@@ -27,7 +27,6 @@ type NewCrawlTemplate = {
   scale: number;
   config: CrawlConfig;
   profileid: string | null;
-  lang: string | null;
 };
 
 export type InitialCrawlTemplate = Pick<
@@ -553,7 +552,6 @@ export class CrawlTemplatesNew extends LiteElement {
       crawlTimeout: crawlTimeoutMinutes ? +crawlTimeoutMinutes * 60 : 0,
       scale: +scale,
       profileid: this.browserProfileId,
-      lang: this.browserLanguage || null,
     };
 
     if (this.isConfigCodeView) {
@@ -565,6 +563,7 @@ export class CrawlTemplatesNew extends LiteElement {
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: trimExclusions(this.exclusions),
+        lang: this.browserLanguage || null,
       };
     }
 
