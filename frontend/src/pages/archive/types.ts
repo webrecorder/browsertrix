@@ -29,11 +29,18 @@ export type Crawl = {
 };
 
 export type SeedConfig = {
-  scopeType: string;
-  limit: number | null;
-  extraHops: number | null;
-  lang: string | null;
-  blockAds: boolean;
+  scopeType:
+    | "prefix"
+    | "host"
+    | "domain"
+    | "page"
+    | "page-spa"
+    | "any"
+    | "custom";
+  limit?: number | null;
+  extraHops?: number | null;
+  lang?: string | null;
+  blockAds?: boolean;
   behaviors?: string | null;
   include?: string[];
   exclude?: string[];
@@ -49,6 +56,11 @@ export type JobConfig = {
   scale: number;
   profileid: string | null;
   config: CrawlConfig;
+  crawlTimeout: number | null;
+};
+
+export type NewJobConfigParams = JobConfig & {
+  runNow: boolean;
 };
 
 export type CrawlTemplate = JobConfig & {

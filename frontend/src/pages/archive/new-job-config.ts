@@ -14,9 +14,10 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
-import pickBy from "lodash/fp/pickBy";
+import uniq from "lodash/fp/uniq";
 
 import LiteElement, { html } from "../../utils/LiteElement";
+import { regexEscape } from "../../utils/string";
 import type { AuthState } from "../../utils/AuthService";
 import {
   getUTCSchedule,
@@ -29,7 +30,7 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { JobConfig } from "./types";
+import type { NewJobConfigParams } from "./types";
 
 export type JobType = "urlList" | "seeded";
 type StepName =
@@ -57,14 +58,13 @@ type FormState = {
   allowedExternalUrlList: string;
   jobTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: JobConfig["config"]["scopeType"];
-  exclusions: JobConfig["config"]["exclude"];
-  pageLimit: JobConfig["config"]["limit"];
-  scale: JobConfig["scale"];
-  profileid: JobConfig["profileid"];
-  blockAds: JobConfig["config"]["blockAds"];
-  lang: JobConfig["config"]["lang"];
-  name: JobConfig["name"];
+  scopeType: "prefix" | "host" | "domain" | "page" | "page-spa" | "custom";
+  exclusions: NewJobConfigParams["config"]["exclude"];
+  pageLimit: NewJobConfigParams["config"]["limit"];
+  scale: NewJobConfigParams["scale"];
+  profileid: NewJobConfigParams["profileid"];
+  blockAds: NewJobConfigParams["config"]["blockAds"];
+  lang: NewJobConfigParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -75,24 +75,23 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: string;
+  jobName: NewJobConfigParams["name"];
 };
 const initialProgressState: ProgressState = {
-  activeTab: "jobScheduling",
-  currentStep: "jobScheduling",
+  activeTab: "jobInformation",
+  currentStep: "jobInformation",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: false },
-    browserSettings: { enabled: false, error: false, completed: false },
-    jobScheduling: { enabled: false, error: false, completed: false },
-    jobInformation: { enabled: false, error: false, completed: false },
+    crawlerSetup: { enabled: true, error: false, completed: true },
+    browserSettings: { enabled: true, error: false, completed: true },
+    jobScheduling: { enabled: true, error: false, completed: true },
+    jobInformation: { enabled: true, error: false, completed: true },
   },
 };
 const initialFormState: FormState = {
-  name: "",
-  primarySeedUrl: "",
-  urlList: "",
+  primarySeedUrl: "http://example.com/path/",
+  urlList: "http://example.com, http://example.com/2",
   includeLinkedPages: false,
-  allowedExternalUrlList: "",
+  allowedExternalUrlList: "http://a.com, http://b.com",
   jobTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
@@ -112,7 +111,7 @@ const initialFormState: FormState = {
     period: "AM",
   },
   runNow: false,
-  jobName: "",
+  jobName: "example",
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -138,6 +137,8 @@ function validURL(url: string) {
     url
   );
 }
+
+const trimExclusions = flow(uniq, compact);
 
 @localized()
 export class NewJobConfig extends LiteElement {
@@ -358,7 +359,7 @@ export class NewJobConfig extends LiteElement {
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
-          defaultValue=${initialFormState.urlList}
+          value=${initialFormState.urlList}
           placeholder=${`https://example.com
 https://example.com/path`}
           required
@@ -486,7 +487,7 @@ https://example.com/path`}
           label=${msg("Crawl Start URL")}
           autocomplete="off"
           placeholder=${urlPlaceholder}
-          defaultValue=${initialFormState.primarySeedUrl}
+          value=${initialFormState.primarySeedUrl}
           required
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
@@ -523,7 +524,8 @@ https://example.com/path`}
           value=${this.formState.scopeType}
           @sl-select=${(e: Event) =>
             this.updateFormState({
-              scopeType: (e.target as HTMLSelectElement).value,
+              scopeType: (e.target as HTMLSelectElement)
+                .value as FormState["scopeType"],
             })}
         >
           <div slot="help-text">${helpText}</div>
@@ -553,9 +555,10 @@ https://example.com/path`}
           label=${msg("Allowed URL Prefixes")}
           rows="3"
           autocomplete="off"
-          defaultValue=${initialFormState.allowedExternalUrlList}
+          value=${initialFormState.allowedExternalUrlList}
           placeholder=${`https://example.org/page/
 https://example.net`}
+          ?disabled=${this.formState.scopeType === "page-spa"}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -864,7 +867,7 @@ https://example.net`}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example job config name",
           })}
-          defaultValue=${defaultValue}
+          value=${defaultValue}
           required
           @sl-change=${(e: Event) => {
             this.updateFormState({
@@ -1042,24 +1045,93 @@ https://example.net`}
     console.log(values);
   }
 
-  private parseConfig(form: HTMLFormElement): JobConfig {
+  private parseConfig(form: HTMLFormElement): NewJobConfigParams {
     const formValues = serialize(form) as FormState;
 
-    const config = {
-      name: formValues.name,
-      schedule: "", // TODO
-      scale: +formValues.scale,
+    const config: NewJobConfigParams = {
+      name: formValues.jobName,
       profileid: formValues.profileid,
+      scale: +formValues.scale,
+      runNow: this.formState.runNow,
+      schedule: getUTCSchedule({
+        interval: this.formState.scheduleFrequency,
+        ...this.formState.scheduleTime,
+      }),
+      crawlTimeout: formValues.jobTimeoutMinutes
+        ? +formValues.jobTimeoutMinutes * 60
+        : 0,
       config: {
-        seeds: [], // TODO
-        scopeType: formValues.scopeType,
+        ...(this.jobType === "urlList"
+          ? this.parseUrlListConfig(formValues)
+          : this.parseSeededConfig(formValues)),
+
         limit: formValues.pageLimit || null,
         extraHops: formValues.includeLinkedPages ? 1 : 0,
         lang: formValues.lang,
         blockAds: formValues.blockAds,
+        exclude: trimExclusions(this.formState.exclusions),
       },
     };
 
+    return config;
+  }
+
+  private parseUrlListConfig(
+    formValues: FormState
+  ): NewJobConfigParams["config"] {
+    const config = {
+      seeds: formValues.urlList.trim().replace(/,/g, " ").split(/\s+/g),
+      scopeType: "page" as FormState["scopeType"],
+    };
+
+    return config;
+  }
+
+  private parseSeededConfig(
+    formValues: FormState
+  ): NewJobConfigParams["config"] {
+    const primarySeedUrl = formValues.primarySeedUrl.replace(/\/$/, "");
+    const externalUrlList = formValues.allowedExternalUrlList
+      ? formValues.allowedExternalUrlList
+          .trim()
+          .replace(/,/g, " ")
+          .split(/\s+/g)
+          .map((str) => str.replace(/\/$/, ""))
+      : [];
+    let scopeType = formValues.scopeType;
+    const include = [];
+    if (externalUrlList.length) {
+      const { host, origin } = new URL(primarySeedUrl);
+      scopeType = "custom";
+
+      // Replicate scope type with regex
+      switch (formValues.scopeType) {
+        case "prefix":
+          include.push(`${regexEscape(primarySeedUrl)}\/.*`);
+          break;
+        case "host":
+          include.push(`${regexEscape(origin)}\/.*`);
+          break;
+        case "domain":
+          include.push(
+            `${regexEscape(origin)}\/.*`,
+            `.*\.${regexEscape(host)}\/.*`
+          );
+          break;
+        default:
+          break;
+      }
+
+      externalUrlList.forEach((url) => {
+        include.push(`${regexEscape(url)}\/.*`);
+      });
+    }
+    console.log(formValues.scopeType, include);
+    const config = {
+      seeds: [primarySeedUrl],
+      scopeType,
+      include,
+    };
     return config;
   }
 

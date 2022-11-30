@@ -1241,7 +1241,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       config = {
         seeds: seedUrlsStr.trim().replace(/,/g, " ").split(/\s+/g),
-        scopeType: formData.get("scopeType") as string,
+        scopeType: formData.get("scopeType") as EditCrawlConfig["scopeType"],
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: trimExclusions(this.exclusions),

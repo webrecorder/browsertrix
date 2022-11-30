@@ -664,7 +664,7 @@ export class CrawlTemplatesNew extends LiteElement {
     } else {
       template.config = {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
-        scopeType: formData.get("scopeType") as string,
+        scopeType: formData.get("scopeType") as CrawlConfig["scopeType"],
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: trimExclusions(this.exclusions),

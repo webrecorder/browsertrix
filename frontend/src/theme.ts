@@ -71,7 +71,9 @@ const theme = css`
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
-    --sl-input-required-content-color: var(--sl-color-neutral-400);
+    /* From GitHub Primer https://github.com/primer/primitives/blob/8b767947e35a79db17b9d7970836f03c904c8afe/data/colors/vars/global_light.ts#L47 */
+    /* TODO replace hardcoded color */
+    --sl-input-required-content-color: #9a6700;
 
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
