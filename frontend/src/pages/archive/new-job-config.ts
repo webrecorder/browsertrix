@@ -60,12 +60,12 @@ type FormState = {
   jobName: string;
 };
 const initialProgressState: ProgressState = {
-  activeTab: "jobInformation",
-  currentStep: "jobInformation",
+  activeTab: "crawlerSetup",
+  currentStep: "crawlerSetup",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: true },
-    browserSettings: { enabled: true, error: false, completed: true },
-    jobScheduling: { enabled: true, error: false, completed: true },
+    crawlerSetup: { enabled: true, error: false, completed: false },
+    browserSettings: { enabled: false, error: false, completed: false },
+    jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
 };
@@ -107,6 +107,12 @@ function getLocalizedWeekDays() {
   const { format } = new Intl.DateTimeFormat(undefined, { weekday: "short" });
   return Array.from({ length: 7 }).map((x, day) =>
     format(Date.now() - (now.getDay() - day) * 86400000)
+  );
+}
+
+function validURL(url: string) {
+  return /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/.test(
+    url
   );
 }
 
@@ -317,7 +323,7 @@ export class NewJobConfig extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
-          @sl-change=${this.onFieldChange}
+          @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -444,12 +450,27 @@ https://example.com/path`}
           placeholder=${urlPlaceholder}
           defaultValue=${initialFormState.primarySeedUrl}
           required
+          @sl-input=${(e: Event) => {
+            const inputEl = e.target as SlInput;
+            if (inputEl.invalid && validURL(inputEl.value)) {
+              inputEl.setCustomValidity("");
+            }
+          }}
           @sl-change=${(e: Event) => {
+            const inputEl = e.target as SlInput;
             this.updateFormState({
-              primarySeedUrl: (e.target as SlInput).value,
+              primarySeedUrl: inputEl.value,
             });
-            // TODO validate URL
-            this.onFieldChange(e);
+          }}
+          @sl-blur=${(e: Event) => {
+            const inputEl = e.target as SlInput;
+            if (validURL(inputEl.value)) {
+              inputEl.setCustomValidity("");
+            } else {
+              inputEl.invalid = true;
+              inputEl.setCustomValidity(msg("Please enter a valid URL."));
+            }
+            this.validateOnBlur(e);
           }}
         ></sl-input>
       `)}
@@ -495,7 +516,7 @@ https://example.com/path`}
           defaultValue=${initialFormState.allowedExternalUrlList}
           placeholder=${`https://example.org/page/
 https://example.net`}
-          @sl-change=${this.onFieldChange}
+          @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -734,6 +755,7 @@ https://example.net`}
               max="31"
               value=${initialFormState.scheduleDayOfMonth}
               required
+              @sl-blur=${this.validateOnBlur}
             >
             </sl-input>
           `)}
@@ -789,8 +811,8 @@ https://example.net`}
             this.updateFormState({
               jobName: (e.target as SlInput).value,
             });
-            this.onFieldChange(e);
           }}
+          @sl-blur=${this.validateOnBlur}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -833,7 +855,7 @@ https://example.net`}
     );
   }
 
-  private onFieldChange = (e: Event) => {
+  private validateOnBlur = (e: Event) => {
     const el = e.target as HTMLInputElement & {
       invalid: boolean;
     };
@@ -906,8 +928,9 @@ https://example.net`}
   private checkCurrentPanelValidity = (): boolean => {
     if (!this.formElem) return false;
 
+    const currentTab = this.progressState.activeTab as StepName;
     const activePanel = this.formElem.querySelector(
-      `btrix-tab-panel[name="newJobConfig-${this.progressState.activeTab}"]`
+      `btrix-tab-panel[name="newJobConfig-${currentTab}"]`
     );
     const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
 
@@ -921,15 +944,17 @@ https://example.net`}
     return !hasInvalid;
   };
 
-  private onSubmit(event: SubmitEvent) {
+  private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    const form = event.target as HTMLFormElement;
+    const isValid = this.checkCurrentPanelValidity();
+    await this.updateComplete;
 
-    if (this.formHasError) {
+    if (!isValid || this.formHasError) {
       console.log("form has error");
       return;
     }
 
+    const form = event.target as HTMLFormElement;
     const values = this.parseConfig(form);
 
     console.log(values);
