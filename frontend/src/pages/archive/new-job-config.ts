@@ -949,6 +949,12 @@ https://example.net`}
     const isValid = this.checkCurrentPanelValidity();
     await this.updateComplete;
 
+    if (this.progressState.activeTab !== stepOrder[stepOrder.length - 1]) {
+      // Prevent submission by "Enter" keypress in other tabs
+      // TODO prevent keypress altogether
+      return;
+    }
+
     if (!isValid || this.formHasError) {
       console.log("form has error");
       return;
