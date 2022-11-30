@@ -21,8 +21,14 @@ const DEFAULT_PANEL_ID = "default-panel";
 
 export class TabPanel extends LitElement {
   static styles = css`
+    :host {
+      display: flex;
+      min-height: 100%;
+    }
+
     .panel[aria-hidden="true"] {
       display: none;
+      height: 0;
     }
   `;
 
@@ -111,6 +117,12 @@ export class TabList extends LitElement {
       grid-gap: 1rem;
     }
 
+    .navWrapper,
+    .content {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
     .content {
       border: var(--sl-panel-border-width) solid var(--sl-panel-border-color);
       background-color: var(--sl-panel-background-color);
@@ -195,7 +207,7 @@ export class TabList extends LitElement {
   render() {
     return html`
       <div class="container">
-        <div>${this.renderNav()}</div>
+        <div class="navWrapper">${this.renderNav()}</div>
         <div class="content">
           <slot></slot>
         </div>
@@ -271,6 +283,11 @@ export class TabList extends LitElement {
     });
     this.getPanels().forEach((panel) => {
       panel.active = panel.name === this.activePanel;
+      if (panel.active) {
+        panel.style.display = "flex";
+      } else {
+        panel.style.display = "none";
+      }
     });
   }
 }

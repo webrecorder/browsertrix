@@ -57,14 +57,15 @@ type FormState = {
   scheduleDayOfMonth: number;
   scheduleDayOfWeek: number;
   runNow: boolean;
+  jobName: string;
 };
 const initialProgressState: ProgressState = {
-  activeTab: "jobScheduling",
-  currentStep: "browserSettings",
+  activeTab: "jobInformation",
+  currentStep: "jobInformation",
   tabs: {
     crawlerSetup: { enabled: true, error: false, completed: true },
     browserSettings: { enabled: true, error: false, completed: true },
-    jobScheduling: { enabled: true, error: false, completed: false },
+    jobScheduling: { enabled: true, error: false, completed: true },
     jobInformation: { enabled: false, error: false, completed: false },
   },
 };
@@ -88,6 +89,7 @@ const initialFormState: FormState = {
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
   runNow: false,
+  jobName: "",
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -142,9 +144,6 @@ export class NewJobConfig extends LiteElement {
       jobInformation: msg("Job Information"),
     };
 
-    const contentClassName =
-      "p-5 grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-5";
-
     return html`
       <h3 class="ml-48 text-lg font-medium mb-3">
         ${tabLabels[this.progressState.activeTab]}
@@ -160,23 +159,24 @@ export class NewJobConfig extends LiteElement {
           )}
 
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
-            <div class=${contentClassName}>
-              ${when(this.jobType === "urlList", this.renderUrlListSetup)}
-              ${when(this.jobType === "seeded", this.renderSeededCrawlSetup)}
-            </div>
-            ${this.renderFooter({ isFirst: true })}
+            ${this.renderPanelContent(
+              html`
+                ${when(this.jobType === "urlList", this.renderUrlListSetup)}
+                ${when(this.jobType === "seeded", this.renderSeededCrawlSetup)}
+              `,
+              { isFirst: true }
+            )}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-browserSettings">
-            <div class=${contentClassName}>${this.renderCrawlBehaviors()}</div>
-            ${this.renderFooter()}
+            ${this.renderPanelContent(this.renderCrawlBehaviors())}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-jobScheduling">
-            <div class=${contentClassName}>${this.renderJobScheduling()}</div>
-            ${this.renderFooter()}
+            ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-jobInformation">
-            <div class=${contentClassName}>${this.renderJobInformation()}</div>
-            ${this.renderFooter({ isLast: true })}
+            ${this.renderPanelContent(this.renderJobInformation(), {
+              isLast: true,
+            })}
           </btrix-tab-panel>
         </btrix-tab-list>
       </form>
@@ -232,7 +232,21 @@ export class NewJobConfig extends LiteElement {
     `;
   }
 
-  private renderFooter({ isFirst = false, isLast = false } = {}) {
+  private renderPanelContent(
+    content: TemplateResult,
+    { isFirst = false, isLast = false } = {}
+  ) {
+    return html`
+      <div class="flex flex-col h-full">
+        <div class="flex-1 p-5 grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-5">
+          ${content}
+        </div>
+        ${this.renderFooter({ isFirst, isLast })}
+      </div>
+    `;
+  }
+
+  private renderFooter({ isFirst = false, isLast = false }) {
     return html`
       <div class="px-5 py-4 border-t flex justify-between">
         ${isFirst
@@ -250,7 +264,9 @@ export class NewJobConfig extends LiteElement {
             `}
         ${isLast
           ? html`<sl-button type="submit" size="small" variant="primary">
-              ${msg("Save")}
+              ${this.formState.runNow
+                ? msg("Save & Run Job")
+                : msg("Save & Schedule Job")}
             </sl-button>`
           : html`<sl-button
               size="small"
@@ -642,6 +658,7 @@ https://example.net`}
             this.updateFormState({
               scheduleType: (e.target as SlRadio)
                 .value as FormState["scheduleType"],
+              runNow: (e.target as SlRadio).value === "now",
             })}
         >
           <sl-radio value="now">${msg("Run Immediately on Save")}</sl-radio>
@@ -753,7 +770,34 @@ https://example.net`}
   };
 
   private renderJobInformation() {
-    return html`TODO`;
+    const defaultValue =
+      this.jobType === "urlList"
+        ? initialFormState.jobName
+        : this.formState.primarySeedUrl;
+    return html`
+      ${this.renderFormCol(html`
+        <sl-input
+          name="jobName"
+          label=${msg("Job Name")}
+          autocomplete="off"
+          placeholder=${msg("Example (example.com) Weekly Crawl", {
+            desc: "Example job config name",
+          })}
+          defaultValue=${defaultValue}
+          required
+          @sl-change=${(e: Event) => {
+            this.updateFormState({
+              jobName: (e.target as SlInput).value,
+            });
+            this.onFieldChange(e);
+          }}
+        ></sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        html`Try to give this job a memorable name so it (and its outputs) can
+        be found later!`
+      )}
+    `;
   }
 
   private handleRemoveRegex(e: ExclusionRemoveEvent) {
