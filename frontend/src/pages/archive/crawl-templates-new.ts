@@ -140,6 +140,17 @@ export class CrawlTemplatesNew extends LiteElement {
       this.exclusions = this.initialCrawlTemplate.config.exclude;
     }
     this.browserProfileId = this.initialCrawlTemplate.profileid;
+    // Default to current user browser language
+    const browserLanguage = navigator.languages?.length
+      ? navigator.languages[0]
+      : navigator.language;
+    if (browserLanguage) {
+      this.browserLanguage = browserLanguage.slice(
+        0,
+        browserLanguage.indexOf("-")
+      );
+    }
+
     super.connectedCallback();
   }
 
@@ -394,6 +405,7 @@ export class CrawlTemplatesNew extends LiteElement {
         </div>
         <div class="col-span-1">
           <btrix-language-select
+            .value=${this.browserLanguage}
             @sl-select=${(e: CustomEvent) =>
               (this.browserLanguage = e.detail.item.value)}
             @sl-clear=${() => (this.browserLanguage = null)}

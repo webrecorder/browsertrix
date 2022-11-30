@@ -43,28 +43,12 @@ export class LanguageSelect extends LitElement {
   @property({ type: Boolean })
   hoist = false;
 
-  private browserLanguage?: string;
-
-  connectedCallback() {
-    const browserLanguage = navigator.languages?.length
-      ? navigator.languages[0]
-      : navigator.language;
-    if (browserLanguage) {
-      this.browserLanguage = browserLanguage.slice(
-        0,
-        browserLanguage.indexOf("-")
-      );
-    }
-
-    super.connectedCallback();
-  }
-
   render() {
     return html`
       <sl-select
         clearable
         placeholder=${msg("Default")}
-        value=${ifDefined(this.value || this.browserLanguage)}
+        value=${ifDefined(this.value)}
         ?hoist=${this.hoist}
       >
         <div slot="label"><slot name="label">${msg("Language")}</slot></div>
