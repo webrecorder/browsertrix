@@ -7,7 +7,7 @@ metadata:
   name: ingress-main
   namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -31,16 +31,6 @@ spec:
   - host: {{ .Values.ingress.host }}
     http:
       paths:
-{{- if .Values.minio_local }}
-      - path: /data/(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: local-minio
-            port:
-              number: 9000
-{{- end }}
-
       - path: /(api/.*)
         pathType: Prefix
         backend:
@@ -65,7 +55,7 @@ metadata:
   name: ingress-authsign
   namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.signer.host }}"
@@ -84,6 +74,35 @@ spec:
               number: 80
 
 {{ end }}
+
+
+{{- if .Values.minio_local }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-minio
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.minio_host }}"
+
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /data/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: local-minio
+            port:
+              number: 9000
+
+
+{{- end }}
 
 {{ if .Values.ingress.tls }}
 ---
@@ -106,7 +125,7 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: nginx
+          class: {{ .Values.ingress_class | default "nginx" }}
 
 {{ end }}
 {{ end }}

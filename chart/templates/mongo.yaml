@@ -59,9 +59,9 @@ spec:
           requests:
             storage: 2Gi
 
-      {{- if .Values.volume_storage_class }}
-      storageClassName: {{ .Values.volume_storage_class }}
-      {{- end }}
+        {{- if .Values.volume_storage_class }}
+        storageClassName: {{ .Values.volume_storage_class }}
+        {{- end }}
 
   template:
     metadata:

@@ -40,9 +40,9 @@ spec:
           requests:
             storage: 1Gi
 
-      {% if volume_storage_class %}
-      storageClassName: {{ volume_storage_class }}
-      {% endif %}
+        {% if volume_storage_class %}
+        storageClassName: {{ volume_storage_class }}
+        {% endif %}
 
   template:
     metadata:
@@ -208,9 +208,9 @@ spec:
           requests:
             storage: {{ requests_hd }}
 
-      {% if volume_storage_class %}
-      storageClassName: {{ volume_storage_class }}
-      {% endif %}
+        {% if volume_storage_class %}
+        storageClassName: {{ volume_storage_class }}
+        {% endif %}
 
   template:
     metadata:

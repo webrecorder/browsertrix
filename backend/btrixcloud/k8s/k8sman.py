@@ -93,6 +93,9 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             access_key = self._secret_data(storage_secret, "STORE_ACCESS_KEY")
             secret_key = self._secret_data(storage_secret, "STORE_SECRET_KEY")
             region = self._secret_data(storage_secret, "STORE_REGION") or ""
+            use_access_for_presign = (
+                self._secret_data(storage_secret, "STORE_USE_ACCESS_FOR_PRESIGN") == "1"
+            )
 
             self._default_storages[name] = S3Storage(
                 access_key=access_key,
@@ -100,6 +103,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
                 endpoint_url=endpoint_url,
                 access_endpoint_url=access_endpoint_url,
                 region=region,
+                use_access_for_presign=use_access_for_presign,
             )
 
         return self._default_storages[name]
