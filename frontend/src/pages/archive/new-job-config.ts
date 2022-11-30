@@ -323,6 +323,7 @@ export class NewJobConfig extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
+          @keydown=${this.preventSubmit}
           @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
@@ -450,6 +451,7 @@ https://example.com/path`}
           placeholder=${urlPlaceholder}
           defaultValue=${initialFormState.primarySeedUrl}
           required
+          @keydown=${this.preventSubmit}
           @sl-input=${(e: Event) => {
             const inputEl = e.target as SlInput;
             if (inputEl.invalid && validURL(inputEl.value)) {
@@ -464,12 +466,14 @@ https://example.com/path`}
           }}
           @sl-blur=${(e: Event) => {
             const inputEl = e.target as SlInput;
+            let text = "";
             if (validURL(inputEl.value)) {
-              inputEl.setCustomValidity("");
             } else {
+              text = msg("Please enter a valid URL.");
               inputEl.invalid = true;
-              inputEl.setCustomValidity(msg("Please enter a valid URL."));
             }
+            inputEl.helpText = text;
+            inputEl.setCustomValidity(text);
             this.validateOnBlur(e);
           }}
         ></sl-input>
@@ -516,6 +520,7 @@ https://example.com/path`}
           defaultValue=${initialFormState.allowedExternalUrlList}
           placeholder=${`https://example.org/page/
 https://example.net`}
+          @keydown=${this.preventSubmit}
           @sl-blur=${this.validateOnBlur}
         ></sl-textarea>
       `)}
@@ -542,6 +547,7 @@ https://example.net`}
           type="number"
           defaultValue=${initialFormState.pageLimit || ""}
           placeholder=${msg("Unlimited")}
+          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("pages")}</span>
         </sl-input>
@@ -584,6 +590,7 @@ https://example.net`}
           label=${msg("Total Job Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
+          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -657,6 +664,7 @@ https://example.net`}
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
+          @keydown=${this.preventSubmit}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -755,6 +763,7 @@ https://example.net`}
               max="31"
               value=${initialFormState.scheduleDayOfMonth}
               required
+              @keydown=${this.preventSubmit}
               @sl-blur=${this.validateOnBlur}
             >
             </sl-input>
@@ -770,8 +779,7 @@ https://example.net`}
         </btrix-time-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Job will run at this time using the timezone specified in your user
-        settings.`
+        html`Job will run at this time in your current timezone.`
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="runNow"
@@ -807,6 +815,7 @@ https://example.net`}
           })}
           defaultValue=${defaultValue}
           required
+          @keydown=${this.preventSubmit}
           @sl-change=${(e: Event) => {
             this.updateFormState({
               jobName: (e.target as SlInput).value,
@@ -944,16 +953,20 @@ https://example.net`}
     return !hasInvalid;
   };
 
+  private preventSubmit(event: KeyboardEvent) {
+    if (
+      event.key === "Enter" &&
+      this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
+    ) {
+      // Prevent submission by "Enter" keypress if not on last tab
+      event.preventDefault();
+    }
+  }
+
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     const isValid = this.checkCurrentPanelValidity();
     await this.updateComplete;
-
-    if (this.progressState.activeTab !== stepOrder[stepOrder.length - 1]) {
-      // Prevent submission by "Enter" keypress in other tabs
-      // TODO prevent keypress altogether
-      return;
-    }
 
     if (!isValid || this.formHasError) {
       console.log("form has error");
