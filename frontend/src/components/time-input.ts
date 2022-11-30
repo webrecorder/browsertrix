@@ -1,15 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-
-const hours = Array.from({ length: 12 }).map((x, i) => ({
-  value: i + 1,
-  label: `${i + 1}`,
-}));
-const minutes = Array.from({ length: 60 }).map((x, i) => ({
-  value: i,
-  label: `${i}`.padStart(2, "0"),
-}));
+import type { SlInput } from "@shoelace-style/shoelace";
 
 /**
  * Usage:
@@ -42,19 +34,19 @@ export class TimeInput extends LitElement {
     }
 
     .separator {
-      padding: var(--sl-spacing-3x-small);
+      padding: var(--sl-spacing-2x-small);
     }
 
-    sl-select::part(menu) {
-      overflow-x: hidden;
+    sl-input {
+      width: 4rem;
     }
 
-    sl-select {
-      min-width: 5em;
+    sl-input::part(input) {
+      text-align: center;
     }
 
     sl-select[name="period"] {
-      margin-left: var(--sl-spacing-2x-small);
+      margin-left: var(--sl-spacing-x-small);
     }
   `;
 
@@ -76,53 +68,59 @@ export class TimeInput extends LitElement {
         <label><slot name="label">${msg("Time")}</slot></label>
         <div class="flex">
           <div class="flex">
-            <sl-select
+            <sl-input
               name="hour"
+              pattern="[0-9]*"
+              maxlength="2"
               value=${this.hour}
               ?disabled=${this.disabled}
-              hoist
-              size="small"
-              @sl-hide=${this.stopProp}
-              @sl-after-hide=${this.stopProp}
-              @sl-select=${(e: any) => {
-                this.hour = +e.target.value;
+              @keyup=${(e: KeyboardEvent) => {
+                const input = e.target as SlInput;
+                const int = +input.value.replace(/[^0-9]/g, "");
+                input.value = `${Math.min(12, Math.max(1, int))}`;
+              }}
+              @sl-change=${async (e: Event) => {
+                e.stopPropagation();
+                const input = e.target as SlInput;
+                await input.updateComplete;
+                this.hour = +input.value;
                 this.dispatchChange();
               }}
             >
-              ${hours.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
+            </sl-input>
             <span class="separator">:</span>
-            <sl-select
+            <sl-input
               name="minute"
-              value=${this.minute}
+              pattern="[0-9]*"
+              maxlength="2"
+              value=${`${this.minute}`.length === 1
+                ? `${0}${this.minute}`
+                : this.minute}
               ?disabled=${this.disabled}
-              hoist
-              size="small"
-              @sl-hide=${this.stopProp}
-              @sl-after-hide=${this.stopProp}
-              @sl-select=${(e: any) => {
-                this.minute = +e.target.value;
+              @keyup=${(e: KeyboardEvent) => {
+                const input = e.target as SlInput;
+                const int = +input.value.replace(/[^0-9]/g, "");
+                input.value = `${Math.min(59, Math.max(0, int))}`;
+              }}
+              @sl-change=${async (e: Event) => {
+                e.stopPropagation();
+                const input = e.target as SlInput;
+                await input.updateComplete;
+                this.minute = +input.value;
                 this.dispatchChange();
               }}
             >
-              ${minutes.map(
-                ({ value, label }) =>
-                  html`<sl-menu-item value=${value}>${label}</sl-menu-item>`
-              )}
-            </sl-select>
+            </sl-input>
           </div>
           <sl-select
             name="period"
             value=${this.period}
             ?disabled=${this.disabled}
             hoist
-            size="small"
             @sl-hide=${this.stopProp}
             @sl-after-hide=${this.stopProp}
             @sl-select=${(e: any) => {
+              e.stopPropagation();
               this.period = e.target.value;
               this.dispatchChange();
             }}

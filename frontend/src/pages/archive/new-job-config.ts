@@ -66,8 +66,8 @@ type FormState = {
   jobName: string;
 };
 const initialProgressState: ProgressState = {
-  activeTab: "crawlerSetup",
-  currentStep: "crawlerSetup",
+  activeTab: "jobScheduling",
+  currentStep: "jobScheduling",
   tabs: {
     crawlerSetup: { enabled: true, error: false, completed: false },
     browserSettings: { enabled: false, error: false, completed: false },
@@ -90,7 +90,7 @@ const initialFormState: FormState = {
   profileid: null,
   blockAds: true,
   lang: null,
-  scheduleType: "now",
+  scheduleType: "cron",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
