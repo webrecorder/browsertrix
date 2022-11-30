@@ -135,12 +135,6 @@ spec:
   selector:
     app: auth-signer
 
-{{- if .Values.service }}
-  {{- if .Values.service.type }}
-  type: {{ .Values.service.type | quote }}
-  {{- end }}
-{{- end }}
-
   clusterIP: None
   ports:
     - protocol: TCP

@@ -91,7 +91,6 @@ metadata:
     app: local-minio
 
 spec:
-  type: NodePort
   selector:
     app: local-minio
 

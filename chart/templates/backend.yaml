@@ -103,12 +103,6 @@ spec:
     app: {{ .Values.name }}
     role: backend
 
-{{- if .Values.service }}
-  {{- if .Values.service.type }}
-  type: {{ .Values.service.type | quote }}
-  {{- end }}
-{{- end }}
-
   ports:
     - protocol: TCP
       port: 8000

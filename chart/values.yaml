@@ -214,9 +214,8 @@ signer_requests_memory: "36Mi"
 signer_limits_memory: "96Mi"
 
 
-# Optional: configure load balancing
-service:
-  type: ClusterIP
+# Optional: configure load balancing annotations
+# service:
 #   annotations:
 #     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 #     helm.sh/resource-policy: keep
