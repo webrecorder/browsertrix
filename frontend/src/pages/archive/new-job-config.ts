@@ -705,9 +705,6 @@ https://example.net`}
             })}
         >
           <sl-radio value="now">${msg("Run Immediately on Save")}</sl-radio>
-          <!-- <sl-radio value="date"
-            >${msg("Run on a Specific Date & Time")}</sl-radio
-          > -->
           <sl-radio value="cron">${msg("Run on a Recurring Basis")}</sl-radio>
         </sl-radio-group>
       `)}
@@ -717,10 +714,6 @@ https://example.net`}
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
     `;
-  }
-
-  private renderScheduleDateTime() {
-    return html``;
   }
 
   private renderScheduleCron = () => {
