@@ -53,8 +53,13 @@ spec:
           image: {{ .Values.minio_image }}
           imagePullPolicy: {{ .Values.minio_pull_policy }}
 
-          command: ['/bin/sh']
-          args: ["mkdir", "-p", "/data/{{ .Values.minio_local_bucket_name }}" ]
+          command:
+              - sh
+              - -c
+              - |
+                  mkdir -p /data/{{ .Values.minio_local_bucket_name }}
+                  mkdir -p /data/.minio.sys
+                  echo '{"version":"1","format":"fs","id":"btrix-data-fs","fs":{"version":"2"}}' > /data/.minio.sys/format.json
 
           volumeMounts:
             - name: data-minio
