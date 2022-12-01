@@ -196,9 +196,7 @@ export class NewJobConfig extends LiteElement {
 
   private getInitialLang() {
     // Default to current user browser language
-    const browserLanguage = navigator.languages?.length
-      ? navigator.languages[0]
-      : navigator.language;
+    const browserLanguage = window.navigator.language;
     if (browserLanguage) {
       return browserLanguage.slice(0, browserLanguage.indexOf("-"));
     }

@@ -33,7 +33,7 @@ type NewCrawlTemplate = {
   scale: number;
   config: Pick<
     CrawlConfig,
-    "seeds" | "scopeType" | "limit" | "extraHops" | "exclude"
+    "seeds" | "scopeType" | "limit" | "extraHops" | "exclude" | "lang"
   >;
   profileid: string | null;
 };
