@@ -87,7 +87,7 @@ spec:
     app: {{ .Values.name }}
     role: frontend
 
-  {{- if .Values.nginx_service_host_port }}
+  {{- if .Values.nginx_service_localhost_port }}
   type: NodePort
   {{- end }}
 
@@ -95,5 +95,5 @@ spec:
     - protocol: TCP
       port: 80
       name: frontend
-      nodePort: {{ .Values.nginx_service_host_port }}
+      nodePort: {{ .Values.nginx_service_localhost_port }}
 
