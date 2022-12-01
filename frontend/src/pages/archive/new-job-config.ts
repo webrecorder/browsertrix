@@ -178,6 +178,20 @@ export class NewJobConfig extends LiteElement {
   @query('form[name="newJobConfig"]')
   formElem?: HTMLFormElement;
 
+  connectedCallback() {
+    // Default to current user browser language
+    const browserLanguage = navigator.languages?.length
+      ? navigator.languages[0]
+      : navigator.language;
+    if (browserLanguage) {
+      this.formState.lang = browserLanguage.slice(
+        0,
+        browserLanguage.indexOf("-")
+      );
+    }
+    super.connectedCallback();
+  }
+
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
       this.updateFormState({
@@ -694,7 +708,10 @@ https://example.net`}
           archiveId=${this.archiveId}
           .profileId=${this.formState.profileid}
           .authState=${this.authState}
-          @on-change=${(e: any) => console.log(e.detail.value)}
+          @on-change=${(e: any) =>
+            this.updateFormState({
+              profileid: e.detail.value,
+            })}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(
@@ -725,8 +742,16 @@ https://example.net`}
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
-          @sl-select=${(e: CustomEvent) => console.log(e.detail.item.value)}
-          @sl-clear=${() => {}}
+          .value=${this.formState.lang}
+          @sl-select=${(e: CustomEvent) =>
+            this.updateFormState({
+              lang: e.detail.item.value,
+            })}
+          @sl-clear=${() => {
+            this.updateFormState({
+              lang: null,
+            });
+          }}
         >
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
@@ -987,7 +1012,6 @@ https://example.net`}
       const tabs = this.progressState.tabs;
       tabs[currentTab].error = true;
       this.updateProgressState({ tabs });
-      console.log(el.checkValidity());
     } else if (this.progressState.tabs[currentTab].error) {
       const hasInvalid = el
         .closest("btrix-tab-panel")
@@ -1176,8 +1200,8 @@ https://example.net`}
 
     const config: NewJobConfigParams = {
       name: formValues.jobName,
-      profileid: formValues.profileid || null,
       scale: +formValues.scale,
+      profileid: this.formState.profileid || null,
       runNow: this.formState.runNow,
       schedule: getUTCSchedule({
         interval: this.formState.scheduleFrequency,
@@ -1195,7 +1219,7 @@ https://example.net`}
           : 0,
         limit: formValues.pageLimit ? +formValues.pageLimit : null,
         extraHops: this.formState.includeLinkedPages ? 1 : 0,
-        lang: formValues.lang,
+        lang: this.formState.lang || null,
         blockAds: this.formState.blockAds,
         exclude: trimExclusions(this.formState.exclusions),
       },
