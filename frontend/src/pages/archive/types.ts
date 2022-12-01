@@ -37,17 +37,18 @@ export type SeedConfig = {
     | "page-spa"
     | "any"
     | "custom";
-  limit?: number | null;
-  extraHops?: number | null;
-  lang?: string | null;
-  blockAds?: boolean;
-  behaviors?: string | null;
   include?: string[];
   exclude?: string[];
+  limit?: number | null;
 };
 
 export type CrawlConfig = SeedConfig & {
   seeds: (string | ({ url: string } & SeedConfig))[];
+  extraHops?: number | null;
+  lang?: string | null;
+  blockAds?: boolean;
+  behaviorTimeout?: number | null;
+  behaviors?: string | null;
 };
 
 export type JobConfig = {

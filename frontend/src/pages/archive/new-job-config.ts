@@ -30,8 +30,11 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { NewJobConfigParams } from "./types";
+import type { JobConfig, NewJobConfigParams } from "./types";
 
+export type InitialJobConfig = Pick<JobConfig, "name" | "profileid"> & {
+  config: Pick<JobConfig["config"], "seeds" | "scopeType" | "exclude">;
+};
 export type JobType = "urlList" | "seeded";
 type StepName =
   | "crawlerSetup"
@@ -78,20 +81,20 @@ type FormState = {
   jobName: NewJobConfigParams["name"];
 };
 const initialProgressState: ProgressState = {
-  activeTab: "jobInformation",
-  currentStep: "jobInformation",
+  activeTab: "crawlerSetup",
+  currentStep: "crawlerSetup",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: true },
-    browserSettings: { enabled: true, error: false, completed: true },
-    jobScheduling: { enabled: true, error: false, completed: true },
-    jobInformation: { enabled: true, error: false, completed: true },
+    crawlerSetup: { enabled: true, error: false, completed: false },
+    browserSettings: { enabled: false, error: false, completed: false },
+    jobScheduling: { enabled: false, error: false, completed: false },
+    jobInformation: { enabled: false, error: false, completed: false },
   },
 };
 const initialFormState: FormState = {
-  primarySeedUrl: "http://example.com/path/",
-  urlList: "http://example.com, http://example.com/2",
+  primarySeedUrl: "",
+  urlList: "",
   includeLinkedPages: false,
-  allowedExternalUrlList: "http://a.com, http://b.com",
+  allowedExternalUrlList: "",
   jobTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
@@ -111,7 +114,7 @@ const initialFormState: FormState = {
     period: "AM",
   },
   runNow: false,
-  jobName: "example",
+  jobName: "",
 };
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -151,11 +154,20 @@ export class NewJobConfig extends LiteElement {
   @property({ type: String })
   jobType?: JobType;
 
+  @property({ type: Object })
+  initialJobConfig?: InitialJobConfig;
+
+  @state()
+  private isSubmitting = false;
+
   @state()
   private progressState: ProgressState = initialProgressState;
 
   @state()
   private formState: FormState = initialFormState;
+
+  @state()
+  private serverError?: TemplateResult | string;
 
   private get formHasError() {
     return Object.values(this.progressState.tabs).some(({ error }) => error);
@@ -165,6 +177,21 @@ export class NewJobConfig extends LiteElement {
 
   @query('form[name="newJobConfig"]')
   formElem?: HTMLFormElement;
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
+      this.updateFormState({
+        jobName: this.initialJobConfig.name,
+        profileid: this.initialJobConfig.profileid,
+        scopeType: this.initialJobConfig.config
+          .scopeType as FormState["scopeType"],
+        exclusions: this.initialJobConfig.config.exclude,
+        urlList: this.initialJobConfig.config.seeds
+          .map((seed) => (typeof seed === "string" ? seed : seed.url))
+          .join("\n"),
+      });
+    }
+  }
 
   render() {
     const tabLabels: Record<StepName, string> = {
@@ -309,7 +336,13 @@ export class NewJobConfig extends LiteElement {
               </sl-button>
             `}
         ${isLast
-          ? html`<sl-button type="submit" size="small" variant="primary">
+          ? html`<sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?disabled=${this.isSubmitting}
+              ?loading=${this.isSubmitting}
+            >
               ${this.formState.runNow
                 ? msg("Save & Run Job")
                 : msg("Save & Schedule Job")}
@@ -359,7 +392,7 @@ export class NewJobConfig extends LiteElement {
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
-          value=${initialFormState.urlList}
+          value=${this.formState.urlList}
           placeholder=${`https://example.com
 https://example.com/path`}
           required
@@ -371,7 +404,6 @@ https://example.com/path`}
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="includeLinkedPages"
-        ?defaultChecked=${initialFormState.includeLinkedPages}
         ?checked=${this.formState.includeLinkedPages}
         @sl-change=${(e: Event) =>
           this.updateFormState({
@@ -487,7 +519,7 @@ https://example.com/path`}
           label=${msg("Crawl Start URL")}
           autocomplete="off"
           placeholder=${urlPlaceholder}
-          value=${initialFormState.primarySeedUrl}
+          value=${this.formState.primarySeedUrl}
           required
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
@@ -520,7 +552,7 @@ https://example.com/path`}
         <sl-select
           name="scopeType"
           label=${msg("Crawl Scope")}
-          defaultValue=${initialFormState.scopeType}
+          defaultValue=${this.formState.scopeType}
           value=${this.formState.scopeType}
           @sl-select=${(e: Event) =>
             this.updateFormState({
@@ -555,7 +587,7 @@ https://example.com/path`}
           label=${msg("Allowed URL Prefixes")}
           rows="3"
           autocomplete="off"
-          value=${initialFormState.allowedExternalUrlList}
+          value=${this.formState.allowedExternalUrlList}
           placeholder=${`https://example.org/page/
 https://example.net`}
           ?disabled=${this.formState.scopeType === "page-spa"}
@@ -568,6 +600,10 @@ https://example.net`}
         <sl-checkbox
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              includeLinkedPages: (e.target as SlCheckbox).checked,
+            })}
         >
           ${msg("Include Any Linked Page (“one hop out”)")}
         </sl-checkbox>
@@ -582,7 +618,7 @@ https://example.net`}
           name="pageLimit"
           label=${msg("Page Limit")}
           type="number"
-          defaultValue=${initialFormState.pageLimit || ""}
+          defaultValue=${this.formState.pageLimit || ""}
           placeholder=${msg("Unlimited")}
         >
           <span slot="suffix">${msg("pages")}</span>
@@ -637,7 +673,7 @@ https://example.net`}
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
-          value=${initialFormState.scale}
+          value=${this.formState.scale}
         >
           <sl-radio-button value="1" size="small">1</sl-radio-button>
           <sl-radio-button value="2" size="small">2</sl-radio-button>
@@ -656,7 +692,7 @@ https://example.net`}
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
           archiveId=${this.archiveId}
-          .profileId=${initialFormState.profileid}
+          .profileId=${this.formState.profileid}
           .authState=${this.authState}
           @on-change=${(e: any) => console.log(e.detail.value)}
         ></btrix-select-browser-profile>
@@ -666,7 +702,14 @@ https://example.net`}
         accounts.`
       )}
       ${this.renderFormCol(html`
-        <sl-checkbox name="blockAds" ?checked=${initialFormState.blockAds}>
+        <sl-checkbox
+          name="blockAds"
+          ?checked=${this.formState.blockAds}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              blockAds: (e.target as SlCheckbox).checked,
+            })}
+        >
           ${msg("Block Ads by Domain")}
         </sl-checkbox>
       `)}
@@ -696,9 +739,10 @@ https://example.net`}
       ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
+          type="number"
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
-          type="number"
+          value=${ifDefined(this.formState.pageTimeoutMinutes || undefined)}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -747,7 +791,7 @@ https://example.net`}
         <sl-select
           name="scheduleFrequency"
           label=${msg("Frequency")}
-          value=${initialFormState.scheduleFrequency}
+          value=${this.formState.scheduleFrequency}
           @sl-select=${(e: Event) =>
             this.updateFormState({
               scheduleFrequency: (e.target as HTMLSelectElement)
@@ -769,7 +813,7 @@ https://example.net`}
             <sl-radio-group
               name="scheduleDayOfWeek"
               label=${msg("Day")}
-              value=${initialFormState.scheduleDayOfWeek}
+              value=${this.formState.scheduleDayOfWeek}
             >
               ${this.daysOfWeek.map(
                 (label, day) =>
@@ -792,7 +836,7 @@ https://example.net`}
               type="number"
               min="1"
               max="31"
-              value=${initialFormState.scheduleDayOfMonth}
+              value=${this.formState.scheduleDayOfMonth}
               required
             >
             </sl-input>
@@ -837,7 +881,6 @@ https://example.net`}
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="runNow"
-        ?defaultChecked=${initialFormState.runNow}
         ?checked=${this.formState.runNow}
         @sl-change=${(e: Event) =>
           this.updateFormState({
@@ -856,7 +899,7 @@ https://example.net`}
   private renderJobInformation() {
     const defaultValue =
       this.jobType === "urlList"
-        ? initialFormState.jobName
+        ? this.formState.jobName
         : this.formState.primarySeedUrl;
     return html`
       ${this.renderFormCol(html`
@@ -880,6 +923,16 @@ https://example.net`}
         html`Try to give this job a memorable name so it (and its outputs) can
         be found later!`
       )}
+      ${this.renderServerError()}
+    `;
+  }
+
+  private renderServerError() {
+    if (!this.serverError) return;
+    return html`
+      <div class="col-span-1 md:col-span-5 mt-5">
+        <btrix-alert variant="danger">${this.serverError}</btrix-alert>
+      </div>
     `;
   }
 
@@ -888,7 +941,7 @@ https://example.net`}
     if (!this.formState.exclusions) {
       this.updateFormState(
         {
-          exclusions: initialFormState.exclusions,
+          exclusions: this.formState.exclusions,
         },
         true
       );
@@ -1018,7 +1071,7 @@ https://example.net`}
   private preventSubmit(event: KeyboardEvent) {
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
-    if (tagName === "sl-input" || tagName === "sl-textarea") {
+    if (tagName === "sl-input") {
       if (
         event.key === "Enter" &&
         this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
@@ -1035,14 +1088,87 @@ https://example.net`}
     await this.updateComplete;
 
     if (!isValid || this.formHasError) {
-      console.log("form has error");
       return;
     }
 
     const form = event.target as HTMLFormElement;
-    const values = this.parseConfig(form);
+    const config = this.parseConfig(form);
 
-    console.log(values);
+    console.log(config);
+
+    this.isSubmitting = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/archives/${this.archiveId}/crawlconfigs/`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(config),
+        }
+      );
+
+      const crawlId = data.run_now_job;
+
+      this.notify({
+        message: crawlId
+          ? msg("Crawl started with new template.")
+          : msg("Crawl template created."),
+        variant: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+
+      if (crawlId) {
+        this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawlId}`);
+      } else {
+        this.navTo(
+          `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
+        );
+      }
+    } catch (e: any) {
+      if (e?.isApiError) {
+        const isConfigError = ({ loc }: any) =>
+          loc.some((v: string) => v === "config");
+        if (e.details && e.details.some(isConfigError)) {
+          this.serverError = this.formatConfigServerError(e.details);
+        } else {
+          this.serverError = e.message;
+        }
+      } else {
+        this.serverError = msg("Something unexpected went wrong");
+      }
+    }
+
+    this.isSubmitting = false;
+  }
+
+  /**
+   * Format `config` related API error returned from server
+   */
+  private formatConfigServerError(details: any): TemplateResult {
+    const detailsWithoutDictError = details.filter(
+      ({ type }: any) => type !== "type_error.dict"
+    );
+
+    const renderDetail = ({ loc, msg: detailMsg }: any) => html`
+      <li>
+        ${loc.some((v: string) => v === "seeds") &&
+        typeof loc[loc.length - 1] === "number"
+          ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
+          : `${loc[loc.length - 1]}: `}
+        ${detailMsg}
+      </li>
+    `;
+
+    return html`
+      ${msg(
+        "Couldn't save crawl template. Please fix the following crawl configuration issues:"
+      )}
+      <ul class="list-disc w-fit pl-4">
+        ${detailsWithoutDictError.map(renderDetail)}
+      </ul>
+    `;
   }
 
   private parseConfig(form: HTMLFormElement): NewJobConfigParams {
@@ -1050,7 +1176,7 @@ https://example.net`}
 
     const config: NewJobConfigParams = {
       name: formValues.jobName,
-      profileid: formValues.profileid,
+      profileid: formValues.profileid || null,
       scale: +formValues.scale,
       runNow: this.formState.runNow,
       schedule: getUTCSchedule({
@@ -1064,11 +1190,13 @@ https://example.net`}
         ...(this.jobType === "urlList"
           ? this.parseUrlListConfig(formValues)
           : this.parseSeededConfig(formValues)),
-
-        limit: formValues.pageLimit || null,
-        extraHops: formValues.includeLinkedPages ? 1 : 0,
+        behaviorTimeout: formValues.pageTimeoutMinutes
+          ? +formValues.pageTimeoutMinutes * 60
+          : 0,
+        limit: formValues.pageLimit ? +formValues.pageLimit : null,
+        extraHops: this.formState.includeLinkedPages ? 1 : 0,
         lang: formValues.lang,
-        blockAds: formValues.blockAds,
+        blockAds: this.formState.blockAds,
         exclude: trimExclusions(this.formState.exclusions),
       },
     };
@@ -1126,7 +1254,6 @@ https://example.net`}
         include.push(`${regexEscape(url)}\/.*`);
       });
     }
-    console.log(formValues.scopeType, include);
     const config = {
       seeds: [primarySeedUrl],
       scopeType,

@@ -17,7 +17,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
 import type { CrawlConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
-import type { JobType } from "./new-job-config";
+import type { JobType, InitialJobConfig } from "./new-job-config";
 import "./new-job-config";
 import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
@@ -38,14 +38,9 @@ type NewCrawlTemplate = {
   profileid: string | null;
 };
 
-export type InitialCrawlTemplate = Pick<
-  NewCrawlTemplate,
-  "name" | "profileid"
-> & {
-  config: Pick<CrawlConfig, "seeds" | "scopeType" | "exclude">;
-};
+export type InitialCrawlTemplate = InitialJobConfig;
 
-const initialJobType: JobType | undefined = "seeded";
+const initialJobType: JobType | undefined = undefined;
 const defaultValue = {
   name: "",
   profileid: null,
@@ -211,14 +206,19 @@ export class CrawlTemplatesNew extends LiteElement {
         seeded: msg("Seeded Crawl"),
       };
 
-      if (this.jobType) {
+      // TODO get job type from API if duplicating
+      const jobType =
+        this.jobType || (this.initialCrawlTemplate.name ? "urlList" : null);
+
+      if (jobType) {
         return html`
           ${this.renderHeader()}
           <h2 class="text-xl font-medium mb-6">
-            ${msg(html`New Job Config &mdash; ${jobTypeLabels[this.jobType]}`)}
+            ${msg(html`New Job Config &mdash; ${jobTypeLabels[jobType]}`)}
           </h2>
           <btrix-new-job-config
-            jobType=${this.jobType}
+            .initialJobConfig=${this.initialCrawlTemplate}
+            jobType=${jobType}
             archiveId=${this.archiveId}
             .authState=${this.authState}
             @reset=${() => (this.jobType = undefined)}
