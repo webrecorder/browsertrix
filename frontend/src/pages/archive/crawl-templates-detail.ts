@@ -104,6 +104,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.isConfigCodeView = true;
       }
       this.configCode = jsonToYaml(this.crawlTemplate.config);
+      this.browserLanguage = this.crawlTemplate.config.lang;
       if (this.crawlTemplate.config.exclude?.length) {
         this.exclusions = this.crawlTemplate.config.exclude;
       }
@@ -725,6 +726,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
           <div>
             <btrix-language-select
+              .value=${this.browserLanguage}
               @sl-select=${(e: CustomEvent) =>
                 (this.browserLanguage = e.detail.item.value)}
               @sl-clear=${() => (this.browserLanguage = null)}

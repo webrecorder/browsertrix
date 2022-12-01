@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { localized, msg } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
 import ISO6391 from "iso-639-1";
@@ -14,11 +15,12 @@ const languages = sortBy("name")(
 }>;
 
 /**
- * Choose language from dropdown
+ * Choose language from dropdown.
+ * Uses ISO 639-1 codes (2 letters representing macrolanguages.)
  *
  * Usage:
  * ```ts
- * <btrix-language-select @sl-select=${console.debug}>
+ * <btrix-language-select value=${defaultValue} @sl-select=${console.debug}>
  *   <span slot="label">Label</span>
  * </btrix-language-select>
  * ```
@@ -35,13 +37,21 @@ export class LanguageSelect extends LitElement {
     }
   `;
 
+  @property({ type: String })
+  value?: LanguageCode;
+
   @property({ type: Boolean })
   hoist = false;
 
   render() {
     return html`
-      <sl-select clearable placeholder=${msg("Default")} ?hoist=${this.hoist}>
-        <div slot="label"><slot name="label"></slot></div>
+      <sl-select
+        clearable
+        placeholder=${msg("Browser Default")}
+        value=${ifDefined(this.value)}
+        ?hoist=${this.hoist}
+      >
+        <div slot="label"><slot name="label">${msg("Language")}</slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-menu-item value=${code}>
