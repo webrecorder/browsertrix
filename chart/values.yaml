@@ -59,9 +59,10 @@ nginx_limits_cpu: "10m"
 nginx_requests_memory: "12Mi"
 nginx_limits_memory: "12Mi"
 
-# if true, will use node port to make the service directly available
-# for testing / local deployments only
-nginx_service_use_node_port: false
+# if set, maps nginx to a fixed port on host machine
+# must be between 30000 - 32767
+# use for deployments on localhost when not using ingress
+# nginx_service_localhost_port: 30870
 
 
 # MongoDB Image
@@ -192,7 +193,7 @@ email:
 # Ingress (Optional)
 # Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
 ingress:
-  host: "btrix.cloud"
+  #host: ""
   cert_email: "test@example.com"
   scheme: "http"
   tls: false
