@@ -104,7 +104,7 @@ const initialFormState: FormState = {
   profileid: null,
   blockAds: true,
   lang: null,
-  scheduleType: "cron",
+  scheduleType: "now",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
@@ -1198,15 +1198,19 @@ https://example.net`}
   private parseConfig(form: HTMLFormElement): NewJobConfigParams {
     const formValues = serialize(form) as FormState;
 
+    // TODO save job type
     const config: NewJobConfigParams = {
       name: formValues.jobName,
       scale: +formValues.scale,
       profileid: this.formState.profileid || null,
       runNow: this.formState.runNow,
-      schedule: getUTCSchedule({
-        interval: this.formState.scheduleFrequency,
-        ...this.formState.scheduleTime,
-      }),
+      schedule:
+        this.formState.scheduleType === "cron"
+          ? getUTCSchedule({
+              interval: this.formState.scheduleFrequency,
+              ...this.formState.scheduleTime,
+            })
+          : "",
       crawlTimeout: formValues.jobTimeoutMinutes
         ? +formValues.jobTimeoutMinutes * 60
         : 0,
