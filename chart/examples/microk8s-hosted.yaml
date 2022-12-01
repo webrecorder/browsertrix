@@ -1,0 +1,57 @@
+# microk8s config overrides (hosted)
+# ----------------------------------
+#
+# This config can be used to run with microk8s, to be accessed via hostname.
+# It requires setting the hostname and signing hostname.
+#
+# Enable microk8s add-ons with:
+# microk8s enable dns ingress cert-manager hostpath-storage registry helm3
+#
+# 
+# After filling in the `ingress.host` and `ingress.cert_email` and optional `signer.host`.
+# run with:
+#
+# microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-hosted.yaml btrix ./chart/
+
+# If developing locally, enable each image override to use image from local microk8s repo
+# api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+# crawler_image: "localhost:32000/webrecorder/browsertrix-crawler:latest"
+
+ingress:
+  # required: set host to use tls
+  # host: "..."
+
+  # required: set email to use tls
+  #cert_email: "..."
+
+  scheme: "https"
+  tls: true
+
+ingress_class: "public"
+
+
+# optionally, set host below to enable WACZ signing
+signer:
+  enabled: true
+
+  # host: ...
+
+
+# optionally, override default mongodb auth, used for all data storage:
+
+#mongo_auth:
+  #username: root
+  #password: PASSWORD!
+  
+
+# optionally, set these to custom values
+
+#superuser:
+  # set this to enable a superuser admim
+  # email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  # password: PASSWORD!
+
