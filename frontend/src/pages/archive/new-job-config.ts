@@ -80,7 +80,7 @@ type FormState = {
   runNow: boolean;
   jobName: NewJobConfigParams["name"];
 };
-const initialProgressState: ProgressState = {
+const getDefaultProgressState = (): ProgressState => ({
   activeTab: "crawlerSetup",
   currentStep: "crawlerSetup",
   tabs: {
@@ -89,8 +89,8 @@ const initialProgressState: ProgressState = {
     jobScheduling: { enabled: false, error: false, completed: false },
     jobInformation: { enabled: false, error: false, completed: false },
   },
-};
-const initialFormState: FormState = {
+});
+const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
@@ -115,15 +115,16 @@ const initialFormState: FormState = {
   },
   runNow: false,
   jobName: "",
-};
+});
 const stepOrder: StepName[] = [
   "crawlerSetup",
   "browserSettings",
   "jobScheduling",
   "jobInformation",
 ];
+const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = stepOrder.filter(
-  (stepName) => initialProgressState.tabs[stepName as StepName]
+  (stepName) => defaultProgressState.tabs[stepName as StepName]
 ) as StepName[];
 
 function getLocalizedWeekDays() {
@@ -161,10 +162,10 @@ export class NewJobConfig extends LiteElement {
   private isSubmitting = false;
 
   @state()
-  private progressState: ProgressState = initialProgressState;
+  private progressState!: ProgressState;
 
   @state()
-  private formState: FormState = initialFormState;
+  private formState!: FormState;
 
   @state()
   private serverError?: TemplateResult | string;
@@ -178,33 +179,44 @@ export class NewJobConfig extends LiteElement {
   @query('form[name="newJobConfig"]')
   formElem?: HTMLFormElement;
 
-  connectedCallback() {
+  constructor() {
+    super();
+    this.progressState = getDefaultProgressState();
+    this.formState = getDefaultFormState();
+    if (!this.formState.lang) {
+      this.formState.lang = this.getInitialLang();
+    }
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
+      this.updateFormState(this.getInitialFormState());
+    }
+  }
+
+  private getInitialLang() {
     // Default to current user browser language
     const browserLanguage = navigator.languages?.length
       ? navigator.languages[0]
       : navigator.language;
     if (browserLanguage) {
-      this.formState.lang = browserLanguage.slice(
-        0,
-        browserLanguage.indexOf("-")
-      );
+      return browserLanguage.slice(0, browserLanguage.indexOf("-"));
     }
-    super.connectedCallback();
+    return null;
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
-      this.updateFormState({
-        jobName: this.initialJobConfig.name,
-        profileid: this.initialJobConfig.profileid,
-        scopeType: this.initialJobConfig.config
-          .scopeType as FormState["scopeType"],
-        exclusions: this.initialJobConfig.config.exclude,
-        urlList: this.initialJobConfig.config.seeds
-          .map((seed) => (typeof seed === "string" ? seed : seed.url))
-          .join("\n"),
-      });
-    }
+  private getInitialFormState() {
+    if (!this.initialJobConfig) return {};
+    return {
+      jobName: this.initialJobConfig.name,
+      profileid: this.initialJobConfig.profileid,
+      scopeType: this.initialJobConfig.config
+        .scopeType as FormState["scopeType"],
+      exclusions: this.initialJobConfig.config.exclude,
+      urlList: this.initialJobConfig.config.seeds
+        .map((seed) => (typeof seed === "string" ? seed : seed.url))
+        .join("\n"),
+    };
   }
 
   render() {
@@ -233,6 +245,7 @@ export class NewJobConfig extends LiteElement {
 
       <form
         name="newJobConfig"
+        @reset=${this.onReset}
         @submit=${this.onSubmit}
         @keydown=${this.preventSubmit}
         @sl-blur=${this.validateOnBlur}
@@ -1006,10 +1019,10 @@ https://example.net`}
     await this.updateComplete;
 
     const currentTab = this.progressState.activeTab as StepName;
+    const tabs = { ...this.progressState.tabs };
     // Check [data-user-invalid] instead of .invalid property
     // to validate only touched inputs
     if ("userInvalid" in el.dataset) {
-      const tabs = this.progressState.tabs;
       tabs[currentTab].error = true;
       this.updateProgressState({ tabs });
     } else if (this.progressState.tabs[currentTab].error) {
@@ -1017,7 +1030,6 @@ https://example.net`}
         .closest("btrix-tab-panel")
         ?.querySelector("[data-invalid]");
       if (!hasInvalid) {
-        const tabs = this.progressState.tabs;
         tabs[currentTab].error = false;
         this.updateProgressState({ tabs });
       }
@@ -1035,16 +1047,11 @@ https://example.net`}
   };
 
   private backStep() {
-    const targetTabIdx = stepOrder.indexOf(this.progressState.activeTab!) - 1;
+    const targetTabIdx = stepOrder.indexOf(this.progressState.activeTab!);
     if (targetTabIdx) {
       this.updateProgressState({
-        activeTab: stepOrder[
-          stepOrder.indexOf(this.progressState.activeTab!) - 1
-        ] as StepName,
+        activeTab: stepOrder[targetTabIdx - 1] as StepName,
       });
-    } else {
-      // Reset to job type selection
-      this.updateProgressState(initialProgressState, true);
     }
   }
 
@@ -1055,11 +1062,11 @@ https://example.net`}
       const { activeTab, tabs, currentStep } = this.progressState;
       const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as StepName;
 
-      const isFirstEnabled = !tabs[nextTab].enabled;
-      let nextTabs = tabs;
+      const isFirstTimeEnabled = !tabs[nextTab].enabled;
+      const nextTabs = { ...tabs };
       let nextCurrentStep = currentStep;
 
-      if (isFirstEnabled) {
+      if (isFirstTimeEnabled) {
         nextTabs[nextTab].enabled = true;
         nextCurrentStep = nextTab;
       }
@@ -1165,6 +1172,15 @@ https://example.net`}
     }
 
     this.isSubmitting = false;
+  }
+
+  private async onReset() {
+    this.progressState = getDefaultProgressState();
+    this.formState = {
+      ...getDefaultFormState(),
+      lang: this.getInitialLang(),
+      ...this.getInitialFormState(),
+    };
   }
 
   /**
@@ -1301,8 +1317,8 @@ https://example.net`}
       };
     } else {
       this.progressState = merge(
-        <ProgressState>this.progressState,
-        <Partial<ProgressState>>nextState
+        <ProgressState>{ ...this.progressState },
+        <Partial<ProgressState>>{ ...nextState }
       );
     }
   }

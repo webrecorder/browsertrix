@@ -1,4 +1,4 @@
-import type { TemplateResult } from "lit";
+import type { TemplateResult, LitElement } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -221,7 +221,10 @@ export class CrawlTemplatesNew extends LiteElement {
             jobType=${jobType}
             archiveId=${this.archiveId}
             .authState=${this.authState}
-            @reset=${() => (this.jobType = undefined)}
+            @reset=${async (e: Event) => {
+              await (e.target as LitElement).updateComplete;
+              this.jobType = undefined;
+            }}
           ></btrix-new-job-config>
         `;
       }
