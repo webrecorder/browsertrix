@@ -3,9 +3,12 @@
 # remove old config
 rm /etc/nginx/conf.d/default.conf
 
-if [ "$NO_MINIO_ROUTE" == "1" ]; then
-  echo "clearning out minio route"
+if [ -z "$LOCAL_MINIO_HOST" ]; then
+  echo "no local minio, clearing out minio route"
   echo "" > /etc/nginx/includes/minio.conf
+else
+  echo "local minio: replacing \$LOCAL_MINIO_HOST with $LOCAL_MINIO_HOST"
+  sed -i "s/\$LOCAL_MINIO_HOST/$LOCAL_MINIO_HOST/g" /etc/nginx/includes/minio.conf
 fi
 
 mkdir -p /etc/nginx/resolvers/

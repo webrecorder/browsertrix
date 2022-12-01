@@ -44,8 +44,10 @@ spec:
             - name: CRAWLER_SVC_SUFFIX
               value: ".crawl-$crawl"
 
-            - name: NO_MINIO_ROUTE
-              value: "1"
+            {{- if .Values.minio_local }}
+            - name: LOCAL_MINIO_HOST
+              value: "{{ .Values.minio_host }}"
+            {{- end }}
 
           resources:
             limits:
