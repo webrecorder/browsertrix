@@ -26,7 +26,8 @@ superuser:
   email: admin@example.com
 
   # optional: if not set, automatically generated
-  password:
+  # change or remove this
+  password: PASSW0RD!
 
 
 # API Image
@@ -83,8 +84,8 @@ mongo_limits_memory: "512Mi"
 
 mongo_auth:
   # specify either username + password (for local mongo)
-  # username: root
-  # password: example
+  username: root
+  password: PASSWORD!
 
   # or full URL (for remote mongo server)
   # db_url: mongodb+srv://...
