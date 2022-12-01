@@ -1219,7 +1219,7 @@ https://example.net`}
       name: formValues.jobName,
       scale: +formValues.scale,
       profileid: this.formState.profileid || null,
-      runNow: this.formState.runNow,
+      runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule:
         this.formState.scheduleType === "cron"
           ? getUTCSchedule({
