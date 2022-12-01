@@ -141,9 +141,7 @@ export class CrawlTemplatesNew extends LiteElement {
     }
     this.browserProfileId = this.initialCrawlTemplate.profileid;
     // Default to current user browser language
-    const browserLanguage = navigator.languages?.length
-      ? navigator.languages[0]
-      : navigator.language;
+    const browserLanguage = window.navigator.language;
     if (browserLanguage) {
       this.browserLanguage = browserLanguage.slice(
         0,
