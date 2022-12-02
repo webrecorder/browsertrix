@@ -32,9 +32,10 @@ def init_db():
     db_url = resolve_db_url()
 
     client = motor.motor_asyncio.AsyncIOMotorClient(
-        db_url, uuidRepresentation="standard",
+        db_url,
+        uuidRepresentation="standard",
         connectTimeoutMS=120000,
-        serverSelectionTimeoutMS=120000
+        serverSelectionTimeoutMS=120000,
     )
 
     mdb = client["browsertrixcloud"]

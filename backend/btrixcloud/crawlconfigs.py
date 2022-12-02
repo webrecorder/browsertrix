@@ -86,7 +86,7 @@ class CrawlConfigIn(BaseModel):
 
     config: RawCrawlConfig
 
-    name: Optional[str]
+    name: str
 
     profileid: Optional[UUID4]
 
@@ -106,7 +106,7 @@ class CrawlConfig(BaseMongoModel):
 
     config: RawCrawlConfig
 
-    name: Optional[str]
+    name: str
 
     created: Optional[datetime]
 
