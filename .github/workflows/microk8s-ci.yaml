@@ -22,10 +22,6 @@ jobs:
           driver-opts: network=host
 
       -
-        name: Wait for microk8s
-        run: sudo microk8s status --wait-ready
-
-      -
         name: Wait for registry to be available
         run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:32000/v2/
 
@@ -76,18 +72,16 @@ jobs:
         name: List SVC
         run: sudo microk8s kubectl get svc
 
-
-      -
-        name: test api
-        run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:30870/api/
-
-
       - 
         name: Backend Tests
         run: py.test -vv ./backend/test/*.py
         continue-on-error: true
 
       -
-        name: Check Logs
+        name: Check Backend Logs
         run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
+
+      -
+        name: Check Mongo Logs
+        run: sudo microk8s kubectl logs svc/local-mongo
 
