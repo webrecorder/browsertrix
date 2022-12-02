@@ -1,6 +1,8 @@
 import requests
 import hashlib
 import time
+import io
+import zipfile
 
 host_prefix = "http://127.0.0.1:30870"
 api_prefix = f"{host_prefix}/api"
@@ -15,6 +17,8 @@ crawl_id = None
 wacz_path = None
 wacz_size = None
 wacz_hash = None
+
+wacz_content = None
 
 
 def test_login():
@@ -35,6 +39,7 @@ def test_login():
     global headers
     headers = {"Authorization": f"Bearer {access_token}"}
 
+
 def test_list_archives():
     r = requests.get(f"{api_prefix}/archives", headers=headers)
     data = r.json()
@@ -47,15 +52,18 @@ def test_list_archives():
 
     assert data["archives"][0]["name"] == "admin's Archive"
 
+
 def test_create_new_config():
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
-        "config": {
-            "seeds": ["https://example.com/"]
-        }
+        "config": {"seeds": ["https://example.com/"]},
     }
-    r = requests.post(f"{api_prefix}/archives/{archive_id}/crawlconfigs/", headers=headers, json=crawl_data)
+    r = requests.post(
+        f"{api_prefix}/archives/{archive_id}/crawlconfigs/",
+        headers=headers,
+        json=crawl_data,
+    )
 
     assert r.status_code == 200
 
@@ -66,14 +74,22 @@ def test_create_new_config():
     global crawl_id
     crawl_id = data["run_now_job"]
 
+
 def test_wait_for_complete():
     print("")
     print("---- Running Crawl ----")
 
     while True:
-        r = requests.get(f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}.json", headers=headers)
+        r = requests.get(
+            f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}.json",
+            headers=headers,
+        )
         data = r.json()
-        assert data["state"] == "starting" or data["state"] == "running" or data["state"] == "complete", data["state"]
+        assert (
+            data["state"] == "starting"
+            or data["state"] == "running"
+            or data["state"] == "complete"
+        ), data["state"]
         if data["state"] == "complete":
             break
 
@@ -89,6 +105,7 @@ def test_wait_for_complete():
     wacz_size = data["resources"][0]["size"]
     wacz_hash = data["resources"][0]["hash"]
 
+
 def test_download_wacz():
     r = requests.get(host_prefix + wacz_path)
     assert r.status_code == 200
@@ -97,3 +114,16 @@ def test_download_wacz():
     h = hashlib.sha256()
     h.update(r.content)
     assert h.hexdigest() == wacz_hash, (h.hexdigest(), wacz_hash)
+
+    global wacz_content
+    wacz_content = r.content
+
+
+def test_verify_wacz():
+    b = io.BytesIO(wacz_content)
+    z = zipfile.ZipFile(b)
+
+    assert "pages/pages.jsonl" in z.namelist()
+
+    pages = z.open("pages/pages.jsonl").read().decode("utf-8")
+    assert '"https://example.com/"' in pages
