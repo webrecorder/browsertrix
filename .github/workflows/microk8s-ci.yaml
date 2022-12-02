@@ -85,4 +85,9 @@ jobs:
       - 
         name: Backend Tests
         run: py.test -vv ./backend/test/*.py
+        continue-on-error: true
+
+      -
+        name: Check Logs
+        run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
 

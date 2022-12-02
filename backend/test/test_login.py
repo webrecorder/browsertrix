@@ -25,7 +25,7 @@ def test_login():
     )
     data = r.json()
 
-    assert r.status_code == 200
+    assert r.status_code == 200, data["detail"]
     assert data["token_type"] == "bearer"
     assert data["access_token"]
     access_token = data["access_token"]
