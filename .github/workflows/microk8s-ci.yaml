@@ -65,6 +65,10 @@ jobs:
         run: pip install pytest requests
 
       -
+        name: Wait for Backend API to be ready
+        run: sudo microk8s kubectl wait --for=condition=ready pod -l role=backend,app=browsertrix-cloud --timeout=120s
+ 
+      -
         name: List Pods
         run: sudo microk8s kubectl get pods
 
@@ -72,9 +76,12 @@ jobs:
         name: List SVC
         run: sudo microk8s kubectl get svc
 
+
       -
-        name: Wait for Backend API to be ready
-        run: sudo microk8s kubectl wait --for=condition=ready pod -l role=backend,app=browsertrix-cloud --timeout=120s
+        name: test api
+        run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:30870/api/
+
+
       - 
         name: Backend Tests
         run: py.test -vv ./backend/test/*.py
