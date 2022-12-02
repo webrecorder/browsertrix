@@ -169,7 +169,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                     email=email,
                     password=password,
                     is_superuser=True,
-                    newArchive=False,
+                    newArchive=True,
                     is_verified=True,
                 )
             )
@@ -178,6 +178,8 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
+
+
 
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
