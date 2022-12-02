@@ -61,7 +61,7 @@ jobs:
         run: pip install pytest requests
 
       -
-        name: Wait for Backend API to be ready
+        name: Wait for all pods to be ready
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=120s
  
       -

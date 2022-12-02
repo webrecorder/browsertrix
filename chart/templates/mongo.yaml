@@ -101,13 +101,16 @@ spec:
               cpu: {{ .Values.mongo_requests_cpu }}
               memory: {{ .Values.mongo_requests_memory }}
 
-          # disable for now, issue pending: https://github.com/bitnami/charts/issues/10264
-          #readinessProbe:
-          #  exec:
-          #    command:
-          #      - mongo
-          #      - --eval
-          #      - db.adminCommand('ping')
+          # reenable for now with mongo 5.0.x
+          readinessProbe:
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 2
+            exec:
+              command:
+                - mongo
+                - --eval
+                - db.adminCommand('ping')
 
 ---
 apiVersion: v1
