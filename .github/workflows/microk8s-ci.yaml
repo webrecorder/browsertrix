@@ -66,15 +66,15 @@ jobs:
 
       -
         name: List Pods
-        run: sudo kubectl get pods
+        run: sudo microk8s kubectl get pods
 
       -
         name: List SVC
-        run: sudo kubectl get svc
+        run: sudo microk8s kubectl get svc
 
       -
         name: Wait for Backend API to be ready
-        run: microk8s kubectl wait --for=condition=ready pod -l role=backend,app=browsertrix-cloud --timeout=120s
+        run: sudo microk8s kubectl wait --for=condition=ready pod -l role=backend,app=browsertrix-cloud --timeout=120s
       - 
         name: Backend Tests
         run: py.test -vv ./backend/test/*.py
