@@ -1,17 +1,15 @@
-name: Browsertrix Cloud Integration Test (for Swarm)
+name: Cluster Run (MicroK8S local)
 
 on: [push, pull_request]
 
 jobs:
   btrix-swarm-test:
-    runs-on: ubuntu-20.04
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
+    runs-on: latest
     steps:
+       - uses: balchua/microk8s-actions@v0.3.0
+         with:
+          channel: '1.25/stable'
+          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
       -
         name: Checkout
         uses: actions/checkout@v3
@@ -22,17 +20,13 @@ jobs:
         with:
           driver-opts: network=host
 
-      - 
-        name: Copy Configs
-        run: ./scripts/init-configs.sh
-
       -
         name: Build Backend
         uses: docker/build-push-action@v3
         with:
           context: backend
           push: true
-          tags: localhost:5000/webrecorder/browsertrix-backend:latest
+          tags: localhost:32000/webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -42,13 +36,14 @@ jobs:
         with:
           context: frontend
           push: true
-          tags: localhost:5000/webrecorder/browsertrix-frontend:latest
+          tags: localhost:32000/webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
       - 
-        name: Run Bootstrap Script
-        run: ./test/setup.sh
+        name: Start Cluster with Helm
+        run: |
+          microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-ci.yaml btrix ./chart/
 
       -
         name: Install Python
