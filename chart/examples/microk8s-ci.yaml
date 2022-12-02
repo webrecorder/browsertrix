@@ -6,6 +6,10 @@
 api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
 nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 
+# don't pull use, existing images
+api_pull_policy: "Never"
+nginx_pull_policy: "Never"
+
 
 superuser:
   # set this to enable a superuser admin
