@@ -21,6 +21,10 @@ jobs:
           driver-opts: network=host
 
       -
+        name: Wait for microk8s
+        run: microk8s status --wait-ready
+
+      -
         name: Build Backend
         uses: docker/build-push-action@v3
         with:
