@@ -64,24 +64,11 @@ jobs:
         name: Wait for all pods to be ready
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=240s
  
-      -
-        name: List Pods
-        run: sudo microk8s kubectl get pods
-
-      -
-        name: List SVC
-        run: sudo microk8s kubectl get svc
-
       - 
-        name: Backend Tests
+        name: Run Tests
         run: py.test -vv ./backend/test/*.py
-        continue-on-error: true
 
       -
-        name: Check Backend Logs
+        name: Print Backend Logs
+        if: ${{ failure() }}
         run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
-
-      -
-        name: Check Mongo Logs
-        run: sudo microk8s kubectl logs svc/local-mongo
-
