@@ -67,6 +67,9 @@ def test_create_new_config():
     crawl_id = data["run_now_job"]
 
 def test_wait_for_complete():
+    print("")
+    print("---- Running Crawl ----")
+
     while True:
         r = requests.get(f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}.json", headers=headers)
         data = r.json()
