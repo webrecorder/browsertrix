@@ -63,6 +63,10 @@ jobs:
       - 
         name: Install Python Libs
         run: pip install pytest requests
+
+      -
+        name: Wait for Backend Server Up
+        run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:30870/api/
  
       - 
         name: Backend Tests
