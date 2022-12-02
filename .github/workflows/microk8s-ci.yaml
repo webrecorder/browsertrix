@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   btrix-microk8s-test:
-    runs-on: latest
+    runs-on: ubuntu-latest
     steps:
       - uses: balchua/microk8s-actions@v0.3.0
         with:
