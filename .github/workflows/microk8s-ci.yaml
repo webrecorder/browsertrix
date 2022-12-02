@@ -3,11 +3,11 @@ name: Cluster Run (MicroK8S local)
 on: [push, pull_request]
 
 jobs:
-  btrix-swarm-test:
+  btrix-microk8s-test:
     runs-on: latest
     steps:
-       - uses: balchua/microk8s-actions@v0.3.0
-         with:
+      - uses: balchua/microk8s-actions@v0.3.0
+        with:
           channel: '1.25/stable'
           addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
       -
@@ -43,7 +43,7 @@ jobs:
       - 
         name: Start Cluster with Helm
         run: |
-          microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-ci.yaml btrix ./chart/
+          sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-ci.yaml btrix ./chart/
 
       -
         name: Install Python
