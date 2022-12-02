@@ -192,7 +192,7 @@ export class CrawlTemplatesNew extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${msg("Back to Crawl Templates")}</span
+            >${msg("Back to Crawl Configs")}</span
           >
         </a>
       </nav>
@@ -214,7 +214,7 @@ export class CrawlTemplatesNew extends LiteElement {
         return html`
           ${this.renderHeader()}
           <h2 class="text-xl font-medium mb-6">
-            ${msg(html`New Job Config &mdash; ${jobTypeLabels[jobType]}`)}
+            ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
           </h2>
           <btrix-new-job-config
             .initialJobConfig=${this.initialCrawlTemplate}
@@ -231,7 +231,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
       return html`
         ${this.renderHeader()}
-        <h2 class="text-xl font-medium mb-6">${msg("New Job Config")}</h2>
+        <h2 class="text-xl font-medium mb-6">${msg("New Crawl Config")}</h2>
         ${this.renderChooseJobType()}
       `;
     }
@@ -292,7 +292,7 @@ export class CrawlTemplatesNew extends LiteElement {
           transform: scale(1.05);
         }
       </style>
-      <h3 class="text-lg font-medium mb-3">${msg("Choose Job Type")}</h3>
+      <h3 class="text-lg font-medium mb-3">${msg("Choose Crawl Type")}</h3>
       <div
         class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-start justify-evenly"
       >
@@ -486,7 +486,7 @@ export class CrawlTemplatesNew extends LiteElement {
               </span>
               <sl-tooltip
                 content=${msg(
-                  "The number of crawler instances that will run in parallel for this crawl job."
+                  "The number of crawler instances that will run in parallel for this crawl."
                 )}
                 ><sl-icon
                   class="inline-block align-middle ml-1 text-neutral-500"

@@ -221,8 +221,8 @@ export class NewJobConfig extends LiteElement {
     const tabLabels: Record<StepName, string> = {
       crawlerSetup: msg("Crawler Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Job Scheduling"),
-      jobInformation: msg("Job Information"),
+      jobScheduling: msg("Crawl Scheduling"),
+      jobInformation: msg("Crawl Information"),
     };
 
     return html`
@@ -369,8 +369,8 @@ export class NewJobConfig extends LiteElement {
               ?loading=${this.isSubmitting}
             >
               ${this.formState.runNow
-                ? msg("Save & Run Job")
-                : msg("Save & Schedule Job")}
+                ? msg("Save & Run Crawl")
+                : msg("Save & Schedule Crawl")}
             </sl-button>`
           : html`<sl-button
               size="small"
@@ -650,7 +650,7 @@ https://example.net`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
-      that will be crawled for this job.`)}
+      that will be crawled.`)}
       ${this.renderFormCol(html`
         <btrix-queue-exclusion-table
           .exclusions=${this.formState.exclusions}
@@ -680,11 +680,11 @@ https://example.net`}
 
   private renderCrawlScale() {
     return html`
-      ${this.renderSectionHeading(msg("Crawl Job Limits"))}
+      ${this.renderSectionHeading(msg("Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-input
           name="jobTimeoutMinutes"
-          label=${msg("Total Job Time Limit")}
+          label=${msg("Crawl Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
         >
@@ -794,7 +794,7 @@ https://example.net`}
     return html`
       ${this.renderFormCol(html`
         <sl-radio-group
-          label=${msg("Job Schedule Type")}
+          label=${msg("Crawl Schedule Type")}
           name="scheduleType"
           value=${this.formState.scheduleType}
           @sl-change=${(e: Event) =>
@@ -809,7 +809,7 @@ https://example.net`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Should this job run immediately when setup is complete, on a set
+        html`Should a crawl run immediately when setup is complete, on a set
         day, or on a recurring schedule?`
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
@@ -840,7 +840,7 @@ https://example.net`}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
-        html`Limit the frequency for how often the job will run.`
+        html`Limit the frequency for how often a crawl will run.`
       )}
       ${when(
         this.formState.scheduleFrequency === "weekly",
@@ -858,7 +858,7 @@ https://example.net`}
             </sl-radio-group>
           `)}
           ${this.renderHelpTextCol(
-            html`What day of the week should the job run on?`
+            html`What day of the week should a crawl run on?`
           )}
         `
       )}
@@ -878,7 +878,7 @@ https://example.net`}
             </sl-input>
           `)}
           ${this.renderHelpTextCol(
-            html`What day of the month should the job run on?`
+            html`What day of the month should a crawl run on?`
           )}
         `
       )}
@@ -913,7 +913,7 @@ https://example.net`}
         </div>
       `)}
       ${this.renderHelpTextCol(
-        html`Job will run at this time in your current timezone.`
+        html`A crawl will run at this time in your current timezone.`
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="runNow"
@@ -923,10 +923,10 @@ https://example.net`}
             runNow: (e.target as SlCheckbox).checked,
           })}
       >
-        ${msg("Also run job immediately on save")}
+        ${msg("Also run a crawl immediately on save")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
-        html`If checked, the job will run at the time specified above and also
+        html`If checked, a crawl will run at the time specified above and also
         once when setup is complete.`
       )}
     `;
@@ -941,10 +941,10 @@ https://example.net`}
       ${this.renderFormCol(html`
         <sl-input
           name="jobName"
-          label=${msg("Job Name")}
+          label=${msg("Crawl Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example job config name",
+            desc: "Example crawl config name",
           })}
           value=${defaultValue}
           required
@@ -956,8 +956,7 @@ https://example.net`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Try to give this job a memorable name so it (and its outputs) can
-        be found later!`
+        html`Try to create a unique name to help keep things organized!`
       )}
       ${this.renderServerError()}
     `;
