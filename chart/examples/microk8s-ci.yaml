@@ -20,5 +20,5 @@ superuser:
   password: PASSW0RD!
 
 
-nginx_service_localhost_port: 30870
+local_service_port: 30870
 

@@ -63,7 +63,7 @@ nginx_limits_memory: "24Mi"
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767
 # use for deployments on localhost when not using ingress
-# nginx_service_localhost_port: 30870
+# local_service_port: 30870
 
 
 # MongoDB Image

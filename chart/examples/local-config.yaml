@@ -1,9 +1,11 @@
-# Docker Desktop Config Overrides
-# -------------------------------
+# Local Config
+# ------------
 
-# This config is designed to be used as is for local deployment on Docker Desktop, for dev purposes
+# This config is designed for local (non-hosted) use, with either Docker Desktop, minikube or local microk8s.
+# With this setup, the cluster should be accessed locally via 'localhost'
 
-# helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/dockerdesktop-config.yaml btrix ./chart/
+# run service on localhost on port
+local_service_port: 30870
 
 
 # overrides to use existing images in local Docker, otherwise will pull from latest
@@ -13,8 +15,9 @@
 # redis_pull_policy: "Never"
 
 
-# run service on localhost on port
-nginx_service_localhost_port: 30870
+# microk8s: if developing locally, can override these to use images from local microk8s repository (on localhost:32000)
+# api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 
 
 # optionally, override default mongodb auth, used for all data storage:
