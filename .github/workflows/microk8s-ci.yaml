@@ -6,7 +6,8 @@ jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: balchua/microk8s-actions@v0.3.0
+      - 
+        uses: balchua/microk8s-actions@v0.3.0
         with:
           channel: '1.25/stable'
           addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
@@ -23,6 +24,10 @@ jobs:
       -
         name: Wait for microk8s
         run: sudo microk8s status --wait-ready
+
+      -
+        name: Wait for registry to be available
+        run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:32000/v2/
 
       -
         name: Build Backend
