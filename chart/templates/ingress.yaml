@@ -76,34 +76,6 @@ spec:
 {{ end }}
 
 
-{{- if .Values.minio_local }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ingress-minio
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.minio_host }}"
-
-spec:
-  rules:
-  - host: {{ .Values.ingress.host }}
-    http:
-      paths:
-      - path: /data/(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: local-minio
-            port:
-              number: 9000
-
-
-{{- end }}
-
 {{ if .Values.ingress.tls }}
 ---
 

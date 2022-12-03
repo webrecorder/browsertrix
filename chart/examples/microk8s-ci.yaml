@@ -1,0 +1,24 @@
+# microk8s overrides for ci
+# -------------------------
+
+
+# use local images
+api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+
+# don't pull use, existing images
+api_pull_policy: "IfNotPresent"
+nginx_pull_policy: "IfNotPresent"
+
+
+superuser:
+  # set this to enable a superuser admin
+  email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  password: PASSW0RD!
+
+
+local_service_port: 30870
+

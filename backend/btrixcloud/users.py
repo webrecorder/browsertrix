@@ -166,10 +166,11 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         try:
             res = await self.create(
                 UserCreate(
+                    name="admin",
                     email=email,
                     password=password,
                     is_superuser=True,
-                    newArchive=False,
+                    newArchive=True,
                     is_verified=True,
                 )
             )

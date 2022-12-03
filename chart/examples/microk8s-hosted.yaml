@@ -1,0 +1,65 @@
+# Hosted Config (eg. for microk8s)
+# --------------------------------
+#
+# This config can be used to run Browsertrix Cloud hosted on a remote server.
+# This requires setting the hostname and signing hostname.
+#
+#
+# The `ingress.host` and `ingress.cert_email` and optional `signer.host` must be set below.
+#
+# microk8s
+# --------
+#
+# One way to deploy this is with microk8s, which will require the following addons:
+#
+# microk8s enable dns ingress cert-manager hostpath-storage registry helm3
+#
+# run with:
+#
+# microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-hosted.yaml btrix ./chart/
+#
+#
+# If developing locally, can override these to use images from local microk8s repository (on localhost:32000)
+#
+# api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+# crawler_image: "localhost:32000/webrecorder/browsertrix-crawler:latest"
+
+
+ingress:
+  # required: set host to use tls
+  # host: "..."
+
+  # required: set email to use tls
+  #cert_email: "..."
+
+  scheme: "https"
+  tls: true
+
+ingress_class: "public"
+
+
+# optionally, set host below to enable WACZ signing
+signer:
+  enabled: true
+
+  # host: ...
+
+
+# optionally, override default mongodb auth, used for all data storage:
+
+#mongo_auth:
+  #username: root
+  #password: PASSWORD!
+  
+
+# optionally, set these to custom values
+
+#superuser:
+  # set this to enable a superuser admim
+  # email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  # password: PASSWORD!
+

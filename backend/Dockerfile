@@ -2,7 +2,7 @@ ARG PODMAN_VERSION=4
 
 FROM docker.io/mgoltzsche/podman:${PODMAN_VERSION}-remote as podmanremote
 
-FROM python:3.9
+FROM docker.io/library/python:3.9
 
 WORKDIR /app
 

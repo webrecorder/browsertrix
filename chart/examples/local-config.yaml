@@ -1,0 +1,40 @@
+# Local Config
+# ------------
+
+# This config is designed for local (non-hosted) use, with either Docker Desktop, minikube or local microk8s.
+# With this setup, the cluster should be accessed locally via 'localhost'
+
+# run service on localhost on port
+local_service_port: 30870
+
+
+# overrides to use existing images in local Docker, otherwise will pull from latest
+# api_pull_policy: "Never"
+# nginx_pull_policy: "Never"
+# crawler_pull_policy: "Never"
+# redis_pull_policy: "Never"
+
+
+# microk8s: if developing locally, can override these to use images from local microk8s repository (on localhost:32000)
+# api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+
+
+# optionally, override default mongodb auth, used for all data storage:
+
+#mongo_auth:
+  #username: root
+  #password: PASSWORD!
+  
+
+# optionally, set these to custom values
+
+#superuser:
+  # set this to enable a superuser admim
+  # email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  # password: PASSWORD!
+
+

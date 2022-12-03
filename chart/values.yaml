@@ -26,7 +26,8 @@ superuser:
   email: admin@example.com
 
   # optional: if not set, automatically generated
-  password:
+  # change or remove this
+  password: PASSW0RD!
 
 
 # API Image
@@ -57,11 +58,12 @@ nginx_requests_cpu: "3m"
 nginx_limits_cpu: "10m"
 
 nginx_requests_memory: "12Mi"
-nginx_limits_memory: "12Mi"
+nginx_limits_memory: "20Mi"
 
-# if true, will use node port to make the service directly available
-# for testing / local deployments only
-nginx_service_use_node_port: false
+# if set, maps nginx to a fixed port on host machine
+# must be between 30000 - 32767
+# use for deployments on localhost when not using ingress
+# local_service_port: 30870
 
 
 # MongoDB Image
@@ -82,8 +84,8 @@ mongo_limits_memory: "512Mi"
 
 mongo_auth:
   # specify either username + password (for local mongo)
-  # username: root
-  # password: example
+  username: root
+  password: PASSWORD!
 
   # or full URL (for remote mongo server)
   # db_url: mongodb+srv://...
@@ -192,7 +194,7 @@ email:
 # Ingress (Optional)
 # Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
 ingress:
-  host: "btrix.cloud"
+  #host: ""
   cert_email: "test@example.com"
   scheme: "http"
   tls: false
