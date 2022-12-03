@@ -58,7 +58,7 @@ nginx_requests_cpu: "3m"
 nginx_limits_cpu: "10m"
 
 nginx_requests_memory: "12Mi"
-nginx_limits_memory: "24Mi"
+nginx_limits_memory: "20Mi"
 
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767

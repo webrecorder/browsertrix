@@ -1,7 +1,7 @@
 # central place to configure the production replayweb.page loading prefix
 ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
-FROM node:16 as build
+FROM docker.io/library/node:16 as build
 
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
@@ -29,14 +29,14 @@ COPY src ./src/
 
 RUN yarn build
 
-FROM nginx
+FROM docker.io/library/nginx:1.23.2
 
 ARG RWP_BASE_URL
 ENV RWP_BASE_URL=${RWP_BASE_URL}
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-COPY ./nginx.conf /etc/nginx/nginx.conf
+#COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./frontend.conf.template /etc/nginx/templates/
 COPY ./minio.conf /etc/nginx/includes/
 
