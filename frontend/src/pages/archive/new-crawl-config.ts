@@ -62,7 +62,7 @@ type FormState = {
   urlList: string;
   includeLinkedPages: boolean;
   allowedExternalUrlList: string;
-  jobTimeoutMinutes: number | null;
+  crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
   scopeType: "prefix" | "host" | "domain" | "page" | "page-spa" | "custom";
   exclusions: NewCrawlConfigParams["config"]["exclude"];
@@ -98,7 +98,7 @@ const getDefaultFormState = (): FormState => ({
   urlList: "",
   includeLinkedPages: false,
   allowedExternalUrlList: "",
-  jobTimeoutMinutes: null,
+  crawlTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
   exclusions: [""], // Empty slots for adding exclusions
@@ -683,10 +683,10 @@ https://example.net`}
 
   private renderCrawlScale() {
     return html`
-      ${this.renderSectionHeading(msg("Crawl Limits"))}
+      ${this.renderSectionHeading(msg("Crawl Scale"))}
       ${this.renderFormCol(html`
         <sl-input
-          name="jobTimeoutMinutes"
+          name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           placeholder=${msg("Unlimited")}
           type="number"
@@ -1227,8 +1227,8 @@ https://example.net`}
               ...this.formState.scheduleTime,
             })
           : "",
-      crawlTimeout: formValues.jobTimeoutMinutes
-        ? +formValues.jobTimeoutMinutes * 60
+      crawlTimeout: formValues.crawlTimeoutMinutes
+        ? +formValues.crawlTimeoutMinutes * 60
         : 0,
       config: {
         ...(this.jobType === "urlList"
