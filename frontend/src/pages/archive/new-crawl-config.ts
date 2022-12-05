@@ -1,4 +1,4 @@
-import type { TemplateResult } from "lit";
+import type { LitElement, TemplateResult } from "lit";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import type {
   SlCheckbox,
@@ -237,18 +237,18 @@ export class NewJobConfig extends LiteElement {
 
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialJobConfig) return {};
-    return {
+    return merge(getDefaultFormState(), {
       jobName: this.initialJobConfig.name,
       browserProfile: this.initialJobConfig.profileid
         ? ({ id: this.initialJobConfig.profileid } as Profile)
-        : null,
+        : undefined,
       scopeType: this.initialJobConfig.config
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
       urlList: this.initialJobConfig.config.seeds
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n"),
-    };
+    });
   }
 
   render() {
@@ -1010,7 +1010,7 @@ https://example.net`}
               ${when(
                 exclusions.length,
                 () => html`
-                  <btrix-queue-exclusion-table .exclusions=${exclusions.length}>
+                  <btrix-queue-exclusion-table .exclusions=${exclusions}>
                   </btrix-queue-exclusion-table>
                 `
               )}
@@ -1159,7 +1159,7 @@ https://example.net`}
     `;
   }
 
-  private handleRemoveRegex(e: ExclusionRemoveEvent) {
+  private async handleRemoveRegex(e: ExclusionRemoveEvent) {
     const { index } = e.detail;
     if (!this.formState.exclusions) {
       this.updateFormState(
@@ -1177,6 +1177,12 @@ https://example.net`}
         true
       );
     }
+
+    // Check if we removed an erroring input
+    const table = e.target as LitElement;
+    await this.updateComplete;
+    await table.updateComplete;
+    this.syncTabErrorState(table);
   }
 
   private handleChangeRegex(e: ExclusionChangeEvent) {
@@ -1211,15 +1217,21 @@ https://example.net`}
       tabs[currentTab].error = true;
       this.updateProgressState({ tabs });
     } else if (this.progressState.tabs[currentTab].error) {
-      const hasInvalid = el
-        .closest("btrix-tab-panel")
-        ?.querySelector("[data-invalid]");
-      if (!hasInvalid) {
-        tabs[currentTab].error = false;
-        this.updateProgressState({ tabs });
-      }
+      this.syncTabErrorState(el);
     }
   };
+
+  private syncTabErrorState(el: HTMLElement) {
+    const currentTab = this.progressState.activeTab as StepName;
+    const tabs = { ...this.progressState.tabs };
+    const panelEl = el.closest("btrix-tab-panel")!;
+    const hasInvalid = panelEl.querySelector("[data-user-invalid]");
+
+    if (!hasInvalid) {
+      tabs[currentTab].error = false;
+      this.updateProgressState({ tabs });
+    }
+  }
 
   private updateFormStateOnChange(e: Event) {
     const elem = e.target as SlTextarea | SlInput | SlCheckbox;

@@ -47,8 +47,7 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    // Show default empty editable rows
-    exclude: Array.from({ length: 3 }).map(() => ""),
+    exclude: [""],
   },
 } as InitialCrawlTemplate;
 const hours = Array.from({ length: 12 }).map((x, i) => ({
