@@ -89,7 +89,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.fuse.setCollection(this.crawlTemplates as any);
     } catch (e) {
       this.notify({
-        message: msg("Sorry, couldn't retrieve crawl templates at this time."),
+        message: msg("Sorry, couldn't retrieve crawl configs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -106,7 +106,7 @@ export class CrawlTemplatesList extends LiteElement {
           : html`
               <div class="border-t border-b py-5">
                 <p class="text-center text-0-500">
-                  ${msg("No crawl templates yet.")}
+                  ${msg("No crawl configs yet.")}
                 </p>
               </div>
             `
@@ -161,7 +161,7 @@ export class CrawlTemplatesList extends LiteElement {
             @click=${this.navLink}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Template")}
+            ${msg("New Crawl Config")}
           </sl-button>
         </div>
       </div>
@@ -549,8 +549,8 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   /**
-   * Fetch crawl templates and record running crawls
-   * associated with the crawl templates
+   * Fetch crawl configs and record running crawls
+   * associated with the crawl configs
    **/
   private async getCrawlTemplates(): Promise<CrawlConfig[]> {
     const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
@@ -613,7 +613,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        message: msg("Sorry, couldn't deactivate crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -641,7 +641,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete crawl template at this time."),
+        message: msg("Sorry, couldn't delete crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

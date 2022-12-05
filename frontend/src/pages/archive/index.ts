@@ -163,7 +163,7 @@ export class Archive extends LiteElement {
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "crawl-templates",
-            label: msg("Crawl Templates"),
+            label: msg("Crawl Configs"),
           })}
           ${this.renderNavTab({
             tabName: "browser-profiles",

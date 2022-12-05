@@ -77,7 +77,7 @@ export class CrawlTemplatesNew extends LiteElement {
   archiveId!: string;
 
   // Use custom property accessor to prevent
-  // overriding default crawl template values
+  // overriding default crawl config values
   @property({ type: Object })
   get initialCrawlTemplate() {
     return this._initialCrawlTemplate;
@@ -240,7 +240,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
       <p class="text-neutral-500 text-sm">
         ${msg(
-          "Configure a new crawl template. You can choose to run a crawl immediately upon saving this template."
+          "Configure a new crawl config. You can choose to run a crawl immediately upon saving this template."
         )}
       </p>
       <main class="mt-6">
@@ -345,7 +345,7 @@ export class CrawlTemplatesNew extends LiteElement {
           label=${msg("Name")}
           help-text=${msg("Name your template to easily identify it later.")}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example crawl template name",
+            desc: "Example crawl config name",
           })}
           autocomplete="off"
           value=${this.initialCrawlTemplate.name}
@@ -728,7 +728,7 @@ export class CrawlTemplatesNew extends LiteElement {
       this.notify({
         message: crawlId
           ? msg("Crawl started with new template.")
-          : msg("Crawl template created."),
+          : msg("Crawl config created."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
@@ -778,7 +778,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
     return html`
       ${msg(
-        "Couldn't save crawl template. Please fix the following crawl configuration issues:"
+        "Couldn't save crawl config. Please fix the following crawl configuration issues:"
       )}
       <ul class="list-disc w-fit mx-auto">
         ${detailsWithoutDictError.map(renderDetail)}

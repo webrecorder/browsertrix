@@ -117,8 +117,8 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.notify({
         message:
           e.statusCode === 404
-            ? msg("Crawl template not found.")
-            : msg("Sorry, couldn't retrieve crawl template at this time."),
+            ? msg("Crawl config not found.")
+            : msg("Sorry, couldn't retrieve crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -139,7 +139,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               class="inline-block align-middle"
             ></sl-icon>
             <span class="inline-block align-middle"
-              >${msg("Back to Crawl Templates")}</span
+              >${msg("Back to Crawl Configs")}</span
             >
           </a>
         </nav>
@@ -169,7 +169,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 : html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
             </h2>
             <div class="text-sm text-neutral-400 md:h-5">
-              <div class="md:inline-block mr-3">${msg("Crawl Template")}</div>
+              <div class="md:inline-block mr-3">${msg("Crawl Config")}</div>
               <code class="bg-neutral-50 text-xs"
                 >${this.crawlTemplate?.id}</code
               >
@@ -445,7 +445,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               class="inline-block align-middle mr-2"
             ></sl-icon>
             <span class="inline-block align-middle">
-              ${msg("This crawl template is inactive.")}
+              ${msg("This crawl config is inactive.")}
               <a
                 class="font-medium underline hover:no-underline"
                 href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlTemplate.newId}`}
@@ -464,7 +464,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             class="inline-block align-middle mr-2"
           ></sl-icon>
           <span class="inline-block align-middle">
-            ${msg("This crawl template is inactive.")}
+            ${msg("This crawl config is inactive.")}
           </span>
         </btrix-alert>
       `;
@@ -532,7 +532,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           name="name"
           label=${msg("Name")}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example crawl template name",
+            desc: "Example crawl config name",
           })}
           autocomplete="off"
           value=${this.crawlTemplate.name}
@@ -715,7 +715,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 <btrix-alert>
                   <p>
                     ${msg(
-                      "Editing the crawl configuration will replace this crawl template with a new version. All other settings will be kept the same."
+                      "Editing the crawl configuration will replace this crawl config with a new version. All other settings will be kept the same."
                     )}
                   </p>
                 </btrix-alert>
@@ -1022,7 +1022,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <sl-dialog
-        label=${msg(str`Edit Crawl Template Name`)}
+        label=${msg(str`Edit Crawl Config Name`)}
         style="--width: ${dialogWidth}"
         ?open=${this.openDialogName === "name"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
@@ -1306,7 +1306,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       });
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        message: msg("Sorry, couldn't deactivate crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1339,8 +1339,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     } catch {
       this.notify({
         message: isDeactivating
-          ? msg("Sorry, couldn't deactivate crawl template at this time.")
-          : msg("Sorry, couldn't delete crawl template at this time."),
+          ? msg("Sorry, couldn't deactivate crawl config at this time.")
+          : msg("Sorry, couldn't delete crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1392,7 +1392,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   /**
-   * Create new crawl template with revised crawl configuration
+   * Create new crawl config with revised crawl configuration
    * @param config Crawl config object
    */
   private async createRevisedTemplate({
@@ -1427,7 +1427,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       );
 
       this.notify({
-        message: msg("Crawl template updated."),
+        message: msg("Crawl config updated."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -1435,7 +1435,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       console.error(e);
 
       this.notify({
-        message: msg("Something went wrong, couldn't update crawl template."),
+        message: msg("Something went wrong, couldn't update crawl config."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1445,8 +1445,8 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   /**
-   * Update crawl template properties
-   * @param params Crawl template properties to update
+   * Update crawl config properties
+   * @param params Crawl config properties to update
    */
   private async updateTemplate(params: Partial<CrawlConfig>): Promise<void> {
     this.isSubmittingUpdate = true;
@@ -1479,7 +1479,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       console.error(e);
 
       this.notify({
-        message: msg("Something went wrong, couldn't update crawl template."),
+        message: msg("Something went wrong, couldn't update crawl config."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

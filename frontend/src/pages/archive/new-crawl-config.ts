@@ -1144,7 +1144,7 @@ https://example.net`}
       this.notify({
         message: crawlId
           ? msg("Crawl started with new template.")
-          : msg("Crawl template created."),
+          : msg("Crawl config created."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
@@ -1203,7 +1203,7 @@ https://example.net`}
 
     return html`
       ${msg(
-        "Couldn't save crawl template. Please fix the following crawl configuration issues:"
+        "Couldn't save crawl config. Please fix the following crawl configuration issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}
