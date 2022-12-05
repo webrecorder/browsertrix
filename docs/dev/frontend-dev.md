@@ -1,4 +1,7 @@
-# Frontend Development
+# Running Frontend
+
+This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
+The frontend can connect to a Browsertrix Cloud API backend running locally or remotely.
 
 ## Quickstart
 
@@ -20,6 +23,12 @@ Update `API_BASE_URL` in `.env.local` to point to your dev backend API. For exam
 
 ```
 API_BASE_URL=http://dev.example.com/api
+```
+
+If connecting to a local deployment cluster, set API_BASE_URL to:
+
+```
+API_BASE_URL=http://localhost:30870/api
 ```
 
 Start the dev server:
