@@ -16,6 +16,7 @@ import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
 import uniq from "lodash/fp/uniq";
 import RegexColorize from "regex-colorize";
+import ISO6391 from "iso-639-1";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import { regexEscape } from "../../utils/string";
@@ -190,6 +191,21 @@ export class NewJobConfig extends LiteElement {
     "page-spa": msg("Single Page App (In-Page Links Only)"),
     page: "",
     custom: "",
+  };
+
+  private scheduleTypeLabels: Record<FormState["scheduleType"], string> = {
+    now: msg("Run Immediately on Save"),
+    date: msg("Run on a Specific Date & Time"),
+    cron: msg("Run on a Recurring Basis"),
+  };
+
+  private scheduleFrequencyLabels: Record<
+    FormState["scheduleFrequency"],
+    string
+  > = {
+    daily: msg("Daily"),
+    weekly: msg("Weekly"),
+    monthly: msg("Monthly"),
   };
 
   @query('form[name="newJobConfig"]')
@@ -810,8 +826,8 @@ https://example.net`}
               runNow: (e.target as SlRadio).value === "now",
             })}
         >
-          <sl-radio value="now">${msg("Run Immediately on Save")}</sl-radio>
-          <sl-radio value="cron">${msg("Run on a Recurring Basis")}</sl-radio>
+          <sl-radio value="now">${this.scheduleTypeLabels["now"]}</sl-radio>
+          <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -840,9 +856,15 @@ https://example.net`}
                 .value as FormState["scheduleFrequency"],
             })}
         >
-          <sl-menu-item value="daily">${msg("Daily")}</sl-menu-item>
-          <sl-menu-item value="weekly">${msg("Weekly")}</sl-menu-item>
-          <sl-menu-item value="monthly">${msg("Monthly")}</sl-menu-item>
+          <sl-menu-item value="daily"
+            >${this.scheduleFrequencyLabels["daily"]}</sl-menu-item
+          >
+          <sl-menu-item value="weekly"
+            >${this.scheduleFrequencyLabels["weekly"]}</sl-menu-item
+          >
+          <sl-menu-item value="monthly"
+            >${this.scheduleFrequencyLabels["monthly"]}</sl-menu-item
+          >
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -1006,15 +1028,38 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Browser Settings"))}
       <div class="col-span-1 md:col-span-5">
         <dl>
-          ${this.renderSetting(msg("Browser Profile"), crawlConfig.profileid)}
+          ${this.renderSetting(
+            msg("Browser Profile"),
+            when(
+              crawlConfig.profileid,
+              () => html`<a
+                class="font-medium text-neutral-700 hover:text-neutral-900"
+                href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
+                @click=${this.navLink}
+              >
+                <sl-icon
+                  class="inline-block align-middle"
+                  name="link-45deg"
+                ></sl-icon>
+                <span class="inline-block align-middle"
+                  >${this.formState.browserProfile!.name}</span
+                >
+              </a>`
+            )
+          )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
             crawlConfig.config.blockAds
           )}
-          ${this.renderSetting(msg("Language"), this.formState.lang)}
+          ${this.renderSetting(
+            msg("Language"),
+            ISO6391.getName(crawlConfig.config.lang!)
+          )}
           ${this.renderSetting(
             msg("Page Time Limit"),
             crawlConfig.config.behaviorTimeout
+              ? msg(str`${crawlConfig.config.behaviorTimeout / 60} minute(s)`)
+              : msg("None")
           )}
         </dl>
       </div>
@@ -1024,22 +1069,13 @@ https://example.net`}
         <dl>
           ${this.renderSetting(
             msg("Crawl Schedule Type"),
-            this.formState.scheduleType
+            this.scheduleTypeLabels[this.formState.scheduleType]
           )}
-          ${this.renderSetting(
-            msg("Frequency"),
-            this.formState.scheduleFrequency
-          )}
-          ${this.renderSetting(
-            msg("Start Time"),
-            msg(str`
-            ${this.formState.scheduleTime.hour}:${
-              this.formState.scheduleTime.minute < 10
-                ? `0${this.formState.scheduleTime.minute}`
-                : this.formState.scheduleTime.minute
-            }
-            ${this.formState.scheduleTime.period}
-          `)
+          ${when(this.formState.scheduleType === "cron", () =>
+            this.renderSetting(
+              msg("Schedule"),
+              humanizeSchedule(crawlConfig.schedule)
+            )
           )}
         </dl>
       </div>
