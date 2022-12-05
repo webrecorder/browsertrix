@@ -1081,7 +1081,7 @@ https://example.net`}
       </div>
       ${this.renderSectionHeading(msg("Job Information"))}
       <div class="col-span-1 md:col-span-5">
-        <dl>${this.renderSetting(msg("Job Name"), this.formState.jobName)}</dl>
+        <dl>${this.renderSetting(msg("Job Name"), crawlConfig.name)}</dl>
       </div>
     `;
   };
