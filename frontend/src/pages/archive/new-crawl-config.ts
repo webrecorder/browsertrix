@@ -106,10 +106,10 @@ const getDefaultFormState = (): FormState => ({
   pageTimeoutMinutes: null,
   scopeType: "host",
   exclusions: [""], // Empty slots for adding exclusions
-  pageLimit: null,
+  pageLimit: undefined,
   scale: 1,
   blockAds: true,
-  lang: null,
+  lang: undefined,
   scheduleType: "now",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
@@ -237,7 +237,7 @@ export class NewJobConfig extends LiteElement {
 
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialJobConfig) return {};
-    return merge(getDefaultFormState(), {
+    return {
       jobName: this.initialJobConfig.name,
       browserProfile: this.initialJobConfig.profileid
         ? ({ id: this.initialJobConfig.profileid } as Profile)
@@ -248,7 +248,7 @@ export class NewJobConfig extends LiteElement {
       urlList: this.initialJobConfig.config.seeds
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n"),
-    });
+    };
   }
 
   render() {
