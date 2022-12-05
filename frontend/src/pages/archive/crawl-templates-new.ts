@@ -40,7 +40,7 @@ type NewCrawlTemplate = {
 
 export type InitialCrawlTemplate = InitialJobConfig;
 
-const initialJobType: JobType | undefined = "seeded";
+const initialJobType: JobType | undefined = undefined;
 const defaultValue = {
   name: "",
   profileid: null,

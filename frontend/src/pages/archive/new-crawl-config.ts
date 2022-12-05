@@ -87,14 +87,14 @@ type FormState = {
   browserProfile: Profile | null;
 };
 const getDefaultProgressState = (): ProgressState => ({
-  activeTab: "confirmSettings",
-  currentStep: "confirmSettings",
+  activeTab: "crawlerSetup",
+  currentStep: "crawlerSetup",
   tabs: {
     crawlerSetup: { enabled: true, error: false, completed: false },
-    browserSettings: { enabled: true, error: false, completed: false },
-    jobScheduling: { enabled: true, error: false, completed: false },
-    jobInformation: { enabled: true, error: false, completed: false },
-    confirmSettings: { enabled: true, error: false, completed: false },
+    browserSettings: { enabled: false, error: false, completed: false },
+    jobScheduling: { enabled: false, error: false, completed: false },
+    jobInformation: { enabled: false, error: false, completed: false },
+    confirmSettings: { enabled: false, error: false, completed: false },
   },
 });
 const getDefaultFormState = (): FormState => ({
