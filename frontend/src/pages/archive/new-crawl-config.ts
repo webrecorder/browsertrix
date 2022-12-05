@@ -30,7 +30,7 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { CrawlConfigParams } from "./types";
+import type { CrawlConfigParams, Profile } from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
@@ -68,7 +68,6 @@ type FormState = {
   exclusions: NewCrawlConfigParams["config"]["exclude"];
   pageLimit: NewCrawlConfigParams["config"]["limit"];
   scale: NewCrawlConfigParams["scale"];
-  profileid: NewCrawlConfigParams["profileid"];
   blockAds: NewCrawlConfigParams["config"]["blockAds"];
   lang: NewCrawlConfigParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron";
@@ -82,6 +81,7 @@ type FormState = {
   };
   runNow: boolean;
   jobName: NewCrawlConfigParams["name"];
+  browserProfile: Profile | null;
 };
 const getDefaultProgressState = (): ProgressState => ({
   activeTab: "crawlerSetup",
@@ -104,7 +104,6 @@ const getDefaultFormState = (): FormState => ({
   exclusions: [""], // Empty slots for adding exclusions
   pageLimit: null,
   scale: 1,
-  profileid: null,
   blockAds: true,
   lang: null,
   scheduleType: "now",
@@ -118,6 +117,7 @@ const getDefaultFormState = (): FormState => ({
   },
   runNow: false,
   jobName: "",
+  browserProfile: null,
 });
 const stepOrder: StepName[] = [
   "crawlerSetup",
@@ -206,11 +206,13 @@ export class NewJobConfig extends LiteElement {
     return null;
   }
 
-  private getInitialFormState() {
+  private getInitialFormState(): Partial<FormState> {
     if (!this.initialJobConfig) return {};
     return {
       jobName: this.initialJobConfig.name,
-      profileid: this.initialJobConfig.profileid,
+      browserProfile: this.initialJobConfig.profileid
+        ? ({ id: this.initialJobConfig.profileid } as Profile)
+        : null,
       scopeType: this.initialJobConfig.config
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
@@ -720,11 +722,11 @@ https://example.net`}
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
           archiveId=${this.archiveId}
-          .profileId=${this.formState.profileid}
+          .profileId=${this.formState.browserProfile?.id}
           .authState=${this.authState}
           @on-change=${(e: any) =>
             this.updateFormState({
-              profileid: e.detail.value,
+              browserProfile: e.detail.value,
             })}
         ></btrix-select-browser-profile>
       `)}
@@ -1218,7 +1220,7 @@ https://example.net`}
     const config: NewCrawlConfigParams = {
       name: formValues.jobName,
       scale: +formValues.scale,
-      profileid: this.formState.profileid || null,
+      profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule:
         this.formState.scheduleType === "cron"
