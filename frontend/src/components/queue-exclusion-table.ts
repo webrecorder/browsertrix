@@ -3,7 +3,7 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 
-import type { CrawlConfig } from "../pages/archive/types";
+import type { SeedConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
@@ -43,7 +43,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
-  exclusions?: CrawlConfig["exclude"];
+  exclusions?: SeedConfig["exclude"];
 
   @property({ type: Number })
   pageSize: number = 5;

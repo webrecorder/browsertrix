@@ -15,12 +15,12 @@ import type {
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ScheduleInterval, humanizeNextDate } from "../../utils/cron";
-import type { CrawlConfig, Profile } from "./types";
+import type { SeedConfig, Profile } from "./types";
 import { getUTCSchedule } from "../../utils/cron";
-import type { JobType, InitialJobConfig } from "./new-job-config";
-import "./new-job-config";
-import seededCrawlSvg from "../../assets/images/new-job-config_Seeded-Crawl.svg";
-import urlListSvg from "../../assets/images/new-job-config_URL-List.svg";
+import type { JobType, InitialJobConfig } from "./new-crawl-config";
+import "./new-crawl-config";
+import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
+import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
 const NEW_JOB_CONFIG = true;
 
@@ -32,7 +32,7 @@ type NewCrawlTemplate = {
   crawlTimeout?: number;
   scale: number;
   config: Pick<
-    CrawlConfig,
+    SeedConfig,
     "seeds" | "scopeType" | "limit" | "extraHops" | "exclude" | "lang"
   >;
   profileid: string | null;
@@ -113,9 +113,9 @@ export class CrawlTemplatesNew extends LiteElement {
   private configCode: string = "";
 
   @state()
-  private exclusions: CrawlConfig["exclude"] = defaultValue.config.exclude;
+  private exclusions: SeedConfig["exclude"] = defaultValue.config.exclude;
 
-  private browserLanguage: CrawlConfig["lang"] = null;
+  private browserLanguage: SeedConfig["lang"] = null;
 
   @state()
   private isSubmitting: boolean = false;
@@ -171,7 +171,7 @@ export class CrawlTemplatesNew extends LiteElement {
           })
         );
       } else if (this.isConfigCodeView === false) {
-        const exclude = (yamlToJson(this.configCode) as CrawlConfig).exclude;
+        const exclude = (yamlToJson(this.configCode) as SeedConfig).exclude;
         this.exclusions = exclude?.length
           ? exclude
           : defaultValue.config.exclude;
@@ -216,7 +216,7 @@ export class CrawlTemplatesNew extends LiteElement {
           <h2 class="text-xl font-medium mb-6">
             ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
           </h2>
-          <btrix-new-job-config
+          <btrix-new-crawl-config
             .initialJobConfig=${this.initialCrawlTemplate}
             jobType=${jobType}
             archiveId=${this.archiveId}
@@ -225,7 +225,7 @@ export class CrawlTemplatesNew extends LiteElement {
               await (e.target as LitElement).updateComplete;
               this.jobType = undefined;
             }}
-          ></btrix-new-job-config>
+          ></btrix-new-crawl-config>
         `;
       }
 
@@ -663,11 +663,11 @@ export class CrawlTemplatesNew extends LiteElement {
     };
 
     if (this.isConfigCodeView) {
-      template.config = yamlToJson(this.configCode) as CrawlConfig;
+      template.config = yamlToJson(this.configCode) as SeedConfig;
     } else {
       template.config = {
         seeds: (seedUrlsStr as string).trim().replace(/,/g, " ").split(/\s+/g),
-        scopeType: formData.get("scopeType") as CrawlConfig["scopeType"],
+        scopeType: formData.get("scopeType") as SeedConfig["scopeType"],
         limit: pageLimit ? +pageLimit : 0,
         extraHops: formData.get("extraHopsOne") ? 1 : 0,
         exclude: trimExclusions(this.exclusions),

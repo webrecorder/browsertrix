@@ -30,10 +30,13 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { JobConfig, NewJobConfigParams } from "./types";
+import type { CrawlConfigParams } from "./types";
 
-export type InitialJobConfig = Pick<JobConfig, "name" | "profileid"> & {
-  config: Pick<JobConfig["config"], "seeds" | "scopeType" | "exclude">;
+type NewCrawlConfigParams = CrawlConfigParams & {
+  runNow: boolean;
+};
+export type InitialJobConfig = Pick<CrawlConfigParams, "name" | "profileid"> & {
+  config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
 };
 export type JobType = "urlList" | "seeded";
 type StepName =
@@ -62,12 +65,12 @@ type FormState = {
   jobTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
   scopeType: "prefix" | "host" | "domain" | "page" | "page-spa" | "custom";
-  exclusions: NewJobConfigParams["config"]["exclude"];
-  pageLimit: NewJobConfigParams["config"]["limit"];
-  scale: NewJobConfigParams["scale"];
-  profileid: NewJobConfigParams["profileid"];
-  blockAds: NewJobConfigParams["config"]["blockAds"];
-  lang: NewJobConfigParams["config"]["lang"];
+  exclusions: NewCrawlConfigParams["config"]["exclude"];
+  pageLimit: NewCrawlConfigParams["config"]["limit"];
+  scale: NewCrawlConfigParams["scale"];
+  profileid: NewCrawlConfigParams["profileid"];
+  blockAds: NewCrawlConfigParams["config"]["blockAds"];
+  lang: NewCrawlConfigParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -78,7 +81,7 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: NewJobConfigParams["name"];
+  jobName: NewCrawlConfigParams["name"];
 };
 const getDefaultProgressState = (): ProgressState => ({
   activeTab: "crawlerSetup",
@@ -1208,11 +1211,11 @@ https://example.net`}
     `;
   }
 
-  private parseConfig(form: HTMLFormElement): NewJobConfigParams {
+  private parseConfig(form: HTMLFormElement): NewCrawlConfigParams {
     const formValues = serialize(form) as FormState;
 
     // TODO save job type
-    const config: NewJobConfigParams = {
+    const config: NewCrawlConfigParams = {
       name: formValues.jobName,
       scale: +formValues.scale,
       profileid: this.formState.profileid || null,
@@ -1247,7 +1250,7 @@ https://example.net`}
 
   private parseUrlListConfig(
     formValues: FormState
-  ): NewJobConfigParams["config"] {
+  ): NewCrawlConfigParams["config"] {
     const config = {
       seeds: formValues.urlList.trim().replace(/,/g, " ").split(/\s+/g),
       scopeType: "page" as FormState["scopeType"],
@@ -1258,7 +1261,7 @@ https://example.net`}
 
   private parseSeededConfig(
     formValues: FormState
-  ): NewJobConfigParams["config"] {
+  ): NewCrawlConfigParams["config"] {
     const primarySeedUrl = formValues.primarySeedUrl.replace(/\/$/, "");
     const externalUrlList = formValues.allowedExternalUrlList
       ? formValues.allowedExternalUrlList
@@ -1335,4 +1338,4 @@ https://example.net`}
   }
 }
 
-customElements.define("btrix-new-job-config", NewJobConfig);
+customElements.define("btrix-new-crawl-config", NewJobConfig);

@@ -28,7 +28,7 @@ export type Crawl = {
   completions?: number;
 };
 
-export type SeedConfig = {
+export type Seed = {
   scopeType:
     | "prefix"
     | "host"
@@ -42,8 +42,8 @@ export type SeedConfig = {
   limit?: number | null;
 };
 
-export type CrawlConfig = SeedConfig & {
-  seeds: (string | ({ url: string } & SeedConfig))[];
+export type SeedConfig = Seed & {
+  seeds: (string | ({ url: string } & Seed))[];
   extraHops?: number | null;
   lang?: string | null;
   blockAds?: boolean;
@@ -51,20 +51,16 @@ export type CrawlConfig = SeedConfig & {
   behaviors?: string | null;
 };
 
-export type JobConfig = {
+export type CrawlConfigParams = {
   name: string;
   schedule: string;
   scale: number;
   profileid: string | null;
-  config: CrawlConfig;
+  config: SeedConfig;
   crawlTimeout: number | null;
 };
 
-export type NewJobConfigParams = JobConfig & {
-  runNow: boolean;
-};
-
-export type CrawlTemplate = JobConfig & {
+export type CrawlConfig = CrawlConfigParams & {
   id: string;
   userid: string;
   userName: string | null;

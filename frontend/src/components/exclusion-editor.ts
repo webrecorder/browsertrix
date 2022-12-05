@@ -6,7 +6,7 @@ import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
 } from "./queue-exclusion-form";
-import type { CrawlConfig } from "../pages/archive/types";
+import type { SeedConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
 
@@ -45,7 +45,7 @@ export class ExclusionEditor extends LiteElement {
   crawlId?: string;
 
   @property({ type: Array })
-  config?: CrawlConfig;
+  config?: SeedConfig;
 
   @property({ type: Boolean })
   isActiveCrawl = false;

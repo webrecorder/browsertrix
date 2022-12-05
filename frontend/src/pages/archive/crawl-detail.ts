@@ -7,7 +7,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, CrawlTemplate } from "./types";
+import type { Crawl, CrawlConfig } from "./types";
 
 type SectionName =
   | "overview"
@@ -51,7 +51,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawlTemplate?: CrawlTemplate;
+  private crawlTemplate?: CrawlConfig;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -899,12 +899,12 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private async getCrawlTemplate(): Promise<CrawlTemplate> {
+  private async getCrawlTemplate(): Promise<CrawlConfig> {
     if (!this.crawl) {
       throw new Error("missing crawl");
     }
 
-    const data: CrawlTemplate = await this.apiFetch(
+    const data: CrawlConfig = await this.apiFetch(
       `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}`,
       this.authState!
     );

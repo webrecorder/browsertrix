@@ -12,7 +12,7 @@ import ISO6391 from "iso-639-1";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
-import type { CrawlTemplate, CrawlConfig } from "./types";
+import type { CrawlConfig, SeedConfig } from "./types";
 import { getUTCSchedule, humanizeSchedule } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 import {
@@ -21,7 +21,7 @@ import {
 } from "../../components/queue-exclusion-table";
 
 type EditCrawlConfig = Pick<
-  CrawlConfig,
+  SeedConfig,
   "seeds" | "scopeType" | "limit" | "extraHops" | "exclude" | "lang"
 >;
 
@@ -50,7 +50,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   crawlConfigId!: string;
 
   @state()
-  private crawlTemplate?: CrawlTemplate;
+  private crawlTemplate?: CrawlConfig;
 
   @state()
   private showAllSeedURLs: boolean = false;
@@ -63,9 +63,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   private configCode: string = "";
 
   @state()
-  private exclusions: CrawlConfig["exclude"] = defaultExclusions;
+  private exclusions: SeedConfig["exclude"] = defaultExclusions;
 
-  private browserLanguage: CrawlConfig["lang"] = null;
+  private browserLanguage: SeedConfig["lang"] = null;
 
   @state()
   private isSubmittingUpdate: boolean = false;
@@ -88,7 +88,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             })
           );
         } else if (this.isConfigCodeView === false) {
-          const exclude = (yamlToJson(this.configCode) as CrawlConfig).exclude;
+          const exclude = (yamlToJson(this.configCode) as SeedConfig).exclude;
           this.exclusions = exclude?.length ? exclude : defaultExclusions;
         }
       }
@@ -1146,8 +1146,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  async getCrawlTemplate(): Promise<CrawlTemplate> {
-    const data: CrawlTemplate = await this.apiFetch(
+  async getCrawlTemplate(): Promise<CrawlConfig> {
+    const data: CrawlConfig = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs/${this.crawlConfigId}`,
       this.authState!
     );
@@ -1364,7 +1364,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.crawlTemplate = {
         ...this.crawlTemplate,
         currCrawlId: crawlId,
-      } as CrawlTemplate;
+      } as CrawlConfig;
 
       this.notify({
         message: msg(
@@ -1400,7 +1400,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     profileId,
   }: {
     config?: EditCrawlConfig;
-    profileId: CrawlTemplate["profileid"];
+    profileId: CrawlConfig["profileid"];
   }) {
     this.isSubmittingUpdate = true;
 
@@ -1448,7 +1448,7 @@ export class CrawlTemplatesDetail extends LiteElement {
    * Update crawl template properties
    * @param params Crawl template properties to update
    */
-  private async updateTemplate(params: Partial<CrawlTemplate>): Promise<void> {
+  private async updateTemplate(params: Partial<CrawlConfig>): Promise<void> {
     this.isSubmittingUpdate = true;
 
     try {
