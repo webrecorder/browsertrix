@@ -1,4 +1,5 @@
 import type { TemplateResult } from "lit";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import type {
   SlCheckbox,
   SlInput,
@@ -14,6 +15,7 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import merge from "lodash/fp/merge";
 import uniq from "lodash/fp/uniq";
+import RegexColorize from "regex-colorize";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import { regexEscape } from "../../utils/string";
@@ -461,7 +463,7 @@ https://example.com/path`}
       ${when(
         this.formState.includeLinkedPages,
         () => html`
-          ${this.renderSectionHeading(msg("Crawl URL Limits"))}
+          ${this.renderSectionHeading(msg("Page Limits"))}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
@@ -644,11 +646,11 @@ https://example.net`}
         html`If checked, the crawler will visit pages one link away outside of
         Crawl Scope.`
       )}
-      ${this.renderSectionHeading(msg("Crawl Limits"))}
+      ${this.renderSectionHeading(msg("Page Limits"))}
       ${this.renderFormCol(html`
         <sl-input
           name="pageLimit"
-          label=${msg("Page Limit")}
+          label=${msg("Max Pages")}
           type="number"
           defaultValue=${this.formState.pageLimit || ""}
           placeholder=${msg("Unlimited")}
@@ -687,7 +689,7 @@ https://example.net`}
 
   private renderCrawlScale() {
     return html`
-      ${this.renderSectionHeading(msg("Crawl Scale"))}
+      ${this.renderSectionHeading(msg("Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
@@ -967,17 +969,17 @@ https://example.net`}
   }
 
   private renderConfirmSettings = () => {
-    const config = this.parseConfig();
-    const exclusions = trimExclusions(this.formState.exclusions);
+    const crawlConfig = this.parseConfig();
+    const exclusions = crawlConfig.config.exclude || [];
     return html`
       ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
         <dl>
           ${when(this.jobType === "urlList", () =>
-            this.renderConfirmUrlListSettings()
+            this.renderConfirmUrlListSettings(crawlConfig)
           )}
           ${when(this.jobType === "seeded", () =>
-            this.renderConfirmSeededSettings()
+            this.renderConfirmSeededSettings(crawlConfig)
           )}
           ${this.renderSetting(
             msg("Exclusions"),
@@ -992,23 +994,27 @@ https://example.net`}
               )}
             `
           )}
+          ${this.renderSetting(
+            msg("Crawl Time Limit"),
+            crawlConfig.crawlTimeout
+              ? msg(str`${crawlConfig.crawlTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+          ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
         </dl>
       </div>
       ${this.renderSectionHeading(msg("Browser Settings"))}
       <div class="col-span-1 md:col-span-5">
         <dl>
-          ${this.renderSetting(
-            msg("Browser Profile"),
-            this.formState.browserProfile?.id
-          )}
+          ${this.renderSetting(msg("Browser Profile"), crawlConfig.profileid)}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
-            this.formState.blockAds
+            crawlConfig.config.blockAds
           )}
           ${this.renderSetting(msg("Language"), this.formState.lang)}
           ${this.renderSetting(
             msg("Page Time Limit"),
-            this.formState.pageTimeoutMinutes
+            crawlConfig.config.behaviorTimeout
           )}
         </dl>
       </div>
@@ -1044,38 +1050,58 @@ https://example.net`}
     `;
   };
 
-  private renderConfirmUrlListSettings() {
+  private renderConfirmUrlListSettings(crawlConfig: NewCrawlConfigParams) {
     return html`
-      ${this.renderSetting(msg("List of URLs"), this.formState.urlList)}
-      ${this.renderSetting(msg("Crawler Instances"), this.formState.scale)}
       ${this.renderSetting(
-        msg("Include External Links"),
-        this.formState.includeLinkedPages
+        msg("List of URLs"),
+        html`
+          <ul>
+            ${crawlConfig.config.seeds.map((url) => html` <li>${url}</li> `)}
+          </ul>
+        `
       )}
-      ${this.renderSetting(msg("Page Limit"), this.formState.pageLimit)}
+      ${this.renderSetting(
+        msg("Include Linked Pages (“one hop out”)"),
+        Boolean(crawlConfig.config.extraHops)
+      )}
     `;
   }
 
-  private renderConfirmSeededSettings() {
+  private renderConfirmSeededSettings(crawlConfig: NewCrawlConfigParams) {
     return html`
       ${this.renderSetting(
         msg("Primary Seed URL"),
         this.formState.primarySeedUrl
       )}
-      ${this.renderSetting(msg("Crawler Instances"), this.formState.scale)}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[this.formState.scopeType]
       )}
       ${this.renderSetting(
         msg("Allowed URL Prefixes"),
-        this.formState.allowedExternalUrlList
+        crawlConfig.config.include?.length
+          ? html`
+              <ul>
+                ${crawlConfig.config.include.map(
+                  (url) =>
+                    staticHtml`<li class="regex">${unsafeStatic(
+                      new RegexColorize().colorizeText(url)
+                    )}</li>`
+                )}
+              </ul>
+            `
+          : msg("None")
       )}
       ${this.renderSetting(
-        msg("Include External Links"),
-        this.formState.includeLinkedPages
+        msg("Include Any Linked Page (“one hop out”)"),
+        Boolean(crawlConfig.config.extraHops)
       )}
-      ${this.renderSetting(msg("Page Limit"), this.formState.pageLimit)}
+      ${this.renderSetting(
+        msg("Max Pages"),
+        crawlConfig.config.limit
+          ? msg(str`${crawlConfig.config.limit} pages`)
+          : msg("Unlimited")
+      )}
     `;
   }
 
