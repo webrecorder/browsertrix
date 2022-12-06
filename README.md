@@ -23,7 +23,11 @@ The latest deployment documentation is available at: [https://docs.browsertrix.c
 The docs cover deploying Browsertrix Cloud in different environments using Kubernetes, from a single-node setup to scalable clusters in the cloud.
 
 Note: Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
-of maintaining feature parity across different setups, and with Kubernetes setup being available and easy to deploy, even on a single machine.
+of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
+
+Making deployment of Browsertrix Cloud as easy as possible is a key goal!
+
+Please open an issue if you have suggestions on how we can further improve our deployment options!
 
 If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the crawling capabilities.
 
