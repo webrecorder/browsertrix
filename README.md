@@ -12,7 +12,9 @@ while the actual crawling is performed using
 
 See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
 
-Docs are available at: [https://docs.browsertrix.cloud/](https://docs.browsertrix.cloud/)
+## Documentation
+
+The full docs for using, deplyoing and developing Browsertrix Cloud are available at: [https://docs.browsertrix.cloud/](https://docs.browsertrix.cloud/)
 
 ## Deployment 
 
@@ -23,11 +25,7 @@ The docs cover deploying Browsertrix Cloud in different environments using Kuber
 Note: Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
 of maintaining feature parity across different setups, and with Kubernetes setup being available and easy to deploy, even on a single machine.
 
-If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the
-crawling capabilities.
-
-## Documentation
-
+If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the crawling capabilities.
 
 ## Development Status
 
