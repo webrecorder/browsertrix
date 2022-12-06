@@ -3,6 +3,8 @@ import { property, queryAsync } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
+// Match witch tailwind lg
+const SCREEN_LG = 1124;
 
 /**
  * Tab list
@@ -118,8 +120,14 @@ export class TabList extends LitElement {
 
     .container {
       display: grid;
-      grid-template-columns: 11rem 1fr;
+      grid-template-columns: 1fr;
       grid-gap: 1rem;
+    }
+
+    @media only screen and (min-width: ${SCREEN_LG}px) {
+      .container {
+        grid-template-columns: 11rem 1fr;
+      }
     }
 
     .navWrapper,
@@ -139,12 +147,20 @@ export class TabList extends LitElement {
     }
 
     ul {
+      display: flex;
       margin: 0 0 0 var(--track-width);
       list-style: none;
       padding: 0;
     }
 
+    @media only screen and (min-width: ${SCREEN_LG}px) {
+      ul {
+        display: block;
+      }
+    }
+
     .track {
+      display: none;
       position: absolute;
       top: 0;
       height: 100%;
@@ -155,10 +171,19 @@ export class TabList extends LitElement {
     }
 
     .indicator {
+      display: none;
       position: absolute;
       width: var(--track-width);
       border-radius: var(--track-width);
       background-color: var(--sl-color-blue-500);
+    }
+
+    @media only screen and (min-width: ${SCREEN_LG}px) {
+      ul,
+      .track,
+      .indicator {
+        display: block;
+      }
     }
   `;
 

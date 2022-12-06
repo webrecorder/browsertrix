@@ -3,8 +3,8 @@ import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
+import { mergeDeep } from "immutable";
 import compact from "lodash/fp/compact";
-import merge from "lodash/fp/merge";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 import ISO6391 from "iso-639-1";
@@ -83,7 +83,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       if (changedProperties.get("isConfigCodeView") !== undefined) {
         if (this.isConfigCodeView) {
           this.configCode = jsonToYaml(
-            merge(this.crawlTemplate.config, {
+            mergeDeep(this.crawlTemplate.config, {
               exclude: trimExclusions(this.exclusions),
             })
           );

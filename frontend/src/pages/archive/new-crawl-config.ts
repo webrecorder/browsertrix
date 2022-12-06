@@ -263,7 +263,7 @@ export class NewJobConfig extends LiteElement {
     };
 
     return html`
-      <header class="ml-48 mb-3 flex justify-between items-baseline">
+      <header class="lg:ml-48 mb-3 flex justify-between items-baseline">
         <h3 class="text-lg font-medium">
           ${tabLabels[this.progressState.activeTab]}
         </h3>
