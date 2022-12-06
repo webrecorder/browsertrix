@@ -1070,7 +1070,8 @@ https://example.net`}
                 @click=${this.navLink}
               >
                 ${this.formState.browserProfile!.name}
-              </a>`
+              </a>`,
+              () => msg("Default Profile")
             )
           )}
           ${this.renderSetting(
