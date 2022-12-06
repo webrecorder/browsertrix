@@ -151,6 +151,8 @@ function validURL(url: string) {
 }
 
 const trimExclusions = flow(uniq, compact);
+const urlListToArray = (str: string) =>
+  str.trim().replace(/,/g, " ").split(/\s+/g);
 
 @localized()
 export class NewJobConfig extends LiteElement {
@@ -404,7 +406,7 @@ export class NewJobConfig extends LiteElement {
               type="submit"
               size="small"
               variant="primary"
-              ?disabled=${this.isSubmitting}
+              ?disabled=${this.isSubmitting || this.formHasError}
               ?loading=${this.isSubmitting}
             >
               ${this.formState.runNow
@@ -460,6 +462,30 @@ export class NewJobConfig extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
+          @sl-input=${async (e: Event) => {
+            const inputEl = e.target as SlInput;
+            await inputEl.updateComplete;
+            if (
+              inputEl.invalid &&
+              !urlListToArray(inputEl.value).some((url) => !validURL(url))
+            ) {
+              inputEl.setCustomValidity("");
+              inputEl.helpText = "";
+            }
+          }}
+          @sl-blur=${async (e: Event) => {
+            const inputEl = e.target as SlInput;
+            await inputEl.updateComplete;
+            if (
+              inputEl.value &&
+              urlListToArray(inputEl.value).some((url) => !validURL(url))
+            ) {
+              const text = msg("Please fix invalid URL in list.");
+              inputEl.invalid = true;
+              inputEl.helpText = text;
+              inputEl.setCustomValidity(text);
+            }
+          }}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
@@ -977,15 +1003,13 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Try to create a unique name to help keep things organized!`
       )}
-      ${this.renderServerError()}
     `;
   }
 
-  private renderServerError() {
-    if (!this.serverError) return;
+  private renderErrorAlert(errorMessage: string | TemplateResult) {
     return html`
-      <div class="col-span-1 md:col-span-5 mt-5">
-        <btrix-alert variant="danger">${this.serverError}</btrix-alert>
+      <div class="col-span-1 md:col-span-5">
+        <btrix-alert variant="danger">${errorMessage}</btrix-alert>
       </div>
     `;
   }
@@ -1083,6 +1107,14 @@ https://example.net`}
           ${this.renderSetting(msg("Job Name"), crawlConfig.name)}
         </dl>
       </div>
+      ${when(this.serverError, () => this.renderErrorAlert(this.serverError!))}
+      ${when(this.formHasError, () =>
+        this.renderErrorAlert(
+          msg(
+            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+          )
+        )
+      )}
     `;
   };
 
@@ -1475,7 +1507,7 @@ https://example.net`}
 
   private parseUrlListConfig(): NewCrawlConfigParams["config"] {
     const config = {
-      seeds: this.formState.urlList.trim().replace(/,/g, " ").split(/\s+/g),
+      seeds: urlListToArray(this.formState.urlList),
       scopeType: "page" as FormState["scopeType"],
     };
 
@@ -1485,11 +1517,9 @@ https://example.net`}
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
     const primarySeedUrl = this.formState.primarySeedUrl.replace(/\/$/, "");
     const externalUrlList = this.formState.allowedExternalUrlList
-      ? this.formState.allowedExternalUrlList
-          .trim()
-          .replace(/,/g, " ")
-          .split(/\s+/g)
-          .map((str) => str.replace(/\/$/, ""))
+      ? urlListToArray(this.formState.allowedExternalUrlList).map((str) =>
+          str.replace(/\/$/, "")
+        )
       : [];
     let scopeType = this.formState.scopeType;
     const include = [];
