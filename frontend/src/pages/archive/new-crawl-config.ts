@@ -12,8 +12,8 @@ import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
 import compact from "lodash/fp/compact";
+import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
-import merge from "lodash/fp/merge";
 import uniq from "lodash/fp/uniq";
 import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
@@ -1567,10 +1567,7 @@ https://example.net`}
         ...nextState,
       };
     } else {
-      this.progressState = merge(
-        <ProgressState>{ ...this.progressState },
-        <Partial<ProgressState>>{ ...nextState }
-      );
+      this.progressState = mergeDeep(this.progressState, nextState);
     }
   }
 
@@ -1581,10 +1578,7 @@ https://example.net`}
         ...nextState,
       };
     } else {
-      this.formState = merge(
-        <FormState>this.formState,
-        <Partial<FormState>>nextState
-      );
+      this.formState = mergeDeep(this.formState, nextState);
     }
   }
 }

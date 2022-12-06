@@ -2,7 +2,7 @@ import type { TemplateResult, LitElement } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import merge from "lodash/fp/merge";
+import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -46,7 +46,7 @@ export class CrawlTemplatesNew extends LiteElement {
   }
   private _initialCrawlTemplate: InitialCrawlTemplate = defaultValue;
   set initialCrawlTemplate(val: any) {
-    this._initialCrawlTemplate = merge(this._initialCrawlTemplate, val);
+    this._initialCrawlTemplate = mergeDeep(this._initialCrawlTemplate, val);
   }
 
   @state()
