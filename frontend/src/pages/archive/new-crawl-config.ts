@@ -1006,15 +1006,19 @@ https://example.net`}
           ${this.renderSetting(
             msg("Exclusions"),
             html`
-              ${exclusions.length || msg("None")}
               ${when(
                 exclusions.length,
                 () => html`
-                  <btrix-queue-exclusion-table .exclusions=${exclusions}>
+                  <btrix-queue-exclusion-table
+                    .exclusions=${exclusions}
+                    label=""
+                  >
                   </btrix-queue-exclusion-table>
-                `
+                `,
+                () => msg("None")
               )}
-            `
+            `,
+            2
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
@@ -1093,7 +1097,7 @@ https://example.net`}
         `
       )}
       ${this.renderSetting(
-        msg("Include Linked Pages (“one hop out”)"),
+        msg("Include Linked Pages"),
         Boolean(crawlConfig.config.extraHops)
       )}
     `;
@@ -1137,7 +1141,7 @@ https://example.net`}
     `;
   }
 
-  private renderSetting(label: string, value: any) {
+  private renderSetting(label: string, value: any, cols = 1) {
     let content = value;
 
     if (typeof value === "boolean") {
@@ -1148,7 +1152,7 @@ https://example.net`}
       >`;
     }
     return html`
-      <div class="col-span-1">
+      <div class="col-span-${cols}">
         <dt class="mb-0.5 text-xs text-neutral-500">${label}</dt>
         <dd class="font-monostyle text-neutral-700">${content}</dd>
       </div>
