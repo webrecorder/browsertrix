@@ -12,7 +12,7 @@ The production deployments also allow using an external mongodb server, and/or e
 
 For a single-machine production deployment, we recommend using microk8s.
 
-1. Install MicroK8S, as suggested in [the local deployment guide](./local-deploy). Ensure the `ingress` and `cert-manager` addons are also enabled.
+1. Install MicroK8S, as suggested in [the local deployment guide](./local) and ensure the `ingress` and `cert-manager` addons are also enabled.
 
 2. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./examples/microk8s-hosted.yaml` to your host and domain
 

@@ -52,7 +52,31 @@ For Ubuntu and other linux distros, we recommend using MicroK8S for both local d
 
 2. Run the Helm command as described above.
 
+
+## Waiting for Cluster to Start
+
+Especially on first run, it may take a few minutes for the Browsertrix Cloud cluster to start, as all images need to be loaded.
+
+You can try running the command: `kubectl wait --for=condition=ready pod --all` to wait for all pods to be initialized.
+
+If this command fails, you can also run `kubectl get pods` to see the status of each of the pods.
+
+There should be 4 pods listed: backend, fronend, minio and mongodb. If any one is not ready for a while, something may be wrong.
+
+### Debugging Pod Issues
+
+To get more details about why a pod has not started, you can run `kubectl describe <podname>` and see the latest status at the bottom.
+
+Often, the error may be obvious, such as failed to pull an image.
+
+If the pod is running, or previously ran, you can also get the logs from the container by running `kubectl logs <podname>`
+
+The outputs of these commands will be helpful if you'd like to report an issue [on GitHub](https://github.com/webrecorder/browsertrix-cloud/issues)
+
+
 ## Uninstalling
 
-To uninstall, simply run `helm unininstall btrix`
+To uninstall, run `helm uninstall btrix`.
+
+By default, the database + storage volumes are not automatically deleted. To fully delete all persistent data created in the cluster, also run `kubectl delete pvc --all`.
 
