@@ -1,4 +1,4 @@
-# Running Frontend
+# Running the Frontend
 
 This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
 The frontend can connect to a Browsertrix Cloud API backend running locally or remotely.
