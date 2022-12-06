@@ -282,7 +282,7 @@ export class NewJobConfig extends LiteElement {
         name="newJobConfig"
         @reset=${this.onReset}
         @submit=${this.onSubmit}
-        @keydown=${this.preventSubmit}
+        @keydown=${this.onKeyDown}
         @sl-blur=${this.validateOnBlur}
         @sl-change=${this.updateFormStateOnChange}
       >
@@ -1363,17 +1363,26 @@ https://example.net`}
     return !hasInvalid;
   };
 
-  private preventSubmit(event: KeyboardEvent) {
+  private onKeyDown(event: KeyboardEvent) {
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
-    if (tagName === "sl-input") {
-      if (
-        event.key === "Enter" &&
-        this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
-      ) {
-        // Prevent submission by "Enter" keypress if not on last tab
+    if (tagName !== "sl-input") return;
+
+    const { key } = event;
+    if ((el as SlInput).type === "number") {
+      // Prevent typing non-numeric keys
+      if (key.length === 1 && /\D/.test(key)) {
         event.preventDefault();
+        return;
       }
+    }
+
+    if (
+      key === "Enter" &&
+      this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
+    ) {
+      // Prevent submission by "Enter" keypress if not on last tab
+      event.preventDefault();
     }
   }
 
