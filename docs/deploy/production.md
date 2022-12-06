@@ -14,11 +14,17 @@ For a single-machine production deployment, we recommend using microk8s.
 
 1. Install MicroK8S, as suggested in [the local deployment guide](./local) and ensure the `ingress` and `cert-manager` addons are also enabled.
 
-2. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./examples/microk8s-hosted.yaml` to your host and domain
+2. Copy `cp ./chart/examples/microk8s-hosted.yaml ./chart/my-config.yaml` to make local changes.
 
-3. Set the supeadmin username and password, and mongodb username and password, also in `./examples/microk8s-hosted.yaml`
+2. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./chart/my-config.yaml` to your host and domain
 
-4. Run with `helm upgrade --install -f ./chart/values.yaml -f ./chart/microk8s-hosted.yaml btrix ./chart/`
+3. Set the superadmin username and password, and mongodb username and password in `./chart/my-config.yaml`
+
+4. Run with:
+
+   ```
+   helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
+   ```
 
 
 ### Using Custom Storage
