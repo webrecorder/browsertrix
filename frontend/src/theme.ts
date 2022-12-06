@@ -149,6 +149,12 @@ const theme = css`
   sl-radio-group sl-radio:not(:first-of-type) {
     margin-top: var(--sl-spacing-small);
   }
+
+  /* Aesthetically closer to monospaced font: */
+  .font-monostyle {
+    font-family: var(--sl-font-mono);
+    font-variation-settings: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
+  }
 `;
 
 export default theme;

@@ -996,7 +996,7 @@ https://example.net`}
     return html`
       ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
-        <dl>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${when(this.jobType === "urlList", () =>
             this.renderConfirmUrlListSettings(crawlConfig)
           )}
@@ -1027,23 +1027,17 @@ https://example.net`}
       </div>
       ${this.renderSectionHeading(msg("Browser Settings"))}
       <div class="col-span-1 md:col-span-5">
-        <dl>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${this.renderSetting(
             msg("Browser Profile"),
             when(
               crawlConfig.profileid,
               () => html`<a
-                class="font-medium text-neutral-700 hover:text-neutral-900"
+                class="text-blue-500 hover:text-blue-600"
                 href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
                 @click=${this.navLink}
               >
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="link-45deg"
-                ></sl-icon>
-                <span class="inline-block align-middle"
-                  >${this.formState.browserProfile!.name}</span
-                >
+                ${this.formState.browserProfile!.name}
               </a>`
             )
           )}
@@ -1066,7 +1060,7 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Job Scheduling"))}
 
       <div class="col-span-1 md:col-span-5">
-        <dl>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${this.renderSetting(
             msg("Crawl Schedule Type"),
             this.scheduleTypeLabels[this.formState.scheduleType]
@@ -1081,7 +1075,9 @@ https://example.net`}
       </div>
       ${this.renderSectionHeading(msg("Job Information"))}
       <div class="col-span-1 md:col-span-5">
-        <dl>${this.renderSetting(msg("Job Name"), crawlConfig.name)}</dl>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ${this.renderSetting(msg("Job Name"), crawlConfig.name)}
+        </dl>
       </div>
     `;
   };
@@ -1152,9 +1148,9 @@ https://example.net`}
       >`;
     }
     return html`
-      <div class="mb-4 last:mb-0">
+      <div class="col-span-1">
         <dt class="mb-0.5 text-xs text-neutral-500">${label}</dt>
-        <dd>${content}</dd>
+        <dd class="font-monostyle text-neutral-700">${content}</dd>
       </div>
     `;
   }
