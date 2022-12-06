@@ -1,0 +1,19 @@
+site_name: Browsertrix Cloud
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.instant
+  font:
+    text: Inter
+    code: Recursive
+markdown_extensions:
+  - toc:
+      toc_depth: 3
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+

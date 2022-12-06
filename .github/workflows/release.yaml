@@ -36,6 +36,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: backend
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-backend:${{ env.VERSION }}, webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
@@ -46,6 +47,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: frontend
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=${{ env.VERSION }}
