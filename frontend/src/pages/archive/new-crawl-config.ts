@@ -439,9 +439,9 @@ export class NewJobConfig extends LiteElement {
     return html`<div class="col-span-1 md:col-span-3">${content}</div> `;
   };
 
-  private renderHelpTextCol(content: TemplateResult) {
+  private renderHelpTextCol(content: TemplateResult, padTop = true) {
     return html`
-      <div class="col-span-1 md:col-span-2 flex">
+      <div class="col-span-1 md:col-span-2 flex${padTop ? " pt-6" : ""}">
         <div class="text-base mr-2">
           <sl-icon name="info-circle"></sl-icon>
         </div>
@@ -500,7 +500,8 @@ https://example.com/path`}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away from a Crawl
-        URL.`
+        URL.`,
+        false
       )}
       ${when(
         this.formState.includeLinkedPages,
@@ -686,7 +687,8 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`
+        Crawl Scope.`,
+        false
       )}
       ${this.renderSectionHeading(msg("Page Limits"))}
       ${this.renderFormCol(html`
@@ -797,7 +799,8 @@ https://example.net`}
             target="_blank"
             rel="noopener noreferrer nofollow"
             >Steven Black’s Hosts file</a
-          >.`
+          >.`,
+        false
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
@@ -977,7 +980,8 @@ https://example.net`}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         html`If checked, a crawl will run at the time specified above and also
-        once when setup is complete.`
+        once when setup is complete.`,
+        false
       )}
     `;
   };

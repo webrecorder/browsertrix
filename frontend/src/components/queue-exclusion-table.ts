@@ -121,7 +121,7 @@ export class QueueExclusionTable extends LiteElement {
           --sl-input-border-width: 0;
         }
       </style>
-      <div class="flex items-center justify-between mb-1.5 leading-none">
+      <div class="flex items-center justify-between mb-2 leading-tight">
         <div>${this.label ?? msg("Exclusions")}</div>
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination

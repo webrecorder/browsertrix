@@ -94,11 +94,17 @@ const theme = css`
     top: auto;
   }
 
-  /* Add more spacing between input and help text */
+  /* Add more spacing between label, input and help text */
+  sl-input::part(form-control-label),
+  sl-textarea::part(form-control-label),
+  sl-select::part(form-control-label) {
+    line-height: 1.4;
+    margin-bottom: 0.375rem;
+  }
   sl-input::part(form-control-help-text),
   sl-textarea::part(form-control-help-text),
   sl-select::part(form-control-help-text) {
-    margin-top: var(--sl-spacing-2x-small);
+    margin-top: var(--sl-spacing-x-small);
     font-weight: 400;
   }
 
