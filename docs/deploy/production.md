@@ -59,6 +59,7 @@ mongo_local: false
 mongo_auth:
   db_url: mongodb+srv://...
 
+```
 
 ## Cloud Deployment
 
