@@ -484,7 +484,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderDetails() {
     return html`
-      <dl class="grid grid-cols-2 md:grid-cols-5 gap- md:gap-0">
+      <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(msg("Last Run"), () =>
           this.crawlTemplate!.lastCrawlTime
             ? html`<sl-format-date
@@ -499,9 +499,13 @@ export class CrawlTemplatesDetail extends LiteElement {
         )}
         ${this.renderDetailItem(msg("Next Run"), () =>
           this.crawlTemplate!.schedule
-            ? humanizeNextDate(this.crawlTemplate!.schedule, {
-                length: "short",
-              })
+            ? html`
+                <div>
+                  ${humanizeNextDate(this.crawlTemplate!.schedule, {
+                    length: "short",
+                  })}
+                </div>
+              `
             : html`<span class="text-neutral-400"
                 >${msg("Not Scheduled")}</span
               >`
@@ -536,9 +540,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     isLast = false
   ) {
     return html`
-      <div class="col-span-1 px-3 py-1 md:px-8${isLast ? "" : " border-r"}">
+      <div class="py-1">
         <dt class="text-xs text-neutral-500">${label}</dt>
-        <dd>
+        <dd class="font-monostyle">
           ${when(
             this.crawlTemplate,
             renderContent,
@@ -546,6 +550,10 @@ export class CrawlTemplatesDetail extends LiteElement {
           )}
         </dd>
       </div>
+      ${when(
+        !isLast,
+        () => html`<hr class="flex-0 border-l w-0" style="height: inherit" />`
+      )}
     `;
   }
 
