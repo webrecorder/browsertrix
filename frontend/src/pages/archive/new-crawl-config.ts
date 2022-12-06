@@ -957,10 +957,10 @@ https://example.net`}
   };
 
   private renderJobInformation() {
-    const defaultValue =
-      this.jobType === "urlList"
-        ? this.formState.jobName
-        : this.formState.primarySeedUrl;
+    const jobNameValue =
+      this.formState.jobName ||
+      (this.jobType === "seeded" && this.formState.primarySeedUrl) ||
+      "";
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -970,7 +970,7 @@ https://example.net`}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl config name",
           })}
-          value=${defaultValue}
+          value=${jobNameValue}
           required
         ></sl-input>
       `)}
@@ -1280,6 +1280,7 @@ https://example.net`}
 
   private nextStep() {
     const isValid = this.checkCurrentPanelValidity();
+    console.log(isValid);
 
     if (isValid) {
       const { activeTab, tabs, currentStep } = this.progressState;
@@ -1436,7 +1437,7 @@ https://example.net`}
   private parseConfig(): NewCrawlConfigParams {
     // TODO save job type
     const config: NewCrawlConfigParams = {
-      name: this.formState.jobName,
+      name: this.formState.jobName || this.formState.primarySeedUrl,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
