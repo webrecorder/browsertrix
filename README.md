@@ -10,28 +10,33 @@ and managing all aspects of crawling process. This system provides the orchestra
 while the actual crawling is performed using
 [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
 
-The system is designed to run in both Kubernetes and Docker Swarm, as well as locally under Podman.
-
 See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
-
-
-## Development Status
-
-Browsertrix Cloud is currently in an early beta stage and not fully ready for production. This is an ambitious project and there's a lot to be done!
-
-If you would like to help in a particular way, please open an issue or reach out to us in other ways.
 
 ## Documentation
 
-Docs are available at: [https://docs.browsertrix.cloud/](https://docs.browsertrix.cloud/) created from the markdown in the [./docs](./docs) on the main branch.
+The full docs for using, deplyoing and developing Browsertrix Cloud are available at: [https://docs.browsertrix.cloud](https://docs.browsertrix.cloud)
 
-To build the documentation locally, install Material for MkDocs with pip:
+## Deployment 
 
-```shell
-pip install mkdocs-material
-```
+The latest deployment documentation is available at: [https://docs.browsertrix.cloud/deploy](https://docs.browsertrix.cloud/deploy)
 
-In the project root directory run `mkdocs serve` to run a local version of the documentation site.
+The docs cover deploying Browsertrix Cloud in different environments using Kubernetes, from a single-node setup to scalable clusters in the cloud.
+
+Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
+of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
+
+Making deployment of Browsertrix Cloud as easy as possible remains a key goal, and we welcome suggestions for how we can further improve our Kubernetes deployment options.
+
+If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the crawling capabilities.
+
+## Development Status
+
+Browsertrix Cloud is currently in a beta, though the system and backend API is fairly stable, we are working on many additional features.
+
+Additional developer documentation is available at [https://docs.browsertrix.cloud/dev](https://docs.browsertrix.cloud/dev)
+
+Please see the GitHub issues and [this GitHub Project](https://github.com/orgs/webrecorder/projects/9) for our current project plan and tasks.
+
 
 ## License
 
