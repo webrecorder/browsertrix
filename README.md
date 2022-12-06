@@ -25,9 +25,7 @@ The docs cover deploying Browsertrix Cloud in different environments using Kuber
 Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
 of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
 
-Making deployment of Browsertrix Cloud as easy as possible is a key goal!
-
-Please open an issue if you have suggestions on how we can further improve our deployment options!
+Making deployment of Browsertrix Cloud as easy as possible remains a key goal, and we welcome suggestions for how we can further improve our Kubernetes deployment options.
 
 If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the crawling capabilities.
 

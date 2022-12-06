@@ -17,7 +17,5 @@ setting up Browsertrix Cloud for different scenarios.
 Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
 of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
 
-Making deployment of Browsertrix Cloud as easy as possible is a key goal!
-
-[Please open an issue](https://github.com/webrecorder/browsertrix-cloud/issues/new) if you have suggestions on how we can further improve our deployment options!
+Making deployment of Browsertrix Cloud as easy as possible remains a key goal, and we welcome suggestions for how we can further improve our Kubernetes deployment options.
 
