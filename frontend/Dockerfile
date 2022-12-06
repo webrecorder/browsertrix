@@ -14,7 +14,7 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 
 WORKDIR /app
 COPY yarn.lock package.json ./
-RUN yarn --frozen-lockfile
+RUN yarn --frozen-lockfile --network-timeout 1000000
 
 COPY lit-localize.json \
     postcss.config.js \

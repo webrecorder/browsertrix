@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
-        uses: balchua/microk8s-actions@v0.3.0
+        uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: '1.25/stable'
           addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
