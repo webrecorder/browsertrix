@@ -1,6 +1,7 @@
-import type { HTMLTemplateResult } from "lit";
+import type { HTMLTemplateResult, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { parse as yamlToJson, stringify as jsonToYaml } from "yaml";
 import { mergeDeep } from "immutable";
@@ -13,7 +14,11 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 import type { CrawlConfig, SeedConfig } from "./types";
-import { getUTCSchedule, humanizeSchedule } from "../../utils/cron";
+import {
+  getUTCSchedule,
+  humanizeSchedule,
+  humanizeNextDate,
+} from "../../utils/cron";
 import "../../components/crawl-scheduler";
 import {
   ExclusionRemoveEvent,
@@ -146,40 +151,27 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderInactiveNotice()}
 
-        <header class="md:px-4 pt-4 md:flex justify-between">
-          <div>
-            <h2
-              class="text-xl md:text-2xl font-semibold md:h-9 leading-tight mb-1"
-            >
-              ${this.crawlTemplate?.name
-                ? html`
-                    <span>${this.crawlTemplate.name}</span>
-                    ${this.crawlTemplate.inactive
-                      ? ""
-                      : html`
-                          <sl-button
-                            size="small"
-                            variant="text"
-                            @click=${() => (this.openDialogName = "name")}
-                          >
-                            ${msg("Edit")}
-                          </sl-button>
-                        `}
-                  `
-                : html`<sl-skeleton class="md:h-9 w-80"></sl-skeleton>`}
-            </h2>
-            <div class="text-sm text-neutral-400 md:h-5">
-              <div class="md:inline-block mr-3">${msg("Crawl Config")}</div>
-              <code class="bg-neutral-50 text-xs"
-                >${this.crawlTemplate?.id}</code
-              >
-            </div>
+        <header class="py-4 md:flex justify-between items-end">
+          <h2 class="text-xl leading-10">
+            ${this.crawlTemplate?.name
+              ? html`<span>${this.crawlTemplate.name}</span> `
+              : ""}
+          </h2>
+          <div class="flex-0 flex">
+            ${when(
+              this.crawlTemplate && !this.crawlTemplate.inactive,
+              () => html`
+                <sl-button variant="primary" class="mr-2">
+                  <sl-icon slot="prefix" name="gear"></sl-icon>
+                  ${msg("Edit Crawl Config")}
+                </sl-button>
+              `
+            )}
+            ${this.renderMenu()}
           </div>
-
-          <div class="flex-0 text-right">${this.renderMenu()}</div>
         </header>
 
-        <section class="md:px-4 text-sm text-neutral-500">
+        <section class="border rounded-lg py-2">
           ${this.renderDetails()}
         </section>
 
@@ -492,34 +484,68 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderDetails() {
     return html`
-      <dl class="grid grid-cols-2">
-        <div>
-          <dt class="text-xs text-0-600">${msg("Created at")}</dt>
-          <dd class="h-5">
-            ${this.crawlTemplate?.created
-              ? html`
-                  <sl-format-date
-                    date=${`${this.crawlTemplate.created}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
-                `
-              : html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div>
-          <dt class="text-xs text-0-600">${msg("Created by")}</dt>
-          <dd class="h-5">
-            ${this.crawlTemplate?.userName ||
-            this.crawlTemplate?.userid ||
-            html`<sl-skeleton style="width: 15em"></sl-skeleton>`}
-          </dd>
-        </div>
+      <dl class="grid grid-cols-2 md:grid-cols-5 gap- md:gap-0">
+        ${this.renderDetailItem(msg("Last Run"), () =>
+          this.crawlTemplate!.lastCrawlTime
+            ? html`<sl-format-date
+                date=${this.crawlTemplate!.lastCrawlTime}
+                month="numeric"
+                day="numeric"
+                year="numeric"
+                hour="numeric"
+                minute="numeric"
+              ></sl-format-date>`
+            : html`<span class="text-neutral-400">${msg("Never")}</span>`
+        )}
+        ${this.renderDetailItem(msg("Next Run"), () =>
+          this.crawlTemplate!.schedule
+            ? humanizeNextDate(this.crawlTemplate!.schedule, {
+                length: "short",
+              })
+            : html`<span class="text-neutral-400"
+                >${msg("Not Scheduled")}</span
+              >`
+        )}
+        ${this.renderDetailItem(
+          msg("Run Count"),
+          () => this.crawlTemplate!.crawlCount
+        )}
+        ${this.renderDetailItem(msg("Schedule"), () =>
+          this.crawlTemplate!.schedule
+            ? html`<sl-icon
+                  name="calendar3"
+                  class="inline-block align-middle mr-1"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Recurring Schedule")}
+                </span>`
+            : html`<span class="text-neutral-400">${msg("None")}</span>`
+        )}
+        ${this.renderDetailItem(
+          msg("Last Updated By"),
+          () => this.crawlTemplate!.userName,
+          true
+        )}
       </dl>
+    `;
+  }
+
+  private renderDetailItem(
+    label: string | TemplateResult,
+    renderContent: () => any,
+    isLast = false
+  ) {
+    return html`
+      <div class="col-span-1 px-3 py-1 md:px-8${isLast ? "" : " border-r"}">
+        <dt class="text-xs text-neutral-500">${label}</dt>
+        <dd>
+          ${when(
+            this.crawlTemplate,
+            renderContent,
+            () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+          )}
+        </dd>
+      </div>
     `;
   }
 
