@@ -4,6 +4,7 @@ import type {
   SlCheckbox,
   SlInput,
   SlRadio,
+  SlRadioGroup,
   SlSelect,
   SlTextarea,
 } from "@shoelace-style/shoelace";
@@ -182,6 +183,15 @@ export class CrawlConfigEditor extends LiteElement {
 
   private get formHasError() {
     return Object.values(this.progressState.tabs).some(({ error }) => error);
+  }
+
+  private get utcSchedule() {
+    return getUTCSchedule({
+      interval: this.formState.scheduleFrequency,
+      dayOfMonth: this.formState.scheduleDayOfMonth,
+      dayOfWeek: this.formState.scheduleDayOfWeek,
+      ...this.formState.scheduleTime,
+    });
   }
 
   private daysOfWeek = getLocalizedWeekDays();
@@ -868,10 +878,7 @@ https://example.net`}
   }
 
   private renderScheduleCron = () => {
-    const utcSchedule = getUTCSchedule({
-      interval: this.formState.scheduleFrequency,
-      ...this.formState.scheduleTime,
-    });
+    const utcSchedule = this.utcSchedule;
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
       ${this.renderFormCol(html`
@@ -907,6 +914,10 @@ https://example.net`}
               name="scheduleDayOfWeek"
               label=${msg("Day")}
               value=${this.formState.scheduleDayOfWeek}
+              @sl-change=${(e: Event) =>
+                this.updateFormState({
+                  scheduleDayOfWeek: +(e.target as SlRadioGroup).value,
+                })}
             >
               ${this.daysOfWeek.map(
                 (label, day) =>
@@ -957,14 +968,20 @@ https://example.net`}
             ${msg(
               html`Schedule:
                 <span class="text-blue-500"
-                  >${humanizeSchedule(utcSchedule)}</span
+                  >${utcSchedule
+                    ? humanizeSchedule(utcSchedule)
+                    : msg("Invalid date")}</span
                 >.`
             )}
           </p>
           <p>
             ${msg(
               html`Next scheduled run:
-                <span>${humanizeNextDate(utcSchedule)}</span>.`
+                <span
+                  >${utcSchedule
+                    ? humanizeNextDate(utcSchedule)
+                    : msg("Invalid date")}</span
+                >.`
             )}
           </p>
         </div>
@@ -1284,7 +1301,7 @@ https://example.net`}
         break;
       case "sl-input": {
         if ((elem as SlInput).type === "number") {
-          value = +value;
+          value = +elem.value;
         } else {
           value = elem.value;
         }
@@ -1491,13 +1508,7 @@ https://example.net`}
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
-      schedule:
-        this.formState.scheduleType === "cron"
-          ? getUTCSchedule({
-              interval: this.formState.scheduleFrequency,
-              ...this.formState.scheduleTime,
-            })
-          : "",
+      schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
         ? this.formState.crawlTimeoutMinutes * 60
         : 0,

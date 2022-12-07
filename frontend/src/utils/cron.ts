@@ -48,7 +48,12 @@ export function humanizeSchedule(
   options: { length?: "short" } = {}
 ): string {
   const interval = getScheduleInterval(schedule);
-  const { days } = parseCron(schedule)!;
+  const parsed = parseCron(schedule);
+  if (!parsed) {
+    // Invalid date
+    return "";
+  }
+  const { days } = parsed;
   const nextDate = parseCron.nextDate(schedule)!;
   const formattedWeekDay = nextDate.toLocaleString(undefined, {
     weekday: "long",
@@ -114,11 +119,15 @@ export function getUTCSchedule({
   minute,
   hour,
   period,
+  dayOfWeek,
+  dayOfMonth,
 }: {
   interval: ScheduleInterval;
   minute: number | string;
   hour: number | string;
   period: "AM" | "PM";
+  dayOfWeek?: number;
+  dayOfMonth?: number;
 }): string {
   const localDate = new Date();
 
@@ -135,11 +144,12 @@ export function getUTCSchedule({
 
   localDate.setHours(+hour + periodOffset);
   localDate.setMinutes(+minute);
-  const dayOfMonth = interval === "monthly" ? localDate.getUTCDate() : "*";
-  const dayOfWeek = interval === "weekly" ? localDate.getUTCDay() : "*";
+  const date =
+    interval === "monthly" ? dayOfMonth || localDate.getUTCDate() : "*";
+  const day = interval === "weekly" ? dayOfWeek || localDate.getUTCDay() : "*";
   const month = "*";
 
-  const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${dayOfMonth} ${month} ${dayOfWeek}`;
+  const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${date} ${month} ${day}`;
 
   return schedule;
 }
