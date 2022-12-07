@@ -5,7 +5,7 @@ To just test out Browsertrix Cloud on your local machine, you can use many of th
 Browsertrix Cloud has been tested with Docker Desktop (with Kubernetes enabled), microk8s, minikube and k3s.
 
 Here are a few different ways to get started with Browsertrix Cloud. The instructions below assume you have cloned
-the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder-browsertrix-cloud) repository locally,
+the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally,
 and have local package managers for your platform (eg. `brew` for mac) already installed.
 
 After following the environment-specific instructions below, simply run: 
