@@ -87,15 +87,31 @@ type FormState = {
   jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
 };
-const getDefaultProgressState = (): ProgressState => ({
+const getDefaultProgressState = (hasConfigId = false): ProgressState => ({
   activeTab: "crawlerSetup",
-  currentStep: "crawlerSetup",
+  currentStep: hasConfigId ? "confirmSettings" : "crawlerSetup",
   tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: false },
-    browserSettings: { enabled: false, error: false, completed: false },
-    jobScheduling: { enabled: false, error: false, completed: false },
-    jobInformation: { enabled: false, error: false, completed: false },
-    confirmSettings: { enabled: false, error: false, completed: false },
+    crawlerSetup: { enabled: true, error: false, completed: hasConfigId },
+    browserSettings: {
+      enabled: hasConfigId,
+      error: false,
+      completed: hasConfigId,
+    },
+    jobScheduling: {
+      enabled: hasConfigId,
+      error: false,
+      completed: hasConfigId,
+    },
+    jobInformation: {
+      enabled: hasConfigId,
+      error: false,
+      completed: hasConfigId,
+    },
+    confirmSettings: {
+      enabled: hasConfigId,
+      error: false,
+      completed: hasConfigId,
+    },
   },
 });
 const getDefaultFormState = (): FormState => ({
@@ -164,6 +180,9 @@ export class CrawlConfigEditor extends LiteElement {
   archiveId!: string;
 
   @property({ type: String })
+  configId?: string;
+
+  @property({ type: String })
   jobType?: JobType;
 
   @property({ type: Object })
@@ -224,13 +243,13 @@ export class CrawlConfigEditor extends LiteElement {
   @query('form[name="newJobConfig"]')
   formElem!: HTMLFormElement;
 
-  constructor() {
-    super();
-    this.progressState = getDefaultProgressState();
+  connectedCallback(): void {
+    this.progressState = getDefaultProgressState(Boolean(this.configId));
     this.formState = getDefaultFormState();
     if (!this.formState.lang) {
       this.formState.lang = this.getInitialLang();
     }
+    super.connectedCallback();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -1531,7 +1550,7 @@ https://example.net`}
   }
 
   private async onReset() {
-    this.progressState = getDefaultProgressState();
+    this.progressState = getDefaultProgressState(Boolean(this.configId));
     this.formState = {
       ...getDefaultFormState(),
       lang: this.getInitialLang(),
