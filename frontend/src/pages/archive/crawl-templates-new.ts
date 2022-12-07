@@ -17,6 +17,7 @@ export type InitialCrawlTemplate = InitialJobConfig;
 const defaultValue = {
   name: "",
   profileid: null,
+  schedule: "",
   config: {
     seeds: [],
     scopeType: "prefix",

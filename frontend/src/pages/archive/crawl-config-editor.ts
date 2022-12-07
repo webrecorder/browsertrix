@@ -26,6 +26,8 @@ import {
   getUTCSchedule,
   humanizeSchedule,
   humanizeNextDate,
+  getScheduleInterval,
+  getNextDate,
 } from "../../utils/cron";
 import type { Tab } from "../../components/tab-list";
 import type {
@@ -38,7 +40,10 @@ import type { CrawlConfigParams, Profile, JobType } from "./types";
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
 };
-export type InitialJobConfig = Pick<CrawlConfigParams, "name" | "profileid"> & {
+export type InitialJobConfig = Pick<
+  CrawlConfigParams,
+  "name" | "profileid" | "schedule"
+> & {
   jobType?: JobType;
   config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
 };
@@ -285,6 +290,25 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
 
+    const scheduleState: Partial<FormState> = {};
+    if (this.initialJobConfig.schedule) {
+      scheduleState.scheduleType = "cron";
+      scheduleState.scheduleFrequency = getScheduleInterval(
+        this.initialJobConfig.schedule
+      );
+      const nextDate = getNextDate(this.initialJobConfig.schedule)!;
+      scheduleState.scheduleDayOfMonth = nextDate.getDate();
+      scheduleState.scheduleDayOfWeek = nextDate.getDay();
+      const hours = nextDate.getHours();
+      scheduleState.scheduleTime = {
+        hour: hours % 12 || 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+    } else {
+      scheduleState.scheduleType = "now";
+    }
+
     return {
       jobName: this.initialJobConfig.name,
       browserProfile: this.initialJobConfig.profileid
@@ -294,6 +318,7 @@ export class CrawlConfigEditor extends LiteElement {
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
       ...seedState,
+      ...scheduleState,
     };
   }
 

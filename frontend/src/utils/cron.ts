@@ -1,6 +1,8 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
+export const getNextDate = parseCron.nextDate;
+
 export type ScheduleInterval = "daily" | "weekly" | "monthly";
 
 /**

@@ -170,8 +170,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     <btrix-crawl-config-editor
       .initialJobConfig=${this.crawlTemplate}
-      configId=${this.crawlTemplate!.id}
       jobType=${"urlList"}
+      configId=${this.crawlTemplate!.id}
       archiveId=${this.archiveId}
       .authState=${this.authState}
       @reset=${(e: Event) => {
@@ -429,6 +429,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       config: this.crawlTemplate.config,
       profileid: this.crawlTemplate.profileid || null,
       jobType: this.crawlTemplate.jobType,
+      schedule: this.crawlTemplate.schedule,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
