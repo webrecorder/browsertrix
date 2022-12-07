@@ -68,11 +68,11 @@ type FormState = {
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
   scopeType: "prefix" | "host" | "domain" | "page" | "page-spa" | "custom";
-  exclusions: NewCrawlConfigParams["config"]["exclude"];
-  pageLimit: NewCrawlConfigParams["config"]["limit"];
-  scale: NewCrawlConfigParams["scale"];
-  blockAds: NewCrawlConfigParams["config"]["blockAds"];
-  lang: NewCrawlConfigParams["config"]["lang"];
+  exclusions: CrawlConfigParams["config"]["exclude"];
+  pageLimit: CrawlConfigParams["config"]["limit"];
+  scale: CrawlConfigParams["scale"];
+  blockAds: CrawlConfigParams["config"]["blockAds"];
+  lang: CrawlConfigParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -83,7 +83,7 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: NewCrawlConfigParams["name"];
+  jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
 };
 const getDefaultProgressState = (): ProgressState => ({
@@ -155,7 +155,7 @@ const urlListToArray = (str: string) =>
   str.trim().replace(/,/g, " ").split(/\s+/g);
 
 @localized()
-export class NewJobConfig extends LiteElement {
+export class CrawlConfigEditor extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -1123,7 +1123,7 @@ https://example.net`}
     `;
   };
 
-  private renderConfirmUrlListSettings(crawlConfig: NewCrawlConfigParams) {
+  private renderConfirmUrlListSettings(crawlConfig: CrawlConfigParams) {
     return html`
       ${this.renderSetting(
         msg("List of URLs"),
@@ -1140,7 +1140,7 @@ https://example.net`}
     `;
   }
 
-  private renderConfirmSeededSettings(crawlConfig: NewCrawlConfigParams) {
+  private renderConfirmSeededSettings(crawlConfig: CrawlConfigParams) {
     return html`
       ${this.renderSetting(
         msg("Primary Seed URL"),
@@ -1597,4 +1597,4 @@ https://example.net`}
   }
 }
 
-customElements.define("btrix-new-crawl-config", NewJobConfig);
+customElements.define("btrix-crawl-config-editor", CrawlConfigEditor);

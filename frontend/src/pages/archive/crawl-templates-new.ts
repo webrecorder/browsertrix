@@ -6,8 +6,8 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, InitialJobConfig } from "./new-crawl-config";
-import "./new-crawl-config";
+import type { JobType, InitialJobConfig } from "./crawl-config-editor";
+import "./crawl-config-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
@@ -88,7 +88,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <h2 class="text-xl font-medium mb-6">
           ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
-        <btrix-new-crawl-config
+        <btrix-crawl-config-editor
           .initialJobConfig=${this.initialCrawlTemplate}
           jobType=${jobType}
           archiveId=${this.archiveId}
@@ -97,7 +97,7 @@ export class CrawlTemplatesNew extends LiteElement {
             await (e.target as LitElement).updateComplete;
             this.jobType = undefined;
           }}
-        ></btrix-new-crawl-config>
+        ></btrix-crawl-config-editor>
       `;
     }
 
