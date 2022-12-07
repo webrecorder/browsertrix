@@ -54,6 +54,9 @@ export class CrawlTemplatesDetail extends LiteElement {
   @property({ type: String })
   crawlConfigId!: string;
 
+  @property({ type: Boolean })
+  isEditing: boolean = false;
+
   @state()
   private crawlTemplate?: CrawlConfig;
 
@@ -161,7 +164,17 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${when(
               this.crawlTemplate && !this.crawlTemplate.inactive,
               () => html`
-                <sl-button variant="primary" class="mr-2">
+                <sl-button
+                  href=${`/archives/${this.archiveId}/crawl-templates/config/${
+                    this.crawlTemplate!.id
+                  }?edit`}
+                  variant="primary"
+                  class="mr-2"
+                  @click=${(e: any) => {
+                    this.crawlTemplate = undefined;
+                    this.navLink(e);
+                  }}
+                >
                   <sl-icon slot="prefix" name="gear"></sl-icon>
                   ${msg("Edit Crawl Config")}
                 </sl-button>
