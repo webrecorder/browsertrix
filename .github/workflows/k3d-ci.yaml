@@ -21,17 +21,30 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
 
+      -
+        name: Build Backend
+        uses: docker/build-push-action@v3
+        with:
+          context: backend
+          load: true
+          tags: webrecorder/browsertrix-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      -
+        name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          load: true
+          tags: webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
       - 
-        name: "Build Backend"
+        name: "Import Images"
         run: |
-          docker build -t webrecorder/browsertrix-backend:latest backend
           k3d image import webrecorder/browsertrix-backend:latest -c btrix-1 --verbose
-
-
-      - 
-        name: "Build Frontend"
-        run: |
-          docker build -t webrecorder/browsertrix-frontend:latest frontend
           k3d image import webrecorder/browsertrix-frontend:latest -c btrix-1 --verbose
 
       - 
