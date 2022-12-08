@@ -1,0 +1,15 @@
+ingress_class: "public"
+
+mongo_auth:
+  username: root
+  password: example
+
+ingress:
+  host: "microk8s.browsertrix.cloud"
+  cert_email: "dev@webrecorder.net"
+  scheme: "https"
+  tls: true
+
+signer:
+  enabled: true
+  host: "signing.microk8s.browsertrix.cloud"
