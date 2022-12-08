@@ -12,6 +12,7 @@ jobs:
         with:
           cluster-name: btrix-1
           args: >-
+            -p "30870:30870@agent:0:direct"
             --agents 1
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
