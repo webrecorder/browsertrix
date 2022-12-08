@@ -1,0 +1,94 @@
+name: Cluster Run (K3d)
+
+on: [push, pull_request]
+
+jobs:
+  btrix-k3d-test:
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Create k3d Cluster
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: btrix-1
+          args: >-
+            -p "30870:30870@agent:0:direct"
+            --agents 1
+            --no-lb
+            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      -
+        name: Build Backend
+        uses: docker/build-push-action@v3
+        with:
+          context: backend
+          load: true
+          #outputs: type=tar,dest=backend.tar
+          tags: webrecorder/browsertrix-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      -
+        name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          load: true
+          #outputs: type=tar,dest=frontend.tar
+          tags: webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - 
+        name: "Import Images"
+        run: |
+          k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-1 --verbose
+          k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-1 --verbose
+
+      - 
+        name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+           version: 3.10.2
+
+      - 
+        name: Start Cluster with Helm
+        run: |
+          helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/k3d-ci.yaml btrix ./chart/
+
+      -
+        name: Install Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      - 
+        name: Install Python Libs
+        run: pip install pytest requests
+
+      -
+        name: Wait for all pods to be ready
+        run: kubectl wait --for=condition=ready pod --all --timeout=240s
+ 
+      - 
+        name: Run Tests
+        run: py.test -vv ./backend/test/*.py
+
+      -
+        name: Print Backend Logs
+        if: ${{ failure() }}
+        run: kubectl logs svc/browsertrix-cloud-backend
+

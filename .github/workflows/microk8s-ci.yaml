@@ -1,4 +1,4 @@
-name: Cluster Run (MicroK8S local)
+name: Cluster Run (MicroK8s)
 
 on: [push, pull_request]
 
