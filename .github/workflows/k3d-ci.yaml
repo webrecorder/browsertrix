@@ -32,8 +32,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: backend
-          outputs:
-            - type=tar,dest=backend.tar
+          outputs: type=tar,dest=backend.tar
           tags: webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
@@ -43,8 +42,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: frontend
-          outputs:
-            - type=tar,dest=frontend.tar
+          outputs: type=tar,dest=frontend.tar
           tags: webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
