@@ -1,0 +1,28 @@
+---
+ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+microk8s_cache_valid_time: 3600
+
+## version management
+microk8s_disable_snap_autoupdate: false
+
+microk8s_registry_size: 20Gi
+
+microk8s_dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+# Define which release is installed and tracked for updates.
+microk8s_channel: stable
+
+your_user: root          # if your cloud provide uses another user change this
+browsertrix_cloud_home: "/opt/browsertrix-cloud"
+microk8s_user_home: "/home/{{ microk8s_user }}"
+microk8s_user: conan     # change this to a different user if you don't want conan the deployer 
+microk8s_plugins:
+  dns: true              # CoreDNS
+  ingress: true          # Ingress controller for external access
+  helm3: true            # Helm 3 - Kubernetes package manager
+  host-access: true      # Allow Pods connecting to Host services smoothly
+  registry: true         # Private image registry exposed on localhost:32000
+  storage: true          # Storage class; allocates storage from host
+  cert-manager: true     # Cert manager
