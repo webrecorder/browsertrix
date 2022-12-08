@@ -1,0 +1,20 @@
+# k3s overrides for ci
+# --------------------
+
+
+# don't pull use, existing images
+api_pull_policy: "Never"
+nginx_pull_policy: "Never"
+
+
+superuser:
+  # set this to enable a superuser admin
+  email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  password: PASSW0RD!
+
+
+local_service_port: 30870
+
