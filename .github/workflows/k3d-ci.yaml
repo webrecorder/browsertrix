@@ -24,14 +24,14 @@ jobs:
       - 
         name: "Build Backend"
         run: |
-          docker buildx -t webrecorder/browsertrix-backend:latest backend
+          docker build -t webrecorder/browsertrix-backend:latest backend
           k3d image import webrecorder/browsertrix-backend:latest -c btrix-1 --verbose
 
 
       - 
         name: "Build Frontend"
         run: |
-          docker buildx -t webrecorder/browsertrix-frontend:latest frontend
+          docker build -t webrecorder/browsertrix-frontend:latest frontend
           k3d image import webrecorder/browsertrix-frontend:latest -c btrix-1 --verbose
 
       - 
