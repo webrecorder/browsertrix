@@ -8,5 +8,3 @@ aiobotocore
 redis>=4.2.0rc1
 pyyaml
 jinja2
-python_on_whales
-podman-compose
