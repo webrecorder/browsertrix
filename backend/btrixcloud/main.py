@@ -26,6 +26,8 @@ from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
 
+from .k8s.k8sman import K8SManager
+
 
 API_PREFIX = "/api"
 app_root = FastAPI(
@@ -67,16 +69,14 @@ def main():
     user_manager.set_archive_ops(archive_ops)
 
     # pylint: disable=import-outside-toplevel
-    if os.environ.get("KUBERNETES_SERVICE_HOST"):
-        from .k8s.k8sman import K8SManager
+    if not os.environ.get("KUBERNETES_SERVICE_HOST"):
+        print(
+            "Sorry, the Browsertrix Cloud Backend must be run inside a Kubernetes environment.\
+             Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+        )
+        sys.exit(1)
 
-        crawl_manager = K8SManager()
-    else:
-        # from .docker.dockerman import DockerManager
-        # crawl_manager = DockerManager(archive_ops)
-        from .swarm.swarmmanager import SwarmManager
-
-        crawl_manager = SwarmManager()
+    crawl_manager = K8SManager()
 
     init_storages_api(archive_ops, crawl_manager, current_active_user)
 
