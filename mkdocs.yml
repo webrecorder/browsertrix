@@ -9,12 +9,20 @@ theme:
   font:
     text: Inter
     code: Recursive
+
+  icon:
+    admonition:
+      tip: fontawesome/solid/angles-right
+      example: fontawesome/solid/flask
+
 markdown_extensions:
   - toc:
       toc_depth: 3
       permalink: true
   - pymdownx.highlight:
       anchor_linenums: true
+  - admonition
   - pymdownx.inlinehilite
+  - pymdownx.details
   - pymdownx.superfences
 

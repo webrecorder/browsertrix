@@ -18,7 +18,7 @@ For a single-machine production deployment, we recommend using microk8s.
 
 2. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./chart/my-config.yaml` to your host and domain
 
-3. Set the superadmin username and password, and mongodb username and password in `./chart/my-config.yaml`
+3. Set the super-admin username and password, and mongodb username and password in `./chart/my-config.yaml`
 
 4. Run with:
 
