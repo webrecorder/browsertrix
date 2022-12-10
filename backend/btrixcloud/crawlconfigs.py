@@ -20,6 +20,15 @@ from .db import BaseMongoModel
 
 
 # ============================================================================
+class JobType(str, Enum):
+    """Job Types"""
+
+    URL_LIST = "url-list"
+    SEED_CRAWL = "seed-crawl"
+    CUSTOM = "custom"
+
+
+# ============================================================================
 class ScopeType(str, Enum):
     """Crawl scope type"""
 
@@ -88,6 +97,8 @@ class CrawlConfigIn(BaseModel):
 
     name: Optional[str]
 
+    jobType: Optional[JobType] = JobType.CUSTOM
+
     profileid: Optional[UUID4]
 
     colls: Optional[List[str]] = []
@@ -107,6 +118,8 @@ class CrawlConfig(BaseMongoModel):
     config: RawCrawlConfig
 
     name: Optional[str]
+
+    jobType: Optional[JobType] = JobType.CUSTOM
 
     created: Optional[datetime]
 
