@@ -14,7 +14,6 @@ import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
 export type InitialCrawlTemplate = InitialJobConfig;
 
-const initialJobType: JobType | undefined = undefined;
 const defaultValue = {
   name: "",
   profileid: null,
@@ -23,7 +22,7 @@ const defaultValue = {
     scopeType: "prefix",
     exclude: [""],
   },
-} as InitialCrawlTemplate;
+} as InitialJobConfig;
 
 /**
  * Usage:
@@ -42,16 +41,16 @@ export class CrawlTemplatesNew extends LiteElement {
   // Use custom property accessor to prevent
   // overriding default crawl config values
   @property({ type: Object })
-  get initialCrawlTemplate() {
+  get initialCrawlTemplate(): InitialJobConfig {
     return this._initialCrawlTemplate;
   }
-  private _initialCrawlTemplate: InitialCrawlTemplate = defaultValue;
-  set initialCrawlTemplate(val: any) {
+  private _initialCrawlTemplate: InitialJobConfig = defaultValue;
+  set initialCrawlTemplate(val: Partial<InitialJobConfig>) {
     this._initialCrawlTemplate = mergeDeep(this._initialCrawlTemplate, val);
   }
 
   @state()
-  private jobType?: JobType = initialJobType;
+  private jobType?: JobType;
 
   private renderHeader() {
     return html`
@@ -80,9 +79,7 @@ export class CrawlTemplatesNew extends LiteElement {
       custom: msg("Custom"),
     };
 
-    // TODO get job type from API if duplicating
-    const jobType =
-      this.jobType || (this.initialCrawlTemplate.name ? "custom" : null);
+    const jobType = this.initialCrawlTemplate.jobType || this.jobType;
 
     if (jobType) {
       return html`

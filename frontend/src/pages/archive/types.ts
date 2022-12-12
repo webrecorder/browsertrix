@@ -51,7 +51,10 @@ export type SeedConfig = Seed & {
   behaviors?: string | null;
 };
 
+export type JobType = "url-list" | "seed-crawl" | "custom";
+
 export type CrawlConfigParams = {
+  jobType: JobType;
   name: string;
   schedule: string;
   scale: number;
@@ -59,8 +62,6 @@ export type CrawlConfigParams = {
   config: SeedConfig;
   crawlTimeout: number | null;
 };
-
-export type JobType = "url-list" | "seed-crawl" | "custom";
 
 export type CrawlConfig = CrawlConfigParams & {
   id: string;

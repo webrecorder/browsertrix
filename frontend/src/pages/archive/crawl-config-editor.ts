@@ -1505,8 +1505,8 @@ https://example.net`}
   }
 
   private parseConfig(): NewCrawlConfigParams {
-    // TODO save job type
     const config: NewCrawlConfigParams = {
+      jobType: this.jobType || "custom",
       name: this.formState.jobName || this.formState.primarySeedUrl,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
