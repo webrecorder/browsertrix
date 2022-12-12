@@ -476,26 +476,52 @@ export class CrawlConfigEditor extends LiteElement {
                 ${msg("Previous Step")}
               </sl-button>
             `}
-        ${isLast
-          ? html`<sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSubmitting || this.formHasError}
-              ?loading=${this.isSubmitting}
-            >
-              ${this.formState.runNow
-                ? msg("Save & Run Crawl")
-                : msg("Save & Schedule Crawl")}
-            </sl-button>`
-          : html`<sl-button
-              size="small"
-              variant="primary"
-              @click=${this.nextStep}
-            >
-              <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-              ${msg("Next Step")}
-            </sl-button>`}
+        ${when(
+          this.configId,
+          () => html`
+            <div>
+              <sl-button
+                type="submit"
+                size="small"
+                variant="primary"
+                ?disabled=${this.isSubmitting || this.formHasError}
+                ?loading=${this.isSubmitting}
+              >
+                ${msg("Save Changes")}
+              </sl-button>
+              ${when(
+                !isLast,
+                () => html`
+                  <sl-button size="small" class="ml-1" @click=${this.nextStep}>
+                    <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                    ${msg("Next")}
+                  </sl-button>
+                `
+              )}
+            </div>
+          `,
+          () =>
+            isLast
+              ? html`<sl-button
+                  type="submit"
+                  size="small"
+                  variant="primary"
+                  ?disabled=${this.isSubmitting || this.formHasError}
+                  ?loading=${this.isSubmitting}
+                >
+                  ${this.formState.runNow
+                    ? msg("Save & Run Crawl")
+                    : msg("Save & Schedule Crawl")}
+                </sl-button>`
+              : html`<sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${this.nextStep}
+                >
+                  <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                  ${msg("Next Step")}
+                </sl-button>`
+        )}
       </div>
     `;
   }
