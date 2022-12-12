@@ -225,9 +225,9 @@ export class CrawlConfigEditor extends LiteElement {
     });
   }
 
-  private daysOfWeek = getLocalizedWeekDays();
+  private readonly daysOfWeek = getLocalizedWeekDays();
 
-  private scopeTypeLabels: Record<FormState["scopeType"], string> = {
+  private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
     prefix: msg("Path Begins with This URL"),
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
@@ -237,13 +237,16 @@ export class CrawlConfigEditor extends LiteElement {
     any: msg("Any"),
   };
 
-  private scheduleTypeLabels: Record<FormState["scheduleType"], string> = {
+  private readonly scheduleTypeLabels: Record<
+    FormState["scheduleType"],
+    string
+  > = {
     now: msg("Run Immediately on Save"),
     date: msg("Run on a Specific Date & Time"),
     cron: msg("Run on a Recurring Basis"),
   };
 
-  private scheduleFrequencyLabels: Record<
+  private readonly scheduleFrequencyLabels: Record<
     FormState["scheduleFrequency"],
     string
   > = {
@@ -333,8 +336,8 @@ export class CrawlConfigEditor extends LiteElement {
     const tabLabels: Record<StepName, string> = {
       crawlerSetup: msg("Crawler Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Job Scheduling"),
-      jobInformation: msg("Job Information"),
+      jobScheduling: msg("Crawl Scheduling"),
+      jobInformation: msg("Crawl Information"),
       confirmSettings: msg("Confirm Settings"),
     };
 
@@ -539,11 +542,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
-      <h4
-        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
-      >
-        ${content}
-      </h4>
+      <btrix-section-heading class="col-span-1 md:col-span-5">
+        <h4>${content}</h4>
+      </btrix-section-heading>
     `;
   }
 
@@ -1159,7 +1160,7 @@ https://example.net`}
       ${this.renderFormCol(html`
         <sl-input
           name="jobName"
-          label=${msg("Crawl Name")}
+          label=${msg("Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl config name",
@@ -1189,12 +1190,10 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${when(this.jobType === "url-list", () =>
-            this.renderConfirmUrlListSettings(crawlConfig)
-          )}
-          ${when(this.jobType === "seed-crawl", () =>
+          ${(when(this.jobType === "seed-crawl", () =>
             this.renderConfirmSeededSettings(crawlConfig)
-          )}
+          ),
+          () => this.renderConfirmUrlListSettings(crawlConfig))}
           ${this.renderSetting(
             msg("Exclusions"),
             html`
@@ -1254,8 +1253,7 @@ https://example.net`}
           )}
         </dl>
       </div>
-      ${this.renderSectionHeading(msg("Job Scheduling"))}
-
+      ${this.renderSectionHeading(msg("Crawl Scheduling"))}
       <div class="col-span-1 md:col-span-5">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${this.renderSetting(
@@ -1270,10 +1268,10 @@ https://example.net`}
           )}
         </dl>
       </div>
-      ${this.renderSectionHeading(msg("Job Information"))}
+      ${this.renderSectionHeading(msg("Crawl Information"))}
       <div class="col-span-1 md:col-span-5">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${this.renderSetting(msg("Job Name"), crawlConfig.name)}
+          ${this.renderSetting(msg("Name"), crawlConfig.name)}
         </dl>
       </div>
       ${when(this.formHasError, () =>

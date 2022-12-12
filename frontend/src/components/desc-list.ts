@@ -20,14 +20,15 @@ import { property } from "lit/decorators.js";
 export class DescListItem extends LitElement {
   static styles = css`
     dt {
+      color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
       line-height: 1rem;
-      color: var(--sl-color-neutral-500);
     }
 
     dd {
       margin: 0;
       padding: 0;
+      color: var(--sl-color-neutral-700);
       font-size: var(--sl-font-size-medium);
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);

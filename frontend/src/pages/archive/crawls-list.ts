@@ -26,7 +26,7 @@ const sortableFieldLabels = {
   finished_desc: msg("Recently Updated"),
   finished_asc: msg("Oldest Finished"),
   state: msg("Status"),
-  configName: msg("Crawl Config Name"),
+  configName: msg("Crawl Name"),
   cid: msg("Crawl Config ID"),
   fileSize_asc: msg("Smallest Files"),
   fileSize_desc: msg("Largest Files"),

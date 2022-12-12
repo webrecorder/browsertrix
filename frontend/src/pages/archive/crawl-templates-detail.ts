@@ -1,4 +1,5 @@
 import type { HTMLTemplateResult, TemplateResult } from "lit";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -8,6 +9,7 @@ import { mergeDeep } from "immutable";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
+import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -60,6 +62,19 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   @state()
   private isSubmittingUpdate: boolean = false;
+
+  private readonly scopeTypeLabels: Record<
+    CrawlConfig["config"]["scopeType"],
+    string
+  > = {
+    prefix: msg("Path Begins with This URL"),
+    host: msg("Pages on This Domain"),
+    domain: msg("Pages on This Domain & Subdomains"),
+    "page-spa": msg("Single Page App (In-Page Links Only)"),
+    page: msg("Page"),
+    custom: msg("Custom"),
+    any: msg("Any"),
+  };
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
@@ -128,7 +143,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderCurrentlyRunningNotice()}
 
-        <main class="md:border md:rounded-lg">TODO</main>
+        <main class="md:border md:rounded-lg py-3 px-6">
+          ${when(this.crawlTemplate, this.renderMain)}
+        </main>
       </div>
     `;
   }
@@ -411,6 +428,175 @@ export class CrawlTemplatesDetail extends LiteElement {
       )}
     `;
   }
+
+  private renderMain = () => {
+    if (!this.crawlTemplate) return;
+    const crawlConfig = this.crawlTemplate;
+    const exclusions = crawlConfig?.config.exclude || [];
+    return html`
+      <btrix-details class="mb-6" open>
+        <h4 slot="title">${msg("Crawl Information")}</h4>
+        <btrix-desc-list>
+          ${this.renderSetting(msg("Name"), crawlConfig.name)}
+        </btrix-desc-list>
+      </btrix-details>
+      <btrix-details class="mb-6" open>
+        <h4 slot="title">${msg("Crawler Setup")}</h4>
+        <btrix-desc-list>
+          ${when(
+            crawlConfig.jobType === "seed-crawl",
+            this.renderConfirmSeededSettings,
+            this.renderConfirmUrlListSettings
+          )}
+          ${this.renderSetting(
+            msg("Exclusions"),
+            html`
+              ${when(
+                exclusions.length,
+                () => html`
+                  <btrix-queue-exclusion-table
+                    .exclusions=${exclusions}
+                    label=""
+                  >
+                  </btrix-queue-exclusion-table>
+                `,
+                () => msg("None")
+              )}
+            `
+          )}
+          ${this.renderSetting(
+            msg("Crawl Time Limit"),
+            crawlConfig.crawlTimeout
+              ? msg(str`${crawlConfig.crawlTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+          ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
+        </btrix-desc-list>
+      </btrix-details>
+      <btrix-details class="mb-6" open>
+        <h4 slot="title">${msg("Browser Settings")}</h4>
+        <btrix-desc-list>
+          ${this.renderSetting(
+            msg("Browser Profile"),
+            when(
+              crawlConfig.profileid,
+              () => html`<a
+                class="text-blue-500 hover:text-blue-600"
+                href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
+                @click=${this.navLink}
+              >
+                ${crawlConfig.profileName}
+              </a>`,
+              () => msg("Default Profile")
+            )
+          )}
+          ${this.renderSetting(
+            msg("Block Ads by Domain"),
+            crawlConfig.config.blockAds
+          )}
+          ${this.renderSetting(
+            msg("Language"),
+            ISO6391.getName(crawlConfig.config.lang!)
+          )}
+          ${this.renderSetting(
+            msg("Page Time Limit"),
+            crawlConfig.config.behaviorTimeout
+              ? msg(str`${crawlConfig.config.behaviorTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+        </btrix-desc-list>
+      </btrix-details>
+      <btrix-details open>
+        <h4 slot="title">${msg("Crawl Scheduling")}</h4>
+        <btrix-desc-list>
+          ${this.renderSetting(
+            msg("Crawl Schedule Type"),
+            crawlConfig.schedule
+              ? msg("Run on a Recurring Basis")
+              : msg("No Schedule")
+          )}
+          ${when(crawlConfig.schedule, () =>
+            this.renderSetting(
+              msg("Schedule"),
+              humanizeSchedule(crawlConfig.schedule)
+            )
+          )}
+        </btrix-desc-list>
+      </btrix-details>
+    `;
+  };
+
+  private renderSetting(label: string, value: any) {
+    let content = value;
+
+    if (typeof value === "boolean") {
+      content = value ? msg("Yes") : msg("No");
+    } else if (typeof value !== "number" && !value) {
+      content = html`<span class="text-neutral-300"
+        >${msg("Not specified")}</span
+      >`;
+    }
+    return html`
+      <btrix-desc-list-item label=${label}> ${content} </btrix-desc-list-item>
+    `;
+  }
+
+  private renderConfirmUrlListSettings = () => {
+    const crawlConfig = this.crawlTemplate!;
+    return html`
+      ${this.renderSetting(
+        msg("List of URLs"),
+        html`
+          <ul>
+            ${crawlConfig.config.seeds.map((url) => html` <li>${url}</li> `)}
+          </ul>
+        `
+      )}
+      ${this.renderSetting(
+        msg("Include Linked Pages"),
+        Boolean(crawlConfig.config.extraHops)
+      )}
+    `;
+  };
+
+  private renderConfirmSeededSettings = () => {
+    const crawlConfig = this.crawlTemplate!;
+    return html`
+      ${this.renderSetting(
+        msg("Primary Seed URL"),
+        crawlConfig.config.seeds[0]
+      )}
+      ${this.renderSetting(
+        msg("Crawl Scope"),
+        this.scopeTypeLabels[crawlConfig.config.scopeType]
+      )}
+      ${this.renderSetting(
+        msg("Allowed URL Prefixes"),
+        crawlConfig.config.include?.length
+          ? html`
+              <ul>
+                ${crawlConfig.config.include.map(
+                  (url) =>
+                    staticHtml`<li class="regex">${unsafeStatic(
+                      new RegexColorize().colorizeText(url)
+                    )}</li>`
+                )}
+              </ul>
+            `
+          : msg("None")
+      )}
+      ${this.renderSetting(
+        msg("Include Any Linked Page (“one hop out”)"),
+        Boolean(crawlConfig.config.extraHops)
+      )}
+      ${this.renderSetting(
+        msg("Max Pages"),
+        crawlConfig.config.limit
+          ? msg(str`${crawlConfig.config.limit} pages`)
+          : msg("Unlimited")
+      )}
+    `;
+  };
 
   async getCrawlTemplate(): Promise<CrawlConfig> {
     const data: CrawlConfig = await this.apiFetch(
