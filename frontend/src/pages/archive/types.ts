@@ -60,8 +60,11 @@ export type CrawlConfigParams = {
   crawlTimeout: number | null;
 };
 
+export type JobType = "url-list" | "seed-crawl" | "custom";
+
 export type CrawlConfig = CrawlConfigParams & {
   id: string;
+  jobType: JobType;
   userid: string;
   userName: string | null;
   created: string;

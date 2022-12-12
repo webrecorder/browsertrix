@@ -579,6 +579,7 @@ export class CrawlTemplatesList extends LiteElement {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
+      jobType: template.jobType,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {

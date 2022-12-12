@@ -6,7 +6,8 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, InitialJobConfig } from "./crawl-config-editor";
+import type { InitialJobConfig } from "./crawl-config-editor";
+import type { JobType } from "./types";
 import "./crawl-config-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
@@ -74,13 +75,14 @@ export class CrawlTemplatesNew extends LiteElement {
 
   render() {
     const jobTypeLabels: Record<JobType, string> = {
-      urlList: msg("URL List"),
-      seeded: msg("Seeded Crawl"),
+      "url-list": msg("URL List"),
+      "seed-crawl": msg("Seeded Crawl"),
+      custom: msg("Custom"),
     };
 
     // TODO get job type from API if duplicating
     const jobType =
-      this.jobType || (this.initialCrawlTemplate.name ? "urlList" : null);
+      this.jobType || (this.initialCrawlTemplate.name ? "custom" : null);
 
     if (jobType) {
       return html`
@@ -122,7 +124,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <div
           role="button"
           class="jobTypeButton"
-          @click=${() => (this.jobType = "urlList")}
+          @click=${() => (this.jobType = "url-list")}
         >
           <figure class="w-64 m-4">
             <img class="transition-transform" src=${urlListSvg} />
@@ -139,7 +141,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <div
           role="button"
           class="jobTypeButton"
-          @click=${() => (this.jobType = "seeded")}
+          @click=${() => (this.jobType = "seed-crawl")}
         >
           <figure class="w-64 m-4">
             <img class="transition-transform" src=${seededCrawlSvg} />

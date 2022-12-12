@@ -33,15 +33,15 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { CrawlConfigParams, Profile } from "./types";
+import type { CrawlConfigParams, Profile, JobType } from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
 };
 export type InitialJobConfig = Pick<CrawlConfigParams, "name" | "profileid"> & {
+  jobType?: JobType;
   config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
 };
-export type JobType = "urlList" | "seeded";
 type StepName =
   | "crawlerSetup"
   | "browserSettings"
@@ -307,8 +307,11 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             ${this.renderPanelContent(
               html`
-                ${when(this.jobType === "urlList", this.renderUrlListSetup)}
-                ${when(this.jobType === "seeded", this.renderSeededCrawlSetup)}
+                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
+                ${when(
+                  this.jobType === "seed-crawl",
+                  this.renderSeededCrawlSetup
+                )}
               `,
               { isFirst: true }
             )}
@@ -1006,7 +1009,7 @@ https://example.net`}
   private renderJobInformation() {
     const jobNameValue =
       this.formState.jobName ||
-      (this.jobType === "seeded" && this.formState.primarySeedUrl) ||
+      (this.jobType === "seed-crawl" && this.formState.primarySeedUrl) ||
       "";
     return html`
       ${this.renderFormCol(html`
@@ -1042,10 +1045,10 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${when(this.jobType === "urlList", () =>
+          ${when(this.jobType === "url-list", () =>
             this.renderConfirmUrlListSettings(crawlConfig)
           )}
-          ${when(this.jobType === "seeded", () =>
+          ${when(this.jobType === "seed-crawl", () =>
             this.renderConfirmSeededSettings(crawlConfig)
           )}
           ${this.renderSetting(
@@ -1513,7 +1516,7 @@ https://example.net`}
         ? this.formState.crawlTimeoutMinutes * 60
         : 0,
       config: {
-        ...(this.jobType === "urlList"
+        ...(this.jobType === "url-list"
           ? this.parseUrlListConfig()
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.pageTimeoutMinutes

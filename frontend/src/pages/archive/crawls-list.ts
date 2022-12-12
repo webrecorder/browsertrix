@@ -707,6 +707,7 @@ export class CrawlsList extends LiteElement {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
+      jobType: template.jobType,
     };
 
     this.navTo(`/archives/${crawl.aid}/crawl-templates/new`, {
