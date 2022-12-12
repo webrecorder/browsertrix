@@ -454,7 +454,11 @@ export class CrawlConfigEditor extends LiteElement {
       <div class="flex flex-col h-full">
         <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
           ${content}
+          ${when(this.serverError, () =>
+            this.renderErrorAlert(this.serverError!)
+          )}
         </div>
+
         ${this.renderFooter({ isFirst, isLast })}
       </div>
     `;
@@ -1265,7 +1269,6 @@ https://example.net`}
           ${this.renderSetting(msg("Job Name"), crawlConfig.name)}
         </dl>
       </div>
-      ${when(this.serverError, () => this.renderErrorAlert(this.serverError!))}
       ${when(this.formHasError, () =>
         this.renderErrorAlert(
           msg(
@@ -1649,9 +1652,9 @@ https://example.net`}
         ? this.formState.crawlTimeoutMinutes * 60
         : 0,
       config: {
-        ...(this.jobType === "url-list"
-          ? this.parseUrlListConfig()
-          : this.parseSeededConfig()),
+        ...(this.jobType === "seed-crawl"
+          ? this.parseSeededConfig()
+          : this.parseUrlListConfig()),
         behaviorTimeout: this.formState.pageTimeoutMinutes
           ? this.formState.pageTimeoutMinutes * 60
           : 0,
