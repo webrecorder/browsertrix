@@ -71,16 +71,41 @@ const theme = css`
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
+    /* From GitHub Primer https://github.com/primer/primitives/blob/8b767947e35a79db17b9d7970836f03c904c8afe/data/colors/vars/global_light.ts#L47 */
+    /* TODO replace hardcoded color */
+    --sl-input-required-content-color: #9a6700;
+
     /* Labels */
     --sl-input-label-font-size-small: var(--sl-font-size-x-small);
     --sl-input-label-font-size-medium: var(--sl-font-size-small);
     --sl-input-label-font-size-large: var(--sl-font-size-medium);
     --sl-input-label-color: var(--sl-color-neutral-800);
+
+    /* Help text */
+    --sl-input-help-text-font-size-medium: var(--sl-font-size-x-small);
+  }
+
+  body {
+    font-size: var(--sl-font-size-medium);
   }
 
   .sl-toast-stack {
     bottom: 0;
     top: auto;
+  }
+
+  /* Add more spacing between label, input and help text */
+  sl-input::part(form-control-label),
+  sl-textarea::part(form-control-label),
+  sl-select::part(form-control-label) {
+    line-height: 1.4;
+    margin-bottom: 0.375rem;
+  }
+  sl-input::part(form-control-help-text),
+  sl-textarea::part(form-control-help-text),
+  sl-select::part(form-control-help-text) {
+    margin-top: var(--sl-spacing-x-small);
+    font-weight: 400;
   }
 
   /* Elevate select and buttons */
@@ -95,13 +120,46 @@ const theme = css`
     line-height: 1.5;
   }
 
+  /* Align left edge with menu item */
+  sl-select sl-menu-label::part(base) {
+    padding-left: calc(var(--sl-spacing-2x-small) + 1.5em);
+  }
+
   /* Validation styles */
-  sl-input.invalid:not([disabled])::part(base) {
+  [data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
-  sl-input.invalid:focus-within::part(base) {
+  [data-user-invalid]:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
+  }
+
+  [data-user-invalid]:not([disabled])::part(form-control-label):after {
+    /* Required asterisk color */
+    color: var(--sl-color-danger-500);
+  }
+
+  [data-user-invalid]:not([disabled])::part(form-control-help-text) {
+    color: var(--sl-color-danger-500);
+  }
+
+  /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
+  sl-divider {
+    border-top-width: var(--sl-panel-border-width);
+  }
+
+  /* Add more spacing between radio options */
+  sl-radio-group sl-radio:first-of-type {
+    margin-top: var(--sl-spacing-x-small);
+  }
+  sl-radio-group sl-radio:not(:first-of-type) {
+    margin-top: var(--sl-spacing-small);
+  }
+
+  /* Aesthetically closer to monospaced font: */
+  .font-monostyle {
+    font-family: var(--sl-font-mono);
+    font-variation-settings: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
   }
 `;
 

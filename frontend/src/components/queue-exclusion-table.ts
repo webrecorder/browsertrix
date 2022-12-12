@@ -3,7 +3,7 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 
-import type { CrawlConfig } from "../pages/archive/types";
+import type { SeedConfig } from "../pages/archive/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
@@ -43,7 +43,10 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
-  exclusions?: CrawlConfig["exclude"];
+  exclusions?: SeedConfig["exclude"];
+
+  @property({ type: String })
+  label?: string;
 
   @property({ type: Number })
   pageSize: number = 5;
@@ -114,47 +117,45 @@ export class QueueExclusionTable extends LiteElement {
           --sl-input-spacing-medium: var(--sl-spacing-small);
         }
 
-        btrix-queue-exclusion-table sl-input:not([invalid]) {
+        btrix-queue-exclusion-table sl-input:not([data-invalid]) {
           --sl-input-border-width: 0;
         }
       </style>
-      <btrix-details open disabled>
-        <h4 slot="title">${msg("Exclusions")}</h4>
-        <div slot="summary-description">
-          ${this.total && this.total > this.pageSize
-            ? html`<btrix-pagination
-                page=${this.page}
-                size=${this.pageSize}
-                totalCount=${this.total}
-                @page-change=${(e: CustomEvent) => {
-                  this.page = e.detail.page;
-                }}
-              >
-              </btrix-pagination>`
-            : ""}
-        </div>
-        <table
-          class="w-full leading-none border-separate"
-          style="border-spacing: 0;"
-        >
-          <thead class="text-xs font-mono text-neutral-600 uppercase">
-            <tr class="h-10 text-left">
-              <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
-                ${msg("Exclusion Type")}
-              </th>
-              <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
-                ${msg("Exclusion Value")}
-              </th>
-              <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
-                <span class="sr-only">Row actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            ${this.results.map(this.renderItem)}
-          </tbody>
-        </table>
-      </btrix-details>
+      <div class="flex items-center justify-between mb-2 leading-tight">
+        <div>${this.label ?? msg("Exclusions")}</div>
+        ${this.total && this.total > this.pageSize
+          ? html`<btrix-pagination
+              page=${this.page}
+              size=${this.pageSize}
+              totalCount=${this.total}
+              @page-change=${(e: CustomEvent) => {
+                this.page = e.detail.page;
+              }}
+            >
+            </btrix-pagination>`
+          : ""}
+      </div>
+      <table
+        class="w-full leading-none border-separate"
+        style="border-spacing: 0;"
+      >
+        <thead class="text-xs font-mono text-neutral-600 uppercase">
+          <tr class="h-10 text-left">
+            <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
+              ${msg("Exclusion Type")}
+            </th>
+            <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
+              ${msg("Exclusion Value")}
+            </th>
+            <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
+              <span class="sr-only">Row actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${this.results.map(this.renderItem)}
+        </tbody>
+      </table>
     `;
   }
 
@@ -391,14 +392,16 @@ export class QueueExclusionTable extends LiteElement {
     // after fixing duplicate values
     const inputElem = e.target as HTMLInputElement;
     const table = inputElem.closest("table") as HTMLTableElement;
-    Array.from(table?.querySelectorAll("sl-input[invalid]")).map((elem) => {
-      if (elem !== inputElem) {
-        const validityMessage =
-          this.getInputDuplicateValidity(elem as SLInputElement) || "";
-        (elem as SLInputElement).setCustomValidity(validityMessage);
-        (elem as SLInputElement).reportValidity();
+    Array.from(table?.querySelectorAll("sl-input[data-invalid]")).map(
+      (elem) => {
+        if (elem !== inputElem) {
+          const validityMessage =
+            this.getInputDuplicateValidity(elem as SLInputElement) || "";
+          (elem as SLInputElement).setCustomValidity(validityMessage);
+          (elem as SLInputElement).reportValidity();
+        }
       }
-    });
+    );
   }
 
   private removeExclusion({ value, type }: Exclusion, index: number) {

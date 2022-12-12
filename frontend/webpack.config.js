@@ -147,6 +147,11 @@ module.exports = {
           from: shoelaceAssetsSrcPath,
           to: path.resolve(__dirname, "dist", shoelaceAssetsPublicPath),
         },
+        // Copy custom icon library
+        {
+          from: path.resolve(__dirname, "src/assets/icons"),
+          to: path.resolve(__dirname, "dist", "assets/icons"),
+        },
       ],
     }),
   ],

@@ -11,7 +11,7 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlTemplate } from "./types";
+import type { Crawl, CrawlConfig } from "./types";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
 
 type CrawlSearchResult = {
@@ -26,8 +26,8 @@ const sortableFieldLabels = {
   finished_desc: msg("Recently Updated"),
   finished_asc: msg("Oldest Finished"),
   state: msg("Status"),
-  configName: msg("Crawl Template Name"),
-  cid: msg("Crawl Template ID"),
+  configName: msg("Crawl Config Name"),
+  cid: msg("Crawl Config ID"),
   fileSize_asc: msg("Smallest Files"),
   fileSize_desc: msg("Largest Files"),
 };
@@ -170,7 +170,7 @@ export class CrawlsList extends LiteElement {
           <sl-input
             class="w-full"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Template name or ID")}
+            placeholder=${msg("Search by Crawl Config name or ID")}
             clearable
             ?disabled=${!this.crawls?.length}
             @sl-input=${this.onSearchInput}
@@ -357,7 +357,7 @@ export class CrawlsList extends LiteElement {
                   e.target.closest("sl-dropdown").hide();
                 }}
               >
-                ${msg("Copy Crawl Template ID")}
+                ${msg("Copy Crawl Config ID")}
               </li>
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
@@ -368,7 +368,7 @@ export class CrawlsList extends LiteElement {
                   );
                 }}
               >
-                ${msg("View Crawl Template")}
+                ${msg("View Crawl Config")}
               </li>
             </ul>
           </sl-dropdown>
@@ -667,13 +667,13 @@ export class CrawlsList extends LiteElement {
       if (e.isApiError && e.statusCode === 404) {
         this.notify({
           message: msg(
-            html`Sorry, cannot rerun crawl from a deactivated crawl template.
+            html`Sorry, cannot rerun crawl from a deactivated crawl config.
               <br />
               <button
                 class="underline hover:no-underline"
                 @click=${() => this.duplicateConfig(crawl, crawlTemplate)}
               >
-                Duplicate crawl template
+                Duplicate crawl config
               </button>`
           ),
           variant: "danger",
@@ -690,8 +690,8 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  async getCrawlTemplate(crawl: Crawl): Promise<CrawlTemplate> {
-    const data: CrawlTemplate = await this.apiFetch(
+  async getCrawlTemplate(crawl: Crawl): Promise<CrawlConfig> {
+    const data: CrawlConfig = await this.apiFetch(
       `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}`,
       this.authState!
     );
@@ -702,11 +702,12 @@ export class CrawlsList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawl: Crawl, template: CrawlTemplate) {
+  private async duplicateConfig(crawl: Crawl, template: CrawlConfig) {
     const crawlTemplate: InitialCrawlTemplate = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
+      jobType: template.jobType,
     };
 
     this.navTo(`/archives/${crawl.aid}/crawl-templates/new`, {

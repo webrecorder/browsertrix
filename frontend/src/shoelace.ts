@@ -3,6 +3,7 @@
  * https://shoelace.style
  */
 import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.js";
+import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/icon-library.js";
 import "@shoelace-style/shoelace/dist/themes/light.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
 import "@shoelace-style/shoelace/dist/components/button/button";
@@ -13,6 +14,7 @@ import "@shoelace-style/shoelace/dist/components/button-group/button-group";
 import "@shoelace-style/shoelace/dist/components/radio/radio";
 import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
 import "@shoelace-style/shoelace/dist/components/radio-button/radio-button";
+import "@shoelace-style/shoelace/dist/components/resize-observer/resize-observer";
 import "@shoelace-style/shoelace/dist/components/select/select";
 import "@shoelace-style/shoelace/dist/components/switch/switch";
 import "@shoelace-style/shoelace/dist/components/textarea/textarea";
@@ -38,6 +40,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-item/menu-item"
 );
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-label/menu-label"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time"
 );
 import(
@@ -60,3 +65,6 @@ import(
 );
 
 setBasePath("/shoelace");
+registerIconLibrary("app", {
+  resolver: (name) => `/assets/icons/${name}.svg`,
+});

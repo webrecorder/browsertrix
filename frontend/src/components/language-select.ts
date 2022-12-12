@@ -46,7 +46,6 @@ export class LanguageSelect extends LitElement {
   render() {
     return html`
       <sl-select
-        clearable
         placeholder=${msg("Browser Default")}
         value=${ifDefined(this.value)}
         ?hoist=${this.hoist}

@@ -10,7 +10,7 @@ import {
   humanizeSchedule,
   humanizeNextDate,
 } from "../utils/cron";
-import type { CrawlTemplate } from "../pages/archive/types";
+import type { CrawlConfig } from "../pages/archive/types";
 
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,
@@ -38,7 +38,7 @@ const minutes = Array.from({ length: 60 }).map((x, i) => ({
 @localized()
 export class CrawlTemplatesScheduler extends LiteElement {
   @property({ type: String })
-  schedule?: CrawlTemplate["schedule"];
+  schedule?: CrawlConfig["schedule"];
 
   @property({ type: Boolean })
   isSubmitting: boolean = false;
@@ -93,6 +93,7 @@ export class CrawlTemplatesScheduler extends LiteElement {
           </div>
         </div>
         <fieldset class="mt-2">
+          <!-- TODO use btrix-time-input -->
           <label class="text-sm">${msg("Time")} </label>
           <div class="md:flex">
             <div class="flex items-center mb-2 md:mb-0 md:mr-2">

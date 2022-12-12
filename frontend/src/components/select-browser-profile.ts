@@ -45,7 +45,7 @@ export class SelectBrowserProfile extends LiteElement {
   render() {
     return html`
       <sl-select
-        name="browserProfile"
+        name="profileid"
         label=${msg("Browser Profile")}
         clearable
         value=${this.selectedProfile?.id || ""}

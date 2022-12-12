@@ -7,7 +7,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, CrawlTemplate } from "./types";
+import type { Crawl, CrawlConfig } from "./types";
 
 type SectionName =
   | "overview"
@@ -51,7 +51,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawlTemplate?: CrawlTemplate;
+  private crawlTemplate?: CrawlConfig;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -376,7 +376,7 @@ export class CrawlDetail extends LiteElement {
               closeDropdown(e);
             }}
           >
-            ${msg("Copy Crawl Template ID")}
+            ${msg("Copy Crawl Config ID")}
           </li>
 
           <li
@@ -388,7 +388,7 @@ export class CrawlDetail extends LiteElement {
               );
             }}
           >
-            ${msg("View Crawl Template")}
+            ${msg("View Crawl Config")}
           </li>
         </ul>
       </sl-dropdown>
@@ -668,7 +668,7 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl Template")}</dt>
+          <dt class="text-sm text-0-600">${msg("Crawl Config")}</dt>
           <dd>
             ${this.crawl
               ? html`
@@ -889,7 +889,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   /**
-   * Fetch crawl template and update internal state
+   * Fetch crawl config and update internal state
    */
   private async fetchCrawlTemplate(): Promise<void> {
     try {
@@ -899,12 +899,12 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private async getCrawlTemplate(): Promise<CrawlTemplate> {
+  private async getCrawlTemplate(): Promise<CrawlConfig> {
     if (!this.crawl) {
       throw new Error("missing crawl");
     }
 
-    const data: CrawlTemplate = await this.apiFetch(
+    const data: CrawlConfig = await this.apiFetch(
       `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}`,
       this.authState!
     );

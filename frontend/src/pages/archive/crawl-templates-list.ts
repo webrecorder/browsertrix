@@ -12,7 +12,7 @@ import Fuse from "fuse.js";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { InitialCrawlTemplate } from "./crawl-templates-new";
-import type { CrawlTemplate } from "./types";
+import type { CrawlConfig } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -48,7 +48,7 @@ export class CrawlTemplatesList extends LiteElement {
   archiveId!: string;
 
   @state()
-  crawlTemplates?: CrawlTemplate[];
+  crawlTemplates?: CrawlConfig[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -57,7 +57,7 @@ export class CrawlTemplatesList extends LiteElement {
   showEditDialog?: boolean = false;
 
   @state()
-  selectedTemplateForEdit?: CrawlTemplate;
+  selectedTemplateForEdit?: CrawlConfig;
 
   @state()
   private orderBy: {
@@ -89,7 +89,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.fuse.setCollection(this.crawlTemplates as any);
     } catch (e) {
       this.notify({
-        message: msg("Sorry, couldn't retrieve crawl templates at this time."),
+        message: msg("Sorry, couldn't retrieve crawl configs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -106,7 +106,7 @@ export class CrawlTemplatesList extends LiteElement {
           : html`
               <div class="border-t border-b py-5">
                 <p class="text-center text-0-500">
-                  ${msg("No crawl templates yet.")}
+                  ${msg("No crawl configs yet.")}
                 </p>
               </div>
             `
@@ -161,7 +161,7 @@ export class CrawlTemplatesList extends LiteElement {
             @click=${this.navLink}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Template")}
+            ${msg("New Crawl Config")}
           </sl-button>
         </div>
       </div>
@@ -279,7 +279,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderTemplateItem(t: CrawlTemplate) {
+  private renderTemplateItem(t: CrawlConfig) {
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${t.name}
@@ -404,7 +404,7 @@ export class CrawlTemplatesList extends LiteElement {
     </a>`;
   }
 
-  private renderCardMenu(t: CrawlTemplate) {
+  private renderCardMenu(t: CrawlConfig) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -508,7 +508,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderCardFooter(t: CrawlTemplate) {
+  private renderCardFooter(t: CrawlConfig) {
     if (t.inactive) {
       return "";
     }
@@ -549,11 +549,11 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   /**
-   * Fetch crawl templates and record running crawls
-   * associated with the crawl templates
+   * Fetch crawl configs and record running crawls
+   * associated with the crawl configs
    **/
-  private async getCrawlTemplates(): Promise<CrawlTemplate[]> {
-    const data: { crawlConfigs: CrawlTemplate[] } = await this.apiFetch(
+  private async getCrawlTemplates(): Promise<CrawlConfig[]> {
+    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs`,
       this.authState!
     );
@@ -574,11 +574,12 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(template: CrawlTemplate) {
+  private async duplicateConfig(template: CrawlConfig) {
     const crawlTemplate: InitialCrawlTemplate = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
+      jobType: template.jobType,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
@@ -592,7 +593,7 @@ export class CrawlTemplatesList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(template: CrawlTemplate): Promise<void> {
+  private async deactivateTemplate(template: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
@@ -613,14 +614,14 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl template at this time."),
+        message: msg("Sorry, couldn't deactivate crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
   }
 
-  private async deleteTemplate(template: CrawlTemplate): Promise<void> {
+  private async deleteTemplate(template: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
@@ -641,14 +642,14 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete crawl template at this time."),
+        message: msg("Sorry, couldn't delete crawl config at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
   }
 
-  private async runNow(template: CrawlTemplate): Promise<void> {
+  private async runNow(template: CrawlConfig): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/archives/${this.archiveId}/crawlconfigs/${template.id}/run`,

@@ -50,7 +50,7 @@ function makeTheme() {
     fontSize: {
       xs: ["var(--sl-font-size-x-small)", { lineHeight: "1.33" }],
       sm: ["var(--sl-font-size-small)", { lineHeight: "1.25rem" }],
-      base: ["var(--sl-font-size-medium)", { lineHeight: "1.5" }],
+      // base: ["var(--sl-font-size-medium)", { lineHeight: "1.5" }],
       lg: ["var(--sl-font-size-large)", { lineHeight: "1.6" }],
       xl: ["var(--sl-font-size-x-large)", { lineHeight: "1.5" }],
       "2xl": ["var(--sl-font-size-2x-large)", { lineHeight: "1.5" }],
@@ -80,6 +80,11 @@ function makeTheme() {
     },
     aspectRatio: {
       "4/3": "4 / 3", // For Browsertrix watch/replay
+    },
+    screens: {
+      lg: "1124px",
+      // Override default of:
+      // => @media (min-width: 1024px) { ... }
     },
   };
 }
