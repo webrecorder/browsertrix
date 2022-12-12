@@ -47,12 +47,14 @@ export type InitialJobConfig = Pick<
   jobType?: JobType;
   config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
 };
-type StepName =
-  | "crawlerSetup"
-  | "browserSettings"
-  | "jobScheduling"
-  | "jobInformation"
-  | "confirmSettings";
+const STEPS = [
+  "crawlerSetup",
+  "browserSettings",
+  "jobScheduling",
+  "jobInformation",
+  "confirmSettings",
+] as const;
+type StepName = typeof STEPS[number];
 type Tabs = Record<
   StepName,
   {
@@ -92,33 +94,45 @@ type FormState = {
   jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
 };
-const getDefaultProgressState = (hasConfigId = false): ProgressState => ({
-  activeTab: "crawlerSetup",
-  currentStep: hasConfigId ? "confirmSettings" : "crawlerSetup",
-  tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: hasConfigId },
-    browserSettings: {
-      enabled: hasConfigId,
-      error: false,
-      completed: hasConfigId,
+
+const getDefaultProgressState = (hasConfigId = false): ProgressState => {
+  let activeTab: StepName = "crawlerSetup";
+  if (window.location.hash) {
+    const hashValue = window.location.hash.slice(1);
+
+    if (STEPS.includes(hashValue as any)) {
+      activeTab = hashValue as StepName;
+    }
+  }
+
+  return {
+    activeTab,
+    currentStep: hasConfigId ? "confirmSettings" : "crawlerSetup",
+    tabs: {
+      crawlerSetup: { enabled: true, error: false, completed: hasConfigId },
+      browserSettings: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      jobScheduling: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      jobInformation: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      confirmSettings: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
     },
-    jobScheduling: {
-      enabled: hasConfigId,
-      error: false,
-      completed: hasConfigId,
-    },
-    jobInformation: {
-      enabled: hasConfigId,
-      error: false,
-      completed: hasConfigId,
-    },
-    confirmSettings: {
-      enabled: hasConfigId,
-      error: false,
-      completed: hasConfigId,
-    },
-  },
-});
+  };
+};
 const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
@@ -145,15 +159,8 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
 });
-const stepOrder: StepName[] = [
-  "crawlerSetup",
-  "browserSettings",
-  "jobScheduling",
-  "jobInformation",
-  "confirmSettings",
-];
 const defaultProgressState = getDefaultProgressState();
-const orderedTabNames = stepOrder.filter(
+const orderedTabNames = STEPS.filter(
   (stepName) => defaultProgressState.tabs[stepName as StepName]
 ) as StepName[];
 
@@ -1463,14 +1470,15 @@ https://example.net`}
       e.stopPropagation();
       return;
     }
+    window.location.hash = step;
     this.updateProgressState({ activeTab: step });
   };
 
   private backStep() {
-    const targetTabIdx = stepOrder.indexOf(this.progressState.activeTab!);
+    const targetTabIdx = STEPS.indexOf(this.progressState.activeTab!);
     if (targetTabIdx) {
       this.updateProgressState({
-        activeTab: stepOrder[targetTabIdx - 1] as StepName,
+        activeTab: STEPS[targetTabIdx - 1] as StepName,
       });
     }
   }
@@ -1481,7 +1489,7 @@ https://example.net`}
 
     if (isValid) {
       const { activeTab, tabs, currentStep } = this.progressState;
-      const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as StepName;
+      const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
 
       const isFirstTimeEnabled = !tabs[nextTab].enabled;
       const nextTabs = { ...tabs };
@@ -1536,7 +1544,7 @@ https://example.net`}
 
     if (
       key === "Enter" &&
-      this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
+      this.progressState.activeTab !== STEPS[STEPS.length - 1]
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
