@@ -467,7 +467,7 @@ export class CrawlConfigEditor extends LiteElement {
           ? html`
               <sl-button size="small" type="reset">
                 <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Start Over")}
+                ${this.configId ? msg("Cancel") : msg("Start Over")}
               </sl-button>
             `
           : html`

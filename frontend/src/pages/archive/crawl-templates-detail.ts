@@ -163,7 +163,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     <header>
       <h2 class="text-xl leading-10">
         ${this.crawlTemplate?.name
-          ? html`<span>${this.crawlTemplate.name}</span> `
+          ? html`<span>${this.crawlTemplate.name}</span>`
           : ""}
       </h2>
     </header>
@@ -174,9 +174,12 @@ export class CrawlTemplatesDetail extends LiteElement {
       configId=${this.crawlTemplate!.id}
       archiveId=${this.archiveId}
       .authState=${this.authState}
-      @reset=${(e: Event) => {
-        console.log("TODO");
-      }}
+      @reset=${(e: Event) =>
+        this.navTo(
+          `/archives/${this.archiveId}/crawl-templates/config/${
+            this.crawlTemplate!.id
+          }`
+        )}
     ></btrix-crawl-config-editor>
   `;
 
