@@ -20,6 +20,10 @@ const theme = css`
     --warning: var(--sl-color-warning-600);
     --danger: var(--sl-color-danger-600);
 
+    /* Custom font variables */
+    --font-monostyle-family: var(--sl-font-mono);
+    --font-monostyle-variation: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
+
     /*
      * Shoelace Theme Tokens
      */
@@ -158,8 +162,8 @@ const theme = css`
 
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
-    font-family: var(--sl-font-mono);
-    font-variation-settings: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
+    font-family: var(--font-monostyle-family);
+    font-variation-settings: var(--font-monostyle-variation);
   }
 `;
 

@@ -81,6 +81,10 @@ import("./tab-list").then(({ Tab, TabList, TabPanel }) => {
   customElements.define("btrix-tab-list", TabList);
   customElements.define("btrix-tab-panel", TabPanel);
 });
+import("./desc-list").then(({ DescListItem, DescList }) => {
+  customElements.define("btrix-desc-list-item", DescListItem);
+  customElements.define("btrix-desc-list", DescList);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

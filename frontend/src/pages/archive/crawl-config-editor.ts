@@ -1352,10 +1352,9 @@ https://example.net`}
       >`;
     }
     return html`
-      <div class="col-span-${cols}">
-        <dt class="mb-0.5 text-xs text-neutral-500">${label}</dt>
-        <dd class="font-monostyle text-neutral-700">${content}</dd>
-      </div>
+      <btrix-desc-list-item class="col-span-${cols}" label=${label}>
+        ${content}
+      </btrix-desc-list-item>
     `;
   }
 
