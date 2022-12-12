@@ -1569,11 +1569,16 @@ https://example.net`}
       );
 
       const crawlId = data.run_now_job;
+      let message = msg("Crawl config created.");
+
+      if (crawlId) {
+        message = msg("Crawl started with new template.");
+      } else if (this.configId) {
+        message = msg("Crawl config updated.");
+      }
 
       this.notify({
-        message: crawlId
-          ? msg("Crawl started with new template.")
-          : msg("Crawl config created."),
+        message,
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
