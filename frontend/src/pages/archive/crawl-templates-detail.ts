@@ -170,7 +170,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     <btrix-crawl-config-editor
       .initialJobConfig=${this.crawlTemplate}
-      jobType=${"urlList"}
+      jobType=${this.crawlTemplate!.jobType}
       configId=${this.crawlTemplate!.id}
       archiveId=${this.archiveId}
       .authState=${this.authState}
