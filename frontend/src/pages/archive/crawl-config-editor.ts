@@ -68,7 +68,7 @@ type FormState = {
   allowedExternalUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: "prefix" | "host" | "domain" | "page" | "page-spa" | "custom";
+  scopeType: CrawlConfigParams["config"]["scopeType"];
   exclusions: CrawlConfigParams["config"]["exclude"];
   pageLimit: CrawlConfigParams["config"]["limit"];
   scale: CrawlConfigParams["scale"];
@@ -201,8 +201,9 @@ export class CrawlConfigEditor extends LiteElement {
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
     "page-spa": msg("Single Page App (In-Page Links Only)"),
-    page: "",
-    custom: "",
+    page: msg("Page"),
+    custom: msg("Custom"),
+    any: msg("Any"),
   };
 
   private scheduleTypeLabels: Record<FormState["scheduleType"], string> = {
@@ -249,17 +250,22 @@ export class CrawlConfigEditor extends LiteElement {
 
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialJobConfig) return {};
-    const seedConfig: Partial<FormState> = {};
-    const { seeds } = this.initialJobConfig.config;
+    const seedState: Partial<FormState> = {};
+    const { seeds, scopeType } = this.initialJobConfig.config;
     if (this.initialJobConfig.jobType === "seed-crawl") {
-      seedConfig.primarySeedUrl =
+      seedState.primarySeedUrl =
         typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
     } else {
       // Treat "custom" like URL list
-      seedConfig.urlList = seeds
+      seedState.urlList = seeds
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
+
+      if (this.initialJobConfig.jobType === "custom") {
+        seedState.scopeType = scopeType || "page";
+      }
     }
+
     return {
       jobName: this.initialJobConfig.name,
       browserProfile: this.initialJobConfig.profileid
@@ -268,7 +274,7 @@ export class CrawlConfigEditor extends LiteElement {
       scopeType: this.initialJobConfig.config
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
-      ...seedConfig,
+      ...seedState,
     };
   }
 
@@ -316,13 +322,13 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             ${this.renderPanelContent(
               html`
-                ${when(
-                  this.jobType === "url-list" || this.jobType === "custom",
-                  this.renderUrlListSetup
-                )}
+                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
                 ${when(
                   this.jobType === "seed-crawl",
                   this.renderSeededCrawlSetup
+                )}
+                ${when(this.jobType === "custom", () =>
+                  this.renderUrlListSetup(true)
                 )}
               `,
               { isFirst: true }
@@ -475,7 +481,7 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderUrlListSetup = () => {
+  private renderUrlListSetup = (isCustom = false) => {
     return html`
       ${this.renderFormCol(html`
         <sl-textarea
@@ -516,6 +522,51 @@ https://example.com/path`}
       ${this.renderHelpTextCol(
         html`The crawler will visit and record each URL listed in the order
         defined here.`
+      )}
+      ${when(
+        isCustom,
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-select
+              name="scopeType"
+              label=${msg("Crawl Scope")}
+              defaultValue=${this.formState.scopeType}
+              value=${this.formState.scopeType}
+              @sl-select=${(e: Event) =>
+                this.updateFormState({
+                  scopeType: (e.target as HTMLSelectElement)
+                    .value as FormState["scopeType"],
+                })}
+            >
+              <sl-menu-item value="prefix">
+                ${this.scopeTypeLabels["prefix"]}
+              </sl-menu-item>
+              <sl-menu-item value="host">
+                ${this.scopeTypeLabels["host"]}
+              </sl-menu-item>
+              <sl-menu-item value="domain">
+                ${this.scopeTypeLabels["domain"]}
+              </sl-menu-item>
+              <sl-divider></sl-divider>
+              <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
+              <sl-menu-item value="page-spa">
+                ${this.scopeTypeLabels["page-spa"]}
+              </sl-menu-item>
+              <sl-menu-item value="page">
+                ${this.scopeTypeLabels["page"]}
+              </sl-menu-item>
+              <sl-menu-item value="custom">
+                ${this.scopeTypeLabels["custom"]}
+              </sl-menu-item>
+              <sl-menu-item value="any">
+                ${this.scopeTypeLabels["any"]}
+              </sl-menu-item>
+            </sl-select>
+          `)}
+          ${this.renderHelpTextCol(
+            html`Tells the crawler which pages it can visit.`
+          )}
+        `
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="includeLinkedPages"
