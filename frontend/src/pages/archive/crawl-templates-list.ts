@@ -430,8 +430,9 @@ export class CrawlTemplatesList extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.showEditDialog = true;
-            this.selectedTemplateForEdit = t;
+            this.navTo(
+              `/archives/${this.archiveId}/crawl-templates/config/${t.id}?edit`
+            );
           }}
         >
           <sl-icon
@@ -439,7 +440,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="pencil-square"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit crawl schedule")}</span
+            >${msg("Edit crawl config")}</span
           >
         </li>
       `);
