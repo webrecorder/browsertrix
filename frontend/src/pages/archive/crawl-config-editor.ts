@@ -249,6 +249,17 @@ export class CrawlConfigEditor extends LiteElement {
 
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialJobConfig) return {};
+    const seedConfig: Partial<FormState> = {};
+    const { seeds } = this.initialJobConfig.config;
+    if (this.initialJobConfig.jobType === "seed-crawl") {
+      seedConfig.primarySeedUrl =
+        typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
+    } else {
+      // Treat "custom" like URL list
+      seedConfig.urlList = seeds
+        .map((seed) => (typeof seed === "string" ? seed : seed.url))
+        .join("\n");
+    }
     return {
       jobName: this.initialJobConfig.name,
       browserProfile: this.initialJobConfig.profileid
@@ -257,9 +268,7 @@ export class CrawlConfigEditor extends LiteElement {
       scopeType: this.initialJobConfig.config
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
-      urlList: this.initialJobConfig.config.seeds
-        .map((seed) => (typeof seed === "string" ? seed : seed.url))
-        .join("\n"),
+      ...seedConfig,
     };
   }
 
@@ -307,7 +316,10 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlerSetup">
             ${this.renderPanelContent(
               html`
-                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
+                ${when(
+                  this.jobType === "url-list" || this.jobType === "custom",
+                  this.renderUrlListSetup
+                )}
                 ${when(
                   this.jobType === "seed-crawl",
                   this.renderSeededCrawlSetup
