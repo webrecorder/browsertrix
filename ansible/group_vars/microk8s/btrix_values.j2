@@ -5,7 +5,7 @@ mongo_auth:
   password: example
 
 ingress:
-  host: "microk8s.browsertrix.cloud"
+  host: "{{ inventory_hostname }}"
   cert_email: "dev@webrecorder.net"
   scheme: "https"
   tls: true
