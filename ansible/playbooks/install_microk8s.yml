@@ -1,7 +1,9 @@
 ---
+# by default this playbook will add the ip address of your endpoint
+# pass '-e host_name="my-domain.example.edu"' for it to work best
 - name: deploy microk8s 
   gather_facts: false
-  hosts: "{{ your_ip }}"
+  hosts: "{{ host_name | default('inventory_hostname') }}"
   remote_user: "{{ your_user }}"
   become: true
   vars_files:
