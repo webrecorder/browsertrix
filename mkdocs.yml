@@ -12,7 +12,7 @@ theme:
   palette:
     primary: teal
     accent: cyan
-  logo: assets/brand/btrix-cloud.svg
+  logo: assets/brand/btrix-logo.svg
 
   icon:
     admonition:
