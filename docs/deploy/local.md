@@ -155,7 +155,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
 
-    2. In `./examples/local-config.yaml`, uncomment out one or both of the following lines to use local images:
+    2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
 
     ```
     api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
