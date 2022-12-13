@@ -39,6 +39,7 @@ import type { CrawlConfigParams, Profile, JobType } from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
+  oldId?: string;
 };
 export type InitialJobConfig = Pick<
   CrawlConfigParams,
@@ -86,7 +87,7 @@ type FormState = {
   scale: CrawlConfigParams["scale"];
   blockAds: CrawlConfigParams["config"]["blockAds"];
   lang: CrawlConfigParams["config"]["lang"];
-  scheduleType: "now" | "date" | "cron";
+  scheduleType: "now" | "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
   scheduleDayOfWeek: number;
@@ -249,6 +250,7 @@ export class CrawlConfigEditor extends LiteElement {
     now: msg("Run Immediately on Save"),
     date: msg("Run on a Specific Date & Time"),
     cron: msg("Run on a Recurring Basis"),
+    none: msg("No Schedule"),
   };
 
   private readonly scheduleFrequencyLabels: Record<
@@ -327,7 +329,7 @@ export class CrawlConfigEditor extends LiteElement {
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
-      scheduleState.scheduleType = "now";
+      scheduleState.scheduleType = "none";
     }
 
     return {
@@ -1200,10 +1202,11 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${(when(this.jobType === "seed-crawl", () =>
-            this.renderConfirmSeededSettings(crawlConfig)
-          ),
-          () => this.renderConfirmUrlListSettings(crawlConfig))}
+          ${when(
+            this.jobType === "seed-crawl",
+            () => this.renderConfirmSeededSettings(crawlConfig),
+            () => this.renderConfirmUrlListSettings(crawlConfig)
+          )}
           ${this.renderSetting(
             msg("Exclusions"),
             html`
@@ -1685,6 +1688,10 @@ https://example.net`}
         exclude: trimExclusions(this.formState.exclusions),
       },
     };
+
+    if (this.configId) {
+      config.oldId = this.configId;
+    }
 
     return config;
   }
