@@ -437,7 +437,6 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <section class="border rounded-lg py-2 mb-4">
         <dl class="px-3 md:px-0 md:flex justify-evenly">
-          ${this.renderDetailItem(msg("Associated With"), () => "TODO")}
           ${this.renderDetailItem(msg("Created By"), () => "TODO")}
           ${this.renderDetailItem(msg("Created At"), () => "TODO", true)}
         </dl>

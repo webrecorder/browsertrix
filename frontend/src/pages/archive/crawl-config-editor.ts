@@ -45,7 +45,12 @@ export type InitialJobConfig = Pick<
   "name" | "profileid" | "schedule"
 > & {
   jobType?: JobType;
-  config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
+  config: Pick<
+    CrawlConfigParams["config"],
+    "seeds" | "scopeType" | "exclude"
+  > & {
+    extraHops?: CrawlConfigParams["config"]["extraHops"];
+  };
 };
 const STEPS = [
   "crawlerSetup",
@@ -141,7 +146,7 @@ const getDefaultFormState = (): FormState => ({
   crawlTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
-  exclusions: [""], // Empty slots for adding exclusions
+  exclusions: [],
   pageLimit: undefined,
   scale: 1,
   blockAds: true,
@@ -260,15 +265,21 @@ export class CrawlConfigEditor extends LiteElement {
 
   connectedCallback(): void {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
-    this.formState = getDefaultFormState();
+    this.formState = {
+      ...getDefaultFormState(),
+      ...this.getInitialFormState(),
+    };
     if (!this.formState.lang) {
       this.formState.lang = this.getInitialLang();
+    }
+    if (!this.formState.exclusions?.length) {
+      this.formState.exclusions = [""]; // Add empty slot
     }
     super.connectedCallback();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
+    if (changedProperties.get("initialJobConfig") && this.initialJobConfig) {
       this.updateFormState(this.getInitialFormState());
     }
   }
@@ -327,6 +338,7 @@ export class CrawlConfigEditor extends LiteElement {
       scopeType: this.initialJobConfig.config
         .scopeType as FormState["scopeType"],
       exclusions: this.initialJobConfig.config.exclude,
+      includeLinkedPages: Boolean(this.initialJobConfig.config.extraHops),
       ...seedState,
       ...scheduleState,
     };
@@ -660,13 +672,13 @@ https://example.com/path`}
         false
       )}
       ${when(
-        this.formState.includeLinkedPages,
+        this.formState.includeLinkedPages || this.jobType === "custom",
         () => html`
           ${this.renderSectionHeading(msg("Page Limits"))}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
-              pageSize="50"
+              pageSize="10"
               editable
               removable
               @on-remove=${this.handleRemoveRegex}
@@ -676,7 +688,7 @@ https://example.com/path`}
               class="w-full mt-1"
               @click=${() =>
                 this.updateFormState({
-                  exclusions: [...(this.formState.exclusions || []), ""],
+                  exclusions: [""],
                 })}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -863,7 +875,7 @@ https://example.net`}
       ${this.renderFormCol(html`
         <btrix-queue-exclusion-table
           .exclusions=${this.formState.exclusions}
-          pageSize="50"
+          pageSize="10"
           editable
           removable
           @on-remove=${this.handleRemoveRegex}
@@ -873,7 +885,7 @@ https://example.net`}
           class="w-full mt-1"
           @click=${() =>
             this.updateFormState({
-              exclusions: [...(this.formState.exclusions || []), ""],
+              exclusions: [""],
             })}
         >
           <sl-icon slot="prefix" name="plus-lg"></sl-icon>
