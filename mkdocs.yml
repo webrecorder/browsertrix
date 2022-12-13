@@ -1,4 +1,4 @@
-site_name: Browsertrix Cloud
+site_name: Browsertrix Cloud Docs
 theme:
   name: material
   features:
@@ -9,6 +9,10 @@ theme:
   font:
     text: Inter
     code: Recursive
+  palette:
+    primary: teal
+    accent: cyan
+  logo: assets/brand/btrix-logo.svg
 
   icon:
     admonition:
