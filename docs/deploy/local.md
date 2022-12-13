@@ -39,15 +39,23 @@ Here are some environment specific instructions for setting up a local cluster f
 
     Note: microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
 
-??? tip "Minikube"
+??? tip "Minikube (Windows, Mac or Linux)"
 
     1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`
 
-    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` or [other options](https://helm.sh/docs/intro/install/)
+    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
     3. Run the Helm command as described above.
 
     4. Mac Only: To access Browsertrix Cloud running in minikube on a mac, run `minikube service browsertrix-cloud-frontend --url` and then access Browsertrix Cloud via the provided URL. This is needed as Browsertrix Cloud is running in a VM.
+
+??? tip "K3S (recommended for non-Ubuntu Linux)"
+
+    1. Install K3s [as per the instructions](https://docs.k3s.io/quick-start)
+
+    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+
+    3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
 
 ## Launching Browsertrix Cloud with Helm
@@ -143,7 +151,16 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
 ??? tip "MicroK8S"
 
-    MicroK8s uses its own container registry, running on port 32000. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
+    MicroK8s uses its own container registry, running on port 32000. 
+
+    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
+
+    2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
+
+    ```
+    api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+    nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+    ```
 
 ??? tip "Minikube" 
 
@@ -160,6 +177,26 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
     ```
 
-Once the images have been built, simply run the `helm upgrade...` command again to restart with local images.
+??? tip "K3S"
+
+    K3S uses `containerd` by default. To use local images, they need to be imported after rebuilding.
+
+    1. Rebuild the images with Docker by running by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts. (Requires Docker to be installed as well).
+
+    2. Serializer the images to .tar:
+
+    ```
+    docker save webrecorder/browsertrix-backend:latest > ./backend.tar
+    docker save webrecorder/browsertrix-frontend:latest > ./frontend.tar
+    ```
+
+    3. Import images into k3s containerd:
+
+    ```
+    k3s ctr images import --base-name webrecorder/browsertrix-backend:latest ./backend.tar
+    k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
+    ```
+
+Once the images have been built and any other config changes made per the above instructions, simply run the `helm upgrade...` command again to restart with local images.
 
 
