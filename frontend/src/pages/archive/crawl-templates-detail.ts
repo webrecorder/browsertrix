@@ -143,13 +143,20 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderCurrentlyRunningNotice()}
 
-        <btrix-tab-list class="mt-2">
+        <!-- <btrix-tab-list class="mt-2">
           <btrix-tab slot="nav" name="TODO">${msg("View Config")}</btrix-tab>
-          <btrix-tab slot="nav" name="TODO">${msg("Crawl History")}</btrix-tab>
+          <btrix-tab slot="nav" name="TODO">${msg(
+          "Crawl History"
+        )}</btrix-tab> -->
 
-          <header slot="header">${msg("View Config")}</header>
-          ${when(this.crawlTemplate, this.renderViewConfig)}
-        </btrix-tab-list>
+        <header slot="header" class="flex justify-between">
+          <div>
+            <!-- ${msg("View Config")} -->
+          </div>
+          <div></div>
+        </header>
+        ${when(this.crawlTemplate, this.renderViewConfig)}
+        <!-- </btrix-tab-list> -->
       </div>
     `;
   }
