@@ -143,9 +143,13 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderCurrentlyRunningNotice()}
 
-        <main class="md:border md:rounded-lg py-3 px-6">
-          ${when(this.crawlTemplate, this.renderMain)}
-        </main>
+        <btrix-tab-list class="mt-2">
+          <btrix-tab slot="nav" name="TODO">${msg("View Config")}</btrix-tab>
+          <btrix-tab slot="nav" name="TODO">${msg("Crawl History")}</btrix-tab>
+
+          <header slot="header">${msg("View Config")}</header>
+          ${when(this.crawlTemplate, this.renderViewConfig)}
+        </btrix-tab-list>
       </div>
     `;
   }
@@ -412,16 +416,13 @@ export class CrawlTemplatesDetail extends LiteElement {
     isLast = false
   ) {
     return html`
-      <div class="py-1">
-        <dt class="text-xs text-neutral-500">${label}</dt>
-        <dd class="font-monostyle">
-          ${when(
-            this.crawlTemplate,
-            renderContent,
-            () => html`<sl-skeleton class="w-full"></sl-skeleton>`
-          )}
-        </dd>
-      </div>
+      <btrix-desc-list-item class="py-1" label=${label}>
+        ${when(
+          this.crawlTemplate,
+          renderContent,
+          () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+        )}
+      </btrix-desc-list-item>
       ${when(
         !isLast,
         () => html`<hr class="flex-0 border-l w-0" style="height: inherit" />`
@@ -429,100 +430,118 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  private renderMain = () => {
+  private renderViewConfig = () => {
     if (!this.crawlTemplate) return;
     const crawlConfig = this.crawlTemplate;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
-      <btrix-details class="mb-6" open>
-        <h4 slot="title">${msg("Crawl Information")}</h4>
-        <btrix-desc-list>
-          ${this.renderSetting(msg("Name"), crawlConfig.name)}
-        </btrix-desc-list>
-      </btrix-details>
-      <btrix-details class="mb-6" open>
-        <h4 slot="title">${msg("Crawler Setup")}</h4>
-        <btrix-desc-list>
-          ${when(
-            crawlConfig.jobType === "seed-crawl",
-            this.renderConfirmSeededSettings,
-            this.renderConfirmUrlListSettings
-          )}
-          ${this.renderSetting(
-            msg("Exclusions"),
-            html`
-              ${when(
-                exclusions.length,
-                () => html`
-                  <btrix-queue-exclusion-table
-                    .exclusions=${exclusions}
-                    label=""
-                  >
-                  </btrix-queue-exclusion-table>
-                `,
-                () => msg("None")
-              )}
-            `
-          )}
-          ${this.renderSetting(
-            msg("Crawl Time Limit"),
-            crawlConfig.crawlTimeout
-              ? msg(str`${crawlConfig.crawlTimeout / 60} minute(s)`)
-              : msg("None")
-          )}
-          ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
-        </btrix-desc-list>
-      </btrix-details>
-      <btrix-details class="mb-6" open>
-        <h4 slot="title">${msg("Browser Settings")}</h4>
-        <btrix-desc-list>
-          ${this.renderSetting(
-            msg("Browser Profile"),
-            when(
-              crawlConfig.profileid,
-              () => html`<a
-                class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
-                @click=${this.navLink}
-              >
-                ${crawlConfig.profileName}
-              </a>`,
-              () => msg("Default Profile")
-            )
-          )}
-          ${this.renderSetting(
-            msg("Block Ads by Domain"),
-            crawlConfig.config.blockAds
-          )}
-          ${this.renderSetting(
-            msg("Language"),
-            ISO6391.getName(crawlConfig.config.lang!)
-          )}
-          ${this.renderSetting(
-            msg("Page Time Limit"),
-            crawlConfig.config.behaviorTimeout
-              ? msg(str`${crawlConfig.config.behaviorTimeout / 60} minute(s)`)
-              : msg("None")
-          )}
-        </btrix-desc-list>
-      </btrix-details>
-      <btrix-details open>
-        <h4 slot="title">${msg("Crawl Scheduling")}</h4>
-        <btrix-desc-list>
-          ${this.renderSetting(
-            msg("Crawl Schedule Type"),
-            crawlConfig.schedule
-              ? msg("Run on a Recurring Basis")
-              : msg("No Schedule")
-          )}
-          ${when(crawlConfig.schedule, () =>
-            this.renderSetting(
-              msg("Schedule"),
-              humanizeSchedule(crawlConfig.schedule)
-            )
-          )}
-        </btrix-desc-list>
-      </btrix-details>
+      <section class="border rounded-lg py-2 mb-4">
+        <dl class="px-3 md:px-0 md:flex justify-evenly">
+          ${this.renderDetailItem(msg("Associated With"), () => "TODO")}
+          ${this.renderDetailItem(msg("Created By"), () => "TODO")}
+          ${this.renderDetailItem(msg("Created At"), () => "TODO", true)}
+        </dl>
+      </section>
+
+      <main class="border rounded-lg py-4 px-6">
+        <section class="mb-6">
+          <btrix-section-heading
+            ><h4>${msg("Crawl Information")}</h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${this.renderSetting(msg("Name"), crawlConfig.name)}
+          </btrix-desc-list>
+        </section>
+        <section class="mb-6">
+          <btrix-section-heading
+            ><h4>${msg("Crawler Setup")}</h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${when(
+              crawlConfig.jobType === "seed-crawl",
+              this.renderConfirmSeededSettings,
+              this.renderConfirmUrlListSettings
+            )}
+            ${this.renderSetting(
+              msg("Exclusions"),
+              html`
+                ${when(
+                  exclusions.length,
+                  () => html`
+                    <btrix-queue-exclusion-table
+                      .exclusions=${exclusions}
+                      label=""
+                    >
+                    </btrix-queue-exclusion-table>
+                  `,
+                  () => msg("None")
+                )}
+              `
+            )}
+            ${this.renderSetting(
+              msg("Crawl Time Limit"),
+              crawlConfig.crawlTimeout
+                ? msg(str`${crawlConfig.crawlTimeout / 60} minute(s)`)
+                : msg("None")
+            )}
+            ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
+          </btrix-desc-list>
+        </section>
+        <section class="mb-6">
+          <btrix-section-heading
+            ><h4>${msg("Browser Settings")}</h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${this.renderSetting(
+              msg("Browser Profile"),
+              when(
+                crawlConfig.profileid,
+                () => html`<a
+                  class="text-blue-500 hover:text-blue-600"
+                  href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
+                  @click=${this.navLink}
+                >
+                  ${crawlConfig.profileName}
+                </a>`,
+                () => msg("Default Profile")
+              )
+            )}
+            ${this.renderSetting(
+              msg("Block Ads by Domain"),
+              crawlConfig.config.blockAds
+            )}
+            ${this.renderSetting(
+              msg("Language"),
+              ISO6391.getName(crawlConfig.config.lang!)
+            )}
+            ${this.renderSetting(
+              msg("Page Time Limit"),
+              crawlConfig.config.behaviorTimeout
+                ? msg(str`${crawlConfig.config.behaviorTimeout / 60} minute(s)`)
+                : msg("None")
+            )}
+          </btrix-desc-list>
+        </section>
+        <section>
+          <btrix-section-heading
+            ><h4>${msg("Crawl Scheduling")}</h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${this.renderSetting(
+              msg("Crawl Schedule Type"),
+              crawlConfig.schedule
+                ? msg("Run on a Recurring Basis")
+                : msg("No Schedule")
+            )}
+            ${when(crawlConfig.schedule, () =>
+              this.renderSetting(
+                msg("Schedule"),
+                humanizeSchedule(crawlConfig.schedule)
+              )
+            )}
+          </btrix-desc-list>
+        </section>
+      </main>
     `;
   };
 

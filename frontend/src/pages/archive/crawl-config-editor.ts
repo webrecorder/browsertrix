@@ -342,21 +342,6 @@ export class CrawlConfigEditor extends LiteElement {
     };
 
     return html`
-      <header class="lg:ml-48 mb-3 flex justify-between items-baseline">
-        <h3 class="text-lg font-medium">
-          ${tabLabels[this.progressState.activeTab]}
-        </h3>
-        <p class="text-xs text-neutral-500">
-          ${msg(
-            html`Fields marked with
-              <span style="color:var(--sl-input-required-content-color)"
-                >*</span
-              >
-              are required`
-          )}
-        </p>
-      </header>
-
       <form
         name="newJobConfig"
         @reset=${this.onReset}
@@ -369,6 +354,19 @@ export class CrawlConfigEditor extends LiteElement {
           activePanel="newJobConfig-${this.progressState.activeTab}"
           progressPanel="newJobConfig-${this.progressState.currentStep}"
         >
+          <header slot="header" class="flex justify-between items-baseline">
+            <h3>${tabLabels[this.progressState.activeTab]}</h3>
+            <p class="text-xs text-neutral-500 font-normal">
+              ${msg(
+                html`Fields marked with
+                  <span style="color:var(--sl-input-required-content-color)"
+                    >*</span
+                  >
+                  are required`
+              )}
+            </p>
+          </header>
+
           ${orderedTabNames.map((tabName) =>
             this.renderNavItem(tabName, tabLabels[tabName])
           )}
@@ -413,7 +411,7 @@ export class CrawlConfigEditor extends LiteElement {
     let icon = html`
       <sl-icon
         name="circle"
-        class="inline-block align-middle mr-1 text-base text-neutral-300"
+        class="inline-block align-middle mr-1 text-base text-neutral-300 max-w"
       ></sl-icon>
     `;
     if (isInvalid) {
@@ -461,7 +459,7 @@ export class CrawlConfigEditor extends LiteElement {
     { isFirst = false, isLast = false } = {}
   ) {
     return html`
-      <div class="flex flex-col h-full">
+      <div class="border rounded-lg flex flex-col h-full">
         <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
           ${content}
           ${when(this.serverError, () =>
