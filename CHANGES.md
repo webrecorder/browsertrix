@@ -1,3 +1,13 @@
+### v1.2.0 Dev
+
+New Features:
+- Updated UI: New Crawl Configuration UI with URL List and Seeded Crawl Job Types
+
+Docs improvements
+
+Docker swarm code removed
+
+
 ### v1.1.0
 
 New Features:
@@ -7,7 +17,7 @@ New Features:
 
 Mkdocs based documentation added
 
-Docker swarm / compose / podman-based deployments not deprecated in favor of Kubernetes
+Docker swarm / compose / podman-based deployments now deprecated in favor of Kubernetes
 
 Various UI improvements and tweaks
 
