@@ -577,17 +577,19 @@ def init_crawls_api(
     archive_crawl_dep = archives.archive_crawl_dep
 
     @app.get("/archives/all/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls_admin(user: User = Depends(user_dep)):
+    async def list_crawls_admin(user: User = Depends(user_dep), cid: uuid.UUID = None):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return ListCrawls(crawls=await ops.list_crawls(None, running_only=True))
+        return ListCrawls(
+            crawls=await ops.list_crawls(None, running_only=True, cid=cid)
+        )
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
     async def list_crawls(
-        archive: Archive = Depends(archive_viewer_dep), userid: Optional[UUID4] = None
+        archive: Archive = Depends(archive_viewer_dep), userid: Optional[UUID4] = None, cid: Optional[UUID4] = None
     ):
-        return ListCrawls(crawls=await ops.list_crawls(archive, userid=userid))
+        return ListCrawls(crawls=await ops.list_crawls(archive, userid=userid, cid=cid, running_only=False))
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/cancel",
