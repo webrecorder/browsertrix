@@ -9,7 +9,7 @@ import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig, InitialCrawlConfig } from "./types";
+import type { CrawlConfig, InitialCrawlConfig, JobType } from "./types";
 import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
@@ -56,6 +56,12 @@ export class CrawlTemplatesDetail extends LiteElement {
     page: msg("Page"),
     custom: msg("Custom"),
     any: msg("Any"),
+  };
+
+  private readonly jobTypeLabels: Record<JobType, string> = {
+    "url-list": msg("URL List"),
+    "seed-crawl": msg("Seeded Crawl"),
+    custom: msg("Custom"),
   };
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -372,19 +378,8 @@ export class CrawlTemplatesDetail extends LiteElement {
               >`
         )}
         ${this.renderDetailItem(
-          msg("Run Count"),
-          () => this.crawlConfig!.crawlCount
-        )}
-        ${this.renderDetailItem(msg("Schedule"), () =>
-          this.crawlConfig!.schedule
-            ? html`<sl-icon
-                  name="calendar3"
-                  class="inline-block align-middle mr-1"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Recurring Schedule")}
-                </span>`
-            : html`<span class="text-neutral-400">${msg("None")}</span>`
+          msg("Crawl Type"),
+          () => this.jobTypeLabels[this.crawlConfig!.jobType]
         )}
         ${this.renderDetailItem(
           msg("Last Updated By"),
@@ -453,6 +448,10 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       <section class="border rounded-lg py-2 mb-4">
         <dl class="px-3 md:px-0 md:flex justify-evenly">
+          ${this.renderDetailItem(
+            msg("Crawl Count"),
+            () => crawlConfig.crawlCount
+          )}
           ${this.renderDetailItem(
             msg("Created At"),
             () => html`
