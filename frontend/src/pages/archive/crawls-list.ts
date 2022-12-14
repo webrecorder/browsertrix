@@ -11,8 +11,7 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlConfig } from "./types";
-import type { InitialCrawlTemplate } from "./crawl-templates-new";
+import type { Crawl, CrawlConfig, InitialCrawlConfig } from "./types";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -703,7 +702,7 @@ export class CrawlsList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(crawl: Crawl, template: CrawlConfig) {
-    const crawlTemplate: InitialCrawlTemplate = {
+    const crawlTemplate: InitialCrawlConfig = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,

@@ -35,24 +35,18 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { CrawlConfigParams, Profile, JobType } from "./types";
+import type {
+  CrawlConfigParams,
+  Profile,
+  InitialCrawlConfig,
+  JobType,
+} from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
   oldId?: string;
 };
-export type InitialJobConfig = Pick<
-  CrawlConfigParams,
-  "name" | "profileid" | "schedule"
-> & {
-  jobType?: JobType;
-  config: Pick<
-    CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "exclude"
-  > & {
-    extraHops?: CrawlConfigParams["config"]["extraHops"];
-  };
-};
+
 const STEPS = [
   "crawlerSetup",
   "browserSettings",
@@ -204,7 +198,7 @@ export class CrawlConfigEditor extends LiteElement {
   jobType?: JobType;
 
   @property({ type: Object })
-  initialJobConfig?: InitialJobConfig;
+  initialCrawlConfig?: InitialCrawlConfig;
 
   @state()
   private isSubmitting = false;
@@ -266,6 +260,20 @@ export class CrawlConfigEditor extends LiteElement {
   formElem!: HTMLFormElement;
 
   connectedCallback(): void {
+    this.initializeEditor();
+    super.connectedCallback();
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.get("initialCrawlConfig") &&
+      this.initialCrawlConfig
+    ) {
+      this.initializeEditor();
+    }
+  }
+
+  private initializeEditor() {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
     this.formState = {
       ...getDefaultFormState(),
@@ -276,13 +284,6 @@ export class CrawlConfigEditor extends LiteElement {
     }
     if (!this.formState.exclusions?.length) {
       this.formState.exclusions = [""]; // Add empty slot
-    }
-    super.connectedCallback();
-  }
-
-  willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.get("initialJobConfig") && this.initialJobConfig) {
-      this.updateFormState(this.getInitialFormState());
     }
   }
 
@@ -296,10 +297,10 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private getInitialFormState(): Partial<FormState> {
-    if (!this.initialJobConfig) return {};
+    if (!this.initialCrawlConfig) return {};
     const seedState: Partial<FormState> = {};
-    const { seeds, scopeType } = this.initialJobConfig.config;
-    if (this.initialJobConfig.jobType === "seed-crawl") {
+    const { seeds, scopeType } = this.initialCrawlConfig.config;
+    if (this.initialCrawlConfig.jobType === "seed-crawl") {
       seedState.primarySeedUrl =
         typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
     } else {
@@ -308,18 +309,18 @@ export class CrawlConfigEditor extends LiteElement {
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
-      if (this.initialJobConfig.jobType === "custom") {
+      if (this.initialCrawlConfig.jobType === "custom") {
         seedState.scopeType = scopeType || "page";
       }
     }
 
     const scheduleState: Partial<FormState> = {};
-    if (this.initialJobConfig.schedule) {
+    if (this.initialCrawlConfig.schedule) {
       scheduleState.scheduleType = "cron";
       scheduleState.scheduleFrequency = getScheduleInterval(
-        this.initialJobConfig.schedule
+        this.initialCrawlConfig.schedule
       );
-      const nextDate = getNextDate(this.initialJobConfig.schedule)!;
+      const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
       scheduleState.scheduleDayOfMonth = nextDate.getDate();
       scheduleState.scheduleDayOfWeek = nextDate.getDay();
       const hours = nextDate.getHours();
@@ -333,14 +334,14 @@ export class CrawlConfigEditor extends LiteElement {
     }
 
     return {
-      jobName: this.initialJobConfig.name,
-      browserProfile: this.initialJobConfig.profileid
-        ? ({ id: this.initialJobConfig.profileid } as Profile)
+      jobName: this.initialCrawlConfig.name,
+      browserProfile: this.initialCrawlConfig.profileid
+        ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
-      scopeType: this.initialJobConfig.config
+      scopeType: this.initialCrawlConfig.config
         .scopeType as FormState["scopeType"],
-      exclusions: this.initialJobConfig.config.exclude,
-      includeLinkedPages: Boolean(this.initialJobConfig.config.extraHops),
+      exclusions: this.initialCrawlConfig.config.exclude,
+      includeLinkedPages: Boolean(this.initialCrawlConfig.config.extraHops),
       ...seedState,
       ...scheduleState,
     };
@@ -1572,7 +1573,7 @@ https://example.net`}
 
     const config = this.parseConfig();
 
-    console.log(config);
+    console.log(config.oldId);
 
     this.isSubmitting = true;
 
@@ -1602,6 +1603,8 @@ https://example.net`}
         duration: 8000,
       });
 
+      console.log(data.added);
+
       if (crawlId) {
         this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawlId}`);
       } else {
@@ -1627,12 +1630,7 @@ https://example.net`}
   }
 
   private async onReset() {
-    this.progressState = getDefaultProgressState(Boolean(this.configId));
-    this.formState = {
-      ...getDefaultFormState(),
-      lang: this.getInitialLang(),
-      ...this.getInitialFormState(),
-    };
+    this.initializeEditor();
   }
 
   /**

@@ -11,8 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { InitialCrawlTemplate } from "./crawl-templates-new";
-import type { CrawlConfig } from "./types";
+import type { CrawlConfig, InitialCrawlConfig } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -576,7 +575,7 @@ export class CrawlTemplatesList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(template: CrawlConfig) {
-    const crawlTemplate: InitialCrawlTemplate = {
+    const crawlTemplate: InitialCrawlConfig = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,

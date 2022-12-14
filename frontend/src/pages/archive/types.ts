@@ -63,6 +63,19 @@ export type CrawlConfigParams = {
   crawlTimeout: number | null;
 };
 
+export type InitialCrawlConfig = Pick<
+  CrawlConfigParams,
+  "name" | "profileid" | "schedule"
+> & {
+  jobType?: JobType;
+  config: Pick<
+    CrawlConfigParams["config"],
+    "seeds" | "scopeType" | "exclude"
+  > & {
+    extraHops?: CrawlConfigParams["config"]["extraHops"];
+  };
+};
+
 export type CrawlConfig = CrawlConfigParams & {
   id: string;
   jobType: JobType;
