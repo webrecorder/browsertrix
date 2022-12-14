@@ -149,13 +149,30 @@ export class CrawlTemplatesDetail extends LiteElement {
           "Crawl History"
         )}</btrix-tab> -->
 
-        <header slot="header" class="flex justify-between">
-          <div>
-            <!-- ${msg("View Config")} -->
-          </div>
-          <div></div>
-        </header>
-        ${when(this.crawlTemplate, this.renderViewConfig)}
+        <div>
+          <header slot="header" class="flex justify-between mb-2">
+            <div class="text-lg text-neutral-700 font-medium">
+              ${msg("View Config")}
+            </div>
+            <div class="flex items-center">
+              <span class="text-xs text-neutral-500 mr-2"
+                >${msg("Config Version:")}</span
+              >
+              <btrix-icon-button
+                class="mr-1"
+                name="chevron-left"
+                variant="primary"
+                custom
+              ></btrix-icon-button>
+              <btrix-icon-button
+                name="chevron-right"
+                variant="primary"
+                custom
+              ></btrix-icon-button>
+            </div>
+          </header>
+          ${when(this.crawlTemplate, this.renderViewConfig)}
+        </div>
         <!-- </btrix-tab-list> -->
       </div>
     `;
@@ -444,8 +461,20 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <section class="border rounded-lg py-2 mb-4">
         <dl class="px-3 md:px-0 md:flex justify-evenly">
-          ${this.renderDetailItem(msg("Created By"), () => "TODO")}
-          ${this.renderDetailItem(msg("Created At"), () => "TODO", true)}
+          ${this.renderDetailItem(
+            msg("Created At"),
+            () => html`
+              <sl-format-date
+                date=${crawlConfig.created}
+                month="numeric"
+                day="numeric"
+                year="numeric"
+                hour="numeric"
+                minute="numeric"
+              ></sl-format-date>
+            `
+          )}
+          ${this.renderDetailItem(msg("Created By"), () => "TODO", true)}
         </dl>
       </section>
 
