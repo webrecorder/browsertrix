@@ -66,7 +66,6 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
-      this.versionId = this.crawlConfigId;
       this.initializeCrawlTemplate();
     }
   }
@@ -75,6 +74,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     try {
       this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
       this.versions[this.crawlConfig.id] = this.crawlConfig;
+      this.versionId = this.crawlConfigId;
     } catch (e: any) {
       this.notify({
         message:
@@ -413,6 +413,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private renderViewConfig = () => {
     const crawlConfig = this.versions[this.versionId || this.crawlConfigId];
     if (!crawlConfig) return;
+    const isCurrentVersion = !crawlConfig.newId;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
       <header slot="header" class="flex justify-between mb-2">
@@ -467,7 +468,25 @@ export class CrawlTemplatesDetail extends LiteElement {
           )}
           ${this.renderDetailItem(
             msg("Created By"),
-            () => crawlConfig.userName,
+            () => crawlConfig.userName
+          )}
+          ${this.renderDetailItem(
+            msg("Version"),
+            () =>
+              isCurrentVersion
+                ? html`
+                    <btrix-badge variant="success"
+                      >${msg("Current Version")}</btrix-badge
+                    >
+                  `
+                : html`
+                    <btrix-badge
+                      variant="warning"
+                      role="button"
+                      @click=${() => this.initializeCrawlTemplate()}
+                      >${msg("New Version Available")}</btrix-badge
+                    >
+                  `,
             true
           )}
         </dl>
