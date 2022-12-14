@@ -458,11 +458,11 @@ export class CrawlTemplatesDetail extends LiteElement {
             () => html`
               <sl-format-date
                 date=${crawlConfig.created}
-                month="numeric"
-                day="numeric"
+                month="2-digit"
+                day="2-digit"
                 year="numeric"
-                hour="numeric"
-                minute="numeric"
+                hour="2-digit"
+                minute="2-digit"
               ></sl-format-date>
             `
           )}
