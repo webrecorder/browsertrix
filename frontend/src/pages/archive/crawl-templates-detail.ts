@@ -648,14 +648,15 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   private getOlderVersion() {
-    this.updateVersion(this.versions[this.versionId!].oldId!);
+    this.updateVersion(this.versions[this.versionId!].oldId);
   }
 
   private getNewerVersion() {
-    this.updateVersion(this.versions[this.versionId!].newId!);
+    this.updateVersion(this.versions[this.versionId!].newId);
   }
 
-  private async updateVersion(versionId: string) {
+  private async updateVersion(versionId: string | null) {
+    if (!versionId) return;
     if (!this.versions[versionId]) {
       this.versions = {
         ...this.versions,
