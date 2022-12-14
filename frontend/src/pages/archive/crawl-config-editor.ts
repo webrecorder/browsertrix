@@ -330,7 +330,11 @@ export class CrawlConfigEditor extends LiteElement {
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
-      scheduleState.scheduleType = "none";
+      if (this.configId) {
+        scheduleState.scheduleType = "none";
+      } else {
+        scheduleState.scheduleType = "now";
+      }
     }
 
     return {
@@ -1028,6 +1032,7 @@ https://example.net`}
         >
           <sl-radio value="now">${this.scheduleTypeLabels["now"]}</sl-radio>
           <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
+          <sl-radio value="none">${this.scheduleTypeLabels["none"]}</sl-radio>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -1496,7 +1501,6 @@ https://example.net`}
 
   private nextStep() {
     const isValid = this.checkCurrentPanelValidity();
-    console.log(isValid);
 
     if (isValid) {
       const { activeTab, tabs, currentStep } = this.progressState;
@@ -1573,8 +1577,6 @@ https://example.net`}
 
     const config = this.parseConfig();
 
-    console.log(config.oldId);
-
     this.isSubmitting = true;
 
     try {
@@ -1602,8 +1604,6 @@ https://example.net`}
         icon: "check2-circle",
         duration: 8000,
       });
-
-      console.log(data.added);
 
       if (crawlId) {
         this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawlId}`);
