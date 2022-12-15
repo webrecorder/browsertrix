@@ -83,6 +83,7 @@ export type CrawlConfig = CrawlConfigParams & {
   userName: string | null;
   created: string;
   crawlCount: number;
+  crawlAttemptCount: number;
   lastCrawlId: string;
   lastCrawlTime: string;
   lastCrawlState: CrawlState;

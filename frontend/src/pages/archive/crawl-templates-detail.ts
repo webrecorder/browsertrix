@@ -340,11 +340,11 @@ export class CrawlTemplatesDetail extends LiteElement {
           this.crawlConfig!.lastCrawlTime
             ? html`<sl-format-date
                 date=${this.crawlConfig!.lastCrawlTime}
-                month="numeric"
-                day="numeric"
+                month="2-digit"
+                day="2-digit"
                 year="numeric"
-                hour="numeric"
-                minute="numeric"
+                hour="2-digit"
+                minute="2-digit"
               ></sl-format-date>`
             : html`<span class="text-neutral-400">${msg("Never")}</span>`
         )}
@@ -520,6 +520,71 @@ export class CrawlTemplatesDetail extends LiteElement {
                 crawlConfig?.schedule
                   ? humanizeSchedule(crawlConfig.schedule)
                   : undefined
+              )
+            )}
+          </btrix-desc-list>
+        </section>
+        <section id="crawls" class="mb-8">
+          <btrix-section-heading
+            ><h4>
+              ${this.renderAnchorLink("crawls")} ${msg("Crawls")}
+            </h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${this.renderSetting(
+              msg("Incomplete Crawl Count"),
+              crawlConfig?.crawlAttemptCount
+            )}
+            ${this.renderSetting(
+              msg("Completed Crawl Count"),
+              crawlConfig?.crawlCount
+            )}
+            ${this.renderSetting(
+              msg("Currently Running Crawl"),
+              when(
+                crawlConfig?.currCrawlId,
+                () => html`<a
+                  class="text-blue-500 hover:text-blue-600"
+                  href=${`/archives/${this.archiveId}/crawls/crawl/${
+                    crawlConfig!.currCrawlId
+                  }`}
+                  @click=${this.navLink}
+                >
+                  ${msg("View Crawl")}
+                </a>`,
+                () => msg("None")
+              )
+            )}
+            ${this.renderSetting(
+              msg("Latest Completed Crawl"),
+              when(
+                crawlConfig?.lastCrawlId,
+                () => html`
+                  <div class="flex items-baseline">
+                    <div class="capitalize mr-3">
+                      ${crawlConfig!.lastCrawlState.replace(/_/g, " ")}
+                    </div>
+                    <sl-format-date
+                      class="mr-3"
+                      date=${crawlConfig!.lastCrawlTime}
+                      month="2-digit"
+                      day="2-digit"
+                      year="numeric"
+                      hour="2-digit"
+                      minute="2-digit"
+                    ></sl-format-date>
+                    <a
+                      class="text-blue-500 hover:text-blue-600"
+                      href=${`/archives/${this.archiveId}/crawls/crawl/${
+                        crawlConfig!.lastCrawlId
+                      }`}
+                      @click=${this.navLink}
+                    >
+                      ${msg("View Crawl")}
+                    </a>
+                  </div>
+                `,
+                () => msg("None")
               )
             )}
           </btrix-desc-list>
