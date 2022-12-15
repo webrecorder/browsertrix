@@ -37,12 +37,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   private crawlConfig?: CrawlConfig;
 
   @state()
-  private versions: { [key: string]: CrawlConfig } = {};
-
-  @state()
-  private versionId?: string; // Version by ID
-
-  @state()
   private isSubmittingUpdate: boolean = false;
 
   private readonly scopeTypeLabels: Record<
@@ -73,8 +67,6 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async initializeCrawlTemplate() {
     try {
       this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
-      this.versions[this.crawlConfig.id] = this.crawlConfig;
-      this.versionId = this.crawlConfigId;
     } catch (e: any) {
       this.notify({
         message:
@@ -98,13 +90,24 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 gap-5">
-        ${this.renderHeader()} ${this.renderInactiveNotice()}
+        ${this.renderHeader()}
 
         <header class="py-4 md:flex justify-between items-end">
-          <h2 class="text-xl leading-10">
+          <h2>
             ${this.crawlConfig?.name
-              ? html`<span>${this.crawlConfig.name}</span> `
+              ? html`<span
+                  class="inline-block align-middle text-xl leading-10 mr-1"
+                  >${this.crawlConfig.name}</span
+                > `
               : ""}
+            ${when(
+              this.crawlConfig?.inactive,
+              () => html`
+                <btrix-badge class="inline-block align-middle" variant="warning"
+                  >${msg("Inactive")}</btrix-badge
+                >
+              `
+            )}
           </h2>
           <div class="flex-0 flex">
             ${when(
@@ -121,9 +124,22 @@ export class CrawlTemplatesDetail extends LiteElement {
                   <sl-icon slot="prefix" name="gear"></sl-icon>
                   ${msg("Edit Crawl Config")}
                 </sl-button>
-              `
+                ${this.renderMenu()}
+              `,
+              () =>
+                this.crawlConfig?.newId
+                  ? html`
+                      <sl-button
+                        size="small"
+                        variant="text"
+                        @click=${this.getNewerVersion}
+                      >
+                        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                        ${msg("Newer Version")}
+                      </sl-button>
+                    `
+                  : ""
             )}
-            ${this.renderMenu()}
           </div>
         </header>
 
@@ -133,14 +149,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         ${this.renderCurrentlyRunningNotice()}
 
-        <!-- <btrix-tab-list class="mt-2">
-          <btrix-tab slot="nav" name="TODO">${msg("View Config")}</btrix-tab>
-          <btrix-tab slot="nav" name="TODO">${msg(
-          "Crawl History"
-        )}</btrix-tab> -->
-
         <div>${when(this.crawlConfig, this.renderViewConfig)}</div>
-        <!-- </btrix-tab-list> -->
       </div>
     `;
   }
@@ -294,44 +303,6 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  private renderInactiveNotice() {
-    if (this.crawlConfig?.inactive) {
-      if (this.crawlConfig?.newId) {
-        return html`
-          <btrix-alert variant="info">
-            <sl-icon
-              name="exclamation-octagon"
-              class="inline-block align-middle mr-2"
-            ></sl-icon>
-            <span class="inline-block align-middle">
-              ${msg("This crawl config is inactive.")}
-              <a
-                class="font-medium underline hover:no-underline"
-                href=${`/archives/${this.archiveId}/crawl-templates/config/${this.crawlConfig.newId}`}
-                @click=${this.navLink}
-                >${msg("Go to newer version")}</a
-              >
-            </span>
-          </btrix-alert>
-        `;
-      }
-
-      return html`
-        <btrix-alert variant="warning">
-          <sl-icon
-            name="exclamation-octagon"
-            class="inline-block align-middle mr-2"
-          ></sl-icon>
-          <span class="inline-block align-middle">
-            ${msg("This crawl config is inactive.")}
-          </span>
-        </btrix-alert>
-      `;
-    }
-
-    return "";
-  }
-
   private renderCurrentlyRunningNotice() {
     if (this.crawlConfig?.currCrawlId) {
       return html`
@@ -350,6 +321,8 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderDetails() {
+    if (!this.crawlConfig) return;
+
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(msg("Last Run"), () =>
@@ -378,12 +351,25 @@ export class CrawlTemplatesDetail extends LiteElement {
               >`
         )}
         ${this.renderDetailItem(
-          msg("Crawl Type"),
-          () => this.jobTypeLabels[this.crawlConfig!.jobType]
+          msg("Crawl Count"),
+          () => this.crawlConfig!.crawlCount
         )}
         ${this.renderDetailItem(
-          msg("Last Updated By"),
-          () => this.crawlConfig!.userName,
+          msg("Created By"),
+          () => this.crawlConfig!.userName
+        )}
+        ${this.renderDetailItem(
+          msg("Created At"),
+          () => html`
+            <sl-format-date
+              date=${this.crawlConfig!.created}
+              month="2-digit"
+              day="2-digit"
+              year="numeric"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          `,
           true
         )}
       </dl>
@@ -411,89 +397,13 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 
   private renderViewConfig = () => {
-    const crawlConfig = this.versions[this.versionId || this.crawlConfigId];
+    const crawlConfig = this.crawlConfig;
     if (!crawlConfig) return;
     const isCurrentVersion = !crawlConfig.newId;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
-      <header slot="header" class="flex justify-between mb-2">
-        <div class="text-lg text-neutral-700 font-medium">
-          ${msg("View Config")}
-        </div>
-        ${when(
-          crawlConfig.oldId || crawlConfig.newId,
-          () => html`
-            <div class="flex items-center">
-              <span class="text-xs text-neutral-500 mr-2"
-                >${msg("Config Version:")}</span
-              >
-              <btrix-icon-button
-                class="mr-1"
-                name="chevron-left"
-                variant="primary"
-                custom
-                @click=${this.getOlderVersion}
-                ?disabled=${!crawlConfig.oldId}
-              ></btrix-icon-button>
-              <btrix-icon-button
-                name="chevron-right"
-                variant="primary"
-                custom
-                @click=${this.getNewerVersion}
-                ?disabled=${!crawlConfig.newId}
-              ></btrix-icon-button>
-            </div>
-          `
-        )}
-      </header>
-
-      <section class="border rounded-lg py-2 mb-4">
-        <dl class="px-3 md:px-0 md:flex justify-evenly">
-          ${this.renderDetailItem(
-            msg("Crawl Count"),
-            () => crawlConfig.crawlCount
-          )}
-          ${this.renderDetailItem(
-            msg("Created At"),
-            () => html`
-              <sl-format-date
-                date=${crawlConfig.created}
-                month="2-digit"
-                day="2-digit"
-                year="numeric"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>
-            `
-          )}
-          ${this.renderDetailItem(
-            msg("Created By"),
-            () => crawlConfig.userName
-          )}
-          ${this.renderDetailItem(
-            msg("Version"),
-            () =>
-              isCurrentVersion
-                ? html`
-                    <btrix-badge variant="success"
-                      >${msg("Current Version")}</btrix-badge
-                    >
-                  `
-                : html`
-                    <btrix-badge
-                      variant="warning"
-                      role="button"
-                      @click=${() => this.initializeCrawlTemplate()}
-                      >${msg("New Version Available")}</btrix-badge
-                    >
-                  `,
-            true
-          )}
-        </dl>
-      </section>
-
       <main class="border rounded-lg py-4 px-6">
-        <section class="mb-6">
+        <section class="mb-8">
           <btrix-section-heading
             ><h4>${msg("Crawl Information")}</h4></btrix-section-heading
           >
@@ -501,7 +411,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${this.renderSetting(msg("Name"), crawlConfig.name)}
           </btrix-desc-list>
         </section>
-        <section class="mb-6">
+        <section class="mb-8">
           <btrix-section-heading
             ><h4>${msg("Crawler Setup")}</h4></btrix-section-heading
           >
@@ -511,21 +421,18 @@ export class CrawlTemplatesDetail extends LiteElement {
               this.renderConfirmSeededSettings,
               this.renderConfirmUrlListSettings
             )}
-            ${this.renderSetting(
-              msg("Exclusions"),
-              html`
-                ${when(
-                  exclusions.length,
-                  () => html`
-                    <btrix-queue-exclusion-table
-                      .exclusions=${exclusions}
-                      label=""
-                    >
-                    </btrix-queue-exclusion-table>
-                  `,
-                  () => msg("None")
-                )}
-              `
+            ${when(
+              exclusions.length,
+              () => html`
+                <div class="mb-2">
+                  <btrix-queue-exclusion-table
+                    .exclusions=${exclusions}
+                    labelClassName="text-xs text-neutral-500"
+                  >
+                  </btrix-queue-exclusion-table>
+                </div>
+              `,
+              () => this.renderSetting(msg("Exclusions"), msg("None"))
             )}
             ${this.renderSetting(
               msg("Crawl Time Limit"),
@@ -536,7 +443,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
           </btrix-desc-list>
         </section>
-        <section class="mb-6">
+        <section class="mb-8">
           <btrix-section-heading
             ><h4>${msg("Browser Settings")}</h4></btrix-section-heading
           >
@@ -571,7 +478,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             )}
           </btrix-desc-list>
         </section>
-        <section>
+        <section class="mb-8">
           <btrix-section-heading
             ><h4>${msg("Crawl Scheduling")}</h4></btrix-section-heading
           >
@@ -586,6 +493,27 @@ export class CrawlTemplatesDetail extends LiteElement {
               this.renderSetting(
                 msg("Schedule"),
                 humanizeSchedule(crawlConfig.schedule)
+              )
+            )}
+          </btrix-desc-list>
+        </section>
+        <section class="mb-8">
+          <btrix-section-heading
+            ><h4>${msg("Config History")}</h4></btrix-section-heading
+          >
+          <btrix-desc-list>
+            ${this.renderSetting(
+              msg("Revision"),
+              when(
+                crawlConfig.oldId,
+                () => html`<a
+                  class="text-blue-500 hover:text-blue-600"
+                  href=${`/archives/${this.archiveId}/crawl-templates/config/${crawlConfig.oldId}`}
+                  @click=${this.navLink}
+                >
+                  ${msg("View older version")}
+                </a>`,
+                () => msg("None")
               )
             )}
           </btrix-desc-list>
@@ -667,23 +595,18 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   private getOlderVersion() {
-    this.updateVersion(this.versions[this.versionId!].oldId);
+    this.updateVersion(this.crawlConfig?.oldId);
   }
 
   private getNewerVersion() {
-    this.updateVersion(this.versions[this.versionId!].newId);
+    this.updateVersion(this.crawlConfig?.newId);
   }
 
-  private async updateVersion(versionId: string | null) {
+  private async updateVersion(versionId?: string | null) {
     if (!versionId) return;
-    if (!this.versions[versionId]) {
-      this.versions = {
-        ...this.versions,
-        [versionId]: await this.getCrawlTemplate(versionId),
-      };
-    }
-
-    this.versionId = versionId;
+    this.navTo(
+      `/archives/${this.archiveId}/crawl-templates/config/${versionId}`
+    );
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
