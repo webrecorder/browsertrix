@@ -85,6 +85,10 @@ import("./desc-list").then(({ DescListItem, DescList }) => {
   customElements.define("btrix-desc-list-item", DescListItem);
   customElements.define("btrix-desc-list", DescList);
 });
+import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
+  customElements.define("btrix-crawl-list-item", CrawlListItem);
+  customElements.define("btrix-crawl-list", CrawlList);
+});
 import("./section-heading").then(({ SectionHeading }) => {
   customElements.define("btrix-section-heading", SectionHeading);
 });

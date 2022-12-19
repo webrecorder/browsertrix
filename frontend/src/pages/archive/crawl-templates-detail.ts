@@ -9,7 +9,7 @@ import ISO6391 from "iso-639-1";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig, InitialCrawlConfig, JobType } from "./types";
+import type { Crawl, CrawlConfig, InitialCrawlConfig, JobType } from "./types";
 import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 
@@ -35,6 +35,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   @state()
   private crawlConfig?: CrawlConfig;
+
+  @state()
+  private lastCrawl?: Crawl;
 
   @state()
   private isSubmittingUpdate: boolean = false;
@@ -68,7 +71,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (
       changedProperties.has("crawlConfig") &&
       !changedProperties.get("crawlConfig") &&
-      this.crawlConfig
+      this.crawlConfig &&
+      window.location.hash
     ) {
       // Show section once crawl config is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
@@ -78,6 +82,8 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async initializeCrawlTemplate() {
     try {
       this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      if (this.crawlConfig.lastCrawlId)
+        this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
     } catch (e: any) {
       this.notify({
         message:
@@ -100,10 +106,10 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
 
     return html`
-      <div class="grid grid-cols-1 gap-5">
+      <div class="grid grid-cols-1 gap-6">
         ${this.renderHeader()}
 
-        <header class="py-4 md:flex justify-between items-end">
+        <header class="col-span-1 py-3 md:flex justify-between items-end">
           <h2>
             ${this.crawlConfig?.name
               ? html`<span
@@ -154,13 +160,18 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
         </header>
 
-        <section class="border rounded-lg py-2">
+        <section class="col-span-1 border rounded-lg py-2">
           ${this.renderDetails()}
         </section>
 
-        ${this.renderCurrentlyRunningNotice()}
+        ${this.renderLastCrawl()} ${this.renderCurrentlyRunningNotice()}
 
-        <div>${this.renderViewConfig()}</div>
+        <div class="col-span-1">
+          <h3 class="text-lg font-medium text-neutral-700 mb-2">
+            ${msg("Crawl Settings")}
+          </h3>
+          ${this.renderSettings()}
+        </div>
       </div>
     `;
   }
@@ -318,7 +329,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (this.crawlConfig?.currCrawlId) {
       return html`
         <a
-          class="flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
+          class="col-span-1 flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
           href=${`/archives/${this.archiveId}/crawls/crawl/${this.crawlConfig.currCrawlId}`}
           @click=${this.navLink}
         >
@@ -336,17 +347,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
-        ${this.renderDetailItem(msg("Last Run"), () =>
-          this.crawlConfig!.lastCrawlTime
-            ? html`<sl-format-date
-                date=${this.crawlConfig!.lastCrawlTime}
-                month="2-digit"
-                day="2-digit"
-                year="numeric"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>`
-            : html`<span class="text-neutral-400">${msg("Never")}</span>`
+        ${this.renderDetailItem(
+          msg("Crawl Count"),
+          () => this.crawlConfig!.crawlCount
         )}
         ${this.renderDetailItem(msg("Next Run"), () =>
           this.crawlConfig!.schedule
@@ -360,10 +363,6 @@ export class CrawlTemplatesDetail extends LiteElement {
             : html`<span class="text-neutral-400"
                 >${msg("Not Scheduled")}</span
               >`
-        )}
-        ${this.renderDetailItem(
-          msg("Crawl Count"),
-          () => this.crawlConfig!.crawlCount
         )}
         ${this.renderDetailItem(
           msg("Created By"),
@@ -387,6 +386,33 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
+  private renderLastCrawl() {
+    if (!this.crawlConfig?.lastCrawlId) return;
+    return html`
+      <section class="col-span-1">
+        <h3 class="text-lg font-medium text-neutral-700 mb-2">
+          ${msg("Previous Crawl")}
+        </h3>
+        <div class="border rounded shadow-sm">
+          <btrix-crawl-list-item .crawl=${this.lastCrawl}>
+            <sl-menu slot="menu">
+              <sl-menu-item
+                @click=${() =>
+                  this.lastCrawl
+                    ? this.navTo(
+                        `/archives/${this.archiveId}/crawls/crawl/${this.lastCrawl.id}`
+                      )
+                    : false}
+              >
+                ${msg("View Crawl Details")}
+              </sl-menu-item>
+            </sl-menu>
+          </btrix-crawl-list-item>
+        </div>
+      </section>
+    `;
+  }
+
   private renderDetailItem(
     label: string | TemplateResult,
     renderContent: () => any,
@@ -407,11 +433,11 @@ export class CrawlTemplatesDetail extends LiteElement {
     `;
   }
 
-  private renderViewConfig = () => {
+  private renderSettings = () => {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
-      <main class="border rounded-lg py-4 px-6">
+      <main class="border rounded-lg py-3 px-5">
         <section id="crawl-information" class="mb-8">
           <btrix-section-heading>
             <h4>
@@ -520,71 +546,6 @@ export class CrawlTemplatesDetail extends LiteElement {
                 crawlConfig?.schedule
                   ? humanizeSchedule(crawlConfig.schedule)
                   : undefined
-              )
-            )}
-          </btrix-desc-list>
-        </section>
-        <section id="crawls" class="mb-8">
-          <btrix-section-heading
-            ><h4>
-              ${this.renderAnchorLink("crawls")} ${msg("Crawls")}
-            </h4></btrix-section-heading
-          >
-          <btrix-desc-list>
-            ${this.renderSetting(
-              msg("Incomplete Crawl Count"),
-              crawlConfig?.crawlAttemptCount
-            )}
-            ${this.renderSetting(
-              msg("Completed Crawl Count"),
-              crawlConfig?.crawlCount
-            )}
-            ${this.renderSetting(
-              msg("Currently Running Crawl"),
-              when(
-                crawlConfig?.currCrawlId,
-                () => html`<a
-                  class="text-blue-500 hover:text-blue-600"
-                  href=${`/archives/${this.archiveId}/crawls/crawl/${
-                    crawlConfig!.currCrawlId
-                  }`}
-                  @click=${this.navLink}
-                >
-                  ${msg("View Crawl")}
-                </a>`,
-                () => msg("None")
-              )
-            )}
-            ${this.renderSetting(
-              msg("Latest Completed Crawl"),
-              when(
-                crawlConfig?.lastCrawlId,
-                () => html`
-                  <div class="flex items-baseline">
-                    <div class="capitalize mr-3">
-                      ${crawlConfig!.lastCrawlState.replace(/_/g, " ")}
-                    </div>
-                    <sl-format-date
-                      class="mr-3"
-                      date=${crawlConfig!.lastCrawlTime}
-                      month="2-digit"
-                      day="2-digit"
-                      year="numeric"
-                      hour="2-digit"
-                      minute="2-digit"
-                    ></sl-format-date>
-                    <a
-                      class="text-blue-500 hover:text-blue-600"
-                      href=${`/archives/${this.archiveId}/crawls/crawl/${
-                        crawlConfig!.lastCrawlId
-                      }`}
-                      @click=${this.navLink}
-                    >
-                      ${msg("View Crawl")}
-                    </a>
-                  </div>
-                `,
-                () => msg("None")
               )
             )}
           </btrix-desc-list>
@@ -716,6 +677,15 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
     const data: CrawlConfig = await this.apiFetch(
       `/archives/${this.archiveId}/crawlconfigs/${configId}`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async getCrawl(crawlId: string): Promise<Crawl> {
+    const data: Crawl = await this.apiFetch(
+      `/archives/${this.archiveId}/crawls/${crawlId}.json`,
       this.authState!
     );
 
