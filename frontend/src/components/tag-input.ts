@@ -26,13 +26,19 @@ export type TimeInputChangeEvent = CustomEvent<{
 @localized()
 export class TagInput extends LitElement {
   static styles = css`
+    :host {
+      --sl-input-spacing-medium: var(--sl-spacing-x-small);
+    }
+
     ${inputCss}
 
     .input__control {
       outline: 1px solid red;
+      --sl-input-spacing-medium: var(--sl-spacing-small);
     }
 
     sl-tag {
+      margin-left: var(--sl-spacing-2x-small);
       margin-top: 0.4rem;
     }
   `;
@@ -68,34 +74,43 @@ export class TagInput extends LitElement {
   }
 
   private renderTag = (content: string) => {
+    const removeTag = () => {
+      this.tags = this.tags.filter((v) => v !== content);
+    };
     return html`
-      <sl-tag size="small" variant="primary" pill removable>${content}</sl-tag>
+      <sl-tag
+        size="small"
+        variant="primary"
+        pill
+        removable
+        @sl-remove=${removeTag}
+        >${content}</sl-tag
+      >
     `;
   };
 
   private onFocus(e: FocusEvent) {
-    console.log("onFocus");
     const el = e.target as HTMLInputElement;
     (el.parentElement as HTMLElement).classList.add("input--focused");
   }
 
   private async onBlur(e: FocusEvent) {
-    console.log("onBlur");
     const el = e.target as HTMLInputElement;
     (el.parentElement as HTMLElement).classList.remove("input--focused");
-    console.log(el.value);
 
-    await this.updateComplete;
-    this.tags = [
-      ...this.tags,
-      ...el.value
-        .trim()
-        .replace(/,/g, " ")
-        .split(/\s+/g)
-        .filter((v) => v && !this.tags.includes(v)),
-    ];
+    if (el.value) {
+      await this.updateComplete;
+      this.tags = [
+        ...this.tags,
+        ...el.value
+          .trim()
+          .replace(/,/g, " ")
+          .split(/\s+/g)
+          .filter((v) => v && !this.tags.includes(v)),
+      ];
 
-    el.value = "";
+      el.value = "";
+    }
   }
 
   private async onKeydown(e: KeyboardEvent) {
