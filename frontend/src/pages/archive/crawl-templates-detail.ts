@@ -99,14 +99,14 @@ export class CrawlTemplatesDetail extends LiteElement {
   render() {
     if (this.isEditing) {
       return html`
-        <div class="grid grid-cols-1 gap-5">
+        <div class="grid grid-cols-1 gap-7">
           ${when(this.crawlConfig, this.renderEditor)}
         </div>
       `;
     }
 
     return html`
-      <div class="grid grid-cols-1 gap-6">
+      <div class="grid grid-cols-1 gap-7">
         ${this.renderHeader()}
 
         <header class="col-span-1 md:flex justify-between items-end">
@@ -178,7 +178,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderHeader(configId?: string) {
     return html`
-      <nav class="col-span-1 mb-3">
+      <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${`/archives/${this.archiveId}/crawl-templates${
