@@ -1244,6 +1244,11 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Try to create a unique name to help keep things organized!`
       )}
+      ${this.renderFormCol(html` <btrix-tag-input></btrix-tag-input> `)}
+      ${this.renderHelpTextCol(
+        html`Create or assign this crawl (and its outputs) to one or more tags
+        to help organize your archived data.`
+      )}
     `;
   }
 
