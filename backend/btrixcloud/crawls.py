@@ -173,6 +173,7 @@ class CrawlOps:
         archive: Optional[Archive] = None,
         cid: uuid.UUID = None,
         collid: uuid.UUID = None,
+        crawl_id: str = None,
         exclude_files=True,
         running_only=False,
     ):
@@ -192,6 +193,9 @@ class CrawlOps:
 
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
+
+        if crawl_id:
+            query["_id"] = crawl_id
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -613,7 +617,7 @@ def init_crawls_api(
         return {"deleted": res}
 
     @app.get(
-        "/archives/all/crawls/{crawl_id}.json",
+        "/archives/all/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
         response_model=CrawlOut,
     )
@@ -624,12 +628,44 @@ def init_crawls_api(
         return await ops.get_crawl(crawl_id, None)
 
     @app.get(
-        "/archives/{aid}/crawls/{crawl_id}.json",
+        "/archives/{aid}/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
         response_model=CrawlOut,
     )
     async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
         return await ops.get_crawl(crawl_id, archive)
+
+    @app.get(
+        "/archives/all/crawls/{crawl_id}",
+        tags=["crawls"],
+        response_model=ListCrawlOut,
+    )
+    async def list_single_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        crawls = await ops.list_crawls(crawl_id=crawl_id)
+        print("crawls", crawls)
+        if len(crawls) < 1:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        return crawls[0]
+
+    @app.get(
+        "/archives/{aid}/crawls/{crawl_id}",
+        tags=["crawls"],
+        response_model=ListCrawlOut,
+    )
+    async def list_single_crawl(
+        crawl_id, archive: Archive = Depends(archive_crawl_dep)
+    ):
+        crawls = await ops.list_crawls(archive, crawl_id=crawl_id)
+        if len(crawls) < 1:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        return crawls[0]
+
+
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/scale",
