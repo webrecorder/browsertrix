@@ -78,6 +78,7 @@ export type InitialCrawlConfig = Pick<
 
 export type CrawlConfig = CrawlConfigParams & {
   id: string;
+  aid: string;
   jobType: JobType;
   userid: string;
   userName: string | null;

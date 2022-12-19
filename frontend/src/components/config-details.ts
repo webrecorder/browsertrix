@@ -13,18 +13,17 @@ import { humanizeSchedule } from "../utils/cron";
  * Usage:
  * ```ts
  * <btrix-config-details
- *     archiveId=${this.archiveId}
- *     .crawlConfig=${this.crawlConfig}
+ *   .crawlConfig=${this.crawlConfig}
  * ></btrix-config-details>
  * ```
  */
 @localized()
 export class ConfigDetails extends LiteElement {
-  @property({ type: String })
-  archiveId!: string;
-
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
+
+  @property({ type: Boolean })
+  anchorLinks = false;
 
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
@@ -103,9 +102,9 @@ export class ConfigDetails extends LiteElement {
               crawlConfig?.profileid,
               () => html`<a
                 class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${this.archiveId}/browser-profiles/profile/${
-                  crawlConfig!.profileid
-                }`}
+                href=${`/archives/${
+                  crawlConfig!.aid
+                }/browser-profiles/profile/${crawlConfig!.profileid}`}
                 @click=${this.navLink}
               >
                 ${crawlConfig?.profileName}
@@ -166,7 +165,7 @@ export class ConfigDetails extends LiteElement {
               crawlConfig?.oldId,
               () => html`<a
                 class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${this.archiveId}/crawl-templates/config/${
+                href=${`/archives/${crawlConfig!.aid}/crawl-templates/config/${
                   crawlConfig!.oldId
                 }`}
                 @click=${this.navLink}
@@ -241,11 +240,12 @@ export class ConfigDetails extends LiteElement {
   };
 
   private renderAnchorLink(id: string) {
+    if (!this.anchorLinks) return;
     const currentUrl = window.location.href;
     return html`
       <a
         href=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-        class="text-base mr-1"
+        class="text-base hover:text-primary mr-1"
       >
         <sl-icon name="link-45deg" class="inline-block align-middle"></sl-icon>
       </a>

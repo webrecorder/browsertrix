@@ -9,13 +9,16 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlConfig } from "./types";
 
-type SectionName =
-  | "overview"
-  | "watch"
-  | "replay"
-  | "files"
-  | "logs"
-  | "exclusions";
+const SECTIONS = [
+  "overview",
+  "watch",
+  "replay",
+  "files",
+  "logs",
+  "config",
+  "exclusions",
+] as const;
+type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -42,6 +45,9 @@ export class CrawlDetail extends LiteElement {
   showArchiveLink = false;
 
   @property({ type: String })
+  archiveId?: string;
+
+  @property({ type: String })
   crawlId?: string;
 
   @state()
@@ -51,7 +57,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawlTemplate?: CrawlConfig;
+  private crawlConfig?: CrawlConfig;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -120,11 +126,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (
-      ["overview", "watch", "replay", "files", "logs", "exclusions"].includes(
-        hash
-      )
-    ) {
+    if (SECTIONS.includes(hash as any)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -160,6 +162,10 @@ export class CrawlDetail extends LiteElement {
         break;
       case "exclusions":
         sectionContent = this.renderExclusions();
+        break;
+
+      case "config":
+        sectionContent = this.renderConfig();
         break;
       default:
         sectionContent = this.renderOverview();
@@ -253,6 +259,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
+          ${renderNavItem({ section: "config", label: msg("Config") })}
           ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
         </ul>
       </nav>
@@ -336,7 +343,7 @@ export class CrawlDetail extends LiteElement {
           class="text-sm text-neutral-800 bg-white whitespace-nowrap"
           role="menu"
         >
-          ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
+          ${!this.isActive && this.crawlConfig && !this.crawlConfig.inactive
             ? html`
                 <li
                   class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
@@ -549,7 +556,7 @@ export class CrawlDetail extends LiteElement {
       <btrix-exclusion-editor
         archiveId=${ifDefined(this.crawl?.aid)}
         crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawlTemplate?.config}
+        .config=${this.crawlConfig?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
@@ -684,7 +691,7 @@ export class CrawlDetail extends LiteElement {
                     <span class="inline-block align-middle">
                       ${this.crawl.configName}
                     </span>
-                    ${this.crawlTemplate?.inactive
+                    ${this.crawlConfig?.inactive
                       ? html`<sl-tag variant="warning" size="small"
                           >${msg("Inactive")}</sl-tag
                         >`
@@ -780,6 +787,15 @@ export class CrawlDetail extends LiteElement {
 
   private renderLogs() {
     return html`TODO`;
+  }
+
+  private renderConfig() {
+    if (!this.crawlConfig) return "";
+    return html`
+      <btrix-config-details
+        .crawlConfig=${this.crawlConfig}
+      ></btrix-config-details>
+    `;
   }
 
   private renderEditScale() {
@@ -893,7 +909,7 @@ export class CrawlDetail extends LiteElement {
    */
   private async fetchCrawlTemplate(): Promise<void> {
     try {
-      this.crawlTemplate = await this.getCrawlTemplate();
+      this.crawlConfig = await this.getCrawlTemplate();
     } catch {
       // Fail silently since page will mostly still function
     }

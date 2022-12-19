@@ -154,8 +154,8 @@ export class CrawlTemplatesDetail extends LiteElement {
           </h3>
           <main class="border rounded-lg py-3 px-5">
             <btrix-config-details
-              archiveId=${this.archiveId}
               .crawlConfig=${this.crawlConfig}
+              anchorLinks
             ></btrix-config-details>
           </main>
         </div>
