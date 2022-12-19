@@ -109,7 +109,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <div class="grid grid-cols-1 gap-6">
         ${this.renderHeader()}
 
-        <header class="col-span-1 py-3 md:flex justify-between items-end">
+        <header class="col-span-1 md:flex justify-between items-end">
           <h2>
             ${this.crawlConfig?.name
               ? html`<span
@@ -178,7 +178,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private renderHeader(configId?: string) {
     return html`
-      <nav>
+      <nav class="col-span-1 mb-3">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${`/archives/${this.archiveId}/crawl-templates${
