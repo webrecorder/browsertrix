@@ -665,8 +665,6 @@ def init_crawls_api(
 
         return crawls[0]
 
-
-
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/scale",
         tags=["crawls"],
