@@ -439,7 +439,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async getCrawl(crawlId: string): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${crawlId}.json`,
+      `/archives/${this.archiveId}/crawls/${crawlId}`,
       this.authState!
     );
 

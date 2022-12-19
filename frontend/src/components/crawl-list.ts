@@ -18,11 +18,6 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "./relative-duration";
 import { Crawl } from "../pages/archive/types";
 
-function getFileSize(resources: Crawl["resources"]) {
-  if (!resources) return 0;
-  return resources.reduce((prev, curr) => prev + curr.size, 0);
-}
-
 @localized()
 export class CrawlListItem extends LitElement {
   static styles = css`
@@ -136,16 +131,10 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender((crawl) =>
-            crawl.fileSize !== undefined
-              ? html`<sl-format-bytes
-                  value=${crawl.fileSize}
-                ></sl-format-bytes>`
-              : html`
-                  <sl-format-bytes
-                    value=${getFileSize(crawl.resources)}
-                  ></sl-format-bytes>
-                `
+          ${this.safeRender(
+            (crawl) => html`<sl-format-bytes
+              value=${crawl.fileSize || 0}
+            ></sl-format-bytes>`
           )}
         </div>
         <div class="desc">
