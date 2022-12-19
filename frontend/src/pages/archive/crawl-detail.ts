@@ -675,33 +675,6 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl Config")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawlTemplateId}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${this.crawl.configName}
-                    </span>
-                    ${this.crawlConfig?.inactive
-                      ? html`<sl-tag variant="warning" size="small"
-                          >${msg("Inactive")}</sl-tag
-                        >`
-                      : ""}
-                  </a>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
           <dd class="truncate">
             ${this.crawl
