@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
@@ -46,12 +46,33 @@ export class TagInput extends LitElement {
   @property({ type: Boolean })
   disabled = false;
 
+  //   TODO validate required
+  @property({ type: Boolean })
+  required = false;
+
   @state()
-  tags: string[] = ["foo"];
+  tags: string[] = [];
+
+  @query("#input")
+  input!: HTMLInputElement;
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("tags") && this.required) {
+      if (this.tags.length) {
+        this.removeAttribute("data-invalid");
+      } else {
+        this.setAttribute("data-invalid", "");
+      }
+    }
+  }
+
+  reportValidity() {
+    this.input.reportValidity();
+  }
 
   render() {
     return html`
-      <div class="form-control">
+      <div class="form-control form-control--has-label">
         <label class="form-control__label" for="input">
           <slot name="label">${msg("Tags")}</slot>
         </label>
@@ -63,6 +84,7 @@ export class TagInput extends LitElement {
             @focus=${this.onFocus}
             @blur=${this.onBlur}
             @keydown=${this.onKeydown}
+            ?required=${this.required && !this.tags.length}
           />
         </div>
       </div>
