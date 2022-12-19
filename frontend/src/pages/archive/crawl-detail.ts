@@ -560,7 +560,7 @@ export class CrawlDetail extends LiteElement {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
-    const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}.json?auth_bearer=${bearer}`;
+    const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
     //const replaySource = this.crawl?.resources?.[0]?.path;
 
     const canReplay = replaySource && this.hasFiles;
@@ -881,7 +881,7 @@ export class CrawlDetail extends LiteElement {
 
   private async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/replay.json`,
       this.authState!
     );
 

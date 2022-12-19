@@ -81,7 +81,7 @@ def test_wait_for_complete():
 
     while True:
         r = requests.get(
-            f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}.json",
+            f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}/replay.json",
             headers=headers,
         )
         data = r.json()
@@ -105,6 +105,13 @@ def test_wait_for_complete():
     wacz_size = data["resources"][0]["size"]
     wacz_hash = data["resources"][0]["hash"]
 
+def test_crawl_info():
+    r = requests.get(
+        f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}",
+        headers=headers,
+    )
+    data = r.json()
+    assert data["fileSize"] == wacz_size
 
 def test_download_wacz():
     r = requests.get(host_prefix + wacz_path)
