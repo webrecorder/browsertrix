@@ -378,7 +378,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     return html`
       <section class="col-span-1">
         <h3 class="text-lg font-medium text-neutral-700 mb-2">
-          ${msg("Previous Crawl")}
+          ${this.crawlConfig.currCrawlId
+            ? msg("Last Completed Crawl")
+            : msg("Latest Crawl")}
         </h3>
         <div class="border rounded shadow-sm">
           <btrix-crawl-list-item .crawl=${this.lastCrawl}>
