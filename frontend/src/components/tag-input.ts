@@ -35,11 +35,12 @@ export class TagInput extends LitElement {
     .input {
       flex-wrap: wrap;
       height: auto;
-      min-height: var(--sl-input-height-medium);
+      min-height: calc(var(--sl-input-height-medium) + 0.5rem);
     }
 
     .input__control {
       --sl-input-spacing-medium: var(--sl-spacing-small);
+      align-self: center;
     }
 
     sl-tag {
@@ -108,12 +109,7 @@ export class TagInput extends LitElement {
       this.tags = this.tags.filter((v) => v !== content);
     };
     return html`
-      <sl-tag
-        size="small"
-        variant="primary"
-        pill
-        removable
-        @sl-remove=${removeTag}
+      <sl-tag variant="primary" pill removable @sl-remove=${removeTag}
         >${content}</sl-tag
       >
     `;
