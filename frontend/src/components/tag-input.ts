@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenu } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
 
@@ -138,7 +138,10 @@ export class TagInput extends LitElement {
   private dropdownIsOpen?: boolean;
 
   @query("#input")
-  private input!: HTMLInputElement;
+  private input?: HTMLInputElement;
+
+  @query("sl-menu")
+  private menu!: SlMenu;
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("tags") && this.required) {
@@ -151,7 +154,7 @@ export class TagInput extends LitElement {
   }
 
   reportValidity() {
-    this.input.reportValidity();
+    this.input?.reportValidity();
   }
 
   render() {
@@ -194,7 +197,20 @@ export class TagInput extends LitElement {
                 ? "animateHide"
                 : "hidden"}"
             >
-              <sl-menu role="listbox" @sl-select=${this.onSelect}>
+              <sl-menu
+                role="listbox"
+                @keydown=${(e: KeyboardEvent) => {
+                  e.stopPropagation();
+                }}
+                @keyup=${(e: KeyboardEvent) => {
+                  e.stopPropagation();
+                  if (e.key === "Escape") {
+                    this.dropdownIsOpen = false;
+                    this.input?.focus();
+                  }
+                }}
+                @sl-select=${this.onSelect}
+              >
                 <!-- TODO tag options from API -->
                 <sl-menu-item role="option" value=${this.inputValue}
                   >${msg(str`Add “${this.inputValue}”`)}</sl-menu-item
@@ -223,66 +239,80 @@ export class TagInput extends LitElement {
   };
 
   private onSelect(e: CustomEvent) {
-    this.tags = union([e.detail.item.value], this.tags);
-    this.input.value = "";
-    this.dropdownIsOpen = false;
+    this.addTags([e.detail.item.value]);
   }
 
   private onFocus(e: FocusEvent) {
     const input = e.target as HTMLInputElement;
     (input.parentElement as HTMLElement).classList.add("input--focused");
+    if (input.value) {
+      this.dropdownIsOpen = true;
+    }
   }
 
-  private async onBlur(e: FocusEvent) {
+  private onBlur(e: FocusEvent) {
     if (e.relatedTarget) {
-      // Keep focus if moving to menu selection
+      // Keep focus on form control if moving to menu selection
       return;
     }
     const input = e.target as HTMLInputElement;
     (input.parentElement as HTMLElement).classList.remove("input--focused");
-    this.dropdownIsOpen = false;
+    this.addTags([input.value]);
   }
 
-  private async onKeydown(e: KeyboardEvent) {
+  private onKeydown(e: KeyboardEvent) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      this.menu?.querySelector("sl-menu-item")?.focus();
+      return;
+    }
     if (e.key === "," || e.key === "Enter") {
       e.preventDefault();
 
       const input = e.target as HTMLInputElement;
       const value = input.value.trim();
-      if (!value) return;
-
-      await this.updateComplete;
-      this.tags = union([value], this.tags);
-      this.dropdownIsOpen = false;
-      input.value = "";
+      if (value) {
+        this.addTags([value]);
+      }
     }
   }
 
-  private async onKeyup(e: KeyboardEvent) {
+  private onKeyup(e: KeyboardEvent) {
     const input = e.target as HTMLInputElement;
+    if (e.key === "Escape") {
+      (input.parentElement as HTMLElement).classList.remove("input--focused");
+      this.dropdownIsOpen = false;
+      input.value = "";
+    }
+
     this.inputValue = input.value;
     if (input.value.length) {
       this.dropdownIsOpen = true;
     }
   }
 
-  private async onPaste(e: ClipboardEvent) {
+  private onPaste(e: ClipboardEvent) {
     const text = e.clipboardData?.getData("text");
-    if (!text) return;
-    await this.updateComplete;
-    this.tags = union(
-      text
-        .split(",")
-        .map((v) => v.trim())
-        .filter((v) => v),
-      this.tags
-    );
-    this.input.value = "";
+    if (text) {
+      this.addTags(
+        text
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v)
+      );
+    }
   }
 
   private onInputWrapperClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
-      this.input.focus();
+      this.input?.focus();
     }
+  }
+
+  private async addTags(tags: string[]) {
+    await this.updateComplete;
+    this.tags = union(tags, this.tags);
+    this.dropdownIsOpen = false;
+    this.input!.value = "";
   }
 }
