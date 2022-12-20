@@ -265,6 +265,20 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
+    if (changedProperties.get("formState") && this.formState) {
+      const hasRequiredFields = this.hasRequiredFields();
+      if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
+        this.updateProgressState({
+          tabs: {
+            ...this.progressState.tabs,
+            crawlSetup: {
+              ...this.progressState.tabs.crawlSetup,
+              completed: true,
+            },
+          },
+        });
+      }
+    }
   }
 
   private initializeEditor() {
@@ -419,6 +433,7 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderNavItem(tabName: StepName, content: TemplateResult | string) {
     const isActive = tabName === this.progressState.activeTab;
+    const isConfirmSettings = tabName === "confirmSettings";
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
     let icon = html`
       <sl-icon
@@ -434,13 +449,22 @@ export class CrawlConfigEditor extends LiteElement {
         ></sl-icon>
       `;
     } else if (isActive) {
-      icon = html`
-        <sl-icon
-          library="app"
-          name="pencil-circle-dashed"
-          class="inline-block align-middle mr-1 text-base"
-        ></sl-icon>
-      `;
+      if (isConfirmSettings) {
+        icon = html`
+          <sl-icon
+            name="info-circle"
+            class="inline-block align-middle mr-1 text-base"
+          ></sl-icon>
+        `;
+      } else {
+        icon = html`
+          <sl-icon
+            library="app"
+            name="pencil-circle-dashed"
+            class="inline-block align-middle mr-1 text-base"
+          ></sl-icon>
+        `;
+      }
     } else if (completed) {
       icon = html`
         <sl-icon
@@ -450,12 +474,18 @@ export class CrawlConfigEditor extends LiteElement {
       `;
     }
 
+    const { enabled } = this.progressState.tabs[tabName];
+    const isEnabled = isConfirmSettings
+      ? this.progressState.tabs.confirmSettings.enabled ||
+        this.progressState.tabs.crawlSetup.completed
+      : enabled;
+
     return html`
       <btrix-tab
         slot="nav"
         name="newJobConfig-${tabName}"
         class="whitespace-nowrap"
-        ?disabled=${!this.progressState.tabs[tabName].enabled}
+        ?disabled=${!isEnabled}
         @click=${this.tabClickHandler(tabName)}
       >
         ${icon}
@@ -1211,21 +1241,11 @@ https://example.net`}
     `;
   };
 
-  private renderSetting(label: string, value: any, cols = 1) {
-    let content = value;
-
-    if (typeof value === "boolean") {
-      content = value ? msg("Yes") : msg("No");
-    } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-300"
-        >${msg("Not specified")}</span
-      >`;
+  private hasRequiredFields(): Boolean {
+    if (this.jobType === "seed-crawl") {
+      return Boolean(this.formState.jobName && this.formState.primarySeedUrl);
     }
-    return html`
-      <btrix-desc-list-item class="col-span-${cols}" label=${label}>
-        ${content}
-      </btrix-desc-list-item>
-    `;
+    return Boolean(this.formState.jobName && this.formState.urlList);
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
