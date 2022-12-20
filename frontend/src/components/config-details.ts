@@ -54,10 +54,11 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
         </btrix-desc-list>
       </section>
-      <section id="crawler-setup" class="mb-8">
+      <section id="crawler-settings" class="mb-8">
         <btrix-section-heading
           ><h4>
-            ${this.renderAnchorLink("crawler-setup")} ${msg("Crawler Setup")}
+            ${this.renderAnchorLink("crawler-settings")}
+            ${msg("Crawler Settings")}
           </h4></btrix-section-heading
         >
         <btrix-desc-list>
