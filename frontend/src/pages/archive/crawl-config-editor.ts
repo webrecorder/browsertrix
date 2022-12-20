@@ -35,6 +35,7 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
+import type { Tags, TagsChangeEvent } from "../../components/tag-input";
 import type {
   CrawlConfigParams,
   Profile,
@@ -91,6 +92,7 @@ type FormState = {
   runNow: boolean;
   jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
+  tags: Tags;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -156,6 +158,7 @@ const getDefaultFormState = (): FormState => ({
   runNow: false,
   jobName: "",
   browserProfile: null,
+  tags: [],
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -348,6 +351,8 @@ export class CrawlConfigEditor extends LiteElement {
         scheduleState.scheduleType = "now";
       }
     }
+
+    // TODO tags
 
     return {
       jobName: this.initialCrawlConfig.name,
@@ -1244,7 +1249,20 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Try to create a unique name to help keep things organized!`
       )}
-      ${this.renderFormCol(html` <btrix-tag-input></btrix-tag-input> `)}
+      ${this.renderFormCol(
+        html`
+          <btrix-tag-input
+            .initialTags=${this.formState.tags}
+            @tags-change=${(e: TagsChangeEvent) =>
+              this.updateFormState(
+                {
+                  tags: e.detail.tags,
+                },
+                true
+              )}
+          ></btrix-tag-input>
+        `
+      )}
       ${this.renderHelpTextCol(
         html`Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived data.`
@@ -1267,6 +1285,7 @@ https://example.net`}
         <btrix-config-details .crawlConfig=${crawlConfig}>
         </btrix-config-details>
       </div>
+
       ${when(this.formHasError, () =>
         this.renderErrorAlert(
           msg(
@@ -1633,6 +1652,7 @@ https://example.net`}
       crawlTimeout: this.formState.crawlTimeoutMinutes
         ? this.formState.crawlTimeoutMinutes * 60
         : 0,
+      tags: this.formState.tags,
       config: {
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()

@@ -5,30 +5,26 @@ import type { SlInput, SlMenu } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
 
-export type TimeInputChangeEvent = CustomEvent<{
-  hour: number;
-  minute: number;
-  period: "AM" | "PM";
+export type Tags = string[];
+export type TagsChangeEvent = CustomEvent<{
+  tags: string[];
 }>;
 
 /**
  * Usage:
  * ```ts
- * <btrix-time-input
- *   hour="1"
- *   minute="1"
- *   period="AM"
- *   @time-change=${console.log}
- * ></btrix-time-input>
+ * <btrix-tag-input
+ *   initialTags=${[]}
+ *   @tags-change=${console.log}
+ * ></btrix-tag-input>
  * ```
  *
- * @events
+ * @events tags-change
  */
 @localized()
 export class TagInput extends LitElement {
   static styles = css`
     :host {
-      --sl-input-spacing-medium: var(--sl-spacing-x-small);
       --tag-height: 1.5rem;
     }
 
@@ -42,8 +38,6 @@ export class TagInput extends LitElement {
     }
 
     .input__control {
-      padding-left: var(--sl-spacing-small);
-      padding-right: var(--sl-spacing-small);
       align-self: center;
       width: 100%;
     }
@@ -53,27 +47,14 @@ export class TagInput extends LitElement {
       flex-shrink: 0;
     }
 
-    sl-tag {
-      margin-left: var(--sl-spacing-2x-small);
+    .dropdownWrapper:not(:first-child) .input__control {
+      padding-left: var(--sl-spacing-small);
+      padding-right: var(--sl-spacing-small);
+    }
+
+    btrix-tag {
+      margin-left: var(--sl-spacing-x-small);
       margin-top: calc(0.5rem - 1px);
-    }
-
-    sl-tag::part(base) {
-      height: var(--tag-height);
-      background-color: var(--sl-color-blue-100);
-      border-color: var(--sl-color-blue-500);
-      color: var(--sl-color-blue-600);
-    }
-
-    sl-tag::part(remove-button) {
-      color: var(--sl-color-blue-600);
-      border-radius: 100%;
-      transition: background-color 0.1s;
-    }
-
-    sl-tag::part(remove-button):hover {
-      background-color: var(--sl-color-blue-600);
-      color: #fff;
     }
 
     .dropdown {
@@ -122,6 +103,9 @@ export class TagInput extends LitElement {
     }
   `;
 
+  @property({ type: Array })
+  initialTags?: Tags;
+
   @property({ type: Boolean })
   disabled = false;
 
@@ -130,7 +114,7 @@ export class TagInput extends LitElement {
   required = false;
 
   @state()
-  private tags: string[] = [];
+  private tags: Tags = [];
 
   @state()
   private inputValue = "";
@@ -143,6 +127,13 @@ export class TagInput extends LitElement {
 
   @query("sl-menu")
   private menu!: SlMenu;
+
+  connectedCallback() {
+    if (this.initialTags) {
+      this.tags = this.initialTags;
+    }
+    super.connectedCallback();
+  }
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("tags") && this.required) {
@@ -174,7 +165,6 @@ export class TagInput extends LitElement {
           @click=${this.onInputWrapperClick}
         >
           ${this.renderTags()}
-
           <div
             class="dropdownWrapper"
             style="min-width: ${placeholder.length}ch"
@@ -235,10 +225,11 @@ export class TagInput extends LitElement {
   private renderTag = (content: string) => {
     const removeTag = () => {
       this.tags = this.tags.filter((v) => v !== content);
+      this.dispatchChange();
     };
     return html`
-      <sl-tag variant="primary" pill removable @sl-remove=${removeTag}
-        >${content}</sl-tag
+      <btrix-tag variant="primary" removable @sl-remove=${removeTag}
+        >${content}</btrix-tag
       >
     `;
   };
@@ -256,7 +247,7 @@ export class TagInput extends LitElement {
   }
 
   private onBlur(e: FocusEvent) {
-    if (e.relatedTarget) {
+    if (e.relatedTarget === this.menu?.querySelector("sl-menu-item")) {
       // Keep focus on form control if moving to menu selection
       return;
     }
@@ -309,13 +300,23 @@ export class TagInput extends LitElement {
     }
   }
 
-  private async addTags(tags: string[]) {
+  private async addTags(tags: Tags) {
     await this.updateComplete;
     this.tags = union(
       tags.map((v) => v.trim()).filter((v) => v),
       this.tags
     );
+    this.dispatchChange();
     this.dropdownIsOpen = false;
     this.input!.value = "";
+  }
+
+  private async dispatchChange() {
+    await this.updateComplete;
+    this.dispatchEvent(
+      <TagsChangeEvent>new CustomEvent("tags-change", {
+        detail: { tags: this.tags },
+      })
+    );
   }
 }

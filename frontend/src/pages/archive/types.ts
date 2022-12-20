@@ -61,6 +61,7 @@ export type CrawlConfigParams = {
   profileid: string | null;
   config: SeedConfig;
   crawlTimeout: number | null;
+  tags?: string[]; // TODO tags type
 };
 
 export type InitialCrawlConfig = Pick<

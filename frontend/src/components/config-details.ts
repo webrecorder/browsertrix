@@ -52,6 +52,14 @@ export class ConfigDetails extends LiteElement {
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+          ${this.renderSetting(
+            msg("Tags"),
+            crawlConfig?.tags?.length
+              ? crawlConfig.tags.map(
+                  (tag) => html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                )
+              : undefined
+          )}
         </btrix-desc-list>
       </section>
       <section id="crawler-settings" class="mb-8">
