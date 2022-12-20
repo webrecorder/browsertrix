@@ -49,7 +49,8 @@ export class TagInput extends LitElement {
     }
 
     .dropdownWrapper {
-      flex: 1 0 10rem;
+      flex-grow: 1;
+      flex-shrink: 0;
     }
 
     sl-tag {
@@ -158,6 +159,7 @@ export class TagInput extends LitElement {
   }
 
   render() {
+    const placeholder = msg("Tags separated by comma");
     return html`
       <div class="form-control form-control--has-label">
         <label
@@ -173,7 +175,10 @@ export class TagInput extends LitElement {
         >
           ${this.renderTags()}
 
-          <div class="dropdownWrapper">
+          <div
+            class="dropdownWrapper"
+            style="min-width: ${placeholder.length}ch"
+          >
             <input
               slot="trigger"
               id="input"
@@ -184,7 +189,7 @@ export class TagInput extends LitElement {
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
-              placeholder=${msg("Tags separated by comma")}
+              placeholder=${placeholder}
               role="combobox"
               aria-controls="dropdown"
               aria-expanded="${this.dropdownIsOpen === true}"
@@ -294,12 +299,7 @@ export class TagInput extends LitElement {
   private onPaste(e: ClipboardEvent) {
     const text = e.clipboardData?.getData("text");
     if (text) {
-      this.addTags(
-        text
-          .split(",")
-          .map((v) => v.trim())
-          .filter((v) => v)
-      );
+      this.addTags(text.split(","));
     }
   }
 
@@ -311,7 +311,10 @@ export class TagInput extends LitElement {
 
   private async addTags(tags: string[]) {
     await this.updateComplete;
-    this.tags = union(tags, this.tags);
+    this.tags = union(
+      tags.map((v) => v.trim()).filter((v) => v),
+      this.tags
+    );
     this.dropdownIsOpen = false;
     this.input!.value = "";
   }
