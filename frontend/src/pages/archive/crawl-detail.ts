@@ -373,7 +373,7 @@ export class CrawlDetail extends LiteElement {
                 role="menuitem"
                 @click=${() => {
                   this.navTo(
-                    `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}#edit`
+                    `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}?edit`
                   );
                 }}
               >
