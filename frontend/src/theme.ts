@@ -99,12 +99,14 @@ const theme = css`
   }
 
   /* Add more spacing between label, input and help text */
+  btrix-tag-input::part(form-control-label),
   sl-input::part(form-control-label),
   sl-textarea::part(form-control-label),
   sl-select::part(form-control-label) {
     line-height: 1.4;
     margin-bottom: 0.375rem;
   }
+  btrix-tag-input::part(form-control-help-text),
   sl-input::part(form-control-help-text),
   sl-textarea::part(form-control-help-text),
   sl-select::part(form-control-help-text) {

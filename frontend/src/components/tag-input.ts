@@ -42,9 +42,9 @@ export class TagInput extends LitElement {
     }
 
     .input__control {
-      --sl-input-spacing-medium: var(--sl-spacing-small);
+      padding-left: var(--sl-spacing-small);
+      padding-right: var(--sl-spacing-small);
       align-self: center;
-      background: yellow;
       width: 100%;
     }
 
@@ -129,7 +129,7 @@ export class TagInput extends LitElement {
   required = false;
 
   @state()
-  private tags: string[] = ["test"];
+  private tags: string[] = [];
 
   @state()
   private inputValue = "";
@@ -179,7 +179,9 @@ export class TagInput extends LitElement {
               @blur=${this.onBlur}
               @keydown=${this.onKeydown}
               @keyup=${this.onKeyup}
+              @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
+              placeholder=${msg("Tags separated by comma")}
               role="combobox"
               aria-controls="dropdown"
               aria-expanded="${this.dropdownIsOpen === true}"
@@ -227,13 +229,17 @@ export class TagInput extends LitElement {
   }
 
   private onFocus(e: FocusEvent) {
-    const el = e.target as HTMLInputElement;
-    (el.parentElement as HTMLElement).classList.add("input--focused");
+    const input = e.target as HTMLInputElement;
+    (input.parentElement as HTMLElement).classList.add("input--focused");
   }
 
   private async onBlur(e: FocusEvent) {
-    const el = e.target as HTMLInputElement;
-    (el.parentElement as HTMLElement).classList.remove("input--focused");
+    if (e.relatedTarget) {
+      // Keep focus if moving to menu selection
+      return;
+    }
+    const input = e.target as HTMLInputElement;
+    (input.parentElement as HTMLElement).classList.remove("input--focused");
     this.dropdownIsOpen = false;
   }
 
@@ -241,23 +247,37 @@ export class TagInput extends LitElement {
     if (e.key === "," || e.key === "Enter") {
       e.preventDefault();
 
-      const el = e.target as HTMLInputElement;
-      const value = el.value.trim();
+      const input = e.target as HTMLInputElement;
+      const value = input.value.trim();
       if (!value) return;
 
       await this.updateComplete;
       this.tags = union([value], this.tags);
       this.dropdownIsOpen = false;
-      el.value = "";
+      input.value = "";
     }
   }
 
   private async onKeyup(e: KeyboardEvent) {
-    const el = e.target as HTMLInputElement;
-    this.inputValue = el.value;
-    if (el.value.length) {
+    const input = e.target as HTMLInputElement;
+    this.inputValue = input.value;
+    if (input.value.length) {
       this.dropdownIsOpen = true;
     }
+  }
+
+  private async onPaste(e: ClipboardEvent) {
+    const text = e.clipboardData?.getData("text");
+    if (!text) return;
+    await this.updateComplete;
+    this.tags = union(
+      text
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v),
+      this.tags
+    );
+    this.input.value = "";
   }
 
   private onInputWrapperClick(e: MouseEvent) {
