@@ -32,8 +32,13 @@ export class TagInput extends LitElement {
 
     ${inputCss}
 
+    .input {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: var(--sl-input-height-medium);
+    }
+
     .input__control {
-      outline: 1px solid red;
       --sl-input-spacing-medium: var(--sl-spacing-small);
     }
 
@@ -76,7 +81,10 @@ export class TagInput extends LitElement {
         <label class="form-control__label" for="input">
           <slot name="label">${msg("Tags")}</slot>
         </label>
-        <div class="input input--medium input--standard">
+        <div
+          class="input input--medium input--standard"
+          @click=${this.onInputWrapperClick}
+        >
           ${this.renderTags()}
           <input
             id="input"
@@ -146,6 +154,12 @@ export class TagInput extends LitElement {
       this.tags = [...this.tags.filter((v) => v !== value), value];
 
       el.value = "";
+    }
+  }
+
+  private onInputWrapperClick(e: MouseEvent) {
+    if (e.target === e.currentTarget) {
+      this.input.focus();
     }
   }
 }
