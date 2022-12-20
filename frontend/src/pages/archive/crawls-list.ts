@@ -271,7 +271,7 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
         <div class="md:order-last col-span-1 flex justify-end">
-          <sl-dropdown @click=${(e: Event) => e.preventDefault()}>
+          <sl-dropdown @click=${(e: Event) => e.preventDefault()} hoist>
             <sl-icon-button
               slot="trigger"
               name="three-dots"
@@ -362,9 +362,7 @@ export class CrawlsList extends LiteElement {
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
                 @click=${(e: any) => {
-                  this.navTo(
-                    `/archives/${crawl.aid}/crawl-templates/config/${crawl.cid}`
-                  );
+                  this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}#config`);
                 }}
               >
                 ${msg("View Crawl Config")}

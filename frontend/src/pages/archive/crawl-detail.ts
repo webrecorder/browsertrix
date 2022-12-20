@@ -1,5 +1,6 @@
 import type { TemplateResult, HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
@@ -332,7 +333,7 @@ export class CrawlDetail extends LiteElement {
     };
 
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
+      <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
@@ -343,28 +344,46 @@ export class CrawlDetail extends LiteElement {
           class="text-sm text-neutral-800 bg-white whitespace-nowrap"
           role="menu"
         >
-          ${!this.isActive && this.crawlConfig && !this.crawlConfig.inactive
-            ? html`
-                <li
-                  class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                  role="menuitem"
-                  @click=${(e: any) => {
-                    this.runNow();
-                    e.target.closest("sl-dropdown").hide();
-                  }}
-                >
-                  <sl-icon
-                    class="inline-block align-middle"
-                    name="arrow-clockwise"
-                  ></sl-icon>
-                  <span class="inline-block align-middle">
-                    ${msg("Re-run crawl")}
-                  </span>
-                </li>
-                <hr />
-              `
-            : ""}
-
+          ${when(
+            this.crawlConfig && !this.crawlConfig.inactive,
+            () => html`
+              ${when(
+                !this.isActive,
+                () => html`
+                  <li
+                    class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      this.runNow();
+                      e.target.closest("sl-dropdown").hide();
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="arrow-clockwise"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${msg("Re-run crawl")}
+                    </span>
+                  </li>
+                `
+              )}
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${() => {
+                  this.navTo(
+                    `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}#edit`
+                  );
+                }}
+              >
+                <span class="inline-block align-middle">
+                  ${msg("Edit Crawl Config")}
+                </span>
+              </li>
+              <hr />
+            `
+          )}
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
@@ -384,18 +403,6 @@ export class CrawlDetail extends LiteElement {
             }}
           >
             ${msg("Copy Crawl Config ID")}
-          </li>
-
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${() => {
-              this.navTo(
-                `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}`
-              );
-            }}
-          >
-            ${msg("View Crawl Config")}
           </li>
         </ul>
       </sl-dropdown>
