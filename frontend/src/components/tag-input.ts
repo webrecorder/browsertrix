@@ -35,17 +35,25 @@ export class TagInput extends LitElement {
     .input {
       flex-wrap: wrap;
       height: auto;
-      min-height: calc(var(--sl-input-height-medium) + 0.5rem);
+      /* min-height: calc(var(--sl-input-height-medium) + 0.5rem); */
     }
 
     .input__control {
       --sl-input-spacing-medium: var(--sl-spacing-small);
       align-self: center;
+      background: yellow;
     }
 
     sl-tag {
       margin-left: var(--sl-spacing-2x-small);
-      margin-top: 0.4rem;
+      /* margin-top: 0.4rem; */
+    }
+
+    sl-tag::part(base) {
+      height: 1.5rem;
+      background-color: var(--sl-color-blue-100);
+      border-color: var(--sl-color-blue-500);
+      color: var(--sl-color-blue-600);
     }
   `;
 
@@ -57,7 +65,7 @@ export class TagInput extends LitElement {
   required = false;
 
   @state()
-  tags: string[] = [];
+  tags: string[] = ["test"];
 
   @query("#input")
   input!: HTMLInputElement;
@@ -79,7 +87,11 @@ export class TagInput extends LitElement {
   render() {
     return html`
       <div class="form-control form-control--has-label">
-        <label class="form-control__label" for="input">
+        <label
+          class="form-control__label"
+          part="form-control-label"
+          for="input"
+        >
           <slot name="label">${msg("Tags")}</slot>
         </label>
         <div
