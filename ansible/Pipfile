@@ -13,6 +13,7 @@ ansible-core = "==2.13"
 docker = "*"
 boto3 = "*"
 jmespath = "*"
+mkdocs-material = "*"
 
 [dev-packages]
 

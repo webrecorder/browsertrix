@@ -15,7 +15,7 @@ k8s_name: "{{ project_name }}"
 bucket_name: "{{ project_name }}"
 bucket_path: "crawls"
 
-domain: "browsertrix.cloud"
+domain: "{{ domain_name | default('browsertrix.cloud') }}"
 subdomain: "{{ project_name }}"
 
 use_do_registry: true

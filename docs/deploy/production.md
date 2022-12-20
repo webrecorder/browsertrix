@@ -3,7 +3,7 @@
 For production and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain
 and (strongly recommended, but not required) second domain for signing web archives. 
 
-We are also experimenting with Ansible playbooks for cloud deployment setups.
+We are also experimenting with [Ansible playbooks](./ansible) for cloud deployment setups.
 
 The production deployments also allow using an external mongodb server, and/or external S3-compatible storage instead of the bundled minio.
 
