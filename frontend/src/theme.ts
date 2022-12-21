@@ -160,6 +160,13 @@ const theme = css`
     margin-top: var(--sl-spacing-small);
   }
 
+  /* Have button group take up whole width */
+  sl-radio-group::part(button-group),
+  sl-radio-group sl-radio-button {
+    width: 100%;
+    min-width: min-content;
+  }
+
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
     font-family: var(--font-monostyle-family);
