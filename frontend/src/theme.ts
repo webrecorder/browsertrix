@@ -119,10 +119,6 @@ const theme = css`
     overflow-x: hidden;
   }
 
-  sl-dropdown sl-menu::part(base) {
-    z-index: 9999;
-  }
-
   /* Decrease control spacing on small select */
   sl-select[size="small"]::part(control) {
     --sl-input-spacing-small: var(--sl-spacing-x-small);
