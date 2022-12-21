@@ -273,6 +273,14 @@ export class CrawlConfigEditor extends LiteElement {
         });
       }
     }
+    if (changedProperties.get("progressState") && this.progressState) {
+      if (
+        (changedProperties.get("progressState") as ProgressState)
+          .currentStep !== this.progressState.currentStep
+      ) {
+        this.formElem?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }
 
   private initializeEditor() {
@@ -496,6 +504,8 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private renderFooter({ isFirst = false, isLast = false }) {
+    const isConfirmSettingsEnabled =
+      this.progressState.tabs.crawlSetup.completed;
     return html`
       <div class="px-6 py-4 border-t flex justify-between">
         ${isFirst
@@ -558,22 +568,26 @@ export class CrawlConfigEditor extends LiteElement {
                       <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                       ${msg("Next Step")}
                     </sl-button>
-                    ${when(
-                      this.progressState.tabs.crawlSetup.completed,
-                      () => html`
-                        <sl-button
-                          class="ml-1"
-                          size="small"
-                          @click=${this.nextStep}
-                        >
-                          <sl-icon
-                            slot="suffix"
-                            name="chevron-double-right"
-                          ></sl-icon>
-                          ${msg("Confirm & Save")}
-                        </sl-button>
-                      `
-                    )}
+                    <sl-button
+                      class="ml-1"
+                      size="small"
+                      @click=${() => {
+                        if (!isConfirmSettingsEnabled) {
+                          this.nextStep();
+                        } else {
+                          this.updateProgressState({
+                            activeTab: "confirmSettings",
+                            currentStep: "confirmSettings",
+                          });
+                        }
+                      }}
+                    >
+                      <sl-icon
+                        slot="suffix"
+                        name="chevron-double-right"
+                      ></sl-icon>
+                      ${msg("Confirm & Save")}
+                    </sl-button>
                   </div>
                 `
         )}
