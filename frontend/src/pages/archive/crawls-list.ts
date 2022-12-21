@@ -101,8 +101,12 @@ export class CrawlsList extends LiteElement {
     )(crawls) as CrawlSearchResult[];
   }
 
-  protected updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("shouldFetch")) {
+  protected willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("shouldFetch") ||
+      changedProperties.get("crawlsBaseUrl") ||
+      changedProperties.get("crawlsAPIBaseUrl")
+    ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
           throw new Error("Crawls base URL not defined");

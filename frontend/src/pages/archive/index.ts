@@ -71,29 +71,26 @@ export class Archive extends LiteElement {
   @state()
   private successfullyInvitedEmail?: string;
 
-  async firstUpdated() {
-    if (!this.archiveId) return;
+  async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("archiveId") && this.archiveId) {
+      try {
+        const archive = await this.getArchive(this.archiveId);
 
-    try {
-      const archive = await this.getArchive(this.archiveId);
+        if (!archive) {
+          this.navTo("/archives");
+        } else {
+          this.archive = archive;
+        }
+      } catch {
+        this.archive = null;
 
-      if (!archive) {
-        this.navTo("/archives");
-      } else {
-        this.archive = archive;
+        this.notify({
+          message: msg("Sorry, couldn't retrieve archive at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
       }
-    } catch {
-      this.archive = null;
-
-      this.notify({
-        message: msg("Sorry, couldn't retrieve archive at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
     }
-  }
-
-  async updated(changedProperties: any) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.successfullyInvitedEmail = undefined;
     }
@@ -216,7 +213,6 @@ export class Archive extends LiteElement {
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      archiveId=${this.archiveId!}
       crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
