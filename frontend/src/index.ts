@@ -76,6 +76,11 @@ export class App extends LiteElement {
   @state()
   private teams?: ArchiveData[];
 
+  // Store selected team ID for when navigating from
+  // pages without associated team (e.g. user account)
+  @state()
+  private selectedTeamId?: string;
+
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     if (authState) {
@@ -91,6 +96,18 @@ export class App extends LiteElement {
 
     this.startSyncBrowserTabs();
     this.fetchAppSettings();
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("userInfo") && this.userInfo) {
+      this.selectedTeamId = this.userInfo.defaultTeamId;
+    }
+    if (
+      changedProperties.get("viewState") &&
+      this.viewState.route === "archive"
+    ) {
+      this.selectedTeamId = this.viewState.params.id;
+    }
   }
 
   private syncViewState() {
@@ -162,7 +179,7 @@ export class App extends LiteElement {
           "Unauthorized with authState:",
           this.authService.authState
         );
-        this.revokeUser();
+        this.clearUser();
         this.navigate(ROUTES.login);
       }
     }
@@ -243,6 +260,10 @@ export class App extends LiteElement {
 
   private renderNavBar() {
     const isAdmin = this.userInfo?.isAdmin;
+    let homeHref = "/";
+    if (!isAdmin && this.selectedTeamId) {
+      homeHref = `/archives/${this.selectedTeamId}/crawls`;
+    }
 
     return html`
       <div class="border-b">
@@ -250,7 +271,7 @@ export class App extends LiteElement {
           class="max-w-screen-lg mx-auto pl-3 box-border h-12 flex items-center justify-between"
         >
           <div>
-            <a href="/" @click="${this.navLink}"
+            <a href="${homeHref}" @click="${this.navLink}"
               ><h1 class="text-sm hover:text-neutral-400 font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
@@ -329,23 +350,14 @@ export class App extends LiteElement {
   private renderTeams() {
     if (!this.teams || this.teams.length < 2 || !this.userInfo) return;
 
-    let selectedId = this.userInfo.defaultTeamId;
-    switch (this.viewState.route) {
-      case "archive":
-        selectedId = this.viewState.params.id;
-        break;
-      case "archives":
-        selectedId = "";
-        break;
-      default:
-        break;
-    }
-
-    const selectedOption = selectedId
-      ? this.teams.find(({ id }) => id === selectedId)
+    const selectedOption = this.selectedTeamId
+      ? this.teams.find(({ id }) => id === this.selectedTeamId)
       : { id: "", name: msg("All Teams") };
     if (!selectedOption) {
-      console.debug(`Could't find team with ID ${selectedId}`, this.teams);
+      console.debug(
+        `Could't find team with ID ${this.selectedTeamId}`,
+        this.teams
+      );
       return;
     }
 
@@ -532,6 +544,7 @@ export class App extends LiteElement {
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
+          .teamId=${this.selectedTeamId}
         ></btrix-home>`;
 
       case "archives":
@@ -690,7 +703,7 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.revokeUser();
+    this.clearUser();
 
     if (redirect) {
       this.navigate("/log-in");
@@ -718,7 +731,7 @@ export class App extends LiteElement {
   }
 
   onNeedLogin() {
-    this.revokeUser();
+    this.clearUser();
     this.navigate(ROUTES.login);
   }
 
@@ -782,10 +795,11 @@ export class App extends LiteElement {
     return this.apiFetch("/users/me", this.authService.authState!);
   }
 
-  private revokeUser() {
+  private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
     this.userInfo = undefined;
+    this.selectedTeamId = undefined;
   }
 
   private getArchives(): Promise<{ archives: ArchiveData[] }> {
@@ -842,7 +856,7 @@ export class App extends LiteElement {
               this.updateUserInfo();
               this.syncViewState();
             } else {
-              this.revokeUser();
+              this.clearUser();
               this.navigate(ROUTES.login);
             }
           }

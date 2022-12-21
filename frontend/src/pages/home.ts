@@ -14,6 +14,9 @@ export class Home extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
+  @property({ type: String })
+  teamId?: string;
+
   @state()
   private isInviteComplete?: boolean;
 
@@ -23,7 +26,7 @@ export class Home extends LiteElement {
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
-      if (this.userInfo && !this.userInfo.defaultTeamId) {
+      if (this.userInfo && !this.teamId) {
         this.fetchArchives();
       }
     } else {
@@ -32,10 +35,8 @@ export class Home extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("userInfo") && this.userInfo) {
-      if (this.userInfo.defaultTeamId) {
-        this.navTo(`/archives/${this.userInfo.defaultTeamId}/crawls`);
-      }
+    if (changedProperties.has("teamId") && this.teamId) {
+      this.navTo(`/archives/${this.teamId}/crawls`);
     } else if (changedProperties.has("authState") && this.authState) {
       this.fetchArchives();
     }
