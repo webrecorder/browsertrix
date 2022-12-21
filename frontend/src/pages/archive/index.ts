@@ -151,7 +151,7 @@ export class Archive extends LiteElement {
             class="font-medium hover:underline"
             href="/archives"
             @click="${this.navLink}"
-            >${msg("Archives")}</a
+            >${msg("Teams")}</a
           >
           <span class="font-mono">/</span>
           <span>${this.archive.name}</span>

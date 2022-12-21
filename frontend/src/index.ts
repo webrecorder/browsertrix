@@ -230,7 +230,7 @@ export class App extends LiteElement {
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/archives"
                     @click=${this.navLink}
-                    >${msg("All Archives")}</a
+                    >${msg("All Teams")}</a
                   >
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"

@@ -50,7 +50,7 @@ export class Home extends LiteElement {
     }
 
     if (this.userInfo.isAdmin === false) {
-      title = msg("Archives");
+      title = msg("Teams");
       content = this.renderLoggedInNonAdmin();
     }
 
@@ -106,9 +106,7 @@ export class Home extends LiteElement {
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
-              <h2 class="text-lg font-medium mb-3 mt-2">
-                ${msg("All Archives")}
-              </h2>
+              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Teams")}</h2>
               <btrix-archives-list
                 .userInfo=${this.userInfo}
                 .archiveList=${this.archiveList}
