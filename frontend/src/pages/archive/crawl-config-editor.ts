@@ -54,14 +54,12 @@ const STEPS = [
   "confirmSettings",
 ] as const;
 type StepName = typeof STEPS[number];
-type Tabs = Record<
-  StepName,
-  {
-    enabled: boolean;
-    completed: boolean;
-    error: boolean;
-  }
->;
+type TabState = {
+  enabled: boolean;
+  completed: boolean;
+  error: boolean;
+};
+type Tabs = Record<StepName, TabState>;
 type ProgressState = {
   currentStep: StepName;
   activeTab: StepName;
@@ -270,11 +268,7 @@ export class CrawlConfigEditor extends LiteElement {
       if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
         this.updateProgressState({
           tabs: {
-            ...this.progressState.tabs,
-            crawlSetup: {
-              ...this.progressState.tabs.crawlSetup,
-              completed: true,
-            },
+            crawlSetup: { completed: true },
           },
         });
       }
@@ -435,43 +429,26 @@ export class CrawlConfigEditor extends LiteElement {
     const isActive = tabName === this.progressState.activeTab;
     const isConfirmSettings = tabName === "confirmSettings";
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
-    let icon = html`
-      <sl-icon
-        name="circle"
-        class="inline-block align-middle mr-1 text-base text-neutral-300 max-w"
-      ></sl-icon>
-    `;
-    if (isInvalid) {
-      icon = html`
-        <sl-icon
-          name="exclamation-circle"
-          class="inline-block align-middle mr-1 text-base text-danger"
-        ></sl-icon>
-      `;
-    } else if (isActive) {
-      if (isConfirmSettings) {
-        icon = html`
-          <sl-icon
-            name="info-circle"
-            class="inline-block align-middle mr-1 text-base"
-          ></sl-icon>
-        `;
-      } else {
-        icon = html`
-          <sl-icon
-            library="app"
-            name="pencil-circle-dashed"
-            class="inline-block align-middle mr-1 text-base"
-          ></sl-icon>
-        `;
+    const iconProps = {
+      name: "circle",
+      library: "default",
+      class: "text-neutral-300",
+    };
+    if (isConfirmSettings) {
+      iconProps.name = "info-circle";
+      iconProps.class = "text-base";
+    } else {
+      if (isInvalid) {
+        iconProps.name = "exclamation-circle";
+        iconProps.class = "text-danger";
+      } else if (isActive) {
+        iconProps.name = "pencil-circle-dashed";
+        iconProps.library = "app";
+        iconProps.class = "text-base";
+      } else if (completed) {
+        iconProps.name = "check-circle";
+        iconProps.class = "text-success";
       }
-    } else if (completed) {
-      icon = html`
-        <sl-icon
-          name="check-circle"
-          class="inline-block align-middle mr-1 text-base text-success"
-        ></sl-icon>
-      `;
     }
 
     const { enabled } = this.progressState.tabs[tabName];
@@ -488,7 +465,11 @@ export class CrawlConfigEditor extends LiteElement {
         ?disabled=${!isEnabled}
         @click=${this.tabClickHandler(tabName)}
       >
-        ${icon}
+        <sl-icon
+          name=${iconProps.name}
+          library=${iconProps.library}
+          class="inline-block align-middle mr-1 text-base ${iconProps.class}"
+        ></sl-icon>
         <span class="inline-block align-middle whitespace-normal">
           ${content}
         </span>
@@ -520,13 +501,13 @@ export class CrawlConfigEditor extends LiteElement {
         ${isFirst
           ? html`
               <sl-button size="small" type="reset">
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${this.configId ? msg("Cancel") : msg("Start Over")}
               </sl-button>
             `
           : html`
               <sl-button size="small" @click=${this.backStep}>
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
               </sl-button>
             `}
@@ -547,7 +528,7 @@ export class CrawlConfigEditor extends LiteElement {
                 !isLast,
                 () => html`
                   <sl-button size="small" class="ml-1" @click=${this.nextStep}>
-                    <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                     ${msg("Next")}
                   </sl-button>
                 `
@@ -567,14 +548,34 @@ export class CrawlConfigEditor extends LiteElement {
                     ? msg("Save & Run Crawl")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
-              : html`<sl-button
-                  size="small"
-                  variant="primary"
-                  @click=${this.nextStep}
-                >
-                  <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                  ${msg("Next Step")}
-                </sl-button>`
+              : html`
+                  <div>
+                    <sl-button
+                      size="small"
+                      variant="primary"
+                      @click=${this.nextStep}
+                    >
+                      <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                      ${msg("Next Step")}
+                    </sl-button>
+                    ${when(
+                      this.progressState.tabs.crawlSetup.completed,
+                      () => html`
+                        <sl-button
+                          class="ml-1"
+                          size="small"
+                          @click=${this.nextStep}
+                        >
+                          <sl-icon
+                            slot="suffix"
+                            name="chevron-double-right"
+                          ></sl-icon>
+                          ${msg("Confirm & Save")}
+                        </sl-button>
+                      `
+                    )}
+                  </div>
+                `
         )}
       </div>
     `;
@@ -1620,13 +1621,19 @@ https://example.net`}
   }
 
   private updateProgressState(
-    nextState: Partial<ProgressState>,
+    nextState: {
+      activeTab?: ProgressState["activeTab"];
+      currentStep?: ProgressState["currentStep"];
+      tabs?: {
+        [K in StepName]?: Partial<TabState>;
+      };
+    },
     shallowMerge = false
   ) {
     if (shallowMerge) {
       this.progressState = {
         ...this.progressState,
-        ...nextState,
+        ...(nextState as Partial<ProgressState>),
       };
     } else {
       this.progressState = mergeDeep(this.progressState, nextState);
