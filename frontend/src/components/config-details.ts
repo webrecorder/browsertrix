@@ -153,31 +153,6 @@ export class ConfigDetails extends LiteElement {
           )}
         </btrix-desc-list>
       </section>
-      <section id="config-history" class="mb-8">
-        <btrix-section-heading
-          ><h4>
-            ${this.renderAnchorLink("config-history")} ${msg("Config History")}
-          </h4></btrix-section-heading
-        >
-        <btrix-desc-list>
-          ${this.renderSetting(
-            msg("Revision"),
-            when(
-              crawlConfig?.oldId,
-              () => html`<a
-                class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${crawlConfig!.aid}/crawl-templates/config/${
-                  crawlConfig!.oldId
-                }`}
-                @click=${this.navLink}
-              >
-                ${msg("View older version")}
-              </a>`,
-              () => msg("None")
-            )
-          )}
-        </btrix-desc-list>
-      </section>
     `;
   }
 
