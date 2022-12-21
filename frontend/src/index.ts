@@ -15,6 +15,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
+import type { ArchiveData } from "./utils/archives";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -28,6 +29,14 @@ type DialogContent = {
   label?: TemplateResult | string;
   body?: TemplateResult | string;
   noHeader?: boolean;
+};
+
+type User = {
+  id: string;
+  email: string;
+  name: string;
+  is_verified: boolean;
+  is_superuser: boolean;
 };
 
 /**
@@ -64,10 +73,14 @@ export class App extends LiteElement {
   @state()
   private isRegistrationEnabled?: boolean;
 
+  @state()
+  private defaultTeamId?: ArchiveData["id"];
+
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     if (authState) {
       this.authService.saveLogin(authState);
+      this.updateUserInfo();
     }
     this.syncViewState();
     super.connectedCallback();
@@ -77,6 +90,7 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
+    this.fetchAppSettings();
   }
 
   private syncViewState() {
@@ -95,11 +109,7 @@ export class App extends LiteElement {
     }
   }
 
-  async firstUpdated() {
-    if (this.authService.authState) {
-      this.updateUserInfo();
-    }
-
+  private async fetchAppSettings() {
     const settings = await this.getAppSettings();
 
     if (settings) {
@@ -111,15 +121,33 @@ export class App extends LiteElement {
 
   private async updateUserInfo() {
     try {
-      const data = await this.getUserInfo();
+      const [userInfoResp, archivesResp] = await Promise.allSettled([
+        this.getUserInfo(),
+        // TODO see if we can add API endpoint to retrieve first archive
+        this.getArchives(),
+      ]);
 
-      this.userInfo = {
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        isVerified: data.is_verified,
-        isAdmin: data.is_superuser,
-      };
+      if (userInfoResp.status === "fulfilled") {
+        const { value } = userInfoResp;
+        this.userInfo = {
+          id: value.id,
+          email: value.email,
+          name: value.name,
+          isVerified: value.is_verified,
+          isAdmin: value.is_superuser,
+        };
+      } else {
+        throw userInfoResp.reason;
+      }
+
+      if (archivesResp.status === "fulfilled") {
+        const { archives } = archivesResp.value;
+        if (archives.length) {
+          this.defaultTeamId = archives[0].id;
+        }
+      } else {
+        throw archivesResp.reason;
+      }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
         console.debug(
@@ -426,7 +454,8 @@ export class App extends LiteElement {
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
-          .userInfo="${this.userInfo}"
+          .userInfo=${this.userInfo}
+          .defaultTeamId=${this.defaultTeamId}
         ></btrix-home>`;
 
       case "archives":
@@ -676,8 +705,12 @@ export class App extends LiteElement {
     alert.toast();
   }
 
-  getUserInfo() {
+  getUserInfo(): Promise<User> {
     return this.apiFetch("/users/me", this.authService.authState!);
+  }
+
+  private getArchives(): Promise<{ archives: ArchiveData[] }> {
+    return this.apiFetch("/archives", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {

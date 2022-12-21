@@ -14,21 +14,28 @@ export class Home extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
+  @property({ type: String })
+  defaultTeamId?: ArchiveData["id"];
+
   @state()
   private isInviteComplete?: boolean;
 
   @state()
   private archiveList?: ArchiveData[];
 
-  async firstUpdated() {
-    this.archiveList = await this.getArchives();
-  }
-
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
     } else {
       this.navTo("/log-in");
+    }
+  }
+
+  async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("defaultTeamId") && this.defaultTeamId) {
+      this.navTo(`/archives/${this.defaultTeamId}/crawls`);
+    } else if (changedProperties.has("authState") && this.authState) {
+      this.archiveList = await this.getArchives();
     }
   }
 
