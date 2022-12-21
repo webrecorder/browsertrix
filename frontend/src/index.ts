@@ -349,29 +349,46 @@ export class App extends LiteElement {
   }
 
   private renderTeamDropdown() {
+    if (!this.teams) return;
     const selectedId =
       this.viewState.route === "archives"
         ? this.viewState.params.id
         : this.defaultTeamId;
+
+    const selectedOption = selectedId
+      ? this.teams.find(({ id }) => id === selectedId)
+      : { id: "", name: msg("All Teams") };
+    if (!selectedOption) {
+      console.debug(`Could't find team with ID ${selectedId}`, this.teams);
+      return;
+    }
+
     return html`
-      <sl-select
-        class="w-40 min-w-min"
-        value=${selectedId || ""}
-        size="small"
-        pill
-        @sl-select=${(e: CustomEvent) => {
-          const { value } = e.detail.item;
-          this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
-        }}
-      >
-        ${this.teams?.map(
-          (team) => html`
-            <sl-menu-item value=${team.id}>${team.name}</sl-menu-item>
-          `
-        )}
-        <sl-divider></sl-divider>
-        <sl-menu-item value="">${msg("All Teams")}</sl-menu-item>
-      </sl-select>
+      <sl-dropdown placement="bottom-end">
+        <sl-button slot="trigger" variant="text" size="small" caret
+          >${selectedOption.name}</sl-button
+        >
+        <sl-menu
+          @sl-select=${(e: CustomEvent) => {
+            const { value } = e.detail.item;
+            this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+          }}
+        >
+          ${this.teams.map(
+            (team) => html`
+              <sl-menu-item
+                value=${team.id}
+                ?checked=${team.id === selectedOption.id}
+                >${team.name}</sl-menu-item
+              >
+            `
+          )}
+          <sl-divider></sl-divider>
+          <sl-menu-item value="" ?checked=${!selectedOption.id}
+            >${msg("All Teams")}</sl-menu-item
+          >
+        </sl-menu>
+      </sl-dropdown>
     `;
   }
 
