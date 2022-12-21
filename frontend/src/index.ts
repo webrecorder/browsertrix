@@ -264,12 +264,6 @@ export class App extends LiteElement {
                 >
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
-                    href="/archives"
-                    @click=${this.navLink}
-                    >${msg("All Teams")}</a
-                  >
-                  <a
-                    class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/crawls"
                     @click=${this.navLink}
                     >${msg("Running Crawls")}</a

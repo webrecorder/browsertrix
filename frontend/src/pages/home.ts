@@ -23,18 +23,21 @@ export class Home extends LiteElement {
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
+      if (this.userInfo && !this.userInfo.defaultTeamId) {
+        this.fetchArchives();
+      }
     } else {
       this.navTo("/log-in");
     }
   }
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("userInfo") && this.userInfo) {
       if (this.userInfo.defaultTeamId) {
         this.navTo(`/archives/${this.userInfo.defaultTeamId}/crawls`);
       }
     } else if (changedProperties.has("authState") && this.authState) {
-      this.archiveList = await this.getArchives();
+      this.fetchArchives();
     }
   }
 
@@ -173,6 +176,10 @@ export class Home extends LiteElement {
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;
+  }
+
+  private async fetchArchives() {
+    this.archiveList = await this.getArchives();
   }
 
   private async getArchives(): Promise<ArchiveData[]> {
