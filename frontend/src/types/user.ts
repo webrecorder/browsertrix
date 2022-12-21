@@ -4,4 +4,5 @@ export type CurrentUser = {
   name: string;
   isVerified: boolean;
   isAdmin: boolean;
+  defaultTeamId?: string;
 };

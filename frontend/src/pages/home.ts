@@ -14,9 +14,6 @@ export class Home extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
-  @property({ type: String })
-  defaultTeamId?: ArchiveData["id"];
-
   @state()
   private isInviteComplete?: boolean;
 
@@ -32,8 +29,10 @@ export class Home extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("defaultTeamId") && this.defaultTeamId) {
-      this.navTo(`/archives/${this.defaultTeamId}/crawls`);
+    if (changedProperties.has("userInfo") && this.userInfo) {
+      if (this.userInfo.defaultTeamId) {
+        this.navTo(`/archives/${this.userInfo.defaultTeamId}/crawls`);
+      }
     } else if (changedProperties.has("authState") && this.authState) {
       this.archiveList = await this.getArchives();
     }

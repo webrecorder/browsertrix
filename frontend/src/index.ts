@@ -31,7 +31,7 @@ type DialogContent = {
   noHeader?: boolean;
 };
 
-type User = {
+type APIUser = {
   id: string;
   email: string;
   name: string;
@@ -75,9 +75,6 @@ export class App extends LiteElement {
 
   @state()
   private teams?: ArchiveData[];
-
-  @state()
-  private defaultTeamId?: ArchiveData["id"];
 
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
@@ -130,7 +127,23 @@ export class App extends LiteElement {
         this.getArchives(),
       ]);
 
-      if (userInfoResp.status === "fulfilled") {
+      const userInfoSuccess = userInfoResp.status === "fulfilled";
+      let defaultTeamId: CurrentUser["defaultTeamId"];
+
+      if (archivesResp.status === "fulfilled") {
+        const { archives } = archivesResp.value;
+        this.teams = archives;
+        if (userInfoSuccess) {
+          const userInfo = userInfoResp.value;
+          if (archives.length && !userInfo?.is_superuser) {
+            defaultTeamId = archives[0].id;
+          }
+        }
+      } else {
+        throw archivesResp.reason;
+      }
+
+      if (userInfoSuccess) {
         const { value } = userInfoResp;
         this.userInfo = {
           id: value.id,
@@ -138,20 +151,10 @@ export class App extends LiteElement {
           name: value.name,
           isVerified: value.is_verified,
           isAdmin: value.is_superuser,
+          defaultTeamId,
         };
       } else {
         throw userInfoResp.reason;
-      }
-
-      if (archivesResp.status === "fulfilled") {
-        const userInfo = userInfoResp.value;
-        const { archives } = archivesResp.value;
-        this.teams = archives;
-        if (archives.length && !userInfo?.is_superuser) {
-          this.defaultTeamId = archives[0].id;
-        }
-      } else {
-        throw archivesResp.reason;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -159,7 +162,7 @@ export class App extends LiteElement {
           "Unauthorized with authState:",
           this.authService.authState
         );
-        this.authService.logout();
+        this.revokeUser();
         this.navigate(ROUTES.login);
       }
     }
@@ -349,7 +352,7 @@ export class App extends LiteElement {
   }
 
   private renderTeamDropdown() {
-    if (!this.teams) return;
+    if (!this.teams || !this.userInfo) return;
 
     if (this.teams.length === 1) {
       const team = this.teams[0];
@@ -364,7 +367,7 @@ export class App extends LiteElement {
       `;
     }
 
-    let selectedId = this.defaultTeamId;
+    let selectedId = this.userInfo.defaultTeamId;
     switch (this.viewState.route) {
       case "archive":
         selectedId = this.viewState.params.id;
@@ -395,6 +398,10 @@ export class App extends LiteElement {
             this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
           }}
         >
+          <sl-menu-item value="" ?checked=${!selectedOption.id}
+            >${msg("All Teams")}</sl-menu-item
+          >
+          <sl-divider></sl-divider>
           ${this.teams.map(
             (team) => html`
               <sl-menu-item
@@ -404,10 +411,6 @@ export class App extends LiteElement {
               >
             `
           )}
-          <sl-divider></sl-divider>
-          <sl-menu-item value="" ?checked=${!selectedOption.id}
-            >${msg("All Teams")}</sl-menu-item
-          >
         </sl-menu>
       </sl-dropdown>
     `;
@@ -526,7 +529,6 @@ export class App extends LiteElement {
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
-          .defaultTeamId=${this.defaultTeamId}
         ></btrix-home>`;
 
       case "archives":
@@ -685,9 +687,7 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.authService.logout();
-    this.authService = new AuthService();
-    this.userInfo = undefined;
+    this.revokeUser();
 
     if (redirect) {
       this.navigate("/log-in");
@@ -715,8 +715,7 @@ export class App extends LiteElement {
   }
 
   onNeedLogin() {
-    this.authService.logout();
-
+    this.revokeUser();
     this.navigate(ROUTES.login);
   }
 
@@ -776,8 +775,14 @@ export class App extends LiteElement {
     alert.toast();
   }
 
-  getUserInfo(): Promise<User> {
+  getUserInfo(): Promise<APIUser> {
     return this.apiFetch("/users/me", this.authService.authState!);
+  }
+
+  private revokeUser() {
+    this.authService.logout();
+    this.authService = new AuthService();
+    this.userInfo = undefined;
   }
 
   private getArchives(): Promise<{ archives: ArchiveData[] }> {
@@ -834,7 +839,7 @@ export class App extends LiteElement {
               this.updateUserInfo();
               this.syncViewState();
             } else {
-              this.authService.logout();
+              this.revokeUser();
               this.navigate(ROUTES.login);
             }
           }
