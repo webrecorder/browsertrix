@@ -595,6 +595,7 @@ export class CrawlDetail extends LiteElement {
                 coll="${ifDefined(this.crawl?.id)}"
                 replayBase="/replay/"
                 noSandbox="true"
+                noCache="true"
               ></replay-web-page>
             </div>`
           : html`
@@ -881,7 +882,9 @@ export class CrawlDetail extends LiteElement {
 
   private async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/replay.json`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
+        this.crawlId
+      }/replay.json`,
       this.authState!
     );
 
