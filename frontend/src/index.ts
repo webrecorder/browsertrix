@@ -1,7 +1,7 @@
 import type { TemplateResult } from "lit";
 import { render } from "lit";
 import { property, state, query } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
@@ -275,7 +275,7 @@ export class App extends LiteElement {
 
           <div class="grid grid-flow-col auto-cols-max gap-3 items-center">
             ${this.authService.authState
-              ? html` ${this.renderTeamDropdown()}
+              ? html` ${this.renderTeams()}
                   <sl-dropdown placement="bottom-end">
                     <sl-icon-button
                       slot="trigger"
@@ -284,26 +284,7 @@ export class App extends LiteElement {
                     ></sl-icon-button>
 
                     <sl-menu class="w-60 min-w-min max-w-full">
-                      <div class="px-7 py-2">
-                        ${isAdmin
-                          ? html`
-                              <div class="mb-2">
-                                <sl-tag
-                                  class="uppercase"
-                                  variant="primary"
-                                  size="small"
-                                  >${msg("admin")}</sl-tag
-                                >
-                              </div>
-                            `
-                          : ""}
-                        <div class="font-medium text-neutral-700">
-                          ${this.userInfo?.name}
-                        </div>
-                        <div class="text-sm text-neutral-500">
-                          ${this.userInfo?.email}
-                        </div>
-                      </div>
+                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                       <sl-divider></sl-divider>
                       <sl-menu-item
                         @click=${() => this.navigate(ROUTES.accountSettings)}
@@ -345,21 +326,8 @@ export class App extends LiteElement {
     `;
   }
 
-  private renderTeamDropdown() {
-    if (!this.teams || !this.userInfo) return;
-
-    if (this.teams.length === 1) {
-      const team = this.teams[0];
-      return html`
-        <sl-button
-          href=${`/archives/${team.id}/crawls`}
-          variant="text"
-          size="small"
-          @click=${this.navLink}
-          >${team.name}</sl-button
-        >
-      `;
-    }
+  private renderTeams() {
+    if (!this.teams || this.teams.length < 2 || !this.userInfo) return;
 
     let selectedId = this.userInfo.defaultTeamId;
     switch (this.viewState.route) {
@@ -392,10 +360,15 @@ export class App extends LiteElement {
             this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
           }}
         >
-          <sl-menu-item value="" ?checked=${!selectedOption.id}
-            >${msg("All Teams")}</sl-menu-item
-          >
-          <sl-divider></sl-divider>
+          ${when(
+            this.userInfo.isAdmin,
+            () => html`
+              <sl-menu-item value="" ?checked=${!selectedOption.id}
+                >${msg("All Teams")}</sl-menu-item
+              >
+              <sl-divider></sl-divider>
+            `
+          )}
           ${this.teams.map(
             (team) => html`
               <sl-menu-item
@@ -407,6 +380,42 @@ export class App extends LiteElement {
           )}
         </sl-menu>
       </sl-dropdown>
+    `;
+  }
+
+  private renderMenuUserInfo() {
+    if (!this.userInfo) return;
+    if (this.userInfo.isAdmin) {
+      return html`
+        <div class="mb-2">
+          <sl-tag class="uppercase" variant="primary" size="small"
+            >${msg("admin")}</sl-tag
+          >
+        </div>
+        <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+        <div class="text-xs text-neutral-500 whitespace-nowrap">
+          ${this.userInfo?.email}
+        </div>
+      `;
+    }
+
+    if (this.teams?.length === 1) {
+      return html`
+        <div class="font-medium text-neutral-700 my-1">
+          ${this.teams![0].name}
+        </div>
+        <div class="text-neutral-500">${this.userInfo?.name}</div>
+        <div class="text-xs text-neutral-500 whitespace-nowrap">
+          ${this.userInfo?.email}
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+      <div class="text-xs text-neutral-500 whitespace-nowrap">
+        ${this.userInfo?.email}
+      </div>
     `;
   }
 
