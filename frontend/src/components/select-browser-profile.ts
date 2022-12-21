@@ -47,7 +47,6 @@ export class SelectBrowserProfile extends LiteElement {
       <sl-select
         name="profileid"
         label=${msg("Browser Profile")}
-        clearable
         value=${this.selectedProfile?.id || ""}
         placeholder=${this.browserProfiles
           ? msg("Default Profile")
@@ -62,7 +61,10 @@ export class SelectBrowserProfile extends LiteElement {
         @sl-after-hide=${this.stopProp}
       >
         ${this.browserProfiles
-          ? ""
+          ? html`
+              <sl-menu-item value="">${msg("Default Profile")}</sl-menu-item>
+              <sl-divider></sl-divider>
+            `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
         ${this.browserProfiles?.map(
           (profile) => html`
