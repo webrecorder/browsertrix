@@ -15,7 +15,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
-import type { ArchiveData } from "./utils/archives";
+import type { Archive, ArchiveData } from "./utils/archives";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -72,6 +72,9 @@ export class App extends LiteElement {
 
   @state()
   private isRegistrationEnabled?: boolean;
+
+  @state()
+  private teams?: ArchiveData[];
 
   @state()
   private defaultTeamId?: ArchiveData["id"];
@@ -141,8 +144,10 @@ export class App extends LiteElement {
       }
 
       if (archivesResp.status === "fulfilled") {
+        const userInfo = userInfoResp.value;
         const { archives } = archivesResp.value;
-        if (archives.length) {
+        this.teams = archives;
+        if (archives.length && !userInfo?.is_superuser) {
           this.defaultTeamId = archives[0].id;
         }
       } else {
@@ -233,7 +238,7 @@ export class App extends LiteElement {
     `;
   }
 
-  renderNavBar() {
+  private renderNavBar() {
     const isAdmin = this.userInfo?.isAdmin;
 
     return html`
@@ -271,58 +276,59 @@ export class App extends LiteElement {
               `
             : ""}
 
-          <div class="grid grid-flow-col gap-3 md:gap-5 items-center">
+          <div class="grid grid-flow-col auto-cols-max gap-3 items-center">
             ${this.authService.authState
-              ? html` <sl-dropdown placement="bottom-end">
-                  <sl-icon-button
-                    slot="trigger"
-                    name="person-circle"
-                    style="font-size: 1.5rem;"
-                  ></sl-icon-button>
+              ? html` ${this.renderTeamDropdown()}
+                  <sl-dropdown placement="bottom-end">
+                    <sl-icon-button
+                      slot="trigger"
+                      name="person-circle"
+                      style="font-size: 1.5rem;"
+                    ></sl-icon-button>
 
-                  <sl-menu class="w-60 min-w-min max-w-full">
-                    <div class="px-7 py-2">
-                      ${isAdmin
-                        ? html`
-                            <div class="mb-2">
-                              <sl-tag
-                                class="uppercase"
-                                variant="primary"
-                                size="small"
-                                >${msg("admin")}</sl-tag
-                              >
-                            </div>
-                          `
+                    <sl-menu class="w-60 min-w-min max-w-full">
+                      <div class="px-7 py-2">
+                        ${isAdmin
+                          ? html`
+                              <div class="mb-2">
+                                <sl-tag
+                                  class="uppercase"
+                                  variant="primary"
+                                  size="small"
+                                  >${msg("admin")}</sl-tag
+                                >
+                              </div>
+                            `
+                          : ""}
+                        <div class="font-medium text-neutral-700">
+                          ${this.userInfo?.name}
+                        </div>
+                        <div class="text-sm text-neutral-500">
+                          ${this.userInfo?.email}
+                        </div>
+                      </div>
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                      >
+                        <sl-icon slot="prefix" name="gear"></sl-icon>
+                        ${msg("Your Account")}
+                      </sl-menu-item>
+                      ${this.userInfo?.isAdmin
+                        ? html` <sl-menu-item
+                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                          >
+                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                            ${msg("Invite Users")}
+                          </sl-menu-item>`
                         : ""}
-                      <div class="font-medium text-neutral-700">
-                        ${this.userInfo?.name}
-                      </div>
-                      <div class="text-sm text-neutral-500">
-                        ${this.userInfo?.email}
-                      </div>
-                    </div>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item
-                      @click=${() => this.navigate(ROUTES.accountSettings)}
-                    >
-                      <sl-icon slot="prefix" name="gear"></sl-icon>
-                      ${msg("Your account")}
-                    </sl-menu-item>
-                    ${this.userInfo?.isAdmin
-                      ? html` <sl-menu-item
-                          @click=${() => this.navigate(ROUTES.usersInvite)}
-                        >
-                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                          ${msg("Invite Users")}
-                        </sl-menu-item>`
-                      : ""}
-                    <sl-divider></sl-divider>
-                    <sl-menu-item @click="${this.onLogOut}">
-                      <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
-                      ${msg("Log Out")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>`
+                      <sl-divider></sl-divider>
+                      <sl-menu-item @click="${this.onLogOut}">
+                        <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                        ${msg("Log Out")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>`
               : html`
                   <a href="/log-in"> ${msg("Log In")} </a>
                   ${this.isRegistrationEnabled
@@ -342,7 +348,34 @@ export class App extends LiteElement {
     `;
   }
 
-  renderFooter() {
+  private renderTeamDropdown() {
+    const selectedId =
+      this.viewState.route === "archives"
+        ? this.viewState.params.id
+        : this.defaultTeamId;
+    return html`
+      <sl-select
+        class="w-40 min-w-min"
+        value=${selectedId || ""}
+        size="small"
+        pill
+        @sl-select=${(e: CustomEvent) => {
+          const { value } = e.detail.item;
+          this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+        }}
+      >
+        ${this.teams?.map(
+          (team) => html`
+            <sl-menu-item value=${team.id}>${team.name}</sl-menu-item>
+          `
+        )}
+        <sl-divider></sl-divider>
+        <sl-menu-item value="">${msg("All Teams")}</sl-menu-item>
+      </sl-select>
+    `;
+  }
+
+  private renderFooter() {
     return html`
       <footer
         class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-end"
@@ -375,7 +408,7 @@ export class App extends LiteElement {
     `;
   }
 
-  renderPage() {
+  private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
@@ -547,7 +580,7 @@ export class App extends LiteElement {
     }
   }
 
-  renderSpinner() {
+  private renderSpinner() {
     return html`
       <div class="w-full flex items-center justify-center text-3xl">
         <sl-spinner></sl-spinner>
@@ -555,13 +588,13 @@ export class App extends LiteElement {
     `;
   }
 
-  renderNotFoundPage() {
+  private renderNotFoundPage() {
     return html`<btrix-not-found
       class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
   }
 
-  renderFindCrawl() {
+  private renderFindCrawl() {
     return html`
       <sl-dropdown
         @sl-after-show=${(e: any) => {
