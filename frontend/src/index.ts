@@ -350,6 +350,20 @@ export class App extends LiteElement {
 
   private renderTeamDropdown() {
     if (!this.teams) return;
+
+    if (this.teams.length === 1) {
+      const team = this.teams[0];
+      return html`
+        <sl-button
+          href=${`/archives/${team.id}/crawls`}
+          variant="text"
+          size="small"
+          @click=${this.navLink}
+          >${team.name}</sl-button
+        >
+      `;
+    }
+
     const selectedId =
       this.viewState.route === "archives"
         ? this.viewState.params.id
