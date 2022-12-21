@@ -525,6 +525,16 @@ export class CrawlConfigEditor extends LiteElement {
           this.configId,
           () => html`
             <div>
+              ${when(
+                !isLast,
+                () => html`
+                  <sl-button class="mr-1" size="small" @click=${this.nextStep}>
+                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                    ${msg("Next")}
+                  </sl-button>
+                `
+              )}
+
               <sl-button
                 type="submit"
                 size="small"
@@ -534,15 +544,6 @@ export class CrawlConfigEditor extends LiteElement {
               >
                 ${msg("Save Changes")}
               </sl-button>
-              ${when(
-                !isLast,
-                () => html`
-                  <sl-button size="small" class="ml-1" @click=${this.nextStep}>
-                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                    ${msg("Next")}
-                  </sl-button>
-                `
-              )}
             </div>
           `,
           () =>
@@ -561,6 +562,7 @@ export class CrawlConfigEditor extends LiteElement {
               : html`
                   <div>
                     <sl-button
+                      class="mr-1"
                       size="small"
                       variant="primary"
                       @click=${this.nextStep}
@@ -569,7 +571,6 @@ export class CrawlConfigEditor extends LiteElement {
                       ${msg("Next Step")}
                     </sl-button>
                     <sl-button
-                      class="ml-1"
                       size="small"
                       @click=${() => {
                         if (!isConfirmSettingsEnabled) {
