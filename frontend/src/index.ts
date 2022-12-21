@@ -364,10 +364,17 @@ export class App extends LiteElement {
       `;
     }
 
-    const selectedId =
-      this.viewState.route === "archives"
-        ? this.viewState.params.id
-        : this.defaultTeamId;
+    let selectedId = this.defaultTeamId;
+    switch (this.viewState.route) {
+      case "archive":
+        selectedId = this.viewState.params.id;
+        break;
+      case "archives":
+        selectedId = "";
+        break;
+      default:
+        break;
+    }
 
     const selectedOption = selectedId
       ? this.teams.find(({ id }) => id === selectedId)
