@@ -37,6 +37,3 @@ ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superu
 ```zsh
 ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain_name="yourdomain.com" -t helm_upgrade
 ```
-
-
-
