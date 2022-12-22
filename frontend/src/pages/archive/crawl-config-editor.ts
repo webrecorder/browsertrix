@@ -26,6 +26,8 @@ import {
   getUTCSchedule,
   humanizeSchedule,
   humanizeNextDate,
+  getScheduleInterval,
+  getNextDate,
 } from "../../utils/cron";
 import type { Tab } from "../../components/tab-list";
 import type {
@@ -33,29 +35,31 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { CrawlConfigParams, Profile, JobType } from "./types";
+import type {
+  CrawlConfigParams,
+  Profile,
+  InitialCrawlConfig,
+  JobType,
+} from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
+  oldId?: string;
 };
-export type InitialJobConfig = Pick<CrawlConfigParams, "name" | "profileid"> & {
-  jobType?: JobType;
-  config: Pick<CrawlConfigParams["config"], "seeds" | "scopeType" | "exclude">;
+
+const STEPS = [
+  "crawlSetup",
+  "browserSettings",
+  "jobScheduling",
+  "confirmSettings",
+] as const;
+type StepName = typeof STEPS[number];
+type TabState = {
+  enabled: boolean;
+  completed: boolean;
+  error: boolean;
 };
-type StepName =
-  | "crawlerSetup"
-  | "browserSettings"
-  | "jobScheduling"
-  | "jobInformation"
-  | "confirmSettings";
-type Tabs = Record<
-  StepName,
-  {
-    enabled: boolean;
-    completed: boolean;
-    error: boolean;
-  }
->;
+type Tabs = Record<StepName, TabState>;
 type ProgressState = {
   currentStep: StepName;
   activeTab: StepName;
@@ -74,7 +78,7 @@ type FormState = {
   scale: CrawlConfigParams["scale"];
   blockAds: CrawlConfigParams["config"]["blockAds"];
   lang: CrawlConfigParams["config"]["lang"];
-  scheduleType: "now" | "date" | "cron";
+  scheduleType: "now" | "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
   scheduleDayOfWeek: number;
@@ -87,17 +91,40 @@ type FormState = {
   jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
 };
-const getDefaultProgressState = (): ProgressState => ({
-  activeTab: "crawlerSetup",
-  currentStep: "crawlerSetup",
-  tabs: {
-    crawlerSetup: { enabled: true, error: false, completed: false },
-    browserSettings: { enabled: false, error: false, completed: false },
-    jobScheduling: { enabled: false, error: false, completed: false },
-    jobInformation: { enabled: false, error: false, completed: false },
-    confirmSettings: { enabled: false, error: false, completed: false },
-  },
-});
+
+const getDefaultProgressState = (hasConfigId = false): ProgressState => {
+  let activeTab: StepName = "crawlSetup";
+  if (window.location.hash) {
+    const hashValue = window.location.hash.slice(1);
+
+    if (STEPS.includes(hashValue as any)) {
+      activeTab = hashValue as StepName;
+    }
+  }
+
+  return {
+    activeTab,
+    currentStep: hasConfigId ? "confirmSettings" : "crawlSetup",
+    tabs: {
+      crawlSetup: { enabled: true, error: false, completed: hasConfigId },
+      browserSettings: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      jobScheduling: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      confirmSettings: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+    },
+  };
+};
 const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
@@ -106,7 +133,7 @@ const getDefaultFormState = (): FormState => ({
   crawlTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
-  exclusions: [""], // Empty slots for adding exclusions
+  exclusions: [],
   pageLimit: undefined,
   scale: 1,
   blockAds: true,
@@ -124,15 +151,8 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
 });
-const stepOrder: StepName[] = [
-  "crawlerSetup",
-  "browserSettings",
-  "jobScheduling",
-  "jobInformation",
-  "confirmSettings",
-];
 const defaultProgressState = getDefaultProgressState();
-const orderedTabNames = stepOrder.filter(
+const orderedTabNames = STEPS.filter(
   (stepName) => defaultProgressState.tabs[stepName as StepName]
 ) as StepName[];
 
@@ -164,10 +184,13 @@ export class CrawlConfigEditor extends LiteElement {
   archiveId!: string;
 
   @property({ type: String })
+  configId?: string;
+
+  @property({ type: String })
   jobType?: JobType;
 
   @property({ type: Object })
-  initialJobConfig?: InitialJobConfig;
+  initialCrawlConfig?: InitialCrawlConfig;
 
   @state()
   private isSubmitting = false;
@@ -194,9 +217,9 @@ export class CrawlConfigEditor extends LiteElement {
     });
   }
 
-  private daysOfWeek = getLocalizedWeekDays();
+  private readonly daysOfWeek = getLocalizedWeekDays();
 
-  private scopeTypeLabels: Record<FormState["scopeType"], string> = {
+  private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
     prefix: msg("Path Begins with This URL"),
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
@@ -206,13 +229,17 @@ export class CrawlConfigEditor extends LiteElement {
     any: msg("Any"),
   };
 
-  private scheduleTypeLabels: Record<FormState["scheduleType"], string> = {
+  private readonly scheduleTypeLabels: Record<
+    FormState["scheduleType"],
+    string
+  > = {
     now: msg("Run Immediately on Save"),
     date: msg("Run on a Specific Date & Time"),
     cron: msg("Run on a Recurring Basis"),
+    none: msg("No Schedule"),
   };
 
-  private scheduleFrequencyLabels: Record<
+  private readonly scheduleFrequencyLabels: Record<
     FormState["scheduleFrequency"],
     string
   > = {
@@ -224,18 +251,49 @@ export class CrawlConfigEditor extends LiteElement {
   @query('form[name="newJobConfig"]')
   formElem!: HTMLFormElement;
 
-  constructor() {
-    super();
-    this.progressState = getDefaultProgressState();
-    this.formState = getDefaultFormState();
-    if (!this.formState.lang) {
-      this.formState.lang = this.getInitialLang();
-    }
+  connectedCallback(): void {
+    this.initializeEditor();
+    super.connectedCallback();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("initialJobConfig") && this.initialJobConfig) {
-      this.updateFormState(this.getInitialFormState());
+    if (
+      changedProperties.get("initialCrawlConfig") &&
+      this.initialCrawlConfig
+    ) {
+      this.initializeEditor();
+    }
+    if (changedProperties.get("formState") && this.formState) {
+      const hasRequiredFields = this.hasRequiredFields();
+      if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
+        this.updateProgressState({
+          tabs: {
+            crawlSetup: { completed: true },
+          },
+        });
+      }
+    }
+    if (changedProperties.get("progressState") && this.progressState) {
+      if (
+        (changedProperties.get("progressState") as ProgressState)
+          .currentStep !== this.progressState.currentStep
+      ) {
+        this.formElem?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }
+
+  private initializeEditor() {
+    this.progressState = getDefaultProgressState(Boolean(this.configId));
+    this.formState = {
+      ...getDefaultFormState(),
+      ...this.getInitialFormState(),
+    };
+    if (!this.formState.lang) {
+      this.formState.lang = this.getInitialLang();
+    }
+    if (!this.formState.exclusions?.length) {
+      this.formState.exclusions = [""]; // Add empty slot
     }
   }
 
@@ -249,10 +307,10 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private getInitialFormState(): Partial<FormState> {
-    if (!this.initialJobConfig) return {};
+    if (!this.initialCrawlConfig) return {};
     const seedState: Partial<FormState> = {};
-    const { seeds, scopeType } = this.initialJobConfig.config;
-    if (this.initialJobConfig.jobType === "seed-crawl") {
+    const { seeds, scopeType } = this.initialCrawlConfig.config;
+    if (this.initialCrawlConfig.jobType === "seed-crawl") {
       seedState.primarySeedUrl =
         typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
     } else {
@@ -261,48 +319,57 @@ export class CrawlConfigEditor extends LiteElement {
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
-      if (this.initialJobConfig.jobType === "custom") {
+      if (this.initialCrawlConfig.jobType === "custom") {
         seedState.scopeType = scopeType || "page";
       }
     }
 
+    const scheduleState: Partial<FormState> = {};
+    if (this.initialCrawlConfig.schedule) {
+      scheduleState.scheduleType = "cron";
+      scheduleState.scheduleFrequency = getScheduleInterval(
+        this.initialCrawlConfig.schedule
+      );
+      const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
+      scheduleState.scheduleDayOfMonth = nextDate.getDate();
+      scheduleState.scheduleDayOfWeek = nextDate.getDay();
+      const hours = nextDate.getHours();
+      scheduleState.scheduleTime = {
+        hour: hours % 12 || 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+    } else {
+      if (this.configId) {
+        scheduleState.scheduleType = "none";
+      } else {
+        scheduleState.scheduleType = "now";
+      }
+    }
+
     return {
-      jobName: this.initialJobConfig.name,
-      browserProfile: this.initialJobConfig.profileid
-        ? ({ id: this.initialJobConfig.profileid } as Profile)
+      jobName: this.initialCrawlConfig.name,
+      browserProfile: this.initialCrawlConfig.profileid
+        ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
-      scopeType: this.initialJobConfig.config
+      scopeType: this.initialCrawlConfig.config
         .scopeType as FormState["scopeType"],
-      exclusions: this.initialJobConfig.config.exclude,
+      exclusions: this.initialCrawlConfig.config.exclude,
+      includeLinkedPages: Boolean(this.initialCrawlConfig.config.extraHops),
       ...seedState,
+      ...scheduleState,
     };
   }
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlerSetup: msg("Crawler Setup"),
+      crawlSetup: msg("Crawl Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Job Scheduling"),
-      jobInformation: msg("Job Information"),
+      jobScheduling: msg("Crawl Scheduling"),
       confirmSettings: msg("Confirm Settings"),
     };
 
     return html`
-      <header class="lg:ml-48 mb-3 flex justify-between items-baseline">
-        <h3 class="text-lg font-medium">
-          ${tabLabels[this.progressState.activeTab]}
-        </h3>
-        <p class="text-xs text-neutral-500">
-          ${msg(
-            html`Fields marked with
-              <span style="color:var(--sl-input-required-content-color)"
-                >*</span
-              >
-              are required`
-          )}
-        </p>
-      </header>
-
       <form
         name="newJobConfig"
         @reset=${this.onReset}
@@ -315,13 +382,29 @@ export class CrawlConfigEditor extends LiteElement {
           activePanel="newJobConfig-${this.progressState.activeTab}"
           progressPanel="newJobConfig-${this.progressState.currentStep}"
         >
+          <header slot="header" class="flex justify-between items-baseline">
+            <h3>${tabLabels[this.progressState.activeTab]}</h3>
+            <p class="text-xs text-neutral-500 font-normal">
+              ${msg(
+                html`Fields marked with
+                  <span style="color:var(--sl-input-required-content-color)"
+                    >*</span
+                  >
+                  are required`
+              )}
+            </p>
+          </header>
+
           ${orderedTabNames.map((tabName) =>
             this.renderNavItem(tabName, tabLabels[tabName])
           )}
 
-          <btrix-tab-panel name="newJobConfig-crawlerSetup">
+          <btrix-tab-panel name="newJobConfig-crawlSetup">
             ${this.renderPanelContent(
               html`
+                ${this.renderSectionHeading(msg("Crawl Information"))}
+                ${this.renderJobInformation()}
+                ${this.renderSectionHeading(msg("Crawler Settings"))}
                 ${when(this.jobType === "url-list", this.renderUrlListSetup)}
                 ${when(
                   this.jobType === "seed-crawl",
@@ -340,9 +423,6 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-jobScheduling">
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-jobInformation">
-            ${this.renderPanelContent(this.renderJobInformation())}
-          </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-confirmSettings">
             ${this.renderPanelContent(this.renderConfirmSettings(), {
               isLast: true,
@@ -355,46 +435,49 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderNavItem(tabName: StepName, content: TemplateResult | string) {
     const isActive = tabName === this.progressState.activeTab;
+    const isConfirmSettings = tabName === "confirmSettings";
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
-    let icon = html`
-      <sl-icon
-        name="circle"
-        class="inline-block align-middle mr-1 text-base text-neutral-300"
-      ></sl-icon>
-    `;
-    if (isInvalid) {
-      icon = html`
-        <sl-icon
-          name="exclamation-circle"
-          class="inline-block align-middle mr-1 text-base text-danger"
-        ></sl-icon>
-      `;
-    } else if (isActive) {
-      icon = html`
-        <sl-icon
-          library="app"
-          name="pencil-circle-dashed"
-          class="inline-block align-middle mr-1 text-base"
-        ></sl-icon>
-      `;
-    } else if (completed) {
-      icon = html`
-        <sl-icon
-          name="check-circle"
-          class="inline-block align-middle mr-1 text-base text-success"
-        ></sl-icon>
-      `;
+    const iconProps = {
+      name: "circle",
+      library: "default",
+      class: "text-neutral-300",
+    };
+    if (isConfirmSettings) {
+      iconProps.name = "info-circle";
+      iconProps.class = "text-base";
+    } else {
+      if (isInvalid) {
+        iconProps.name = "exclamation-circle";
+        iconProps.class = "text-danger";
+      } else if (isActive) {
+        iconProps.name = "pencil-circle-dashed";
+        iconProps.library = "app";
+        iconProps.class = "text-base";
+      } else if (completed) {
+        iconProps.name = "check-circle";
+        iconProps.class = "text-success";
+      }
     }
+
+    const { enabled } = this.progressState.tabs[tabName];
+    const isEnabled = isConfirmSettings
+      ? this.progressState.tabs.confirmSettings.enabled ||
+        this.progressState.tabs.crawlSetup.completed
+      : enabled;
 
     return html`
       <btrix-tab
         slot="nav"
         name="newJobConfig-${tabName}"
         class="whitespace-nowrap"
-        ?disabled=${!this.progressState.tabs[tabName].enabled}
+        ?disabled=${!isEnabled}
         @click=${this.tabClickHandler(tabName)}
       >
-        ${icon}
+        <sl-icon
+          name=${iconProps.name}
+          library=${iconProps.library}
+          class="inline-block align-middle mr-1 text-base ${iconProps.class}"
+        ></sl-icon>
         <span class="inline-block align-middle whitespace-normal">
           ${content}
         </span>
@@ -407,62 +490,117 @@ export class CrawlConfigEditor extends LiteElement {
     { isFirst = false, isLast = false } = {}
   ) {
     return html`
-      <div class="flex flex-col h-full">
+      <div class="border rounded-lg flex flex-col h-full">
         <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
           ${content}
+          ${when(this.serverError, () =>
+            this.renderErrorAlert(this.serverError!)
+          )}
         </div>
+
         ${this.renderFooter({ isFirst, isLast })}
       </div>
     `;
   }
 
   private renderFooter({ isFirst = false, isLast = false }) {
+    const isConfirmSettingsEnabled =
+      this.progressState.tabs.crawlSetup.completed;
     return html`
       <div class="px-6 py-4 border-t flex justify-between">
         ${isFirst
           ? html`
               <sl-button size="small" type="reset">
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Start Over")}
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${this.configId ? msg("Cancel") : msg("Start Over")}
               </sl-button>
             `
           : html`
               <sl-button size="small" @click=${this.backStep}>
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
               </sl-button>
             `}
-        ${isLast
-          ? html`<sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSubmitting || this.formHasError}
-              ?loading=${this.isSubmitting}
-            >
-              ${this.formState.runNow
-                ? msg("Save & Run Crawl")
-                : msg("Save & Schedule Crawl")}
-            </sl-button>`
-          : html`<sl-button
-              size="small"
-              variant="primary"
-              @click=${this.nextStep}
-            >
-              <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-              ${msg("Next Step")}
-            </sl-button>`}
+        ${when(
+          this.configId,
+          () => html`
+            <div>
+              ${when(
+                !isLast,
+                () => html`
+                  <sl-button class="mr-1" size="small" @click=${this.nextStep}>
+                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                    ${msg("Next")}
+                  </sl-button>
+                `
+              )}
+
+              <sl-button
+                type="submit"
+                size="small"
+                variant="primary"
+                ?disabled=${this.isSubmitting || this.formHasError}
+                ?loading=${this.isSubmitting}
+              >
+                ${msg("Save Changes")}
+              </sl-button>
+            </div>
+          `,
+          () =>
+            isLast
+              ? html`<sl-button
+                  type="submit"
+                  size="small"
+                  variant="primary"
+                  ?disabled=${this.isSubmitting || this.formHasError}
+                  ?loading=${this.isSubmitting}
+                >
+                  ${this.formState.runNow
+                    ? msg("Save & Run Crawl")
+                    : msg("Save & Schedule Crawl")}
+                </sl-button>`
+              : html`
+                  <div>
+                    <sl-button
+                      class="mr-1"
+                      size="small"
+                      variant="primary"
+                      @click=${this.nextStep}
+                    >
+                      <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                      ${msg("Next Step")}
+                    </sl-button>
+                    <sl-button
+                      size="small"
+                      @click=${() => {
+                        if (!isConfirmSettingsEnabled) {
+                          this.nextStep();
+                        } else {
+                          this.updateProgressState({
+                            activeTab: "confirmSettings",
+                            currentStep: "confirmSettings",
+                          });
+                        }
+                      }}
+                    >
+                      <sl-icon
+                        slot="suffix"
+                        name="chevron-double-right"
+                      ></sl-icon>
+                      ${msg("Confirm & Save")}
+                    </sl-button>
+                  </div>
+                `
+        )}
       </div>
     `;
   }
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
-      <h4
-        class="col-span-1 md:col-span-5 text-neutral-500 leading-none py-2 border-b"
-      >
-        ${content}
-      </h4>
+      <btrix-section-heading class="col-span-1 md:col-span-5">
+        <h4>${content}</h4>
+      </btrix-section-heading>
     `;
   }
 
@@ -580,13 +718,13 @@ https://example.com/path`}
         false
       )}
       ${when(
-        this.formState.includeLinkedPages,
+        this.formState.includeLinkedPages || this.jobType === "custom",
         () => html`
           ${this.renderSectionHeading(msg("Page Limits"))}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
-              pageSize="50"
+              pageSize="10"
               editable
               removable
               @on-remove=${this.handleRemoveRegex}
@@ -596,7 +734,7 @@ https://example.com/path`}
               class="w-full mt-1"
               @click=${() =>
                 this.updateFormState({
-                  exclusions: [...(this.formState.exclusions || []), ""],
+                  exclusions: [""],
                 })}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -783,7 +921,7 @@ https://example.net`}
       ${this.renderFormCol(html`
         <btrix-queue-exclusion-table
           .exclusions=${this.formState.exclusions}
-          pageSize="50"
+          pageSize="10"
           editable
           removable
           @on-remove=${this.handleRemoveRegex}
@@ -793,7 +931,7 @@ https://example.net`}
           class="w-full mt-1"
           @click=${() =>
             this.updateFormState({
-              exclusions: [...(this.formState.exclusions || []), ""],
+              exclusions: [""],
             })}
         >
           <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -933,6 +1071,7 @@ https://example.net`}
         >
           <sl-radio value="now">${this.scheduleTypeLabels["now"]}</sl-radio>
           <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
+          <sl-radio value="none">${this.scheduleTypeLabels["none"]}</sl-radio>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -1078,7 +1217,7 @@ https://example.net`}
       ${this.renderFormCol(html`
         <sl-input
           name="jobName"
-          label=${msg("Crawl Name")}
+          label=${msg("Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl config name",
@@ -1103,99 +1242,11 @@ https://example.net`}
 
   private renderConfirmSettings = () => {
     const crawlConfig = this.parseConfig();
-    const exclusions = crawlConfig.config.exclude || [];
     return html`
-      ${this.renderSectionHeading(msg("Crawler Setup"))}
       <div class="col-span-1 md:col-span-5">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${when(this.jobType === "url-list", () =>
-            this.renderConfirmUrlListSettings(crawlConfig)
-          )}
-          ${when(this.jobType === "seed-crawl", () =>
-            this.renderConfirmSeededSettings(crawlConfig)
-          )}
-          ${this.renderSetting(
-            msg("Exclusions"),
-            html`
-              ${when(
-                exclusions.length,
-                () => html`
-                  <btrix-queue-exclusion-table
-                    .exclusions=${exclusions}
-                    label=""
-                  >
-                  </btrix-queue-exclusion-table>
-                `,
-                () => msg("None")
-              )}
-            `,
-            2
-          )}
-          ${this.renderSetting(
-            msg("Crawl Time Limit"),
-            crawlConfig.crawlTimeout
-              ? msg(str`${crawlConfig.crawlTimeout / 60} minute(s)`)
-              : msg("None")
-          )}
-          ${this.renderSetting(msg("Crawler Instances"), crawlConfig.scale)}
-        </dl>
+        <btrix-config-details .crawlConfig=${crawlConfig}>
+        </btrix-config-details>
       </div>
-      ${this.renderSectionHeading(msg("Browser Settings"))}
-      <div class="col-span-1 md:col-span-5">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${this.renderSetting(
-            msg("Browser Profile"),
-            when(
-              crawlConfig.profileid,
-              () => html`<a
-                class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${this.archiveId}/browser-profiles/profile/${crawlConfig.profileid}`}
-                @click=${this.navLink}
-              >
-                ${this.formState.browserProfile!.name}
-              </a>`,
-              () => msg("Default Profile")
-            )
-          )}
-          ${this.renderSetting(
-            msg("Block Ads by Domain"),
-            crawlConfig.config.blockAds
-          )}
-          ${this.renderSetting(
-            msg("Language"),
-            ISO6391.getName(crawlConfig.config.lang!)
-          )}
-          ${this.renderSetting(
-            msg("Page Time Limit"),
-            crawlConfig.config.behaviorTimeout
-              ? msg(str`${crawlConfig.config.behaviorTimeout / 60} minute(s)`)
-              : msg("None")
-          )}
-        </dl>
-      </div>
-      ${this.renderSectionHeading(msg("Job Scheduling"))}
-
-      <div class="col-span-1 md:col-span-5">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${this.renderSetting(
-            msg("Crawl Schedule Type"),
-            this.scheduleTypeLabels[this.formState.scheduleType]
-          )}
-          ${when(this.formState.scheduleType === "cron", () =>
-            this.renderSetting(
-              msg("Schedule"),
-              humanizeSchedule(crawlConfig.schedule)
-            )
-          )}
-        </dl>
-      </div>
-      ${this.renderSectionHeading(msg("Job Information"))}
-      <div class="col-span-1 md:col-span-5">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${this.renderSetting(msg("Job Name"), crawlConfig.name)}
-        </dl>
-      </div>
-      ${when(this.serverError, () => this.renderErrorAlert(this.serverError!))}
       ${when(this.formHasError, () =>
         this.renderErrorAlert(
           msg(
@@ -1206,77 +1257,11 @@ https://example.net`}
     `;
   };
 
-  private renderConfirmUrlListSettings(crawlConfig: CrawlConfigParams) {
-    return html`
-      ${this.renderSetting(
-        msg("List of URLs"),
-        html`
-          <ul>
-            ${crawlConfig.config.seeds.map((url) => html` <li>${url}</li> `)}
-          </ul>
-        `
-      )}
-      ${this.renderSetting(
-        msg("Include Linked Pages"),
-        Boolean(crawlConfig.config.extraHops)
-      )}
-    `;
-  }
-
-  private renderConfirmSeededSettings(crawlConfig: CrawlConfigParams) {
-    return html`
-      ${this.renderSetting(
-        msg("Primary Seed URL"),
-        this.formState.primarySeedUrl
-      )}
-      ${this.renderSetting(
-        msg("Crawl Scope"),
-        this.scopeTypeLabels[this.formState.scopeType]
-      )}
-      ${this.renderSetting(
-        msg("Allowed URL Prefixes"),
-        crawlConfig.config.include?.length
-          ? html`
-              <ul>
-                ${crawlConfig.config.include.map(
-                  (url) =>
-                    staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url)
-                    )}</li>`
-                )}
-              </ul>
-            `
-          : msg("None")
-      )}
-      ${this.renderSetting(
-        msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(crawlConfig.config.extraHops)
-      )}
-      ${this.renderSetting(
-        msg("Max Pages"),
-        crawlConfig.config.limit
-          ? msg(str`${crawlConfig.config.limit} pages`)
-          : msg("Unlimited")
-      )}
-    `;
-  }
-
-  private renderSetting(label: string, value: any, cols = 1) {
-    let content = value;
-
-    if (typeof value === "boolean") {
-      content = value ? msg("Yes") : msg("No");
-    } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-300"
-        >${msg("Not specified")}</span
-      >`;
+  private hasRequiredFields(): Boolean {
+    if (this.jobType === "seed-crawl") {
+      return Boolean(this.formState.jobName && this.formState.primarySeedUrl);
     }
-    return html`
-      <div class="col-span-${cols}">
-        <dt class="mb-0.5 text-xs text-neutral-500">${label}</dt>
-        <dd class="font-monostyle text-neutral-700">${content}</dd>
-      </div>
-    `;
+    return Boolean(this.formState.jobName && this.formState.urlList);
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
@@ -1390,25 +1375,25 @@ https://example.net`}
       e.stopPropagation();
       return;
     }
+    window.location.hash = step;
     this.updateProgressState({ activeTab: step });
   };
 
   private backStep() {
-    const targetTabIdx = stepOrder.indexOf(this.progressState.activeTab!);
+    const targetTabIdx = STEPS.indexOf(this.progressState.activeTab!);
     if (targetTabIdx) {
       this.updateProgressState({
-        activeTab: stepOrder[targetTabIdx - 1] as StepName,
+        activeTab: STEPS[targetTabIdx - 1] as StepName,
       });
     }
   }
 
   private nextStep() {
     const isValid = this.checkCurrentPanelValidity();
-    console.log(isValid);
 
     if (isValid) {
       const { activeTab, tabs, currentStep } = this.progressState;
-      const nextTab = stepOrder[stepOrder.indexOf(activeTab!) + 1] as StepName;
+      const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
 
       const isFirstTimeEnabled = !tabs[nextTab].enabled;
       const nextTabs = { ...tabs };
@@ -1463,7 +1448,7 @@ https://example.net`}
 
     if (
       key === "Enter" &&
-      this.progressState.activeTab !== stepOrder[stepOrder.length - 1]
+      this.progressState.activeTab !== STEPS[STEPS.length - 1]
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
@@ -1481,8 +1466,6 @@ https://example.net`}
 
     const config = this.parseConfig();
 
-    console.log(config);
-
     this.isSubmitting = true;
 
     try {
@@ -1496,11 +1479,16 @@ https://example.net`}
       );
 
       const crawlId = data.run_now_job;
+      let message = msg("Crawl config created.");
+
+      if (crawlId) {
+        message = msg("Crawl started with new template.");
+      } else if (this.configId) {
+        message = msg("Crawl config updated.");
+      }
 
       this.notify({
-        message: crawlId
-          ? msg("Crawl started with new template.")
-          : msg("Crawl config created."),
+        message,
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
@@ -1531,12 +1519,7 @@ https://example.net`}
   }
 
   private async onReset() {
-    this.progressState = getDefaultProgressState();
-    this.formState = {
-      ...getDefaultFormState(),
-      lang: this.getInitialLang(),
-      ...this.getInitialFormState(),
-    };
+    this.initializeEditor();
   }
 
   /**
@@ -1579,9 +1562,9 @@ https://example.net`}
         ? this.formState.crawlTimeoutMinutes * 60
         : 0,
       config: {
-        ...(this.jobType === "url-list"
-          ? this.parseUrlListConfig()
-          : this.parseSeededConfig()),
+        ...(this.jobType === "seed-crawl"
+          ? this.parseSeededConfig()
+          : this.parseUrlListConfig()),
         behaviorTimeout: this.formState.pageTimeoutMinutes
           ? this.formState.pageTimeoutMinutes * 60
           : 0,
@@ -1592,6 +1575,10 @@ https://example.net`}
         exclude: trimExclusions(this.formState.exclusions),
       },
     };
+
+    if (this.configId) {
+      config.oldId = this.configId;
+    }
 
     return config;
   }
@@ -1649,13 +1636,19 @@ https://example.net`}
   }
 
   private updateProgressState(
-    nextState: Partial<ProgressState>,
+    nextState: {
+      activeTab?: ProgressState["activeTab"];
+      currentStep?: ProgressState["currentStep"];
+      tabs?: {
+        [K in StepName]?: Partial<TabState>;
+      };
+    },
     shallowMerge = false
   ) {
     if (shallowMerge) {
       this.progressState = {
         ...this.progressState,
-        ...nextState,
+        ...(nextState as Partial<ProgressState>),
       };
     } else {
       this.progressState = mergeDeep(this.progressState, nextState);

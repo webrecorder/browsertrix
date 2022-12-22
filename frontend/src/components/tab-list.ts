@@ -3,8 +3,9 @@ import { property, queryAsync } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Match witch tailwind lg
-const SCREEN_LG = 1124;
+// Match witch tailwind 4xl max width
+// https://tailwindcss.com/docs/max-width
+const SCREEN_LG = 896;
 
 /**
  * Tab list
@@ -120,26 +121,36 @@ export class TabList extends LitElement {
 
     .container {
       display: grid;
+      grid-template-areas:
+        "menu"
+        "header"
+        "main";
       grid-template-columns: 1fr;
       grid-gap: 1rem;
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
       .container {
-        grid-template-columns: 11rem 1fr;
+        grid-template-areas:
+          ". header"
+          "menu main";
+        grid-template-columns: auto ${SCREEN_LG}px;
       }
     }
 
-    .navWrapper,
-    .content {
-      grid-column: auto;
-      grid-row: auto;
+    .navWrapper {
+      grid-area: menu;
+    }
+
+    .header {
+      grid-area: header;
+      font-size: var(--sl-font-size-large);
+      font-weight: 500;
+      line-height: 1;
     }
 
     .content {
-      border: var(--sl-panel-border-width) solid var(--sl-panel-border-color);
-      background-color: var(--sl-panel-background-color);
-      border-radius: var(--sl-border-radius-large);
+      grid-area: main;
     }
 
     .nav {
@@ -148,9 +159,13 @@ export class TabList extends LitElement {
 
     ul {
       display: flex;
-      margin: 0 0 0 var(--track-width);
+      margin: 0;
       list-style: none;
       padding: 0;
+    }
+
+    .progressable ul {
+      margin-left: var(--track-width);
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
@@ -179,9 +194,9 @@ export class TabList extends LitElement {
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
-      ul,
-      .track,
-      .indicator {
+      .progressable ul,
+      .progressable .track,
+      .progressable .indicator {
         display: block;
       }
     }
@@ -238,6 +253,7 @@ export class TabList extends LitElement {
     return html`
       <div class="container">
         <div class="navWrapper">${this.renderNav()}</div>
+        <div class="header"><slot name="header"></slot></div>
         <div class="content">
           <slot></slot>
         </div>
@@ -251,7 +267,7 @@ export class TabList extends LitElement {
         @sl-resize=${() =>
           this.repositionIndicator(this.getTab(this.progressPanel))}
       >
-        <div class="nav">
+        <div class="nav ${this.progressPanel ? " progressable" : ""}">
           <div class="track" role="presentation">
             <div class="indicator" role="presentation"></div>
           </div>
@@ -267,7 +283,7 @@ export class TabList extends LitElement {
   private getPanels(): TabPanelElement[] {
     const slotElems = (
       this.renderRoot!.querySelector(
-        "slot:not([name='nav'])"
+        ".content slot:not([name])"
       ) as HTMLSlotElement
     ).assignedElements();
     return ([...slotElems] as TabPanelElement[]).filter(

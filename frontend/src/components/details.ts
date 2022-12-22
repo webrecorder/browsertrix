@@ -30,7 +30,7 @@ export class Details extends LitElement {
     }
 
     summary {
-      color: var(--sl-input-label-color);
+      color: var(--sl-color-neutral-500);
       margin-bottom: var(--sl-spacing-2x-small);
       line-height: 1;
       display: flex;

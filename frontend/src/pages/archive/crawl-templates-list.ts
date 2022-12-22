@@ -11,8 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { InitialCrawlTemplate } from "./crawl-templates-new";
-import type { CrawlConfig } from "./types";
+import type { CrawlConfig, InitialCrawlConfig } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -430,8 +429,9 @@ export class CrawlTemplatesList extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.showEditDialog = true;
-            this.selectedTemplateForEdit = t;
+            this.navTo(
+              `/archives/${this.archiveId}/crawl-templates/config/${t.id}?edit`
+            );
           }}
         >
           <sl-icon
@@ -439,7 +439,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="pencil-square"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit crawl schedule")}</span
+            >${msg("Edit crawl config")}</span
           >
         </li>
       `);
@@ -575,11 +575,12 @@ export class CrawlTemplatesList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(template: CrawlConfig) {
-    const crawlTemplate: InitialCrawlTemplate = {
+    const crawlTemplate: InitialCrawlConfig = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
       jobType: template.jobType,
+      schedule: template.schedule,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {

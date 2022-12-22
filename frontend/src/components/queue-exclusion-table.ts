@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 
@@ -45,8 +46,11 @@ export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })
   exclusions?: SeedConfig["exclude"];
 
+  // TODO switch to LitElement & slotted label
   @property({ type: String })
   label?: string;
+  @property({ type: String })
+  labelClassName?: string;
 
   @property({ type: Number })
   pageSize: number = 5;
@@ -122,7 +126,9 @@ export class QueueExclusionTable extends LiteElement {
         }
       </style>
       <div class="flex items-center justify-between mb-2 leading-tight">
-        <div>${this.label ?? msg("Exclusions")}</div>
+        <div class=${ifDefined(this.labelClassName)}>
+          ${this.label ?? msg("Exclusions")}
+        </div>
         ${this.total && this.total > this.pageSize
           ? html`<btrix-pagination
               page=${this.page}

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 /**
  * Button with single icon.
@@ -19,6 +20,12 @@ export class IconButton extends LitElement {
 
   @property({ type: String })
   variant: "primary" | "danger" | "neutral" = "neutral";
+
+  @property({ type: Boolean })
+  custom? = false;
+
+  @property({ type: Boolean })
+  raised = false;
 
   @property({ type: Boolean })
   disabled: boolean = false;
@@ -104,7 +111,10 @@ export class IconButton extends LitElement {
     >
       ${this.loading
         ? html`<sl-spinner></sl-spinner>`
-        : html`<sl-icon name=${this.name}></sl-icon>`}
+        : html`<sl-icon
+            name=${this.name}
+            library=${ifDefined(this.custom ? "app" : undefined)}
+          ></sl-icon>`}
     </button>`;
   }
 

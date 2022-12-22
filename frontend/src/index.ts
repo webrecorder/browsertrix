@@ -462,7 +462,7 @@ export class App extends LiteElement {
           crawlId=${this.viewState.params.crawlId}
           ?isAddingMember=${this.viewState.route === "archiveAddMember"}
           ?isNewResourceTab=${this.viewState.route === "archiveNewResourceTab"}
-          ?isEditing=${Boolean(this.viewState.params.edit)}
+          ?isEditing=${"edit" in this.viewState.params}
         ></btrix-archive>`;
 
       case "accountSettings":

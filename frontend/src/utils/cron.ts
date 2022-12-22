@@ -1,6 +1,8 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
+export const getNextDate = parseCron.nextDate;
+
 export type ScheduleInterval = "daily" | "weekly" | "monthly";
 
 /**
@@ -21,12 +23,25 @@ export function getScheduleInterval(
 
 /**
  * Get human-friendly date from cron expression
- * Example: "Every day at 9:30 AM CDT"
+ * Example: "Monday, December 12, 2022 at 12:00 AM PST"
  **/
-export function humanizeNextDate(schedule: string): string {
+export function humanizeNextDate(
+  schedule: string,
+  options: { length?: "short" } = {}
+): string {
   const nextDate = parseCron.nextDate(schedule);
 
   if (!nextDate) return "";
+
+  if (options.length === "short") {
+    return nextDate.toLocaleString(undefined, {
+      month: "numeric",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    });
+  }
 
   return nextDate.toLocaleString(undefined, {
     weekday: "long",

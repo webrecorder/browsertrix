@@ -1,5 +1,6 @@
 import type { TemplateResult, HTMLTemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
@@ -9,13 +10,16 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlConfig } from "./types";
 
-type SectionName =
-  | "overview"
-  | "watch"
-  | "replay"
-  | "files"
-  | "logs"
-  | "exclusions";
+const SECTIONS = [
+  "overview",
+  "watch",
+  "replay",
+  "files",
+  "logs",
+  "config",
+  "exclusions",
+] as const;
+type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -42,6 +46,9 @@ export class CrawlDetail extends LiteElement {
   showArchiveLink = false;
 
   @property({ type: String })
+  archiveId?: string;
+
+  @property({ type: String })
   crawlId?: string;
 
   @state()
@@ -51,7 +58,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawlTemplate?: CrawlConfig;
+  private crawlConfig?: CrawlConfig;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -120,11 +127,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (
-      ["overview", "watch", "replay", "files", "logs", "exclusions"].includes(
-        hash
-      )
-    ) {
+    if (SECTIONS.includes(hash as any)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -160,6 +163,10 @@ export class CrawlDetail extends LiteElement {
         break;
       case "exclusions":
         sectionContent = this.renderExclusions();
+        break;
+
+      case "config":
+        sectionContent = this.renderConfig();
         break;
       default:
         sectionContent = this.renderOverview();
@@ -253,6 +260,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
+          ${renderNavItem({ section: "config", label: msg("Config") })}
           ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
         </ul>
       </nav>
@@ -325,7 +333,7 @@ export class CrawlDetail extends LiteElement {
     };
 
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
+      <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${this.isActive
             ? html`<sl-icon name="three-dots"></sl-icon>`
@@ -336,28 +344,46 @@ export class CrawlDetail extends LiteElement {
           class="text-sm text-neutral-800 bg-white whitespace-nowrap"
           role="menu"
         >
-          ${!this.isActive && this.crawlTemplate && !this.crawlTemplate.inactive
-            ? html`
-                <li
-                  class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                  role="menuitem"
-                  @click=${(e: any) => {
-                    this.runNow();
-                    e.target.closest("sl-dropdown").hide();
-                  }}
-                >
-                  <sl-icon
-                    class="inline-block align-middle"
-                    name="arrow-clockwise"
-                  ></sl-icon>
-                  <span class="inline-block align-middle">
-                    ${msg("Re-run crawl")}
-                  </span>
-                </li>
-                <hr />
-              `
-            : ""}
-
+          ${when(
+            this.crawlConfig && !this.crawlConfig.inactive,
+            () => html`
+              ${when(
+                !this.isActive,
+                () => html`
+                  <li
+                    class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      this.runNow();
+                      e.target.closest("sl-dropdown").hide();
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="arrow-clockwise"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${msg("Re-run crawl")}
+                    </span>
+                  </li>
+                `
+              )}
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${() => {
+                  this.navTo(
+                    `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}?edit`
+                  );
+                }}
+              >
+                <span class="inline-block align-middle">
+                  ${msg("Edit Crawl Config")}
+                </span>
+              </li>
+              <hr />
+            `
+          )}
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
@@ -377,18 +403,6 @@ export class CrawlDetail extends LiteElement {
             }}
           >
             ${msg("Copy Crawl Config ID")}
-          </li>
-
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${() => {
-              this.navTo(
-                `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}`
-              );
-            }}
-          >
-            ${msg("View Crawl Config")}
           </li>
         </ul>
       </sl-dropdown>
@@ -549,7 +563,7 @@ export class CrawlDetail extends LiteElement {
       <btrix-exclusion-editor
         archiveId=${ifDefined(this.crawl?.aid)}
         crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawlTemplate?.config}
+        .config=${this.crawlConfig?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
@@ -669,33 +683,6 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl Config")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <a
-                    class="font-medium text-neutral-700 hover:text-neutral-900"
-                    href=${`/archives/${this.crawl.aid}/crawl-templates/config/${this.crawlTemplateId}`}
-                    @click=${this.navLink}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle"
-                      name="link-45deg"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${this.crawl.configName}
-                    </span>
-                    ${this.crawlTemplate?.inactive
-                      ? html`<sl-tag variant="warning" size="small"
-                          >${msg("Inactive")}</sl-tag
-                        >`
-                      : ""}
-                  </a>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
           <dd class="truncate">
             ${this.crawl
@@ -781,6 +768,15 @@ export class CrawlDetail extends LiteElement {
 
   private renderLogs() {
     return html`TODO`;
+  }
+
+  private renderConfig() {
+    if (!this.crawlConfig) return "";
+    return html`
+      <btrix-config-details
+        .crawlConfig=${this.crawlConfig}
+      ></btrix-config-details>
+    `;
   }
 
   private renderEditScale() {
@@ -896,7 +892,7 @@ export class CrawlDetail extends LiteElement {
    */
   private async fetchCrawlTemplate(): Promise<void> {
     try {
-      this.crawlTemplate = await this.getCrawlTemplate();
+      this.crawlConfig = await this.getCrawlTemplate();
     } catch {
       // Fail silently since page will mostly still function
     }

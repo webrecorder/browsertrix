@@ -6,23 +6,21 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { InitialJobConfig } from "./crawl-config-editor";
-import type { JobType } from "./types";
+import type { JobType, InitialCrawlConfig } from "./types";
 import "./crawl-config-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
-export type InitialCrawlTemplate = InitialJobConfig;
-
 const defaultValue = {
   name: "",
   profileid: null,
+  schedule: "",
   config: {
     seeds: [],
     scopeType: "prefix",
     exclude: [""],
   },
-} as InitialJobConfig;
+} as InitialCrawlConfig;
 
 /**
  * Usage:
@@ -41,11 +39,11 @@ export class CrawlTemplatesNew extends LiteElement {
   // Use custom property accessor to prevent
   // overriding default crawl config values
   @property({ type: Object })
-  get initialCrawlTemplate(): InitialJobConfig {
+  get initialCrawlTemplate(): InitialCrawlConfig {
     return this._initialCrawlTemplate;
   }
-  private _initialCrawlTemplate: InitialJobConfig = defaultValue;
-  set initialCrawlTemplate(val: Partial<InitialJobConfig>) {
+  private _initialCrawlTemplate: InitialCrawlConfig = defaultValue;
+  set initialCrawlTemplate(val: Partial<InitialCrawlConfig>) {
     this._initialCrawlTemplate = mergeDeep(this._initialCrawlTemplate, val);
   }
 
@@ -88,7 +86,7 @@ export class CrawlTemplatesNew extends LiteElement {
           ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-crawl-config-editor
-          .initialJobConfig=${this.initialCrawlTemplate}
+          .initialCrawlConfig=${this.initialCrawlTemplate}
           jobType=${jobType}
           archiveId=${this.archiveId}
           .authState=${this.authState}

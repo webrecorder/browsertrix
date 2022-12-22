@@ -11,8 +11,7 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlConfig } from "./types";
-import type { InitialCrawlTemplate } from "./crawl-templates-new";
+import type { Crawl, CrawlConfig, InitialCrawlConfig } from "./types";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -26,7 +25,7 @@ const sortableFieldLabels = {
   finished_desc: msg("Recently Updated"),
   finished_asc: msg("Oldest Finished"),
   state: msg("Status"),
-  configName: msg("Crawl Config Name"),
+  configName: msg("Crawl Name"),
   cid: msg("Crawl Config ID"),
   fileSize_asc: msg("Smallest Files"),
   fileSize_desc: msg("Largest Files"),
@@ -272,7 +271,7 @@ export class CrawlsList extends LiteElement {
           </div>
         </div>
         <div class="md:order-last col-span-1 flex justify-end">
-          <sl-dropdown @click=${(e: Event) => e.preventDefault()}>
+          <sl-dropdown @click=${(e: Event) => e.preventDefault()} hoist>
             <sl-icon-button
               slot="trigger"
               name="three-dots"
@@ -363,9 +362,7 @@ export class CrawlsList extends LiteElement {
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
                 @click=${(e: any) => {
-                  this.navTo(
-                    `/archives/${crawl.aid}/crawl-templates/config/${crawl.cid}`
-                  );
+                  this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}#config`);
                 }}
               >
                 ${msg("View Crawl Config")}
@@ -703,11 +700,12 @@ export class CrawlsList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(crawl: Crawl, template: CrawlConfig) {
-    const crawlTemplate: InitialCrawlTemplate = {
+    const crawlTemplate: InitialCrawlConfig = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
       jobType: template.jobType,
+      schedule: template.schedule,
     };
 
     this.navTo(`/archives/${crawl.aid}/crawl-templates/new`, {

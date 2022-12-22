@@ -81,6 +81,20 @@ import("./tab-list").then(({ Tab, TabList, TabPanel }) => {
   customElements.define("btrix-tab-list", TabList);
   customElements.define("btrix-tab-panel", TabPanel);
 });
+import("./desc-list").then(({ DescListItem, DescList }) => {
+  customElements.define("btrix-desc-list-item", DescListItem);
+  customElements.define("btrix-desc-list", DescList);
+});
+import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
+  customElements.define("btrix-crawl-list-item", CrawlListItem);
+  customElements.define("btrix-crawl-list", CrawlList);
+});
+import("./section-heading").then(({ SectionHeading }) => {
+  customElements.define("btrix-section-heading", SectionHeading);
+});
+import("./config-details").then(({ ConfigDetails }) => {
+  customElements.define("btrix-config-details", ConfigDetails);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
