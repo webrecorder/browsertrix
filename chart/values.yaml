@@ -225,3 +225,9 @@ signer_limits_memory: "96Mi"
 #   annotations:
 #     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 #     helm.sh/resource-policy: keep
+
+# Admin services (see Chart.yaml's dependencies)
+# note: see `chart/examples/local-logging.yaml`
+addons:
+  admin:
+    logging: false

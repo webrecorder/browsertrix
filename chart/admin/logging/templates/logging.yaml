@@ -1,0 +1,8 @@
+{{ if .Values.logging.enabled }}
+
+{{ include "es.install" . }}
+{{ include "kb.install" . }}
+{{ include "ingress.install" . }}
+{{ include "fluentd.install" . }}
+
+{{ end }}

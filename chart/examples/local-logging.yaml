@@ -1,0 +1,23 @@
+ingress:
+  host: "myhostname"
+  scheme: "https"
+  tls: false
+
+ingress_class: "nginx"
+
+addons:
+  admin:
+    logging: true
+
+btrix-admin-logging:
+  logging:
+    enabled: true
+    dedicatedNode:
+      enabled: false
+    ingress:
+      tls: false
+      host: "myhostname"
+    elasticsearch:
+      local: true
+    kibana:
+      local: true

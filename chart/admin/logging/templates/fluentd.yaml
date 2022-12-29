@@ -1,0 +1,138 @@
+{{- define "fluentd.install" -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluentd
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: fluentd
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      - key: "nodeType"
+        operator: "Equal"
+        value: "crawling"
+        effect: "NoSchedule"
+      containers:
+      - name: fluentd
+        image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+        env:
+          - name: K8S_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name:  FLUENT_ELASTICSEARCH_HOST
+            value: "btrixlog-es-http.{{ .Values.logging.namespace | default "btrix-admin" }}.svc.cluster.local"
+          - name:  FLUENT_ELASTICSEARCH_PORT
+            value: "9200"
+          - name: FLUENT_ELASTICSEARCH_SCHEME
+            value: "https"
+          # Option to configure elasticsearch plugin with self signed certs
+          # ================================================================
+          - name: FLUENT_ELASTICSEARCH_SSL_VERIFY
+            value: "false"
+          # Option to configure elasticsearch plugin with tls
+          # ================================================================
+          - name: FLUENT_ELASTICSEARCH_SSL_VERSION
+            value: "TLSv1_2"
+          - name: FLUENTD_SYSTEMD_CONF
+            value: 'disable'
+          # X-Pack Authentication
+          # =====================
+          - name: FLUENT_ELASTICSEARCH_USER
+            value: "elastic"
+          - name: FLUENT_ELASTICSEARCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: btrixlog-es-elastic-user
+                key: elastic
+          # =====================
+          - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
+            value: /var/log/containers/fluent*
+          # - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
+          #   value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+        resources:
+          limits:
+            cpu: {{ .Values.logging.fluentd.cpu | default "60m" }}
+            memory: {{ .Values.logging.fluentd.mem | default "200Mi" }}
+          requests:
+            cpu: {{ .Values.logging.fluentd.cpu | default "60m" }}
+            memory: {{ .Values.logging.fluentd.mem | default "200Mi" }}
+        volumeMounts:
+        - name: varlog
+          mountPath: {{ .Values.logging.fluentd.logVar | default "/var/log" }}
+        # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+        - name: dockercontainerlogdirectory
+          mountPath: {{ .Values.logging.fluentd.logPathContainers | default "/var/lib/docker/containers" }}
+          readOnly: true
+        # When actual pod logs in /var/log/pods, the following lines should be used.
+        # - name: dockercontainerlogdirectory
+        #   mountPath: /var/log/pods
+        #   readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: {{ .Values.logging.fluentd.logVar | default "/var/log" }}
+      # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+      - name: dockercontainerlogdirectory
+        hostPath:
+          path: {{ .Values.logging.fluentd.logPathContainers | default "/var/lib/docker/containers" }}
+      # When actual pod logs in /var/log/pods, the following lines should be used.
+      # - name: dockercontainerlogdirectory
+      #   hostPath:
+      #     path: /var/log/pods
+{{- end -}}
