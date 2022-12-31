@@ -14,8 +14,13 @@
   # Install pre-requisites (RedHat)
   - name: microk8s | enable epel-release (RedHat)
     ansible.builtin.dnf:
-      name: git
+      name: "{{ item }}"
       state: present
+    loop:
+      - git
+      - epel-release
+      - python3
+      - python3-pip
     become: true
     when:
       - ansible_os_family == "RedHat"
@@ -23,6 +28,20 @@
       - microk8s
       - microk8s.dependencies
       - microk8s.dependencies.apt
+
+  - name: microk8s | set permissive selinux (RedHat)
+    ansible.builtin.command: /usr/sbin/setenforce 0
+    when:
+      - ansible_os_family == "RedHat"
+    become: true
+
+  - name: microk8s | allow permissive to persist (RedHat)
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+    when:
+      - ansible_os_family == "RedHat"
+    become: true
 
   # ===========================================
   # Install microk8s
@@ -37,18 +56,6 @@
       cache_valid_time: "{{ microk8s_cache_valid_time }}"
     when:
       - ansible_os_family == "Debian"
-    tags:
-      - microk8s
-      - microk8s.dependencies
-      - microk8s.dependencies.apt
-
-  - name: microk8s | enable epel-release (RedHat)
-    ansible.builtin.dnf:
-      name: epel-release
-      state: latest
-    become: true
-    when:
-      - ansible_os_family == "RedHat"
     tags:
       - microk8s
       - microk8s.dependencies
@@ -112,6 +119,31 @@
       - microk8s
       - microk8s.dependencies
       - microk8s.dependencies.services
+
+  - name: microk8s | create new snap file (RedHat)
+    ansible.builtin.file:
+      path: /etc/profile.d/snap.sh
+      state: touch
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | create new path (RedHat)
+    ansible.builtin.set_fact:
+      snap_path: "export PATH=$PATH:/var/lib/snapd/snap/bin"
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | create config for file (RedHat)
+    ansible.builtin.copy:
+      content: "{{ snap_path }}"
+      dest: /etc/profile.d/snap.sh
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | source environment (RedHat)
+    ansible.builtin.shell: source /etc/profile.d/snap.sh
+    when:
+      - ansible_os_family == "RedHat"
 
   - name: microk8s | Install microk8s
     community.general.snap:
@@ -322,7 +354,7 @@
     tags:
       - helm_upgrade
 
-  - name: microk8s deploy | helm | deploy btrix
+  - name: microk8s deploy | helm | deploy btrix (Debian)
     ansible.builtin.command: helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
     args:
       chdir: "{{ browsertrix_cloud_home }}"
@@ -330,6 +362,21 @@
     become: true
     become_user: "{{ microk8s_user }}"
     changed_when: helm_result.rc == 0
+    when:
+      - ansible_os_family == "Debian"
+    tags:
+      - helm_upgrade
+
+  - name: microk8s deploy | helm | deploy btrix (RedHat)
+    ansible.builtin.command: /var/lib/snapd/snap/bin/helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
+    args:
+      chdir: "{{ browsertrix_cloud_home }}"
+    register: helm_result
+    become: true
+    become_user: "{{ microk8s_user }}"
+    changed_when: helm_result.rc == 0
+    when:
+      - ansible_os_family == "RedHat"
     tags:
       - helm_upgrade
 
