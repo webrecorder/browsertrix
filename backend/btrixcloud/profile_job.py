@@ -3,6 +3,7 @@
 import os
 import signal
 import asyncio
+import secrets
 
 from abc import ABC, abstractmethod
 
@@ -23,6 +24,7 @@ class ProfileJob(ABC):
             "storage_path": os.environ.get("STORE_PATH") or "",
             "url": os.environ.get("START_URL"),
             "profile_filename": os.environ.get("PROFILE_PATH") or "",
+            "vnc_password": secrets.token_hex(16),
         }
 
         self.idle_timeout = int(os.environ["IDLE_TIMEOUT"])

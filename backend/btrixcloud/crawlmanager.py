@@ -3,12 +3,12 @@
 import os
 import asyncio
 import datetime
+import secrets
 
 from abc import ABC, abstractmethod
 
 from fastapi.templating import Jinja2Templates
 
-from .utils import random_suffix
 from .db import resolve_db_url
 
 
@@ -52,7 +52,7 @@ class BaseCrawlManager(ABC):
 
         await self.check_storage(storage_name)
 
-        browserid = f"prf-{random_suffix()}"
+        browserid = f"prf-{secrets.token_hex(5)}"
 
         params = {
             "id": browserid,
@@ -63,6 +63,7 @@ class BaseCrawlManager(ABC):
             "storage_path": storage_path or "",
             "baseprofile": baseprofile or "",
             "profile_path": profile_path,
+            "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "env": os.environ,
         }

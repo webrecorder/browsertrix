@@ -31,7 +31,7 @@ export class ProfileBrowser extends LiteElement {
   static SIDE_BAR_WIDTH = 288;
 
   /** Profile creation only works in Chromium-based browsers */
-  static isBrowserCompatible = Boolean((window as any).chrome);
+  static isBrowserCompatible = true;//Boolean((window as any).chrome);
 
   @property({ type: Object })
   authState!: AuthState;

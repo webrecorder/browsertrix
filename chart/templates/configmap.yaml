@@ -47,6 +47,8 @@ data:
 
   WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
 
+  IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
+
 
 ---
 apiVersion: v1

@@ -35,7 +35,7 @@ export class BrowserProfilesList extends LiteElement {
   private isSubmitting = false;
 
   /** Profile creation only works in Chromium-based browsers */
-  private isBrowserCompatible = Boolean((window as any).chrome);
+  private isBrowserCompatible = true;//Boolean((window as any).chrome);
 
   firstUpdated() {
     if (this.showCreateDialog) {

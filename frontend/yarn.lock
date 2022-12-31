@@ -206,6 +206,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@novnc/novnc@^1.4.0-beta":
+  version "1.4.0-beta"
+  resolved "https://registry.yarnpkg.com/@novnc/novnc/-/novnc-1.4.0-beta.tgz#a9aedc3f0274863dcfd0d382c43615e912f7c006"
+  integrity sha512-iLwlvPucpqZ14yZHIrW6bxeC1Aynd5hNhbe9iSEYTOPtOicpVkbwj5Mpkmyw9rSqYoqwLKerV7OJ8afUg1Yq0g==
+
 "@open-wc/chai-dom-equals@^0.12.36":
   version "0.12.36"
   resolved "https://registry.yarnpkg.com/@open-wc/chai-dom-equals/-/chai-dom-equals-0.12.36.tgz#ed0eb56b9e98c4d7f7280facce6215654aae9f4c"

@@ -1,8 +1,8 @@
 const { merge } = require("webpack-merge");
 
-const common = require("./webpack.config.js");
+const [main, vnc] = require("./webpack.config.js");
 
-module.exports = merge(common, {
+module.exports = [merge(main, {
   mode: "production",
   devtool: "source-map",
 
@@ -14,4 +14,7 @@ module.exports = merge(common, {
       chunks: "all",
     },
   },
-});
+}), {
+  ...vnc,
+  mode: "production"
+}];
