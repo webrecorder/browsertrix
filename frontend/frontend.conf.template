@@ -64,7 +64,8 @@ server {
 
     # redirect to bundled build of novnc
     location ~* ^/browser/([^/]+)/core/rfb.js$ {
-      return 308 $scheme://$http_host/js/novnc.js;
+      absolute_redirect off;
+      return 308 /js/novnc.js;
     }
 
     location ~* ^/browser/([^/]+)/ws$ {
