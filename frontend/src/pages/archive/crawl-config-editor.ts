@@ -313,46 +313,47 @@ export class CrawlConfigEditor extends LiteElement {
 
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialCrawlConfig) return {};
-    const seedState: Partial<FormState> = {};
+    const formState: Partial<FormState> = {};
     const { seeds, scopeType } = this.initialCrawlConfig.config;
     if (this.initialCrawlConfig.jobType === "seed-crawl") {
-      seedState.primarySeedUrl =
+      formState.primarySeedUrl =
         typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
     } else {
       // Treat "custom" like URL list
-      seedState.urlList = seeds
+      formState.urlList = seeds
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
       if (this.initialCrawlConfig.jobType === "custom") {
-        seedState.scopeType = scopeType || "page";
+        formState.scopeType = scopeType || "page";
       }
     }
 
-    const scheduleState: Partial<FormState> = {};
     if (this.initialCrawlConfig.schedule) {
-      scheduleState.scheduleType = "cron";
-      scheduleState.scheduleFrequency = getScheduleInterval(
+      formState.scheduleType = "cron";
+      formState.scheduleFrequency = getScheduleInterval(
         this.initialCrawlConfig.schedule
       );
       const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
-      scheduleState.scheduleDayOfMonth = nextDate.getDate();
-      scheduleState.scheduleDayOfWeek = nextDate.getDay();
+      formState.scheduleDayOfMonth = nextDate.getDate();
+      formState.scheduleDayOfWeek = nextDate.getDay();
       const hours = nextDate.getHours();
-      scheduleState.scheduleTime = {
+      formState.scheduleTime = {
         hour: hours % 12 || 12,
         minute: nextDate.getMinutes(),
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
       if (this.configId) {
-        scheduleState.scheduleType = "none";
+        formState.scheduleType = "none";
       } else {
-        scheduleState.scheduleType = "now";
+        formState.scheduleType = "now";
       }
     }
 
-    // TODO tags
+    if (this.initialCrawlConfig.tags?.length) {
+      formState.tags = this.initialCrawlConfig.tags;
+    }
 
     return {
       jobName: this.initialCrawlConfig.name,
@@ -363,8 +364,7 @@ export class CrawlConfigEditor extends LiteElement {
         .scopeType as FormState["scopeType"],
       exclusions: this.initialCrawlConfig.config.exclude,
       includeLinkedPages: Boolean(this.initialCrawlConfig.config.extraHops),
-      ...seedState,
-      ...scheduleState,
+      ...formState,
     };
   }
 

@@ -61,12 +61,12 @@ export type CrawlConfigParams = {
   profileid: string | null;
   config: SeedConfig;
   crawlTimeout: number | null;
-  tags?: string[]; // TODO tags type
+  tags?: string[];
 };
 
 export type InitialCrawlConfig = Pick<
   CrawlConfigParams,
-  "name" | "profileid" | "schedule"
+  "name" | "profileid" | "schedule" | "tags"
 > & {
   jobType?: JobType;
   config: Pick<
