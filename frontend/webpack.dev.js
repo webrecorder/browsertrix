@@ -1,7 +1,7 @@
 const path = require("path");
 const { merge } = require("webpack-merge");
 
-const common = require("./webpack.config.js");
+const [main, vnc] = require("./webpack.config.js");
 
 // for testing: for prod, the Dockerfile should have the official prod version used
 const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
@@ -19,47 +19,53 @@ const shoelaceAssetsSrcPath = path.resolve(
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
 
-module.exports = merge(common, {
-  devServer: {
-    watchFiles: ["src/*.js"],
-    open: true,
-    compress: true,
-    hot: true,
-    static: [
-      {
-        directory: shoelaceAssetsSrcPath,
-        publicPath: "/" + shoelaceAssetsPublicPath,
-      },
-      {
-        directory: path.join(__dirname),
-        //publicPath: "/",
-        watch: true,
-      },
-    ],
-    historyApiFallback: true,
-    proxy: {
-      "/api": {
-        target: devBackendUrl.href,
-        headers: {
-          Host: devBackendUrl.host,
+module.exports = [
+  merge(main, {
+    devServer: {
+      watchFiles: ["src/*.js"],
+      open: true,
+      compress: true,
+      hot: true,
+      static: [
+        {
+          directory: shoelaceAssetsSrcPath,
+          publicPath: "/" + shoelaceAssetsPublicPath,
         },
-        ws: true,
-      },
+        {
+          directory: path.join(__dirname),
+          //publicPath: "/",
+          watch: true,
+        },
+      ],
+      historyApiFallback: true,
+      proxy: {
+        "/api": {
+          target: devBackendUrl.href,
+          headers: {
+            Host: devBackendUrl.host,
+          },
+          ws: true,
+        },
 
-      "/data": {
-        target: devBackendUrl.href,
-        headers: {
-          Host: devBackendUrl.host,
+        "/data": {
+          target: devBackendUrl.href,
+          headers: {
+            Host: devBackendUrl.host,
+          },
         },
       },
+      // Serve replay service worker file
+      onBeforeSetupMiddleware: (server) => {
+        server.app.get("/replay/sw.js", (req, res) => {
+          res.set("Content-Type", "application/javascript");
+          res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
+        });
+      },
+      port: 9870,
     },
-    // Serve replay service worker file
-    onBeforeSetupMiddleware: (server) => {
-      server.app.get("/replay/sw.js", (req, res) => {
-        res.set("Content-Type", "application/javascript");
-        res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
-      });
-    },
-    port: 9870,
+  }),
+  {
+    ...vnc,
+    mode: "production",
   },
-});
+];
