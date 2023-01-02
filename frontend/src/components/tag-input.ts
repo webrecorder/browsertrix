@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlInput, SlMenu } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
+import debounce from "lodash/fp/debounce";
 
 export type Tags = string[];
 export type TagsChangeEvent = CustomEvent<{
@@ -122,6 +123,9 @@ export class TagInput extends LitElement {
   @state()
   private dropdownIsOpen?: boolean;
 
+  @state()
+  private tagOptions: Tags = [];
+
   @query("#input")
   private input?: HTMLInputElement;
 
@@ -176,6 +180,7 @@ export class TagInput extends LitElement {
               @focus=${this.onFocus}
               @blur=${this.onBlur}
               @keydown=${this.onKeydown}
+              @input=${this.onInput}
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
@@ -206,10 +211,20 @@ export class TagInput extends LitElement {
                 }}
                 @sl-select=${this.onSelect}
               >
-                <!-- TODO tag options from API -->
-                <sl-menu-item role="option" value=${this.inputValue}
-                  >${msg(str`Add “${this.inputValue}”`)}</sl-menu-item
-                >
+                ${this.tagOptions
+                  .slice(0, 3)
+                  .map(
+                    (tag) => html`
+                      <sl-menu-item role="option" value=${tag}
+                        >${tag}</sl-menu-item
+                      >
+                    `
+                  )}
+                ${this.tagOptions.length ? html`<sl-divider></sl-divider>` : ""}
+
+                <sl-menu-item role="option" value=${this.inputValue}>
+                  ${msg(str`Add “${this.inputValue}”`)}
+                </sl-menu-item>
               </sl-menu>
             </div>
           </div>
@@ -273,17 +288,22 @@ export class TagInput extends LitElement {
     }
   }
 
+  private onInput = debounce(200)(async (e: InputEvent) => {
+    const input = (e as any).originalTarget as HTMLInputElement;
+    this.inputValue = input.value;
+    if (input.value.length) {
+      this.dropdownIsOpen = true;
+      this.tagOptions = await this.getOptions();
+    }
+  }) as any;
+
   private onKeyup(e: KeyboardEvent) {
     const input = e.target as HTMLInputElement;
     if (e.key === "Escape") {
       (input.parentElement as HTMLElement).classList.remove("input--focused");
       this.dropdownIsOpen = false;
+      this.inputValue = "";
       input.value = "";
-    }
-
-    this.inputValue = input.value;
-    if (input.value.length) {
-      this.dropdownIsOpen = true;
     }
   }
 
@@ -318,5 +338,16 @@ export class TagInput extends LitElement {
         detail: { tags: this.tags },
       })
     );
+  }
+
+  private async getOptions() {
+    // TODO actual API call
+    await new Promise((resolve) => {
+      window.setTimeout(() => {
+        resolve(null);
+      }, 1000);
+    });
+
+    return ["temp1", "temp2"];
   }
 }
