@@ -262,7 +262,7 @@ export class TagInput extends LitElement {
   }
 
   private onBlur(e: FocusEvent) {
-    if (e.relatedTarget === this.menu?.querySelector("sl-menu-item")) {
+    if (this.menu?.contains(e.relatedTarget as HTMLElement)) {
       // Keep focus on form control if moving to menu selection
       return;
     }
