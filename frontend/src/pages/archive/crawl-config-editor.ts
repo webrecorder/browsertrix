@@ -50,7 +50,7 @@ type NewCrawlConfigParams = CrawlConfigParams & {
 const STEPS = [
   "crawlSetup",
   "browserSettings",
-  "jobScheduling",
+  "crawlScheduling",
   "confirmSettings",
 ] as const;
 type StepName = typeof STEPS[number];
@@ -112,7 +112,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      jobScheduling: {
+      crawlScheduling: {
         enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
@@ -365,7 +365,7 @@ export class CrawlConfigEditor extends LiteElement {
     const tabLabels: Record<StepName, string> = {
       crawlSetup: msg("Crawl Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Crawl Scheduling"),
+      crawlScheduling: msg("Crawl Scheduling"),
       confirmSettings: msg("Confirm Settings"),
     };
 
@@ -420,7 +420,7 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-browserSettings">
             ${this.renderPanelContent(this.renderCrawlBehaviors())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-jobScheduling">
+          <btrix-tab-panel name="newJobConfig-crawlScheduling">
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-confirmSettings">
