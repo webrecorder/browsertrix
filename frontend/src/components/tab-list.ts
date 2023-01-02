@@ -155,6 +155,9 @@ export class TabList extends LitElement {
 
     .nav {
       position: relative;
+      position: -webkit-sticky;
+      position: sticky;
+      top: var(--sl-spacing-medium);
     }
 
     ul {
