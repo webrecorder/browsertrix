@@ -50,7 +50,8 @@ type NewCrawlConfigParams = CrawlConfigParams & {
 const STEPS = [
   "crawlSetup",
   "browserSettings",
-  "jobScheduling",
+  "crawlScheduling",
+  "crawlInformation",
   "confirmSettings",
 ] as const;
 type StepName = typeof STEPS[number];
@@ -94,7 +95,7 @@ type FormState = {
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
-  if (window.location.hash) {
+  if (hasConfigId && window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
     if (STEPS.includes(hashValue as any)) {
@@ -112,7 +113,12 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      jobScheduling: {
+      crawlScheduling: {
+        enabled: hasConfigId,
+        error: false,
+        completed: hasConfigId,
+      },
+      crawlInformation: {
         enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
@@ -263,23 +269,13 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
-    if (changedProperties.get("formState") && this.formState) {
-      const hasRequiredFields = this.hasRequiredFields();
-      if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
-        this.updateProgressState({
-          tabs: {
-            crawlSetup: { completed: true },
-          },
-        });
-      }
-    }
     if (changedProperties.get("progressState") && this.progressState) {
-      if (
-        (changedProperties.get("progressState") as ProgressState)
-          .currentStep !== this.progressState.currentStep
-      ) {
-        this.formElem?.scrollIntoView({ behavior: "smooth" });
-      }
+      this.handleProgressStateChange(
+        changedProperties.get("progressState") as ProgressState
+      );
+    }
+    if (changedProperties.get("formState") && this.formState) {
+      this.handleFormStateChange();
     }
   }
 
@@ -365,7 +361,8 @@ export class CrawlConfigEditor extends LiteElement {
     const tabLabels: Record<StepName, string> = {
       crawlSetup: msg("Crawl Setup"),
       browserSettings: msg("Browser Settings"),
-      jobScheduling: msg("Crawl Scheduling"),
+      crawlScheduling: msg("Crawl Scheduling"),
+      crawlInformation: msg("Crawl Information"),
       confirmSettings: msg("Confirm Settings"),
     };
 
@@ -402,9 +399,6 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlSetup">
             ${this.renderPanelContent(
               html`
-                ${this.renderSectionHeading(msg("Crawl Information"))}
-                ${this.renderJobInformation()}
-                ${this.renderSectionHeading(msg("Crawler Settings"))}
                 ${when(this.jobType === "url-list", this.renderUrlListSetup)}
                 ${when(
                   this.jobType === "seed-crawl",
@@ -420,8 +414,11 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-browserSettings">
             ${this.renderPanelContent(this.renderCrawlBehaviors())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-jobScheduling">
+          <btrix-tab-panel name="newJobConfig-crawlScheduling">
             ${this.renderPanelContent(this.renderJobScheduling())}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-crawlInformation">
+            ${this.renderPanelContent(this.renderJobInformation())}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-confirmSettings">
             ${this.renderPanelContent(this.renderConfirmSettings(), {
@@ -1262,6 +1259,53 @@ https://example.net`}
       return Boolean(this.formState.jobName && this.formState.primarySeedUrl);
     }
     return Boolean(this.formState.jobName && this.formState.urlList);
+  }
+
+  private handleFormStateChange() {
+    if (!this.formState.jobName) {
+      this.setDefaultJobName();
+    }
+    const hasRequiredFields = this.hasRequiredFields();
+    if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
+      this.updateProgressState({
+        tabs: {
+          crawlSetup: { completed: true },
+        },
+      });
+    }
+  }
+
+  private handleProgressStateChange(oldState: ProgressState) {
+    const { currentStep } = this.progressState;
+    if (oldState.currentStep !== currentStep) {
+      this.formElem?.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
+  private setDefaultJobName() {
+    // Set default crawl name based on seed URLs
+    if (!this.formState.primarySeedUrl && !this.formState.urlList) {
+      return;
+    }
+    let jobName = "";
+    if (this.jobType === "seed-crawl") {
+      jobName = this.formState.primarySeedUrl;
+    } else {
+      const urlList = urlListToArray(this.formState.urlList);
+
+      const firstUrl = urlList[0].trim();
+      if (urlList.length > 1) {
+        const remainder = urlList.length - 1;
+        if (remainder === 1) {
+          jobName = msg(str`${firstUrl} + ${remainder} more URL`);
+        } else {
+          jobName = msg(str`${firstUrl} + ${remainder} more URLs`);
+        }
+      } else {
+        jobName = firstUrl;
+      }
+    }
+    this.updateFormState({ jobName });
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
