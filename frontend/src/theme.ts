@@ -118,6 +118,11 @@ const theme = css`
     box-shadow: var(--sl-shadow-small);
   }
 
+  /* Prevent horizontal scrollbar */
+  sl-select::part(menu) {
+    overflow-x: hidden;
+  }
+
   /* Decrease control spacing on small select */
   sl-select[size="small"]::part(control) {
     --sl-input-spacing-small: var(--sl-spacing-x-small);

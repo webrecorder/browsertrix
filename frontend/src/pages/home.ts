@@ -14,21 +14,31 @@ export class Home extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
+  @property({ type: String })
+  teamId?: string;
+
   @state()
   private isInviteComplete?: boolean;
 
   @state()
   private archiveList?: ArchiveData[];
 
-  async firstUpdated() {
-    this.archiveList = await this.getArchives();
-  }
-
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
+      if (this.userInfo && !this.teamId) {
+        this.fetchArchives();
+      }
     } else {
       this.navTo("/log-in");
+    }
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("teamId") && this.teamId) {
+      this.navTo(`/archives/${this.teamId}/crawls`);
+    } else if (changedProperties.has("authState") && this.authState) {
+      this.fetchArchives();
     }
   }
 
@@ -50,7 +60,7 @@ export class Home extends LiteElement {
     }
 
     if (this.userInfo.isAdmin === false) {
-      title = msg("Archives");
+      title = msg("Teams");
       content = this.renderLoggedInNonAdmin();
     }
 
@@ -106,9 +116,7 @@ export class Home extends LiteElement {
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
-              <h2 class="text-lg font-medium mb-3 mt-2">
-                ${msg("All Archives")}
-              </h2>
+              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Teams")}</h2>
               <btrix-archives-list
                 .userInfo=${this.userInfo}
                 .archiveList=${this.archiveList}
@@ -169,6 +177,10 @@ export class Home extends LiteElement {
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;
+  }
+
+  private async fetchArchives() {
+    this.archiveList = await this.getArchives();
   }
 
   private async getArchives(): Promise<ArchiveData[]> {

@@ -1,7 +1,7 @@
 import type { TemplateResult } from "lit";
 import { render } from "lit";
 import { property, state, query } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import "tailwindcss/tailwind.css";
@@ -15,6 +15,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
+import type { Archive, ArchiveData } from "./utils/archives";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -28,6 +29,14 @@ type DialogContent = {
   label?: TemplateResult | string;
   body?: TemplateResult | string;
   noHeader?: boolean;
+};
+
+type APIUser = {
+  id: string;
+  email: string;
+  name: string;
+  is_verified: boolean;
+  is_superuser: boolean;
 };
 
 /**
@@ -64,10 +73,19 @@ export class App extends LiteElement {
   @state()
   private isRegistrationEnabled?: boolean;
 
+  @state()
+  private teams?: ArchiveData[];
+
+  // Store selected team ID for when navigating from
+  // pages without associated team (e.g. user account)
+  @state()
+  private selectedTeamId?: string;
+
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     if (authState) {
       this.authService.saveLogin(authState);
+      this.updateUserInfo();
     }
     this.syncViewState();
     super.connectedCallback();
@@ -77,6 +95,19 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
+    this.fetchAppSettings();
+  }
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("userInfo") && this.userInfo) {
+      this.selectedTeamId = this.userInfo.defaultTeamId;
+    }
+    if (
+      changedProperties.get("viewState") &&
+      this.viewState.route === "archive"
+    ) {
+      this.selectedTeamId = this.viewState.params.id;
+    }
   }
 
   private syncViewState() {
@@ -95,11 +126,7 @@ export class App extends LiteElement {
     }
   }
 
-  async firstUpdated() {
-    if (this.authService.authState) {
-      this.updateUserInfo();
-    }
-
+  private async fetchAppSettings() {
     const settings = await this.getAppSettings();
 
     if (settings) {
@@ -111,22 +138,48 @@ export class App extends LiteElement {
 
   private async updateUserInfo() {
     try {
-      const data = await this.getUserInfo();
+      const [userInfoResp, archivesResp] = await Promise.allSettled([
+        this.getUserInfo(),
+        // TODO see if we can add API endpoint to retrieve first archive
+        this.getArchives(),
+      ]);
 
-      this.userInfo = {
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        isVerified: data.is_verified,
-        isAdmin: data.is_superuser,
-      };
+      const userInfoSuccess = userInfoResp.status === "fulfilled";
+      let defaultTeamId: CurrentUser["defaultTeamId"];
+
+      if (archivesResp.status === "fulfilled") {
+        const { archives } = archivesResp.value;
+        this.teams = archives;
+        if (userInfoSuccess) {
+          const userInfo = userInfoResp.value;
+          if (archives.length && !userInfo?.is_superuser) {
+            defaultTeamId = archives[0].id;
+          }
+        }
+      } else {
+        throw archivesResp.reason;
+      }
+
+      if (userInfoSuccess) {
+        const { value } = userInfoResp;
+        this.userInfo = {
+          id: value.id,
+          email: value.email,
+          name: value.name,
+          isVerified: value.is_verified,
+          isAdmin: value.is_superuser,
+          defaultTeamId,
+        };
+      } else {
+        throw userInfoResp.reason;
+      }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
         console.debug(
           "Unauthorized with authState:",
           this.authService.authState
         );
-        this.authService.logout();
+        this.clearUser();
         this.navigate(ROUTES.login);
       }
     }
@@ -205,8 +258,12 @@ export class App extends LiteElement {
     `;
   }
 
-  renderNavBar() {
+  private renderNavBar() {
     const isAdmin = this.userInfo?.isAdmin;
+    let homeHref = "/";
+    if (!isAdmin && this.selectedTeamId) {
+      homeHref = `/archives/${this.selectedTeamId}/crawls`;
+    }
 
     return html`
       <div class="border-b">
@@ -214,7 +271,7 @@ export class App extends LiteElement {
           class="max-w-screen-lg mx-auto pl-3 box-border h-12 flex items-center justify-between"
         >
           <div>
-            <a href="/" @click="${this.navLink}"
+            <a href="${homeHref}" @click="${this.navLink}"
               ><h1 class="text-sm hover:text-neutral-400 font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
@@ -228,12 +285,6 @@ export class App extends LiteElement {
                 >
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
-                    href="/archives"
-                    @click=${this.navLink}
-                    >${msg("All Archives")}</a
-                  >
-                  <a
-                    class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/crawls"
                     @click=${this.navLink}
                     >${msg("Running Crawls")}</a
@@ -243,58 +294,40 @@ export class App extends LiteElement {
               `
             : ""}
 
-          <div class="grid grid-flow-col gap-3 md:gap-5 items-center">
+          <div class="grid grid-flow-col auto-cols-max gap-3 items-center">
             ${this.authService.authState
-              ? html` <sl-dropdown placement="bottom-end">
-                  <sl-icon-button
-                    slot="trigger"
-                    name="person-circle"
-                    style="font-size: 1.5rem;"
-                  ></sl-icon-button>
+              ? html` ${this.renderTeams()}
+                  <sl-dropdown placement="bottom-end">
+                    <sl-icon-button
+                      slot="trigger"
+                      name="person-circle"
+                      style="font-size: 1.5rem;"
+                    ></sl-icon-button>
 
-                  <sl-menu class="w-60 min-w-min max-w-full">
-                    <div class="px-7 py-2">
-                      ${isAdmin
-                        ? html`
-                            <div class="mb-2">
-                              <sl-tag
-                                class="uppercase"
-                                variant="primary"
-                                size="small"
-                                >${msg("admin")}</sl-tag
-                              >
-                            </div>
-                          `
+                    <sl-menu class="w-60 min-w-min max-w-full">
+                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                      >
+                        <sl-icon slot="prefix" name="gear"></sl-icon>
+                        ${msg("Account Settings")}
+                      </sl-menu-item>
+                      ${this.userInfo?.isAdmin
+                        ? html` <sl-menu-item
+                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                          >
+                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                            ${msg("Invite Users")}
+                          </sl-menu-item>`
                         : ""}
-                      <div class="font-medium text-neutral-700">
-                        ${this.userInfo?.name}
-                      </div>
-                      <div class="text-sm text-neutral-500">
-                        ${this.userInfo?.email}
-                      </div>
-                    </div>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item
-                      @click=${() => this.navigate(ROUTES.accountSettings)}
-                    >
-                      <sl-icon slot="prefix" name="gear"></sl-icon>
-                      ${msg("Your account")}
-                    </sl-menu-item>
-                    ${this.userInfo?.isAdmin
-                      ? html` <sl-menu-item
-                          @click=${() => this.navigate(ROUTES.usersInvite)}
-                        >
-                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                          ${msg("Invite Users")}
-                        </sl-menu-item>`
-                      : ""}
-                    <sl-divider></sl-divider>
-                    <sl-menu-item @click="${this.onLogOut}">
-                      <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
-                      ${msg("Log Out")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>`
+                      <sl-divider></sl-divider>
+                      <sl-menu-item @click="${this.onLogOut}">
+                        <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                        ${msg("Log Out")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>`
               : html`
                   <a href="/log-in"> ${msg("Log In")} </a>
                   ${this.isRegistrationEnabled
@@ -314,7 +347,91 @@ export class App extends LiteElement {
     `;
   }
 
-  renderFooter() {
+  private renderTeams() {
+    if (!this.teams || this.teams.length < 2 || !this.userInfo) return;
+
+    const selectedOption = this.selectedTeamId
+      ? this.teams.find(({ id }) => id === this.selectedTeamId)
+      : { id: "", name: msg("All Teams") };
+    if (!selectedOption) {
+      console.debug(
+        `Could't find team with ID ${this.selectedTeamId}`,
+        this.teams
+      );
+      return;
+    }
+
+    return html`
+      <sl-dropdown placement="bottom-end">
+        <sl-button slot="trigger" variant="text" size="small" caret
+          >${selectedOption.name}</sl-button
+        >
+        <sl-menu
+          @sl-select=${(e: CustomEvent) => {
+            const { value } = e.detail.item;
+            this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+          }}
+        >
+          ${when(
+            this.userInfo.isAdmin,
+            () => html`
+              <sl-menu-item value="" ?checked=${!selectedOption.id}
+                >${msg("All Teams")}</sl-menu-item
+              >
+              <sl-divider></sl-divider>
+            `
+          )}
+          ${this.teams.map(
+            (team) => html`
+              <sl-menu-item
+                value=${team.id}
+                ?checked=${team.id === selectedOption.id}
+                >${team.name}</sl-menu-item
+              >
+            `
+          )}
+        </sl-menu>
+      </sl-dropdown>
+    `;
+  }
+
+  private renderMenuUserInfo() {
+    if (!this.userInfo) return;
+    if (this.userInfo.isAdmin) {
+      return html`
+        <div class="mb-2">
+          <sl-tag class="uppercase" variant="primary" size="small"
+            >${msg("admin")}</sl-tag
+          >
+        </div>
+        <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+        <div class="text-xs text-neutral-500 whitespace-nowrap">
+          ${this.userInfo?.email}
+        </div>
+      `;
+    }
+
+    if (this.teams?.length === 1) {
+      return html`
+        <div class="font-medium text-neutral-700 my-1">
+          ${this.teams![0].name}
+        </div>
+        <div class="text-neutral-500">${this.userInfo?.name}</div>
+        <div class="text-xs text-neutral-500 whitespace-nowrap">
+          ${this.userInfo?.email}
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+      <div class="text-xs text-neutral-500 whitespace-nowrap">
+        ${this.userInfo?.email}
+      </div>
+    `;
+  }
+
+  private renderFooter() {
     return html`
       <footer
         class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-end"
@@ -347,7 +464,7 @@ export class App extends LiteElement {
     `;
   }
 
-  renderPage() {
+  private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
@@ -426,7 +543,8 @@ export class App extends LiteElement {
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
-          .userInfo="${this.userInfo}"
+          .userInfo=${this.userInfo}
+          .teamId=${this.selectedTeamId}
         ></btrix-home>`;
 
       case "archives":
@@ -518,7 +636,7 @@ export class App extends LiteElement {
     }
   }
 
-  renderSpinner() {
+  private renderSpinner() {
     return html`
       <div class="w-full flex items-center justify-center text-3xl">
         <sl-spinner></sl-spinner>
@@ -526,13 +644,13 @@ export class App extends LiteElement {
     `;
   }
 
-  renderNotFoundPage() {
+  private renderNotFoundPage() {
     return html`<btrix-not-found
       class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
   }
 
-  renderFindCrawl() {
+  private renderFindCrawl() {
     return html`
       <sl-dropdown
         @sl-after-show=${(e: any) => {
@@ -585,9 +703,7 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    this.authService.logout();
-    this.authService = new AuthService();
-    this.userInfo = undefined;
+    this.clearUser();
 
     if (redirect) {
       this.navigate("/log-in");
@@ -615,8 +731,7 @@ export class App extends LiteElement {
   }
 
   onNeedLogin() {
-    this.authService.logout();
-
+    this.clearUser();
     this.navigate(ROUTES.login);
   }
 
@@ -676,8 +791,19 @@ export class App extends LiteElement {
     alert.toast();
   }
 
-  getUserInfo() {
+  getUserInfo(): Promise<APIUser> {
     return this.apiFetch("/users/me", this.authService.authState!);
+  }
+
+  private clearUser() {
+    this.authService.logout();
+    this.authService = new AuthService();
+    this.userInfo = undefined;
+    this.selectedTeamId = undefined;
+  }
+
+  private getArchives(): Promise<{ archives: ArchiveData[] }> {
+    return this.apiFetch("/archives", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {
@@ -730,7 +856,7 @@ export class App extends LiteElement {
               this.updateUserInfo();
               this.syncViewState();
             } else {
-              this.authService.logout();
+              this.clearUser();
               this.navigate(ROUTES.login);
             }
           }

@@ -233,11 +233,18 @@ export class AccountSettings extends LiteElement {
     }
 
     return html`<div class="grid gap-4">
-      <h1 class="text-xl font-semibold">${msg("Account settings")}</h1>
+      <h1 class="text-xl font-semibold">${msg("Account Settings")}</h1>
 
       ${successMessage}
 
       <section class="p-4 md:p-8 border rounded-lg grid gap-6">
+        <div>
+          <div class="mb-1 text-gray-500">${msg("Name")}</div>
+          <div class="inline-flex items-center">
+            <span class="mr-3">${this.userInfo?.name}</span>
+          </div>
+        </div>
+
         <div>
           <div class="mb-1 text-gray-500">${msg("Email")}</div>
           <div class="inline-flex items-center">

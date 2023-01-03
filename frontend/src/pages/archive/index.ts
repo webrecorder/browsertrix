@@ -71,29 +71,26 @@ export class Archive extends LiteElement {
   @state()
   private successfullyInvitedEmail?: string;
 
-  async firstUpdated() {
-    if (!this.archiveId) return;
+  async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("archiveId") && this.archiveId) {
+      try {
+        const archive = await this.getArchive(this.archiveId);
 
-    try {
-      const archive = await this.getArchive(this.archiveId);
+        if (!archive) {
+          this.navTo("/archives");
+        } else {
+          this.archive = archive;
+        }
+      } catch {
+        this.archive = null;
 
-      if (!archive) {
-        this.navTo("/archives");
-      } else {
-        this.archive = archive;
+        this.notify({
+          message: msg("Sorry, couldn't retrieve archive at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
       }
-    } catch {
-      this.archive = null;
-
-      this.notify({
-        message: msg("Sorry, couldn't retrieve archive at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
     }
-  }
-
-  async updated(changedProperties: any) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.successfullyInvitedEmail = undefined;
     }
@@ -145,19 +142,6 @@ export class Archive extends LiteElement {
     }
 
     return html`<article>
-      <header class="w-full max-w-screen-lg mx-auto px-3 box-border py-4">
-        <nav class="text-sm text-neutral-400">
-          <a
-            class="font-medium hover:underline"
-            href="/archives"
-            @click="${this.navLink}"
-            >${msg("Archives")}</a
-          >
-          <span class="font-mono">/</span>
-          <span>${this.archive.name}</span>
-        </nav>
-      </header>
-
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
@@ -229,7 +213,6 @@ export class Archive extends LiteElement {
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
-      archiveId=${this.archiveId!}
       crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
