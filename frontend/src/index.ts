@@ -716,6 +716,9 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
+    if (this.userInfo) {
+      this.unpersistUserSettings(this.userInfo.id);
+    }
     this.clearUser();
 
     if (redirect) {
