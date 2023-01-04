@@ -39,6 +39,10 @@ type APIUser = {
   is_superuser: boolean;
 };
 
+type UserSettings = {
+  teamId: string;
+};
+
 /**
  * @event navigate
  * @event notify
@@ -49,6 +53,8 @@ type APIUser = {
  */
 @localized()
 export class App extends LiteElement {
+  static storageKey = "btrix.app";
+
   @property({ type: String })
   version?: string;
 
@@ -83,11 +89,14 @@ export class App extends LiteElement {
 
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
+    this.syncViewState();
+    if (this.viewState.route === "archive") {
+      this.selectedTeamId = this.viewState.params.id;
+    }
     if (authState) {
       this.authService.saveLogin(authState);
       this.updateUserInfo();
     }
-    this.syncViewState();
     super.connectedCallback();
 
     window.addEventListener("popstate", () => {
@@ -99,9 +108,6 @@ export class App extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("userInfo") && this.userInfo) {
-      this.selectedTeamId = this.userInfo.defaultTeamId;
-    }
     if (
       changedProperties.get("viewState") &&
       this.viewState.route === "archive"
@@ -139,39 +145,44 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const [userInfoResp, archivesResp] = await Promise.allSettled([
-        this.getUserInfo(),
+        this.getUserInfo().then((value) => {
+          this.userInfo = {
+            id: value.id,
+            email: value.email,
+            name: value.name,
+            isVerified: value.is_verified,
+            isAdmin: value.is_superuser,
+          };
+          const settings = this.getPersistedUserSettings(value.id);
+          if (settings) {
+            this.selectedTeamId = settings.teamId;
+          }
+          return value;
+        }),
         // TODO see if we can add API endpoint to retrieve first archive
         this.getArchives(),
       ]);
 
       const userInfoSuccess = userInfoResp.status === "fulfilled";
-      let defaultTeamId: CurrentUser["defaultTeamId"];
-
       if (archivesResp.status === "fulfilled") {
         const { archives } = archivesResp.value;
         this.teams = archives;
         if (userInfoSuccess) {
           const userInfo = userInfoResp.value;
           if (archives.length && !userInfo?.is_superuser) {
-            defaultTeamId = archives[0].id;
+            this.selectedTeamId = this.selectedTeamId || archives[0].id;
+
+            if (archives.length === 1) {
+              // Persist selected team ID since there's no
+              // user selection event to persist
+              this.persistUserSettings(userInfo.id, {
+                teamId: this.selectedTeamId,
+              });
+            }
           }
         }
       } else {
         throw archivesResp.reason;
-      }
-
-      if (userInfoSuccess) {
-        const { value } = userInfoResp;
-        this.userInfo = {
-          id: value.id,
-          email: value.email,
-          name: value.name,
-          isVerified: value.is_verified,
-          isAdmin: value.is_superuser,
-          defaultTeamId,
-        };
-      } else {
-        throw userInfoResp.reason;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -370,6 +381,11 @@ export class App extends LiteElement {
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
             this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+            if (this.userInfo) {
+              this.persistUserSettings(this.userInfo.id, { teamId: value });
+            } else {
+              console.debug("User info not set");
+            }
           }}
         >
           ${when(
@@ -703,6 +719,9 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
+    if (this.userInfo) {
+      this.unpersistUserSettings(this.userInfo.id);
+    }
     this.clearUser();
 
     if (redirect) {
@@ -863,6 +882,25 @@ export class App extends LiteElement {
         }
       }
     );
+  }
+
+  private getPersistedUserSettings(userId: string): UserSettings | null {
+    const value = window.localStorage.getItem(`${App.storageKey}.${userId}`);
+    if (value) {
+      return JSON.parse(value);
+    }
+    return null;
+  }
+
+  private persistUserSettings(userId: string, settings: UserSettings) {
+    window.localStorage.setItem(
+      `${App.storageKey}.${userId}`,
+      JSON.stringify(settings)
+    );
+  }
+
+  private unpersistUserSettings(userId: string) {
+    window.localStorage.removeItem(`${App.storageKey}.${userId}`);
   }
 }
 
