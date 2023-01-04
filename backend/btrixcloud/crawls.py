@@ -569,6 +569,7 @@ def init_crawls_api(
 
     ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, archives)
 
+    archive_viewer_dep = archives.archive_viewer_dep
     archive_crawl_dep = archives.archive_crawl_dep
 
     @app.get("/archives/all/crawls", tags=["crawls"], response_model=ListCrawls)
@@ -579,7 +580,7 @@ def init_crawls_api(
         return ListCrawls(crawls=await ops.list_crawls(None, running_only=True))
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls(archive: Archive = Depends(archive_crawl_dep)):
+    async def list_crawls(archive: Archive = Depends(archive_viewer_dep)):
         return ListCrawls(crawls=await ops.list_crawls(archive))
 
     @app.post(
@@ -632,7 +633,7 @@ def init_crawls_api(
         tags=["crawls"],
         response_model=CrawlOut,
     )
-    async def get_crawl(crawl_id, archive: Archive = Depends(archive_crawl_dep)):
+    async def get_crawl(crawl_id, archive: Archive = Depends(archive_viewer_dep)):
         return await ops.get_crawl(crawl_id, archive)
 
     @app.get(
@@ -657,7 +658,7 @@ def init_crawls_api(
         response_model=ListCrawlOut,
     )
     async def list_single_crawl(
-        crawl_id, archive: Archive = Depends(archive_crawl_dep)
+        crawl_id, archive: Archive = Depends(archive_viewer_dep)
     ):
         crawls = await ops.list_crawls(archive, crawl_id=crawl_id)
         if len(crawls) < 1:
