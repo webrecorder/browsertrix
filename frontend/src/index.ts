@@ -39,6 +39,10 @@ type APIUser = {
   is_superuser: boolean;
 };
 
+type UserSettings = {
+  teamId: string;
+};
+
 /**
  * @event navigate
  * @event notify
@@ -86,9 +90,11 @@ export class App extends LiteElement {
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     this.syncViewState();
+    if (this.viewState.route === "archive") {
+      this.selectedTeamId = this.viewState.params.id;
+    }
     if (authState) {
       this.authService.saveLogin(authState);
-      this.setInitialSelectedTeam();
       this.updateUserInfo();
     }
     super.connectedCallback();
@@ -107,16 +113,6 @@ export class App extends LiteElement {
       this.viewState.route === "archive"
     ) {
       this.selectedTeamId = this.viewState.params.id;
-    }
-  }
-  private setInitialSelectedTeam() {
-    if (this.viewState.route === "archive") {
-      this.selectedTeamId = this.viewState.params.id;
-    } else {
-      const storedId = this.getPersistedSelectedTeam();
-      if (storedId) {
-        this.selectedTeamId = storedId;
-      }
     }
   }
 
@@ -156,19 +152,6 @@ export class App extends LiteElement {
 
       const userInfoSuccess = userInfoResp.status === "fulfilled";
 
-      if (archivesResp.status === "fulfilled") {
-        const { archives } = archivesResp.value;
-        this.teams = archives;
-        if (userInfoSuccess) {
-          const userInfo = userInfoResp.value;
-          if (archives.length && !userInfo?.is_superuser) {
-            this.selectedTeamId = this.selectedTeamId || archives[0].id;
-          }
-        }
-      } else {
-        throw archivesResp.reason;
-      }
-
       if (userInfoSuccess) {
         const { value } = userInfoResp;
         this.userInfo = {
@@ -178,8 +161,25 @@ export class App extends LiteElement {
           isVerified: value.is_verified,
           isAdmin: value.is_superuser,
         };
+        const settings = this.getPersistedUserSettings(value.id);
+        if (settings) {
+          this.selectedTeamId = settings.teamId;
+        }
       } else {
         throw userInfoResp.reason;
+      }
+
+      if (archivesResp.status === "fulfilled") {
+        const { archives } = archivesResp.value;
+        this.teams = archives;
+        if (userInfoSuccess && !this.selectedTeamId) {
+          const userInfo = userInfoResp.value;
+          if (archives.length && !userInfo?.is_superuser) {
+            this.selectedTeamId = archives[0].id;
+          }
+        }
+      } else {
+        throw archivesResp.reason;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -378,7 +378,11 @@ export class App extends LiteElement {
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
             this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
-            this.persistSelectedTeam(value);
+            if (this.userInfo) {
+              this.persistUserSettings(this.userInfo.id, { teamId: value });
+            } else {
+              console.debug("User info not set");
+            }
           }}
         >
           ${when(
@@ -807,9 +811,11 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    this.userInfo = undefined;
+    if (this.userInfo) {
+      this.unpersistUserSettings(this.userInfo.id);
+      this.userInfo = undefined;
+    }
     this.selectedTeamId = undefined;
-    this.unpersistSelectedTeam();
   }
 
   private getArchives(): Promise<{ archives: ArchiveData[] }> {
@@ -875,16 +881,24 @@ export class App extends LiteElement {
     );
   }
 
-  private getPersistedSelectedTeam() {
-    return window.localStorage.getItem(`${App.storageKey}.teamId`);
+  private getPersistedUserSettings(userId: string): UserSettings | null {
+    const value = window.localStorage.getItem(`${App.storageKey}.${userId}`);
+    if (value) {
+      return JSON.parse(value);
+    }
+    return null;
   }
 
-  private persistSelectedTeam(id: string) {
-    window.localStorage.setItem(`${App.storageKey}.teamId`, id);
+  private persistUserSettings(userId: string, settings: UserSettings) {
+    if (!this.userInfo) return;
+    window.localStorage.setItem(
+      `${App.storageKey}.${userId}`,
+      JSON.stringify(settings)
+    );
   }
 
-  private unpersistSelectedTeam() {
-    window.localStorage.removeItem(`${App.storageKey}.teamId`);
+  private unpersistUserSettings(userId: string) {
+    window.localStorage.removeItem(`${App.storageKey}.${userId}`);
   }
 }
 
