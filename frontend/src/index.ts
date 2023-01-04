@@ -83,11 +83,14 @@ export class App extends LiteElement {
 
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
+    this.syncViewState();
     if (authState) {
       this.authService.saveLogin(authState);
+      if (this.viewState.route === "archive") {
+        this.selectedTeamId = this.viewState.params.id;
+      }
       this.updateUserInfo();
     }
-    this.syncViewState();
     super.connectedCallback();
 
     window.addEventListener("popstate", () => {
@@ -99,9 +102,6 @@ export class App extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("userInfo") && this.userInfo) {
-      this.selectedTeamId = this.userInfo.defaultTeamId;
-    }
     if (
       changedProperties.get("viewState") &&
       this.viewState.route === "archive"
@@ -145,7 +145,6 @@ export class App extends LiteElement {
       ]);
 
       const userInfoSuccess = userInfoResp.status === "fulfilled";
-      let defaultTeamId: CurrentUser["defaultTeamId"];
 
       if (archivesResp.status === "fulfilled") {
         const { archives } = archivesResp.value;
@@ -153,7 +152,7 @@ export class App extends LiteElement {
         if (userInfoSuccess) {
           const userInfo = userInfoResp.value;
           if (archives.length && !userInfo?.is_superuser) {
-            defaultTeamId = archives[0].id;
+            this.selectedTeamId = this.selectedTeamId || archives[0].id;
           }
         }
       } else {
@@ -168,7 +167,6 @@ export class App extends LiteElement {
           name: value.name,
           isVerified: value.is_verified,
           isAdmin: value.is_superuser,
-          defaultTeamId,
         };
       } else {
         throw userInfoResp.reason;
