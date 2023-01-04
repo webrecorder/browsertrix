@@ -102,8 +102,10 @@ spec:
           # =====================
           - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
             value: /var/log/containers/fluent*
-          # - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
-          #   value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+          {{ if not .Values.logging.kibana.local }}
+          - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
+            value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+          {{ end }}
         resources:
           limits:
             cpu: {{ .Values.logging.fluentd.cpu | default "60m" }}
