@@ -49,6 +49,8 @@ type APIUser = {
  */
 @localized()
 export class App extends LiteElement {
+  static storageKey = "btrix.app";
+
   @property({ type: String })
   version?: string;
 
@@ -368,6 +370,7 @@ export class App extends LiteElement {
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
             this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+            this.persistSelectedTeam(value);
           }}
         >
           ${when(
@@ -861,6 +864,18 @@ export class App extends LiteElement {
         }
       }
     );
+  }
+
+  private getPersistedSelectedTeam() {
+    return window.localStorage.getItem(`${App.storageKey}.teamId`);
+  }
+
+  private persistSelectedTeam(id: string) {
+    window.localStorage.setItem(`${App.storageKey}.teamId`, id);
+  }
+
+  private unpersistSelectedTeam() {
+    window.localStorage.removeItem(`${App.storageKey}.teamId`);
   }
 }
 
