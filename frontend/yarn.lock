@@ -1443,6 +1443,11 @@ braces@^3.0.1, braces@~3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
+broadcastchannel-polyfill@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/broadcastchannel-polyfill/-/broadcastchannel-polyfill-1.0.1.tgz#7596b3d78526b3919e76562aff00cd1278a205ea"
+  integrity sha512-iooPAN913j4xfrIu5o+mDaks9UUDOBfgjn8SsuzysfXr/X+f8m9y5t8c5rAbW6P0LdUXBJx33zwN4Cs6b9BGRw==
+
 browserslist@^4.14.5:
   version "4.17.2"
   resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.17.2.tgz#aa15dbd2fab399a399fe4df601bb09363c5458a6"

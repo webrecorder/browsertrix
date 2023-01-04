@@ -4,6 +4,7 @@ import { property, state, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
+import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
 import type { ArchiveTab } from "./pages/archive";
