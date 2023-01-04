@@ -145,37 +145,40 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const [userInfoResp, archivesResp] = await Promise.allSettled([
-        this.getUserInfo(),
+        this.getUserInfo().then((value) => {
+          this.userInfo = {
+            id: value.id,
+            email: value.email,
+            name: value.name,
+            isVerified: value.is_verified,
+            isAdmin: value.is_superuser,
+          };
+          const settings = this.getPersistedUserSettings(value.id);
+          if (settings) {
+            this.selectedTeamId = settings.teamId;
+          }
+          return value;
+        }),
         // TODO see if we can add API endpoint to retrieve first archive
         this.getArchives(),
       ]);
 
       const userInfoSuccess = userInfoResp.status === "fulfilled";
-
-      if (userInfoSuccess) {
-        const { value } = userInfoResp;
-        this.userInfo = {
-          id: value.id,
-          email: value.email,
-          name: value.name,
-          isVerified: value.is_verified,
-          isAdmin: value.is_superuser,
-        };
-        const settings = this.getPersistedUserSettings(value.id);
-        if (settings) {
-          this.selectedTeamId = settings.teamId;
-        }
-      } else {
-        throw userInfoResp.reason;
-      }
-
       if (archivesResp.status === "fulfilled") {
         const { archives } = archivesResp.value;
         this.teams = archives;
-        if (userInfoSuccess && !this.selectedTeamId) {
+        if (userInfoSuccess) {
           const userInfo = userInfoResp.value;
           if (archives.length && !userInfo?.is_superuser) {
-            this.selectedTeamId = archives[0].id;
+            this.selectedTeamId = this.selectedTeamId || archives[0].id;
+
+            if (archives.length === 1) {
+              // Persist selected team ID since there's no
+              // user selection event to persist
+              this.persistUserSettings(userInfo.id, {
+                teamId: this.selectedTeamId,
+              });
+            }
           }
         }
       } else {
@@ -890,7 +893,6 @@ export class App extends LiteElement {
   }
 
   private persistUserSettings(userId: string, settings: UserSettings) {
-    if (!this.userInfo) return;
     window.localStorage.setItem(
       `${App.storageKey}.${userId}`,
       JSON.stringify(settings)
