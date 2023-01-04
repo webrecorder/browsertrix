@@ -18,7 +18,7 @@ This will enable the helm dependencies defined in `chart/Chart.yaml`.
 And, edit `chart/examples/local-logging.yaml` for a local test.
 
 Optionally, when install the logging service only, edit `chart/admin/logging/values.yaml`.
-For a local test, it should use a hostname (not `localhost` but a hostname registered in `/etc/hosts`)
+For a local test, it should use a hostname (not `localhost` but a hostname like `myhostname` registered in `/etc/hosts`)
 
 ## Installation
 
