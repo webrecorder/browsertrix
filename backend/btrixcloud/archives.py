@@ -230,6 +230,11 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         archive = await ops.get_archive_for_user_by_id(uuid.UUID(aid), user)
         if not archive:
             raise HTTPException(status_code=404, detail=f"Archive '{aid}' not found")
+        if not archive.is_viewer(user):
+            raise HTTPException(
+                status_code=403,
+                detail="User does not have permission to view this archive",
+            )
 
         return archive
 
