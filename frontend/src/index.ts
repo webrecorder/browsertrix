@@ -811,10 +811,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    if (this.userInfo) {
-      this.unpersistUserSettings(this.userInfo.id);
-      this.userInfo = undefined;
-    }
+    this.userInfo = undefined;
     this.selectedTeamId = undefined;
   }
 
