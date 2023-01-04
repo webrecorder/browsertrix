@@ -88,9 +88,7 @@ export class App extends LiteElement {
     this.syncViewState();
     if (authState) {
       this.authService.saveLogin(authState);
-      if (this.viewState.route === "archive") {
-        this.selectedTeamId = this.viewState.params.id;
-      }
+      this.setInitialSelectedTeam();
       this.updateUserInfo();
     }
     super.connectedCallback();
@@ -109,6 +107,16 @@ export class App extends LiteElement {
       this.viewState.route === "archive"
     ) {
       this.selectedTeamId = this.viewState.params.id;
+    }
+  }
+  private setInitialSelectedTeam() {
+    if (this.viewState.route === "archive") {
+      this.selectedTeamId = this.viewState.params.id;
+    } else {
+      const storedId = this.getPersistedSelectedTeam();
+      if (storedId) {
+        this.selectedTeamId = storedId;
+      }
     }
   }
 
@@ -801,6 +809,7 @@ export class App extends LiteElement {
     this.authService = new AuthService();
     this.userInfo = undefined;
     this.selectedTeamId = undefined;
+    this.unpersistSelectedTeam();
   }
 
   private getArchives(): Promise<{ archives: ArchiveData[] }> {
