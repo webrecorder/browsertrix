@@ -28,10 +28,14 @@ jobs:
         with:
            version: 3.10.2
 
+      - name: Add hosts to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 myhost" | sudo tee -a /etc/hosts
+
       - name: Start Cluster with Helm (chart/admin/logging)
         run: |
           ./chart/admin/logging/scripts/eck_install.sh
-          helm upgrade --install -f ./chart/admin/logging/values.yaml btrix-admin-log ./chart/admin/logging
+          helm upgrade --install -f ./chart/admin/logging/values.yaml btrix-admin-log ./chart/admin/logging --set logging.ingress.host=myhost
 
       - name: Wait for all pods to be ready
         run: |
@@ -48,10 +52,15 @@ jobs:
           # check the auto-generated password for elastic
           while kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'; ret=$?; [ $ret -ne 0 ]; do sleep 5; done
 
+      - name: Test Ingress
+        run: |
+          curl --retry 10 --retry-delay 5 --retry-connrefused -k https://myhost/kibana
+
       - name: Test Kibana
         run: |
           kubectl port-forward service/btrixlog-kb-http -n btrix-admin 5601:5601 &
-          curl --retry 20 --retry-delay 10 --retry-connrefused -k https://localhost:5601/kibana
+          sleep 3
+          curl --retry 10 --retry-delay 5 --retry-connrefused -k --header "Host: myhost" https://localhost:5601/kibana
  
       # - name: Clean up
       #   run: |
