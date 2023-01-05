@@ -1,14 +1,13 @@
 import requests
 
-api_prefix = "http://127.0.0.1:30870/api"
+from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
 
 
 def test_login_invalid():
-    username = "admin@example.com"
     password = "invalid"
     r = requests.post(
-        f"{api_prefix}/auth/jwt/login",
-        data={"username": username, "password": password, "grant_type": "password"},
+        f"{API_PREFIX}/auth/jwt/login",
+        data={"username": ADMIN_USERNAME, "password": password, "grant_type": "password"},
     )
     data = r.json()
 
@@ -17,11 +16,9 @@ def test_login_invalid():
 
 
 def test_login():
-    username = "admin@example.com"
-    password = "PASSW0RD!"
     r = requests.post(
-        f"{api_prefix}/auth/jwt/login",
-        data={"username": username, "password": password, "grant_type": "password"},
+        f"{API_PREFIX}/auth/jwt/login",
+        data={"username": ADMIN_USERNAME, "password": ADMIN_PW, "grant_type": "password"},
     )
     data = r.json()
 

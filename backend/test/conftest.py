@@ -36,7 +36,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
     # Start crawl.
     crawl_data = {
         "runNow": True,
-        "name": "Test Crawl",
+        "name": "Admin Test Crawl",
         "config": {"seeds": ["https://example.com/"]},
     }
     r = requests.post(
