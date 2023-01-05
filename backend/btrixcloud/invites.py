@@ -47,6 +47,15 @@ class InviteToArchiveRequest(InviteRequest):
 
 
 # ============================================================================
+class AddToArchiveRequest(InviteRequest):
+    """Request to add a new user to an archive directly"""
+
+    role: UserRole
+    password: str
+    name: str
+
+
+# ============================================================================
 class InviteOps:
     """invite users (optionally to an archive), send emails and delete invites"""
 

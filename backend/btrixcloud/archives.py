@@ -12,7 +12,7 @@ from .db import BaseMongoModel
 
 from .users import User
 
-from .invites import InvitePending, InviteToArchiveRequest, UserRole
+from .invites import AddToArchiveRequest, InvitePending, InviteToArchiveRequest, UserRole
 
 
 # crawl scale for constraint
@@ -205,7 +205,6 @@ class ArchiveOps:
 
     async def add_user_by_invite(self, invite: InvitePending, user: User):
         """Add user to an Archive from an InvitePending, if any"""
-
         # if no archive to add to (eg. superuser invite), just return
         if not invite.aid:
             return
@@ -332,6 +331,23 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
 
         await ops.add_user_by_invite(invite, user)
         await user_manager.user_db.update(user)
+        return {"added": True}
+
+    @router.post("/add-user", tags=["invites"])
+    async def add_new_user_to_archive(
+        invite: AddToArchiveRequest,
+        request: Request,
+        archive: Archive = Depends(archive_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await user_manager.create_non_super_user(
+            invite.email, invite.password, invite.name
+        )
+        update_role = UpdateRole(role=invite.role, email=invite.email)
+        await set_role(update_role, archive, user)
         return {"added": True}
 
     return ops
