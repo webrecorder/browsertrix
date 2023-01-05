@@ -85,7 +85,7 @@ jobs:
  
       - 
         name: Run Tests
-        run: py.test -vv ./backend/test/*.py
+        run: pytest -vv ./backend/test/*.py
 
       -
         name: Print Backend Logs
