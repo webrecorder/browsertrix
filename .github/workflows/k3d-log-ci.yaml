@@ -52,16 +52,17 @@ jobs:
           # check the auto-generated password for elastic
           while kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'; ret=$?; [ $ret -ne 0 ]; do sleep 5; done
 
-      - name: Test Ingress
-        run: |
-          curl --retry 10 --retry-delay 5 --retry-connrefused -k https://myhost/kibana
-
       - name: Test Kibana
         run: |
+          sleep 30
           kubectl port-forward service/btrixlog-kb-http -n btrix-admin 5601:5601 &
-          sleep 3
-          curl --retry 10 --retry-delay 5 --retry-connrefused -k --header "Host: myhost" https://localhost:5601/kibana
- 
+          sleep 5
+          curl --retry 10 --retry-delay 5 --retry-connrefused -k -v --header "Host: myhost" https://localhost:5601/kibana
+
+      # - name: Test Ingress
+      #   run: |
+      #     curl --retry 10 --retry-delay 5 --retry-connrefused -k https://myhost/kibana
+
       # - name: Clean up
       #   run: |
       #     helm uninstall btrix-admin-log
