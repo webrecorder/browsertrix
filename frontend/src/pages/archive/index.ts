@@ -113,8 +113,6 @@ export class Archive extends LiteElement {
       `;
     }
 
-    const showMembersTab = Boolean(this.archive.users);
-
     let tabPanelContent = "" as any;
 
     switch (this.archiveTab) {
@@ -141,26 +139,7 @@ export class Archive extends LiteElement {
         break;
     }
 
-    return html`<article>
-      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
-        <nav class="-ml-3 flex items-end overflow-x-auto">
-          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
-          ${this.renderNavTab({
-            tabName: "crawl-templates",
-            label: msg("Crawl Configs"),
-          })}
-          ${this.renderNavTab({
-            tabName: "browser-profiles",
-            label: msg("Browser Profiles"),
-          })}
-          ${showMembersTab
-            ? this.renderNavTab({ tabName: "members", label: msg("Members") })
-            : ""}
-        </nav>
-      </div>
-
-      <hr />
-
+    return html`
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
@@ -169,34 +148,6 @@ export class Archive extends LiteElement {
           ${tabPanelContent}
         </div>
       </main>
-    </article>`;
-  }
-
-  private renderNavTab({
-    tabName,
-    label,
-  }: {
-    tabName: ArchiveTab;
-    label: string;
-  }) {
-    const isActive = this.archiveTab === tabName;
-
-    return html`
-      <a
-        id="${tabName}-tab"
-        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/archives/${this.archiveId}/${tabName}`}
-        aria-selected=${isActive}
-        @click=${this.navLink}
-      >
-        <div
-          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
-            ? "border-primary text-primary"
-            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
-        >
-          ${label}
-        </div>
-      </a>
     `;
   }
 

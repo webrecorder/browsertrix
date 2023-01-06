@@ -255,7 +255,7 @@ export class App extends LiteElement {
       </style>
 
       <div class="min-w-screen min-h-screen flex flex-col">
-        ${this.renderNavBar()}
+        ${this.renderNavBar()} ${this.renderSubNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
@@ -665,6 +665,58 @@ export class App extends LiteElement {
     return html`<btrix-not-found
       class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
+  }
+
+  private renderSubNavBar() {
+    if (!this.selectedTeamId) return;
+
+    return html`
+      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+        <nav class="-ml-3 flex items-end overflow-x-auto">
+          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
+          ${this.renderNavTab({
+            tabName: "crawl-templates",
+            label: msg("Crawl Configs"),
+          })}
+          ${this.renderNavTab({
+            tabName: "browser-profiles",
+            label: msg("Browser Profiles"),
+          })}
+          ${this.renderNavTab({ tabName: "members", label: msg("Members") })}
+        </nav>
+      </div>
+
+      <hr />
+    `;
+  }
+
+  private renderNavTab({
+    tabName,
+    label,
+  }: {
+    tabName: ArchiveTab;
+    label: string;
+  }) {
+    // const isActive = this.archiveTab === tabName;
+    const isActive = false;
+
+    return html`
+      <a
+        id="${tabName}-tab"
+        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
+        href=${`/archives/${this.selectedTeamId}/${tabName}`}
+        aria-selected=${isActive}
+        @click=${this.navLink}
+      >
+        <div
+          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
+            ? "border-primary text-primary"
+            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
+        >
+          ${label}
+        </div>
+      </a>
+    `;
   }
 
   private renderFindCrawl() {
