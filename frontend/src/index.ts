@@ -668,7 +668,7 @@ export class App extends LiteElement {
   }
 
   private renderSubNavBar() {
-    if (!this.selectedTeamId) return;
+    if (!this.userInfo || !this.selectedTeamId) return;
 
     return html`
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
@@ -697,8 +697,7 @@ export class App extends LiteElement {
     tabName: ArchiveTab;
     label: string;
   }) {
-    // const isActive = this.archiveTab === tabName;
-    const isActive = false;
+    const isActive = this.viewState.params.tab === tabName;
 
     return html`
       <a
