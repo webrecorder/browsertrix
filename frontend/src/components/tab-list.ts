@@ -140,6 +140,14 @@ export class TabList extends LitElement {
 
     .navWrapper {
       grid-area: menu;
+      overflow-y: hidden;
+      overflow-x: auto;
+    }
+
+    @media only screen and (min-width: ${SCREEN_LG}px) {
+      .navWrapper {
+        overflow: initial;
+      }
     }
 
     .header {
