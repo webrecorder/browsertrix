@@ -1296,9 +1296,12 @@ https://example.net`}
   private async handleProgressStateChange(oldState: ProgressState) {
     const { activeTab } = this.progressState;
     if (oldState.activeTab !== activeTab) {
-      (await this.activeTabPanel)?.scrollIntoView({
-        behavior: "smooth",
-      });
+      const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
+      if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
+        activeTabPanel.scrollIntoView({
+          behavior: "smooth",
+        });
+      }
     }
   }
 
