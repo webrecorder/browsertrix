@@ -8,7 +8,7 @@ import type {
   SlSelect,
   SlTextarea,
 } from "@shoelace-style/shoelace";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, queryAsync } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -257,6 +257,9 @@ export class CrawlConfigEditor extends LiteElement {
   @query('form[name="newJobConfig"]')
   formElem!: HTMLFormElement;
 
+  @queryAsync("btrix-tab-panel[aria-hidden=false]")
+  activeTabPanel!: Promise<HTMLElement | null>;
+
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
@@ -269,13 +272,16 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
+    if (changedProperties.get("formState") && this.formState) {
+      this.handleFormStateChange();
+    }
+  }
+
+  updated(changedProperties: Map<string, any>) {
     if (changedProperties.get("progressState") && this.progressState) {
       this.handleProgressStateChange(
         changedProperties.get("progressState") as ProgressState
       );
-    }
-    if (changedProperties.get("formState") && this.formState) {
-      this.handleFormStateChange();
     }
   }
 
@@ -396,7 +402,7 @@ export class CrawlConfigEditor extends LiteElement {
             this.renderNavItem(tabName, tabLabels[tabName])
           )}
 
-          <btrix-tab-panel name="newJobConfig-crawlSetup">
+          <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
             ${this.renderPanelContent(
               html`
                 ${when(this.jobType === "url-list", this.renderUrlListSetup)}
@@ -411,16 +417,28 @@ export class CrawlConfigEditor extends LiteElement {
               { isFirst: true }
             )}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-browserSettings">
+          <btrix-tab-panel
+            name="newJobConfig-browserSettings"
+            class="scroll-m-3"
+          >
             ${this.renderPanelContent(this.renderCrawlBehaviors())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlScheduling">
+          <btrix-tab-panel
+            name="newJobConfig-crawlScheduling"
+            class="scroll-m-3"
+          >
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlInformation">
+          <btrix-tab-panel
+            name="newJobConfig-crawlInformation"
+            class="scroll-m-3"
+          >
             ${this.renderPanelContent(this.renderJobInformation())}
           </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-confirmSettings">
+          <btrix-tab-panel
+            name="newJobConfig-confirmSettings"
+            class="scroll-m-3"
+          >
             ${this.renderPanelContent(this.renderConfirmSettings(), {
               isLast: true,
             })}
@@ -1275,10 +1293,12 @@ https://example.net`}
     }
   }
 
-  private handleProgressStateChange(oldState: ProgressState) {
-    const { currentStep } = this.progressState;
-    if (oldState.currentStep !== currentStep) {
-      this.formElem?.scrollIntoView({ behavior: "smooth" });
+  private async handleProgressStateChange(oldState: ProgressState) {
+    const { activeTab } = this.progressState;
+    if (oldState.activeTab !== activeTab) {
+      (await this.activeTabPanel)?.scrollIntoView({
+        behavior: "smooth",
+      });
     }
   }
 

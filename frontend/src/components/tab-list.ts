@@ -342,8 +342,10 @@ export class TabList extends LitElement {
       panel.active = panel.name === this.activePanel;
       if (panel.active) {
         panel.style.display = "flex";
+        panel.setAttribute("aria-hidden", "false");
       } else {
         panel.style.display = "none";
+        panel.setAttribute("aria-hidden", "true");
       }
     });
   }
