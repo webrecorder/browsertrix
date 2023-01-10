@@ -4,15 +4,9 @@ import time
 import io
 import zipfile
 
+from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
+
 host_prefix = "http://127.0.0.1:30870"
-api_prefix = f"{host_prefix}/api"
-
-
-access_token = None
-headers = None
-archive_id = None
-
-crawl_id = None
 
 wacz_path = None
 wacz_size = None
@@ -21,47 +15,31 @@ wacz_hash = None
 wacz_content = None
 
 
-def test_login():
-    username = "admin@example.com"
-    password = "PASSW0RD!"
-    r = requests.post(
-        f"{api_prefix}/auth/jwt/login",
-        data={"username": username, "password": password, "grant_type": "password"},
-    )
-    assert r.status_code == 200
+def test_list_archives(admin_auth_headers, admin_aid):
+    r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
     data = r.json()
 
-    assert data["token_type"] == "bearer"
+    archives = data["archives"]
+    assert len(archives) > 0
 
-    global access_token
-    access_token = data["access_token"]
-
-    global headers
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-
-def test_list_archives():
-    r = requests.get(f"{api_prefix}/archives", headers=headers)
-    data = r.json()
-
-    assert len(data["archives"]) == 1
-    assert data["archives"][0]["id"]
-
-    global archive_id
-    archive_id = data["archives"][0]["id"]
-
-    assert data["archives"][0]["name"] == "admin's Archive"
+    archive_ids = []
+    archive_names = []
+    for archive in archives:
+        archive_ids.append(archive["id"])
+        archive_names.append(archive["name"])
+    assert admin_aid in archive_ids
+    assert "admin's Archive" in archive_names
 
 
-def test_create_new_config():
+def test_create_new_config(admin_auth_headers, admin_aid):
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
         "config": {"seeds": ["https://example.com/"]},
     }
     r = requests.post(
-        f"{api_prefix}/archives/{archive_id}/crawlconfigs/",
-        headers=headers,
+        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        headers=admin_auth_headers,
         json=crawl_data,
     )
 
@@ -71,18 +49,15 @@ def test_create_new_config():
     assert data["added"]
     assert data["run_now_job"]
 
-    global crawl_id
-    crawl_id = data["run_now_job"]
 
-
-def test_wait_for_complete():
+def test_wait_for_complete(admin_auth_headers, admin_aid, admin_crawl_id):
     print("")
     print("---- Running Crawl ----")
 
     while True:
         r = requests.get(
-            f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}/replay.json",
-            headers=headers,
+            f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}/replay.json",
+            headers=admin_auth_headers,
         )
         data = r.json()
         assert (
@@ -105,10 +80,10 @@ def test_wait_for_complete():
     wacz_size = data["resources"][0]["size"]
     wacz_hash = data["resources"][0]["hash"]
 
-def test_crawl_info():
+def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
     r = requests.get(
-        f"{api_prefix}/archives/{archive_id}/crawls/{crawl_id}",
-        headers=headers,
+        f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
     )
     data = r.json()
     assert data["fileSize"] == wacz_size

@@ -180,6 +180,33 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
 
+    async def create_non_super_user(
+        self, email: str, password: str, name: str = "New user"
+    ):
+        if not email:
+            print("No user defined", flush=True)
+            return
+
+        if not password:
+            password = passlib.pwd.genword()
+
+        try:
+            user_create = UserCreate(
+                name=name,
+                email=email,
+                password=password,
+                is_superuser=False,
+                newArchive=True,
+                is_verified=True,
+            )
+            created_user = await super().create(user_create, safe=False, request=None)
+            await self.on_after_register_custom(created_user, user_create, request=None)
+            return created_user
+
+        except (DuplicateKeyError, UserAlreadyExists):
+            print(f"User {email} already exists", flush=True)
+
+
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
     ):
