@@ -165,6 +165,9 @@ const vnc = {
     library: {
       type: "module",
     },
+    // Fix node >v16 compatibility issues
+    // https://stackoverflow.com/a/73465262
+    hashFunction: "xxhash64",
   },
 };
 
