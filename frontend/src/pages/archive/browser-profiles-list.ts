@@ -34,9 +34,6 @@ export class BrowserProfilesList extends LiteElement {
   @state()
   private isSubmitting = false;
 
-  /** Profile creation only works in Chromium-based browsers */
-  private isBrowserCompatible = true;//Boolean((window as any).chrome);
-
   firstUpdated() {
     if (this.showCreateDialog) {
       this.isCreateFormVisible = true;
@@ -66,17 +63,6 @@ export class BrowserProfilesList extends LiteElement {
         @sl-show=${() => (this.isCreateFormVisible = true)}
         @sl-after-hide=${() => (this.isCreateFormVisible = false)}
       >
-        ${this.isBrowserCompatible
-          ? ""
-          : html`
-              <div class="mb-4">
-                <btrix-alert variant="warning" class="text-sm">
-                  ${msg(
-                    "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
-                  )}
-                </btrix-alert>
-              </div>
-            `}
         ${this.isCreateFormVisible ? this.renderCreateForm() : ""}
       </sl-dialog> `;
   }
@@ -213,7 +199,6 @@ export class BrowserProfilesList extends LiteElement {
               name="urlPrefix"
               value="https://"
               hoist
-              ?disabled=${!this.isBrowserCompatible}
               @sl-hide=${this.stopProp}
               @sl-after-hide=${this.stopProp}
             >
@@ -226,7 +211,6 @@ export class BrowserProfilesList extends LiteElement {
               placeholder=${msg("example.com")}
               autocomplete="off"
               aria-labelledby="startingUrlLabel"
-              ?disabled=${!this.isBrowserCompatible}
               required
             >
             </sl-input>
@@ -238,7 +222,7 @@ export class BrowserProfilesList extends LiteElement {
           <sl-button
             variant="primary"
             type="submit"
-            ?disabled=${!this.isBrowserCompatible || this.isSubmitting}
+            ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
             ${msg("Start Profile Creator")}

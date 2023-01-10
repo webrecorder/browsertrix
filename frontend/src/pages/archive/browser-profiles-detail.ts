@@ -239,7 +239,6 @@ export class BrowserProfilesDetail extends LiteElement {
                     <sl-button
                       variant="primary"
                       outline
-                      ?disabled=${!ProfileBrowser.isBrowserCompatible}
                       @click=${this.startBrowserPreview}
                       ><sl-icon
                         slot="prefix"
