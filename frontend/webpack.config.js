@@ -163,10 +163,9 @@ const vnc = {
   output: {
     filename: "js/novnc.js",
     library: {
-      type: 'module',
+      type: "module",
     },
   },
-
 };
 
-module.exports = [ main, vnc ];
+module.exports = [main, vnc];
