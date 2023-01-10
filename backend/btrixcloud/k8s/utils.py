@@ -26,7 +26,7 @@ async def create_from_yaml(k8s_client, doc, namespace):
 
 async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
     """send signal to all pods"""
-    command = ["kill", "-s", signame, "1"]
+    command = ["bash", "-c", f"kill -s {signame} 1"]
     signaled = False
 
     try:
@@ -36,13 +36,17 @@ async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
 
             print(f"Sending {signame} to {pod.metadata.name}", flush=True)
 
-            await core_api_ws.connect_get_namespaced_pod_exec(
+            res = await core_api_ws.connect_get_namespaced_pod_exec(
                 pod.metadata.name,
                 namespace=namespace,
                 command=command,
                 stdout=True,
             )
-            signaled = True
+            if res:
+                print("Result", res, flush=True)
+
+            else:
+                signaled = True
 
     # pylint: disable=broad-except
     except Exception as exc:

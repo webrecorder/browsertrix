@@ -30,9 +30,6 @@ export class ProfileBrowser extends LiteElement {
   // is hidden on the backend
   static SIDE_BAR_WIDTH = 288;
 
-  /** Profile creation only works in Chromium-based browsers */
-  static isBrowserCompatible = Boolean((window as any).chrome);
-
   @property({ type: Object })
   authState!: AuthState;
 
@@ -112,18 +109,6 @@ export class ProfileBrowser extends LiteElement {
   }
 
   private renderBrowser() {
-    if (!ProfileBrowser.isBrowserCompatible) {
-      return html`
-        <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
-          <btrix-alert variant="warning" class="text-sm">
-            ${msg(
-              "Browser profile creation is only supported in Chromium-based browsers (such as Chrome) at this time. Please re-open this page in a compatible browser to proceed."
-            )}
-          </btrix-alert>
-        </div>
-      `;
-    }
-
     if (this.hasFetchError) {
       return html`
         <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">

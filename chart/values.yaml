@@ -48,6 +48,8 @@ api_limits_memory: "512Mi"
 job_cpu: "3m"
 job_memory: "70Mi"
 
+profile_browser_idle_seconds: 60
+
 
 # Nginx Image
 # =========================================

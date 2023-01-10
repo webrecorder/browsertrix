@@ -75,6 +75,9 @@ spec:
             - name: STORE_PATH
               value: {{ storage_path }}
 
+            - name: VNC_PASS
+              value: {{ vnc_password }}
+
 ---
 apiVersion: v1
 kind: Service

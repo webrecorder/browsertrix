@@ -45,7 +45,7 @@ spec:
       containers:
         - name: crawl-job
           image: {{ job_image }}
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: ["python", "-m", "btrixcloud.k8s.profile_job"]
 
           volumeMounts:
@@ -65,7 +65,7 @@ spec:
               value: {{ storage_name }}
 
             - name: IDLE_TIMEOUT
-              value: "60"
+              value: "{{ idle_timeout }}"
 
             - name: START_URL
               value: {{ url }}

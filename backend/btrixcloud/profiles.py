@@ -146,28 +146,29 @@ class ProfileOps:
 
     async def get_profile_browser_url(self, browserid, aid, headers):
         """get profile browser url"""
-        json = await self._send_browser_req(browserid, "/target")
+        json = await self._send_browser_req(browserid, "/vncpass")
 
-        target_id = json.get("targetId")
+        password = json.get("password")
 
-        if not target_id:
+        if not password:
             raise HTTPException(status_code=400, detail="browser_not_available")
 
         scheme = headers.get("X-Forwarded-Proto") or "http"
         host = headers.get("Host") or "localhost"
-        ws_scheme = "wss" if scheme == "https" else "ws"
-
-        prefix = f"{host}/loadbrowser/{browserid}/devtools"
+        # ws_scheme = "wss" if scheme == "https" else "ws"
 
         auth_bearer = headers.get("Authorization").split(" ")[1]
 
-        params = {"panel": "resources"}
-        params[
-            ws_scheme
-        ] = f"{prefix}/page/{target_id}?aid={aid}&auth_bearer={auth_bearer}"
+        params = {
+            "path": f"browser/{browserid}/ws?aid={aid}&auth_bearer={auth_bearer}",
+            "password": password,
+            "aid": aid,
+            "auth_bearer": auth_bearer,
+            "scale": 0.75,
+        }
 
-        # pylint: disable=line-too-long
-        return {"url": f"{scheme}://{prefix}/inspector.html?{urlencode(params)}"}
+        url = f"{scheme}://{host}/browser/{browserid}/?{urlencode(params)}"
+        return {"url": url}
 
     async def ping_profile_browser(self, browserid):
         """ping profile browser to keep it running"""

@@ -64,7 +64,7 @@ const version = (() => {
   return packageJSON.version;
 })();
 
-module.exports = {
+const main = {
   entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -156,3 +156,19 @@ module.exports = {
     }),
   ],
 };
+
+const vnc = {
+  entry: "./node_modules/@novnc/novnc/core/rfb.js",
+  experiments: { outputModule: true },
+  output: {
+    filename: "js/novnc.js",
+    library: {
+      type: "module",
+    },
+    // Fix node >v16 compatibility issues
+    // https://stackoverflow.com/a/73465262
+    hashFunction: "xxhash64",
+  },
+};
+
+module.exports = [main, vnc];
