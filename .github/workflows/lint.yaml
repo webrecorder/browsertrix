@@ -21,8 +21,8 @@ jobs:
 
       - name: Style Check
         run: |
-          black --check btrixcloud/
+          black --check backend/btrixcloud/
 
       - name: Lint Check
         run: |
-          pylint btrixcloud/
+          pylint backend/btrixcloud/
