@@ -19,7 +19,6 @@ from .invites import (
     UserRole,
 )
 
-
 # crawl scale for constraint
 MAX_CRAWL_SCALE = 3
 
