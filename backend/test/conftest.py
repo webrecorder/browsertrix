@@ -11,6 +11,7 @@ ADMIN_PW = "PASSW0RD!"
 VIEWER_USERNAME = "viewer@example.com"
 VIEWER_PW = "viewerPASSW0RD!"
 
+
 @pytest.fixture(scope="session")
 def admin_auth_headers():
     r = requests.post(
@@ -25,11 +26,13 @@ def admin_auth_headers():
     access_token = data.get("access_token")
     return {"Authorization": f"Bearer {access_token}"}
 
+
 @pytest.fixture(scope="session")
 def admin_aid(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
     data = r.json()
     return data["archives"][0]["id"]
+
 
 @pytest.fixture(scope="session")
 def admin_crawl_id(admin_auth_headers, admin_aid):
@@ -56,6 +59,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
         if data["state"] == "complete":
             return crawl_id
         time.sleep(5)
+
 
 @pytest.fixture(scope="session")
 def viewer_auth_headers(admin_auth_headers, admin_aid):
