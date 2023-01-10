@@ -573,7 +573,7 @@ class CrawlConfigOps:
 
         return result.inserted_id
 
-    def get_crawl_config_tags(self, archive):
+    async def get_crawl_config_tags(self, archive):
         cursor = await self.crawl_configs.distinct("tags", {"aid": archive.id})
         results = await cursor.to_list(length=1000)
         print(results)
