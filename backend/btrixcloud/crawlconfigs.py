@@ -573,6 +573,12 @@ class CrawlConfigOps:
 
         return result.inserted_id
 
+    def get_crawl_config_tags(self, archive):
+        cursor = await self.crawl_configs.distinct("tags", {"aid": archive.id})
+        results = await cursor.to_list(length=1000)
+        print(results)
+        return results
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
@@ -652,6 +658,10 @@ def init_crawl_config_api(
             )
 
         return await ops.do_make_inactive(crawlconfig)
+
+    @router.get("/tags")
+    async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.get_crawl_config_tags(archive)
 
     archive_ops.router.include_router(router)
 
