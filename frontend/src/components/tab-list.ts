@@ -140,6 +140,14 @@ export class TabList extends LitElement {
 
     .navWrapper {
       grid-area: menu;
+      overflow-y: hidden;
+      overflow-x: auto;
+    }
+
+    @media only screen and (min-width: ${SCREEN_LG}px) {
+      .navWrapper {
+        overflow: initial;
+      }
     }
 
     .header {
@@ -155,6 +163,9 @@ export class TabList extends LitElement {
 
     .nav {
       position: relative;
+      position: -webkit-sticky;
+      position: sticky;
+      top: var(--sl-spacing-medium);
     }
 
     ul {
@@ -331,8 +342,10 @@ export class TabList extends LitElement {
       panel.active = panel.name === this.activePanel;
       if (panel.active) {
         panel.style.display = "flex";
+        panel.setAttribute("aria-hidden", "false");
       } else {
         panel.style.display = "none";
+        panel.setAttribute("aria-hidden", "true");
       }
     });
   }
