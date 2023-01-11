@@ -342,12 +342,7 @@ export class TagInput extends LitElement {
 
   private async getOptions() {
     // TODO actual API call
-    await new Promise((resolve) => {
-      window.setTimeout(() => {
-        resolve(null);
-      }, 1000);
-    });
-
-    return ["temp1", "temp2"];
+    // https://github.com/webrecorder/browsertrix-cloud/issues/453
+    return [];
   }
 }
