@@ -104,7 +104,10 @@
       "no-unused-vars": "warn"
     }
   },
-  "prettier": {},
+  "prettier": {
+    "tabWidth": 2,
+    "useTabs": false
+  },
   "lint-staged": {
     "src/*.{ts,js,html,css,json}": "prettier --write"
   },
