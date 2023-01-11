@@ -56,6 +56,9 @@ export class TagInput extends LitElement {
     btrix-tag {
       margin-left: var(--sl-spacing-x-small);
       margin-top: calc(0.5rem - 1px);
+      max-width: calc(
+        100% - var(--sl-spacing-x-small) - var(--sl-spacing-x-small)
+      );
     }
 
     .dropdown {
@@ -243,7 +246,11 @@ export class TagInput extends LitElement {
       this.dispatchChange();
     };
     return html`
-      <btrix-tag variant="primary" removable @sl-remove=${removeTag}
+      <btrix-tag
+        variant="primary"
+        removable
+        @sl-remove=${removeTag}
+        title=${content}
         >${content}</btrix-tag
       >
     `;

@@ -22,6 +22,13 @@ export class Tag extends SLTag {
       font-family: var(--sl-font-sans);
     }
 
+    .tag__content {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .tag__remove {
       color: var(--sl-color-blue-600);
       border-radius: 100%;
