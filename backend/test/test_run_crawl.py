@@ -89,7 +89,7 @@ def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
 
 
 def test_download_wacz():
-    r = requests.get(host_prefix + wacz_path)
+    r = requests.get(HOST_PREFIX + wacz_path)
     assert r.status_code == 200
     assert len(r.content) == wacz_size
 
