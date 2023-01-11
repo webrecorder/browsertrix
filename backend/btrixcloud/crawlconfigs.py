@@ -225,7 +225,7 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("aid", pymongo.HASHED), ("tags", pymongo.ASCENDING)]
+            [("aid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
     def set_coll_ops(self, coll_ops):
