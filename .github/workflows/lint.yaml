@@ -25,4 +25,5 @@ jobs:
 
       - name: Lint Check
         run: |
-          pylint backend/btrixcloud/
+          cd backend/
+          pylint btrixcloud/
