@@ -29,6 +29,9 @@ superuser:
   # change or remove this
   password: PASSW0RD!
 
+# Set name for default organization created with superuser
+default_org: "My Organization"
+
 
 # API Image
 # =========================================

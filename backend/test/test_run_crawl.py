@@ -26,7 +26,7 @@ def test_list_archives(admin_auth_headers, admin_aid):
         archive_ids.append(archive["id"])
         archive_names.append(archive["name"])
     assert admin_aid in archive_ids
-    assert "admin's Archive" in archive_names
+    assert "My Organization" in archive_names
 
 
 def test_create_new_config(admin_auth_headers, admin_aid):

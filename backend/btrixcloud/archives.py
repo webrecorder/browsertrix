@@ -1,6 +1,7 @@
 """
 Archive API handling
 """
+import os
 import uuid
 
 from typing import Dict, Union, Literal, Optional
@@ -147,6 +148,12 @@ class ArchiveOps:
     ):
         # pylint: disable=too-many-arguments
         """Create new archive with default storage for new user"""
+        default_org = await self.get_default_org()
+        if default_org and default_org.name == archive_name:
+            print(
+                f'\'Name "{archive_name}" reserved by default organization - skipping'
+            )
+            return
 
         id_ = uuid.uuid4()
 
@@ -187,6 +194,13 @@ class ArchiveOps:
         """Get an archive by id"""
         res = await self.archives.find_one({"_id": aid})
         return Archive.from_dict(res)
+
+    async def get_default_org(self):
+        """Get default organization"""
+        default_org = os.environ.get("DEFAULT_ORG", "My Organization")
+        res = await self.archives.find_one({"name": default_org})
+        if res:
+            return Archive.from_dict(res)
 
     async def update(self, archive: Archive):
         """Update existing archive"""

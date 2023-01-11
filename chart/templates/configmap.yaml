@@ -25,6 +25,8 @@ data:
 
   CRAWLER_LIVENESS_PORT: "{{ .Values.crawler_liveness_port | default 0 }}"
 
+  DEFAULT_ORG: "{{ .Values.default_org }}"
+
   JOB_IMAGE: "{{ .Values.api_image }}"
 
   {{- if .Values.crawler_pv_claim }}
