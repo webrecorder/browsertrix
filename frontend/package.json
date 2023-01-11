@@ -26,6 +26,7 @@
     "yaml": "^2.0.0-11"
   },
   "scripts": {
+    "prepare": "cd .. && husky install frontend/.husky",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
@@ -62,6 +63,7 @@
     "eslint-webpack-plugin": "^3.1.1",
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.5.0",
+    "husky": "^8.0.3",
     "node-fetch": "^3.1.0",
     "postcss": "^8.4.5",
     "postcss-loader": "^6.1.1",
