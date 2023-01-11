@@ -519,8 +519,6 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private renderFooter({ isFirst = false, isLast = false }) {
-    const isConfirmSettingsEnabled =
-      this.progressState.tabs.crawlSetup.completed;
     return html`
       <div class="px-6 py-4 border-t flex justify-between">
         ${isFirst
@@ -588,13 +586,14 @@ export class CrawlConfigEditor extends LiteElement {
                     <sl-button
                       size="small"
                       @click=${() => {
-                        if (!isConfirmSettingsEnabled) {
-                          this.nextStep();
-                        } else {
+                        if (this.hasRequiredFields()) {
                           this.updateProgressState({
                             activeTab: "confirmSettings",
                             currentStep: "confirmSettings",
+                            tabs: { crawlSetup: { completed: true } },
                           });
+                        } else {
+                          this.nextStep();
                         }
                       }}
                     >
