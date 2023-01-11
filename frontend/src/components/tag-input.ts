@@ -226,7 +226,7 @@ export class TagInput extends LitElement {
                 ${this.tagOptions.length ? html`<sl-divider></sl-divider>` : ""}
 
                 <sl-menu-item role="option" value=${this.inputValue}>
-                  ${msg(str`Add “${this.inputValue}”`)}
+                  ${msg(str`Add “${this.inputValue.toLocaleLowerCase()}”`)}
                 </sl-menu-item>
               </sl-menu>
             </div>
@@ -330,7 +330,7 @@ export class TagInput extends LitElement {
   private async addTags(tags: Tags) {
     await this.updateComplete;
     this.tags = union(
-      tags.map((v) => v.trim()).filter((v) => v),
+      tags.map((v) => v.trim().toLocaleLowerCase()).filter((v) => v),
       this.tags
     );
     this.dispatchChange();
