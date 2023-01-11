@@ -253,9 +253,13 @@ class ProfileOps:
 
         return {"success": True}
 
-    async def list_profiles(self, archive: Archive):
+    async def list_profiles(self, archive: Archive, userid: Optional[UUID4] = None):
         """list all profiles"""
-        cursor = self.profiles.find({"aid": archive.id})
+        query = {"aid": archive.id}
+        if userid:
+            query["userid"] = userid
+
+        cursor = self.profiles.find(query)
         results = await cursor.to_list(length=1000)
         return [Profile.from_dict(res) for res in results]
 
@@ -395,8 +399,9 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     @router.get("", response_model=List[Profile])
     async def list_profiles(
         archive: Archive = Depends(archive_crawl_dep),
+        userid: Optional[UUID4] = None,
     ):
-        return await ops.list_profiles(archive)
+        return await ops.list_profiles(archive, userid)
 
     @router.post("", response_model=Profile)
     async def commit_browser_to_new(

@@ -12,6 +12,9 @@ ADMIN_PW = "PASSW0RD!"
 VIEWER_USERNAME = "viewer@example.com"
 VIEWER_PW = "viewerPASSW0RD!"
 
+CRAWLER_USERNAME = "crawler@example.com"
+CRAWLER_PW = "crawlerPASSWORD!"
+
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
@@ -90,8 +93,36 @@ def viewer_auth_headers(admin_auth_headers, admin_aid):
             "password": VIEWER_PW,
             "grant_type": "password",
         },
-        headers=admin_auth_headers,
     )
     data = r.json()
     access_token = data.get("access_token")
     return {"Authorization": f"Bearer {access_token}"}
+
+@pytest.fixture(scope="session")
+def crawler_auth_headers(admin_auth_headers, admin_aid):
+    requests.post(
+        f"{API_PREFIX}/archives/{admin_aid}/add-user",
+        json={
+            "email": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "name": "new-crawler",
+            "role": 20,
+        },
+        headers=admin_auth_headers,
+    )
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    access_token = data.get("access_token")
+    return {"Authorization": f"Bearer {access_token}"}
+
+@pytest.fixture(scope="session")
+def crawler_userid(crawler_auth_headers):
+    r = requests.get(f"{API_PREFIX}/users/me", headers=crawler_auth_headers)
+    return r.json()["id"]

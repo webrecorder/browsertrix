@@ -173,6 +173,7 @@ class CrawlOps:
         archive: Optional[Archive] = None,
         cid: uuid.UUID = None,
         collid: uuid.UUID = None,
+        userid: uuid.UUID = None,
         crawl_id: str = None,
         exclude_files=True,
         running_only=False,
@@ -190,6 +191,9 @@ class CrawlOps:
 
         if collid:
             query["colls"] = collid
+
+        if userid:
+            query["userid"] = userid
 
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
@@ -580,8 +584,10 @@ def init_crawls_api(
         return ListCrawls(crawls=await ops.list_crawls(None, running_only=True))
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls(archive: Archive = Depends(archive_viewer_dep)):
-        return ListCrawls(crawls=await ops.list_crawls(archive))
+    async def list_crawls(
+        archive: Archive = Depends(archive_viewer_dep), userid: Optional[UUID4] = None
+    ):
+        return ListCrawls(crawls=await ops.list_crawls(archive, userid=userid))
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/cancel",

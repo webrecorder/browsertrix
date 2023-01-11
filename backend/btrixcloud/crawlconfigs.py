@@ -366,13 +366,19 @@ class CrawlConfigOps:
         return {"success": True}
 
     async def get_crawl_configs(
-        self, archive: Archive, tags: Optional[List[str]] = None
+        self,
+        archive: Archive,
+        userid: Optional[UUID4] = None,
+        tags: Optional[List[str]] = None,
     ):
         """Get all crawl configs for an archive is a member of"""
         match_query = {"aid": archive.id, "inactive": {"$ne": True}}
 
         if tags:
             match_query["tags"] = {"$all": tags}
+
+        if userid:
+            match_query["userid"] = userid
 
         # pylint: disable=duplicate-code
         cursor = self.crawl_configs.aggregate(
@@ -599,9 +605,10 @@ def init_crawl_config_api(
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(
         archive: Archive = Depends(archive_crawl_dep),
+        userid: Optional[UUID4] = None,
         tag: Union[List[str], None] = Query(default=None),
     ):
-        return await ops.get_crawl_configs(archive, tag)
+        return await ops.get_crawl_configs(archive, userid=userid, tags=tag)
 
     @router.get("/tags")
     async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
