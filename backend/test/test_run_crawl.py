@@ -35,7 +35,7 @@ def test_create_new_config(admin_auth_headers, admin_aid):
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
-        "config": {"seeds": ["https://example.com/"]},
+        "config": {"seeds": ["https://webrecorder.net/"]},
     }
     r = requests.post(
         f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
@@ -110,4 +110,4 @@ def test_verify_wacz():
     assert "pages/pages.jsonl" in z.namelist()
 
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
-    assert '"https://example.com/"' in pages
+    assert '"https://webrecorder.net/"' in pages

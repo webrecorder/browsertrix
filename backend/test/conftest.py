@@ -40,7 +40,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
     crawl_data = {
         "runNow": True,
         "name": "Admin Test Crawl",
-        "config": {"seeds": ["https://example.com/"]},
+        "config": {"seeds": ["https://webrecorder.net/"], "limit": 1},
     }
     r = requests.post(
         f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",

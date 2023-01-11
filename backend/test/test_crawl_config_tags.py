@@ -1,10 +1,6 @@
 import requests
-import hashlib
-import time
-import io
-import zipfile
 
-from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
+from .conftest import API_PREFIX
 
 new_cid_1 = None
 new_cid_2 = None
