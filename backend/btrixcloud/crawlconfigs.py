@@ -225,7 +225,7 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("aid": pymongo.HASHED), ("tags": pymongo.ASCENDING)]
+            [("aid", pymongo.HASHED), ("tags", pymongo.ASCENDING)]
         )
 
     def set_coll_ops(self, coll_ops):
@@ -576,10 +576,8 @@ class CrawlConfigOps:
         return result.inserted_id
 
     async def get_crawl_config_tags(self, archive):
-        results = await self.crawl_configs.distinct("tags", {"aid": archive.id})
-        #results = await cursor.to_list(length=1000)
-        print(results)
-        return results
+        """get distinct tags from all crawl configs for this archive"""
+        return await self.crawl_configs.distinct("tags", {"aid": archive.id})
 
 
 # ============================================================================
