@@ -11,7 +11,7 @@ from datetime import datetime
 
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .users import User
 from .archives import Archive, MAX_CRAWL_SCALE
@@ -102,6 +102,7 @@ class CrawlConfigIn(BaseModel):
     profileid: Optional[UUID4]
 
     colls: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
@@ -124,6 +125,7 @@ class CrawlConfig(BaseMongoModel):
     created: Optional[datetime]
 
     colls: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
@@ -220,6 +222,10 @@ class CrawlConfigOps:
         """init index for crawls db"""
         await self.crawl_configs.create_index(
             [("aid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
+        )
+
+        await self.crawl_configs.create_index(
+            [("aid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
     def set_coll_ops(self, coll_ops):
@@ -359,12 +365,19 @@ class CrawlConfigOps:
 
         return {"success": True}
 
-    async def get_crawl_configs(self, archive: Archive):
+    async def get_crawl_configs(
+        self, archive: Archive, tags: Optional[List[str]] = None
+    ):
         """Get all crawl configs for an archive is a member of"""
+        match_query = {"aid": archive.id, "inactive": {"$ne": True}}
+
+        if tags:
+            match_query["tags"] = {"$all": tags}
+
         # pylint: disable=duplicate-code
         cursor = self.crawl_configs.aggregate(
             [
-                {"$match": {"aid": archive.id, "inactive": {"$ne": True}}},
+                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "users",
@@ -564,6 +577,10 @@ class CrawlConfigOps:
 
         return result.inserted_id
 
+    async def get_crawl_config_tags(self, archive):
+        """get distinct tags from all crawl configs for this archive"""
+        return await self.crawl_configs.distinct("tags", {"aid": archive.id})
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
@@ -580,8 +597,15 @@ def init_crawl_config_api(
     archive_crawl_dep = archive_ops.archive_crawl_dep
 
     @router.get("", response_model=CrawlConfigsResponse)
-    async def get_crawl_configs(archive: Archive = Depends(archive_crawl_dep)):
-        return await ops.get_crawl_configs(archive)
+    async def get_crawl_configs(
+        archive: Archive = Depends(archive_crawl_dep),
+        tag: Union[List[str], None] = Query(default=None),
+    ):
+        return await ops.get_crawl_configs(archive, tag)
+
+    @router.get("/tags")
+    async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.get_crawl_config_tags(archive)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config(cid: str, archive: Archive = Depends(archive_crawl_dep)):

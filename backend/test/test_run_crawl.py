@@ -4,9 +4,7 @@ import time
 import io
 import zipfile
 
-from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
-
-host_prefix = "http://127.0.0.1:30870"
+from .conftest import API_PREFIX, HOST_PREFIX
 
 wacz_path = None
 wacz_size = None
@@ -35,7 +33,7 @@ def test_create_new_config(admin_auth_headers, admin_aid):
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
-        "config": {"seeds": ["https://example.com/"]},
+        "config": {"seeds": ["https://webrecorder.net/"]},
     }
     r = requests.post(
         f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
@@ -91,7 +89,7 @@ def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
 
 
 def test_download_wacz():
-    r = requests.get(host_prefix + wacz_path)
+    r = requests.get(HOST_PREFIX + wacz_path)
     assert r.status_code == 200
     assert len(r.content) == wacz_size
 
@@ -110,4 +108,4 @@ def test_verify_wacz():
     assert "pages/pages.jsonl" in z.namelist()
 
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
-    assert '"https://example.com/"' in pages
+    assert '"https://webrecorder.net/"' in pages
