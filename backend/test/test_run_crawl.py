@@ -4,9 +4,7 @@ import time
 import io
 import zipfile
 
-from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
-
-host_prefix = "http://127.0.0.1:30870"
+from .conftest import API_PREFIX, HOST_PREFIX
 
 wacz_path = None
 wacz_size = None

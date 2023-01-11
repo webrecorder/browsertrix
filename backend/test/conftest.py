@@ -3,7 +3,8 @@ import requests
 import time
 
 
-API_PREFIX = "http://127.0.0.1:30870/api"
+HOST_PREFIX = "http://127.0.0.1:30870"
+API_PREFIX = HOST_PREFIX + "/api"
 
 ADMIN_USERNAME = "admin@example.com"
 ADMIN_PW = "PASSW0RD!"
@@ -14,24 +15,33 @@ VIEWER_PW = "viewerPASSW0RD!"
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
-    r = requests.post(
-        f"{API_PREFIX}/auth/jwt/login",
-        data={
-            "username": ADMIN_USERNAME,
-            "password": ADMIN_PW,
-            "grant_type": "password",
-        },
-    )
-    data = r.json()
-    access_token = data.get("access_token")
-    return {"Authorization": f"Bearer {access_token}"}
+    while True:
+        r = requests.post(
+            f"{API_PREFIX}/auth/jwt/login",
+            data={
+                "username": ADMIN_USERNAME,
+                "password": ADMIN_PW,
+                "grant_type": "password",
+            },
+        )
+        data = r.json()
+        try:
+            return {"Authorization": f"Bearer {data['access_token']}"}
+        except:
+            print("Waiting for admin_auth_headers")
+            time.sleep(5)
 
 
 @pytest.fixture(scope="session")
 def admin_aid(admin_auth_headers):
-    r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
-    data = r.json()
-    return data["archives"][0]["id"]
+    while True:
+        r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
+        data = r.json()
+        try:
+            return data["archives"][0]["id"]
+        except:
+            print("Waiting for admin_aid")
+            time.sleep(5)
 
 
 @pytest.fixture(scope="session")
