@@ -19,8 +19,7 @@ export class Tag extends SLTag {
       background-color: var(--sl-color-blue-100);
       border-color: var(--sl-color-blue-500);
       color: var(--sl-color-blue-600);
-      font-family: var(--font-monostyle-family);
-      font-variation-settings: var(--font-monostyle-variation);
+      font-family: var(--sl-font-sans);
     }
 
     .tag__remove {
