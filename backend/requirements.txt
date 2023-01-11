@@ -3,6 +3,7 @@ fastapi==0.71.0
 fastapi-users[mongodb]==9.2.2
 loguru
 aiofiles
+pydantic==1.8.2
 kubernetes-asyncio==22.6.5
 aiobotocore
 redis>=4.2.0rc1

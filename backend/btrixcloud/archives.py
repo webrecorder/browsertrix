@@ -12,8 +12,12 @@ from .db import BaseMongoModel
 
 from .users import User
 
-from .invites import AddToArchiveRequest, InvitePending, InviteToArchiveRequest, UserRole
-
+from .invites import (
+    AddToArchiveRequest,
+    InvitePending,
+    InviteToArchiveRequest,
+    UserRole,
+)
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = 3
@@ -223,6 +227,8 @@ class ArchiveOps:
 # ============================================================================
 def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
     """Init archives api router for /archives"""
+    # pylint: disable=too-many-locals
+
     ops = ArchiveOps(mdb, invites)
 
     async def archive_dep(aid: str, user: User = Depends(user_dep)):
@@ -336,7 +342,6 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
     @router.post("/add-user", tags=["invites"])
     async def add_new_user_to_archive(
         invite: AddToArchiveRequest,
-        request: Request,
         archive: Archive = Depends(archive_owner_dep),
         user: User = Depends(user_dep),
     ):

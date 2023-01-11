@@ -7,7 +7,11 @@ def test_login_invalid():
     password = "invalid"
     r = requests.post(
         f"{API_PREFIX}/auth/jwt/login",
-        data={"username": ADMIN_USERNAME, "password": password, "grant_type": "password"},
+        data={
+            "username": ADMIN_USERNAME,
+            "password": password,
+            "grant_type": "password",
+        },
     )
     data = r.json()
 
@@ -18,7 +22,11 @@ def test_login_invalid():
 def test_login():
     r = requests.post(
         f"{API_PREFIX}/auth/jwt/login",
-        data={"username": ADMIN_USERNAME, "password": ADMIN_PW, "grant_type": "password"},
+        data={
+            "username": ADMIN_USERNAME,
+            "password": ADMIN_PW,
+            "grant_type": "password",
+        },
     )
     data = r.json()
 

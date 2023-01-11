@@ -80,6 +80,7 @@ def test_wait_for_complete(admin_auth_headers, admin_aid, admin_crawl_id):
     wacz_size = data["resources"][0]["size"]
     wacz_hash = data["resources"][0]["hash"]
 
+
 def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
     r = requests.get(
         f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}",
@@ -87,6 +88,7 @@ def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
     )
     data = r.json()
     assert data["fileSize"] == wacz_size
+
 
 def test_download_wacz():
     r = requests.get(host_prefix + wacz_path)

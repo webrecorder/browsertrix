@@ -183,6 +183,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     async def create_non_super_user(
         self, email: str, password: str, name: str = "New user"
     ):
+        """create a regular user with given credentials"""
         if not email:
             print("No user defined", flush=True)
             return
@@ -205,7 +206,6 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
-
 
     async def on_after_register_custom(
         self, user: UserDB, user_create: UserCreate, request: Optional[Request]
