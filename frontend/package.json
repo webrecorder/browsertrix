@@ -32,7 +32,7 @@
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
-    "format": "prettier --write \"src/**/*.{ts,js,html,css}\"",
+    "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build"
   },
