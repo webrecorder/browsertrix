@@ -224,7 +224,9 @@ class CrawlConfigOps:
             [("aid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )
 
-        await self.crawl_configs.create_index({"tags": 1})
+        await self.crawl_configs.create_index(
+            [("aid": pymongo.HASHED), ("tags": pymongo.ASCENDING)]
+        )
 
     def set_coll_ops(self, coll_ops):
         """set collection ops"""
@@ -574,8 +576,8 @@ class CrawlConfigOps:
         return result.inserted_id
 
     async def get_crawl_config_tags(self, archive):
-        cursor = await self.crawl_configs.distinct("tags", {"aid": archive.id})
-        results = await cursor.to_list(length=1000)
+        results = await self.crawl_configs.distinct("tags", {"aid": archive.id})
+        #results = await cursor.to_list(length=1000)
         print(results)
         return results
 
@@ -600,6 +602,10 @@ def init_crawl_config_api(
         tag: Union[List[str], None] = Query(default=None),
     ):
         return await ops.get_crawl_configs(archive, tag)
+
+    @router.get("/tags")
+    async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
+        return await ops.get_crawl_config_tags(archive)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config(cid: str, archive: Archive = Depends(archive_crawl_dep)):
@@ -658,10 +664,6 @@ def init_crawl_config_api(
             )
 
         return await ops.do_make_inactive(crawlconfig)
-
-    @router.get("/tags")
-    async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
-        return await ops.get_crawl_config_tags(archive)
 
     archive_ops.router.include_router(router)
 
