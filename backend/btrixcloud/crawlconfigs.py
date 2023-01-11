@@ -365,7 +365,7 @@ class CrawlConfigOps:
 
         return {"success": True}
 
-    async def get_crawl_configs(self, archive: Archive, tags: List[str] = None):
+    async def get_crawl_configs(self, archive: Archive, tags: Optional[List[str]] = None):
         """Get all crawl configs for an archive is a member of"""
         match_query = {"aid": archive.id, "inactive": {"$ne": True}}
 
