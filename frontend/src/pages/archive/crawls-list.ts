@@ -12,6 +12,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlConfig, InitialCrawlConfig } from "./types";
+import { SlCheckbox } from "@shoelace-style/shoelace";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -50,6 +51,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
+  @property({ type: String })
+  userId!: string;
+
   // e.g. `/archive/${this.archiveId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -81,6 +85,9 @@ export class CrawlsList extends LiteElement {
   };
 
   @state()
+  private filterByCurrentUser = true;
+
+  @state()
   private filterBy: string = "";
 
   // For fuzzy search:
@@ -104,7 +111,8 @@ export class CrawlsList extends LiteElement {
     if (
       changedProperties.has("shouldFetch") ||
       changedProperties.get("crawlsBaseUrl") ||
-      changedProperties.get("crawlsAPIBaseUrl")
+      changedProperties.get("crawlsAPIBaseUrl") ||
+      changedProperties.has("filterByCurrentUser")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
@@ -182,6 +190,21 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
         <div class="col-span-12 md:col-span-1 flex items-center justify-end">
+          ${this.userId
+            ? html`<label class="mr-3">
+                <span class="text-neutral-500 mr-1"
+                  >${msg("Filter My Crawls")}</span
+                >
+                <sl-switch
+                  @sl-change=${(e: CustomEvent) =>
+                    (this.filterByCurrentUser = (
+                      e.target as SlCheckbox
+                    ).checked)}
+                  ?checked=${this.filterByCurrentUser}
+                ></sl-switch>
+              </label>`
+            : ""}
+
           <div class="whitespace-nowrap text-neutral-500 mr-2">
             ${msg("Sort By")}
           </div>
@@ -554,13 +577,11 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(): Promise<{ crawls: Crawl[] }> {
-    // Mock to use in dev:
-    // return import("../../__mocks__/api/archives/[id]/crawls").then(
-    //   (module) => module.default
-    // );
+    const params =
+      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
     const data = await this.apiFetch(
-      this.crawlsAPIBaseUrl || this.crawlsBaseUrl,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
       this.authState!
     );
 

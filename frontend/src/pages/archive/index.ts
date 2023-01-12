@@ -164,6 +164,7 @@ export class Archive extends LiteElement {
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
+      userId=${this.userInfo!.id}
       crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.archiveTab === "crawls"}
     ></btrix-crawls-list>`;
