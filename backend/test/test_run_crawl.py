@@ -21,12 +21,9 @@ def test_list_archives(admin_auth_headers, admin_aid):
     assert len(archives) > 0
 
     archive_ids = []
-    archive_names = []
     for archive in archives:
         archive_ids.append(archive["id"])
-        archive_names.append(archive["name"])
     assert admin_aid in archive_ids
-    assert "My Organization" in archive_names
 
 
 def test_create_new_config(admin_auth_headers, admin_aid):

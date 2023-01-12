@@ -341,6 +341,26 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
             ]
         }
 
+    @app.post("/archives/create", tags=["archives"])
+    async def create_archive(
+        new_archive: RenameArchive,
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        id_ = uuid.uuid4()
+        storage_path = str(id_) + "/"
+        archive = Archive(
+            id=id_,
+            name=new_archive.name,
+            users={},
+            storage=DefaultStorage(name="default", path=storage_path),
+        )
+        await ops.add_archive(archive)
+
+        return {"added": True}
+
     @router.get("", tags=["archives"])
     async def get_archive(
         archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
