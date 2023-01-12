@@ -6,3 +6,5 @@
 .DS_Store
 # digital ocean custom values
 private.yml
+# microk8s playbook hosts
+hosts

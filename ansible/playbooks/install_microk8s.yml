@@ -1,7 +1,394 @@
 ---
-- name: install microk8s
-  hosts: "{{ your_ip }}"
+# by default this playbook will add the ip address of your endpoint
+# pass '-e host_name="my-domain.example.edu"' for it to work best
+- name: deploy microk8s 
+  gather_facts: true
+  hosts: "{{ host_ip | default('inventory_hostname') }}"
   remote_user: "{{ your_user }}"
   become: true
-  roles:
-    - role: ../roles/microk8s
+  vars_files:
+    - ../group_vars/microk8s/main.yml
+
+  tasks:
+  # ===========================================
+  # Install pre-requisites (RedHat)
+  - name: microk8s | enable epel-release (RedHat)
+    ansible.builtin.dnf:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - git
+      - epel-release
+      - python3
+      - python3-pip
+    become: true
+    when:
+      - ansible_os_family == "RedHat"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.apt
+
+  - name: microk8s | set permissive selinux (RedHat)
+    ansible.builtin.command: /usr/sbin/setenforce 0
+    when:
+      - ansible_os_family == "RedHat"
+    become: true
+
+  - name: microk8s | allow permissive to persist (RedHat)
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+    when:
+      - ansible_os_family == "RedHat"
+    become: true
+
+  # ===========================================
+  # Install microk8s
+  - name: microk8s | ensure dependencies are installed (Debian)
+    ansible.builtin.apt:
+      name:
+        - snapd
+        - fuse
+        - udev
+      state: present
+      update_cache: true
+      cache_valid_time: "{{ microk8s_cache_valid_time }}"
+    when:
+      - ansible_os_family == "Debian"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.apt
+
+  - name: microk8s | ensure dependencies are installed (RedHat)
+    ansible.builtin.dnf:
+      name:
+        - snapd
+        - fuse
+        - udev
+      state: present
+      update_cache: true
+    when:
+      - ansible_os_family == "RedHat"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.apt
+
+  - name: microk8s | start and enable services
+    ansible.builtin.service:
+      name: "{{ microk8s_service }}"
+      state: started
+      enabled: true
+    loop:
+      - snapd
+    loop_control:
+      loop_var: microk8s_service
+      label: "{{ microk8s_service }}"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.services
+
+  - name: microk8s | start and enable services (Debian)
+    ansible.builtin.service:
+      name: "{{ microk8s_service }}"
+      state: started
+      enabled: true
+    loop:
+      - udev
+    loop_control:
+      loop_var: microk8s_service
+      label: "{{ microk8s_service }}"
+    when:
+      - ansible_os_family == "Debian"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.services
+
+  - name: microk8s | create symlinks (RedHat)
+    ansible.builtin.file:
+      src: /var/lib/snapd/snap
+      dest: /snap
+      state: link
+    when:
+      - ansible_os_family == "RedHat"
+    tags:
+      - microk8s
+      - microk8s.dependencies
+      - microk8s.dependencies.services
+
+  - name: microk8s | create new snap file (RedHat)
+    ansible.builtin.file:
+      path: /etc/profile.d/snap.sh
+      state: touch
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | create new path (RedHat)
+    ansible.builtin.set_fact:
+      snap_path: "export PATH=$PATH:/var/lib/snapd/snap/bin"
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | create config for file (RedHat)
+    ansible.builtin.copy:
+      content: "{{ snap_path }}"
+      dest: /etc/profile.d/snap.sh
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | source environment (RedHat)
+    ansible.builtin.shell: source /etc/profile.d/snap.sh
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | Install microk8s
+    community.general.snap:
+      name: microk8s
+      classic: true
+      channel: "{{ microk8s_channel }}"
+    notify: microk8s ready
+    tags:
+      - microk8s
+      - microk8s.install
+
+  - name: microk8s | create kubectl alias
+    ansible.builtin.command:
+      cmd: snap alias microk8s.kubectl kubectl
+    changed_when: false
+    tags:
+      - microk8s
+      - microk8s.alias
+      - microk8s.alias.kubectl
+
+  - name: microk8s | create helm3 alias
+    ansible.builtin.command:
+      cmd: snap alias microk8s.helm3 helm
+    changed_when: false
+    when:
+      - microk8s_plugins is defined
+      - microk8s_plugins.helm3 is defined
+      - microk8s_plugins.helm3
+    tags:
+      - microk8s
+      - microk8s.alias
+      - microk8s.alias.helm
+
+  - name: microk8s | create dir for microk8s certificates
+    ansible.builtin.file:
+      path: /usr/share/ca-certificates/extra
+      state: directory
+      mode: 0755
+    tags:
+      - microk8s
+      - microk8s.certs
+      - microk8s.certs.dir
+
+  - name: microk8s | Disable snap autoupdate
+    ansible.builtin.blockinfile:
+      dest: /etc/hosts
+      marker: "# {mark} ANSIBLE MANAGED: microk8s Disable snap autoupdate"
+      content: |
+        127.0.0.1 api.snapcraft.io
+    when:
+      - (microk8s_disable_snap_autoupdate | bool)
+    tags:
+      - microk8s
+      - microk8s.disable_autoupdate
+
+  # ===========================================
+  # Configure microk8s user and group
+  - name: microk8s user group | create {{ microk8s_user }} group
+    ansible.builtin.group:
+      name: "{{ microk8s_user }}"
+      state: present
+
+  - name: microk8s user group | add user to group
+    ansible.builtin.user:
+      name: "{{ microk8s_user }}"
+      group: "{{ microk8s_user }}"
+      groups: microk8s
+      append: true
+
+  - name: microk8s user group | Create .kube folder for the user
+    ansible.builtin.file:
+      path: "{{ microk8s_user_home }}/.kube"
+      state: directory
+      owner: '{{ microk8s_user }}'
+      group: '{{ microk8s_user }}'
+      mode: 0750
+
+  - name: microk8s user group | create kubectl config
+    ansible.builtin.shell:
+      cmd: microk8s config > {{ microk8s_user_home }}/.kube/config
+    args:
+      executable: /bin/bash
+      creates: "{{ microk8s_user_home }}/.kube/config"
+    environment:
+      PATH: '${PATH}:/snap/bin/'
+
+  - name: microk8s user group | check permissions on config directory
+    ansible.builtin.file:
+      path: "{{ microk8s_user_home }}/.kube"
+      state: directory
+      owner: '{{ microk8s_user }}'
+      group: '{{ microk8s_user }}'
+      recurse: true
+
+  - name: microk8s user group | check permission on config file
+    ansible.builtin.file:
+      path: "{{ microk8s_user_home }}/.kube/config"
+      state: file
+      owner: '{{ microk8s_user }}'
+      group: '{{ microk8s_user }}'
+      mode: 0600
+
+  # ===========================================
+  # Configure plugins
+  - name: microk8s plugins | enable plugins
+    ansible.builtin.command:
+      cmd: "microk8s.enable {{ microk8s_plugin.key }}"
+    with_dict: "{{ microk8s_plugins }}"
+    loop_control:
+      loop_var: microk8s_plugin
+      label: "{{ microk8s_plugin.key }}"
+    when:
+      - microk8s_plugins is defined
+      - microk8s_plugin.value
+      - microk8s_plugin.key != "registry"
+      - microk8s_plugin.key != "dns"
+    register: microk8s_cmd_result
+    changed_when:
+      - "'Addon {{ microk8s_plugin.key }} is already enabled'
+        not in microk8s_cmd_result.stdout"
+
+  - name: microk8s plugins | disable plugins
+    ansible.builtin.command:
+      cmd: "microk8s.disable {{ microk8s_plugin.key }}"
+    with_dict: "{{ microk8s_plugins | default({}) }}"
+    loop_control:
+      loop_var: microk8s_plugin
+      label: "{{ microk8s_plugin.key }}"
+    register: microk8s_cmd_result
+    changed_when:
+      - "'Addon {{ microk8s_plugin.key }} is already disabled'
+        not in microk8s_cmd_result.stdout"
+    when:
+      - microk8s_plugins is defined
+      - not (microk8s_plugin.value | bool)
+      - microk8s_plugin.key != "registry"
+
+  - name: microk8s plugins | Enable registry
+    ansible.builtin.command:
+      cmd: "microk8s.enable registry:size={{ microk8s_registry_size }}"
+    register: microk8s_cmd_result
+    changed_when:
+      - "'Addon registry is already enabled' not in microk8s_cmd_result.stdout"
+    when:
+      - microk8s_plugins is defined
+      - microk8s_plugins.registry is defined
+      - (microk8s_plugins.registry | bool)
+
+  - name: microk8s plugins | Disable registry
+    ansible.builtin.command:
+      cmd: "microk8s.disable registry:size={{ microk8s_registry_size }}"
+    register: microk8s_cmd_result
+    changed_when:
+      - "'Addon registry is already disabled' not in microk8s_cmd_result.stdout"
+    when:
+      - microk8s_plugins is defined
+      - microk8s_plugins.registry is defined
+      - not (microk8s_plugins.registry | bool)
+
+  - name: microk8s plugins | Enable DNS
+    ansible.builtin.command:
+      cmd: 'microk8s.enable dns:{{ microk8s_dns_servers | join(",") }}'
+    register: microk8s_cmd_result
+    changed_when:
+      - "'Addon dns is already enabled' not in microk8s_cmd_result.stdout"
+    when:
+      - microk8s_plugins is defined
+      - microk8s_plugins.dns is defined
+      - (microk8s_plugins.dns | bool)
+  
+  # ===========================================
+  # deploy browsertrix
+  - name: microk8s deploy | create browsertrix repo
+    ansible.builtin.git:
+      repo: "https://github.com/webrecorder/browsertrix-cloud"
+      dest: "{{ browsertrix_cloud_home }}"
+      clone: true
+      update: true
+      force: true
+      version: main
+    tags:
+      - helm_upgrade
+
+  - name: microk8s deploy | Make repos git safe
+    ansible.builtin.command: git config --global --add safe.directory "{{ browsertrix_cloud_home }}"
+    become: true
+    changed_when: false
+    tags:
+      - helm_upgrade
+
+  - name: microk8s deploy | grant permissions on deploy user
+    ansible.builtin.file:
+      path: "{{ browsertrix_cloud_home }}"
+      state: directory
+      owner: '{{ microk8s_user }}'
+      group: '{{ microk8s_user }}'
+      follow: false
+      recurse: true
+      mode: 0775
+    tags:
+      - helm_upgrade
+
+  - name: micork8s deploy | helm | output values yaml
+    ansible.builtin.template:
+      src: ../group_vars/microk8s/btrix_values.j2
+      dest: "{{ microk8s_user_home }}/values.yaml"
+      mode: u+rw
+    tags:
+      - helm_upgrade
+
+  - name: microk8s deploy | helm | deploy btrix (Debian)
+    ansible.builtin.command: helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
+    args:
+      chdir: "{{ browsertrix_cloud_home }}"
+    register: helm_result
+    become: true
+    become_user: "{{ microk8s_user }}"
+    changed_when: helm_result.rc == 0
+    when:
+      - ansible_os_family == "Debian"
+    tags:
+      - helm_upgrade
+
+  - name: microk8s deploy | helm | deploy btrix (RedHat)
+    ansible.builtin.command: /var/lib/snapd/snap/bin/helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
+    args:
+      chdir: "{{ browsertrix_cloud_home }}"
+    register: helm_result
+    become: true
+    become_user: "{{ microk8s_user }}"
+    changed_when: helm_result.rc == 0
+    when:
+      - ansible_os_family == "RedHat"
+    tags:
+      - helm_upgrade
+
+  handlers:
+    - name: Reboot System
+      ansible.builtin.reboot:
+      when:
+        - skip_handlers | default("false") == "false"
+
+    - name: microk8s ready
+      ansible.builtin.command:
+        cmd: microk8s.status --wait-ready
+      changed_when: false
+      when:
+        - skip_handlers | default("false") == "false"
