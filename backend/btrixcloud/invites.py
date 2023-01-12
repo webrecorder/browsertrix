@@ -77,8 +77,10 @@ class InviteOps:
                 status_code=403, detail="This user has already been invited"
             )
 
+        # Invitations to a specific org via API must invite role, so if it's
+        # absent assume this is a general invitation from superadmin.
         if not new_user_invite.role:
-            new_user_invite.role = UserRole.CRAWLER
+            new_user_invite.role = UserRole.OWNER
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
