@@ -1,6 +1,7 @@
 """
 Archive API handling
 """
+import asyncio
 import os
 import uuid
 
@@ -22,6 +23,8 @@ from .invites import (
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = 3
+
+DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
 
 # ============================================================================
@@ -197,10 +200,27 @@ class ArchiveOps:
 
     async def get_default_org(self):
         """Get default organization"""
-        default_org = os.environ.get("DEFAULT_ORG", "My Organization")
-        res = await self.archives.find_one({"name": default_org})
+        res = await self.archives.find_one({"name": DEFAULT_ORG})
         if res:
             return Archive.from_dict(res)
+
+    async def create_default_org(self, storage_name="default"):
+        """Create default organization if doesn't exist."""
+        res = await self.archives.find_one({"name": DEFAULT_ORG})
+        if not res:
+            id_ = uuid.uuid4()
+            storage_path = str(id_) + "/"
+            archive = Archive(
+                id=id_,
+                name=DEFAULT_ORG,
+                users={},
+                storage=DefaultStorage(name=storage_name, path=storage_path),
+            )
+            storage_info = f"Storage: {storage_name} / {storage_path}"
+            print(
+                f'Created Default Organization "{DEFAULT_ORG}". Storage: {storage_info}'
+            )
+            await self.add_archive(archive)
 
     async def update(self, archive: Archive):
         """Update existing archive"""
@@ -368,5 +388,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         update_role = UpdateRole(role=invite.role, email=invite.email)
         await set_role(update_role, archive, user)
         return {"added": True}
+
+    asyncio.create_task(ops.create_default_org())
 
     return ops

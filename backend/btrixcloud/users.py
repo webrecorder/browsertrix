@@ -156,7 +156,6 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         """Initialize a super user from env vars"""
         email = os.environ.get("SUPERUSER_EMAIL")
         password = os.environ.get("SUPERUSER_PASSWORD")
-        default_org = os.environ.get("DEFAULT_ORG", "My Organization")
         if not email:
             print("No superuser defined", flush=True)
             return
@@ -171,8 +170,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                     email=email,
                     password=password,
                     is_superuser=True,
-                    newArchive=True,
-                    newArchiveName=default_org,
+                    newArchive=False,
                     is_verified=True,
                 )
             )
@@ -183,7 +181,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             print(f"User {email} already exists", flush=True)
 
     async def create_non_super_user(
-        self, email: str, password: str, name: str = "New user"
+        self,
+        email: str,
+        password: str,
+        name: str = "New user",
     ):
         """create a regular user with given credentials"""
         if not email:
