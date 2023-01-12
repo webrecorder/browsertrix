@@ -26,13 +26,14 @@
     "yaml": "^2.0.0-11"
   },
   "scripts": {
+    "prepare": "cd .. && husky install frontend/.husky",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
-    "format": "prettier --write \"**/*.{ts,js,html,css}\"",
+    "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build"
   },
@@ -62,6 +63,8 @@
     "eslint-webpack-plugin": "^3.1.1",
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.5.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
     "node-fetch": "^3.1.0",
     "postcss": "^8.4.5",
     "postcss-loader": "^6.1.1",
@@ -101,7 +104,14 @@
       "no-unused-vars": "warn"
     }
   },
-  "prettier": {},
+  "prettier": {
+    "tabWidth": 2,
+    "useTabs": false
+  },
+  "lint-staged": {
+    "src/**/*.{ts,js}": "eslint --fix --quiet",
+    "src/*.{ts,js,html,css,json}": "prettier --write"
+  },
   "engines": {
     "node": ">=16 <20"
   }
