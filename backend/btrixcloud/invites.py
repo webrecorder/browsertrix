@@ -77,10 +77,8 @@ class InviteOps:
                 status_code=403, detail="This user has already been invited"
             )
 
-        if not archive_name or not new_user_invite.aid:
-            default_org = await self.archives.find_one({"default": True})
-            new_user_invite.aid = default_org["_id"]
-            archive_name = default_org["name"]
+        if not new_user_invite.role:
+            new_user_invite.role = UserRole.CRAWLER
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
