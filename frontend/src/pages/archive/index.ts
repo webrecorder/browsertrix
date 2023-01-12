@@ -197,6 +197,7 @@ export class Archive extends LiteElement {
     return html`<btrix-crawl-templates-list
       .authState=${this.authState!}
       .archiveId=${this.archiveId!}
+      userId=${this.userInfo!.id}
     ></btrix-crawl-templates-list>`;
   }
 

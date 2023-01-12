@@ -1,4 +1,4 @@
-import type { HTMLTemplateResult } from "lit";
+import type { HTMLTemplateResult, PropertyValueMap } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { parseCron } from "@cheap-glitch/mi-cron";
@@ -18,6 +18,7 @@ import {
   humanizeSchedule,
 } from "../../utils/cron";
 import "../../components/crawl-scheduler";
+import { SlCheckbox } from "@shoelace-style/shoelace";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -46,6 +47,9 @@ export class CrawlTemplatesList extends LiteElement {
   @property({ type: String })
   archiveId!: string;
 
+  @property({ type: String })
+  userId!: string;
+
   @state()
   crawlTemplates?: CrawlConfig[];
 
@@ -68,6 +72,9 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   @state()
+  private filterByCurrentUser = true;
+
+  @state()
   private searchBy: string = "";
 
   @state()
@@ -80,18 +87,23 @@ export class CrawlTemplatesList extends LiteElement {
     threshold: 0.4, // stricter; default is 0.6
   });
 
-  async firstUpdated() {
-    try {
-      this.crawlTemplates = await this.getCrawlTemplates();
+  protected async willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("archiveId") ||
+      changedProperties.has("filterByCurrentUser")
+    ) {
+      try {
+        this.crawlTemplates = await this.getCrawlTemplates();
 
-      // Update search/filter collection
-      this.fuse.setCollection(this.crawlTemplates as any);
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawl configs at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+        // Update search/filter collection
+        this.fuse.setCollection(this.crawlTemplates as any);
+      } catch (e) {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve crawl configs at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
@@ -200,6 +212,21 @@ export class CrawlTemplatesList extends LiteElement {
               </button>
             </div>
             <div class="flex items-center justify-end">
+              ${this.userId
+                ? html`<label class="mr-3">
+                    <span class="text-neutral-500 mr-1"
+                      >${msg("Filter My Crawls")}</span
+                    >
+                    <sl-switch
+                      @sl-change=${(e: CustomEvent) =>
+                        (this.filterByCurrentUser = (
+                          e.target as SlCheckbox
+                        ).checked)}
+                      ?checked=${this.filterByCurrentUser}
+                    ></sl-switch>
+                  </label>`
+                : ""}
+
               <div class="whitespace-nowrap text-sm text-0-500 mr-2">
                 ${msg("Sort By")}
               </div>
@@ -553,8 +580,11 @@ export class CrawlTemplatesList extends LiteElement {
    * associated with the crawl configs
    **/
   private async getCrawlTemplates(): Promise<CrawlConfig[]> {
+    const params =
+      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
+
     const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
-      `/archives/${this.archiveId}/crawlconfigs`,
+      `/archives/${this.archiveId}/crawlconfigs${params}`,
       this.authState!
     );
 
