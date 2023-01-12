@@ -27,8 +27,6 @@ MAX_CRAWL_SCALE = 3
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
-lock = asyncio.Lock()
-
 
 # ============================================================================
 class UpdateRole(InviteToArchiveRequest):
@@ -151,8 +149,6 @@ class ArchiveOps:
 
         self.invites = invites
 
-        asyncio.create_task(self.init_index())
-
     async def init_index(self):
         """init lookup index"""
         await self.archives.create_index("name", unique=True)
@@ -221,27 +217,28 @@ class ArchiveOps:
 
     async def create_default_org(self, storage_name="default"):
         """Create default organization if doesn't exist."""
-        async with lock:
-            existing_default = await self.get_default_org()
-            if existing_default:
-                print("Default organization already exists - skipping", flush=True)
-                return
+        await self.init_index()
 
-            id_ = uuid.uuid4()
-            storage_path = str(id_) + "/"
-            archive = Archive(
-                id=id_,
-                name=DEFAULT_ORG,
-                users={},
-                storage=DefaultStorage(name=storage_name, path=storage_path),
-                default=True,
-            )
-            storage_info = f"Storage: {storage_name} / {storage_path}"
-            print(
-                f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
-                flush=True,
-            )
-            await self.add_archive(archive)
+        existing_default = await self.get_default_org()
+        if existing_default:
+            print("Default organization already exists - skipping", flush=True)
+            return
+
+        id_ = uuid.uuid4()
+        storage_path = str(id_) + "/"
+        archive = Archive(
+            id=id_,
+            name=DEFAULT_ORG,
+            users={},
+            storage=DefaultStorage(name=storage_name, path=storage_path),
+            default=True,
+        )
+        storage_info = f"Storage: {storage_name} / {storage_path}"
+        print(
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
+            flush=True,
+        )
+        await self.add_archive(archive)
 
     async def update(self, archive: Archive):
         """Update existing archive"""
