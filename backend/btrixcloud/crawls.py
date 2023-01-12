@@ -173,6 +173,7 @@ class CrawlOps:
         archive: Optional[Archive] = None,
         cid: uuid.UUID = None,
         collid: uuid.UUID = None,
+        userid: uuid.UUID = None,
         crawl_id: str = None,
         exclude_files=True,
         running_only=False,
@@ -190,6 +191,9 @@ class CrawlOps:
 
         if collid:
             query["colls"] = collid
+
+        if userid:
+            query["userid"] = userid
 
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
@@ -573,15 +577,31 @@ def init_crawls_api(
     archive_crawl_dep = archives.archive_crawl_dep
 
     @app.get("/archives/all/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls_admin(user: User = Depends(user_dep)):
+    async def list_crawls_admin(
+        user: User = Depends(user_dep),
+        userid: Optional[UUID4] = None,
+        cid: Optional[UUID4] = None,
+    ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return ListCrawls(crawls=await ops.list_crawls(None, running_only=True))
+        return ListCrawls(
+            crawls=await ops.list_crawls(
+                None, userid=userid, cid=cid, running_only=True
+            )
+        )
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls(archive: Archive = Depends(archive_viewer_dep)):
-        return ListCrawls(crawls=await ops.list_crawls(archive))
+    async def list_crawls(
+        archive: Archive = Depends(archive_viewer_dep),
+        userid: Optional[UUID4] = None,
+        cid: Optional[UUID4] = None,
+    ):
+        return ListCrawls(
+            crawls=await ops.list_crawls(
+                archive, userid=userid, cid=cid, running_only=False
+            )
+        )
 
     @app.post(
         "/archives/{aid}/crawls/{crawl_id}/cancel",
@@ -646,7 +666,6 @@ def init_crawls_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         crawls = await ops.list_crawls(crawl_id=crawl_id)
-        print("crawls", crawls)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
