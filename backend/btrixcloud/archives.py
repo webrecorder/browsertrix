@@ -3,12 +3,13 @@ Archive API handling
 """
 import asyncio
 import os
+import time
 import uuid
 
 from typing import Dict, Union, Literal, Optional
 
 from pydantic import BaseModel
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from .db import BaseMongoModel
@@ -151,7 +152,11 @@ class ArchiveOps:
 
     async def init_index(self):
         """init lookup index"""
-        await self.archives.create_index("name", unique=True)
+        while True:
+            try:
+                return await self.archives.create_index("name", unique=True)
+            except AutoReconnect:
+                time.sleep(5)
 
     async def add_archive(self, archive: Archive):
         """Add new archive"""
