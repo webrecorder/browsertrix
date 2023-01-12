@@ -215,7 +215,7 @@ export class CrawlTemplatesList extends LiteElement {
               ${this.userId
                 ? html`<label class="mr-3">
                     <span class="text-neutral-500 mr-1"
-                      >${msg("Filter My Crawls")}</span
+                      >${msg("Show Only Mine")}</span
                     >
                     <sl-switch
                       @sl-change=${(e: CustomEvent) =>
