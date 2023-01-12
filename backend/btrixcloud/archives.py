@@ -155,7 +155,7 @@ class ArchiveOps:
 
     async def init_index(self):
         """init lookup index"""
-        self.archives.create_index("name", unique=True)
+        await self.archives.create_index("name", unique=True)
 
     async def add_archive(self, archive: Archive):
         """Add new archive"""
