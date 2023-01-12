@@ -16,6 +16,7 @@ def test_admin_get_archive_crawls(admin_auth_headers, admin_aid, admin_crawl_id)
         crawl_ids.append(crawl["id"])
     assert admin_crawl_id in crawl_ids
 
+
 def test_viewer_get_archive_crawls(viewer_auth_headers, admin_aid, admin_crawl_id):
     r = requests.get(
         f"{API_PREFIX}/archives/{admin_aid}/crawls", headers=viewer_auth_headers

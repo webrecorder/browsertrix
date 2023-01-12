@@ -33,7 +33,9 @@ def test_get_config_by_user(crawler_auth_headers, admin_aid, crawler_userid):
     assert len(r.json()["crawlConfigs"]) == 1
 
 
-def test_ensure_crawl_and_admin_user_crawls(admin_aid, crawler_crawl_id, admin_crawl_id):
+def test_ensure_crawl_and_admin_user_crawls(
+    admin_aid, crawler_auth_headers, crawler_crawl_id, admin_crawl_id
+):
     assert crawler_crawl_id
     assert admin_crawl_id
     r = requests.get(
