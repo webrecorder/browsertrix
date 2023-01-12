@@ -95,6 +95,12 @@ import("./section-heading").then(({ SectionHeading }) => {
 import("./config-details").then(({ ConfigDetails }) => {
   customElements.define("btrix-config-details", ConfigDetails);
 });
+import("./tag-input").then(({ TagInput }) => {
+  customElements.define("btrix-tag-input", TagInput);
+});
+import("./tag").then(({ Tag }) => {
+  customElements.define("btrix-tag", Tag);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

@@ -460,6 +460,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       profileid: this.crawlConfig.profileid || null,
       jobType: this.crawlConfig.jobType,
       schedule: this.crawlConfig.schedule,
+      tags: this.crawlConfig.tags,
     };
 
     this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
