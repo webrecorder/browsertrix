@@ -8,6 +8,7 @@ import uuid
 from typing import Dict, Union, Literal, Optional
 
 from pydantic import BaseModel
+from pymongo.errors import DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from .db import BaseMongoModel
@@ -26,10 +27,19 @@ MAX_CRAWL_SCALE = 3
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
+lock = asyncio.Lock()
+
 
 # ============================================================================
 class UpdateRole(InviteToArchiveRequest):
     """Update existing role for user"""
+
+
+# ============================================================================
+class RenameArchive(BaseModel):
+    """Request to invite another user"""
+
+    name: str
 
 
 # ============================================================================
@@ -66,6 +76,8 @@ class Archive(BaseMongoModel):
     storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
+
+    default: bool = False
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -139,9 +151,18 @@ class ArchiveOps:
 
         self.invites = invites
 
+        asyncio.create_task(self.init_index())
+
+    async def init_index(self):
+        """init lookup index"""
+        self.archives.create_index("name", unique=True)
+
     async def add_archive(self, archive: Archive):
         """Add new archive"""
-        return await self.archives.insert_one(archive.to_dict())
+        try:
+            return await self.archives.insert_one(archive.to_dict())
+        except DuplicateKeyError:
+            print(f"Archive name {archive.name} already in use - skipping", flush=True)
 
     async def create_new_archive_for_user(
         self,
@@ -151,13 +172,6 @@ class ArchiveOps:
     ):
         # pylint: disable=too-many-arguments
         """Create new archive with default storage for new user"""
-        default_org = await self.get_default_org()
-        if default_org and default_org.name == archive_name:
-            print(
-                f'\'Name "{archive_name}" reserved by default organization - skipping'
-            )
-            return
-
         id_ = uuid.uuid4()
 
         storage_path = str(id_) + "/"
@@ -169,7 +183,8 @@ class ArchiveOps:
             storage=DefaultStorage(name=storage_name, path=storage_path),
         )
 
-        print(f"Created New Archive with storage {storage_name} / {storage_path}")
+        storage_info = f"storage {storage_name} / {storage_path}"
+        print(f"Creating new archive {archive_name} with {storage_info}", flush=True)
         await self.add_archive(archive)
 
     async def get_archives_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
@@ -200,14 +215,18 @@ class ArchiveOps:
 
     async def get_default_org(self):
         """Get default organization"""
-        res = await self.archives.find_one({"name": DEFAULT_ORG})
+        res = await self.archives.find_one({"default": True})
         if res:
             return Archive.from_dict(res)
 
     async def create_default_org(self, storage_name="default"):
         """Create default organization if doesn't exist."""
-        res = await self.archives.find_one({"name": DEFAULT_ORG})
-        if not res:
+        async with lock:
+            existing_default = await self.get_default_org()
+            if existing_default:
+                print("Default organization already exists - skipping", flush=True)
+                return
+
             id_ = uuid.uuid4()
             storage_path = str(id_) + "/"
             archive = Archive(
@@ -215,16 +234,20 @@ class ArchiveOps:
                 name=DEFAULT_ORG,
                 users={},
                 storage=DefaultStorage(name=storage_name, path=storage_path),
+                default=True,
             )
             storage_info = f"Storage: {storage_name} / {storage_path}"
             print(
-                f'Created Default Organization "{DEFAULT_ORG}". Storage: {storage_info}'
+                f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
+                flush=True,
             )
             await self.add_archive(archive)
 
     async def update(self, archive: Archive):
         """Update existing archive"""
-        self.archives.replace_one({"_id": archive.id}, archive.to_dict())
+        return await self.archives.find_one_and_update(
+            {"_id": archive.id}, {"$set": archive.to_dict()}, upsert=True
+        )
 
     async def update_storage(
         self, archive: Archive, storage: Union[S3Storage, DefaultStorage]
@@ -323,6 +346,16 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
     ):
         return await archive.serialize_for_user(user, user_manager)
+
+    @router.post("/rename", tags=["archives"])
+    async def rename_archive(
+        rename: RenameArchive,
+        archive: Archive = Depends(archive_owner_dep),
+    ):
+        archive.name = rename.name
+        await ops.update(archive)
+
+        return {"updated": True}
 
     @router.patch("/user-role", tags=["archives"])
     async def set_role(

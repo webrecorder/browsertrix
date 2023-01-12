@@ -217,7 +217,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         print(f"User {user.id} has registered.")
 
-        if user_create.newArchive:
+        if user_create.newArchive is True:
             print(f"Creating new archive for {user.id}")
 
             archive_name = (
