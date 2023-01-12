@@ -85,6 +85,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
 def admin_config_id(admin_crawl_id):
     return _admin_config_id
 
+
 @pytest.fixture(scope="session")
 def viewer_auth_headers(admin_auth_headers, admin_aid):
     requests.post(
@@ -108,6 +109,7 @@ def viewer_auth_headers(admin_auth_headers, admin_aid):
     data = r.json()
     access_token = data.get("access_token")
     return {"Authorization": f"Bearer {access_token}"}
+
 
 @pytest.fixture(scope="session")
 def crawler_auth_headers(admin_auth_headers, admin_aid):
@@ -133,10 +135,12 @@ def crawler_auth_headers(admin_auth_headers, admin_aid):
     access_token = data.get("access_token")
     return {"Authorization": f"Bearer {access_token}"}
 
+
 @pytest.fixture(scope="session")
 def crawler_userid(crawler_auth_headers):
     r = requests.get(f"{API_PREFIX}/users/me", headers=crawler_auth_headers)
     return r.json()["id"]
+
 
 @pytest.fixture(scope="session")
 def crawler_crawl_id(crawler_auth_headers, admin_aid):
@@ -167,6 +171,7 @@ def crawler_crawl_id(crawler_auth_headers, admin_aid):
         if data["state"] == "complete":
             return crawl_id
         time.sleep(5)
+
 
 @pytest.fixture(scope="session")
 def crawler_config_id(crawler_crawl_id):
