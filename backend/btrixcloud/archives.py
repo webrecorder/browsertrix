@@ -156,6 +156,10 @@ class ArchiveOps:
             try:
                 return await self.archives.create_index("name", unique=True)
             except AutoReconnect:
+                print(
+                    "Database connection unavailable to create index. Will try again in 5 scconds",
+                    flush=True,
+                )
                 time.sleep(5)
 
     async def add_archive(self, archive: Archive):
