@@ -577,12 +577,12 @@ def init_crawls_api(
     archive_crawl_dep = archives.archive_crawl_dep
 
     @app.get("/archives/all/crawls", tags=["crawls"], response_model=ListCrawls)
-    async def list_crawls_admin(user: User = Depends(user_dep), cid: uuid.UUID = None):
+    async def list_crawls_admin(user: User = Depends(user_dep), userid: Optional[UUID4] = None, cid: Optional[UUID4] = None):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return ListCrawls(
-            crawls=await ops.list_crawls(None, running_only=True, cid=cid)
+            crawls=await ops.list_crawls(None, userid=userid, cid=cid, running_only=True)
         )
 
     @app.get("/archives/{aid}/crawls", tags=["crawls"], response_model=ListCrawls)
@@ -654,7 +654,6 @@ def init_crawls_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         crawls = await ops.list_crawls(crawl_id=crawl_id)
-        print("crawls", crawls)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
