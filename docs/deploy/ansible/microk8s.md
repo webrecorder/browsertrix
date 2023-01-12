@@ -1,6 +1,9 @@
-## Microk8s
+# Microk8s
 
-This provides an easy way to install BrowserTrix Cloud on an ubuntu (tested on Jammy Jellyfish) and a RedHat 9 (tested on Rocky Linux 9). It automatically sets up BrowserTrix with, letsencrypt certificates.
+*Playbook Path: [ansible/playbooks/install_microk8s.yml](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/playbooks/install_microk8s.yml)*
+
+This playbook provides an easy way to install Browsertrix Cloud on an Ubuntu (tested on Jammy Jellyfish) and a RedHat 9 (tested on Rocky Linux 9).
+It automatically sets up Browsertrix with, Letsencrypt certificates.
 
 ### Requirements
 
@@ -13,29 +16,26 @@ To run this ansible playbook, you need to:
 
 #### Install
 
-Clone the repo:
-
+1. Clone the repo:
 ```zsh
 git clone https://github.com/webrecorder/browsertrix-cloud.git
 cd browsertrix-cloud
 ```
 
-[Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/microk8s/main.yml)
+2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/microk8s/main.yml) and modify them or pass them as extra variables as shown below. 
 
-and modify them or pass them as extra variables as shown below. 
+3. Add your IP address above to a new file called [inventory/hosts]
 
-Add your IP address above to a new file called [inventory/hosts]
-
-Run the playbook:
-
+4. Run the playbook:
 ```zsh
 ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -e your_user="your_vps_admin_user"
 ```
 
 #### Upgrading
 
-* Run `git pull`
-* Run the playbook:
+1. Run `git pull`
+
+2. Run the playbook:
 ```zsh
 ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -t helm_upgrade
 ```

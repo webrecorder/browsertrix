@@ -1,6 +1,8 @@
-## DigitalOcean 
+# DigitalOcean 
 
-This provides an easy way to install BrowserTrix Cloud on DigitalOcean. It automatically sets up BrowserTrix with, letsencrypt certificates.
+*Playbook Path: [ansible/playbooks/install_microk8s.yml](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/playbooks/do_setup.yml)*
+
+This playbook provides an easy way to install BrowserTrix Cloud on DigitalOcean. It automatically sets up Browsertrix with, LetsEncrypt certificates.
 
 ### Requirements
 
@@ -13,27 +15,24 @@ To run this ansible playbook, you need to:
 
 #### Install
 
-Clone the repo:
-
+1. Clone the repo:
 ```zsh
 git clone https://github.com/webrecorder/browsertrix-cloud.git
 cd browsertrix-cloud
 ```
 
-[Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml)
+2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml) and modify them or pass them as extra variables as shown below. 
 
-and modify them or pass them as extra variables as shown below. 
-
-Run the playbook:
-
+3. Run the playbook:
 ```zsh
 ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain_name="yourdomain.com"
 ```
 
 #### Upgrading
 
-* Run `git pull`
-* Run the playbook:
+1. Run `git pull`
+
+2. Run the playbook:
 ```zsh
 ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain_name="yourdomain.com" -t helm_upgrade
 ```
