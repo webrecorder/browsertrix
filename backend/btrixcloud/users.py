@@ -140,6 +140,9 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         ):
             raise HTTPException(status_code=400, detail="Invalid Invite Token")
 
+        # Don't create a new org for registered users.
+        user.newArchive = False
+
         created_user = await super().create(user, safe, request)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
