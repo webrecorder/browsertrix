@@ -44,9 +44,11 @@ def admin_aid(admin_auth_headers):
         r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
         data = r.json()
         try:
-            return data["archives"][0]["id"]
+            for archive in data["archives"]:
+                if archive["default"] is True:
+                    return archive["id"]
         except:
-            print("Waiting for admin_aid")
+            print("Waiting for default org id")
             time.sleep(5)
 
 

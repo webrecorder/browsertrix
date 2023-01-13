@@ -140,6 +140,9 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         ):
             raise HTTPException(status_code=400, detail="Invalid Invite Token")
 
+        # Don't create a new org for registered users.
+        user.newArchive = False
+
         created_user = await super().create(user, safe, request)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
@@ -170,7 +173,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                     email=email,
                     password=password,
                     is_superuser=True,
-                    newArchive=True,
+                    newArchive=False,
                     is_verified=True,
                 )
             )
@@ -181,7 +184,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             print(f"User {email} already exists", flush=True)
 
     async def create_non_super_user(
-        self, email: str, password: str, name: str = "New user"
+        self,
+        email: str,
+        password: str,
+        name: str = "New user",
     ):
         """create a regular user with given credentials"""
         if not email:
@@ -197,7 +203,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 email=email,
                 password=password,
                 is_superuser=False,
-                newArchive=True,
+                newArchive=False,
                 is_verified=True,
             )
             created_user = await super().create(user_create, safe=False, request=None)
@@ -214,7 +220,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         print(f"User {user.id} has registered.")
 
-        if user_create.newArchive:
+        if user_create.newArchive is True:
             print(f"Creating new archive for {user.id}")
 
             archive_name = (

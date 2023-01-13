@@ -8,7 +8,6 @@ import uuid
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
-
 from .db import BaseMongoModel
 
 
@@ -61,6 +60,7 @@ class InviteOps:
 
     def __init__(self, mdb, email):
         self.invites = mdb["invites"]
+        self.archives = mdb["archives"]
         self.email = email
 
     async def add_new_user_invite(
@@ -76,6 +76,11 @@ class InviteOps:
             raise HTTPException(
                 status_code=403, detail="This user has already been invited"
             )
+
+        # Invitations to a specific org via API must invite role, so if it's
+        # absent assume this is a general invitation from superadmin.
+        if not new_user_invite.role:
+            new_user_invite.role = UserRole.OWNER
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
@@ -126,11 +131,13 @@ class InviteOps:
         if allow_existing is false, don't allow invites to existing users"""
         invite_code = uuid.uuid4().hex
 
-        aid = None
-        archive_name = None
         if archive:
             aid = archive.id
             archive_name = archive.name
+        else:
+            default_org = await self.archives.find_one({"default": True})
+            aid = default_org["_id"]
+            archive_name = default_org["name"]
 
         invite_pending = InvitePending(
             id=invite_code,
