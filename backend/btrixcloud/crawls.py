@@ -360,6 +360,7 @@ class CrawlOps:
             scale=crawlconfig.scale,
             manual=True,
             started=ts_now(),
+            tags=crawlconfig.tags,
         )
 
         try:

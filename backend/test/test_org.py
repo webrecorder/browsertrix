@@ -14,7 +14,7 @@ def test_ensure_only_one_default_org(admin_auth_headers):
     default_org_name = default_orgs[0]["name"]
     orgs_with_same_name = [org for org in orgs if org["name"] == default_org_name]
     assert len(orgs_with_same_name) == 1
-    
+
 
 def test_rename_org(admin_auth_headers, admin_aid):
     UPDATED_NAME = "updated org name"
@@ -34,6 +34,7 @@ def test_rename_org(admin_auth_headers, admin_aid):
     assert r.status_code == 200
     data = r.json()
     assert data["name"] == UPDATED_NAME
+
 
 def test_create_org(admin_auth_headers):
     NEW_ORG_NAME = "New Org"

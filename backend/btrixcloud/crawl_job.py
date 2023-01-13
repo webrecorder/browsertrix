@@ -48,6 +48,7 @@ class CrawlJob(ABC):
 
         self.is_manual = os.environ.get("RUN_MANUAL") == "1"
         self.tags = os.environ.get("TAGS", "").split(",")
+        print("TAGS", self.tags)
 
         self.scale = int(os.environ.get("INITIAL_SCALE") or 0)
 

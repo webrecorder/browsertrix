@@ -46,27 +46,17 @@ def test_create_new_config(admin_auth_headers, admin_aid):
 
 
 def test_wait_for_complete(admin_auth_headers, admin_aid, admin_crawl_id):
-    print("")
-    print("---- Running Crawl ----")
-
-    while True:
-        r = requests.get(
-            f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}/replay.json",
-            headers=admin_auth_headers,
-        )
-        data = r.json()
-        assert (
-            data["state"] == "starting"
-            or data["state"] == "running"
-            or data["state"] == "complete"
-        ), data["state"]
-        if data["state"] == "complete":
-            break
-
-        time.sleep(5)
+    r = requests.get(
+        f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["state"] == "complete"
 
     assert len(data["resources"]) == 1
     assert data["resources"][0]["path"]
+
+    assert data["tags"] == ["wr-test-1", "wr-test-2"]
 
     global wacz_path
     global wacz_size
