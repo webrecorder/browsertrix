@@ -228,9 +228,14 @@ class ArchiveOps:
         """Create default organization if doesn't exist."""
         await self.init_index()
 
-        existing_default = await self.get_default_org()
-        if existing_default:
-            print("Default organization already exists - skipping", flush=True)
+        default_org = await self.get_default_org()
+        if default_org:
+            if default_org.name == DEFAULT_ORG:
+                print("Default organization already exists - skipping", flush=True)
+            else:
+                default_org.name = DEFAULT_ORG
+                await self.update(default_org)
+                print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
 
         id_ = uuid.uuid4()
