@@ -61,7 +61,7 @@ superuser:
 
 registration_enabled: "{{ '1' if registration_enabled else '0' }}"
 
-org_name: "{{ org_name }}"
+default_org: "{{ org_name }}"
 
 
 # Admin Send Email Options
