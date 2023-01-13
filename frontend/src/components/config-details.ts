@@ -196,7 +196,7 @@ export class ConfigDetails extends LiteElement {
         this.scopeTypeLabels[crawlConfig?.config.scopeType]
       )}
       ${this.renderSetting(
-        msg("Allowed URL Prefixes"),
+        msg("Extra Start URLs"),
         crawlConfig?.config.include?.length
           ? html`
               <ul>
