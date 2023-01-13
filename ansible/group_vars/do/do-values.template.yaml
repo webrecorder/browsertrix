@@ -70,5 +70,6 @@ email:
   smtp_host: {{ smtp_host }}
   sender_email: {{ sender_email }}
   password: {{ sender_password }}
+  reply_to_email: {{ reply_to_email }}
 
 
