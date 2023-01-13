@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import IntEnum
 from typing import Optional
 import uuid
+import os
 
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
@@ -62,6 +63,7 @@ class InviteOps:
         self.invites = mdb["invites"]
         self.archives = mdb["archives"]
         self.email = email
+        self.allow_dupe_invites = os.environ.get("ALLOW_DUPE_INVITES", "0") == "1"
 
     async def add_new_user_invite(
         self,
@@ -71,8 +73,10 @@ class InviteOps:
     ):
         """Add invite for new user"""
 
-        res = await self.invites.find_one({"email": new_user_invite.email})
-        if res:
+        res = await self.invites.find_one(
+            {"email": new_user_invite.email, "aid": new_user_invite.aid}
+        )
+        if res and not self.allow_dupe_invites:
             raise HTTPException(
                 status_code=403, detail="This user has already been invited"
             )
@@ -81,6 +85,9 @@ class InviteOps:
         # absent assume this is a general invitation from superadmin.
         if not new_user_invite.role:
             new_user_invite.role = UserRole.OWNER
+
+        if res:
+            await self.invites.delete_one({"_id": res["_id"]})
 
         await self.invites.insert_one(new_user_invite.to_dict())
 

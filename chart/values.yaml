@@ -15,6 +15,9 @@ volume_storage_class:
 registration_enabled: "0"
 jwt_token_lifetime_minutes: 1440
 
+# if set to "1", allow inviting same user to same org multiple times
+allow_dupe_invites: "0"
+
 # number of workers for backend api
 backend_workers: 4
 
