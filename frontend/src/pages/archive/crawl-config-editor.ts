@@ -898,7 +898,7 @@ https://example.com/path`}
       ${this.renderFormCol(html`
         <sl-textarea
           name="allowedExternalUrlList"
-          label=${msg("Extra Start URLs")}
+          label=${msg("Extra URLs In Scope")}
           rows="3"
           autocomplete="off"
           value=${this.formState.allowedExternalUrlList}
