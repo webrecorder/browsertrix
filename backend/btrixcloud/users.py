@@ -232,6 +232,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 storage_name="default",
                 user=user,
             )
+        else:
+            default_org = await self.archive_ops.get_default_org()
+            if default_org:
+                await self.archive_ops.add_user_to_archive(default_org, user.id)
 
         is_verified = hasattr(user_create, "is_verified") and user_create.is_verified
 

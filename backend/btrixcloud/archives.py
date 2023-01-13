@@ -287,9 +287,15 @@ class ArchiveOps:
                 status_code=400, detail="Invalid Invite Code, No Such Archive"
             )
 
-        archive.users[str(user.id)] = invite.role
-        await self.update(archive)
+        await self.add_user_to_archive(archive, user.id, invite.role)
         return True
+
+    async def add_user_to_archive(
+        self, archive: Archive, userid: uuid.UUID, role: UserRole = UserRole.OWNER
+    ):
+        """Add user to Archive with specified role"""
+        archive.users[str(userid)] = role
+        await self.update(archive)
 
 
 # ============================================================================
@@ -404,8 +410,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't change own role!")
 
-        archive.users[str(other_user.id)] = update.role
-        await ops.update(archive)
+        await ops.add_user_to_archive(archive, other_user.id, update.role)
 
         return {"updated": True}
 
