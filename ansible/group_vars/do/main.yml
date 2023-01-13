@@ -27,7 +27,9 @@ signing_host: "signing"
 superuser_email: "dev@webrecorder.net"
 superuser_password: "PassW0rd!"
 
-registration_enabled: true
+org_name: "{{ project_name }}"
+
+registration_enabled: false
 
 cert_email: "{{ superuser_email }}"
 
