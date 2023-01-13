@@ -9,6 +9,8 @@ crawler_limits_cpu: "2200m"
 crawler_requests_memory: "1200Mi"
 crawler_limits_memory: "3200Mi"
 
+crawler_pull_policy: "Always"
+
 # Registry
 {% if use_do_registry %}
 api_image: "{{ registry_endpoint }}/webrecorder/browsertrix-backend:{{ image_tag }}"
@@ -58,6 +60,8 @@ superuser:
   password: {{ superuser_password }}
 
 registration_enabled: "{{ '1' if registration_enabled else '0' }}"
+
+default_org: "{{ org_name }}"
 
 
 # Admin Send Email Options

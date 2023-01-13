@@ -15,7 +15,7 @@ k8s_name: "{{ project_name }}"
 bucket_name: "{{ project_name }}"
 bucket_path: "crawls"
 
-domain: "{{ domain_name | default('browsertrix.cloud') }}"
+domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
 use_do_registry: true
@@ -27,7 +27,9 @@ signing_host: "signing"
 superuser_email: "dev@webrecorder.net"
 superuser_password: "PassW0rd!"
 
-registration_enabled: true
+org_name: "{{ project_name }}"
+
+registration_enabled: false
 
 cert_email: "{{ superuser_email }}"
 
