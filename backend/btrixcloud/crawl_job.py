@@ -47,6 +47,7 @@ class CrawlJob(ABC):
         self.userid = uuid.UUID(os.environ["USER_ID"])
 
         self.is_manual = os.environ.get("RUN_MANUAL") == "1"
+        self.tags = os.environ.get("TAGS", "").split(",")
 
         self.scale = int(os.environ.get("INITIAL_SCALE") or 0)
 
@@ -360,6 +361,7 @@ class CrawlJob(ABC):
             manual=self.is_manual,
             scale=scale,
             started=self.started,
+            tags=self.tags,
             # colls=json.loads(job.metadata.annotations.get("btrix.colls", [])),
         )
 

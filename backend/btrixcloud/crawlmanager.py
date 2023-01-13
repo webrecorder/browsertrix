@@ -183,6 +183,7 @@ class BaseCrawlManager(ABC):
             "schedule": schedule,
             "env": os.environ,
             "mongo_db_url": resolve_db_url(),
+            "tags": ",".join(crawlconfig.tags),
         }
 
         return self.templates.env.get_template("crawl_job.yaml").render(params)

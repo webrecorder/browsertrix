@@ -84,6 +84,7 @@ class Crawl(BaseMongoModel):
     files: Optional[List[CrawlFile]] = []
 
     colls: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -121,6 +122,7 @@ class ListCrawlOut(BaseMongoModel):
     fileCount: int = 0
 
     colls: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -358,6 +360,7 @@ class CrawlOps:
             scale=crawlconfig.scale,
             manual=True,
             started=ts_now(),
+            tags=crawlconfig.tags,
         )
 
         try:
