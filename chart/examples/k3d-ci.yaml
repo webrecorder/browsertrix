@@ -7,6 +7,12 @@ api_pull_policy: "Never"
 nginx_pull_policy: "Never"
 
 
+mongo_auth:
+  # specify either username + password (for local mongo)
+  username: root
+  password: PASSWORD@
+
+
 superuser:
   # set this to enable a superuser admin
   email: admin@example.com
