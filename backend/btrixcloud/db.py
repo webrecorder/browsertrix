@@ -3,6 +3,7 @@ Browsertrix API Mongo DB initialization
 """
 
 import os
+import urllib
 from typing import Optional
 
 import motor.motor_asyncio
@@ -18,8 +19,8 @@ def resolve_db_url():
     if db_url:
         return db_url
 
-    mongo_user = os.environ["MONGO_INITDB_ROOT_USERNAME"]
-    mongo_pass = os.environ["MONGO_INITDB_ROOT_PASSWORD"]
+    mongo_user = urllib.parse.quote_plus(os.environ["MONGO_INITDB_ROOT_USERNAME"])
+    mongo_pass = urllib.parse.quote_plus(os.environ["MONGO_INITDB_ROOT_PASSWORD"])
     mongo_host = os.environ["MONGO_HOST"]
 
     return f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}:27017"

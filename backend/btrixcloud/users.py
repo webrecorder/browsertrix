@@ -166,6 +166,23 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         if not password:
             password = passlib.pwd.genword()
 
+        curr_superuser_res = await self.user_db.collection.find_one(
+            {"is_superuser": True}
+        )
+        if curr_superuser_res:
+            user = UserDB(**curr_superuser_res)
+            update = {"password": password}
+            if user.email != email:
+                update["email"] = email
+
+            try:
+                await self._update(user, update)
+                print("Superuser Updated!")
+            except UserAlreadyExists:
+                print(f"User {email} already exists", flush=True)
+
+            return
+
         try:
             res = await self.create(
                 UserCreate(
