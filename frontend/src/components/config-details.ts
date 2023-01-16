@@ -196,7 +196,7 @@ export class ConfigDetails extends LiteElement {
         this.scopeTypeLabels[crawlConfig?.config.scopeType]
       )}
       ${this.renderSetting(
-        msg("Extra URLs In Scope"),
+        msg("Extra URLs in Scope"),
         crawlConfig?.config.include?.length
           ? html`
               <ul>
