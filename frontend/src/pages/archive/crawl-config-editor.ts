@@ -747,7 +747,7 @@ https://example.com/path`}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
-              pageSize="10"
+              pageSize="30"
               editable
               removable
               @on-remove=${this.handleRemoveRegex}
