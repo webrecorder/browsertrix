@@ -41,7 +41,7 @@ type APIUser = {
 };
 
 type UserSettings = {
-  teamId: string;
+  orgId: string;
 };
 
 /**
@@ -81,18 +81,18 @@ export class App extends LiteElement {
   private isRegistrationEnabled?: boolean;
 
   @state()
-  private teams?: OrgData[];
+  private orgs?: OrgData[];
 
-  // Store selected team ID for when navigating from
-  // pages without associated team (e.g. user account)
+  // Store selected org ID for when navigating from
+  // pages without associated org (e.g. user account)
   @state()
-  private selectedTeamId?: string;
+  private selectedOrgId?: string;
 
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.selectedTeamId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.id;
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -110,7 +110,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.selectedTeamId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.id;
     }
   }
 
@@ -153,7 +153,7 @@ export class App extends LiteElement {
           };
           const settings = this.getPersistedUserSettings(value.id);
           if (settings) {
-            this.selectedTeamId = settings.teamId;
+            this.selectedOrgId = settings.orgId;
           }
           return value;
         }),
@@ -164,17 +164,17 @@ export class App extends LiteElement {
       const userInfoSuccess = userInfoResp.status === "fulfilled";
       if (orgsResp.status === "fulfilled") {
         const { orgs } = orgsResp.value;
-        this.teams = orgs;
+        this.orgs = orgs;
         if (userInfoSuccess) {
           const userInfo = userInfoResp.value;
           if (orgs.length && !userInfo?.is_superuser) {
-            this.selectedTeamId = this.selectedTeamId || orgs[0].id;
+            this.selectedOrgId = this.selectedOrgId || orgs[0].id;
 
             if (orgs.length === 1) {
-              // Persist selected team ID since there's no
+              // Persist selected org ID since there's no
               // user selection event to persist
               this.persistUserSettings(userInfo.id, {
-                teamId: this.selectedTeamId,
+                orgId: this.selectedOrgId,
               });
             }
           }
@@ -270,8 +270,8 @@ export class App extends LiteElement {
   private renderNavBar() {
     const isAdmin = this.userInfo?.isAdmin;
     let homeHref = "/";
-    if (!isAdmin && this.selectedTeamId) {
-      homeHref = `/orgs/${this.selectedTeamId}/crawls`;
+    if (!isAdmin && this.selectedOrgId) {
+      homeHref = `/orgs/${this.selectedOrgId}/crawls`;
     }
 
     return html`
@@ -305,7 +305,7 @@ export class App extends LiteElement {
 
           <div class="grid grid-flow-col auto-cols-max gap-3 items-center">
             ${this.authService.authState
-              ? html` ${this.renderTeams()}
+              ? html` ${this.renderOrgs()}
                   <sl-dropdown placement="bottom-end">
                     <sl-icon-button
                       slot="trigger"
@@ -356,16 +356,16 @@ export class App extends LiteElement {
     `;
   }
 
-  private renderTeams() {
-    if (!this.teams || this.teams.length < 2 || !this.userInfo) return;
+  private renderOrgs() {
+    if (!this.orgs || this.orgs.length < 2 || !this.userInfo) return;
 
-    const selectedOption = this.selectedTeamId
-      ? this.teams.find(({ id }) => id === this.selectedTeamId)
-      : { id: "", name: msg("All Teams") };
+    const selectedOption = this.selectedOrgId
+      ? this.orgs.find(({ id }) => id === this.selectedOrgId)
+      : { id: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Could't find team with ID ${this.selectedTeamId}`,
-        this.teams
+        `Could't find organization with ID ${this.selectedOrgId}`,
+        this.orgs
       );
       return;
     }
@@ -380,7 +380,7 @@ export class App extends LiteElement {
             const { value } = e.detail.item;
             this.navigate(`/orgs/${value}${value ? "/crawls" : ""}`);
             if (this.userInfo) {
-              this.persistUserSettings(this.userInfo.id, { teamId: value });
+              this.persistUserSettings(this.userInfo.id, { orgId: value });
             } else {
               console.debug("User info not set");
             }
@@ -390,17 +390,17 @@ export class App extends LiteElement {
             this.userInfo.isAdmin,
             () => html`
               <sl-menu-item value="" ?checked=${!selectedOption.id}
-                >${msg("All Teams")}</sl-menu-item
+                >${msg("All Organizations")}</sl-menu-item
               >
               <sl-divider></sl-divider>
             `
           )}
-          ${this.teams.map(
-            (team) => html`
+          ${this.orgs.map(
+            (org) => html`
               <sl-menu-item
-                value=${team.id}
-                ?checked=${team.id === selectedOption.id}
-                >${team.name}</sl-menu-item
+                value=${org.id}
+                ?checked=${org.id === selectedOption.id}
+                >${org.name}</sl-menu-item
               >
             `
           )}
@@ -425,10 +425,10 @@ export class App extends LiteElement {
       `;
     }
 
-    if (this.teams?.length === 1) {
+    if (this.orgs?.length === 1) {
       return html`
         <div class="font-medium text-neutral-700 my-1">
-          ${this.teams![0].name}
+          ${this.orgs![0].name}
         </div>
         <div class="text-neutral-500">${this.userInfo?.name}</div>
         <div class="text-xs text-neutral-500 whitespace-nowrap">
@@ -558,7 +558,7 @@ export class App extends LiteElement {
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
-          .teamId=${this.selectedTeamId}
+          .orgId=${this.selectedOrgId}
         ></btrix-home>`;
 
       case "orgs":
@@ -665,7 +665,7 @@ export class App extends LiteElement {
   }
 
   private renderSubNavBar() {
-    if (!this.userInfo || !this.selectedTeamId) return;
+    if (!this.userInfo || !this.selectedOrgId) return;
 
     return html`
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
@@ -694,7 +694,7 @@ export class App extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.selectedTeamId}/${tabName}`}
+        href=${`/orgs/${this.selectedOrgId}/${tabName}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -861,7 +861,7 @@ export class App extends LiteElement {
     this.authService.logout();
     this.authService = new AuthService();
     this.userInfo = undefined;
-    this.selectedTeamId = undefined;
+    this.selectedOrgId = undefined;
   }
 
   private getOrgs(): Promise<{ orgs: OrgData[] }> {

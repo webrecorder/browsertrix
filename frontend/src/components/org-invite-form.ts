@@ -44,7 +44,7 @@ export class OrgInviteForm extends LiteElement {
             name="inviteEmail"
             type="email"
             label=${msg("Email")}
-            placeholder=${msg("team-member@email.com", {
+            placeholder=${msg("org-member@email.com", {
               desc: "Placeholder text for email to invite",
             })}
             required

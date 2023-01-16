@@ -15,7 +15,7 @@ export class Home extends LiteElement {
   userInfo?: CurrentUser;
 
   @property({ type: String })
-  teamId?: string;
+  orgId?: string;
 
   @state()
   private isInviteComplete?: boolean;
@@ -26,7 +26,7 @@ export class Home extends LiteElement {
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
-      if (this.userInfo && !this.teamId) {
+      if (this.userInfo && !this.orgId) {
         this.fetchOrgs();
       }
     } else {
@@ -35,8 +35,8 @@ export class Home extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("teamId") && this.teamId) {
-      this.navTo(`/orgs/${this.teamId}/crawls`);
+    if (changedProperties.has("orgId") && this.orgId) {
+      this.navTo(`/orgs/${this.orgId}/crawls`);
     } else if (changedProperties.has("authState") && this.authState) {
       this.fetchOrgs();
     }
@@ -60,7 +60,7 @@ export class Home extends LiteElement {
     }
 
     if (this.userInfo.isAdmin === false) {
-      title = msg("Teams");
+      title = msg("Organizations");
       content = this.renderLoggedInNonAdmin();
     }
 
@@ -116,7 +116,7 @@ export class Home extends LiteElement {
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
-              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Teams")}</h2>
+              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Organizations")}</h2>
               <btrix-orgs-list
                 .userInfo=${this.userInfo}
                 .orgList=${this.orgList}

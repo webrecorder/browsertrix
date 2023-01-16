@@ -7,6 +7,7 @@
 # run service on localhost on port
 local_service_port: 30870
 
+default_org: "My Local Organization"
 
 # overrides to use existing images in local Docker, otherwise will pull from latest
 # api_pull_policy: "Never"

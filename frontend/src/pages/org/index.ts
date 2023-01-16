@@ -259,7 +259,7 @@ export class Org extends LiteElement {
               ${msg("Name")}
             </div>
             <div class="px-3 py-2" role="columnheader" aria-sort="none">
-              ${msg("Role", { desc: "Team member's role" })}
+              ${msg("Role", { desc: "Organization member's role" })}
             </div>
           </div>
         </div>
