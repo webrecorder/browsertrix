@@ -75,9 +75,15 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("exclusions") && this.exclusions) {
+    if (changedProperties.get("exclusions") && this.exclusions) {
+      if (
+        changedProperties.get("exclusions").toString() ===
+        this.exclusions.toString()
+      ) {
+        // Check list equality
+        return;
+      }
       this.exclusionToRemove = undefined;
-
       const prevVal = changedProperties.get("exclusions");
       if (prevVal) {
         const prevTotal = prevVal.length;
@@ -88,9 +94,14 @@ export class QueueExclusionTable extends LiteElement {
           this.page = lastPage;
         }
       }
-
       this.updatePageResults();
-    } else if (changedProperties.has("page")) {
+    } else if (changedProperties.get("page") && this.page) {
+      this.updatePageResults();
+    }
+  }
+
+  firstUpdated() {
+    if (this.exclusions) {
       this.updatePageResults();
     }
   }
@@ -167,9 +178,10 @@ export class QueueExclusionTable extends LiteElement {
 
   private renderItem = (
     exclusion: Exclusion,
-    index: number,
+    pageIndex: number,
     arr: Exclusion[]
   ) => {
+    const index = (this.page - 1) * this.pageSize + pageIndex;
     const [typeColClass, valueColClass, actionColClass] =
       this.getColumnClassNames(index + 1, arr.length);
 
