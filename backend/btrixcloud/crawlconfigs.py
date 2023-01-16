@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
+from .worker import by_one_worker
 
 from .db import BaseMongoModel
 
@@ -216,6 +217,7 @@ class CrawlConfigOps:
         """set crawl ops reference"""
         self.crawl_ops = ops
 
+    @by_one_worker("/app/btrixcloud/worker-pid.file")
     async def init_index(self):
         """init index for crawls db"""
         await self.crawl_configs.create_index(

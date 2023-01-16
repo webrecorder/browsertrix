@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .db import BaseMongoModel
 
 from .users import User
+from .worker import by_one_worker
 
 from .invites import (
     AddToOrgRequest,
@@ -224,6 +225,7 @@ class OrgOps:
         if res:
             return Organization.from_dict(res)
 
+    @by_one_worker("/app/btrixcloud/worker-pid.file")
     async def create_default_org(self, storage_name="default"):
         """Create default organization if doesn't exist."""
         await self.init_index()

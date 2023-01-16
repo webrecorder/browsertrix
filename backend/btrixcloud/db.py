@@ -1,14 +1,17 @@
 """
 Browsertrix API Mongo DB initialization
 """
-
+import asyncio
+import importlib.util
 import os
 import urllib
+import time
 from typing import Optional
 
 import motor.motor_asyncio
-
 from pydantic import BaseModel, UUID4
+
+from .worker import by_one_worker
 
 
 # ============================================================================
@@ -28,7 +31,7 @@ def resolve_db_url():
 
 # ============================================================================
 def init_db():
-    """initializde the mongodb connector"""
+    """initialize the mongodb connector"""
 
     db_url = resolve_db_url()
 
@@ -42,6 +45,36 @@ def init_db():
     mdb = client["browsertrixcloud"]
 
     return client, mdb
+
+
+# ============================================================================
+@by_one_worker("/app/btrixcloud/worker-pid.file")
+async def run_db_migrations(mdb):
+    """Run database migrations."""
+    migrations_path = "/app/btrixcloud/migrations"
+    module_files = [
+        f
+        for f in os.listdir(migrations_path)
+        if not os.path.isdir(os.path.join(migrations_path, f))
+        and not f.startswith("__")
+    ]
+    for module_file in module_files:
+        module_path = os.path.join(migrations_path, module_file)
+        try:
+            migration_name = os.path.basename(module_file).rstrip(".py")
+            spec = importlib.util.spec_from_file_location(
+                f".migrations.{migration_name}", module_path
+            )
+            assert spec
+            migration_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(migration_module)
+            migration = migration_module.Migration(mdb)
+            await migration.run()
+        except ImportError as err:
+            print(
+                f"Error importing Migration class from module {module_file}: {err}",
+                flush=True,
+            )
 
 
 # ============================================================================

@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
 
-from .db import init_db
+from .db import init_db, run_db_migrations
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -48,6 +48,8 @@ def main():
     crawl_manager = None
 
     dbclient, mdb = init_db()
+
+    asyncio.create_task(run_db_migrations(mdb))
 
     settings = {
         "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",

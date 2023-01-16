@@ -13,6 +13,7 @@ from pydantic import BaseModel, UUID4
 
 from .db import BaseMongoModel
 from .orgs import Organization
+from .worker import by_one_worker
 
 
 # ============================================================================
@@ -46,6 +47,7 @@ class CollectionOps:
 
         asyncio.create_task(self.init_index())
 
+    @by_one_worker("/app/btrixcloud/worker-pid.file")
     async def init_index(self):
         """init lookup index"""
         await self.collections.create_index(
