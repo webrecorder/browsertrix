@@ -13,7 +13,7 @@ import { F } from "lodash/fp";
  * ```ts
  * <btrix-browser-profiles-detail
  *  authState=${authState}
- *  archiveId=${archiveId}
+ *  orgId=${orgId}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```
@@ -24,7 +24,7 @@ export class BrowserProfilesDetail extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   profileId!: string;
@@ -67,7 +67,7 @@ export class BrowserProfilesDetail extends LiteElement {
     return html`<div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/browser-profiles`}
+          href=${`/orgs/${this.orgId}/browser-profiles`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -155,8 +155,8 @@ export class BrowserProfilesDetail extends LiteElement {
                       <li>
                         <a
                           class="text-neutral-600 hover:underline"
-                          href=${`/archives/${
-                            this.profile!.aid
+                          href=${`/orgs/${
+                            this.profile!.oid
                           }/crawl-templates/config/${id}`}
                         >
                           ${name}
@@ -218,7 +218,7 @@ export class BrowserProfilesDetail extends LiteElement {
           <main class="relative">
             <btrix-profile-browser
               .authState=${this.authState}
-              archiveId=${this.archiveId}
+              orgId=${this.orgId}
               browserId=${ifDefined(this.browserId)}
               .origins=${this.profile?.origins}
               @load=${() => (this.isBrowserLoaded = true)}
@@ -419,7 +419,7 @@ export class BrowserProfilesDetail extends LiteElement {
       });
 
       this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
+        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           this.profile.name
@@ -443,7 +443,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/${this.profile!.id}`,
+        `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -465,7 +465,7 @@ export class BrowserProfilesDetail extends LiteElement {
           duration: 15000,
         });
       } else {
-        this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+        this.navTo(`/orgs/${this.orgId}/browser-profiles`);
 
         this.notify({
           message: msg(html`Deleted <strong>${profileName}</strong>.`),
@@ -489,7 +489,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     return this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser`,
+      `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
         method: "POST",
@@ -500,7 +500,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
   private deleteBrowser(id: string) {
     return this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser/${id}`,
+      `/orgs/${this.orgId}/profiles/browser/${id}`,
       this.authState!,
       {
         method: "DELETE",
@@ -527,7 +527,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
   private async getProfile(): Promise<Profile> {
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles/${this.profileId}`,
+      `/orgs/${this.orgId}/profiles/${this.profileId}`,
       this.authState!
     );
 
@@ -556,7 +556,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/${this.profileId}`,
+        `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
           method: "PATCH",
@@ -601,7 +601,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/${this.profileId}`,
+        `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
           method: "PATCH",

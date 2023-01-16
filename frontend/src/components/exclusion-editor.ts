@@ -6,7 +6,7 @@ import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
 } from "./queue-exclusion-form";
-import type { SeedConfig } from "../pages/archive/types";
+import type { SeedConfig } from "../pages/org/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
 
@@ -22,7 +22,7 @@ type ResponseData = {
  * Usage example:
  * ```ts
  * <btrix-exclusion-editor
- *   archiveId=${this.crawl.aid}
+ *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
  *   .config=${this.crawlTemplate.config}
  *   .authState=${this.authState}
@@ -39,7 +39,7 @@ export class ExclusionEditor extends LiteElement {
   authState?: AuthState;
 
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
@@ -69,7 +69,7 @@ export class ExclusionEditor extends LiteElement {
   willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("authState") ||
-      changedProperties.has("archiveId") ||
+      changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("regex")
     ) {
@@ -127,7 +127,7 @@ export class ExclusionEditor extends LiteElement {
 
   private renderQueue() {
     return html`<btrix-crawl-queue
-      archiveId=${this.archiveId!}
+      orgId=${this.orgId!}
       crawlId=${this.crawlId!}
       .authState=${this.authState}
       regex=${this.regex}
@@ -150,7 +150,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
         this.authState!,
         {
           method: "DELETE",
@@ -208,7 +208,7 @@ export class ExclusionEditor extends LiteElement {
 
   private async getQueueMatches(): Promise<ResponseData> {
     const data: ResponseData = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/queueMatchAll?regex=${this.regex}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?regex=${this.regex}`,
       this.authState!
     );
 
@@ -222,7 +222,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
         this.authState!,
         {
           method: "POST",

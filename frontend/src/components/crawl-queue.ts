@@ -19,7 +19,7 @@ const POLL_INTERVAL_SECONDS = 5;
  * Usage example:
  * ```ts
  * <btrix-crawl-queue
- *   archiveId=${this.crawl.aid}
+ *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
  *   .authState=${this.authState}
  *   regex="skip-me"
@@ -32,7 +32,7 @@ export class CrawlQueue extends LiteElement {
   authState?: AuthState;
 
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
@@ -66,7 +66,7 @@ export class CrawlQueue extends LiteElement {
   willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("authState") ||
-      changedProperties.has("archiveId") ||
+      changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("page") ||
       changedProperties.has("regex")
@@ -201,7 +201,7 @@ export class CrawlQueue extends LiteElement {
 
   private async getQueue(): Promise<ResponseData> {
     const data: ResponseData = await this.apiFetch(
-      `/archives/${this.archiveId}/crawls/${this.crawlId}/queue?offset=${
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?offset=${
         (this.page - 1) * this.pageSize
       }&count=${this.pageSize}&regex=${this.regex}`,
       this.authState!

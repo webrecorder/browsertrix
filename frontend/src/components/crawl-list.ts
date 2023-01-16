@@ -16,7 +16,7 @@ import { property, queryAssignedElements } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
-import { Crawl } from "../pages/archive/types";
+import { Crawl } from "../pages/org/types";
 
 @localized()
 export class CrawlListItem extends LitElement {

@@ -7,7 +7,7 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
-import type { ArchiveTab } from "./pages/archive";
+import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
@@ -16,7 +16,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
-import type { Archive, ArchiveData } from "./utils/archives";
+import type { Org, OrgData } from "./utils/orgs";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -81,7 +81,7 @@ export class App extends LiteElement {
   private isRegistrationEnabled?: boolean;
 
   @state()
-  private teams?: ArchiveData[];
+  private teams?: OrgData[];
 
   // Store selected team ID for when navigating from
   // pages without associated team (e.g. user account)
@@ -91,7 +91,7 @@ export class App extends LiteElement {
   async connectedCallback() {
     const authState = await AuthService.initSessionStorage();
     this.syncViewState();
-    if (this.viewState.route === "archive") {
+    if (this.viewState.route === "org") {
       this.selectedTeamId = this.viewState.params.id;
     }
     if (authState) {
@@ -109,10 +109,7 @@ export class App extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (
-      changedProperties.get("viewState") &&
-      this.viewState.route === "archive"
-    ) {
+    if (changedProperties.get("viewState") && this.viewState.route === "org") {
       this.selectedTeamId = this.viewState.params.id;
     }
   }
@@ -145,7 +142,7 @@ export class App extends LiteElement {
 
   private async updateUserInfo() {
     try {
-      const [userInfoResp, archivesResp] = await Promise.allSettled([
+      const [userInfoResp, orgsResp] = await Promise.allSettled([
         this.getUserInfo().then((value) => {
           this.userInfo = {
             id: value.id,
@@ -160,20 +157,20 @@ export class App extends LiteElement {
           }
           return value;
         }),
-        // TODO see if we can add API endpoint to retrieve first archive
-        this.getArchives(),
+        // TODO see if we can add API endpoint to retrieve first org
+        this.getOrgs(),
       ]);
 
       const userInfoSuccess = userInfoResp.status === "fulfilled";
-      if (archivesResp.status === "fulfilled") {
-        const { archives } = archivesResp.value;
-        this.teams = archives;
+      if (orgsResp.status === "fulfilled") {
+        const { orgs } = orgsResp.value;
+        this.teams = orgs;
         if (userInfoSuccess) {
           const userInfo = userInfoResp.value;
-          if (archives.length && !userInfo?.is_superuser) {
-            this.selectedTeamId = this.selectedTeamId || archives[0].id;
+          if (orgs.length && !userInfo?.is_superuser) {
+            this.selectedTeamId = this.selectedTeamId || orgs[0].id;
 
-            if (archives.length === 1) {
+            if (orgs.length === 1) {
               // Persist selected team ID since there's no
               // user selection event to persist
               this.persistUserSettings(userInfo.id, {
@@ -183,7 +180,7 @@ export class App extends LiteElement {
           }
         }
       } else {
-        throw archivesResp.reason;
+        throw orgsResp.reason;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -274,7 +271,7 @@ export class App extends LiteElement {
     const isAdmin = this.userInfo?.isAdmin;
     let homeHref = "/";
     if (!isAdmin && this.selectedTeamId) {
-      homeHref = `/archives/${this.selectedTeamId}/crawls`;
+      homeHref = `/orgs/${this.selectedTeamId}/crawls`;
     }
 
     return html`
@@ -381,7 +378,7 @@ export class App extends LiteElement {
         <sl-menu
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
-            this.navigate(`/archives/${value}${value ? "/crawls" : ""}`);
+            this.navigate(`/orgs/${value}${value ? "/crawls" : ""}`);
             if (this.userInfo) {
               this.persistUserSettings(this.userInfo.id, { teamId: value });
             } else {
@@ -564,24 +561,24 @@ export class App extends LiteElement {
           .teamId=${this.selectedTeamId}
         ></btrix-home>`;
 
-      case "archives":
-        return html`<btrix-archives
+      case "orgs":
+        return html`<btrix-orgs
           class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
-        ></btrix-archives>`;
+        ></btrix-orgs>`;
 
-      case "archive":
-      case "archiveAddMember":
-      case "archiveNewResourceTab":
-      case "archiveCrawl":
+      case "org":
+      case "orgAddMember":
+      case "orgNewResourceTab":
+      case "orgCrawl":
       case "browserProfile":
       case "browser":
       case "crawlTemplate":
       case "crawlTemplateEdit":
-        return html`<btrix-archive
+        return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
@@ -589,16 +586,16 @@ export class App extends LiteElement {
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
-          archiveId=${this.viewState.params.id}
-          archiveTab=${this.viewState.params.tab as ArchiveTab}
+          orgId=${this.viewState.params.id}
+          orgTab=${this.viewState.params.tab as OrgTab}
           browserProfileId=${this.viewState.params.browserProfileId}
           browserId=${this.viewState.params.browserId}
           crawlConfigId=${this.viewState.params.crawlConfigId}
           crawlId=${this.viewState.params.crawlId}
-          ?isAddingMember=${this.viewState.route === "archiveAddMember"}
-          ?isNewResourceTab=${this.viewState.route === "archiveNewResourceTab"}
+          ?isAddingMember=${this.viewState.route === "orgAddMember"}
+          ?isNewResourceTab=${this.viewState.route === "orgNewResourceTab"}
           ?isEditing=${"edit" in this.viewState.params}
-        ></btrix-archive>`;
+        ></btrix-org>`;
 
       case "accountSettings":
         return html`<btrix-account-settings
@@ -690,20 +687,14 @@ export class App extends LiteElement {
     `;
   }
 
-  private renderNavTab({
-    tabName,
-    label,
-  }: {
-    tabName: ArchiveTab;
-    label: string;
-  }) {
+  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
     const isActive = this.viewState.params.tab === tabName;
 
     return html`
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/archives/${this.selectedTeamId}/${tabName}`}
+        href=${`/orgs/${this.selectedTeamId}/${tabName}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -873,8 +864,8 @@ export class App extends LiteElement {
     this.selectedTeamId = undefined;
   }
 
-  private getArchives(): Promise<{ archives: ArchiveData[] }> {
-    return this.apiFetch("/archives", this.authService.authState!);
+  private getOrgs(): Promise<{ orgs: OrgData[] }> {
+    return this.apiFetch("/orgs", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {

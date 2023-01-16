@@ -137,7 +137,7 @@ class Organization(BaseMongoModel):
 
 
 # ============================================================================
-class OrganizationOps:
+class OrgOps:
     """Organization API operations"""
 
     def __init__(self, mdb, invites):
@@ -215,7 +215,7 @@ class OrganizationOps:
 
     async def get_org_by_id(self, oid: uuid.UUID):
         """Get an org by id"""
-        res = await self.org.find_one({"_id": oid})
+        res = await self.orgs.find_one({"_id": oid})
         return Organization.from_dict(res)
 
     async def get_default_org(self):
@@ -305,7 +305,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals
 
-    ops = OrganizationOps(mdb, invites)
+    ops = OrgOps(mdb, invites)
 
     async def org_dep(oid: str, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(uuid.UUID(oid), user)

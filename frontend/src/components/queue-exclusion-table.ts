@@ -4,7 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 
-import type { SeedConfig } from "../pages/archive/types";
+import type { SeedConfig } from "../pages/org/types";
 import LiteElement, { html } from "../utils/LiteElement";
 import { regexEscape } from "../utils/string";
 import type { Exclusion } from "./queue-exclusion-form";

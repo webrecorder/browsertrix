@@ -38,7 +38,7 @@ server {
     }
 
     location ~* /watch/([^/]+)/([^/]+)/([^/]+)/ws {
-      set $archive $1;
+      set $org $1;
       set $crawl $2;
       set $num $3;
       set $auth_bearer $arg_auth_bearer;
@@ -57,7 +57,7 @@ server {
 
     location = /access_check {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/crawls/$crawl/access?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/orgs/$org/crawls/$crawl/access?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }
@@ -71,7 +71,7 @@ server {
     location ~* ^/browser/([^/]+)/ws$ {
       set $browserid $1;
       set $auth_bearer $arg_auth_bearer;
-      set $archive $arg_aid;
+      set $org $arg_oid;
       set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
 
       auth_request  /access_check_profiles;
@@ -90,7 +90,7 @@ server {
     location ~* ^/browser/([^/]+)/$ {
       set $browserid $1;
       set $auth_bearer $arg_auth_bearer;
-      set $archive $arg_aid;
+      set $org $arg_oid;
       set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
 
       auth_request  /access_check_profiles;
@@ -101,7 +101,7 @@ server {
 
     location = /access_check_profiles {
       internal;
-      proxy_pass http://${BACKEND_HOST}:8000/api/archives/$archive/profiles/browser/$browserid/access?auth_bearer=$auth_bearer;
+      proxy_pass http://${BACKEND_HOST}:8000/api/orgs/$org/profiles/browser/$browserid/access?auth_bearer=$auth_bearer;
       proxy_pass_request_body off;
       proxy_set_header Content-Length "";
     }

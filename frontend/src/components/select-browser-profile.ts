@@ -5,7 +5,7 @@ import orderBy from "lodash/fp/orderBy";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement from "../utils/LiteElement";
-import type { Profile } from "../pages/archive/types";
+import type { Profile } from "../pages/org/types";
 
 /**
  * Browser profile select dropdown
@@ -14,7 +14,7 @@ import type { Profile } from "../pages/archive/types";
  * ```ts
  * <btrix-select-browser-profile
  *   authState=${authState}
- *   archiveId=${archiveId}
+ *   orgId=${orgId}
  *   on-change=${({value}) => selectedProfile = value}
  * ></btrix-select-browser-profile>
  * ```
@@ -27,7 +27,7 @@ export class SelectBrowserProfile extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   profileId?: string;
@@ -106,7 +106,7 @@ export class SelectBrowserProfile extends LiteElement {
             >`
           : ""}
         <a
-          href=${`/archives/${this.archiveId}/browser-profiles/profile/${this.selectedProfile.id}`}
+          href=${`/orgs/${this.orgId}/browser-profiles/profile/${this.selectedProfile.id}`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
         >
@@ -129,7 +129,7 @@ export class SelectBrowserProfile extends LiteElement {
           >${msg("No additional browser profiles found.")}</span
         >
         <a
-          href=${`/archives/${this.archiveId}/browser-profiles/new`}
+          href=${`/orgs/${this.orgId}/browser-profiles/new`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
           @click=${(e: any) => {
@@ -192,7 +192,7 @@ export class SelectBrowserProfile extends LiteElement {
 
   private async getProfiles(): Promise<Profile[]> {
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles`,
+      `/orgs/${this.orgId}/profiles`,
       this.authState!
     );
 

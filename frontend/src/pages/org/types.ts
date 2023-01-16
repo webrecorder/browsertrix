@@ -12,7 +12,7 @@ export type Crawl = {
   id: string;
   userid: string;
   userName: string;
-  aid: string;
+  oid: string;
   cid: string;
   configName: string;
   schedule: string;
@@ -79,7 +79,7 @@ export type InitialCrawlConfig = Pick<
 
 export type CrawlConfig = CrawlConfigParams & {
   id: string;
-  aid: string;
+  oid: string;
   jobType: JobType;
   userid: string;
   userName: string | null;
@@ -104,6 +104,6 @@ export type Profile = {
   origins: string[];
   profileId: string;
   baseProfileName: string;
-  aid: string;
+  oid: string;
   crawlconfigs: { id: string; name: string }[];
 };

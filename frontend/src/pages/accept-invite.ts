@@ -23,11 +23,11 @@ export class AcceptInvite extends LiteElement {
   private inviteInfo: {
     inviterEmail: string;
     inviterName: string;
-    archiveName: string;
+    orgName: string;
   } = {
     inviterEmail: "",
     inviterName: "",
-    archiveName: "",
+    orgName: "",
   };
 
   connectedCallback(): void {
@@ -103,7 +103,7 @@ export class AcceptInvite extends LiteElement {
               html`You've been invited to join
                 <span class="text-primary break-words"
                   >${hasInviteInfo
-                    ? this.inviteInfo.archiveName || msg("Browsertrix Cloud")
+                    ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
                     : placeholder}</span
                 >`
             )}
@@ -132,7 +132,7 @@ export class AcceptInvite extends LiteElement {
       this.inviteInfo = {
         inviterEmail: data.inviterEmail,
         inviterName: data.inviterName,
-        archiveName: data.archiveName,
+        orgName: data.orgName,
       };
     } catch {
       this.serverError = msg("This invitation is not valid");
@@ -149,7 +149,7 @@ export class AcceptInvite extends LiteElement {
 
     try {
       await this.apiFetch(
-        `/archives/invite-accept/${this.token}`,
+        `/orgs/invite-accept/${this.token}`,
         this.authState,
         {
           method: "POST",
@@ -157,7 +157,7 @@ export class AcceptInvite extends LiteElement {
       );
 
       this.notify({
-        message: msg(str`You've joined ${this.inviteInfo.archiveName}.`),
+        message: msg(str`You've joined ${this.inviteInfo.orgName}.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -175,7 +175,7 @@ export class AcceptInvite extends LiteElement {
   private onDecline() {
     this.notify({
       message: msg(
-        str`You've declined to join ${this.inviteInfo.archiveName}.`
+        str`You've declined to join ${this.inviteInfo.orgName}.`
       ),
       variant: "info",
       icon: "info-circle",

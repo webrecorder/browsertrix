@@ -45,7 +45,7 @@ export class CrawlTemplatesList extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   userId!: string;
@@ -89,7 +89,7 @@ export class CrawlTemplatesList extends LiteElement {
 
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("archiveId") ||
+      changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
       try {
@@ -169,7 +169,7 @@ export class CrawlTemplatesList extends LiteElement {
 
         <div class="grow-0 mb-4">
           <sl-button
-            href=${`/archives/${this.archiveId}/crawl-templates/new`}
+            href=${`/orgs/${this.orgId}/crawl-templates/new`}
             variant="primary"
             @click=${this.navLink}
           >
@@ -308,7 +308,7 @@ export class CrawlTemplatesList extends LiteElement {
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${t.name}
-      href=${`/archives/${this.archiveId}/crawl-templates/config/${t.id}`}
+      href=${`/orgs/${this.orgId}/crawl-templates/config/${t.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
@@ -356,7 +356,7 @@ export class CrawlTemplatesList extends LiteElement {
                   </span>
                   <a
                     class="font-medium hover:underline"
-                    href=${`/archives/${this.archiveId}/crawls/crawl/${t.lastCrawlId}`}
+                    href=${`/orgs/${this.orgId}/crawls/crawl/${t.lastCrawlId}`}
                     @click=${(e: any) => {
                       e.stopPropagation();
                       this.navLink(e);
@@ -456,7 +456,7 @@ export class CrawlTemplatesList extends LiteElement {
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
             this.navTo(
-              `/archives/${this.archiveId}/crawl-templates/config/${t.id}?edit`
+              `/orgs/${this.orgId}/crawl-templates/config/${t.id}?edit`
             );
           }}
         >
@@ -549,7 +549,7 @@ export class CrawlTemplatesList extends LiteElement {
             e.preventDefault();
             this.runningCrawlsMap[t.id]
               ? this.navTo(
-                  `/archives/${this.archiveId}/crawls/crawl/${
+                  `/orgs/${this.orgId}/crawls/crawl/${
                     this.runningCrawlsMap[t.id]
                   }#watch`
                 )
@@ -583,7 +583,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
     const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
-      `/archives/${this.archiveId}/crawlconfigs${params}`,
+      `/orgs/${this.orgId}/crawlconfigs${params}`,
       this.authState!
     );
 
@@ -613,7 +613,7 @@ export class CrawlTemplatesList extends LiteElement {
       tags: template.tags,
     };
 
-    this.navTo(`/archives/${this.archiveId}/crawl-templates/new`, {
+    this.navTo(`/orgs/${this.orgId}/crawl-templates/new`, {
       crawlTemplate,
     });
 
@@ -627,7 +627,7 @@ export class CrawlTemplatesList extends LiteElement {
   private async deactivateTemplate(template: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -655,7 +655,7 @@ export class CrawlTemplatesList extends LiteElement {
   private async deleteTemplate(template: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -683,7 +683,7 @@ export class CrawlTemplatesList extends LiteElement {
   private async runNow(template: CrawlConfig): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${template.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${template.id}/run`,
         this.authState!,
         {
           method: "POST",
@@ -702,9 +702,9 @@ export class CrawlTemplatesList extends LiteElement {
           html`Started crawl from <strong>${template.name}</strong>. <br />
             <a
               class="underline hover:no-underline"
-              href="/archives/${this
-                .archiveId}/crawls/crawl/${data.started}#watch"
-              @click="${this.navLink.bind(this)}"
+              href="/orgs/${this
+                .orgId}/crawls/crawl/${data.started}#watch"
+              @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
         ),
@@ -742,7 +742,7 @@ export class CrawlTemplatesList extends LiteElement {
 
     try {
       await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/${editedTemplateId}`,
+        `/orgs/${this.orgId}/crawlconfigs/${editedTemplateId}`,
         this.authState!,
         {
           method: "PATCH",

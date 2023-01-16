@@ -2,18 +2,18 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import type { CurrentUser } from "../types/user";
-import type { ArchiveData } from "../utils/archives";
+import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
-import { isOwner } from "../utils/archives";
+import { isOwner } from "../utils/orgs";
 
 @localized()
-export class ArchivesList extends LiteElement {
+export class OrgsList extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
   @property({ type: Array })
-  archiveList: ArchiveData[] = [];
+  orgList: OrgData[] = [];
 
   @property({ type: Boolean })
   skeleton? = false;
@@ -25,21 +25,21 @@ export class ArchivesList extends LiteElement {
 
     return html`
       <ul class="border rounded-lg overflow-hidden">
-        ${this.archiveList?.map(
-          (archive) =>
+        ${this.orgList?.map(
+          (org) =>
             html`
               <li
                 class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
                 role="button"
-                @click=${this.makeOnArchiveClick(archive)}
+                @click=${this.makeOnOrgClick(org)}
               >
                 <span class="font-medium mr-2 transition-colors"
-                  >${archive.name}</span
+                  >${org.name}</span
                 >
                 ${this.userInfo &&
-                archive.users &&
+                org.users &&
                 (this.userInfo.isAdmin ||
-                  isOwner(archive.users[this.userInfo.id].role))
+                  isOwner(org.users[this.userInfo.id].role))
                   ? html`<sl-tag size="small" variant="primary"
                       >${msg("Owner")}</sl-tag
                     >`
@@ -61,8 +61,8 @@ export class ArchivesList extends LiteElement {
     `;
   }
 
-  private makeOnArchiveClick(archive: ArchiveData): Function {
-    const navigate = () => this.navTo(`/archives/${archive.id}/crawls`);
+  private makeOnOrgClick(org: OrgData): Function {
+    const navigate = () => this.navTo(`/orgs/${org.id}/crawls`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {

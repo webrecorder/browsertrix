@@ -20,11 +20,11 @@ export class Join extends LiteElement {
   private inviteInfo: {
     inviterEmail: string;
     inviterName: string;
-    archiveName: string;
+    orgName: string;
   } = {
     inviterEmail: "",
     inviterName: "",
-    archiveName: "",
+    orgName: "",
   };
 
   connectedCallback(): void {
@@ -67,7 +67,7 @@ export class Join extends LiteElement {
               html`You've been invited to join
                 <span class="text-primary break-words"
                   >${hasInviteInfo
-                    ? this.inviteInfo.archiveName || msg("Browsertrix Cloud")
+                    ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
                     : placeholder}</span
                 >`
             )}
@@ -98,7 +98,7 @@ export class Join extends LiteElement {
       this.inviteInfo = {
         inviterEmail: body.inviterEmail,
         inviterName: body.inviterName,
-        archiveName: body.archiveName,
+        orgName: body.orgName,
       };
     } else {
       this.serverError = msg("This invitation is not valid");

@@ -10,14 +10,14 @@ import("./locale-picker").then(({ LocalePicker }) => {
 import("./account-settings").then(({ AccountSettings }) => {
   customElements.define("btrix-account-settings", AccountSettings);
 });
-import("./archive-invite-form").then(({ ArchiveInviteForm }) => {
-  customElements.define("btrix-archive-invite-form", ArchiveInviteForm);
+import("./org-invite-form").then(({ OrgInviteForm }) => {
+  customElements.define("btrix-org-invite-form", OrgInviteForm);
 });
 import("./config-editor").then(({ ConfigEditor }) => {
   customElements.define("btrix-config-editor", ConfigEditor);
 });
-import("./archives-list").then(({ ArchivesList }) => {
-  customElements.define("btrix-archives-list", ArchivesList);
+import("./orgs-list").then(({ OrgsList }) => {
+  customElements.define("btrix-orgs-list", OrgsList);
 });
 import("./copy-button").then(({ CopyButton }) => {
   customElements.define("btrix-copy-button", CopyButton);

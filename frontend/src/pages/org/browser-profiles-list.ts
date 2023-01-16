@@ -10,7 +10,7 @@ import type { Profile } from "./types";
  * ```ts
  * <btrix-browser-profiles-list
  *  authState=${authState}
- *  archiveId=${archiveId}
+ *  orgId=${orgId}
  * ></btrix-browser-profiles-list>
  * ```
  */
@@ -20,7 +20,7 @@ export class BrowserProfilesList extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: Boolean })
   showCreateDialog = false;
@@ -45,7 +45,7 @@ export class BrowserProfilesList extends LiteElement {
   render() {
     return html`<header class="mb-3 text-right">
         <sl-button
-          href=${`/archives/${this.archiveId}/browser-profiles/new`}
+          href=${`/orgs/${this.orgId}/browser-profiles/new`}
           variant="primary"
           @click=${this.navLink}
         >
@@ -107,7 +107,7 @@ export class BrowserProfilesList extends LiteElement {
     return html`
       <a
         class="block p-1 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
-        href=${`/archives/${this.archiveId}/browser-profiles/profile/${data.id}`}
+        href=${`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`}
         @click=${this.navLink}
         title=${data.name}
       >
@@ -233,7 +233,7 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private hideDialog() {
-    this.navTo(`/archives/${this.archiveId}/browser-profiles`);
+    this.navTo(`/orgs/${this.orgId}/browser-profiles`);
   }
 
   async onSubmit(event: SubmitEvent) {
@@ -257,7 +257,7 @@ export class BrowserProfilesList extends LiteElement {
       });
 
       this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
+        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           "My Profile"
@@ -287,7 +287,7 @@ export class BrowserProfilesList extends LiteElement {
       });
 
       this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/browser/${
+        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           profile.name
@@ -307,7 +307,7 @@ export class BrowserProfilesList extends LiteElement {
   private async deleteProfile(profile: Profile) {
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles/${profile.id}`,
+        `/orgs/${this.orgId}/profiles/${profile.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -354,7 +354,7 @@ export class BrowserProfilesList extends LiteElement {
     };
 
     return this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser`,
+      `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
         method: "POST",
@@ -382,7 +382,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private async getProfiles(): Promise<Profile[]> {
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles`,
+      `/orgs/${this.orgId}/profiles`,
       this.authState!
     );
 

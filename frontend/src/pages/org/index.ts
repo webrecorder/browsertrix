@@ -4,10 +4,10 @@ import { msg, localized, str } from "@lit/localize";
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
-import type { ArchiveData } from "../../utils/archives";
+import type { OrgData } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
-import { isOwner, AccessCode } from "../../utils/archives";
+import { isOwner, AccessCode } from "../../utils/orgs";
 import "./crawl-templates-detail";
 import "./crawl-templates-list";
 import "./crawl-templates-new";
@@ -17,7 +17,7 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
 
-export type ArchiveTab =
+export type OrgTab =
   | "crawls"
   | "crawl-templates"
   | "browser-profiles"
@@ -27,7 +27,7 @@ const defaultTab = "crawls";
 
 @needLogin
 @localized()
-export class Archive extends LiteElement {
+export class Org extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -38,10 +38,10 @@ export class Archive extends LiteElement {
   viewStateData?: ViewState["data"];
 
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: String })
-  archiveTab: ArchiveTab = defaultTab;
+  orgTab: OrgTab = defaultTab;
 
   @property({ type: String })
   browserProfileId?: string;
@@ -66,26 +66,26 @@ export class Archive extends LiteElement {
   isNewResourceTab: boolean = false;
 
   @state()
-  private archive?: ArchiveData | null;
+  private org?: OrgData | null;
 
   @state()
   private successfullyInvitedEmail?: string;
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("archiveId") && this.archiveId) {
+    if (changedProperties.has("orgId") && this.orgId) {
       try {
-        const archive = await this.getArchive(this.archiveId);
+        const org = await this.getOrg(this.orgId);
 
-        if (!archive) {
-          this.navTo("/archives");
+        if (!org) {
+          this.navTo("/orgs");
         } else {
-          this.archive = archive;
+          this.org = org;
         }
       } catch {
-        this.archive = null;
+        this.org = null;
 
         this.notify({
-          message: msg("Sorry, couldn't retrieve archive at this time."),
+          message: msg("Sorry, couldn't retrieve organization at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
         });
@@ -97,12 +97,12 @@ export class Archive extends LiteElement {
   }
 
   render() {
-    if (this.archive === null) {
+    if (this.org === null) {
       // TODO handle 404 and 500s
       return "";
     }
 
-    if (!this.archive) {
+    if (!this.org) {
       return html`
         <div
           class="absolute top-1/2 left-1/2 -mt-4 -ml-4"
@@ -115,7 +115,7 @@ export class Archive extends LiteElement {
 
     let tabPanelContent = "" as any;
 
-    switch (this.archiveTab) {
+    switch (this.orgTab) {
       case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
@@ -143,7 +143,7 @@ export class Archive extends LiteElement {
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
-          aria-labelledby="${this.archiveTab}-tab"
+          aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
         </div>
@@ -152,7 +152,7 @@ export class Archive extends LiteElement {
   }
 
   private renderCrawls() {
-    const crawlsBaseUrl = `/archives/${this.archiveId}/crawls`;
+    const crawlsBaseUrl = `/orgs/${this.orgId}/crawls`;
 
     if (this.crawlId) {
       return html` <btrix-crawl-detail
@@ -166,7 +166,7 @@ export class Archive extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       crawlsBaseUrl=${crawlsBaseUrl}
-      ?shouldFetch=${this.archiveTab === "crawls"}
+      ?shouldFetch=${this.orgTab === "crawls"}
     ></btrix-crawls-list>`;
   }
 
@@ -176,7 +176,7 @@ export class Archive extends LiteElement {
         <btrix-crawl-templates-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
-          .archiveId=${this.archiveId!}
+          .orgId=${this.orgId!}
           .crawlConfigId=${this.crawlConfigId}
           .isEditing=${this.isEditing}
         ></btrix-crawl-templates-detail>
@@ -189,14 +189,14 @@ export class Archive extends LiteElement {
       return html` <btrix-crawl-templates-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
+        .orgId=${this.orgId!}
         .initialCrawlTemplate=${crawlTemplate}
       ></btrix-crawl-templates-new>`;
     }
 
     return html`<btrix-crawl-templates-list
       .authState=${this.authState!}
-      .archiveId=${this.archiveId!}
+      .orgId=${this.orgId!}
       userId=${this.userInfo!.id}
     ></btrix-crawl-templates-list>`;
   }
@@ -205,7 +205,7 @@ export class Archive extends LiteElement {
     if (this.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
+        .orgId=${this.orgId!}
         profileId=${this.browserProfileId}
       ></btrix-browser-profiles-detail>`;
     }
@@ -213,20 +213,20 @@ export class Archive extends LiteElement {
     if (this.browserId) {
       return html`<btrix-browser-profiles-new
         .authState=${this.authState!}
-        .archiveId=${this.archiveId!}
+        .orgId=${this.orgId!}
         .browserId=${this.browserId}
       ></btrix-browser-profiles-new>`;
     }
 
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
-      .archiveId=${this.archiveId!}
+      .orgId=${this.orgId!}
       ?showCreateDialog=${this.isNewResourceTab}
     ></btrix-browser-profiles-list>`;
   }
 
   private renderMembers() {
-    if (!this.archive!.users) return;
+    if (!this.org!.users) return;
 
     let successMessage;
 
@@ -245,7 +245,7 @@ export class Archive extends LiteElement {
 
       <div class="text-right">
         <sl-button
-          href=${`/archives/${this.archiveId}/members/add-member`}
+          href=${`/orgs/${this.orgId}/members/add-member`}
           variant="primary"
           @click=${this.navLink}
           >${msg("Add Member")}</sl-button
@@ -264,7 +264,7 @@ export class Archive extends LiteElement {
           </div>
         </div>
         <div role="rowgroup">
-          ${Object.entries(this.archive!.users).map(
+          ${Object.entries(this.org!.users).map(
             ([id, { name, role }]) => html`
               <div class="border-b flex" role="row">
                 <div class="w-1/2 p-3" role="cell">
@@ -290,7 +290,7 @@ export class Archive extends LiteElement {
       <div class="mb-5">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/members`}
+          href=${`/orgs/${this.orgId}/members`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -305,18 +305,18 @@ export class Archive extends LiteElement {
 
       <div class="border rounded-lg p-4 md:p-8 md:pt-6">
         <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
-        <btrix-archive-invite-form
+        <btrix-org-invite-form
           @success=${this.onInviteSuccess}
-          @cancel=${() => this.navTo(`/archives/${this.archiveId}/members`)}
+          @cancel=${() => this.navTo(`/orgs/${this.orgId}/members`)}
           .authState=${this.authState}
-          .archiveId=${this.archiveId}
-        ></btrix-archive-invite-form>
+          .orgId=${this.orgId}
+        ></btrix-org-invite-form>
       </div>
     `;
   }
 
-  async getArchive(archiveId: string): Promise<ArchiveData> {
-    const data = await this.apiFetch(`/archives/${archiveId}`, this.authState!);
+  async getOrg(orgId: string): Promise<OrgData> {
+    const data = await this.apiFetch(`/orgs/${orgId}`, this.authState!);
 
     return data;
   }
@@ -326,10 +326,10 @@ export class Archive extends LiteElement {
   ) {
     this.successfullyInvitedEmail = event.detail.inviteEmail;
 
-    this.navTo(`/archives/${this.archiveId}/members`);
+    this.navTo(`/orgs/${this.orgId}/members`);
   }
 
-  updateUrl(event: CustomEvent<{ name: ArchiveTab }>) {
-    this.navTo(`/archives/${this.archiveId}/${event.detail.name}`);
+  updateUrl(event: CustomEvent<{ name: OrgTab }>) {
+    this.navTo(`/orgs/${this.orgId}/${event.detail.name}`);
   }
 }

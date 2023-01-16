@@ -183,7 +183,7 @@ export class CrawlConfigEditor extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   configId?: string;
@@ -1056,7 +1056,7 @@ https://example.net`}
     return html`
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
-          archiveId=${this.archiveId}
+          orgId=${this.orgId}
           .profileId=${this.formState.browserProfile?.id}
           .authState=${this.authState}
           @on-change=${(e: any) =>
@@ -1611,7 +1611,7 @@ https://example.net`}
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/crawlconfigs/`,
+        `/orgs/${this.orgId}/crawlconfigs/`,
         this.authState!,
         {
           method: "POST",
@@ -1636,10 +1636,10 @@ https://example.net`}
       });
 
       if (crawlId) {
-        this.navTo(`/archives/${this.archiveId}/crawls/crawl/${crawlId}`);
+        this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
         this.navTo(
-          `/archives/${this.archiveId}/crawl-templates/config/${data.added}`
+          `/orgs/${this.orgId}/crawl-templates/config/${data.added}`
         );
       }
     } catch (e: any) {

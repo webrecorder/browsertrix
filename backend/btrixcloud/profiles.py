@@ -311,7 +311,7 @@ class ProfileOps:
             return None
 
     async def get_crawl_configs_for_profile(
-        self, profileid: uuid.UUID, aorg: Optional[Organization] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
         """Get list of crawl config id, names for that use a particular profile"""
 

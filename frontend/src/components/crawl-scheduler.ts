@@ -10,7 +10,7 @@ import {
   humanizeSchedule,
   humanizeNextDate,
 } from "../utils/cron";
-import type { CrawlConfig } from "../pages/archive/types";
+import type { CrawlConfig } from "../pages/org/types";
 
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,

@@ -34,19 +34,19 @@ export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  // e.g. `/archive/${this.archiveId}/crawls`
+  // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
 
-  // e.g. `/archive/${this.archiveId}/crawls`
+  // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
   @property({ type: Boolean })
-  showArchiveLink = false;
+  showOrgLink = false;
 
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
@@ -373,7 +373,7 @@ export class CrawlDetail extends LiteElement {
                 role="menuitem"
                 @click=${() => {
                   this.navTo(
-                    `/archives/${this.crawl?.aid}/crawl-templates/config/${this.crawlTemplateId}?edit`
+                    `/orgs/${this.crawl?.oid}/crawl-templates/config/${this.crawlTemplateId}?edit`
                   );
                 }}
               >
@@ -545,7 +545,7 @@ export class CrawlDetail extends LiteElement {
             >
               <btrix-screencast
                 authToken=${authToken}
-                archiveId=${this.crawl.aid}
+                orgId=${this.crawl.oid}
                 crawlId=${this.crawlId!}
                 scale=${this.crawl.scale}
               ></btrix-screencast>
@@ -561,7 +561,7 @@ export class CrawlDetail extends LiteElement {
       </h3>
 
       <btrix-exclusion-editor
-        archiveId=${ifDefined(this.crawl?.aid)}
+        orgId=${ifDefined(this.crawl?.oid)}
         crawlId=${ifDefined(this.crawl?.id)}
         .config=${this.crawlConfig?.config}
         .authState=${this.authState}
@@ -574,7 +574,7 @@ export class CrawlDetail extends LiteElement {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
     // for now, just use the first file until multi-wacz support is fully implemented
-    const replaySource = `/api/archives/${this.crawl?.aid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
+    const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
     //const replaySource = this.crawl?.resources?.[0]?.path;
 
     const canReplay = replaySource && this.hasFiles;
@@ -695,16 +695,16 @@ export class CrawlDetail extends LiteElement {
               : html`<sl-skeleton class="h-6"></sl-skeleton>`}
           </dd>
         </div>
-        ${this.showArchiveLink
+        ${this.showOrgLink
           ? html`
               <div class="col-span-1">
-                <dt class="text-sm text-0-600">${msg("Archive")}</dt>
+                <dt class="text-sm text-0-600">${msg("Organization")}</dt>
                 <dd>
                   ${this.crawl
                     ? html`
                         <a
                           class="font-medium text-neutral-700 hover:text-neutral-900"
-                          href=${`/archives/${this.crawl.aid}/crawls`}
+                          href=${`/orgs/${this.crawl.oid}/crawls`}
                           @click=${this.navLink}
                         >
                           <sl-icon
@@ -712,7 +712,7 @@ export class CrawlDetail extends LiteElement {
                             name="link-45deg"
                           ></sl-icon>
                           <span class="inline-block align-middle">
-                            ${msg("View Archive")}
+                            ${msg("View Organization")}
                           </span>
                         </a>
                       `
@@ -904,7 +904,7 @@ export class CrawlDetail extends LiteElement {
     }
 
     const data: CrawlConfig = await this.apiFetch(
-      `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}`,
+      `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawlTemplateId}`,
       this.authState!
     );
 
@@ -914,7 +914,7 @@ export class CrawlDetail extends LiteElement {
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/cancel`,
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -936,7 +936,7 @@ export class CrawlDetail extends LiteElement {
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/stop`,
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -960,7 +960,7 @@ export class CrawlDetail extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.crawl!.aid}/crawls/${this.crawlId}/scale`,
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/scale`,
         this.authState!,
         {
           method: "POST",
@@ -1008,8 +1008,8 @@ export class CrawlDetail extends LiteElement {
               <br />
               <a
                 class="underline hover:no-underline"
-                href="/archives/${this.crawl
-                  .aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+                href="/orgs/${this.crawl
+                  .oid}/crawls/crawl/${crawlTemplate.currCrawlId}"
                 @click=${this.navLink.bind(this)}
                 >View crawl</a
               >`
@@ -1022,7 +1022,7 @@ export class CrawlDetail extends LiteElement {
       }
 
       const data = await this.apiFetch(
-        `/archives/${this.crawl.aid}/crawlconfigs/${this.crawlTemplateId}/run`,
+        `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawlTemplateId}/run`,
         this.authState!,
         {
           method: "POST",
@@ -1030,7 +1030,7 @@ export class CrawlDetail extends LiteElement {
       );
 
       if (data.started) {
-        this.navTo(`/archives/${this.crawl.aid}/crawls/crawl/${data.started}`);
+        this.navTo(`/orgs/${this.crawl.oid}/crawls/crawl/${data.started}`);
       }
 
       this.notify({
