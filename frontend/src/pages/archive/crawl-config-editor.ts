@@ -1283,9 +1283,10 @@ https://example.net`}
 
   private renderConfirmSettings = () => {
     const crawlConfig = this.parseConfig();
+    const profileName = this.formState.browserProfile?.name;
     return html`
       <div class="col-span-1 md:col-span-5">
-        <btrix-config-details .crawlConfig=${crawlConfig}>
+        <btrix-config-details .crawlConfig=${{ ...crawlConfig, profileName }}>
         </btrix-config-details>
       </div>
 
