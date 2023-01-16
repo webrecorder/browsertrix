@@ -576,7 +576,8 @@ export class CrawlConfigEditor extends LiteElement {
                   ?disabled=${this.isSubmitting || this.formHasError}
                   ?loading=${this.isSubmitting}
                 >
-                  ${this.formState.runNow
+                  ${this.formState.scheduleType === "now" ||
+                  this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
