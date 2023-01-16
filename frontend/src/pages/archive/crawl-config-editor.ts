@@ -354,6 +354,9 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialCrawlConfig.tags?.length) {
       formState.tags = this.initialCrawlConfig.tags;
     }
+    if (this.initialCrawlConfig.crawlTimeout) {
+      formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    }
 
     return {
       jobName: this.initialCrawlConfig.name,
@@ -971,6 +974,7 @@ https://example.net`}
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
+          value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
           placeholder=${msg("Unlimited")}
           type="number"
         >
@@ -1062,7 +1066,7 @@ https://example.net`}
           type="number"
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageTimeoutMinutes || undefined)}
+          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
