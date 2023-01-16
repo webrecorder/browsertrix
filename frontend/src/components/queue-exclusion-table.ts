@@ -183,7 +183,7 @@ export class QueueExclusionTable extends LiteElement {
   ) => {
     const index = (this.page - 1) * this.pageSize + pageIndex;
     const [typeColClass, valueColClass, actionColClass] =
-      this.getColumnClassNames(index + 1, arr.length);
+      this.getColumnClassNames(pageIndex + 1, arr.length);
 
     return html`
       <tr
