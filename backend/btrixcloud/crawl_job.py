@@ -36,13 +36,13 @@ class CrawlJob(ABC):
         super().__init__()
 
         _, mdb = init_db()
-        self.archives = mdb["archives"]
+        self.orgs = mdb["organizations"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
 
         self.crawls_done_key = "crawls-done"
 
-        self.aid = uuid.UUID(os.environ["ARCHIVE_ID"])
+        self.oid = uuid.UUID(os.environ["ORG_ID"])
         self.cid = uuid.UUID(os.environ["CRAWL_CONFIG_ID"])
         self.userid = uuid.UUID(os.environ["USER_ID"])
 
@@ -234,10 +234,10 @@ class CrawlJob(ABC):
             },
         )
 
-        # init archive crawl stats
+        # init org crawl stats
         yymm = datetime.utcnow().strftime("%Y-%m")
-        await self.archives.find_one_and_update(
-            {"_id": self.aid}, {"$inc": {f"usage.{yymm}": duration}}
+        await self.orgs.find_one_and_update(
+            {"_id": self.oid}, {"$inc": {f"usage.{yymm}": duration}}
         )
 
     async def update_running_crawl_stats(self, crawl_id):
@@ -356,7 +356,7 @@ class CrawlJob(ABC):
             id=self.job_id,
             state=state,
             userid=self.userid,
-            aid=self.aid,
+            oid=self.oid,
             cid=self.cid,
             manual=self.is_manual,
             scale=scale,

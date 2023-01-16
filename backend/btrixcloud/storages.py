@@ -8,22 +8,22 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, HTTPException
 from aiobotocore.session import get_session
 
-from .archives import Archive, DefaultStorage, S3Storage
+from .orgs import Organization, DefaultStorage, S3Storage
 from .users import User
 
 
 # ============================================================================
-def init_storages_api(archive_ops, crawl_manager, user_dep):
-    """API for updating storage for an archive"""
+def init_storages_api(org_ops, crawl_manager, user_dep):
+    """API for updating storage for an org"""
 
-    router = archive_ops.router
-    archive_owner_dep = archive_ops.archive_owner_dep
+    router = org_ops.router
+    org_owner_dep = org_ops.org_owner_dep
 
     # pylint: disable=bare-except, raise-missing-from
-    @router.patch("/storage", tags=["archives"])
+    @router.patch("/storage", tags=["organizations"])
     async def update_storage(
         storage: Union[S3Storage, DefaultStorage],
-        archive: Archive = Depends(archive_owner_dep),
+        org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if storage.type == "default":
@@ -43,11 +43,9 @@ def init_storages_api(archive_ops, crawl_manager, user_dep):
                     detail="Could not verify custom storage. Check credentials are valid?",
                 )
 
-        await archive_ops.update_storage(archive, storage)
+        await org_ops.update_storage(org, storage)
 
-        await crawl_manager.update_archive_storage(
-            archive.id, str(user.id), archive.storage
-        )
+        await crawl_manager.update_org_storage(org.id, str(user.id), org.storage)
 
         return {"updated": True}
 
@@ -92,13 +90,13 @@ async def verify_storage_upload(storage, filename):
 
 
 # ============================================================================
-async def get_presigned_url(archive, crawlfile, crawl_manager, duration=3600):
+async def get_presigned_url(org, crawlfile, crawl_manager, duration=3600):
     """generate pre-signed url for crawl file"""
     if crawlfile.def_storage_name:
         s3storage = await crawl_manager.get_default_storage(crawlfile.def_storage_name)
 
-    elif archive.storage.type == "s3":
-        s3storage = archive.storage
+    elif org.storage.type == "s3":
+        s3storage = org.storage
 
     else:
         raise Exception("No Default Storage Found, Invalid Storage Type")

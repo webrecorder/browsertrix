@@ -15,9 +15,9 @@ def get_sample_crawl_data(tags):
     }
 
 
-def test_create_new_config_1(admin_auth_headers, admin_aid):
+def test_create_new_config_1(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-1", "tag-2"]),
     )
@@ -32,25 +32,25 @@ def test_create_new_config_1(admin_auth_headers, admin_aid):
     new_cid_1 = data["added"]
 
 
-def test_get_config_1(admin_auth_headers, admin_aid):
+def test_get_config_1(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/{new_cid_1}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_1}",
         headers=admin_auth_headers,
     )
     assert r.json()["tags"] == ["tag-1", "tag-2"]
 
 
-def test_get_config_by_tag_1(admin_auth_headers, admin_aid):
+def test_get_config_by_tag_1(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/tags",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tags",
         headers=admin_auth_headers,
     )
     assert r.json() == ["tag-1", "tag-2"]
 
 
-def test_create_new_config_2(admin_auth_headers, admin_aid):
+def test_create_new_config_2(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-3", "tag-0"]),
     )
@@ -65,17 +65,17 @@ def test_create_new_config_2(admin_auth_headers, admin_aid):
     new_cid_2 = data["added"]
 
 
-def test_get_config_by_tag_2(admin_auth_headers, admin_aid):
+def test_get_config_by_tag_2(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/tags",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tags",
         headers=admin_auth_headers,
     )
     assert r.json() == ["tag-0", "tag-1", "tag-2", "tag-3"]
 
 
-def test_get_config_2(admin_auth_headers, admin_aid):
+def test_get_config_2(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/{new_cid_2}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_2}",
         headers=admin_auth_headers,
     )
     assert r.json()["tags"] == ["tag-3", "tag-0"]

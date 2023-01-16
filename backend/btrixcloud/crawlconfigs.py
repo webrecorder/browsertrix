@@ -14,7 +14,7 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .users import User
-from .archives import Archive, MAX_CRAWL_SCALE
+from .orgs import Organization, MAX_CRAWL_SCALE
 
 from .db import BaseMongoModel
 
@@ -130,7 +130,7 @@ class CrawlConfig(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
-    aid: UUID4
+    oid: UUID4
 
     userid: UUID4
 
@@ -191,13 +191,11 @@ class UpdateCrawlConfig(BaseModel):
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
-    def __init__(
-        self, dbclient, mdb, user_manager, archive_ops, crawl_manager, profiles
-    ):
+    def __init__(self, dbclient, mdb, user_manager, org_ops, crawl_manager, profiles):
         self.dbclient = dbclient
         self.crawl_configs = mdb["crawl_configs"]
         self.user_manager = user_manager
-        self.archive_ops = archive_ops
+        self.org_ops = org_ops
         self.crawl_manager = crawl_manager
         self.profiles = profiles
         self.profiles.set_crawlconfigs(self)
@@ -221,11 +219,11 @@ class CrawlConfigOps:
     async def init_index(self):
         """init index for crawls db"""
         await self.crawl_configs.create_index(
-            [("aid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
+            [("oid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )
 
         await self.crawl_configs.create_index(
-            [("aid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
     def set_coll_ops(self, coll_ops):
@@ -239,13 +237,13 @@ class CrawlConfigOps:
     async def add_crawl_config(
         self,
         config: CrawlConfigIn,
-        archive: Archive,
+        org: Organization,
         user: User,
         for_running_crawl=False,
     ):
         """Add new crawl config"""
         data = config.dict()
-        data["aid"] = archive.id
+        data["oid"] = org.id
         data["userid"] = user.id
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
@@ -256,20 +254,18 @@ class CrawlConfigOps:
         profile_filename = None
         if config.profileid:
             profile_filename = await self.profiles.get_profile_storage_path(
-                config.profileid, archive
+                config.profileid, org
             )
             if not profile_filename:
                 raise HTTPException(status_code=400, detail="invalid_profile_id")
 
         if config.colls:
-            data["colls"] = await self.coll_ops.find_collections(
-                archive.id, config.colls
-            )
+            data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
 
         old_id = data.get("oldId")
 
         if old_id:
-            old_config = await self.get_crawl_config(old_id, archive)
+            old_config = await self.get_crawl_config(old_id, org)
             async with await self.dbclient.start_session() as sesh:
                 async with sesh.start_transaction():
                     if (
@@ -296,7 +292,7 @@ class CrawlConfigOps:
 
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
-            storage=archive.storage,
+            storage=org.storage,
             run_now=config.runNow,
             out_filename=out_filename,
             profile_filename=profile_filename,
@@ -367,12 +363,12 @@ class CrawlConfigOps:
 
     async def get_crawl_configs(
         self,
-        archive: Archive,
+        org: Organization,
         userid: Optional[UUID4] = None,
         tags: Optional[List[str]] = None,
     ):
-        """Get all crawl configs for an archive is a member of"""
-        match_query = {"aid": archive.id, "inactive": {"$ne": True}}
+        """Get all crawl configs for an organization is a member of"""
+        match_query = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
             match_query["tags"] = {"$all": tags}
@@ -398,8 +394,8 @@ class CrawlConfigOps:
 
         results = await cursor.to_list(length=1000)
 
-        # crawls = await self.crawl_manager.list_running_crawls(aid=archive.id)
-        crawls = await self.crawl_ops.list_crawls(archive=archive, running_only=True)
+        # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
+        crawls = await self.crawl_ops.list_crawls(org=org, running_only=True)
 
         running = {}
         for crawl in crawls:
@@ -415,12 +411,12 @@ class CrawlConfigOps:
         return CrawlConfigsResponse(crawlConfigs=configs)
 
     async def get_crawl_config_ids_for_profile(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
         """Return all crawl configs that are associated with a given profileid"""
         query = {"profileid": profileid, "inactive": {"$ne": True}}
-        if archive:
-            query["aid"] = archive.id
+        if org:
+            query["oid"] = org.id
 
         cursor = self.crawl_configs.find(query, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
@@ -438,12 +434,12 @@ class CrawlConfigOps:
 
         return None
 
-    async def get_crawl_config_out(self, cid: uuid.UUID, archive: Archive):
+    async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
         also include inactive crawl configs"""
 
         crawlconfig = await self.get_crawl_config(
-            cid, archive, active_only=False, config_cls=CrawlConfigOut
+            cid, org, active_only=False, config_cls=CrawlConfigOut
         )
         if not crawlconfig:
             raise HTTPException(
@@ -460,7 +456,7 @@ class CrawlConfigOps:
 
         if crawlconfig.profileid:
             crawlconfig.profileName = await self.profiles.get_profile_name(
-                crawlconfig.profileid, archive
+                crawlconfig.profileid, org
             )
 
         return crawlconfig
@@ -468,14 +464,14 @@ class CrawlConfigOps:
     async def get_crawl_config(
         self,
         cid: uuid.UUID,
-        archive: Optional[Archive],
+        org: Optional[Organization],
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
-        """Get an archive for user by unique id"""
+        """Get an organization for user by unique id"""
         query = {"_id": cid}
-        if archive:
-            query["aid"] = archive.id
+        if org:
+            query["oid"] = org.id
         if active_only:
             query["inactive"] = {"$ne": True}
 
@@ -511,7 +507,7 @@ class CrawlConfigOps:
         # if no crawls have been run, actually delete
         if not other_crawl_count:
             result = await self.crawl_configs.delete_one(
-                {"_id": crawlconfig.id, "aid": crawlconfig.aid}
+                {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
 
             if result.deleted_count != 1:
@@ -548,10 +544,10 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def copy_add_remove_exclusion(self, regex, cid, archive, user, add=True):
+    async def copy_add_remove_exclusion(self, regex, cid, org, user, add=True):
         """create a copy of existing crawl config, with added exclusion regex"""
         # get crawl config
-        crawl_config = await self.get_crawl_config(cid, archive, active_only=False)
+        crawl_config = await self.get_crawl_config(cid, org, active_only=False)
 
         # update exclusion
         exclude = crawl_config.config.exclude or []
@@ -578,56 +574,54 @@ class CrawlConfigOps:
         new_config.oldId = crawl_config.id
 
         result, _ = await self.add_crawl_config(
-            new_config, archive, user, for_running_crawl=True
+            new_config, org, user, for_running_crawl=True
         )
 
         return result.inserted_id
 
-    async def get_crawl_config_tags(self, archive):
-        """get distinct tags from all crawl configs for this archive"""
-        return await self.crawl_configs.distinct("tags", {"aid": archive.id})
+    async def get_crawl_config_tags(self, org):
+        """get distinct tags from all crawl configs for this orge"""
+        return await self.crawl_configs.distinct("tags", {"oid": org.id})
 
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
-    dbclient, mdb, user_dep, user_manager, archive_ops, crawl_manager, profiles
+    dbclient, mdb, user_dep, user_manager, org_ops, crawl_manager, profiles
 ):
     """Init /crawlconfigs api routes"""
-    ops = CrawlConfigOps(
-        dbclient, mdb, user_manager, archive_ops, crawl_manager, profiles
-    )
+    ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
 
     router = ops.router
 
-    archive_crawl_dep = archive_ops.archive_crawl_dep
+    org_crawl_dep = org_ops.org_crawl_dep
 
     @router.get("", response_model=CrawlConfigsResponse)
     async def get_crawl_configs(
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
         tag: Union[List[str], None] = Query(default=None),
     ):
-        return await ops.get_crawl_configs(archive, userid=userid, tags=tag)
+        return await ops.get_crawl_configs(org, userid=userid, tags=tag)
 
     @router.get("/tags")
-    async def get_crawl_config_tags(archive: Archive = Depends(archive_crawl_dep)):
-        return await ops.get_crawl_config_tags(archive)
+    async def get_crawl_config_tags(org: Organization = Depends(org_crawl_dep)):
+        return await ops.get_crawl_config_tags(org)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
-    async def get_crawl_config(cid: str, archive: Archive = Depends(archive_crawl_dep)):
-        return await ops.get_crawl_config_out(uuid.UUID(cid), archive)
+    async def get_crawl_config(cid: str, org: Organization = Depends(org_crawl_dep)):
+        return await ops.get_crawl_config_out(uuid.UUID(cid), org)
 
     @router.post("/")
     async def add_crawl_config(
         config: CrawlConfigIn,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        res, new_job_name = await ops.add_crawl_config(config, archive, user)
+        res, new_job_name = await ops.add_crawl_config(config, org, user)
         return {"added": str(res.inserted_id), "run_now_job": new_job_name}
 
-    @router.patch("/{cid}", dependencies=[Depends(archive_crawl_dep)])
+    @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])
     async def update_crawl_config(
         update: UpdateCrawlConfig,
         cid: str,
@@ -637,10 +631,10 @@ def init_crawl_config_api(
     @router.post("/{cid}/run")
     async def run_now(
         cid: str,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), archive)
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org)
 
         if not crawlconfig:
             raise HTTPException(
@@ -661,9 +655,9 @@ def init_crawl_config_api(
         return {"started": crawl_id}
 
     @router.delete("/{cid}")
-    async def make_inactive(cid: str, archive: Archive = Depends(archive_crawl_dep)):
+    async def make_inactive(cid: str, org: Organization = Depends(org_crawl_dep)):
 
-        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), archive)
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org)
 
         if not crawlconfig:
             raise HTTPException(
@@ -672,6 +666,6 @@ def init_crawl_config_api(
 
         return await ops.do_make_inactive(crawlconfig)
 
-    archive_ops.router.include_router(router)
+    org_ops.router.include_router(router)
 
     return ops

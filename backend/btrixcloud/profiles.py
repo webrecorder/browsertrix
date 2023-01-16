@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel, UUID4, HttpUrl
 import aiohttp
 
-from .archives import Archive
+from .orgs import Organization
 from .users import User
 
 from .db import BaseMongoModel
@@ -37,7 +37,7 @@ class Profile(BaseMongoModel):
     description: Optional[str] = ""
 
     userid: UUID4
-    aid: UUID4
+    oid: UUID4
 
     origins: List[str]
     resource: Optional[ProfileFile]
@@ -107,23 +107,23 @@ class ProfileOps:
         self.crawlconfigs = crawlconfigs
 
     async def create_new_browser(
-        self, archive: Archive, user: User, profile_launch: ProfileLaunchBrowserIn
+        self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """Create new profile"""
         if self.shared_profile_storage:
             storage_name = self.shared_profile_storage
             storage = None
-        elif archive.storage and archive.storage.type == "default":
+        elif org.storage and org.storage.type == "default":
             storage_name = None
-            storage = archive.storage
+            storage = org.storage
         else:
-            storage_name = str(archive.id)
+            storage_name = str(org.id)
             storage = None
 
         profile_path = ""
         if profile_launch.profileId:
             profile_path = await self.get_profile_storage_path(
-                profile_launch.profileId, archive
+                profile_launch.profileId, org
             )
 
             if not profile_path:
@@ -131,7 +131,7 @@ class ProfileOps:
 
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
-            str(archive.id),
+            str(org.id),
             url=profile_launch.url,
             storage=storage,
             storage_name=storage_name,
@@ -144,7 +144,7 @@ class ProfileOps:
 
         return BrowserId(browserid=browserid)
 
-    async def get_profile_browser_url(self, browserid, aid, headers):
+    async def get_profile_browser_url(self, browserid, oid, headers):
         """get profile browser url"""
         json = await self._send_browser_req(browserid, "/vncpass")
 
@@ -160,9 +160,9 @@ class ProfileOps:
         auth_bearer = headers.get("Authorization").split(" ")[1]
 
         params = {
-            "path": f"browser/{browserid}/ws?aid={aid}&auth_bearer={auth_bearer}",
+            "path": f"browser/{browserid}/ws?oid={oid}&auth_bearer={auth_bearer}",
             "password": password,
-            "aid": aid,
+            "oid": oid,
             "auth_bearer": auth_bearer,
             "scale": 0.75,
         }
@@ -228,7 +228,7 @@ class ProfileOps:
             origins=json["origins"],
             resource=profile_file,
             userid=uuid.UUID(metadata.get("btrix.user")),
-            aid=uuid.UUID(metadata.get("btrix.archive")),
+            oid=uuid.UUID(metadata.get("btrix.org")),
             baseid=baseid,
         )
 
@@ -253,9 +253,9 @@ class ProfileOps:
 
         return {"success": True}
 
-    async def list_profiles(self, archive: Archive, userid: Optional[UUID4] = None):
+    async def list_profiles(self, org: Organization, userid: Optional[UUID4] = None):
         """list all profiles"""
-        query = {"aid": archive.id}
+        query = {"oid": org.id}
         if userid:
             query["userid"] = userid
 
@@ -264,12 +264,12 @@ class ProfileOps:
         return [Profile.from_dict(res) for res in results]
 
     async def get_profile(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
-        """get profile by id and archive"""
+        """get profile by id and org"""
         query = {"_id": profileid}
-        if archive:
-            query["aid"] = archive.id
+        if org:
+            query["oid"] = org.id
 
         res = await self.profiles.find_one(query)
         if not res:
@@ -278,61 +278,61 @@ class ProfileOps:
         return Profile.from_dict(res)
 
     async def get_profile_with_configs(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
         """get profile for api output, with crawlconfigs"""
 
-        profile = await self.get_profile(profileid, archive)
+        profile = await self.get_profile(profileid, org)
 
-        crawlconfigs = await self.get_crawl_configs_for_profile(profileid, archive)
+        crawlconfigs = await self.get_crawl_configs_for_profile(profileid, org)
 
         return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
 
     async def get_profile_storage_path(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
-        """return profile path filename (relative path) for given profile id and archive"""
+        """return profile path filename (relative path) for given profile id and org"""
         try:
-            profile = await self.get_profile(profileid, archive)
+            profile = await self.get_profile(profileid, org)
             return profile.resource.filename
         # pylint: disable=bare-except
         except:
             return None
 
     async def get_profile_name(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
-        """return profile for given profile id and archive"""
+        """return profile for given profile id and org"""
         try:
-            profile = await self.get_profile(profileid, archive)
+            profile = await self.get_profile(profileid, org)
             return profile.name
         # pylint: disable=bare-except
         except:
             return None
 
     async def get_crawl_configs_for_profile(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, aorg: Optional[Organization] = None
     ):
         """Get list of crawl config id, names for that use a particular profile"""
 
         crawlconfig_names = await self.crawlconfigs.get_crawl_config_ids_for_profile(
-            profileid, archive
+            profileid, org
         )
 
         return crawlconfig_names
 
     async def delete_profile(
-        self, profileid: uuid.UUID, archive: Optional[Archive] = None
+        self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
         """delete profile, if not used in active crawlconfig"""
-        profile = await self.get_profile_with_configs(profileid, archive)
+        profile = await self.get_profile_with_configs(profileid, org)
 
         if len(profile.crawlconfigs) > 0:
             return {"error": "in_use", "crawlconfigs": profile.crawlconfigs}
 
         query = {"_id": profileid}
-        if archive:
-            query["aid"] = archive.id
+        if org:
+            query["oid"] = org.id
 
         # pylint: disable=fixme
         # todo: delete the file itself!
@@ -372,43 +372,41 @@ class ProfileOps:
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
-def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
+def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
     """init profile ops system"""
     ops = ProfileOps(mdb, crawl_manager)
 
     router = ops.router
 
-    archive_crawl_dep = archive_ops.archive_crawl_dep
+    org_crawl_dep = org_ops.org_crawl_dep
 
     async def browser_get_metadata(
-        browserid: str, archive: Archive = Depends(archive_crawl_dep)
+        browserid: str, org: Organization = Depends(org_crawl_dep)
     ):
-        # if await ops.redis.hget(f"br:{browserid}", "archive") != str(archive.id):
+        # if await ops.redis.hget(f"br:{browserid}", "org") != str(org.id):
         metadata = await crawl_manager.get_profile_browser_metadata(browserid)
-        if metadata.get("btrix.archive") != str(archive.id):
+        if metadata.get("btrix.org") != str(org.id):
             raise HTTPException(status_code=404, detail="no_such_browser")
 
         return metadata
 
-    async def browser_dep(
-        browserid: str, archive: Archive = Depends(archive_crawl_dep)
-    ):
-        await browser_get_metadata(browserid, archive)
+    async def browser_dep(browserid: str, org: Organization = Depends(org_crawl_dep)):
+        await browser_get_metadata(browserid, org)
         return browserid
 
     @router.get("", response_model=List[Profile])
     async def list_profiles(
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
     ):
-        return await ops.list_profiles(archive, userid)
+        return await ops.list_profiles(org, userid)
 
     @router.post("", response_model=Profile)
     async def commit_browser_to_new(
         browser_commit: ProfileCreateUpdate,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        metadata = await browser_get_metadata(browser_commit.browserid, archive)
+        metadata = await browser_get_metadata(browser_commit.browserid, org)
 
         return await ops.commit_to_profile(browser_commit, metadata)
 
@@ -416,13 +414,13 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     async def commit_browser_to_existing(
         browser_commit: ProfileCreateUpdate,
         profileid: UUID4,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
         if not browser_commit.browserid:
             await ops.update_profile_metadata(profileid, browser_commit)
 
         else:
-            metadata = await browser_get_metadata(browser_commit.browserid, archive)
+            metadata = await browser_get_metadata(browser_commit.browserid, org)
 
             await ops.commit_to_profile(browser_commit, metadata, profileid)
 
@@ -431,24 +429,24 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
     async def get_profile(
         profileid: UUID4,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.get_profile_with_configs(profileid, archive)
+        return await ops.get_profile_with_configs(profileid, org)
 
     @router.delete("/{profileid}")
     async def delete_profile(
         profileid: UUID4,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.delete_profile(profileid, archive)
+        return await ops.delete_profile(profileid, org)
 
     @router.post("/browser", response_model=BrowserId)
     async def create_new(
         profile_launch: ProfileLaunchBrowserIn,
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.create_new_browser(archive, user, profile_launch)
+        return await ops.create_new_browser(org, user, profile_launch)
 
     @router.post("/browser/{browserid}/ping")
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):
@@ -464,10 +462,10 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     async def get_profile_browser_url(
         request: Request,
         browserid: str = Depends(browser_dep),
-        archive: Archive = Depends(archive_crawl_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.get_profile_browser_url(
-            browserid, str(archive.id), request.headers
+            browserid, str(org.id), request.headers
         )
 
     # pylint: disable=unused-argument
@@ -479,6 +477,6 @@ def init_profiles_api(mdb, crawl_manager, archive_ops, user_dep):
     async def delete_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.delete_profile_browser(browserid)
 
-    archive_ops.router.include_router(router)
+    org_ops.router.include_router(router)
 
     return ops

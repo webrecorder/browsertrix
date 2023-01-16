@@ -12,16 +12,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, UUID4
 
 from .db import BaseMongoModel
-from .archives import Archive
+from .orgs import Organization
 
 
 # ============================================================================
 class Collection(BaseMongoModel):
-    """Archive collection structure"""
+    """Org collection structure"""
 
     name: str
 
-    aid: UUID4
+    oid: UUID4
 
     description: Optional[str]
 
@@ -49,32 +49,32 @@ class CollectionOps:
     async def init_index(self):
         """init lookup index"""
         await self.collections.create_index(
-            [("aid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
         )
 
-    async def add_collection(self, aid: uuid.UUID, name: str, description=None):
+    async def add_collection(self, oid: uuid.UUID, name: str, description=None):
         """add new collection"""
-        coll = Collection(id=uuid.uuid4(), aid=aid, name=name, description=description)
+        coll = Collection(id=uuid.uuid4(), oid=oid, name=name, description=description)
         try:
             res = await self.collections.insert_one(coll.to_dict())
             return res.inserted_id
 
         except pymongo.errors.DuplicateKeyError:
             res = await self.collections.find_one_and_update(
-                {"aid": aid, "name": name},
+                {"oid": oid, "name": name},
                 {"$set": {"name": name, "description": description}},
             )
             return str(res["_id"])
 
-    async def find_collection(self, aid: uuid.UUID, name: str):
-        """find collection by archive + name"""
-        res = await self.collections.find_one({"archive": aid, "name": name})
+    async def find_collection(self, oid: uuid.UUID, name: str):
+        """find collection by org + name"""
+        res = await self.collections.find_one({"org": oid, "name": name})
         return Collection.from_dict(res) if res else None
 
-    async def find_collections(self, aid: uuid.UUID, names: List[str]):
-        """find all collections for archive given a list of names"""
+    async def find_collections(self, oid: uuid.UUID, names: List[str]):
+        """find all collections for org given a list of names"""
         cursor = self.collections.find(
-            {"aid": aid, "name": {"$in": names}}, projection=["_id", "name"]
+            {"oid": oid, "name": {"$in": names}}, projection=["_id", "name"]
         )
         results = await cursor.to_list(length=1000)
         if len(results) != len(names):
@@ -89,23 +89,23 @@ class CollectionOps:
 
         return [result["_id"] for result in results]
 
-    async def list_collections(self, aid: uuid.UUID):
-        """list all collections for archive"""
-        cursor = self.collections.find({"archive": aid}, projection=["_id", "name"])
+    async def list_collections(self, oid: uuid.UUID):
+        """list all collections for org"""
+        cursor = self.collections.find({"org": oid}, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
         return {result["name"]: result["_id"] for result in results}
 
-    async def get_collection_crawls(self, aid: uuid.UUID, name: str = None):
-        """fidn collection and get all crawls by collection name per archive"""
+    async def get_collection_crawls(self, oid: uuid.UUID, name: str = None):
+        """fidn collection and get all crawls by collection name per org"""
         collid = None
         if name:
-            coll = await self.find_collection(aid, name)
+            coll = await self.find_collection(oid, name)
             if not coll:
                 return None
 
             collid = coll.id
 
-        crawls = await self.crawls.list_finished_crawls(aid=aid, collid=collid)
+        crawls = await self.crawls.list_finished_crawls(oid=oid, collid=collid)
         all_files = []
         for crawl in crawls:
             if not crawl.files:
@@ -126,23 +126,23 @@ class CollectionOps:
 
 
 # ============================================================================
-def init_collections_api(mdb, crawls, archives, crawl_manager):
+def init_collections_api(mdb, crawls, orgs, crawl_manager):
     """init collections api"""
     colls = CollectionOps(mdb, crawls, crawl_manager)
 
-    archive_crawl_dep = archives.archive_crawl_dep
-    archive_viewer_dep = archives.archive_viewer_dep
+    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = orgs.org_viewer_dep
 
     router = APIRouter(
         prefix="/collections",
-        dependencies=[Depends(archive_crawl_dep)],
+        dependencies=[Depends(org_crawl_dep)],
         responses={404: {"description": "Not found"}},
         tags=["collections"],
     )
 
     @router.post("")
     async def add_collection(
-        new_coll: CollIn, archive: Archive = Depends(archive_crawl_dep)
+        new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
         coll_id = None
         if new_coll.name == "$all":
@@ -150,7 +150,7 @@ def init_collections_api(mdb, crawls, archives, crawl_manager):
 
         try:
             coll_id = await colls.add_collection(
-                archive.id, new_coll.name, new_coll.description
+                org.id, new_coll.name, new_coll.description
             )
 
         except Exception as exc:
@@ -162,13 +162,13 @@ def init_collections_api(mdb, crawls, archives, crawl_manager):
         return {"collection": coll_id}
 
     @router.get("")
-    async def list_collection_all(archive: Archive = Depends(archive_viewer_dep)):
-        return await colls.list_collections(archive.id)
+    async def list_collection_all(org: Organization = Depends(org_viewer_dep)):
+        return await colls.list_collections(org.id)
 
     @router.get("/$all")
-    async def get_collection_all(archive: Archive = Depends(archive_viewer_dep)):
+    async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         try:
-            results = await colls.get_collection_crawls(archive.id)
+            results = await colls.get_collection_crawls(org.id)
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -180,10 +180,10 @@ def init_collections_api(mdb, crawls, archives, crawl_manager):
 
     @router.get("/{coll_name}")
     async def get_collection(
-        coll_name: str, archive: Archive = Depends(archive_viewer_dep)
+        coll_name: str, org: Organization = Depends(org_viewer_dep)
     ):
         try:
-            results = await colls.get_collection_crawls(archive.id, coll_name)
+            results = await colls.get_collection_crawls(org.id, coll_name)
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -198,6 +198,6 @@ def init_collections_api(mdb, crawls, archives, crawl_manager):
 
         return results
 
-    archives.router.include_router(router)
+    orgs.router.include_router(router)
 
     return colls

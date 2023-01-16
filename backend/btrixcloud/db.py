@@ -57,14 +57,14 @@ class BaseMongoModel(BaseModel):
 
     @classmethod
     def from_dict(cls, data):
-        """convert dict from mongo to an Archive"""
+        """convert dict from mongo to a class"""
         if not data:
             return None
         data["id"] = data.pop("_id")
         return cls(**data)
 
     def serialize(self, **opts):
-        """convert Archive to dict"""
+        """convert class to dict"""
         return self.dict(
             exclude_unset=True, exclude_defaults=True, exclude_none=True, **opts
         )

@@ -5,7 +5,7 @@ metadata:
 
   labels:
     btrix.profile: "1"
-    btrix.archive: {{ aid }}
+    btrix.org: {{ oid }}
     btrix.user: {{ userid }}
     {%- if baseprofile %}
     btrix.baseprofile: "{{ baseprofile }}"
@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         btrix.profile: "1"
-        btrix.archive: {{ aid }}
+        btrix.org: {{ oid }}
         btrix.user: {{ userid }}
         {%- if baseprofile %}
         btrix.baseprofile: "{{ baseprofile }}"

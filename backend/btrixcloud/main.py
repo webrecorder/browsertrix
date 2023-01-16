@@ -17,7 +17,7 @@ from .db import init_db
 from .emailsender import EmailSender
 from .invites import init_invites
 from .users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
-from .archives import init_archives_api
+from .orgs import init_orgs_api
 
 from .profiles import init_profiles_api
 
@@ -62,11 +62,9 @@ def main():
 
     current_active_user = fastapi_users.current_user(active=True)
 
-    archive_ops = init_archives_api(
-        app, mdb, user_manager, invites, current_active_user
-    )
+    org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
-    user_manager.set_archive_ops(archive_ops)
+    user_manager.set_org_ops(org_ops)
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
@@ -78,16 +76,16 @@ def main():
 
     crawl_manager = K8SManager()
 
-    init_storages_api(archive_ops, crawl_manager, current_active_user)
+    init_storages_api(org_ops, crawl_manager, current_active_user)
 
-    profiles = init_profiles_api(mdb, crawl_manager, archive_ops, current_active_user)
+    profiles = init_profiles_api(mdb, crawl_manager, org_ops, current_active_user)
 
     crawl_config_ops = init_crawl_config_api(
         dbclient,
         mdb,
         current_active_user,
         user_manager,
-        archive_ops,
+        org_ops,
         crawl_manager,
         profiles,
     )
@@ -98,15 +96,15 @@ def main():
         user_manager,
         crawl_manager,
         crawl_config_ops,
-        archive_ops,
+        org_ops,
         current_active_user,
     )
 
-    coll_ops = init_collections_api(mdb, crawls, archive_ops, crawl_manager)
+    coll_ops = init_collections_api(mdb, crawls, org_ops, crawl_manager)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
-    app.include_router(archive_ops.router)
+    app.include_router(org_ops.router)
 
     @app.get("/settings")
     async def get_settings():

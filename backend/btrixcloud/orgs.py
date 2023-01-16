@@ -1,5 +1,5 @@
 """
-Archive API handling
+Organization API handling
 """
 import asyncio
 import os
@@ -17,9 +17,9 @@ from .db import BaseMongoModel
 from .users import User
 
 from .invites import (
-    AddToArchiveRequest,
+    AddToOrgRequest,
     InvitePending,
-    InviteToArchiveRequest,
+    InviteToOrgRequest,
     UserRole,
 )
 
@@ -30,12 +30,12 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
 
 # ============================================================================
-class UpdateRole(InviteToArchiveRequest):
+class UpdateRole(InviteToOrgRequest):
     """Update existing role for user"""
 
 
 # ============================================================================
-class RenameArchive(BaseModel):
+class RenameOrg(BaseModel):
     """Request to invite another user"""
 
     name: str
@@ -65,8 +65,8 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
-class Archive(BaseMongoModel):
-    """Archive Base Model"""
+class Organization(BaseMongoModel):
+    """Organization Base Model"""
 
     name: str
 
@@ -122,31 +122,31 @@ class Archive(BaseMongoModel):
             keys = list(result["users"].keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
-            for archive_user in user_list:
-                id_ = str(archive_user["id"])
+            for org_user in user_list:
+                id_ = str(org_user["id"])
                 role = result["users"].get(id_)
                 if not role:
                     continue
 
                 result["users"][id_] = {
                     "role": role,
-                    "name": archive_user.get("name", ""),
+                    "name": org_user.get("name", ""),
                 }
 
         return result
 
 
 # ============================================================================
-class ArchiveOps:
-    """Archive API operations"""
+class OrganizationOps:
+    """Organization API operations"""
 
     def __init__(self, mdb, invites):
-        self.archives = mdb["archives"]
+        self.orgs = mdb["organizations"]
 
         self.router = None
-        self.archive_viewer_dep = None
-        self.archive_crawl_dep = None
-        self.archive_owner_dep = None
+        self.org_viewer_dep = None
+        self.org_crawl_dep = None
+        self.org_owner_dep = None
 
         self.invites = invites
 
@@ -154,7 +154,7 @@ class ArchiveOps:
         """init lookup index"""
         while True:
             try:
-                return await self.archives.create_index("name", unique=True)
+                return await self.orgs.create_index("name", unique=True)
             except AutoReconnect:
                 print(
                     "Database connection unavailable to create index. Will try again in 5 scconds",
@@ -162,67 +162,67 @@ class ArchiveOps:
                 )
                 time.sleep(5)
 
-    async def add_archive(self, archive: Archive):
-        """Add new archive"""
+    async def add_org(self, org: Organization):
+        """Add new org"""
         try:
-            return await self.archives.insert_one(archive.to_dict())
+            return await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError:
-            print(f"Archive name {archive.name} already in use - skipping", flush=True)
+            print(f"Organization name {org.name} already in use - skipping", flush=True)
 
-    async def create_new_archive_for_user(
+    async def create_new_org_for_user(
         self,
-        archive_name: str,
+        org_name: str,
         storage_name,
         user: User,
     ):
         # pylint: disable=too-many-arguments
-        """Create new archive with default storage for new user"""
+        """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
 
         storage_path = str(id_) + "/"
 
-        archive = Archive(
+        org = Organization(
             id=id_,
-            name=archive_name,
+            name=org_name,
             users={str(user.id): UserRole.OWNER},
             storage=DefaultStorage(name=storage_name, path=storage_path),
         )
 
         storage_info = f"storage {storage_name} / {storage_path}"
-        print(f"Creating new archive {archive_name} with {storage_info}", flush=True)
-        await self.add_archive(archive)
+        print(f"Creating new org {org_name} with {storage_info}", flush=True)
+        await self.add_org(org)
 
-    async def get_archives_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
-        """Get all archives a user is a member of"""
+    async def get_orgs_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
+        """Get all orgs a user is a member of"""
         if user.is_superuser:
             query = {}
         else:
             query = {f"users.{user.id}": {"$gte": role.value}}
-        cursor = self.archives.find(query)
+        cursor = self.orgs.find(query)
         results = await cursor.to_list(length=1000)
-        return [Archive.from_dict(res) for res in results]
+        return [Organization.from_dict(res) for res in results]
 
-    async def get_archive_for_user_by_id(
-        self, aid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
+    async def get_org_for_user_by_id(
+        self, oid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
-        """Get an archive for user by unique id"""
+        """Get an org for user by unique id"""
         if user.is_superuser:
-            query = {"_id": aid}
+            query = {"_id": oid}
         else:
-            query = {f"users.{user.id}": {"$gte": role.value}, "_id": aid}
-        res = await self.archives.find_one(query)
-        return Archive.from_dict(res)
+            query = {f"users.{user.id}": {"$gte": role.value}, "_id": oid}
+        res = await self.orgs.find_one(query)
+        return Organization.from_dict(res)
 
-    async def get_archive_by_id(self, aid: uuid.UUID):
-        """Get an archive by id"""
-        res = await self.archives.find_one({"_id": aid})
-        return Archive.from_dict(res)
+    async def get_org_by_id(self, oid: uuid.UUID):
+        """Get an org by id"""
+        res = await self.org.find_one({"_id": oid})
+        return Organization.from_dict(res)
 
     async def get_default_org(self):
         """Get default organization"""
-        res = await self.archives.find_one({"default": True})
+        res = await self.orgs.find_one({"default": True})
         if res:
-            return Archive.from_dict(res)
+            return Organization.from_dict(res)
 
     async def create_default_org(self, storage_name="default"):
         """Create default organization if doesn't exist."""
@@ -240,7 +240,7 @@ class ArchiveOps:
 
         id_ = uuid.uuid4()
         storage_path = str(id_) + "/"
-        archive = Archive(
+        org = Organization(
             id=id_,
             name=DEFAULT_ORG,
             users={},
@@ -252,20 +252,20 @@ class ArchiveOps:
             f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
             flush=True,
         )
-        await self.add_archive(archive)
+        await self.add_org(org)
 
-    async def update(self, archive: Archive):
-        """Update existing archive"""
-        return await self.archives.find_one_and_update(
-            {"_id": archive.id}, {"$set": archive.to_dict()}, upsert=True
+    async def update(self, org: Organization):
+        """Update existing org"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
         )
 
     async def update_storage(
-        self, archive: Archive, storage: Union[S3Storage, DefaultStorage]
+        self, org: Organization, storage: Union[S3Storage, DefaultStorage]
     ):
-        """Update storage on an existing archive"""
-        return await self.archives.find_one_and_update(
-            {"_id": archive.id}, {"$set": {"storage": storage.dict()}}
+        """Update storage on an existing organization"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"storage": storage.dict()}}
         )
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
@@ -276,91 +276,95 @@ class ArchiveOps:
         return True
 
     async def add_user_by_invite(self, invite: InvitePending, user: User):
-        """Add user to an Archive from an InvitePending, if any"""
-        # if no archive to add to (eg. superuser invite), just return
-        if not invite.aid:
+        """Add user to an org from an InvitePending, if any.
+
+        If there's no org to add to (eg. superuser invite), just return.
+        """
+        if not invite.oid:
             return
 
-        archive = await self.get_archive_by_id(invite.aid)
-        if not archive:
+        org = await self.get_org_by_id(invite.oid)
+        if not org:
             raise HTTPException(
-                status_code=400, detail="Invalid Invite Code, No Such Archive"
+                status_code=400, detail="Invalid Invite Code, No Such Organization"
             )
 
-        await self.add_user_to_archive(archive, user.id, invite.role)
+        await self.add_user_to_org(org, user.id, invite.role)
         return True
 
-    async def add_user_to_archive(
-        self, archive: Archive, userid: uuid.UUID, role: UserRole = UserRole.OWNER
+    async def add_user_to_org(
+        self, org: Organization, userid: uuid.UUID, role: UserRole = UserRole.OWNER
     ):
-        """Add user to Archive with specified role"""
-        archive.users[str(userid)] = role
-        await self.update(archive)
+        """Add user to organization with specified role"""
+        org.users[str(userid)] = role
+        await self.update(org)
 
 
 # ============================================================================
-def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
-    """Init archives api router for /archives"""
+def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
+    """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals
 
-    ops = ArchiveOps(mdb, invites)
+    ops = OrganizationOps(mdb, invites)
 
-    async def archive_dep(aid: str, user: User = Depends(user_dep)):
-        archive = await ops.get_archive_for_user_by_id(uuid.UUID(aid), user)
-        if not archive:
-            raise HTTPException(status_code=404, detail=f"Archive '{aid}' not found")
-        if not archive.is_viewer(user):
+    async def org_dep(oid: str, user: User = Depends(user_dep)):
+        org = await ops.get_org_for_user_by_id(uuid.UUID(oid), user)
+        if not org:
+            raise HTTPException(
+                status_code=404, detail=f"Organization '{oid}' not found"
+            )
+        if not org.is_viewer(user):
             raise HTTPException(
                 status_code=403,
-                detail="User does not have permission to view this archive",
+                detail="User does not have permission to view this organization",
             )
 
-        return archive
+        return org
 
-    async def archive_crawl_dep(
-        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    async def org_crawl_dep(
+        org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
-        if not archive.is_crawler(user):
+        if not org.is_crawler(user):
             raise HTTPException(
                 status_code=403, detail="User does not have permission to modify crawls"
             )
 
-        return archive
+        return org
 
-    async def archive_owner_dep(
-        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    async def org_owner_dep(
+        org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
-        if not archive.is_owner(user):
+        if not org.is_owner(user):
             raise HTTPException(
                 status_code=403,
                 detail="User does not have permission to perform this action",
             )
 
-        return archive
+        return org
 
     router = APIRouter(
-        prefix="/archives/{aid}",
-        dependencies=[Depends(archive_dep)],
+        prefix="/orgs/{oid}",
+        dependencies=[Depends(org_dep)],
         responses={404: {"description": "Not found"}},
     )
 
     ops.router = router
-    ops.archive_viewer_dep = archive_dep
-    ops.archive_crawl_dep = archive_crawl_dep
-    ops.archive_owner_dep = archive_owner_dep
+    ops.org_viewer_dep = org_dep
+    ops.org_crawl_dep = org_crawl_dep
+    ops.org_owner_dep = org_owner_dep
 
-    @app.get("/archives", tags=["archives"])
-    async def get_archives(user: User = Depends(user_dep)):
-        results = await ops.get_archives_for_user(user)
+    @app.get("/orgs", tags=["organizations"])
+    async def get_orgs(user: User = Depends(user_dep)):
+        results = await ops.get_orgs_for_user(user)
         return {
-            "archives": [
+            "orgs": [
                 await res.serialize_for_user(user, user_manager) for res in results
             ]
         }
 
-    @app.post("/archives/create", tags=["archives"])
-    async def create_archive(
-        new_archive: RenameArchive,
+    @app.post("/orgs/create", tags=["organizations"])
+    async def create_org(
+        new_org: RenameOrg,
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
@@ -368,36 +372,36 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
 
         id_ = uuid.uuid4()
         storage_path = str(id_) + "/"
-        archive = Archive(
+        org = Organization(
             id=id_,
-            name=new_archive.name,
+            name=new_org.name,
             users={},
             storage=DefaultStorage(name="default", path=storage_path),
         )
-        await ops.add_archive(archive)
+        await ops.add_org(org)
 
         return {"added": True}
 
-    @router.get("", tags=["archives"])
-    async def get_archive(
-        archive: Archive = Depends(archive_dep), user: User = Depends(user_dep)
+    @router.get("", tags=["organizations"])
+    async def get_org(
+        org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
-        return await archive.serialize_for_user(user, user_manager)
+        return await org.serialize_for_user(user, user_manager)
 
-    @router.post("/rename", tags=["archives"])
-    async def rename_archive(
-        rename: RenameArchive,
-        archive: Archive = Depends(archive_owner_dep),
+    @router.post("/rename", tags=["organizations"])
+    async def rename_org(
+        rename: RenameOrg,
+        org: Organization = Depends(org_owner_dep),
     ):
-        archive.name = rename.name
-        await ops.update(archive)
+        org.name = rename.name
+        await ops.update(org)
 
         return {"updated": True}
 
-    @router.patch("/user-role", tags=["archives"])
+    @router.patch("/user-role", tags=["organizations"])
     async def set_role(
         update: UpdateRole,
-        archive: Archive = Depends(archive_owner_dep),
+        org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
 
@@ -410,15 +414,15 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't change own role!")
 
-        await ops.add_user_to_archive(archive, other_user.id, update.role)
+        await ops.add_user_to_org(org, other_user.id, update.role)
 
         return {"updated": True}
 
     @router.post("/invite", tags=["invites"])
-    async def invite_user_to_archive(
-        invite: InviteToArchiveRequest,
+    async def invite_user_to_org(
+        invite: InviteToOrgRequest,
         request: Request,
-        archive: Archive = Depends(archive_owner_dep),
+        org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
 
@@ -426,7 +430,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
             invite,
             user,
             user_manager,
-            archive=archive,
+            org=org,
             allow_existing=True,
             headers=request.headers,
         ):
@@ -434,7 +438,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
 
         return {"invited": "existing_user"}
 
-    @app.post("/archives/invite-accept/{token}", tags=["invites"])
+    @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = invites.accept_user_invite(user, token)
 
@@ -443,9 +447,9 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
         return {"added": True}
 
     @router.post("/add-user", tags=["invites"])
-    async def add_new_user_to_archive(
-        invite: AddToArchiveRequest,
-        archive: Archive = Depends(archive_owner_dep),
+    async def add_new_user_to_org(
+        invite: AddToOrgRequest,
+        org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
@@ -455,7 +459,7 @@ def init_archives_api(app, mdb, user_manager, invites, user_dep: User):
             invite.email, invite.password, invite.name
         )
         update_role = UpdateRole(role=invite.role, email=invite.email)
-        await set_role(update_role, archive, user)
+        await set_role(update_role, org, user)
         return {"added": True}
 
     asyncio.create_task(ops.create_default_org())

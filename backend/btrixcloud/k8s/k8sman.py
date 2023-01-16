@@ -7,7 +7,7 @@ import base64
 import yaml
 import aiohttp
 
-from ..archives import S3Storage
+from ..orgs import S3Storage
 from ..crawlmanager import BaseCrawlManager
 
 from .k8sapi import K8sAPI
@@ -34,14 +34,14 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         await self._get_storage_secret(storage_name)
         return True
 
-    async def update_archive_storage(self, aid, userid, storage):
-        """Update storage by either creating a per-archive secret, if using custom storage
-        or deleting per-archive secret, if using default storage"""
-        archive_storage_name = f"storage-{aid}"
+    async def update_org_storage(self, oid, userid, storage):
+        """Update storage by either creating a per-org secret, if using custom storage
+        or deleting per-org secret, if using default storage"""
+        org_storage_name = f"storage-{oid}"
         if storage.type == "default":
             try:
                 await self.core_api.delete_namespaced_secret(
-                    archive_storage_name,
+                    org_storage_name,
                     namespace=self.namespace,
                     propagation_policy="Foreground",
                 )
@@ -51,11 +51,11 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
             return
 
-        labels = {"btrix.archive": aid, "btrix.user": userid}
+        labels = {"btrix.org": oid, "btrix.user": userid}
 
         crawl_secret = self.client.V1Secret(
             metadata={
-                "name": archive_storage_name,
+                "name": org_storage_name,
                 "namespace": self.namespace,
                 "labels": labels,
             },
@@ -74,7 +74,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
         # pylint: disable=bare-except
         except:
             await self.core_api.patch_namespaced_secret(
-                name=archive_storage_name, namespace=self.namespace, body=crawl_secret
+                name=org_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
     async def get_default_storage_access_endpoint(self, name):
@@ -174,7 +174,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
         labels = {
             "btrix.crawlconfig": str(crawlconfig.id),
-            "btrix.archive": str(crawlconfig.aid),
+            "btrix.org": str(crawlconfig.oid),
         }
 
         config_map = self.client.V1ConfigMap(
@@ -219,7 +219,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             propagation_policy="Foreground",
         )
 
-    async def _post_to_job(self, crawl_id, aid, path, data=None):
+    async def _post_to_job(self, crawl_id, oid, path, data=None):
         """post to default container in a pod for job
         try all pods in case of many
         """
@@ -227,7 +227,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
         pods = await self.core_api.list_namespaced_pod(
             namespace=self.namespace,
-            label_selector=f"job-name={job_name},btrix.archive={aid}",
+            label_selector=f"job-name={job_name},btrix.org={oid}",
         )
 
         if not pods.items:
