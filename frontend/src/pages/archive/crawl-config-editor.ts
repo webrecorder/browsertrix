@@ -354,6 +354,9 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialCrawlConfig.tags?.length) {
       formState.tags = this.initialCrawlConfig.tags;
     }
+    if (this.initialCrawlConfig.crawlTimeout) {
+      formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    }
 
     return {
       jobName: this.initialCrawlConfig.name,
@@ -573,7 +576,8 @@ export class CrawlConfigEditor extends LiteElement {
                   ?disabled=${this.isSubmitting || this.formHasError}
                   ?loading=${this.isSubmitting}
                 >
-                  ${this.formState.runNow
+                  ${this.formState.scheduleType === "now" ||
+                  this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
@@ -743,7 +747,7 @@ https://example.com/path`}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
-              pageSize="10"
+              pageSize="30"
               editable
               removable
               @on-remove=${this.handleRemoveRegex}
@@ -971,6 +975,7 @@ https://example.net`}
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
+          value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
           placeholder=${msg("Unlimited")}
           type="number"
         >
@@ -1062,7 +1067,7 @@ https://example.net`}
           type="number"
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageTimeoutMinutes || undefined)}
+          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1278,11 +1283,18 @@ https://example.net`}
   }
 
   private renderConfirmSettings = () => {
-    const crawlConfig = this.parseConfig();
     return html`
       <div class="col-span-1 md:col-span-5">
-        <btrix-config-details .crawlConfig=${crawlConfig}>
-        </btrix-config-details>
+        ${when(this.progressState.activeTab === "confirmSettings", () => {
+          // Prevent parsing and rendering tab when not visible
+          const crawlConfig = this.parseConfig();
+          const profileName = this.formState.browserProfile?.name;
+
+          return html`<btrix-config-details
+            .crawlConfig=${{ ...crawlConfig, profileName }}
+          >
+          </btrix-config-details>`;
+        })}
       </div>
 
       ${when(this.formHasError, () =>

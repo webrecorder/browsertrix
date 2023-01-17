@@ -60,13 +60,13 @@ export type CrawlConfigParams = {
   scale: number;
   profileid: string | null;
   config: SeedConfig;
-  crawlTimeout: number | null;
+  crawlTimeout?: number | null;
   tags?: string[];
 };
 
 export type InitialCrawlConfig = Pick<
   CrawlConfigParams,
-  "name" | "profileid" | "schedule" | "tags"
+  "name" | "profileid" | "schedule" | "tags" | "crawlTimeout"
 > & {
   jobType?: JobType;
   config: Pick<
