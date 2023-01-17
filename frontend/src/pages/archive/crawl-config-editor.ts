@@ -280,16 +280,31 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
-    if (
-      changedProperties.get("progressState")?.activeTab === "crawlSetup" &&
-      this.progressState?.activeTab !== "crawlSetup"
-    ) {
-      if (!this.hasRequiredFields()) {
-        this.updateProgressState({
-          tabs: {
-            crawlSetup: { error: true },
-          },
-        });
+    if (changedProperties.get("progressState") && this.progressState) {
+      if (
+        changedProperties.get("progressState").activeTab === "crawlSetup" &&
+        this.progressState.activeTab !== "crawlSetup"
+      ) {
+        // Show that required tab has error even if input hasn't been touched
+        if (!this.hasRequiredFields()) {
+          this.updateProgressState({
+            tabs: {
+              crawlSetup: { error: true },
+            },
+          });
+        }
+      } else if (
+        changedProperties.get("progressState").activeTab !== "crawlSetup" &&
+        this.progressState.activeTab === "crawlSetup"
+      ) {
+        if (this.progressState.tabs.crawlSetup.error) {
+          // Show field validation styles
+          const requiredInput = this.formElem.querySelector(
+            "[data-required][data-invalid]"
+          ) as SlInput;
+          requiredInput?.setAttribute("data-user-invalid", "");
+          requiredInput?.focus();
+        }
       }
     }
   }
@@ -504,11 +519,17 @@ export class CrawlConfigEditor extends LiteElement {
         class="whitespace-nowrap"
         @click=${this.tabClickHandler(tabName)}
       >
-        <sl-icon
-          name=${iconProps.name}
-          library=${iconProps.library}
-          class="inline-block align-middle mr-1 text-base ${iconProps.class}"
-        ></sl-icon>
+        <sl-tooltip
+          content=${msg("Form section contains errors")}
+          ?disabled=${!isInvalid}
+          hoist
+        >
+          <sl-icon
+            name=${iconProps.name}
+            library=${iconProps.library}
+            class="inline-block align-middle mr-1 text-base ${iconProps.class}"
+          ></sl-icon>
+        </sl-tooltip>
         <span class="inline-block align-middle whitespace-normal">
           ${content}
         </span>
