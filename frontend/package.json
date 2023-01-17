@@ -26,14 +26,16 @@
     "yaml": "^2.0.0-11"
   },
   "scripts": {
-    "prepare": "cd .. && husky install frontend/.husky",
+    "prepare": "yarn localize:prepare && cd .. && husky install frontend/.husky",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --node-resolve --playwright --browsers chromium",
-    "prebuild": "del-cli ./dist",
+    "prebuild": "del-cli ./dist && yarn localize:prepare",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
+    "prestart": "yarn localize:prepare",
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
     "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
+    "localize:prepare": "yarn localize:extract && yarn localize:build",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build"
   },

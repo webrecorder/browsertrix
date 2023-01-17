@@ -23,5 +23,9 @@
 .env.local
 .env.*.local
 
+# translation files
+src/__generated__/**/*.ts
+xliff/*.xlf
+
 storybook-static
 custom-elements.json
