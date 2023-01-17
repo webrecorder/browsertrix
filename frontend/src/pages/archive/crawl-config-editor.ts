@@ -270,9 +270,6 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
-    if (changedProperties.get("formState") && this.formState) {
-      this.handleFormStateChange();
-    }
   }
 
   updated(changedProperties: Map<string, any>) {
@@ -664,6 +661,11 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
+            } else {
+              await this.updateComplete;
+              if (!this.formState.jobName) {
+                this.setDefaultJobName();
+              }
             }
           }}
         ></sl-textarea>
@@ -849,6 +851,11 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
+            } else {
+              await this.updateComplete;
+              if (!this.formState.jobName) {
+                this.setDefaultJobName();
+              }
             }
           }}
         ></sl-input>
@@ -1235,11 +1242,11 @@ https://example.net`}
             desc: "Example crawl config name",
           })}
           value=${jobNameValue}
-          required
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Try to create a unique name to help keep things organized!`
+        html`Customize this crawl config and crawl name. Crawls are named after
+        the starting URL(s) by default.`
       )}
       ${this.renderFormCol(
         html`
@@ -1297,23 +1304,9 @@ https://example.net`}
 
   private hasRequiredFields(): Boolean {
     if (this.jobType === "seed-crawl") {
-      return Boolean(this.formState.jobName && this.formState.primarySeedUrl);
+      return Boolean(this.formState.primarySeedUrl);
     }
-    return Boolean(this.formState.jobName && this.formState.urlList);
-  }
-
-  private handleFormStateChange() {
-    if (!this.formState.jobName) {
-      this.setDefaultJobName();
-    }
-    const hasRequiredFields = this.hasRequiredFields();
-    if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
-      this.updateProgressState({
-        tabs: {
-          crawlSetup: { completed: true },
-        },
-      });
-    }
+    return Boolean(this.formState.urlList);
   }
 
   private async handleProgressStateChange(oldState: ProgressState) {
@@ -1328,7 +1321,7 @@ https://example.net`}
     }
   }
 
-  private setDefaultJobName() {
+  private getDefaultJobName() {
     // Set default crawl name based on seed URLs
     if (!this.formState.primarySeedUrl && !this.formState.urlList) {
       return;
@@ -1351,7 +1344,14 @@ https://example.net`}
         jobName = firstUrl;
       }
     }
-    this.updateFormState({ jobName });
+    return jobName;
+  }
+
+  private setDefaultJobName() {
+    const jobName = this.getDefaultJobName();
+    if (jobName) {
+      this.updateFormState({ jobName });
+    }
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
@@ -1637,7 +1637,7 @@ https://example.net`}
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
-      name: this.formState.jobName || this.formState.primarySeedUrl,
+      name: this.formState.jobName || this.getDefaultJobName() || "",
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
