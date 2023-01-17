@@ -143,7 +143,7 @@
   resolved "https://registry.yarnpkg.com/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.0.0.tgz#427e19a2765681fd83411cd72c55ba80a01e0523"
   integrity sha512-ic93MBXfApIFTrup4a70M/+ddD8xdt2zxxj9sRwHQzhS9ag/syqkD8JPdTXsc1gUy2K8TTirhlCqyTEM/sifNw==
 
-"@lit/localize-tools@^0.6.6":
+"@lit/localize-tools@^0.6.5":
   version "0.6.6"
   resolved "https://registry.yarnpkg.com/@lit/localize-tools/-/localize-tools-0.6.6.tgz#418bb36b3849f3eae5184fab40cd122d7af9c821"
   integrity sha512-Lv47Kp+wElypqTtlaybJnp3Ew+jECaeUYrRBHqtQhDOpnz2DjW9+Jt+zwVpU8VAM8Z7aspceBpSyqm9HTuwKhw==
