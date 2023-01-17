@@ -62,7 +62,6 @@ type TabState = {
 };
 type Tabs = Record<StepName, TabState>;
 type ProgressState = {
-  currentStep: StepName;
   activeTab: StepName;
   tabs: Tabs;
 };
@@ -106,7 +105,6 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
   return {
     activeTab,
-    currentStep: hasConfigId ? "confirmSettings" : "crawlSetup",
     tabs: {
       crawlSetup: { error: false, completed: hasConfigId },
       browserSettings: {
@@ -410,7 +408,6 @@ export class CrawlConfigEditor extends LiteElement {
       >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
-          progressPanel="newJobConfig-${this.progressState.currentStep}"
         >
           <header slot="header" class="flex justify-between items-baseline">
             <h3>${tabLabels[this.progressState.activeTab]}</h3>
@@ -609,7 +606,6 @@ export class CrawlConfigEditor extends LiteElement {
                         if (this.hasRequiredFields()) {
                           this.updateProgressState({
                             activeTab: "confirmSettings",
-                            currentStep: "confirmSettings",
                           });
                         } else {
                           this.nextStep();
@@ -1521,12 +1517,10 @@ https://example.net`}
     const isValid = this.checkCurrentPanelValidity();
 
     if (isValid) {
-      const { activeTab, currentStep } = this.progressState;
+      const { activeTab } = this.progressState;
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
       this.updateProgressState({
         activeTab: nextTab,
-        currentStep:
-          STEPS[Math.max(STEPS.indexOf(nextTab), STEPS.indexOf(currentStep))],
       });
     }
   }
@@ -1757,7 +1751,6 @@ https://example.net`}
   private updateProgressState(
     nextState: {
       activeTab?: ProgressState["activeTab"];
-      currentStep?: ProgressState["currentStep"];
       tabs?: {
         [K in StepName]?: Partial<TabState>;
       };
