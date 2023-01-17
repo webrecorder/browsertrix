@@ -286,16 +286,10 @@ export class CrawlConfigEditor extends LiteElement {
       changedProperties.get("progressState")?.activeTab === "crawlSetup" &&
       this.progressState?.activeTab !== "crawlSetup"
     ) {
-      if (this.hasRequiredFields()) {
+      if (!this.hasRequiredFields()) {
         this.updateProgressState({
           tabs: {
-            crawlSetup: { completed: true },
-          },
-        });
-      } else {
-        this.updateProgressState({
-          tabs: {
-            crawlSetup: { error: true, completed: false },
+            crawlSetup: { error: true },
           },
         });
       }
@@ -503,7 +497,6 @@ export class CrawlConfigEditor extends LiteElement {
         iconProps.class = "text-base";
       } else if (completed) {
         iconProps.name = "check-circle";
-        iconProps.class = "text-success";
       }
     }
 
@@ -617,7 +610,6 @@ export class CrawlConfigEditor extends LiteElement {
                           this.updateProgressState({
                             activeTab: "confirmSettings",
                             currentStep: "confirmSettings",
-                            tabs: { crawlSetup: { completed: true } },
                           });
                         } else {
                           this.nextStep();
@@ -1535,9 +1527,6 @@ https://example.net`}
         activeTab: nextTab,
         currentStep:
           STEPS[Math.max(STEPS.indexOf(nextTab), STEPS.indexOf(currentStep))],
-        tabs: {
-          [activeTab]: { completed: true },
-        },
       });
     }
   }
