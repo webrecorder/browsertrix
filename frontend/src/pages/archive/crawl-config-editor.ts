@@ -286,9 +286,12 @@ export class CrawlConfigEditor extends LiteElement {
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.get("progressState") && this.progressState) {
-      this.handleProgressStateChange(
-        changedProperties.get("progressState") as ProgressState
-      );
+      if (
+        changedProperties.get("progressState").activeTab !==
+        this.progressState.activeTab
+      ) {
+        this.scrollToPanelTop();
+      }
     }
   }
 
@@ -1334,15 +1337,12 @@ https://example.net`}
     return Boolean(this.formState.urlList);
   }
 
-  private async handleProgressStateChange(oldState: ProgressState) {
-    const { activeTab } = this.progressState;
-    if (oldState.activeTab !== activeTab) {
-      const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
-      if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
-        activeTabPanel.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
+  private async scrollToPanelTop() {
+    const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
+    if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
+      activeTabPanel.scrollIntoView({
+        behavior: "smooth",
+      });
     }
   }
 
