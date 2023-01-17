@@ -293,31 +293,35 @@ export class CrawlConfigEditor extends LiteElement {
             },
           });
         }
-      } else if (
-        changedProperties.get("progressState").activeTab !== "crawlSetup" &&
-        this.progressState.activeTab === "crawlSetup"
-      ) {
-        if (this.progressState.tabs.crawlSetup.error) {
-          // Show field validation styles
-          const requiredInput = this.formElem.querySelector(
-            "[data-required][data-invalid]"
-          ) as SlInput;
-          requiredInput?.setAttribute("data-user-invalid", "");
-          requiredInput?.focus();
-        }
       }
     }
   }
 
-  updated(changedProperties: Map<string, any>) {
+  async updated(changedProperties: Map<string, any>) {
     if (changedProperties.get("progressState") && this.progressState) {
       if (
         changedProperties.get("progressState").activeTab !==
         this.progressState.activeTab
       ) {
         this.scrollToPanelTop();
+
+        // Focus on first field in section
+        (
+          (await this.activeTabPanel)?.querySelector(
+            "sl-input, sl-textarea, sl-select, sl-radio-group"
+          ) as HTMLElement
+        )?.focus();
       }
     }
+  }
+
+  async firstUpdated() {
+    // Focus on first field in section
+    (
+      (await this.activeTabPanel)?.querySelector(
+        "sl-input, sl-textarea, sl-select, sl-radio-group"
+      ) as HTMLElement
+    )?.focus();
   }
 
   private initializeEditor() {
