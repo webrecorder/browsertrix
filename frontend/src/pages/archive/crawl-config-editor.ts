@@ -1430,12 +1430,14 @@ https://example.net`}
     await this.updateComplete;
 
     const currentTab = this.progressState.activeTab as StepName;
-    const tabs = { ...this.progressState.tabs };
     // Check [data-user-invalid] instead of .invalid property
     // to validate only touched inputs
     if ("userInvalid" in el.dataset) {
-      tabs[currentTab].error = true;
-      this.updateProgressState({ tabs });
+      this.updateProgressState({
+        tabs: {
+          [currentTab]: { error: true },
+        },
+      });
     } else if (this.progressState.tabs[currentTab].error) {
       this.syncTabErrorState(el);
     }
@@ -1443,13 +1445,15 @@ https://example.net`}
 
   private syncTabErrorState(el: HTMLElement) {
     const currentTab = this.progressState.activeTab as StepName;
-    const tabs = { ...this.progressState.tabs };
     const panelEl = el.closest("btrix-tab-panel")!;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
     if (!hasInvalid) {
-      tabs[currentTab].error = false;
-      this.updateProgressState({ tabs });
+      this.updateProgressState({
+        tabs: {
+          [currentTab]: { error: false },
+        },
+      });
     }
   }
 
