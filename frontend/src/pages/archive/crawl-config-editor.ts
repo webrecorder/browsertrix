@@ -282,6 +282,24 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
+    if (
+      changedProperties.get("progressState")?.activeTab === "crawlSetup" &&
+      this.progressState?.activeTab !== "crawlSetup"
+    ) {
+      if (this.hasRequiredFields()) {
+        this.updateProgressState({
+          tabs: {
+            crawlSetup: { completed: true },
+          },
+        });
+      } else {
+        this.updateProgressState({
+          tabs: {
+            crawlSetup: { error: true, completed: false },
+          },
+        });
+      }
+    }
   }
 
   updated(changedProperties: Map<string, any>) {
@@ -1511,17 +1529,15 @@ https://example.net`}
     const isValid = this.checkCurrentPanelValidity();
 
     if (isValid) {
-      const { activeTab, tabs, currentStep } = this.progressState;
+      const { activeTab, currentStep } = this.progressState;
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
-
-      const nextTabs = { ...tabs };
-      let nextCurrentStep = currentStep;
-
-      nextTabs[activeTab!].completed = true;
       this.updateProgressState({
         activeTab: nextTab,
-        currentStep: nextCurrentStep,
-        tabs: nextTabs,
+        currentStep:
+          STEPS[Math.max(STEPS.indexOf(nextTab), STEPS.indexOf(currentStep))],
+        tabs: {
+          [activeTab]: { completed: true },
+        },
       });
     }
   }
