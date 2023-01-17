@@ -57,7 +57,6 @@ const STEPS = [
 ] as const;
 type StepName = typeof STEPS[number];
 type TabState = {
-  enabled: boolean;
   completed: boolean;
   error: boolean;
 };
@@ -109,24 +108,20 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     activeTab,
     currentStep: hasConfigId ? "confirmSettings" : "crawlSetup",
     tabs: {
-      crawlSetup: { enabled: true, error: false, completed: hasConfigId },
+      crawlSetup: { error: false, completed: hasConfigId },
       browserSettings: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       crawlScheduling: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       crawlInformation: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       confirmSettings: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
@@ -482,18 +477,11 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
 
-    const { enabled } = this.progressState.tabs[tabName];
-    const isEnabled = isConfirmSettings
-      ? this.progressState.tabs.confirmSettings.enabled ||
-        this.progressState.tabs.crawlSetup.completed
-      : enabled;
-
     return html`
       <btrix-tab
         slot="nav"
         name="newJobConfig-${tabName}"
         class="whitespace-nowrap"
-        ?disabled=${!isEnabled}
         @click=${this.tabClickHandler(tabName)}
       >
         <sl-icon
@@ -1497,14 +1485,8 @@ https://example.net`}
       const { activeTab, tabs, currentStep } = this.progressState;
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
 
-      const isFirstTimeEnabled = !tabs[nextTab].enabled;
       const nextTabs = { ...tabs };
       let nextCurrentStep = currentStep;
-
-      if (isFirstTimeEnabled) {
-        nextTabs[nextTab].enabled = true;
-        nextCurrentStep = nextTab;
-      }
 
       nextTabs[activeTab!].completed = true;
       this.updateProgressState({
