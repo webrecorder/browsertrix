@@ -1,11 +1,9 @@
 """
 Browsertrix API Mongo DB initialization
 """
-import asyncio
 import importlib.util
 import os
 import urllib
-import time
 from typing import Optional
 
 import motor.motor_asyncio

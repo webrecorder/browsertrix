@@ -114,6 +114,11 @@
     "src/**/*.{ts,js}": "eslint --fix --quiet",
     "src/*.{ts,js,html,css,json}": "prettier --write"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": ".husky/pre-commit"
+    }
+  },
   "engines": {
     "node": ">=16 <20"
   }

@@ -39,13 +39,15 @@ class Migration:
                     continue
 
                 try:
-                    first_doc["aid"]
+                    # pylint: disable=pointless-statement
+                    first_doc["aid"]  # fmt: skip
                     return True
                 except KeyError:
                     pass
 
                 try:
-                    first_doc["oid"]
+                    # pylint: disable=pointless-statement
+                    first_doc["oid"]  # fmt: skip
                 except KeyError:
                     return True
 
