@@ -1483,7 +1483,7 @@ https://example.net`}
     const panelEl = el.closest("btrix-tab-panel")!;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid && !this.progressState.tabs[currentTab].error) {
+    if (!hasInvalid && this.progressState.tabs[currentTab].error) {
       this.updateProgressState({
         tabs: {
           [currentTab]: { error: false },
