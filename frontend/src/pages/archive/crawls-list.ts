@@ -159,7 +159,7 @@ export class CrawlsList extends LiteElement {
             ${this.lastFetched
               ? msg(html`Last updated:
                   <sl-format-date
-                    date=${new Date(this.lastFetched).toString()}
+                    date="${new Date(this.lastFetched).toString()}"
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -693,7 +693,7 @@ export class CrawlsList extends LiteElement {
               <br />
               <button
                 class="underline hover:no-underline"
-                @click=${() => this.duplicateConfig(crawl, crawlTemplate)}
+                @click="${() => this.duplicateConfig(crawl, crawlTemplate)}"
               >
                 Duplicate crawl config
               </button>`
