@@ -142,7 +142,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header class="sticky mb-3 top-0 py-2 bg-neutral-0">
+        <header class="sticky z-10 mb-3 top-0 py-2 bg-neutral-0">
           ${this.renderControls()}
         </header>
         <section>

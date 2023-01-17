@@ -109,7 +109,7 @@ export class CrawlTemplatesList extends LiteElement {
 
   render() {
     return html`
-      <div class="sticky mb-3 top-0 py-2 bg-neutral-0">
+      <div class="sticky z-10 mb-2 top-0 py-2 bg-neutral-0">
         ${this.renderControls()}
       </div>
 
