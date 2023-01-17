@@ -286,7 +286,10 @@ export class CrawlConfigEditor extends LiteElement {
         this.progressState.activeTab !== "crawlSetup"
       ) {
         // Show that required tab has error even if input hasn't been touched
-        if (!this.hasRequiredFields()) {
+        if (
+          !this.hasRequiredFields() &&
+          !this.progressState.tabs.crawlSetup.error
+        ) {
           this.updateProgressState({
             tabs: {
               crawlSetup: { error: true },
@@ -1464,6 +1467,7 @@ https://example.net`}
     // Check [data-user-invalid] instead of .invalid property
     // to validate only touched inputs
     if ("userInvalid" in el.dataset) {
+      if (this.progressState.tabs[currentTab].error) return;
       this.updateProgressState({
         tabs: {
           [currentTab]: { error: true },
@@ -1479,7 +1483,7 @@ https://example.net`}
     const panelEl = el.closest("btrix-tab-panel")!;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid) {
+    if (!hasInvalid && !this.progressState.tabs[currentTab].error) {
       this.updateProgressState({
         tabs: {
           [currentTab]: { error: false },
