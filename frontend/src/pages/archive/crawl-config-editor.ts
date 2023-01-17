@@ -209,7 +209,10 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   private get formHasError() {
-    return Object.values(this.progressState.tabs).some(({ error }) => error);
+    return (
+      !this.hasRequiredFields() ||
+      Object.values(this.progressState.tabs).some(({ error }) => error)
+    );
   }
 
   private get utcSchedule() {
@@ -261,6 +264,15 @@ export class CrawlConfigEditor extends LiteElement {
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
+
+    window.addEventListener("hashchange", () => {
+      const hashValue = window.location.hash.slice(1);
+      if (STEPS.includes(hashValue as any)) {
+        this.updateProgressState({
+          activeTab: hashValue as StepName,
+        });
+      }
+    });
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -1278,7 +1290,26 @@ https://example.net`}
   }
 
   private renderConfirmSettings = () => {
+    const errorAlert = when(this.formHasError, () => {
+      const errorMessage = this.hasRequiredFields()
+        ? msg(
+            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+          )
+        : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
+            URL(s) required in
+            <a
+              href="${`${window.location.href.split("#")[0]}#crawlSetup`}"
+              class="bold underline hover:no-underline"
+              >Crawl Setup</a
+            >. <br /><br />
+            Please fix to continue.`);
+
+      return this.renderErrorAlert(errorMessage);
+    });
+
     return html`
+      ${errorAlert}
+
       <div class="col-span-1 md:col-span-5">
         ${when(this.progressState.activeTab === "confirmSettings", () => {
           // Prevent parsing and rendering tab when not visible
@@ -1292,13 +1323,7 @@ https://example.net`}
         })}
       </div>
 
-      ${when(this.formHasError, () =>
-        this.renderErrorAlert(
-          msg(
-            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
-          )
-        )
-      )}
+      ${errorAlert}
     `;
   };
 
