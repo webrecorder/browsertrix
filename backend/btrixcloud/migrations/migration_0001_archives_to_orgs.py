@@ -84,24 +84,16 @@ class Migration:
                 continue
 
             item.data["ORG_ID"] = org_id
-            item.data.pop("ARCHIVE_ID")
+            try:
+                item.data.pop("ARCHIVE_ID")
+            except KeyError:
+                pass
 
             item.metadata.labels["btrix.org"] = org_id
-            item.metadata.labels.pop("btrix.archive")
-
-            managed_fields = item.metadata.managed_fields[0].fields_v1
             try:
-                managed_fields["f:data"].pop("f:ARCHIVE_ID")
+                item.metadata.labels.pop("btrix.archive")
             except KeyError:
                 pass
-            managed_fields["f:data"]["f:ORG_ID"] = {}
-
-            managed_field_labels = managed_fields["f:metadata"]["f:labels"]
-            try:
-                managed_field_labels.pop("f:btrix.archive")
-            except KeyError:
-                pass
-            managed_field_labels["f:btrix.org"] = {}
 
             await k8s_api_instance.core_api.patch_namespaced_config_map(
                 name=item_name, namespace=crawler_namespace, body=item
