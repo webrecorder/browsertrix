@@ -501,7 +501,7 @@ export class CrawlConfigEditor extends LiteElement {
     const iconProps = {
       name: "circle",
       library: "default",
-      class: "text-neutral-300",
+      class: "text-neutral-400",
     };
     if (isConfirmSettings) {
       iconProps.name = "info-circle";
