@@ -1,7 +1,7 @@
 """
 Migration 0001 - Archives to Orgs
 """
-from pymongo.errors import InvalidName, OperationFailure
+from pymongo.errors import OperationFailure
 
 
 class Migration:
@@ -52,19 +52,6 @@ class Migration:
             return True
         return False
 
-    async def delete_indexes(self):
-        """Delete existing indexes for all collections.
-
-        These will be recreated when the backend APIs are initialized.
-        """
-        collection_names = await self.mdb.list_collection_names()
-        for collection in collection_names:
-            try:
-                current_coll = self.mdb[collection]
-                await current_coll.drop_indexes()
-            except InvalidName:
-                continue
-
     async def migrate_up(self):
         """Perform migration up."""
         # Rename archives collection to organizations
@@ -97,8 +84,5 @@ class Migration:
         else:
             print("No migration to apply - skipping", flush=True)
             return
-
-        print("Deleting existing indexes", flush=True)
-        await self.delete_indexes()
 
         print(f"Database successfully migrated to {self.MIGRATION_VERSION}", flush=True)

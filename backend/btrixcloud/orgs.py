@@ -1,7 +1,6 @@
 """
 Organization API handling
 """
-import asyncio
 import os
 import time
 import uuid
@@ -15,7 +14,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .db import BaseMongoModel
 
 from .users import User
-from .worker import by_one_worker
 
 from .invites import (
     AddToOrgRequest,
@@ -225,7 +223,6 @@ class OrgOps:
         if res:
             return Organization.from_dict(res)
 
-    @by_one_worker("/app/btrixcloud/worker-pid.file")
     async def create_default_org(self, storage_name="default"):
         """Create default organization if doesn't exist."""
         await self.init_index()
@@ -463,7 +460,5 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         update_role = UpdateRole(role=invite.role, email=invite.email)
         await set_role(update_role, org, user)
         return {"added": True}
-
-    asyncio.create_task(ops.create_default_org())
 
     return ops

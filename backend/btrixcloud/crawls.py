@@ -19,7 +19,6 @@ from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .storages import get_presigned_url
-from .worker import by_one_worker
 
 
 # ============================================================================
@@ -165,9 +164,6 @@ class CrawlOps:
 
         self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
 
-        asyncio.create_task(self.init_index())
-
-    @by_one_worker("/app/btrixcloud/worker-pid.file")
     async def init_index(self):
         """init index for crawls db"""
         await self.crawls.create_index("colls")

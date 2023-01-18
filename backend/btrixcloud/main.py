@@ -2,7 +2,6 @@
 main file for browsertrix-api system
 supports docker and kubernetes based deployments of multiple browsertrix-crawlers
 """
-
 import os
 import signal
 import sys
@@ -12,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
 
-from .db import init_db, run_db_migrations
+from .db import init_db, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -48,8 +47,6 @@ def main():
     crawl_manager = None
 
     dbclient, mdb = init_db()
-
-    asyncio.create_task(run_db_migrations(mdb))
 
     settings = {
         "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
@@ -105,6 +102,12 @@ def main():
     coll_ops = init_collections_api(mdb, crawls, org_ops, crawl_manager)
 
     crawl_config_ops.set_coll_ops(coll_ops)
+
+    asyncio.create_task(
+        update_and_prepare_db(
+            mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops
+        )
+    )
 
     app.include_router(org_ops.router)
 

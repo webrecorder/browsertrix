@@ -177,7 +177,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
             try:
                 await self._update(user, update)
-                print("Superuser Updated!")
+                print("Superuser updated")
             except UserAlreadyExists:
                 print(f"User {email} already exists", flush=True)
 
@@ -446,7 +446,5 @@ def init_users_api(app, user_manager):
         return await user_manager.format_invite(invite)
 
     app.include_router(users_router, prefix="/users", tags=["users"])
-
-    asyncio.create_task(user_manager.create_super_user())
 
     return fastapi_users

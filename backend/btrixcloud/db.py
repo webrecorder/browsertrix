@@ -8,6 +8,7 @@ from typing import Optional
 
 import motor.motor_asyncio
 from pydantic import BaseModel, UUID4
+from pymongo.errors import InvalidName
 
 from .worker import by_one_worker
 
@@ -47,12 +48,39 @@ def init_db():
 
 # ============================================================================
 @by_one_worker("/app/btrixcloud/worker-pid.file")
+async def update_and_prepare_db(
+    # pylint: disable=R0913
+    mdb,
+    user_manager,
+    org_ops,
+    crawl_config_ops,
+    crawls_ops,
+    coll_ops,
+):
+    """Prepare database for application.
+
+    - Run database migrations
+    - Recreate indexes
+    - Create/update superuser
+    - Create/update default org
+
+    Run all tasks in order in a single worker.
+    """
+    await run_db_migrations(mdb)
+    await drop_indexes(mdb)
+    await create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops)
+    await user_manager.create_super_user()
+    await org_ops.create_default_org()
+    print("Database updated and ready", flush=True)
+
+
+# ============================================================================
 async def run_db_migrations(mdb):
     """Run database migrations."""
     migrations_path = "/app/btrixcloud/migrations"
     module_files = [
         f
-        for f in os.listdir(migrations_path)
+        for f in sorted(os.listdir(migrations_path))
         if not os.path.isdir(os.path.join(migrations_path, f))
         and not f.startswith("__")
     ]
@@ -73,6 +101,30 @@ async def run_db_migrations(mdb):
                 f"Error importing Migration class from module {module_file}: {err}",
                 flush=True,
             )
+
+
+# ============================================================================
+async def drop_indexes(mdb):
+    """Drop all database indexes."""
+    print("Dropping database indexes", flush=True)
+    collection_names = await mdb.list_collection_names()
+    for collection in collection_names:
+        try:
+            current_coll = mdb[collection]
+            await current_coll.drop_indexes()
+            print(f"Indexes for collection {collection} dropped")
+        except InvalidName:
+            continue
+
+
+# ============================================================================
+async def create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops):
+    """Create database indexes."""
+    print("Creating database indexes", flush=True)
+    await org_ops.init_index()
+    await crawl_config_ops.init_index()
+    await crawls_ops.init_index()
+    await coll_ops.init_index()
 
 
 # ============================================================================
