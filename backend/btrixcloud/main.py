@@ -52,6 +52,9 @@ def main():
     settings = {
         "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
         "jwtTokenLifetime": JWT_TOKEN_LIFETIME,
+        "defaultBehaviorTimeSeconds": int(
+            os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
+        ),
     }
 
     invites = init_invites(mdb, email)

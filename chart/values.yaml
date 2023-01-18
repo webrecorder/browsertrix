@@ -15,6 +15,9 @@ volume_storage_class:
 registration_enabled: "0"
 jwt_token_lifetime_minutes: 1440
 
+# default time to run behaviors on each page (in seconds)
+default_behavior_time_seconds: 300
+
 # if set to "1", allow inviting same user to same org multiple times
 allow_dupe_invites: "0"
 

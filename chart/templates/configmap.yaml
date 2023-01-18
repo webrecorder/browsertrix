@@ -49,6 +49,8 @@ data:
 
   JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"
 
+  DEFAULT_BEHAVIOR_TIME_SECONDS: "{{ .Values.default_behavior_time_seconds }}"
+
   WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
