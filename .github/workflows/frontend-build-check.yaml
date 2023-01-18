@@ -20,7 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-btrix-frontend-build-
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: frontend
         run: yarn install --frozen-lockfile
 
   localization-build:
@@ -28,7 +28,7 @@ jobs:
     needs: setup
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: frontend
     steps:
       - name: Localization Build
         run: yarn localize:prepare
@@ -38,7 +38,7 @@ jobs:
     needs: setup
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: frontend
     steps:
       - name: Webpack Build
         run: yarn build
