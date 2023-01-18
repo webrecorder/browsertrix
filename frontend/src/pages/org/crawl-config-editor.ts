@@ -1018,6 +1018,21 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-input
+          name="pageTimeoutMinutes"
+          type="number"
+          label=${msg("Page Time Limit")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        html`Adds a hard time limit for how long the crawler can spend on a
+        single webpage.`
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
@@ -1104,22 +1119,6 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Websites that observe the browser’s language setting may serve
         content in that language if available.`
-      )}
-      ${this.renderSectionHeading(msg("On-Page Behavior"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageTimeoutMinutes"
-          type="number"
-          label=${msg("Page Time Limit")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
-        >
-          <span slot="suffix">${msg("minutes")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        html`Adds a hard time limit for how long the crawler can spend on a
-        single webpage.`
       )}
     `;
   }
@@ -1638,9 +1637,7 @@ https://example.net`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(
-          `/orgs/${this.orgId}/crawl-templates/config/${data.added}`
-        );
+        this.navTo(`/orgs/${this.orgId}/crawl-templates/config/${data.added}`);
       }
     } catch (e: any) {
       if (e?.isApiError) {
