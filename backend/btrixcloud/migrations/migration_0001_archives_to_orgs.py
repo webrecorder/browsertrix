@@ -1,8 +1,6 @@
 """
 Migration 0001 - Archives to Orgs
 """
-import os
-
 from pymongo.errors import InvalidName, OperationFailure
 
 
@@ -17,43 +15,41 @@ class Migration:
         "profiles",
     ]
 
-    MIGRATION_NAME = os.path.basename(__file__)
+    MIGRATION_VERSION = "0001"
 
     def __init__(self, mdb):
         self.mdb = mdb
 
+    async def get_db_version(self):
+        """Get current db version from database."""
+        db_version = None
+        version_collection = self.mdb["version"]
+        version_record = await version_collection.find_one()
+        if not version_record:
+            return db_version
+        try:
+            db_version = version_record["version"]
+        except KeyError:
+            pass
+        return db_version
+
+    async def set_db_version(self):
+        """Set db version to version_number."""
+        version_collection = self.mdb["version"]
+        await version_collection.find_one_and_update(
+            {}, {"$set": {"version": self.MIGRATION_VERSION}}, upsert=True
+        )
+
     async def migrate_up_needed(self):
         """Verify migration up is needed and return boolean indicator."""
-        # archives collection was renamed to organizations.
-        collection_names = await self.mdb.list_collection_names()
-        if "archives" in collection_names or "organizations" not in collection_names:
+        db_version = await self.get_db_version()
+        print(f"Current database version before migration: {db_version}")
+        print(f"Migration available to apply: {self.MIGRATION_VERSION}")
+        # Databases from prior to migrations will not have a version set.
+        if not db_version:
             return True
-
-        # aid field in these collections was renamed to oid.
-        for collection in self.COLLECTIONS_AID_TO_OID:
-            try:
-                current_coll = self.mdb[collection]
-                first_doc = await current_coll.find_one()
-
-                if not first_doc:
-                    continue
-
-                try:
-                    # pylint: disable=pointless-statement
-                    first_doc["aid"]  # fmt: skip
-                    return True
-                except KeyError:
-                    pass
-
-                try:
-                    # pylint: disable=pointless-statement
-                    first_doc["oid"]  # fmt: skip
-                except KeyError:
-                    return True
-
-            except InvalidName:
-                continue
-
+        if db_version < self.MIGRATION_VERSION:
+            return True
         return False
 
     async def delete_indexes(self):
@@ -93,15 +89,16 @@ class Migration:
             print("Performing migration up", flush=True)
             try:
                 await self.migrate_up()
+                await self.set_db_version()
             except OperationFailure as err:
-                print(f"Error running migration {self.MIGRATION_NAME}: {err}")
+                print(f"Error running migration {self.MIGRATION_VERSION}: {err}")
                 return
 
         else:
-            print("No migrations to apply - skipping", flush=True)
+            print("No migration to apply - skipping", flush=True)
             return
 
         print("Deleting existing indexes", flush=True)
         await self.delete_indexes()
 
-        print(f"Migration {self.MIGRATION_NAME} successfully completed", flush=True)
+        print(f"Database successfully migrated to {self.MIGRATION_VERSION}", flush=True)
