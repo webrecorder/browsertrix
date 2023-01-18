@@ -1,0 +1,6 @@
+{
+  "search.exclude": {
+    "**/__generated__": true,
+    "**/xliff": true
+  }
+}
