@@ -109,7 +109,9 @@ export class CrawlTemplatesList extends LiteElement {
 
   render() {
     return html`
-      <div class="mb-4">${this.renderControls()}</div>
+      <div class="sticky z-10 mb-2 top-0 py-2 bg-neutral-0">
+        ${this.renderControls()}
+      </div>
 
       ${this.crawlTemplates
         ? this.crawlTemplates.length
@@ -177,108 +179,105 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
       </div>
 
-      ${this.crawlTemplates && this.crawlTemplates.length
-        ? html`<div class="flex flex-wrap items-center justify-between">
-            <div class="text-sm">
-              <button
-                class="inline-block font-medium border-2 border-transparent ${this
-                  .filterByScheduled === null
-                  ? "border-b-current text-primary"
-                  : "text-neutral-500"} mr-3"
-                aria-selected=${this.filterByScheduled === null}
-                @click=${() => (this.filterByScheduled = null)}
-              >
-                ${msg("All")}
-              </button>
-              <button
-                class="inline-block font-medium border-2 border-transparent ${this
-                  .filterByScheduled === true
-                  ? "border-b-current text-primary"
-                  : "text-neutral-500"} mr-3"
-                aria-selected=${this.filterByScheduled === true}
-                @click=${() => (this.filterByScheduled = true)}
-              >
-                ${msg("Scheduled")}
-              </button>
-              <button
-                class="inline-block font-medium border-2 border-transparent ${this
-                  .filterByScheduled === false
-                  ? "border-b-current text-primary"
-                  : "text-neutral-500"} mr-3"
-                aria-selected=${this.filterByScheduled === false}
-                @click=${() => (this.filterByScheduled = false)}
-              >
-                ${msg("No schedule")}
-              </button>
-            </div>
-            <div class="flex items-center justify-end">
-              ${this.userId
-                ? html`<label class="mr-3">
-                    <span class="text-neutral-500 mr-1"
-                      >${msg("Show Only Mine")}</span
-                    >
-                    <sl-switch
-                      @sl-change=${(e: CustomEvent) =>
-                        (this.filterByCurrentUser = (
-                          e.target as SlCheckbox
-                        ).checked)}
-                      ?checked=${this.filterByCurrentUser}
-                    ></sl-switch>
-                  </label>`
-                : ""}
-
-              <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-                ${msg("Sort By")}
-              </div>
-              <sl-dropdown
-                placement="bottom-end"
-                distance="4"
-                @sl-select=${(e: any) => {
-                  const [field, direction] = e.detail.item.value.split("_");
-                  this.orderBy = {
-                    field: field,
-                    direction: direction,
-                  };
-                }}
-              >
-                <sl-button
-                  slot="trigger"
-                  size="small"
-                  pill
-                  caret
-                  ?disabled=${!this.crawlTemplates?.length}
-                  >${(sortableFieldLabels as any)[this.orderBy.field] ||
-                  sortableFieldLabels[
-                    `${this.orderBy.field}_${this.orderBy.direction}`
-                  ]}</sl-button
+      <div class="flex flex-wrap items-center justify-between">
+        <div class="text-sm">
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === null
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === null}
+            @click=${() => (this.filterByScheduled = null)}
+          >
+            ${msg("All")}
+          </button>
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === true
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === true}
+            @click=${() => (this.filterByScheduled = true)}
+          >
+            ${msg("Scheduled")}
+          </button>
+          <button
+            class="inline-block font-medium border-2 border-transparent ${this
+              .filterByScheduled === false
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3"
+            aria-selected=${this.filterByScheduled === false}
+            @click=${() => (this.filterByScheduled = false)}
+          >
+            ${msg("No schedule")}
+          </button>
+        </div>
+        <div class="flex items-center justify-end">
+          ${this.userId
+            ? html`<label class="mr-3">
+                <span class="text-neutral-500 mr-1"
+                  >${msg("Show Only Mine")}</span
                 >
-                <sl-menu>
-                  ${Object.entries(sortableFieldLabels).map(
-                    ([value, label]) => html`
-                      <sl-menu-item
-                        value=${value}
-                        ?checked=${value ===
-                        `${this.orderBy.field}_${this.orderBy.direction}`}
-                        >${label}</sl-menu-item
-                      >
-                    `
-                  )}
-                </sl-menu>
-              </sl-dropdown>
-              <sl-icon-button
-                name="arrow-down-up"
-                label=${msg("Reverse sort")}
-                @click=${() => {
-                  this.orderBy = {
-                    ...this.orderBy,
-                    direction:
-                      this.orderBy.direction === "asc" ? "desc" : "asc",
-                  };
-                }}
-              ></sl-icon-button>
-            </div>
-          </div>`
-        : ""}
+                <sl-switch
+                  @sl-change=${(e: CustomEvent) =>
+                    (this.filterByCurrentUser = (
+                      e.target as SlCheckbox
+                    ).checked)}
+                  ?checked=${this.filterByCurrentUser}
+                ></sl-switch>
+              </label>`
+            : ""}
+
+          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+            ${msg("Sort By")}
+          </div>
+          <sl-dropdown
+            placement="bottom-end"
+            distance="4"
+            @sl-select=${(e: any) => {
+              const [field, direction] = e.detail.item.value.split("_");
+              this.orderBy = {
+                field: field,
+                direction: direction,
+              };
+            }}
+          >
+            <sl-button
+              slot="trigger"
+              size="small"
+              pill
+              caret
+              ?disabled=${!this.crawlTemplates?.length}
+              >${(sortableFieldLabels as any)[this.orderBy.field] ||
+              sortableFieldLabels[
+                `${this.orderBy.field}_${this.orderBy.direction}`
+              ]}</sl-button
+            >
+            <sl-menu>
+              ${Object.entries(sortableFieldLabels).map(
+                ([value, label]) => html`
+                  <sl-menu-item
+                    value=${value}
+                    ?checked=${value ===
+                    `${this.orderBy.field}_${this.orderBy.direction}`}
+                    >${label}</sl-menu-item
+                  >
+                `
+              )}
+            </sl-menu>
+          </sl-dropdown>
+          <sl-icon-button
+            name="arrow-down-up"
+            label=${msg("Reverse sort")}
+            @click=${() => {
+              this.orderBy = {
+                ...this.orderBy,
+                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+              };
+            }}
+          ></sl-icon-button>
+        </div>
+      </div>
     `;
   }
 
