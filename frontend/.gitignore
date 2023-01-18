@@ -24,7 +24,7 @@
 .env.*.local
 
 # translation files
-src/__generated__/**/*.ts
+src/__generated__/locales/*.ts
 xliff/*.xlf
 
 storybook-static
