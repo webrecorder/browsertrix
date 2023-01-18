@@ -19,4 +19,3 @@ repos:
       language: system
       entry: frontend/.husky/pre-commit
       pass_filenames: false
-      always_run: true
