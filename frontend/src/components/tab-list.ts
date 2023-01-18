@@ -170,13 +170,9 @@ export class TabList extends LitElement {
 
     ul {
       display: flex;
-      margin: 0;
+      margin: 0 0 0 var(--track-width);
       list-style: none;
       padding: 0;
-    }
-
-    .progressable ul {
-      margin-left: var(--track-width);
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
@@ -205,9 +201,9 @@ export class TabList extends LitElement {
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
-      .progressable ul,
-      .progressable .track,
-      .progressable .indicator {
+      ul,
+      .track,
+      .indicator {
         display: block;
       }
     }
@@ -217,7 +213,7 @@ export class TabList extends LitElement {
   @property({ type: String })
   activePanel: string = DEFAULT_PANEL_ID;
 
-  // If panels are progressable, the current panel in progress
+  // If panels are linear, the current panel in progress
   @property({ type: String })
   progressPanel?: string;
 
@@ -278,7 +274,7 @@ export class TabList extends LitElement {
         @sl-resize=${() =>
           this.repositionIndicator(this.getTab(this.progressPanel))}
       >
-        <div class="nav ${this.progressPanel ? " progressable" : ""}">
+        <div class="nav ${this.progressPanel ? "linear" : "nonlinear"}">
           <div class="track" role="presentation">
             <div class="indicator" role="presentation"></div>
           </div>

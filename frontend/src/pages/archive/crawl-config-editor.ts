@@ -57,13 +57,11 @@ const STEPS = [
 ] as const;
 type StepName = typeof STEPS[number];
 type TabState = {
-  enabled: boolean;
   completed: boolean;
   error: boolean;
 };
 type Tabs = Record<StepName, TabState>;
 type ProgressState = {
-  currentStep: StepName;
   activeTab: StepName;
   tabs: Tabs;
 };
@@ -107,26 +105,21 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
   return {
     activeTab,
-    currentStep: hasConfigId ? "confirmSettings" : "crawlSetup",
     tabs: {
-      crawlSetup: { enabled: true, error: false, completed: hasConfigId },
+      crawlSetup: { error: false, completed: hasConfigId },
       browserSettings: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       crawlScheduling: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       crawlInformation: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
       confirmSettings: {
-        enabled: hasConfigId,
         error: false,
         completed: hasConfigId,
       },
@@ -214,7 +207,10 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   private get formHasError() {
-    return Object.values(this.progressState.tabs).some(({ error }) => error);
+    return (
+      !this.hasRequiredFields() ||
+      Object.values(this.progressState.tabs).some(({ error }) => error)
+    );
   }
 
   private get utcSchedule() {
@@ -266,6 +262,15 @@ export class CrawlConfigEditor extends LiteElement {
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
+
+    window.addEventListener("hashchange", () => {
+      const hashValue = window.location.hash.slice(1);
+      if (STEPS.includes(hashValue as any)) {
+        this.updateProgressState({
+          activeTab: hashValue as StepName,
+        });
+      }
+    });
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -275,17 +280,51 @@ export class CrawlConfigEditor extends LiteElement {
     ) {
       this.initializeEditor();
     }
-    if (changedProperties.get("formState") && this.formState) {
-      this.handleFormStateChange();
+    if (changedProperties.get("progressState") && this.progressState) {
+      if (
+        changedProperties.get("progressState").activeTab === "crawlSetup" &&
+        this.progressState.activeTab !== "crawlSetup"
+      ) {
+        // Show that required tab has error even if input hasn't been touched
+        if (
+          !this.hasRequiredFields() &&
+          !this.progressState.tabs.crawlSetup.error
+        ) {
+          this.updateProgressState({
+            tabs: {
+              crawlSetup: { error: true },
+            },
+          });
+        }
+      }
     }
   }
 
-  updated(changedProperties: Map<string, any>) {
+  async updated(changedProperties: Map<string, any>) {
     if (changedProperties.get("progressState") && this.progressState) {
-      this.handleProgressStateChange(
-        changedProperties.get("progressState") as ProgressState
-      );
+      if (
+        changedProperties.get("progressState").activeTab !==
+        this.progressState.activeTab
+      ) {
+        this.scrollToPanelTop();
+
+        // Focus on first field in section
+        (
+          (await this.activeTabPanel)?.querySelector(
+            "sl-input, sl-textarea, sl-select, sl-radio-group"
+          ) as HTMLElement
+        )?.focus();
+      }
     }
+  }
+
+  async firstUpdated() {
+    // Focus on first field in section
+    (
+      (await this.activeTabPanel)?.querySelector(
+        "sl-input, sl-textarea, sl-select, sl-radio-group"
+      ) as HTMLElement
+    )?.focus();
   }
 
   private initializeEditor() {
@@ -391,7 +430,7 @@ export class CrawlConfigEditor extends LiteElement {
       >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
-          progressPanel="newJobConfig-${this.progressState.currentStep}"
+          progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
           <header slot="header" class="flex justify-between items-baseline">
             <h3>${tabLabels[this.progressState.activeTab]}</h3>
@@ -463,7 +502,7 @@ export class CrawlConfigEditor extends LiteElement {
     const iconProps = {
       name: "circle",
       library: "default",
-      class: "text-neutral-300",
+      class: "text-neutral-400",
     };
     if (isConfirmSettings) {
       iconProps.name = "info-circle";
@@ -478,29 +517,27 @@ export class CrawlConfigEditor extends LiteElement {
         iconProps.class = "text-base";
       } else if (completed) {
         iconProps.name = "check-circle";
-        iconProps.class = "text-success";
       }
     }
-
-    const { enabled } = this.progressState.tabs[tabName];
-    const isEnabled = isConfirmSettings
-      ? this.progressState.tabs.confirmSettings.enabled ||
-        this.progressState.tabs.crawlSetup.completed
-      : enabled;
 
     return html`
       <btrix-tab
         slot="nav"
         name="newJobConfig-${tabName}"
         class="whitespace-nowrap"
-        ?disabled=${!isEnabled}
         @click=${this.tabClickHandler(tabName)}
       >
-        <sl-icon
-          name=${iconProps.name}
-          library=${iconProps.library}
-          class="inline-block align-middle mr-1 text-base ${iconProps.class}"
-        ></sl-icon>
+        <sl-tooltip
+          content=${msg("Form section contains errors")}
+          ?disabled=${!isInvalid}
+          hoist
+        >
+          <sl-icon
+            name=${iconProps.name}
+            library=${iconProps.library}
+            class="inline-block align-middle mr-1 text-base ${iconProps.class}"
+          ></sl-icon>
+        </sl-tooltip>
         <span class="inline-block align-middle whitespace-normal">
           ${content}
         </span>
@@ -598,8 +635,6 @@ export class CrawlConfigEditor extends LiteElement {
                         if (this.hasRequiredFields()) {
                           this.updateProgressState({
                             activeTab: "confirmSettings",
-                            currentStep: "confirmSettings",
-                            tabs: { crawlSetup: { completed: true } },
                           });
                         } else {
                           this.nextStep();
@@ -676,6 +711,11 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
+            } else {
+              await this.updateComplete;
+              if (!this.formState.jobName) {
+                this.setDefaultJobName();
+              }
             }
           }}
         ></sl-textarea>
@@ -861,6 +901,11 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
+            } else {
+              await this.updateComplete;
+              if (!this.formState.jobName) {
+                this.setDefaultJobName();
+              }
             }
           }}
         ></sl-input>
@@ -1247,11 +1292,11 @@ https://example.net`}
             desc: "Example crawl config name",
           })}
           value=${jobNameValue}
-          required
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Try to create a unique name to help keep things organized!`
+        html`Customize this crawl config and crawl name. Crawls are named after
+        the starting URL(s) by default.`
       )}
       ${this.renderFormCol(
         html`
@@ -1283,7 +1328,26 @@ https://example.net`}
   }
 
   private renderConfirmSettings = () => {
+    const errorAlert = when(this.formHasError, () => {
+      const errorMessage = this.hasRequiredFields()
+        ? msg(
+            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+          )
+        : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
+            URL(s) required in
+            <a
+              href="${`${window.location.href.split("#")[0]}#crawlSetup`}"
+              class="bold underline hover:no-underline"
+              >Crawl Setup</a
+            >. <br /><br />
+            Please fix to continue.`);
+
+      return this.renderErrorAlert(errorMessage);
+    });
+
     return html`
+      ${errorAlert}
+
       <div class="col-span-1 md:col-span-5">
         ${when(this.progressState.activeTab === "confirmSettings", () => {
           // Prevent parsing and rendering tab when not visible
@@ -1297,50 +1361,27 @@ https://example.net`}
         })}
       </div>
 
-      ${when(this.formHasError, () =>
-        this.renderErrorAlert(
-          msg(
-            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
-          )
-        )
-      )}
+      ${errorAlert}
     `;
   };
 
   private hasRequiredFields(): Boolean {
     if (this.jobType === "seed-crawl") {
-      return Boolean(this.formState.jobName && this.formState.primarySeedUrl);
+      return Boolean(this.formState.primarySeedUrl);
     }
-    return Boolean(this.formState.jobName && this.formState.urlList);
+    return Boolean(this.formState.urlList);
   }
 
-  private handleFormStateChange() {
-    if (!this.formState.jobName) {
-      this.setDefaultJobName();
-    }
-    const hasRequiredFields = this.hasRequiredFields();
-    if (hasRequiredFields && !this.progressState.tabs.crawlSetup.error) {
-      this.updateProgressState({
-        tabs: {
-          crawlSetup: { completed: true },
-        },
+  private async scrollToPanelTop() {
+    const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
+    if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
+      activeTabPanel.scrollIntoView({
+        behavior: "smooth",
       });
     }
   }
 
-  private async handleProgressStateChange(oldState: ProgressState) {
-    const { activeTab } = this.progressState;
-    if (oldState.activeTab !== activeTab) {
-      const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
-      if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
-        activeTabPanel.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
-    }
-  }
-
-  private setDefaultJobName() {
+  private getDefaultJobName() {
     // Set default crawl name based on seed URLs
     if (!this.formState.primarySeedUrl && !this.formState.urlList) {
       return;
@@ -1363,7 +1404,14 @@ https://example.net`}
         jobName = firstUrl;
       }
     }
-    this.updateFormState({ jobName });
+    return jobName;
+  }
+
+  private setDefaultJobName() {
+    const jobName = this.getDefaultJobName();
+    if (jobName) {
+      this.updateFormState({ jobName });
+    }
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
@@ -1417,12 +1465,15 @@ https://example.net`}
     await this.updateComplete;
 
     const currentTab = this.progressState.activeTab as StepName;
-    const tabs = { ...this.progressState.tabs };
     // Check [data-user-invalid] instead of .invalid property
     // to validate only touched inputs
     if ("userInvalid" in el.dataset) {
-      tabs[currentTab].error = true;
-      this.updateProgressState({ tabs });
+      if (this.progressState.tabs[currentTab].error) return;
+      this.updateProgressState({
+        tabs: {
+          [currentTab]: { error: true },
+        },
+      });
     } else if (this.progressState.tabs[currentTab].error) {
       this.syncTabErrorState(el);
     }
@@ -1430,13 +1481,15 @@ https://example.net`}
 
   private syncTabErrorState(el: HTMLElement) {
     const currentTab = this.progressState.activeTab as StepName;
-    const tabs = { ...this.progressState.tabs };
     const panelEl = el.closest("btrix-tab-panel")!;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid) {
-      tabs[currentTab].error = false;
-      this.updateProgressState({ tabs });
+    if (!hasInvalid && this.progressState.tabs[currentTab].error) {
+      this.updateProgressState({
+        tabs: {
+          [currentTab]: { error: false },
+        },
+      });
     }
   }
 
@@ -1494,23 +1547,10 @@ https://example.net`}
     const isValid = this.checkCurrentPanelValidity();
 
     if (isValid) {
-      const { activeTab, tabs, currentStep } = this.progressState;
+      const { activeTab } = this.progressState;
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
-
-      const isFirstTimeEnabled = !tabs[nextTab].enabled;
-      const nextTabs = { ...tabs };
-      let nextCurrentStep = currentStep;
-
-      if (isFirstTimeEnabled) {
-        nextTabs[nextTab].enabled = true;
-        nextCurrentStep = nextTab;
-      }
-
-      nextTabs[activeTab!].completed = true;
       this.updateProgressState({
         activeTab: nextTab,
-        currentStep: nextCurrentStep,
-        tabs: nextTabs,
       });
     }
   }
@@ -1655,7 +1695,7 @@ https://example.net`}
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
-      name: this.formState.jobName || this.formState.primarySeedUrl,
+      name: this.formState.jobName || this.getDefaultJobName() || "",
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
@@ -1741,7 +1781,6 @@ https://example.net`}
   private updateProgressState(
     nextState: {
       activeTab?: ProgressState["activeTab"];
-      currentStep?: ProgressState["currentStep"];
       tabs?: {
         [K in StepName]?: Partial<TabState>;
       };
