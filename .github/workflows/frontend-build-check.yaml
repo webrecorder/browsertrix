@@ -22,23 +22,9 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: yarn install --frozen-lockfile
-
-  localization-build:
-    runs-on: ubuntu-latest
-    needs: setup
-    defaults:
-      run:
+      - name: Localization build
         working-directory: frontend
-    steps:
-      - name: Localization Build
         run: yarn localize:prepare
-
-  webpack-build:
-    runs-on: ubuntu-latest
-    needs: setup
-    defaults:
-      run:
+      - name: Webpack build
         working-directory: frontend
-    steps:
-      - name: Webpack Build
         run: yarn build
