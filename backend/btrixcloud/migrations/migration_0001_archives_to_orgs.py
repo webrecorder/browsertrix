@@ -1,7 +1,11 @@
 """
 Migration 0001 - Archives to Orgs
 """
+import os
+
 from pymongo.errors import OperationFailure
+
+from btrixcloud.k8s.k8sapi import K8sAPI
 
 
 class Migration:
@@ -65,6 +69,43 @@ class Migration:
         for collection in self.COLLECTIONS_AID_TO_OID:
             current_coll = self.mdb[collection]
             await current_coll.update_many({}, {"$rename": {"aid": "oid"}})
+
+        # Update k8s configmaps
+        k8s_api_instance = K8sAPI()
+        crawler_namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
+        config_map = await k8s_api_instance.core_api.list_namespaced_config_map(
+            namespace=crawler_namespace
+        )
+        for item in config_map.items:
+            item_name = item.metadata.name
+            try:
+                org_id = item.data["ARCHIVE_ID"]
+            except KeyError:
+                continue
+
+            item.data["ORG_ID"] = org_id
+            item.data.pop("ARCHIVE_ID")
+
+            item.metadata.labels["btrix.org"] = org_id
+            item.metadata.labels.pop("btrix.archive")
+
+            managed_fields = item.metadata.managed_fields[0].fields_v1
+            try:
+                managed_fields["f:data"].pop("f:ARCHIVE_ID")
+            except KeyError:
+                pass
+            managed_fields["f:data"]["f:ORG_ID"] = {}
+
+            managed_field_labels = managed_fields["f:metadata"]["f:labels"]
+            try:
+                managed_field_labels.pop("f:btrix.archive")
+            except KeyError:
+                pass
+            managed_field_labels["f:btrix.org"] = {}
+
+            await k8s_api_instance.core_api.patch_namespaced_config_map(
+                name=item_name, namespace=crawler_namespace, body=item
+            )
 
     def migrate_down(self):
         """Perform migration down."""
