@@ -1,0 +1,36 @@
+name: Frontend Build Check
+on:
+  pull_request:
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/*.json'
+      - 'frontend/*.js'
+      - 'frontend/*.ts'
+jobs:
+  setup-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: frontend/dist
+          key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
+          restore-keys: |
+            ${{ runner.os }}-btrix-frontend-build-
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+      - name: Localization build
+        working-directory: frontend
+        run: yarn localize:prepare
+      - name: Webpack build
+        working-directory: frontend
+        run: yarn build
