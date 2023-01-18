@@ -1,32 +1,34 @@
 name: Cluster Run (MicroK8s)
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'chart/**'
 
 jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
     steps:
-      - 
-        uses: balchua/microk8s-actions@v0.3.1
+      - uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: '1.25/stable'
           addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
 
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           driver-opts: network=host
 
-      -
-        name: Wait for registry to be available
+      - name: Wait for registry to be available
         run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:32000/v2/
 
-      -
-        name: Build Backend
+      - name: Build Backend
         uses: docker/build-push-action@v3
         with:
           context: backend
@@ -35,8 +37,7 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
-      -
-        name: Build Frontend
+      - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
           context: frontend
@@ -45,30 +46,24 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
-      - 
-        name: Start Cluster with Helm
+      - name: Start Cluster with Helm
         run: |
           sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-ci.yaml btrix ./chart/
 
-      -
-        name: Install Python
+      - name: Install Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.9'
 
-      - 
-        name: Install Python Libs
+      - name: Install Python Libs
         run: pip install pytest requests
 
-      -
-        name: Wait for all pods to be ready
+      - name: Wait for all pods to be ready
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=240s
- 
-      - 
-        name: Run Tests
+
+      - name: Run Tests
         run: pytest -vv ./backend/test/*.py
 
-      -
-        name: Print Backend Logs
+      - name: Print Backend Logs
         if: ${{ failure() }}
         run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
