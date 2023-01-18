@@ -704,7 +704,7 @@ export class CrawlTemplatesList extends LiteElement {
               class="underline hover:no-underline"
               href="/archives/${this
                 .archiveId}/crawls/crawl/${data.started}#watch"
-              @click=${this.navLink.bind(this)}
+              @click="${this.navLink.bind(this)}"
               >Watch crawl</a
             >`
         ),

@@ -1329,15 +1329,14 @@ https://example.net`}
 
   private renderConfirmSettings = () => {
     const errorAlert = when(this.formHasError, () => {
+      const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
             "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
           )
         : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
             URL(s) required in
-            <a
-              href="${`${window.location.href.split("#")[0]}#crawlSetup`}"
-              class="bold underline hover:no-underline"
+            <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
             >. <br /><br />
             Please fix to continue.`);
