@@ -1,7 +1,13 @@
 name: Frontend Build Check
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/*.json'
+      - 'frontend/*.js'
+      - 'frontend/*.ts'
 jobs:
-  setup:
+  setup-and-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
