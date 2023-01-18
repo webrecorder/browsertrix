@@ -1,6 +1,5 @@
 ## editors
 /.idea
-/.vscode
 
 ## system files
 .DS_Store
@@ -22,10 +21,6 @@
 # dotenv
 .env.local
 .env.*.local
-
-# translation files
-src/__generated__/locales/*.ts
-xliff/*.xlf
 
 storybook-static
 custom-elements.json
