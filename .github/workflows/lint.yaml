@@ -1,16 +1,26 @@
-name: Lint Check
-on: [push, pull_request]
+name: Backend Lint Check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v2
-        
+
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
