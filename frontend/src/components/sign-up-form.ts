@@ -22,9 +22,9 @@ export class SignUpForm extends LiteElement {
   inviteToken?: string;
 
   @property({ type: Boolean })
-  // TODO replace with archive info
+  // TODO replace with org info
   // https://github.com/ikreymer/browsertrix-cloud/issues/35
-  isArchiveInvite?: boolean;
+  isOrgInvite?: boolean;
 
   @state()
   private serverError?: string;
@@ -99,7 +99,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-sm text-gray-500">
             <span class="text-gray-400">${msg("(optional)")}</span> ${msg(
-              "Your name will be visible to archive collaborators."
+              "Your name will be visible to organization collaborators."
             )}
           </p>
         </div>
@@ -133,20 +133,20 @@ export class SignUpForm extends LiteElement {
       email: string;
       password: string;
       name: string;
-      newArchive: boolean;
+      newOrg: boolean;
       inviteToken?: string;
     } = {
       email,
       password,
       name: name || email,
-      newArchive: true,
+      newOrg: true,
     };
 
     if (this.inviteToken) {
       registerParams.inviteToken = this.inviteToken;
 
-      if (this.isArchiveInvite) {
-        registerParams.newArchive = false;
+      if (this.isOrgInvite) {
+        registerParams.newOrg = false;
       }
     }
 

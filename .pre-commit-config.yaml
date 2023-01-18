@@ -1,0 +1,21 @@
+repos:
+- repo: https://github.com/psf/black
+  rev: 22.12.0
+  hooks:
+    - id: black
+      args: ["backend/btrixcloud/"]
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: cd backend && pylint
+      language: system
+      types: [python]
+      args: ["btrixcloud/"]
+- repo: local
+  hooks:
+    - id: husky-run-pre-commit
+      name: husky
+      language: system
+      entry: frontend/.husky/pre-commit
+      pass_filenames: false

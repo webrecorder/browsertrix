@@ -6,7 +6,7 @@ import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import type { CrawlConfig } from "../pages/archive/types";
+import type { CrawlConfig } from "../pages/org/types";
 import { humanizeSchedule } from "../utils/cron";
 
 /**
@@ -111,8 +111,8 @@ export class ConfigDetails extends LiteElement {
               crawlConfig?.profileid,
               () => html`<a
                 class="text-blue-500 hover:text-blue-600"
-                href=${`/archives/${
-                  crawlConfig!.aid
+                href=${`/orgs/${
+                  crawlConfig!.oid
                 }/browser-profiles/profile/${crawlConfig!.profileid}`}
                 @click=${this.navLink}
               >

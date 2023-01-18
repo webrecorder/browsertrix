@@ -3,13 +3,13 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import type { CurrentUser } from "../types/user";
-import type { ArchiveData } from "../utils/archives";
+import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 
 @needLogin
 @localized()
-export class Archives extends LiteElement {
+export class Orgs extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -17,10 +17,10 @@ export class Archives extends LiteElement {
   userInfo?: CurrentUser;
 
   @state()
-  private archiveList?: ArchiveData[];
+  private orgList?: OrgData[];
 
   async firstUpdated() {
-    this.archiveList = await this.getArchives();
+    this.orgList = await this.getOrgs();
   }
 
   render() {
@@ -29,13 +29,13 @@ export class Archives extends LiteElement {
         <header
           class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
         >
-          <h1 class="text-xl font-medium">${msg("Teams")}</h1>
+          <h1 class="text-xl font-medium">${msg("Organizations")}</h1>
         </header>
         <hr />
       </div>
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
-        ${this.archiveList
-          ? this.renderArchives()
+        ${this.orgList
+          ? this.renderOrgs()
           : html`
               <div class="flex items-center justify-center my-24 text-3xl">
                 <sl-spinner></sl-spinner>
@@ -45,26 +45,26 @@ export class Archives extends LiteElement {
     `;
   }
 
-  private renderArchives() {
-    if (!this.archiveList?.length) {
+  private renderOrgs() {
+    if (!this.orgList?.length) {
       return html`<div class="border rounded-lg bg-white p-4 md:p-8">
         <p class="text-neutral-400 text-center">
-          ${msg("You don't have any archives.")}
+          ${msg("You don't have any organizations.")}
         </p>
       </div>`;
     }
 
     return html`
-      <btrix-archives-list
+      <btrix-orgs-list
         .userInfo=${this.userInfo}
-        .archiveList=${this.archiveList}
-      ></btrix-archives-list>
+        .orgList=${this.orgList}
+      ></btrix-orgs-list>
     `;
   }
 
-  private async getArchives(): Promise<ArchiveData[]> {
-    const data = await this.apiFetch("/archives", this.authState!);
+  private async getOrgs(): Promise<OrgData[]> {
+    const data = await this.apiFetch("/orgs", this.authState!);
 
-    return data.archives;
+    return data.orgs;
   }
 }

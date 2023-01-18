@@ -7,7 +7,7 @@ export const AccessCode: Record<UserRole, number> = {
   owner: 40,
 } as const;
 
-export type ArchiveData = {
+export type OrgData = {
   id: string;
   name: string;
   users?: {
@@ -18,14 +18,14 @@ export type ArchiveData = {
   };
 };
 
-export type Archive = {
-  aid: string;
+export type Org = {
+  oid: string;
   name?: string;
   id?: string;
-  users?: { [id: string]: ArchiveData };
+  users?: { [id: string]: OrgData };
 };
 
-export type ArchiveConfig = any;
+export type OrgConfig = any;
 
 export function isOwner(accessCode?: typeof AccessCode[UserRole]): boolean {
   if (!accessCode) return false;

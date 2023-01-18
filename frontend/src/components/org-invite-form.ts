@@ -3,12 +3,12 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
-import { AccessCode } from "../utils/archives";
+import { AccessCode } from "../utils/orgs";
 
 @localized()
-export class ArchiveInviteForm extends LiteElement {
+export class OrgInviteForm extends LiteElement {
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: Object })
   authState?: AuthState;
@@ -44,7 +44,7 @@ export class ArchiveInviteForm extends LiteElement {
             name="inviteEmail"
             type="email"
             label=${msg("Email")}
-            placeholder=${msg("team-member@email.com", {
+            placeholder=${msg("org-member@email.com", {
               desc: "Placeholder text for email to invite",
             })}
             required
@@ -100,7 +100,7 @@ export class ArchiveInviteForm extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/invite`,
+        `/orgs/${this.orgId}/invite`,
         this.authState,
         {
           method: "POST",

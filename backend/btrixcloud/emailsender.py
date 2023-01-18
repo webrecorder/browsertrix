@@ -74,14 +74,14 @@ The verification token is: {token}"""
 
     # pylint: disable=too-many-arguments
     def send_new_user_invite(
-        self, receiver_email, sender, archive_name, token, headers=None
+        self, receiver_email, sender, org_name, token, headers=None
     ):
         """Send email to invite new user"""
 
         origin = self.get_origin(headers)
 
         message = f"""
-You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
+You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
 
 You can join by clicking here: {origin}/join/{token}?email={receiver_email}
 
@@ -89,19 +89,19 @@ The invite token is: {token}"""
 
         self._send_encrypted(
             receiver_email,
-            f'You\'ve been invited to join "{archive_name}" on Browsertrix Cloud',
+            f'You\'ve been invited to join "{org_name}" on Browsertrix Cloud',
             message,
         )
 
     # pylint: disable=too-many-arguments
     def send_existing_user_invite(
-        self, receiver_email, sender, archive_name, token, headers=None
+        self, receiver_email, sender, org_name, token, headers=None
     ):
         """Send email to invite new user"""
         origin = self.get_origin(headers)
 
         message = f"""
-You are invited by {sender} to join their archive, "{archive_name}" on Browsertrix Cloud!
+You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
 
 You can join by clicking here: {origin}/invite/accept/{token}?email={receiver_email}
 
@@ -109,7 +109,7 @@ The invite token is: {token}"""
 
         self._send_encrypted(
             receiver_email,
-            f'You\'ve been invited to join "{archive_name}" on Browsertrix Cloud',
+            f'You\'ve been invited to join "{org_name}" on Browsertrix Cloud',
             message,
         )
 

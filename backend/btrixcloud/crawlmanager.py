@@ -33,7 +33,7 @@ class BaseCrawlManager(ABC):
     async def run_profile_browser(
         self,
         userid,
-        aid,
+        oid,
         url,
         storage=None,
         storage_name=None,
@@ -57,7 +57,7 @@ class BaseCrawlManager(ABC):
         params = {
             "id": browserid,
             "userid": str(userid),
-            "aid": str(aid),
+            "oid": str(oid),
             "job_image": self.job_image,
             "storage_name": storage_name,
             "storage_path": storage_path or "",
@@ -88,7 +88,7 @@ class BaseCrawlManager(ABC):
             storage_name = storage.name
             storage_path = storage.path
         else:
-            storage_name = str(crawlconfig.aid)
+            storage_name = str(crawlconfig.oid)
             storage_path = ""
 
         await self.check_storage(storage_name)
@@ -100,7 +100,7 @@ class BaseCrawlManager(ABC):
             STORE_FILENAME=out_filename,
             STORAGE_NAME=storage_name,
             USER_ID=str(crawlconfig.userid),
-            ARCHIVE_ID=str(crawlconfig.aid),
+            ORG_ID=str(crawlconfig.oid),
             CRAWL_CONFIG_ID=str(crawlconfig.id),
             PROFILE_FILENAME=profile_filename,
         )
@@ -134,26 +134,26 @@ class BaseCrawlManager(ABC):
 
         return True
 
-    async def shutdown_crawl(self, crawl_id, aid, graceful=True):
+    async def shutdown_crawl(self, crawl_id, oid, graceful=True):
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         return await self._post_to_job(
-            crawl_id, aid, "/stop" if graceful else "/cancel"
+            crawl_id, oid, "/stop" if graceful else "/cancel"
         )
 
-    async def scale_crawl(self, crawl_id, aid, scale=1):
+    async def scale_crawl(self, crawl_id, oid, scale=1):
         """Set the crawl scale (job parallelism) on the specified job"""
 
-        return await self._post_to_job(crawl_id, aid, f"/scale/{scale}")
+        return await self._post_to_job(crawl_id, oid, f"/scale/{scale}")
 
-    async def change_crawl_config(self, crawl_id, aid, new_cid):
+    async def change_crawl_config(self, crawl_id, oid, new_cid):
         """Change crawl config and restart"""
 
-        return await self._post_to_job(crawl_id, aid, f"/change_config/{new_cid}")
+        return await self._post_to_job(crawl_id, oid, f"/change_config/{new_cid}")
 
-    async def delete_crawl_configs_for_archive(self, archive):
-        """Delete all crawl configs for given archive"""
-        return await self._delete_crawl_configs(f"btrix.archive={archive}")
+    async def delete_crawl_configs_for_org(self, org):
+        """Delete all crawl configs for given org"""
+        return await self._delete_crawl_configs(f"btrix.org={org}")
 
     async def delete_crawl_config_by_id(self, cid):
         """Delete all crawl configs by id"""
@@ -176,7 +176,7 @@ class BaseCrawlManager(ABC):
             "id": job_id,
             "cid": str(crawlconfig.id),
             "userid": str(crawlconfig.userid),
-            "aid": str(crawlconfig.aid),
+            "oid": str(crawlconfig.oid),
             "job_image": self.job_image,
             "manual": "1" if manual else "0",
             "crawler_node_type": self.crawler_node_type,
@@ -208,7 +208,7 @@ class BaseCrawlManager(ABC):
         """update schedule on crawl job"""
 
     @abstractmethod
-    async def _post_to_job(self, crawl_id, aid, path, data=None):
+    async def _post_to_job(self, crawl_id, oid, path, data=None):
         """make a POST request to the container for specified crawl job"""
 
     @abstractmethod

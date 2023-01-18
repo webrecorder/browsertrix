@@ -34,7 +34,7 @@ export class CrawlTemplatesNew extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   // Use custom property accessor to prevent
   // overriding default crawl config values
@@ -55,7 +55,7 @@ export class CrawlTemplatesNew extends LiteElement {
       <nav class="mb-5">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/archives/${this.archiveId}/crawl-templates`}
+          href=${`/orgs/${this.orgId}/crawl-templates`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -88,7 +88,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <btrix-crawl-config-editor
           .initialCrawlConfig=${this.initialCrawlTemplate}
           jobType=${jobType}
-          archiveId=${this.archiveId}
+          orgId=${this.orgId}
           .authState=${this.authState}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;

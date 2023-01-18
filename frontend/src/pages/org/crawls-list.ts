@@ -54,11 +54,11 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   userId!: string;
 
-  // e.g. `/archive/${this.archiveId}/crawls`
+  // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
 
-  // e.g. `/archive/${this.archiveId}/crawls`
+  // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
@@ -595,7 +595,7 @@ export class CrawlsList extends LiteElement {
   private async cancel(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${crawl.aid}/crawls/${crawl.id}/cancel`,
+        `/orgs/${crawl.oid}/crawls/${crawl.id}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -617,7 +617,7 @@ export class CrawlsList extends LiteElement {
   private async stop(crawl: Crawl) {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/archives/${crawl.aid}/crawls/${crawl.id}/stop`,
+        `/orgs/${crawl.oid}/crawls/${crawl.id}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -647,7 +647,7 @@ export class CrawlsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+              href="/orgs/${crawl.oid}/crawls/crawl/${crawlTemplate.currCrawlId}"
               @click=${this.navLink.bind(this)}
               >View crawl</a
             >`
@@ -661,7 +661,7 @@ export class CrawlsList extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}/run`,
+        `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}/run`,
         this.authState!,
         {
           method: "POST",
@@ -678,7 +678,7 @@ export class CrawlsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/archives/${crawl.aid}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${crawl.oid}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
@@ -716,7 +716,7 @@ export class CrawlsList extends LiteElement {
 
   async getCrawlTemplate(crawl: Crawl): Promise<CrawlConfig> {
     const data: CrawlConfig = await this.apiFetch(
-      `/archives/${crawl.aid}/crawlconfigs/${crawl.cid}`,
+      `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
       this.authState!
     );
 
@@ -736,7 +736,7 @@ export class CrawlsList extends LiteElement {
       tags: template.tags,
     };
 
-    this.navTo(`/archives/${crawl.aid}/crawl-templates/new`, {
+    this.navTo(`/orgs/${crawl.oid}/crawl-templates/new`, {
       crawlTemplate,
     });
 

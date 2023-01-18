@@ -13,27 +13,27 @@ wacz_hash = None
 wacz_content = None
 
 
-def test_list_archives(admin_auth_headers, admin_aid):
-    r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
+def test_list_orgs(admin_auth_headers, default_org_id):
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
 
-    archives = data["archives"]
-    assert len(archives) > 0
+    orgs = data["orgs"]
+    assert len(orgs) > 0
 
-    archive_ids = []
-    for archive in archives:
-        archive_ids.append(archive["id"])
-    assert admin_aid in archive_ids
+    org_ids = []
+    for org in orgs:
+        org_ids.append(org["id"])
+    assert default_org_id in org_ids
 
 
-def test_create_new_config(admin_auth_headers, admin_aid):
+def test_create_new_config(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
         "config": {"seeds": ["https://webrecorder.net/"]},
     }
     r = requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=crawl_data,
     )
@@ -45,9 +45,9 @@ def test_create_new_config(admin_auth_headers, admin_aid):
     assert data["run_now_job"]
 
 
-def test_wait_for_complete(admin_auth_headers, admin_aid, admin_crawl_id):
+def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -66,9 +66,9 @@ def test_wait_for_complete(admin_auth_headers, admin_aid, admin_crawl_id):
     wacz_hash = data["resources"][0]["hash"]
 
 
-def test_crawl_info(admin_auth_headers, admin_aid, admin_crawl_id):
+def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     r = requests.get(
-        f"{API_PREFIX}/archives/{admin_aid}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
     )
     data = r.json()

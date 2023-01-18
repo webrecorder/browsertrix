@@ -39,21 +39,21 @@ def admin_auth_headers():
 
 
 @pytest.fixture(scope="session")
-def admin_aid(admin_auth_headers):
+def default_org_id(admin_auth_headers):
     while True:
-        r = requests.get(f"{API_PREFIX}/archives", headers=admin_auth_headers)
+        r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
         data = r.json()
         try:
-            for archive in data["archives"]:
-                if archive["default"] is True:
-                    return archive["id"]
+            for org in data["orgs"]:
+                if org["default"] is True:
+                    return org["id"]
         except:
             print("Waiting for default org id")
             time.sleep(5)
 
 
 @pytest.fixture(scope="session")
-def admin_crawl_id(admin_auth_headers, admin_aid):
+def admin_crawl_id(admin_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
         "runNow": True,
@@ -65,7 +65,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
         },
     }
     r = requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=crawl_data,
     )
@@ -78,7 +78,7 @@ def admin_crawl_id(admin_auth_headers, admin_aid):
     # Wait for it to complete and then return crawl ID
     while True:
         r = requests.get(
-            f"{API_PREFIX}/archives/{admin_aid}/crawls/{crawl_id}/replay.json",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
             headers=admin_auth_headers,
         )
         data = r.json()
@@ -93,9 +93,9 @@ def admin_config_id(admin_crawl_id):
 
 
 @pytest.fixture(scope="session")
-def viewer_auth_headers(admin_auth_headers, admin_aid):
+def viewer_auth_headers(admin_auth_headers, default_org_id):
     requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/add-user",
+        f"{API_PREFIX}/orgs/{default_org_id}/add-user",
         json={
             "email": VIEWER_USERNAME,
             "password": VIEWER_PW,
@@ -118,9 +118,9 @@ def viewer_auth_headers(admin_auth_headers, admin_aid):
 
 
 @pytest.fixture(scope="session")
-def crawler_auth_headers(admin_auth_headers, admin_aid):
+def crawler_auth_headers(admin_auth_headers, default_org_id):
     requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/add-user",
+        f"{API_PREFIX}/orgs/{default_org_id}/add-user",
         json={
             "email": CRAWLER_USERNAME,
             "password": CRAWLER_PW,
@@ -149,7 +149,7 @@ def crawler_userid(crawler_auth_headers):
 
 
 @pytest.fixture(scope="session")
-def crawler_crawl_id(crawler_auth_headers, admin_aid):
+def crawler_crawl_id(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
         "runNow": True,
@@ -157,7 +157,7 @@ def crawler_crawl_id(crawler_auth_headers, admin_aid):
         "config": {"seeds": ["https://webrecorder.net/"], "limit": 1},
     }
     r = requests.post(
-        f"{API_PREFIX}/archives/{admin_aid}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
         json=crawl_data,
     )
@@ -170,7 +170,7 @@ def crawler_crawl_id(crawler_auth_headers, admin_aid):
     # Wait for it to complete and then return crawl ID
     while True:
         r = requests.get(
-            f"{API_PREFIX}/archives/{admin_aid}/crawls/{crawl_id}/replay.json",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
             headers=crawler_auth_headers,
         )
         data = r.json()

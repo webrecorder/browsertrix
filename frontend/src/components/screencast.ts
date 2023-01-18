@@ -29,7 +29,7 @@ type CloseMessage = Message & {
  * Usage example:
  * ```ts
  * <btrix-screencast
- *   archiveId=${archiveId}
+ *   orgId=${orgId}
  *   crawlId=${crawlId}
  * ></btrix-screencast>
  * ```
@@ -129,7 +129,7 @@ export class Screencast extends LitElement {
   authToken?: string;
 
   @property({ type: String })
-  archiveId?: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
@@ -164,7 +164,7 @@ export class Screencast extends LitElement {
 
   async updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.get("archiveId") ||
+      changedProperties.get("orgId") ||
       changedProperties.get("crawlId") ||
       changedProperties.get("authToken")
     ) {
@@ -298,7 +298,7 @@ export class Screencast extends LitElement {
    * Connect to all crawler instances
    */
   private connectAll() {
-    if (!this.archiveId || !this.crawlId) {
+    if (!this.orgId || !this.crawlId) {
       return;
     }
 
@@ -392,7 +392,7 @@ export class Screencast extends LitElement {
    */
   private connectWs(index: number): WebSocket {
     const ws = new WebSocket(
-      `${Screencast.baseURL}/${this.archiveId}/${
+      `${Screencast.baseURL}/${this.orgId}/${
         this.crawlId
       }/${index}/ws?auth_bearer=${this.authToken || ""}`
     );

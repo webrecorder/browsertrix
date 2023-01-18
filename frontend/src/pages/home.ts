@@ -3,7 +3,7 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import type { CurrentUser } from "../types/user";
-import type { ArchiveData } from "../utils/archives";
+import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()
@@ -15,19 +15,19 @@ export class Home extends LiteElement {
   userInfo?: CurrentUser;
 
   @property({ type: String })
-  teamId?: string;
+  orgId?: string;
 
   @state()
   private isInviteComplete?: boolean;
 
   @state()
-  private archiveList?: ArchiveData[];
+  private orgList?: OrgData[];
 
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
-      if (this.userInfo && !this.teamId) {
-        this.fetchArchives();
+      if (this.userInfo && !this.orgId) {
+        this.fetchOrgs();
       }
     } else {
       this.navTo("/log-in");
@@ -35,15 +35,15 @@ export class Home extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("teamId") && this.teamId) {
-      this.navTo(`/archives/${this.teamId}/crawls`);
+    if (changedProperties.has("orgId") && this.orgId) {
+      this.navTo(`/orgs/${this.orgId}/crawls`);
     } else if (changedProperties.has("authState") && this.authState) {
-      this.fetchArchives();
+      this.fetchOrgs();
     }
   }
 
   render() {
-    if (!this.userInfo || !this.archiveList) {
+    if (!this.userInfo || !this.orgList) {
       return html`
         <div class="flex items-center justify-center my-24 text-3xl">
           <sl-spinner></sl-spinner>
@@ -60,7 +60,7 @@ export class Home extends LiteElement {
     }
 
     if (this.userInfo.isAdmin === false) {
-      title = msg("Teams");
+      title = msg("Organizations");
       content = this.renderLoggedInNonAdmin();
     }
 
@@ -80,7 +80,7 @@ export class Home extends LiteElement {
   }
 
   private renderLoggedInAdmin() {
-    if (this.archiveList!.length) {
+    if (this.orgList!.length) {
       return html`
         <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
           <form
@@ -116,11 +116,11 @@ export class Home extends LiteElement {
         <div class="grid grid-cols-3 gap-8">
           <div class="col-span-3 md:col-span-2">
             <section>
-              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Teams")}</h2>
-              <btrix-archives-list
+              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Organizations")}</h2>
+              <btrix-orgs-list
                 .userInfo=${this.userInfo}
-                .archiveList=${this.archiveList}
-              ></btrix-archives-list>
+                .orgList=${this.orgList}
+              ></btrix-orgs-list>
             </section>
           </div>
           <div class="col-span-3 md:col-span-1 md:mt-12">
@@ -145,20 +145,20 @@ export class Home extends LiteElement {
   }
 
   private renderLoggedInNonAdmin() {
-    if (this.archiveList && !this.archiveList.length) {
+    if (this.orgList && !this.orgList.length) {
       return html`<div class="border rounded-lg bg-white p-4 md:p-8">
         <p class="text-neutral-400 text-center">
-          ${msg("You don't have any archives.")}
+          ${msg("You don't have any organizations.")}
         </p>
       </div>`;
     }
 
     return html`
-      <btrix-archives-list
+      <btrix-orgs-list
         .userInfo=${this.userInfo}
-        .archiveList=${this.archiveList}
-        ?skeleton=${!this.archiveList}
-      ></btrix-archives-list>
+        .orgList=${this.orgList}
+        ?skeleton=${!this.orgList}
+      ></btrix-orgs-list>
     `;
   }
 
@@ -179,13 +179,13 @@ export class Home extends LiteElement {
     `;
   }
 
-  private async fetchArchives() {
-    this.archiveList = await this.getArchives();
+  private async fetchOrgs() {
+    this.orgList = await this.getOrgs();
   }
 
-  private async getArchives(): Promise<ArchiveData[]> {
-    const data = await this.apiFetch("/archives", this.authState!);
+  private async getOrgs(): Promise<OrgData[]> {
+    const data = await this.apiFetch("/orgs", this.authState!);
 
-    return data.archives;
+    return data.orgs;
   }
 }

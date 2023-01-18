@@ -7,7 +7,7 @@ metadata:
 
   labels:
     btrix.user: {{ userid }}
-    btrix.archive: {{ aid }}
+    btrix.org: {{ oid }}
     btrix.crawlconfig: {{ cid }}
 
 spec:
@@ -17,7 +17,7 @@ spec:
     metadata:
       labels:
         btrix.user: {{ userid }}
-        btrix.archive: {{ aid }}
+        btrix.org: {{ oid }}
         btrix.crawlconfig: {{ cid }}
     spec:
       restartPolicy: OnFailure
@@ -64,8 +64,8 @@ spec:
             - name: USER_ID
               value: "{{ userid }}"
 
-            - name: ARCHIVE_ID
-              value: "{{ aid }}"
+            - name: ORG_ID
+              value: "{{ oid }}"
 
             - name: CRAWL_CONFIG_ID
               value: "{{ cid }}"

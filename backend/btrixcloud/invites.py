@@ -27,7 +27,7 @@ class InvitePending(BaseMongoModel):
 
     created: datetime
     inviterEmail: str
-    aid: Optional[UUID4]
+    oid: Optional[UUID4]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]
 
@@ -40,15 +40,15 @@ class InviteRequest(BaseModel):
 
 
 # ============================================================================
-class InviteToArchiveRequest(InviteRequest):
-    """Request to invite another user to an archive"""
+class InviteToOrgRequest(InviteRequest):
+    """Request to invite another user to an organization"""
 
     role: UserRole
 
 
 # ============================================================================
-class AddToArchiveRequest(InviteRequest):
-    """Request to add a new user to an archive directly"""
+class AddToOrgRequest(InviteRequest):
+    """Request to add a new user to an organization directly"""
 
     role: UserRole
     password: str
@@ -57,24 +57,24 @@ class AddToArchiveRequest(InviteRequest):
 
 # ============================================================================
 class InviteOps:
-    """invite users (optionally to an archive), send emails and delete invites"""
+    """invite users (optionally to an org), send emails and delete invites"""
 
     def __init__(self, mdb, email):
         self.invites = mdb["invites"]
-        self.archives = mdb["archives"]
+        self.orgs = mdb["organizations"]
         self.email = email
         self.allow_dupe_invites = os.environ.get("ALLOW_DUPE_INVITES", "0") == "1"
 
     async def add_new_user_invite(
         self,
         new_user_invite: InvitePending,
-        archive_name: Optional[str],
+        org_name: Optional[str],
         headers: Optional[dict],
     ):
         """Add invite for new user"""
 
         res = await self.invites.find_one(
-            {"email": new_user_invite.email, "aid": new_user_invite.aid}
+            {"email": new_user_invite.email, "oid": new_user_invite.oid}
         )
         if res and not self.allow_dupe_invites:
             raise HTTPException(
@@ -94,7 +94,7 @@ class InviteOps:
         self.email.send_new_user_invite(
             new_user_invite.email,
             new_user_invite.inviterEmail,
-            archive_name,
+            org_name,
             new_user_invite.id,
             headers,
         )
@@ -130,25 +130,25 @@ class InviteOps:
         invite: InviteRequest,
         user,
         user_manager,
-        archive=None,
+        org=None,
         allow_existing=False,
         headers: dict = None,
     ):
-        """create new invite for user to join, optionally an archive.
+        """create new invite for user to join, optionally an org.
         if allow_existing is false, don't allow invites to existing users"""
         invite_code = uuid.uuid4().hex
 
-        if archive:
-            aid = archive.id
-            archive_name = archive.name
+        if org:
+            oid = org.id
+            org_name = org.name
         else:
-            default_org = await self.archives.find_one({"default": True})
-            aid = default_org["_id"]
-            archive_name = default_org["name"]
+            default_org = await self.orgs.find_one({"default": True})
+            oid = default_org["_id"]
+            org_name = default_org["name"]
 
         invite_pending = InvitePending(
             id=invite_code,
-            aid=aid,
+            oid=oid,
             created=datetime.utcnow(),
             role=invite.role if hasattr(invite, "role") else None,
             email=invite.email,
@@ -160,7 +160,7 @@ class InviteOps:
         if not other_user:
             await self.add_new_user_invite(
                 invite_pending,
-                archive_name,
+                org_name,
                 headers,
             )
             return True
@@ -171,9 +171,9 @@ class InviteOps:
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't invite ourselves!")
 
-        if archive.users.get(str(other_user.id)):
+        if org.users.get(str(other_user.id)):
             raise HTTPException(
-                status_code=400, detail="User already a member of this archive."
+                status_code=400, detail="User already a member of this organization."
             )
 
         # no need to store our own email as adding invite to user
@@ -183,7 +183,7 @@ class InviteOps:
         await user_manager.user_db.update(other_user)
 
         self.email.send_existing_user_invite(
-            other_user.email, user.name, archive_name, invite_code, headers
+            other_user.email, user.name, org_name, invite_code, headers
         )
 
         return False

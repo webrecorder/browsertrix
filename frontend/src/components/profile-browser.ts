@@ -15,7 +15,7 @@ const POLL_INTERVAL_SECONDS = 2;
  * ```ts
  * <btrix-profile-browser
  *   authState=${authState}
- *   archiveId=${archiveId}
+ *   orgId=${orgId}
  *   browserId=${browserId}
  *   initialNavigateUrl=${initialNavigateUrl}
  *   origins=${origins}
@@ -34,7 +34,7 @@ export class ProfileBrowser extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   browserId?: string;
@@ -293,7 +293,7 @@ export class ProfileBrowser extends LiteElement {
     url?: string;
   }> {
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser/${this.browserId}`,
+      `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
       this.authState!
     );
 
@@ -307,7 +307,7 @@ export class ProfileBrowser extends LiteElement {
     if (!this.iframeSrc) return;
 
     const data = this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser/${this.browserId}/navigate`,
+      `/orgs/${this.orgId}/profiles/browser/${this.browserId}/navigate`,
       this.authState!,
       {
         method: "POST",
@@ -325,7 +325,7 @@ export class ProfileBrowser extends LiteElement {
     if (!this.iframeSrc) return;
 
     const data = await this.apiFetch(
-      `/archives/${this.archiveId}/profiles/browser/${this.browserId}/ping`,
+      `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
       this.authState!,
       {
         method: "POST",

@@ -57,8 +57,8 @@ class UserCreateIn(models.CreateUpdateDictModel):
 
     inviteToken: Optional[UUID4]
 
-    newArchive: bool
-    newArchiveName: Optional[str] = ""
+    newOrg: bool
+    newOrgName: Optional[str] = ""
 
 
 # ============================================================================
@@ -71,8 +71,8 @@ class UserCreate(models.BaseUserCreate):
 
     inviteToken: Optional[UUID4]
 
-    newArchive: bool
-    newArchiveName: Optional[str] = ""
+    newOrg: bool
+    newOrgName: Optional[str] = ""
 
 
 # ============================================================================
@@ -112,13 +112,13 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         super().__init__(user_db)
         self.email = email
         self.invites = invites
-        self.archive_ops = None
+        self.org_ops = None
 
         self.registration_enabled = os.environ.get("REGISTRATION_ENABLED") == "1"
 
-    def set_archive_ops(self, ops):
-        """set archive ops"""
-        self.archive_ops = ops
+    def set_org_ops(self, ops):
+        """set org ops"""
+        self.org_ops = ops
 
     async def create(
         self, user: UserCreate, safe: bool = False, request: Optional[Request] = None
@@ -141,7 +141,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             raise HTTPException(status_code=400, detail="Invalid Invite Token")
 
         # Don't create a new org for registered users.
-        user.newArchive = False
+        user.newOrg = False
 
         created_user = await super().create(user, safe, request)
         await self.on_after_register_custom(created_user, user, request)
@@ -177,7 +177,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
             try:
                 await self._update(user, update)
-                print("Superuser Updated!")
+                print("Superuser updated")
             except UserAlreadyExists:
                 print(f"User {email} already exists", flush=True)
 
@@ -190,7 +190,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                     email=email,
                     password=password,
                     is_superuser=True,
-                    newArchive=False,
+                    newOrg=False,
                     is_verified=True,
                 )
             )
@@ -220,7 +220,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 email=email,
                 password=password,
                 is_superuser=False,
-                newArchive=False,
+                newOrg=False,
                 is_verified=True,
             )
             created_user = await super().create(user_create, safe=False, request=None)
@@ -237,30 +237,28 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         print(f"User {user.id} has registered.")
 
-        if user_create.newArchive is True:
-            print(f"Creating new archive for {user.id}")
+        if user_create.newOrg is True:
+            print(f"Creating new organization for {user.id}")
 
-            archive_name = (
-                user_create.newArchiveName or f"{user.name or user.email}'s Archive"
+            org_name = (
+                user_create.newOrgName or f"{user.name or user.email}'s Organization"
             )
 
-            await self.archive_ops.create_new_archive_for_user(
-                archive_name=archive_name,
+            await self.org_ops.create_new_org_for_user(
+                org_name=org_name,
                 storage_name="default",
                 user=user,
             )
         else:
-            default_org = await self.archive_ops.get_default_org()
+            default_org = await self.org_ops.get_default_org()
             if default_org:
-                await self.archive_ops.add_user_to_archive(default_org, user.id)
+                await self.org_ops.add_user_to_org(default_org, user.id)
 
         is_verified = hasattr(user_create, "is_verified") and user_create.is_verified
 
         if user_create.inviteToken:
             try:
-                await self.archive_ops.handle_new_user_invite(
-                    user_create.inviteToken, user
-                )
+                await self.org_ops.handle_new_user_invite(user_create.inviteToken, user)
             except HTTPException as exc:
                 print(exc)
 
@@ -292,11 +290,9 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         inviter = await self.get_by_email(invite.inviterEmail)
         result = invite.serialize()
         result["inviterName"] = inviter.name
-        if invite.aid:
-            archive = await self.archive_ops.get_archive_for_user_by_id(
-                invite.aid, inviter
-            )
-            result["archiveName"] = archive.name
+        if invite.oid:
+            org = await self.org_ops.get_org_for_user_by_id(invite.oid, inviter)
+            result["orgName"] = org.name
 
         return result
 
@@ -424,7 +420,7 @@ def init_users_api(app, user_manager):
             invite,
             user,
             user_manager,
-            archive=None,
+            org=None,
             allow_existing=False,
             headers=request.headers,
         )
@@ -450,7 +446,5 @@ def init_users_api(app, user_manager):
         return await user_manager.format_invite(invite)
 
     app.include_router(users_router, prefix="/users", tags=["users"])
-
-    asyncio.create_task(user_manager.create_super_user())
 
     return fastapi_users

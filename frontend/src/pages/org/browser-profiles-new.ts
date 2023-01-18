@@ -10,7 +10,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
  * ```ts
  * <btrix-browser-profiles-new
  *  authState=${authState}
- *  archiveId=${archiveId}
+ *  orgId=${orgId}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```
@@ -21,7 +21,7 @@ export class BrowserProfilesNew extends LiteElement {
   authState!: AuthState;
 
   @property({ type: String })
-  archiveId!: string;
+  orgId!: string;
 
   @property({ type: String })
   browserId!: string;
@@ -60,8 +60,8 @@ export class BrowserProfilesNew extends LiteElement {
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
           href=${this.params.profileId
-            ? `/archives/${this.archiveId}/browser-profiles/profile/${this.params.profileId}`
-            : `/archives/${this.archiveId}/browser-profiles`}
+            ? `/orgs/${this.orgId}/browser-profiles/profile/${this.params.profileId}`
+            : `/orgs/${this.orgId}/browser-profiles`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -105,7 +105,7 @@ export class BrowserProfilesNew extends LiteElement {
 
       <btrix-profile-browser
         .authState=${this.authState}
-        archiveId=${this.archiveId}
+        orgId=${this.orgId}
         browserId=${this.browserId}
         initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
       ></btrix-profile-browser>
@@ -182,7 +182,7 @@ export class BrowserProfilesNew extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/archives/${this.archiveId}/profiles`,
+        `/orgs/${this.orgId}/profiles`,
         this.authState!,
         {
           method: "POST",
@@ -197,7 +197,7 @@ export class BrowserProfilesNew extends LiteElement {
       });
 
       this.navTo(
-        `/archives/${this.archiveId}/browser-profiles/profile/${data.id}`
+        `/orgs/${this.orgId}/browser-profiles/profile/${data.id}`
       );
     } catch (e) {
       this.isSubmitting = false;
