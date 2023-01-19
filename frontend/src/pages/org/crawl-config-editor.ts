@@ -1031,9 +1031,9 @@ https://example.net`}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
             this.formState.pageTimeoutMinutes ??
-              this.defaultBehaviorTimeoutMinutes ??
-              DEFAULT_BEHAVIOR_TIMEOUT_MINUTES
+              this.defaultBehaviorTimeoutMinutes
           )}
+          ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1819,11 +1819,15 @@ https://example.net`}
   private async fetchAPIDefaults() {
     try {
       const data = await this.apiFetch("/settings", this.authState!);
-      this.defaultBehaviorTimeoutMinutes = data.defaultBehaviorTimeSeconds / 60;
-    } catch (e: any) {
-      if (e.isApiError) {
-        console.log("apiError");
+      if (data.defaultBehaviorTimeSeconds) {
+        this.defaultBehaviorTimeoutMinutes =
+          data.defaultBehaviorTimeSeconds / 60;
+      } else {
+        this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
       }
+    } catch (e: any) {
+      console.debug(e);
+      this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
     }
   }
 }
