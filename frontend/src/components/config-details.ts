@@ -89,6 +89,12 @@ export class ConfigDetails extends LiteElement {
             () => this.renderSetting(msg("Exclusions"), msg("None"))
           )}
           ${this.renderSetting(
+            msg("Page Time Limit"),
+            crawlConfig?.config.behaviorTimeout
+              ? msg(str`${crawlConfig?.config.behaviorTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+          ${this.renderSetting(
             msg("Crawl Time Limit"),
             crawlConfig?.crawlTimeout
               ? msg(str`${crawlConfig?.crawlTimeout / 60} minute(s)`)
@@ -111,9 +117,9 @@ export class ConfigDetails extends LiteElement {
               crawlConfig?.profileid,
               () => html`<a
                 class="text-blue-500 hover:text-blue-600"
-                href=${`/orgs/${
-                  crawlConfig!.oid
-                }/browser-profiles/profile/${crawlConfig!.profileid}`}
+                href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
+                  crawlConfig!.profileid
+                }`}
                 @click=${this.navLink}
               >
                 ${crawlConfig?.profileName}
@@ -128,12 +134,6 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Language"),
             ISO6391.getName(crawlConfig?.config.lang!)
-          )}
-          ${this.renderSetting(
-            msg("Page Time Limit"),
-            crawlConfig?.config.behaviorTimeout
-              ? msg(str`${crawlConfig?.config.behaviorTimeout / 60} minute(s)`)
-              : msg("None")
           )}
         </btrix-desc-list>
       </section>
