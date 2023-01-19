@@ -241,7 +241,10 @@ export class Org extends LiteElement {
 
   private renderOrgName() {
     if (!this.org) return;
-    return html`<form @submit=${this.onOrgNameSubmit}>
+    return html`<form
+      @submit=${this.onOrgNameSubmit}
+      @reset=${() => (this.isEditingOrgName = false)}
+    >
       <div class="flex">
         <div class="flex-1 mr-3">
           <sl-input
@@ -255,6 +258,9 @@ export class Org extends LiteElement {
         <div class="flex-0">
           ${this.isEditingOrgName
             ? html`
+                <sl-button type="reset" class="mr-1"
+                  >${msg("Cancel")}</sl-button
+                >
                 <sl-button type="submit" variant="primary"
                   >${msg("Save Changes")}</sl-button
                 >
