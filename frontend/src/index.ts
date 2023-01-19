@@ -856,7 +856,7 @@ export class App extends LiteElement {
   }
 
   getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me", this.authService.authState!);
+    return this.apiFetch("/users/me-with-orgs", this.authService.authState!);
   }
 
   private clearUser() {
