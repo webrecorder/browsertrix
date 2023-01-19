@@ -176,6 +176,7 @@ function validURL(url: string) {
 const trimExclusions = flow(uniq, compact);
 const urlListToArray = (str: string) =>
   str.trim().replace(/,/g, " ").split(/\s+/g);
+const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -199,6 +200,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private progressState!: ProgressState;
+
+  @state()
+  private defaultBehaviorTimeoutMinutes?: number;
 
   @state()
   private formState!: FormState;
@@ -274,6 +278,9 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("authState") && this.authState) {
+      this.fetchAPIDefaults();
+    }
     if (
       changedProperties.get("initialCrawlConfig") &&
       this.initialCrawlConfig
@@ -1022,7 +1029,11 @@ https://example.net`}
           type="number"
           label=${msg("Page Time Limit")}
           placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
+          value=${ifDefined(
+            this.formState.pageTimeoutMinutes ??
+              this.defaultBehaviorTimeoutMinutes ??
+              DEFAULT_BEHAVIOR_TIMEOUT_MINUTES
+          )}
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1704,9 +1715,10 @@ https://example.net`}
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout: this.formState.pageTimeoutMinutes
-          ? this.formState.pageTimeoutMinutes * 60
-          : 0,
+        behaviorTimeout:
+          (this.formState.pageTimeoutMinutes ??
+            this.defaultBehaviorTimeoutMinutes ??
+            DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
         extraHops: this.formState.includeLinkedPages ? 1 : 0,
         lang: this.formState.lang || null,
@@ -1801,6 +1813,17 @@ https://example.net`}
       };
     } else {
       this.formState = mergeDeep(this.formState, nextState);
+    }
+  }
+
+  private async fetchAPIDefaults() {
+    try {
+      const data = await this.apiFetch("/settings", this.authState!);
+      this.defaultBehaviorTimeoutMinutes = data.defaultBehaviorTimeSeconds / 60;
+    } catch (e: any) {
+      if (e.isApiError) {
+        console.log("apiError");
+      }
     }
   }
 }
