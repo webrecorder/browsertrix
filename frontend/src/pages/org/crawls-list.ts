@@ -736,7 +736,7 @@ export class CrawlsList extends LiteElement {
       tags: template.tags,
     };
 
-    this.navTo(`/orgs/${crawl.oid}/crawl-templates/new`, {
+    this.navTo(`/orgs/${crawl.oid}/crawl-configs/new`, {
       crawlTemplate,
     });
 

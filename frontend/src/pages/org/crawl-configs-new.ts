@@ -25,7 +25,7 @@ const defaultValue = {
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-new></btrix-crawl-templates-new>
+ * <btrix-crawl-configs-new></btrix-crawl-configs-new>
  * ```
  */
 @localized()
@@ -55,7 +55,7 @@ export class CrawlTemplatesNew extends LiteElement {
       <nav class="mb-5">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/crawl-templates`}
+          href=${`/orgs/${this.orgId}/crawl-configs`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -155,4 +155,4 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-templates-new", CrawlTemplatesNew);
+customElements.define("btrix-crawl-configs-new", CrawlTemplatesNew);
