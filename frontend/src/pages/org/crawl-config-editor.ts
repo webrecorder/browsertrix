@@ -176,6 +176,7 @@ function validURL(url: string) {
 const trimExclusions = flow(uniq, compact);
 const urlListToArray = (str: string) =>
   str.trim().replace(/,/g, " ").split(/\s+/g);
+const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -199,6 +200,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private progressState!: ProgressState;
+
+  @state()
+  private defaultBehaviorTimeoutMinutes?: number;
 
   @state()
   private formState!: FormState;
@@ -274,6 +278,9 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("authState") && this.authState) {
+      this.fetchAPIDefaults();
+    }
     if (
       changedProperties.get("initialCrawlConfig") &&
       this.initialCrawlConfig
@@ -393,8 +400,12 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialCrawlConfig.tags?.length) {
       formState.tags = this.initialCrawlConfig.tags;
     }
-    if (this.initialCrawlConfig.crawlTimeout) {
+    if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
       formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    }
+    if (typeof this.initialCrawlConfig.config.behaviorTimeout === "number") {
+      formState.pageTimeoutMinutes =
+        this.initialCrawlConfig.config.behaviorTimeout / 60;
     }
 
     return {
@@ -1018,6 +1029,26 @@ https://example.net`}
       ${this.renderSectionHeading(msg("Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-input
+          name="pageTimeoutMinutes"
+          type="number"
+          label=${msg("Page Time Limit")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(
+            this.formState.pageTimeoutMinutes ??
+              this.defaultBehaviorTimeoutMinutes
+          )}
+          ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          required
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        html`Adds a hard time limit for how long the crawler can spend on a
+        single webpage.`
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
@@ -1104,22 +1135,6 @@ https://example.net`}
       ${this.renderHelpTextCol(
         html`Websites that observe the browser’s language setting may serve
         content in that language if available.`
-      )}
-      ${this.renderSectionHeading(msg("On-Page Behavior"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageTimeoutMinutes"
-          type="number"
-          label=${msg("Page Time Limit")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageTimeoutMinutes ?? undefined)}
-        >
-          <span slot="suffix">${msg("minutes")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        html`Adds a hard time limit for how long the crawler can spend on a
-        single webpage.`
       )}
     `;
   }
@@ -1638,9 +1653,7 @@ https://example.net`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(
-          `/orgs/${this.orgId}/crawl-templates/config/${data.added}`
-        );
+        this.navTo(`/orgs/${this.orgId}/crawl-templates/config/${data.added}`);
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1707,9 +1720,10 @@ https://example.net`}
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout: this.formState.pageTimeoutMinutes
-          ? this.formState.pageTimeoutMinutes * 60
-          : 0,
+        behaviorTimeout:
+          (this.formState.pageTimeoutMinutes ??
+            this.defaultBehaviorTimeoutMinutes ??
+            DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
         extraHops: this.formState.includeLinkedPages ? 1 : 0,
         lang: this.formState.lang || null,
@@ -1804,6 +1818,21 @@ https://example.net`}
       };
     } else {
       this.formState = mergeDeep(this.formState, nextState);
+    }
+  }
+
+  private async fetchAPIDefaults() {
+    try {
+      const data = await this.apiFetch("/settings", this.authState!);
+      if (data.defaultBehaviorTimeSeconds) {
+        this.defaultBehaviorTimeoutMinutes =
+          data.defaultBehaviorTimeSeconds / 60;
+      } else {
+        this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
+      }
+    } catch (e: any) {
+      console.debug(e);
+      this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
     }
   }
 }

@@ -71,7 +71,7 @@ export type InitialCrawlConfig = Pick<
   jobType?: JobType;
   config: Pick<
     CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "exclude"
+    "seeds" | "scopeType" | "exclude" | "behaviorTimeout"
   > & {
     extraHops?: CrawlConfigParams["config"]["extraHops"];
   };
