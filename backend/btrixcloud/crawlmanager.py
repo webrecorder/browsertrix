@@ -180,7 +180,7 @@ class BaseCrawlManager(ABC):
             "userid": str(crawlconfig.userid),
             "oid": str(crawlconfig.oid),
             "job_image": self.job_image,
-            "job_image_pull_policy": self.job_image_pull_policy,
+            "job_pull_policy": self.job_pull_policy,
             "manual": "1" if manual else "0",
             "crawler_node_type": self.crawler_node_type,
             "schedule": schedule,
