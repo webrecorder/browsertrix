@@ -10,6 +10,9 @@ export type Tags = string[];
 export type TagsChangeEvent = CustomEvent<{
   tags: string[];
 }>;
+export type TagInputEvent = CustomEvent<{
+  value: string;
+}>;
 
 /**
  * Usage:
@@ -20,6 +23,7 @@ export type TagsChangeEvent = CustomEvent<{
  * ></btrix-tag-input>
  * ```
  *
+ * @events tag-input
  * @events tags-change
  */
 @localized()
@@ -110,6 +114,9 @@ export class TagInput extends LitElement {
   @property({ type: Array })
   initialTags?: Tags;
 
+  @property({ type: Array })
+  tagOptions: Tags = [];
+
   @property({ type: Boolean })
   disabled = false;
 
@@ -125,9 +132,6 @@ export class TagInput extends LitElement {
 
   @state()
   private dropdownIsOpen?: boolean;
-
-  @state()
-  private tagOptions: Tags = [];
 
   @query("#input")
   private input?: HTMLInputElement;
@@ -300,8 +304,12 @@ export class TagInput extends LitElement {
     this.inputValue = input.value;
     if (input.value.length) {
       this.dropdownIsOpen = true;
-      this.tagOptions = await this.getOptions();
     }
+    this.dispatchEvent(
+      <TagInputEvent>new CustomEvent("tag-input", {
+        detail: { value: input.value },
+      })
+    );
   }) as any;
 
   private onKeyup(e: KeyboardEvent) {
@@ -345,11 +353,5 @@ export class TagInput extends LitElement {
         detail: { tags: this.tags },
       })
     );
-  }
-
-  private async getOptions() {
-    // TODO actual API call
-    // https://github.com/webrecorder/browsertrix-cloud/issues/453
-    return [];
   }
 }

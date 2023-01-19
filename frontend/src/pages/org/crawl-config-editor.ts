@@ -18,6 +18,7 @@ import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
+import Fuse from "fuse.js";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import { regexEscape } from "../../utils/string";
@@ -35,7 +36,11 @@ import type {
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
 import type { TimeInputChangeEvent } from "../../components/time-input";
-import type { Tags, TagsChangeEvent } from "../../components/tag-input";
+import type {
+  TagInputEvent,
+  Tags,
+  TagsChangeEvent,
+} from "../../components/tag-input";
 import type {
   CrawlConfigParams,
   Profile,
@@ -195,6 +200,9 @@ export class CrawlConfigEditor extends LiteElement {
   initialCrawlConfig?: InitialCrawlConfig;
 
   @state()
+  private tagOptions: string[] = [];
+
+  @state()
   private isSubmitting = false;
 
   @state()
@@ -205,6 +213,12 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    shouldSort: false,
+    threshold: 0.2, // stricter; default is 0.6
+  });
 
   private get formHasError() {
     return (
@@ -325,6 +339,8 @@ export class CrawlConfigEditor extends LiteElement {
         "sl-input, sl-textarea, sl-select, sl-radio-group"
       ) as HTMLElement
     )?.focus();
+
+    this.fetchTags();
   }
 
   private initializeEditor() {
@@ -1302,6 +1318,8 @@ https://example.net`}
         html`
           <btrix-tag-input
             .initialTags=${this.formState.tags}
+            .tagOptions=${this.tagOptions}
+            @tag-input=${this.onTagInput}
             @tags-change=${(e: TagsChangeEvent) =>
               this.updateFormState(
                 {
@@ -1638,9 +1656,7 @@ https://example.net`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(
-          `/orgs/${this.orgId}/crawl-templates/config/${data.added}`
-        );
+        this.navTo(`/orgs/${this.orgId}/crawl-templates/config/${data.added}`);
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1689,6 +1705,27 @@ https://example.net`}
         ${detailsWithoutDictError.map(renderDetail)}
       </ul>
     `;
+  }
+
+  private onTagInput = (e: TagInputEvent) => {
+    const { value } = e.detail;
+    if (!value) return;
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
+  };
+
+  private async fetchTags() {
+    try {
+      const tags = await this.apiFetch(
+        `/orgs/${this.orgId}/crawlconfigs/tags`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      this.fuse.setCollection(tags as any);
+    } catch (e) {
+      // Fail silently, since users can still enter tags
+      console.debug(e);
+    }
   }
 
   private parseConfig(): NewCrawlConfigParams {
