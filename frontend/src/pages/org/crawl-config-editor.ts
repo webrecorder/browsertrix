@@ -100,7 +100,7 @@ type FormState = {
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
-  if (hasConfigId && window.location.hash) {
+  if (window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
     if (STEPS.includes(hashValue as any)) {
