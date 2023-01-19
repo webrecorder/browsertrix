@@ -400,8 +400,12 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialCrawlConfig.tags?.length) {
       formState.tags = this.initialCrawlConfig.tags;
     }
-    if (this.initialCrawlConfig.crawlTimeout) {
+    if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
       formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    }
+    if (typeof this.initialCrawlConfig.config.behaviorTimeout === "number") {
+      formState.pageTimeoutMinutes =
+        this.initialCrawlConfig.config.behaviorTimeout / 60;
     }
 
     return {
