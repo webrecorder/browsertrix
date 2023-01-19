@@ -1038,6 +1038,7 @@ https://example.net`}
               this.defaultBehaviorTimeoutMinutes
           )}
           ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          required
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
