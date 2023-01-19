@@ -50,6 +50,14 @@ export class CrawlTemplatesNew extends LiteElement {
   @state()
   private jobType?: JobType;
 
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this.jobType) {
+      const url = new URL(window.location.href);
+      this.jobType = (url.searchParams.get("jobType") as JobType) || undefined;
+    }
+  }
+
   private renderHeader() {
     return html`
       <nav class="mb-5">
@@ -116,10 +124,14 @@ export class CrawlTemplatesNew extends LiteElement {
       <div
         class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-start justify-evenly"
       >
-        <div
+        <a
           role="button"
           class="jobTypeButton"
-          @click=${() => (this.jobType = "url-list")}
+          href=${`/orgs/${this.orgId}/crawl-templates/config/new?jobType=url-list`}
+          @click=${(e: any) => {
+            this.navLink(e);
+            this.jobType = "url-list";
+          }}
         >
           <figure class="w-64 m-4">
             <img class="transition-transform" src=${urlListSvg} />
@@ -132,11 +144,15 @@ export class CrawlTemplatesNew extends LiteElement {
               </p>
             </figcaption>
           </figure>
-        </div>
-        <div
+        </a>
+        <a
           role="button"
           class="jobTypeButton"
-          @click=${() => (this.jobType = "seed-crawl")}
+          href=${`/orgs/${this.orgId}/crawl-templates/config/new?jobType=seed-crawl`}
+          @click=${(e: any) => {
+            this.navLink(e);
+            this.jobType = "seed-crawl";
+          }}
         >
           <figure class="w-64 m-4">
             <img class="transition-transform" src=${seededCrawlSvg} />
@@ -149,7 +165,7 @@ export class CrawlTemplatesNew extends LiteElement {
               </p>
             </figcaption>
           </figure>
-        </div>
+        </a>
       </div>
     `;
   }
