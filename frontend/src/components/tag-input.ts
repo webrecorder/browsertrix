@@ -304,6 +304,8 @@ export class TagInput extends LitElement {
     this.inputValue = input.value;
     if (input.value.length) {
       this.dropdownIsOpen = true;
+    } else {
+      this.dropdownIsOpen = false;
     }
     this.dispatchEvent(
       <TagInputEvent>new CustomEvent("tag-input", {
