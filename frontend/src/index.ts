@@ -672,7 +672,7 @@ export class App extends LiteElement {
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
-            tabName: "crawl-templates",
+            tabName: "crawl-configs",
             label: msg("Crawl Configs"),
           })}
           ${this.renderNavTab({

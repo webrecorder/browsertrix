@@ -36,7 +36,7 @@ const sortableFieldLabels = {
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-list></btrix-crawl-templates-list>
+ * <btrix-crawl-configs-list></btrix-crawl-configs-list>
  * ```
  */
 @localized()
@@ -169,7 +169,7 @@ export class CrawlTemplatesList extends LiteElement {
 
         <div class="grow-0 mb-4">
           <sl-button
-            href=${`/orgs/${this.orgId}/crawl-templates/new`}
+            href=${`/orgs/${this.orgId}/crawl-configs/new`}
             variant="primary"
             @click=${this.navLink}
           >
@@ -308,7 +308,7 @@ export class CrawlTemplatesList extends LiteElement {
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${t.name}
-      href=${`/orgs/${this.orgId}/crawl-templates/config/${t.id}`}
+      href=${`/orgs/${this.orgId}/crawl-configs/config/${t.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
@@ -455,9 +455,7 @@ export class CrawlTemplatesList extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.navTo(
-              `/orgs/${this.orgId}/crawl-templates/config/${t.id}?edit`
-            );
+            this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${t.id}?edit`);
           }}
         >
           <sl-icon
@@ -613,7 +611,7 @@ export class CrawlTemplatesList extends LiteElement {
       tags: template.tags,
     };
 
-    this.navTo(`/orgs/${this.orgId}/crawl-templates/new`, {
+    this.navTo(`/orgs/${this.orgId}/crawl-configs/new`, {
       crawlTemplate,
     });
 
@@ -702,8 +700,7 @@ export class CrawlTemplatesList extends LiteElement {
           html`Started crawl from <strong>${template.name}</strong>. <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this
-                .orgId}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
@@ -777,4 +774,4 @@ export class CrawlTemplatesList extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-templates-list", CrawlTemplatesList);
+customElements.define("btrix-crawl-configs-list", CrawlTemplatesList);

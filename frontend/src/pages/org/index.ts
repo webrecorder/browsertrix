@@ -8,9 +8,9 @@ import type { OrgData } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import { isOwner, AccessCode } from "../../utils/orgs";
-import "./crawl-templates-detail";
-import "./crawl-templates-list";
-import "./crawl-templates-new";
+import "./crawl-configs-detail";
+import "./crawl-configs-list";
+import "./crawl-configs-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./browser-profiles-detail";
@@ -19,7 +19,7 @@ import "./browser-profiles-new";
 
 export type OrgTab =
   | "crawls"
-  | "crawl-templates"
+  | "crawl-configs"
   | "browser-profiles"
   | "members";
 
@@ -119,7 +119,7 @@ export class Org extends LiteElement {
       case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
-      case "crawl-templates":
+      case "crawl-configs":
         tabPanelContent = this.renderCrawlTemplates();
         break;
       case "browser-profiles":
@@ -173,32 +173,32 @@ export class Org extends LiteElement {
   private renderCrawlTemplates() {
     if (this.crawlConfigId) {
       return html`
-        <btrix-crawl-templates-detail
+        <btrix-crawl-configs-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           .orgId=${this.orgId!}
           .crawlConfigId=${this.crawlConfigId}
           .isEditing=${this.isEditing}
-        ></btrix-crawl-templates-detail>
+        ></btrix-crawl-configs-detail>
       `;
     }
 
     if (this.isNewResourceTab) {
       const crawlTemplate = this.viewStateData?.crawlTemplate;
 
-      return html` <btrix-crawl-templates-new
+      return html` <btrix-crawl-configs-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
         .orgId=${this.orgId!}
         .initialCrawlTemplate=${crawlTemplate}
-      ></btrix-crawl-templates-new>`;
+      ></btrix-crawl-configs-new>`;
     }
 
-    return html`<btrix-crawl-templates-list
+    return html`<btrix-crawl-configs-list
       .authState=${this.authState!}
       .orgId=${this.orgId!}
       userId=${this.userInfo!.id}
-    ></btrix-crawl-templates-list>`;
+    ></btrix-crawl-configs-list>`;
   }
 
   private renderBrowserProfiles() {

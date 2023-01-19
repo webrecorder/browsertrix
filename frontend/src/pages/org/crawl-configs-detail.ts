@@ -11,7 +11,7 @@ import { humanizeNextDate } from "../../utils/cron";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-templates-detail></btrix-crawl-templates-detail>
+ * <btrix-crawl-configs-detail></btrix-crawl-configs-detail>
  * ```
  */
 @localized()
@@ -113,7 +113,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               this.crawlConfig && !this.crawlConfig.inactive,
               () => html`
                 <sl-button
-                  href=${`/orgs/${this.orgId}/crawl-templates/config/${
+                  href=${`/orgs/${this.orgId}/crawl-configs/config/${
                     this.crawlConfig!.id
                   }?edit`}
                   variant="primary"
@@ -168,7 +168,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/crawl-templates${
+          href=${`/orgs/${this.orgId}/crawl-configs${
             configId ? `/config/${configId}` : ""
           }`}
           @click=${this.navLink}
@@ -206,9 +206,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       .authState=${this.authState}
       @reset=${(e: Event) =>
         this.navTo(
-          `/orgs/${this.orgId}/crawl-templates/config/${
-            this.crawlConfig!.id
-          }`
+          `/orgs/${this.orgId}/crawl-configs/config/${this.crawlConfig!.id}`
         )}
     ></btrix-crawl-config-editor>
   `;
@@ -425,9 +423,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private getNewerVersion() {
     const versionId = this.crawlConfig?.newId;
     if (!versionId) return;
-    this.navTo(
-      `/orgs/${this.orgId}/crawl-templates/config/${versionId}`
-    );
+    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
@@ -463,7 +459,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       tags: this.crawlConfig.tags,
     };
 
-    this.navTo(`/orgs/${this.orgId}/crawl-templates/new`, {
+    this.navTo(`/orgs/${this.orgId}/crawl-configs/new`, {
       crawlTemplate,
     });
 
@@ -521,7 +517,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/crawl-templates`);
+      this.navTo(`/orgs/${this.orgId}/crawl-configs`);
 
       this.notify({
         message: isDeactivating
@@ -564,8 +560,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this
-                .orgId}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
@@ -584,4 +579,4 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-templates-detail", CrawlTemplatesDetail);
+customElements.define("btrix-crawl-configs-detail", CrawlTemplatesDetail);

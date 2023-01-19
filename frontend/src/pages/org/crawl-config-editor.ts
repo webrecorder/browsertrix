@@ -1674,7 +1674,7 @@ https://example.net`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(`/orgs/${this.orgId}/crawl-templates/config/${data.added}`);
+        this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${data.added}`);
       }
     } catch (e: any) {
       if (e?.isApiError) {
