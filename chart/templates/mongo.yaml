@@ -43,7 +43,7 @@ spec:
     matchLabels:
       app: local-mongo
   serviceName: local-mongo
-  replicas: {{ .Values.api_num_replicas }}
+  replicas: {{ .Values.backend_num_replicas }}
   podManagementPolicy: Parallel
   volumeClaimTemplates:
     - metadata:

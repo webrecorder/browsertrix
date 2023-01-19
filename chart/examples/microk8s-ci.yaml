@@ -3,12 +3,12 @@
 
 
 # use local images
-api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 
 # don't pull use, existing images
-api_pull_policy: "IfNotPresent"
-nginx_pull_policy: "IfNotPresent"
+backend_pull_policy: "IfNotPresent"
+frontend_pull_policy: "IfNotPresent"
 
 
 mongo_auth:

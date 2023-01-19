@@ -41,7 +41,7 @@ spec:
       containers:
         - name: crawl-job
           image: {{ job_image }}
-          imagePullPolicy: {{ job_image_pull_policy }}
+          imagePullPolicy: {{ job_pull_policy }}
           command: ["uvicorn", "btrixcloud.k8s.crawl_job:app", "--host", "0.0.0.0", "--access-log", "--log-level", "info"]
 
           volumeMounts:

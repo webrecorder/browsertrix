@@ -3,8 +3,8 @@
 
 
 # don't pull use, existing images
-api_pull_policy: "Never"
-nginx_pull_policy: "Never"
+backend_pull_policy: "Never"
+frontend_pull_policy: "Never"
 
 
 mongo_auth:

@@ -10,7 +10,7 @@ spec:
     matchLabels:
       app: {{ .Values.name }}
       role: frontend
-  replicas: {{ .Values.nginx_num_replicas | default 1 }}
+  replicas: {{ .Values.frontend_num_replicas | default 1 }}
   template:
     metadata:
       labels:
@@ -32,8 +32,8 @@ spec:
 
       containers:
         - name: nginx
-          image: {{ .Values.nginx_image }}
-          imagePullPolicy: {{ .Values.nginx_pull_policy }}
+          image: {{ .Values.frontend_image }}
+          imagePullPolicy: {{ .Values.frontend_pull_policy }}
           env:
             - name: BACKEND_HOST
               value: {{ .Values.name }}-backend
@@ -54,12 +54,12 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.nginx_limits_cpu }}
-              memory: {{ .Values.nginx_limits_memory }}
+              cpu: {{ .Values.frontend_limits_cpu }}
+              memory: {{ .Values.frontend_limits_memory }}
 
             requests:
-              cpu: {{ .Values.nginx_requests_cpu }}
-              memory: {{ .Values.nginx_requests_memory }}
+              cpu: {{ .Values.frontend_requests_cpu }}
+              memory: {{ .Values.frontend_requests_memory }}
 
           readinessProbe:
             httpGet:

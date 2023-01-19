@@ -10,7 +10,7 @@ spec:
     matchLabels:
       app: {{ .Values.name }}
       role: backend
-  replicas: {{ .Values.api_num_replicas }}
+  replicas: {{ .Values.backend_num_replicas }}
   template:
     metadata:
       labels:
@@ -31,8 +31,8 @@ spec:
 
       containers:
         - name: api
-          image: {{ .Values.api_image }}
-          imagePullPolicy: {{ .Values.api_pull_policy }}
+          image: {{ .Values.backend_image }}
+          imagePullPolicy: {{ .Values.backend_pull_policy }}
           envFrom:
             - configMapRef:
                 name: {{ .Values.name }}-env-config
@@ -43,12 +43,12 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.api_limits_cpu }}
-              memory: {{ .Values.api_limits_memory }}
+              cpu: {{ .Values.backend_limits_cpu }}
+              memory: {{ .Values.backend_limits_memory }}
 
             requests:
-              cpu: {{ .Values.api_requests_cpu }}
-              memory: {{ .Values.api_requests_memory }}
+              cpu: {{ .Values.backend_requests_cpu }}
+              memory: {{ .Values.backend_requests_memory }}
 
           startupProbe:
             httpGet:

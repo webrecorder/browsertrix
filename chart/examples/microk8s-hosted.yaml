@@ -21,8 +21,8 @@
 #
 # If developing locally, can override these to use images from local microk8s repository (on localhost:32000)
 #
-# api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-# nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+# backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 # crawler_image: "localhost:32000/webrecorder/browsertrix-crawler:latest"
 
 
