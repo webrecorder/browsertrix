@@ -47,7 +47,7 @@ spec:
   selector:
     matchLabels:
       app: auth-signer
-  replicas: {{ .Values.api_num_replicas }}
+  replicas: {{ .Values.backend_num_replicas }}
   serviceName: auth-signer
   volumeClaimTemplates:
   - metadata:

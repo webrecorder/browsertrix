@@ -19,7 +19,7 @@ class K8SJobMixin(K8sAPI):
     """Crawl Job State"""
 
     def __init__(self):
-        self.namespace = os.environ.get("CRAWL_NAMESPACE") or "crawlers"
+        self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self.config_file = "/config/config.yaml"
 
         self.job_id = os.environ.get("JOB_ID")
