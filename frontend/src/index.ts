@@ -578,6 +578,7 @@ export class App extends LiteElement {
       case "browser":
       case "crawlTemplate":
       case "crawlTemplateEdit":
+      case "crawlTemplateNew":
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
@@ -593,7 +594,8 @@ export class App extends LiteElement {
           crawlConfigId=${this.viewState.params.crawlConfigId}
           crawlId=${this.viewState.params.crawlId}
           ?isAddingMember=${this.viewState.route === "orgAddMember"}
-          ?isNewResourceTab=${this.viewState.route === "orgNewResourceTab"}
+          ?isNewResourceTab=${this.viewState.route === "orgNewResourceTab" ||
+          this.viewState.route === "crawlTemplateNew"}
           ?isEditing=${"edit" in this.viewState.params}
         ></btrix-org>`;
 

@@ -459,9 +459,12 @@ export class CrawlTemplatesDetail extends LiteElement {
       tags: this.crawlConfig.tags,
     };
 
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/new`, {
-      crawlTemplate,
-    });
+    this.navTo(
+      `/orgs/${this.orgId}/crawl-configs/new?jobType=${crawlTemplate.jobType}`,
+      {
+        crawlTemplate,
+      }
+    );
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),

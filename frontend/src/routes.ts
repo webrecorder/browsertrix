@@ -19,6 +19,7 @@ export const ROUTES = {
     "/orgs/:id/:tab/profile/browser/:browserId?name&description&profileId&navigateUrl",
   crawlTemplate: "/orgs/:id/:tab/config/:crawlConfigId",
   crawlTemplateEdit: "/orgs/:id/:tab/config/:crawlConfigId?edit",
+  crawlTemplateNew: "/orgs/:id/:tab/new?jobType",
   users: "/users",
   usersInvite: "/users/invite",
   crawls: "/crawls",
