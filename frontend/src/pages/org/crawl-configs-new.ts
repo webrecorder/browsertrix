@@ -59,20 +59,28 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 
   private renderHeader() {
+    let href = `/orgs/${this.orgId}/crawl-configs`;
+    let label = msg("Back to Crawl Configs");
+
+    if (this.jobType) {
+      href = `/orgs/${this.orgId}/crawl-configs/new`;
+      label = msg("Choose Crawl Type");
+    }
     return html`
       <nav class="mb-5">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/crawl-configs`}
-          @click=${this.navLink}
+          href=${href}
+          @click=${(e: any) => {
+            this.navLink(e);
+            this.jobType = undefined;
+          }}
         >
           <sl-icon
             name="arrow-left"
             class="inline-block align-middle"
           ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Crawl Configs")}</span
-          >
+          <span class="inline-block align-middle">${label}</span>
         </a>
       </nav>
     `;
@@ -127,7 +135,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-templates/config/new?jobType=url-list`}
+          href=${`/orgs/${this.orgId}/crawl-configs/new?jobType=url-list`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "url-list";
@@ -148,7 +156,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-templates/config/new?jobType=seed-crawl`}
+          href=${`/orgs/${this.orgId}/crawl-configs/new?jobType=seed-crawl`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "seed-crawl";

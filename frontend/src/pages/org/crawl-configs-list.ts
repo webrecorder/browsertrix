@@ -169,7 +169,7 @@ export class CrawlTemplatesList extends LiteElement {
 
         <div class="grow-0 mb-4">
           <sl-button
-            href=${`/orgs/${this.orgId}/crawl-configs/new`}
+            href=${`/orgs/${this.orgId}/crawl-configs/new?jobType`}
             variant="primary"
             @click=${this.navLink}
           >
@@ -611,9 +611,12 @@ export class CrawlTemplatesList extends LiteElement {
       tags: template.tags,
     };
 
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/new`, {
-      crawlTemplate,
-    });
+    this.navTo(
+      `/orgs/${this.orgId}/crawl-configs/new?jobType=${crawlTemplate.jobType}`,
+      {
+        crawlTemplate,
+      }
+    );
 
     this.notify({
       message: msg(str`Copied crawl configuration to new template.`),
