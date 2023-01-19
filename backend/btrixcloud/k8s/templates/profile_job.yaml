@@ -45,7 +45,7 @@ spec:
       containers:
         - name: crawl-job
           image: {{ job_image }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ job_image_pull_policy }}
           command: ["python", "-m", "btrixcloud.k8s.profile_job"]
 
           volumeMounts:

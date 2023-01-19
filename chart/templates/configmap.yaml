@@ -28,6 +28,7 @@ data:
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   JOB_IMAGE: "{{ .Values.api_image }}"
+  JOB_IMAGE_PULL_POLICY: "{{ .Values.api_image_pull_policy }}"
 
   {{- if .Values.crawler_pv_claim }}
   CRAWLER_PV_CLAIM: "{{ .Values.crawler_pv_claim }}"

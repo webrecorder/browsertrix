@@ -19,7 +19,7 @@ domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
 use_do_registry: true
-image_tag: "dev"
+image_tag: "latest"
 
 enable_signing: true
 signing_host: "signing"
