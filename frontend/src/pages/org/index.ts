@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
 import type { ViewState } from "../../utils/APIRouter";
@@ -240,43 +241,55 @@ export class Org extends LiteElement {
   }
 
   private renderOrgName() {
-    if (!this.org) return;
+    if (!this.org || !this.userInfo) return;
+    const memberInfo = (this.org.users ?? {})[this.userInfo.id];
+    if (!memberInfo || !isOwner(memberInfo.role)) {
+      return html`
+        <sl-input
+          label=${msg("Org Name")}
+          value=${this.org.name}
+          readonly
+        ></sl-input>
+      `;
+    }
+
     return html`<form
       @submit=${this.onOrgNameSubmit}
       @reset=${() => (this.isEditingOrgName = false)}
     >
-      <div class="flex">
+      <div class="flex items-end">
         <div class="flex-1 mr-3">
           <sl-input
             name="orgName"
+            label=${msg("Org Name")}
             autocomplete="off"
             value=${this.org.name}
             ?readonly=${!this.isEditingOrgName}
-            required
+            ?required=${this.isEditingOrgName}
           ></sl-input>
         </div>
         <div class="flex-0">
-          ${this.isEditingOrgName
-            ? html`
-                <sl-button type="reset" class="mr-1"
-                  >${msg("Cancel")}</sl-button
-                >
-                <sl-button type="submit" variant="primary"
-                  >${msg("Save Changes")}</sl-button
-                >
-              `
-            : html`
-                <sl-button
-                  @click=${(e: MouseEvent) => {
-                    this.isEditingOrgName = true;
-                    (e.target as SlButton)
-                      .closest("form")
-                      ?.querySelector("sl-input")
-                      ?.focus();
-                  }}
-                  >${msg("Edit")}</sl-button
-                >
-              `}
+          ${when(
+            this.isEditingOrgName,
+            () => html`
+              <sl-button type="reset" class="mr-1">${msg("Cancel")}</sl-button>
+              <sl-button type="submit" variant="primary"
+                >${msg("Save Changes")}</sl-button
+              >
+            `,
+            () => html`
+              <sl-button
+                @click=${(e: MouseEvent) => {
+                  this.isEditingOrgName = true;
+                  (e.target as SlButton)
+                    .closest("form")
+                    ?.querySelector("sl-input")
+                    ?.focus();
+                }}
+                >${msg("Edit")}</sl-button
+              >
+            `
+          )}
         </div>
       </div>
     </form>`;
