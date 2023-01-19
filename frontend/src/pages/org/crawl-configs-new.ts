@@ -62,7 +62,8 @@ export class CrawlTemplatesNew extends LiteElement {
     let href = `/orgs/${this.orgId}/crawl-configs`;
     let label = msg("Back to Crawl Configs");
 
-    if (this.jobType) {
+    // Allow user to go back to choose crawl type if new (not duplicated) config
+    if (this.jobType && !this.initialCrawlTemplate.jobType) {
       href = `/orgs/${this.orgId}/crawl-configs/new`;
       label = msg("Choose Crawl Type");
     }
