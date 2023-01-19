@@ -312,6 +312,9 @@ export class CrawlConfigEditor extends LiteElement {
         }
       }
     }
+    if (changedProperties.get("orgId") && this.orgId) {
+      this.fetchTags();
+    }
   }
 
   async updated(changedProperties: Map<string, any>) {
@@ -1714,6 +1717,7 @@ https://example.net`}
   };
 
   private async fetchTags() {
+    this.tagOptions = [];
     try {
       const tags = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
