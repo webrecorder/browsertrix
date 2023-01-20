@@ -1,0 +1,45 @@
+{{- define "kb.install" -}}
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: btrixlog
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+spec:
+  version: 8.5.3
+  count: 1
+  elasticsearchRef:
+    name: btrixlog
+  config:
+    server:
+      basePath: "{{ .Values.logging.ingress.path | default "/kibana" }}"
+      rewriteBasePath: false
+      publicBaseUrl: "https://{{ .Values.logging.ingress.host | default "localhost" }}{{ .Values.logging.ingress.path | default "/kibana" }}"
+  podTemplate:
+    spec:
+      containers:
+      - name: kibana
+        {{ if not .Values.logging.kibana.local }}
+        env:
+          - name: NODE_OPTIONS
+            value: "{{ .Values.logging.kibana.opt | default "--max-old-space-size=1024" }}"
+        resources:
+          requests:
+            memory: {{ .Values.logging.kibana.mem | default "1Gi" }}
+            cpu: {{ .Values.logging.kibana.cpu | default "1" }}
+          limits:
+            memory: {{ .Values.logging.kibana.mem | default "1Gi" }}
+            cpu: {{ .Values.logging.kibana.cpu | default "1" }}
+        {{ end }}
+      {{ if .Values.logging.dedicatedNode.enabled }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodeType
+                operator: In
+                values:
+                - "{{ .Values.logging.dedicatedNode.nodeType | default "admin" }}"
+      {{ end }}
+{{- end -}}

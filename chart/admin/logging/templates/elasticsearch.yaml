@@ -1,0 +1,70 @@
+{{- define "es.install" -}}
+{{ if .Values.logging.elasticsearch.volumeEnabled }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: es-storage-pvc
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.logging.elasticsearch.volumeSize | default "1Gi" }}
+  storageClassName: hostpath
+{{ end }}
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: btrixlog
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+spec:
+  version: 8.5.3
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      node.store.allow_mmap: false
+    podTemplate:
+      spec:
+        {{ if .Values.logging.elasticsearch.volumeEnabled }}
+        volumes:
+          - name: data-es
+            persistentVolumeClaim:
+              claimName: es-storage-pvc
+        {{ end }}
+        {{ if .Values.logging.dedicatedNode.enabled }}
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                  - "{{ .Values.logging.dedicatedNode.nodeType | default "admin" }}"
+        {{ end }}
+        containers:
+        - name: elasticsearch
+          {{ if not .Values.logging.elasticsearch.local }}
+          env:
+          - name: ES_JAVA_OPTS
+            value: "{{ .Values.logging.elasticsearch.opt | default "-Xms2g -Xmx2g" }}"
+          resources:
+            requests:
+              memory: {{ .Values.logging.elasticsearch.mem | default "4Gi" }}
+              cpu: {{ .Values.logging.elasticsearch.cpu | default "1" }}
+            limits:
+              memory: {{ .Values.logging.elasticsearch.mem | default "4Gi" }}
+              cpu: {{ .Values.logging.elasticsearch.cpu | default "1" }}
+          {{ end }}
+          {{ if .Values.logging.elasticsearch.volumeEnabled }}
+          volumeMounts:
+            - name: data-es
+              mountPath: /usr/share/elasticsearch/data
+          {{ end }}
+{{- end -}}

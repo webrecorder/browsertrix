@@ -1,6 +1,6 @@
 apiVersion: v2
-name: browsertrix-cloud
-description: A chart for running the Webrecorder Browsertrix System
+name: btrix-admin-logging
+description: A chart for running the Webrecorder Browsertrix System - admin services
 type: application
 icon: https://webrecorder.net/assets/icon.png
 
@@ -13,9 +13,3 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 0.1.0
-
-dependencies:
-  - name: btrix-admin-logging
-    version: 0.1.0
-    condition: addons.admin.logging
-    repository: file://./admin/logging

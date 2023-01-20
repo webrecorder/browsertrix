@@ -1,0 +1,83 @@
+name: Cluster Run (K3d-Admin-Logging)
+
+on: [push, pull_request]
+
+jobs:
+  btrix-k3d-admin-logging-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create k3d Cluster
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: btrix-1
+          args: >-
+            --agents 1
+            -p "443:443@loadbalancer"
+            --k3s-arg "--no-deploy=traefik,metrics-server@server:*"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+           version: 3.10.2
+
+      - name: Add hosts to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 myhost.internal" | sudo tee -a /etc/hosts
+
+      - name: Install nginx ingress controller
+        run: |
+          helm install --namespace kube-system nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx
+          sleep 5
+          POD=$(kubectl get pods -A | grep nginx-ingress | head -n 1 | awk '{print $2}')
+          while [[ $(kubectl get pods $POD -n kube-system -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do kubectl get pods -n kube-system; sleep 5; done
+          sleep 20
+ 
+      - name: Start Cluster with Helm (chart/admin/logging)
+        run: |
+          ./chart/admin/logging/scripts/eck_install.sh
+          helm upgrade --install -f ./chart/admin/logging/values.yaml btrix-admin-log ./chart/admin/logging --set logging.ingress.host=myhost.internal
+
+      - name: Wait for all pods to be ready
+        run: |
+          # waiting fluentd
+          kubectl wait --for=condition=ready pod --all --timeout=200s -n btrix-admin
+          # waiting elastic-operator and ES/Kibana
+          while [[ $(kubectl get pods -n elastic-system -l control-plane=elastic-operator           -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do kubectl get pods -n elastic-system; sleep 5; done
+          while [[ $(kubectl get pods -n btrix-admin    -l common.k8s.elastic.co/type=elasticsearch -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do kubectl get pods -n btrix-admin; sleep 5; done
+          while [[ $(kubectl get pods -n btrix-admin    -l common.k8s.elastic.co/type=kibana        -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do kubectl get pods -n btrix-admin; sleep 5; done
+          kubectl get pod -n btrix-admin -o wide
+          kubectl get svc -n btrix-admin -o wide
+          kubectl get ingress -A -o wide
+          kubectl describe ingress kibana-main -n btrix-admin
+          # check the auto-generated password for elastic
+          while kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'; ret=$?; [ $ret -ne 0 ]; do sleep 5; done
+
+      - name: Test Kibana via port-forward
+        run: |
+          sleep 20
+          kubectl port-forward service/btrixlog-kb-http -n btrix-admin 5601:5601 &
+          sleep 5
+          curl -k -v https://myhost.internal:5601/kibana/ 2>&1 | grep -i "location"
+
+      - name: Test Kibana via Ingress
+        run: |
+          kubectl get ingress -A -o wide
+          # kubectl describe ingress kibana-main -n btrix-admin
+          # kubectl describe pod $POD -n kube-system
+          curl -v -k https://myhost.internal/kibana/ 2>&1 | grep -i "location"
+
+      - name: Install Kibana dashboard
+        run: |
+          cd ./chart/admin/logging/scripts
+          ./kibana_imports.sh
+
+      - name: Clean up
+        run: |
+          helm uninstall btrix-admin-log
+          ./chart/admin/logging/scripts/eck_uninstall.sh
