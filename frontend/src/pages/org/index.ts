@@ -315,7 +315,7 @@ export class Org extends LiteElement {
 
       <div class="text-right">
         <sl-button
-          href=${`/orgs/${this.orgId}/members/add-member`}
+          href=${`/orgs/${this.orgId}/settings/add-member`}
           @click=${this.navLink}
           >${msg("Add Member")}</sl-button
         >
