@@ -77,6 +77,9 @@ export class Org extends LiteElement {
   @state()
   private isEditingOrgName = false;
 
+  @state()
+  private isSavingOrgName = false;
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       try {
@@ -273,7 +276,11 @@ export class Org extends LiteElement {
             this.isEditingOrgName,
             () => html`
               <sl-button type="reset" class="mr-1">${msg("Cancel")}</sl-button>
-              <sl-button type="submit" variant="primary"
+              <sl-button
+                type="submit"
+                variant="primary"
+                ?disabled=${this.isSavingOrgName}
+                ?loading=${this.isSavingOrgName}
                 >${msg("Save Changes")}</sl-button
               >
             `,
@@ -395,6 +402,8 @@ export class Org extends LiteElement {
     if (!this.org) return;
     const { orgName } = serialize(e.target as HTMLFormElement);
 
+    this.isSavingOrgName = true;
+
     try {
       await this.apiFetch(`/orgs/${this.org.id}/rename`, this.authState!, {
         method: "POST",
@@ -412,6 +421,9 @@ export class Org extends LiteElement {
         ...this.org,
         name: orgName as string,
       };
+
+      this.isEditingOrgName = false;
+      this.dispatchEvent(new CustomEvent("update-user-info"));
     } catch (e) {
       console.debug(e);
       this.notify({
@@ -421,7 +433,7 @@ export class Org extends LiteElement {
       });
     }
 
-    this.isEditingOrgName = false;
+    this.isSavingOrgName = false;
   }
 
   onInviteSuccess(

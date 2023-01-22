@@ -582,6 +582,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
+          @update-user-info=${this.updateUserInfo}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
