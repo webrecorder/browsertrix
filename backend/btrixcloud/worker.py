@@ -17,7 +17,7 @@ class UniqueWorker:
 
     def set_id(self):
         """Create path to pid file and write to pid."""
-        if self.path.exists():
+        if not self.path.exists():
             self.path.parents[0].mkdir(parents=True, exist_ok=True)
 
         with open(self.path, "w", encoding="utf-8") as pid_file:
