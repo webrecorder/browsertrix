@@ -445,6 +445,11 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
+    @users_router.get("/invite-delete/{token}", tags=["invites"])
+    async def delete_invite(token: str):
+        await user_manager.invites.remove_invite(token)
+        return {"removed": True}
+
     app.include_router(users_router, prefix="/users", tags=["users"])
 
     return fastapi_users
