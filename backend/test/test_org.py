@@ -56,3 +56,30 @@ def test_create_org(admin_auth_headers):
     for org in data["orgs"]:
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
+
+
+def test_remove_user_from_org(admin_auth_headers, default_org_id):
+    # Add new user to org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/add-user",
+        json={
+            "email": "toremove@example.com",
+            "password": "PASSW0RD!",
+            "name": "toremove",
+            "role": 10,
+        },
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    # Remove user
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/remove",
+        json={"email": "toremove@example.com"},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["removed"]

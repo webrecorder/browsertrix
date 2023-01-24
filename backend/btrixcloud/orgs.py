@@ -18,6 +18,7 @@ from .users import User
 from .invites import (
     AddToOrgRequest,
     InvitePending,
+    InviteRequest,
     InviteToOrgRequest,
     UserRole,
 )
@@ -31,6 +32,11 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 # ============================================================================
 class UpdateRole(InviteToOrgRequest):
     """Update existing role for user"""
+
+
+# ============================================================================
+class RemoveFromOrg(InviteRequest):
+    """Remove this user from org"""
 
 
 # ============================================================================
@@ -298,6 +304,14 @@ class OrgOps:
         org.users[str(userid)] = role
         await self.update(org)
 
+    async def get_org_owners(self, org: Organization):
+        """Return list of org's Owner users."""
+        org_owners = []
+        for key, value in org.users.items():
+            if value == UserRole.OWNER:
+                org_owners.append(key)
+        return org_owners
+
 
 # ============================================================================
 def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
@@ -444,6 +458,23 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         await ops.add_user_by_invite(invite, user)
         await user_manager.user_db.update(user)
         return {"added": True}
+
+    @router.post("/remove", tags=["invites"])
+    async def remove_user_from_org(
+        remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
+    ):
+        other_user = await user_manager.user_db.get_by_email(remove.email)
+
+        if org.is_owner(other_user):
+            org_owners = await ops.get_org_owners(org)
+            if len(org_owners) == 1:
+                raise HTTPException(
+                    status_code=400, detail="Can't remove only owner from org"
+                )
+
+        del org.users[str(other_user.id)]
+        await ops.update(org)
+        return {"removed": True}
 
     @router.post("/add-user", tags=["invites"])
     async def add_new_user_to_org(
