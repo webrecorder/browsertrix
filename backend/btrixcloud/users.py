@@ -407,6 +407,27 @@ def init_users_api(app, user_manager):
 
     users_router = fastapi_users.get_users_router()
 
+    @users_router.get("/me-with-orgs", tags=["users"])
+    async def me_with_org_info(user: User = Depends(current_active_user)):
+        """/users/me with orgs user belongs to."""
+        user_info = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "orgs": [],
+            "is_active": user.is_active,
+            "is_superuser": user.is_superuser,
+            "is_verified": user.is_verified,
+        }
+        user_orgs = await user_manager.org_ops.get_orgs_for_user(user)
+        if user_orgs:
+            user_info["orgs"] = [
+                {"id": org.id, "name": org.name, "default": org.default}
+                for org in user_orgs
+            ]
+        print(f"user info with orgs: {user_info}", flush=True)
+        return user_info
+
     @users_router.post("/invite", tags=["invites"])
     async def invite_user(
         invite: InviteRequest,
