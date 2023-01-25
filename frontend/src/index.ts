@@ -583,6 +583,7 @@ export class App extends LiteElement {
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
+          @update-user-info=${this.updateUserInfo}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
@@ -681,7 +682,10 @@ export class App extends LiteElement {
             tabName: "browser-profiles",
             label: msg("Browser Profiles"),
           })}
-          ${this.renderNavTab({ tabName: "members", label: msg("Members") })}
+          ${this.renderNavTab({
+            tabName: "settings",
+            label: msg("Org Settings"),
+          })}
         </nav>
       </div>
 
