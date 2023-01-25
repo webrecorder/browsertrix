@@ -407,7 +407,12 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         org: Organization = Depends(org_owner_dep),
     ):
         org.name = rename.name
-        await ops.update(org)
+        try:
+            await ops.update(org)
+        except DuplicateKeyError:
+            raise HTTPException(
+                status_code=400, detail=f'Name "{rename.name}"" already taken'
+            )
 
         return {"updated": True}
 
