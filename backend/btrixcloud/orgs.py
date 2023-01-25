@@ -411,9 +411,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
             await ops.update(org)
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=400, detail='duplicate_org_name'
-            )
+            raise HTTPException(status_code=400, detail="duplicate_org_name")
 
         return {"updated": True}
 
