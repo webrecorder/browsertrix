@@ -270,13 +270,9 @@ export class Org extends LiteElement {
     ></btrix-org-settings>`;
   }
 
-  async getOrg(orgId: string): Promise<OrgData> {
+  private async getOrg(orgId: string): Promise<OrgData> {
     const data = await this.apiFetch(`/orgs/${orgId}`, this.authState!);
 
     return data;
-  }
-
-  updateUrl(event: CustomEvent<{ name: OrgTab }>) {
-    this.navTo(`/orgs/${this.orgId}/${event.detail.name}`);
   }
 }
