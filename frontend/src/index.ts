@@ -8,7 +8,7 @@ import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
 import "./utils/polyfills";
-import type { OrgTab } from "./pages/org/org";
+import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
