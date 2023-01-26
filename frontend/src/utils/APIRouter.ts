@@ -1,6 +1,6 @@
-import { Path } from "path-parser";
+import UrlPattern from "url-pattern";
 
-type Routes = { [key: string]: Path };
+type Routes = { [key: string]: UrlPattern };
 type Paths = { [key: string]: string };
 
 export type ViewState = {
@@ -19,25 +19,30 @@ export type ViewState = {
 };
 
 export default class APIRouter {
-  routes: Routes;
+  private routes: Routes;
 
   constructor(paths: Paths) {
     this.routes = {};
 
     for (const [name, route] of Object.entries(paths)) {
-      this.routes[name] = new Path(route);
+      this.routes[name] = new UrlPattern(route);
     }
   }
 
-  match(path: string): ViewState {
-    for (const [name, route] of Object.entries(this.routes)) {
-      const res = route.test(path);
+  match(url: string): ViewState {
+    for (const [name, pattern] of Object.entries(this.routes)) {
+      const [path, qs] = url.split("?");
+      const urlParams = pattern.match(path);
 
-      if (res) {
-        return { route: name, pathname: path, params: res };
+      if (urlParams) {
+        const params = {
+          ...urlParams,
+          ...Object.fromEntries(new URLSearchParams(qs).entries()),
+        };
+        return { route: name, pathname: url, params };
       }
     }
 
-    return { route: null, pathname: path, params: {} };
+    return { route: null, pathname: url, params: {} };
   }
 }

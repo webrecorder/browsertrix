@@ -7,6 +7,7 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
+import "./utils/polyfills";
 import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
@@ -92,7 +93,7 @@ export class App extends LiteElement {
     const authState = await AuthService.initSessionStorage();
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.orgId;
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -110,7 +111,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.orgId;
     }
   }
 
@@ -588,7 +589,7 @@ export class App extends LiteElement {
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
-          orgId=${this.viewState.params.id}
+          orgId=${this.viewState.params.orgId}
           orgTab=${this.viewState.params.tab as OrgTab}
           browserProfileId=${this.viewState.params.browserProfileId}
           browserId=${this.viewState.params.browserId}
@@ -648,8 +649,10 @@ export class App extends LiteElement {
         }
       }
 
-      default:
+      default: {
+        console.log(this.viewState);
         return this.renderNotFoundPage();
+      }
     }
   }
 
