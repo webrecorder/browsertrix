@@ -112,10 +112,11 @@ class Migration:
                 await self.set_db_version()
             except OperationFailure as err:
                 print(f"Error running migration {self.MIGRATION_VERSION}: {err}")
-                return
+                return False
 
         else:
             print("No migration to apply - skipping", flush=True)
-            return
+            return False
 
         print(f"Database successfully migrated to {self.MIGRATION_VERSION}", flush=True)
+        return True

@@ -66,8 +66,8 @@ async def update_and_prepare_db(
 
     Run all tasks in order in a single worker.
     """
-    await run_db_migrations(mdb)
-    await drop_indexes(mdb)
+    if await run_db_migrations(mdb):
+        await drop_indexes(mdb)
     await create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops)
     await user_manager.create_super_user()
     await org_ops.create_default_org()
@@ -77,6 +77,7 @@ async def update_and_prepare_db(
 # ============================================================================
 async def run_db_migrations(mdb):
     """Run database migrations."""
+    migrations_run = False
     migrations_path = "/app/btrixcloud/migrations"
     module_files = [
         f
@@ -95,12 +96,14 @@ async def run_db_migrations(mdb):
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
             migration = migration_module.Migration(mdb)
-            await migration.run()
+            if await migration.run():
+                migrations_run = True
         except ImportError as err:
             print(
                 f"Error importing Migration class from module {module_file}: {err}",
                 flush=True,
             )
+    return migrations_run
 
 
 # ============================================================================
