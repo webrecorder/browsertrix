@@ -46,6 +46,9 @@ export class OrgSettings extends LiteElement {
   isAddingMember = false;
 
   @state()
+  private isAddMemberFormVisible = false;
+
+  @state()
   private successfullyInvitedEmail?: string;
 
   @state()
@@ -60,15 +63,12 @@ export class OrgSettings extends LiteElement {
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
+      this.isAddMemberFormVisible = true;
       this.successfullyInvitedEmail = undefined;
     }
   }
 
   render() {
-    if (this.isAddingMember) {
-      return this.renderAddMember();
-    }
-
     return html`<header class="mb-5">
         <h2 class="text-xl leading-10">${msg("Org Settings")}</h2>
       </header>
@@ -98,7 +98,6 @@ export class OrgSettings extends LiteElement {
           : "text-neutral-600 hover:bg-neutral-50"}"
         @click=${this.navLink}
         aria-selected=${isActive}
-        tabindex="0"
       >
         ${this.tabLabels[name]}
       </a>
@@ -152,8 +151,9 @@ export class OrgSettings extends LiteElement {
       <div class="text-right">
         <sl-button
           href=${`/orgs/${this.orgId}/settings/members?invite`}
+          variant="primary"
           @click=${this.navLink}
-          >${msg("Add Member")}</sl-button
+          >${msg("Invite New Member")}</sl-button
         >
       </div>
 
@@ -187,36 +187,31 @@ export class OrgSettings extends LiteElement {
             `
           )}
         </div>
-      </div>`;
+      </div>
+
+      <btrix-dialog
+        label=${msg("Invite New Member")}
+        ?open=${this.isAddingMember}
+        @sl-request-close=${this.hideDialog}
+        @sl-show=${() => (this.isAddMemberFormVisible = true)}
+        @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
+      >
+        ${this.isAddMemberFormVisible ? this.renderAddMember() : ""}
+      </btrix-dialog> `;
+  }
+
+  private hideDialog() {
+    this.navTo(`/orgs/${this.orgId}/settings/members`);
   }
 
   private renderAddMember() {
     return html`
-      <div class="mb-5">
-        <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/settings/members`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Settings")}</span
-          >
-        </a>
-      </div>
-
-      <div class="border rounded-lg p-4 md:p-8 md:pt-6">
-        <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
-        <btrix-org-invite-form
-          @success=${this.onInviteSuccess}
-          @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings/members`)}
-          .authState=${this.authState}
-          .orgId=${this.orgId}
-        ></btrix-org-invite-form>
-      </div>
+      <btrix-org-invite-form
+        @success=${this.onInviteSuccess}
+        @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings/members`)}
+        .authState=${this.authState}
+        .orgId=${this.orgId}
+      ></btrix-org-invite-form>
     `;
   }
 
