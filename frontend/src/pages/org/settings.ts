@@ -228,7 +228,9 @@ export class OrgSettings extends LiteElement {
       };
 
       this.isEditingOrgName = false;
-      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.dispatchEvent(
+        new CustomEvent("update-user-info", { bubbles: true })
+      );
     } catch (e) {
       console.debug(e);
       this.notify({
