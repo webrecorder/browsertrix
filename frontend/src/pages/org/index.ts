@@ -23,6 +23,13 @@ export type OrgTab =
   | "browser-profiles"
   | "settings";
 
+type Params = {
+  crawlId?: string;
+  crawlConfigId?: string;
+  browserProfileId?: string;
+  browserId?: string;
+};
+
 const defaultTab = "crawls";
 
 @needLogin
@@ -37,33 +44,14 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
+  @property({ type: Object })
+  params!: Params;
+
   @property({ type: String })
-  orgId?: string;
+  orgId!: string;
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
-
-  @property({ type: String })
-  browserProfileId?: string;
-
-  @property({ type: String })
-  browserId?: string;
-
-  @property({ type: String })
-  crawlId?: string;
-
-  @property({ type: String })
-  crawlConfigId?: string;
-
-  @property({ type: Boolean })
-  isAddingMember: boolean = false;
-
-  @property({ type: Boolean })
-  isEditing: boolean = false;
-
-  /** Whether new resource is being added in tab */
-  @property({ type: Boolean })
-  isNewResourceTab: boolean = false;
 
   @state()
   private org?: OrgData | null;
@@ -144,10 +132,10 @@ export class Org extends LiteElement {
   private renderCrawls() {
     const crawlsBaseUrl = `/orgs/${this.orgId}/crawls`;
 
-    if (this.crawlId) {
+    if (this.params.crawlId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
-        crawlId=${this.crawlId}
+        crawlId=${this.params.crawlId}
         crawlsBaseUrl=${crawlsBaseUrl}
       ></btrix-crawl-detail>`;
     }
@@ -161,19 +149,22 @@ export class Org extends LiteElement {
   }
 
   private renderCrawlTemplates() {
-    if (this.crawlConfigId) {
+    const isEditing = this.params.hasOwnProperty("edit");
+    const isNewResourceTab = this.params.hasOwnProperty("new");
+
+    if (this.params.crawlConfigId) {
       return html`
         <btrix-crawl-configs-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           .orgId=${this.orgId!}
-          .crawlConfigId=${this.crawlConfigId}
-          .isEditing=${this.isEditing}
+          .crawlConfigId=${this.params.crawlConfigId}
+          .isEditing=${isEditing}
         ></btrix-crawl-configs-detail>
       `;
     }
 
-    if (this.isNewResourceTab) {
+    if (isNewResourceTab) {
       const crawlTemplate = this.viewStateData?.crawlTemplate;
 
       return html` <btrix-crawl-configs-new
@@ -192,36 +183,40 @@ export class Org extends LiteElement {
   }
 
   private renderBrowserProfiles() {
-    if (this.browserProfileId) {
+    const isNewResourceTab = this.params.hasOwnProperty("new");
+
+    if (this.params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         .authState=${this.authState!}
         .orgId=${this.orgId!}
-        profileId=${this.browserProfileId}
+        profileId=${this.params.browserProfileId}
       ></btrix-browser-profiles-detail>`;
     }
 
-    if (this.browserId) {
+    if (this.params.browserId) {
       return html`<btrix-browser-profiles-new
         .authState=${this.authState!}
         .orgId=${this.orgId!}
-        .browserId=${this.browserId}
+        .browserId=${this.params.browserId}
       ></btrix-browser-profiles-new>`;
     }
 
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
       .orgId=${this.orgId!}
-      ?showCreateDialog=${this.isNewResourceTab}
+      ?showCreateDialog=${isNewResourceTab}
     ></btrix-browser-profiles-list>`;
   }
 
   private renderOrgSettings() {
+    const isAddingMember = this.params.hasOwnProperty("invite");
+
     return html`<btrix-org-settings
       .authState=${this.authState}
       .userInfo=${this.userInfo}
       .org=${this.org || null}
       .orgId=${this.orgId!}
-      ?isAddingMember=${this.isAddingMember}
+      ?isAddingMember=${isAddingMember}
     ></btrix-org-settings>`;
   }
 

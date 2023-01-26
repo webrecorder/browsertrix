@@ -143,7 +143,7 @@ export class OrgSettings extends LiteElement {
 
       <div class="text-right">
         <sl-button
-          href=${`/orgs/${this.orgId}/settings/add-member`}
+          href=${`/orgs/${this.orgId}/settings/members?invite`}
           @click=${this.navLink}
           >${msg("Add Member")}</sl-button
         >
@@ -187,7 +187,7 @@ export class OrgSettings extends LiteElement {
       <div class="mb-5">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/settings`}
+          href=${`/orgs/${this.orgId}/settings/members`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -204,7 +204,7 @@ export class OrgSettings extends LiteElement {
         <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
         <btrix-org-invite-form
           @success=${this.onInviteSuccess}
-          @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings`)}
+          @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings/members`)}
           .authState=${this.authState}
           .orgId=${this.orgId}
         ></btrix-org-invite-form>
@@ -256,7 +256,7 @@ export class OrgSettings extends LiteElement {
   ) {
     this.successfullyInvitedEmail = event.detail.inviteEmail;
 
-    this.navTo(`/orgs/${this.orgId}/settings`);
+    this.navTo(`/orgs/${this.orgId}/settings/members`);
   }
 }
 

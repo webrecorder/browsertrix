@@ -460,7 +460,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/crawl-configs/new?jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }

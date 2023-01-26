@@ -64,7 +64,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
     if (this.jobType && !this.initialCrawlTemplate.jobType) {
-      href = `/orgs/${this.orgId}/crawl-configs/new`;
+      href = `/orgs/${this.orgId}/crawl-configs?new`;
       label = msg("Choose Crawl Type");
     }
     return html`
@@ -136,7 +136,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-configs/new?jobType=url-list`}
+          href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=url-list`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "url-list";
@@ -157,7 +157,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-configs/new?jobType=seed-crawl`}
+          href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=seed-crawl`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "seed-crawl";

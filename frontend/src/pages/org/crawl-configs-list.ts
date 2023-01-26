@@ -169,7 +169,7 @@ export class CrawlTemplatesList extends LiteElement {
 
         <div class="grow-0 mb-4">
           <sl-button
-            href=${`/orgs/${this.orgId}/crawl-configs/new?jobType`}
+            href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
             variant="primary"
             @click=${this.navLink}
           >
@@ -612,7 +612,7 @@ export class CrawlTemplatesList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/crawl-configs/new?jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }

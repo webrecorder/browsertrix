@@ -45,7 +45,7 @@ export class BrowserProfilesList extends LiteElement {
   render() {
     return html`<header class="mb-3 text-right">
         <sl-button
-          href=${`/orgs/${this.orgId}/browser-profiles/new`}
+          href=${`/orgs/${this.orgId}/browser-profiles?new`}
           variant="primary"
           @click=${this.navLink}
         >

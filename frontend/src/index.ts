@@ -253,7 +253,7 @@ export class App extends LiteElement {
       </style>
 
       <div class="min-w-screen min-h-screen flex flex-col">
-        ${this.renderNavBar()} ${this.renderSubNavBar()}
+        ${this.renderNavBar()} ${this.renderOrgNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
@@ -572,14 +572,6 @@ export class App extends LiteElement {
         ></btrix-orgs>`;
 
       case "org":
-      case "orgAddMember":
-      case "orgNewResourceTab":
-      case "orgCrawl":
-      case "browserProfile":
-      case "browser":
-      case "crawlTemplate":
-      case "crawlTemplateEdit":
-      case "crawlTemplateNew":
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
@@ -589,16 +581,9 @@ export class App extends LiteElement {
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
+          .params=${this.viewState.params}
           orgId=${this.viewState.params.orgId}
-          orgTab=${this.viewState.params.tab as OrgTab}
-          browserProfileId=${this.viewState.params.browserProfileId}
-          browserId=${this.viewState.params.browserId}
-          crawlConfigId=${this.viewState.params.crawlConfigId}
-          crawlId=${this.viewState.params.crawlId}
-          ?isAddingMember=${this.viewState.route === "orgAddMember"}
-          ?isNewResourceTab=${this.viewState.route === "orgNewResourceTab" ||
-          this.viewState.route === "crawlTemplateNew"}
-          ?isEditing=${"edit" in this.viewState.params}
+          orgTab=${this.viewState.params.orgTab as OrgTab}
         ></btrix-org>`;
 
       case "accountSettings":
@@ -670,7 +655,7 @@ export class App extends LiteElement {
     ></btrix-not-found>`;
   }
 
-  private renderSubNavBar() {
+  private renderOrgNavBar() {
     if (!this.userInfo || !this.selectedOrgId) return;
 
     return html`
@@ -697,7 +682,7 @@ export class App extends LiteElement {
   }
 
   private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
-    const isActive = this.viewState.params.tab === tabName;
+    const isActive = this.viewState.params.orgTab === tabName;
 
     return html`
       <a
