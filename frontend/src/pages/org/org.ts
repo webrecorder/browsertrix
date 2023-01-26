@@ -61,13 +61,7 @@ export class Org extends LiteElement {
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       try {
-        const org = await this.getOrg(this.orgId);
-
-        if (!org) {
-          this.navTo("/orgs");
-        } else {
-          this.org = org;
-        }
+        this.org = await this.getOrg(this.orgId);
       } catch {
         this.org = null;
 

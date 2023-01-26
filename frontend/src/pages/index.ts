@@ -10,7 +10,7 @@ import(/* webpackChunkName: "log-in" */ "./log-in").then(({ LogInPage }) => {
 import(/* webpackChunkName: "orgs" */ "./orgs").then(({ Orgs }) => {
   customElements.define("btrix-orgs", Orgs);
 });
-import(/* webpackChunkName: "org" */ "./org").then(({ Org }) => {
+import(/* webpackChunkName: "org" */ "./org/org").then(({ Org }) => {
   customElements.define("btrix-org", Org);
 });
 import(/* webpackChunkName: "crawls" */ "./crawls").then(({ Crawls }) => {
