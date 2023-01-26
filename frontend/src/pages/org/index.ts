@@ -1,10 +1,12 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
 import type { OrgData } from "../../utils/orgs";
+import { isOwner } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import "./crawl-configs-detail";
@@ -15,7 +17,7 @@ import "./crawls-list";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
-import "./org-settings";
+import "./settings";
 
 export type OrgTab =
   | "crawls"
@@ -84,7 +86,7 @@ export class Org extends LiteElement {
       return "";
     }
 
-    if (!this.org) {
+    if (!this.org || !this.userInfo) {
       return html`
         <div
           class="absolute top-1/2 left-1/2 -mt-4 -ml-4"
@@ -95,6 +97,8 @@ export class Org extends LiteElement {
       `;
     }
 
+    const memberInfo = (this.org.users ?? {})[this.userInfo.id];
+    const isOrgOwner = memberInfo && isOwner(memberInfo.role);
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
@@ -107,9 +111,12 @@ export class Org extends LiteElement {
       case "browser-profiles":
         tabPanelContent = this.renderBrowserProfiles();
         break;
-      case "settings":
-        tabPanelContent = this.renderOrgSettings();
-        break;
+      case "settings": {
+        if (isOrgOwner) {
+          tabPanelContent = this.renderOrgSettings();
+          break;
+        }
+      }
       default:
         tabPanelContent = html`<btrix-not-found
           class="flex items-center justify-center"
@@ -118,6 +125,7 @@ export class Org extends LiteElement {
     }
 
     return html`
+      ${this.renderOrgNavBar(isOrgOwner)}
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
@@ -126,6 +134,54 @@ export class Org extends LiteElement {
           ${tabPanelContent}
         </div>
       </main>
+    `;
+  }
+
+  private renderOrgNavBar(isOrgOwner: boolean) {
+    return html`
+      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+        <nav class="-ml-3 flex items-end overflow-x-auto">
+          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
+          ${this.renderNavTab({
+            tabName: "crawl-configs",
+            label: msg("Crawl Configs"),
+          })}
+          ${this.renderNavTab({
+            tabName: "browser-profiles",
+            label: msg("Browser Profiles"),
+          })}
+          ${when(isOrgOwner, () =>
+            this.renderNavTab({
+              tabName: "settings",
+              label: msg("Org Settings"),
+            })
+          )}
+        </nav>
+      </div>
+
+      <hr />
+    `;
+  }
+
+  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
+    const isActive = this.orgTab === tabName;
+
+    return html`
+      <a
+        id="${tabName}-tab"
+        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
+        href=${`/orgs/${this.orgId}/${tabName}`}
+        aria-selected=${isActive}
+        @click=${this.navLink}
+      >
+        <div
+          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
+            ? "border-primary text-primary"
+            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
+        >
+          ${label}
+        </div>
+      </a>
     `;
   }
 
@@ -214,8 +270,8 @@ export class Org extends LiteElement {
     return html`<btrix-org-settings
       .authState=${this.authState}
       .userInfo=${this.userInfo}
-      .org=${this.org || null}
-      .orgId=${this.orgId!}
+      .org=${this.org}
+      .orgId=${this.orgId}
       ?isAddingMember=${isAddingMember}
     ></btrix-org-settings>`;
   }

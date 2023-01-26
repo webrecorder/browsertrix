@@ -15,7 +15,11 @@ import type { CurrentUser } from "../../types/user";
  * Usage:
  * ```ts
  * <btrix-org-settings
- *
+ *  .authState=${authState}
+ *  .userInfo=${userInfo}
+ *  .org=${org}
+ *  .orgId=${orgId}
+ *  ?isAddingMember=${isAddingMember}
  * ></btrix-org-settings>
  * ```
  */
@@ -25,13 +29,13 @@ export class OrgSettings extends LiteElement {
   authState?: AuthState;
 
   @property({ type: Object })
-  userInfo?: CurrentUser;
+  userInfo!: CurrentUser;
 
   @property({ type: String })
   orgId!: string;
 
   @property({ type: Object })
-  org: OrgData | null = null;
+  org!: OrgData;
 
   @property({ type: Boolean })
   isAddingMember = false;
@@ -65,18 +69,6 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderOrgName() {
-    if (!this.org || !this.userInfo) return;
-    const memberInfo = (this.org.users ?? {})[this.userInfo.id];
-    if (!memberInfo || !isOwner(memberInfo.role)) {
-      return html`
-        <sl-input
-          label=${msg("Org Name")}
-          value=${this.org.name}
-          readonly
-        ></sl-input>
-      `;
-    }
-
     return html`<form
       @submit=${this.onOrgNameSubmit}
       @reset=${() => (this.isEditingOrgName = false)}
@@ -124,8 +116,6 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    if (!this.org!.users) return;
-
     let successMessage;
 
     if (this.successfullyInvitedEmail) {
@@ -161,7 +151,7 @@ export class OrgSettings extends LiteElement {
           </div>
         </div>
         <div role="rowgroup">
-          ${Object.entries(this.org!.users).map(
+          ${Object.entries(this.org.users!).map(
             ([id, { name, role }]) => html`
               <div class="border-b flex" role="row">
                 <div class="w-1/2 p-3" role="cell">
