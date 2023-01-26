@@ -7,6 +7,7 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
+import "./utils/polyfills";
 import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
@@ -16,7 +17,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
-import type { Org, OrgData } from "./utils/orgs";
+import type { OrgData } from "./utils/orgs";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -38,6 +39,7 @@ type APIUser = {
   name: string;
   is_verified: boolean;
   is_superuser: boolean;
+  orgs: OrgData[];
 };
 
 type UserSettings = {
@@ -92,7 +94,7 @@ export class App extends LiteElement {
     const authState = await AuthService.initSessionStorage();
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.orgId;
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -110,7 +112,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.id;
+      this.selectedOrgId = this.viewState.params.orgId;
     }
   }
 
@@ -142,45 +144,30 @@ export class App extends LiteElement {
 
   private async updateUserInfo() {
     try {
-      const [userInfoResp, orgsResp] = await Promise.allSettled([
-        this.getUserInfo().then((value) => {
-          this.userInfo = {
-            id: value.id,
-            email: value.email,
-            name: value.name,
-            isVerified: value.is_verified,
-            isAdmin: value.is_superuser,
-          };
-          const settings = this.getPersistedUserSettings(value.id);
-          if (settings) {
-            this.selectedOrgId = settings.orgId;
-          }
-          return value;
-        }),
-        // TODO see if we can add API endpoint to retrieve first org
-        this.getOrgs(),
-      ]);
-
-      const userInfoSuccess = userInfoResp.status === "fulfilled";
-      if (orgsResp.status === "fulfilled") {
-        const { orgs } = orgsResp.value;
-        this.orgs = orgs;
-        if (userInfoSuccess) {
-          const userInfo = userInfoResp.value;
-          if (orgs.length && !userInfo?.is_superuser) {
-            this.selectedOrgId = this.selectedOrgId || orgs[0].id;
-
-            if (orgs.length === 1) {
-              // Persist selected org ID since there's no
-              // user selection event to persist
-              this.persistUserSettings(userInfo.id, {
-                orgId: this.selectedOrgId,
-              });
-            }
-          }
+      const userInfo = await this.getUserInfo();
+      this.userInfo = {
+        id: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        isVerified: userInfo.is_verified,
+        isAdmin: userInfo.is_superuser,
+      };
+      const settings = this.getPersistedUserSettings(userInfo.id);
+      if (settings) {
+        this.selectedOrgId = settings.orgId;
+      }
+      const orgs = userInfo.orgs;
+      this.orgs = orgs;
+      if (orgs.length && !this.userInfo.isAdmin && !this.selectedOrgId) {
+        const firstOrg = orgs[0].id;
+        if (orgs.length === 1) {
+          // Persist selected org ID since there's no
+          // user selection event to persist
+          this.persistUserSettings(userInfo.id, {
+            orgId: firstOrg,
+          });
         }
-      } else {
-        throw orgsResp.reason;
+        this.selectedOrgId = firstOrg;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -252,7 +239,7 @@ export class App extends LiteElement {
       </style>
 
       <div class="min-w-screen min-h-screen flex flex-col">
-        ${this.renderNavBar()} ${this.renderSubNavBar()}
+        ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
@@ -571,33 +558,21 @@ export class App extends LiteElement {
         ></btrix-orgs>`;
 
       case "org":
-      case "orgAddMember":
-      case "orgNewResourceTab":
-      case "orgCrawl":
-      case "browserProfile":
-      case "browser":
-      case "crawlTemplate":
-      case "crawlTemplateEdit":
-      case "crawlTemplateNew":
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
           @need-login=${this.onNeedLogin}
-          @update-user-info=${this.updateUserInfo}
+          @update-user-info=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.updateUserInfo();
+          }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
-          orgId=${this.viewState.params.id}
-          orgTab=${this.viewState.params.tab as OrgTab}
-          browserProfileId=${this.viewState.params.browserProfileId}
-          browserId=${this.viewState.params.browserId}
-          crawlConfigId=${this.viewState.params.crawlConfigId}
-          crawlId=${this.viewState.params.crawlId}
-          ?isAddingMember=${this.viewState.route === "orgAddMember"}
-          ?isNewResourceTab=${this.viewState.route === "orgNewResourceTab" ||
-          this.viewState.route === "crawlTemplateNew"}
-          ?isEditing=${"edit" in this.viewState.params}
+          .params=${this.viewState.params}
+          orgId=${this.viewState.params.orgId}
+          orgTab=${this.viewState.params.orgTab as OrgTab}
         ></btrix-org>`;
 
       case "accountSettings":
@@ -665,54 +640,6 @@ export class App extends LiteElement {
     return html`<btrix-not-found
       class="w-full md:bg-neutral-50 flex items-center justify-center"
     ></btrix-not-found>`;
-  }
-
-  private renderSubNavBar() {
-    if (!this.userInfo || !this.selectedOrgId) return;
-
-    return html`
-      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
-        <nav class="-ml-3 flex items-end overflow-x-auto">
-          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
-          ${this.renderNavTab({
-            tabName: "crawl-configs",
-            label: msg("Crawl Configs"),
-          })}
-          ${this.renderNavTab({
-            tabName: "browser-profiles",
-            label: msg("Browser Profiles"),
-          })}
-          ${this.renderNavTab({
-            tabName: "settings",
-            label: msg("Org Settings"),
-          })}
-        </nav>
-      </div>
-
-      <hr />
-    `;
-  }
-
-  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
-    const isActive = this.viewState.params.tab === tabName;
-
-    return html`
-      <a
-        id="${tabName}-tab"
-        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.selectedOrgId}/${tabName}`}
-        aria-selected=${isActive}
-        @click=${this.navLink}
-      >
-        <div
-          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
-            ? "border-primary text-primary"
-            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
-        >
-          ${label}
-        </div>
-      </a>
-    `;
   }
 
   private renderFindCrawl() {
@@ -868,10 +795,6 @@ export class App extends LiteElement {
     this.authService = new AuthService();
     this.userInfo = undefined;
     this.selectedOrgId = undefined;
-  }
-
-  private getOrgs(): Promise<{ orgs: OrgData[] }> {
-    return this.apiFetch("/orgs", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {

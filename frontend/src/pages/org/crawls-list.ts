@@ -737,7 +737,7 @@ export class CrawlsList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${crawl.oid}/crawl-configs/new?jobType=${crawlTemplate.jobType}`,
+      `/orgs/${crawl.oid}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }

@@ -6,7 +6,6 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { ProfileBrowser } from "../../components/profile-browser";
 import { Profile } from "./types";
-import { F } from "lodash/fp";
 
 /**
  * Usage:
