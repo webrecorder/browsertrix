@@ -138,7 +138,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
         on: {
           SUCCESS: {
             target: "readOnly",
-            actions: "setSucessMessage",
+            actions: "setSuccessMessage",
           },
           ERROR: {
             target: "editingForm",
@@ -151,7 +151,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   {
     actions: {
       reset: assign(() => initialContext),
-      setSucessMessage: assign((context, event) => ({
+      setSuccessMessage: assign((context, event) => ({
         ...context,
         ...(event as FormSuccessEvent).detail,
       })),
