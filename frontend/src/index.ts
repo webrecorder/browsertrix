@@ -17,7 +17,7 @@ import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
-import type { Org, OrgData } from "./utils/orgs";
+import type { OrgData } from "./utils/orgs";
 import theme from "./theme";
 import { ROUTES, DASHBOARD_ROUTE } from "./routes";
 import "./shoelace";
@@ -39,6 +39,7 @@ type APIUser = {
   name: string;
   is_verified: boolean;
   is_superuser: boolean;
+  orgs: OrgData[];
 };
 
 type UserSettings = {
@@ -143,45 +144,30 @@ export class App extends LiteElement {
 
   private async updateUserInfo() {
     try {
-      const [userInfoResp, orgsResp] = await Promise.allSettled([
-        this.getUserInfo().then((value) => {
-          this.userInfo = {
-            id: value.id,
-            email: value.email,
-            name: value.name,
-            isVerified: value.is_verified,
-            isAdmin: value.is_superuser,
-          };
-          const settings = this.getPersistedUserSettings(value.id);
-          if (settings) {
-            this.selectedOrgId = settings.orgId;
-          }
-          return value;
-        }),
-        // TODO see if we can add API endpoint to retrieve first org
-        this.getOrgs(),
-      ]);
-
-      const userInfoSuccess = userInfoResp.status === "fulfilled";
-      if (orgsResp.status === "fulfilled") {
-        const { orgs } = orgsResp.value;
-        this.orgs = orgs;
-        if (userInfoSuccess) {
-          const userInfo = userInfoResp.value;
-          if (orgs.length && !userInfo?.is_superuser) {
-            this.selectedOrgId = this.selectedOrgId || orgs[0].id;
-
-            if (orgs.length === 1) {
-              // Persist selected org ID since there's no
-              // user selection event to persist
-              this.persistUserSettings(userInfo.id, {
-                orgId: this.selectedOrgId,
-              });
-            }
-          }
+      const userInfo = await this.getUserInfo();
+      this.userInfo = {
+        id: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        isVerified: userInfo.is_verified,
+        isAdmin: userInfo.is_superuser,
+      };
+      const settings = this.getPersistedUserSettings(userInfo.id);
+      if (settings) {
+        this.selectedOrgId = settings.orgId;
+      }
+      const orgs = userInfo.orgs;
+      this.orgs = orgs;
+      if (orgs.length && !this.userInfo.isAdmin && !this.selectedOrgId) {
+        const firstOrg = orgs[0].id;
+        if (orgs.length === 1) {
+          // Persist selected org ID since there's no
+          // user selection event to persist
+          this.persistUserSettings(userInfo.id, {
+            orgId: firstOrg,
+          });
         }
-      } else {
-        throw orgsResp.reason;
+        this.selectedOrgId = firstOrg;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -806,10 +792,6 @@ export class App extends LiteElement {
     this.authService = new AuthService();
     this.userInfo = undefined;
     this.selectedOrgId = undefined;
-  }
-
-  private getOrgs(): Promise<{ orgs: OrgData[] }> {
-    return this.apiFetch("/orgs", this.authService.authState!);
   }
 
   private showDialog(content: DialogContent) {
