@@ -49,10 +49,10 @@ export class OrgSettings extends LiteElement {
   private isAddMemberFormVisible = false;
 
   @state()
-  private successfullyInvitedEmail?: string;
+  private isSavingOrgName = false;
 
   @state()
-  private isSavingOrgName = false;
+  private isSubmittingInvite = false;
 
   private get tabLabels() {
     return {
@@ -64,7 +64,6 @@ export class OrgSettings extends LiteElement {
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
-      this.successfullyInvitedEmail = undefined;
     }
   }
 
@@ -105,7 +104,6 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderInformation() {
-    console.log(this.org);
     return html`<div class="rounded border p-5">
       <form @submit=${this.onOrgNameSubmit}>
         <div class="flex items-end">
@@ -133,21 +131,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    let successMessage;
-
-    if (this.successfullyInvitedEmail) {
-      successMessage = html`
-        <div class="my-3">
-          <btrix-alert variant="success"
-            >${msg(
-              str`Successfully invited ${this.successfullyInvitedEmail}`
-            )}</btrix-alert
-          >
-        </div>
-      `;
-    }
-    return html`${successMessage}
-
+    return html`
       <div class="text-right">
         <sl-button
           href=${`/orgs/${this.orgId}/settings/members?invite`}
@@ -192,33 +176,86 @@ export class OrgSettings extends LiteElement {
       <btrix-dialog
         label=${msg("Invite New Member")}
         ?open=${this.isAddingMember}
-        @sl-request-close=${this.hideDialog}
+        @sl-request-close=${this.hideInviteDialog}
         @sl-show=${() => (this.isAddMemberFormVisible = true)}
         @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
       >
-        ${this.isAddMemberFormVisible ? this.renderAddMember() : ""}
-      </btrix-dialog> `;
+        ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
+      </btrix-dialog>
+    `;
   }
 
-  private hideDialog() {
+  private hideInviteDialog() {
     this.navTo(`/orgs/${this.orgId}/settings/members`);
   }
 
-  private renderAddMember() {
+  private renderInviteForm() {
     return html`
-      <btrix-org-invite-form
-        @success=${this.onInviteSuccess}
-        @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings/members`)}
-        .authState=${this.authState}
-        .orgId=${this.orgId}
-      ></btrix-org-invite-form>
+      <form
+        id="orgInviteForm"
+        @submit=${this.onOrgInviteSubmit}
+        @reset=${this.hideInviteDialog}
+      >
+        <div class="mb-5">
+          <sl-input
+            id="inviteEmail"
+            name="inviteEmail"
+            type="email"
+            label=${msg("Email")}
+            placeholder=${msg("org-member@email.com", {
+              desc: "Placeholder text for email to invite",
+            })}
+            required
+          >
+          </sl-input>
+        </div>
+        <div class="mb-5">
+          <sl-radio-group
+            name="role"
+            label="Permission"
+            value=${AccessCode.viewer}
+          >
+            <sl-radio value=${AccessCode.owner}>
+              ${msg("Admin — Can create crawls and manage org members")}
+            </sl-radio>
+            <sl-radio value=${AccessCode.crawler}>
+              ${msg("Crawler — Can create crawls")}
+            </sl-radio>
+            <sl-radio value=${AccessCode.viewer}>
+              ${msg("Viewer — Can view crawls")}
+            </sl-radio>
+          </sl-radio-group>
+        </div>
+      </form>
+      <div slot="footer" class="flex justify-between">
+        <sl-button form="orgInviteForm" type="reset" size="small"
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          form="orgInviteForm"
+          variant="primary"
+          type="submit"
+          size="small"
+          ?loading=${this.isSubmittingInvite}
+          ?disabled=${this.isSubmittingInvite}
+          >${msg("Invite")}</sl-button
+        >
+      </div>
     `;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 
   private async onOrgNameSubmit(e: SubmitEvent) {
     e.preventDefault();
 
-    const { orgName } = serialize(e.target as HTMLFormElement);
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const { orgName } = serialize(formEl);
 
     this.isSavingOrgName = true;
 
@@ -238,10 +275,11 @@ export class OrgSettings extends LiteElement {
       this.dispatchEvent(
         new CustomEvent("update-user-info", { bubbles: true })
       );
-    } catch (e) {
-      console.debug(e);
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't update organization name at this time."),
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't update organization name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -250,12 +288,48 @@ export class OrgSettings extends LiteElement {
     this.isSavingOrgName = false;
   }
 
-  private onInviteSuccess(
-    event: CustomEvent<{ inviteEmail: string; isExistingUser: boolean }>
-  ) {
-    this.successfullyInvitedEmail = event.detail.inviteEmail;
+  async onOrgInviteSubmit(e: SubmitEvent) {
+    e.preventDefault();
 
-    this.navTo(`/orgs/${this.orgId}/settings/members`);
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const { inviteEmail, role } = serialize(formEl);
+
+    this.isSubmittingInvite = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/invite`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: Number(role),
+          }),
+        }
+      );
+
+      this.notify({
+        message: msg(str`Successfully invited ${inviteEmail}.`),
+        variant: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+
+      this.hideInviteDialog();
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't invite user at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingInvite = false;
   }
 }
 

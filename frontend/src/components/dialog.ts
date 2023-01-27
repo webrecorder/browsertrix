@@ -28,5 +28,11 @@ export class Dialog extends SLDialog {
     .dialog__close {
       --header-spacing: var(--sl-spacing-2x-small);
     }
+
+    .dialog__footer {
+      padding-top: var(--sl-spacing-small);
+      padding-bottom: var(--sl-spacing-small);
+      border-top: 1px solid var(--sl-color-neutral-100);
+    }
   `;
 }
