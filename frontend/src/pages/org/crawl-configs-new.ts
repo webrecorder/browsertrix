@@ -148,7 +148,7 @@ export class CrawlTemplatesNew extends LiteElement {
               <div class="text-lg font-medium my-3">${msg("URL List")}</div>
               <p class="text-sm text-neutral-500">
                 ${msg(
-                  "The crawler visits every URL you tell it to and optionally every URL linked on those pages."
+                  "The crawler visits every URL specified in a list, and optionally every URL linked on those pages."
                 )}
               </p>
             </figcaption>
@@ -169,7 +169,7 @@ export class CrawlTemplatesNew extends LiteElement {
               <div class="text-lg font-medium my-3">${msg("Seeded Crawl")}</div>
               <p class="text-sm text-neutral-500">
                 ${msg(
-                  "The crawler automatically finds new pages and archives them."
+                  "The crawler automatically discovers and archives pages starting from a single seed URL."
                 )}
               </p>
             </figcaption>

@@ -442,7 +442,7 @@ export class CrawlConfigEditor extends LiteElement {
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlSetup: msg("Crawl Setup"),
+      crawlSetup: msg("Crawl Scope"),
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Crawl Scheduling"),
       crawlInformation: msg("Crawl Information"),
@@ -944,7 +944,7 @@ https://example.com/path`}
       ${this.renderFormCol(html`
         <sl-select
           name="scopeType"
-          label=${msg("Crawl Scope")}
+          label=${msg("Start URL Scope")}
           defaultValue=${this.formState.scopeType}
           value=${this.formState.scopeType}
           @sl-select=${(e: Event) =>
@@ -987,7 +987,7 @@ https://example.net`}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
-        html`Crawl pages outside of Crawl Scope that begin with these URLs.`
+        html`If the crawler finds pages outside of the Start URL Scope they will only be saved if they begin with URLs listed here.`
       )}
       ${this.renderFormCol(html`
         <sl-checkbox
@@ -1096,8 +1096,8 @@ https://example.net`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Increasing parallel crawler instances will speed up crawls, but
-        take up more system resources.`
+        html`Increasing parallel crawler instances can speed up crawls, but
+        may increase the chances of getting rate limited.`
       )}
     `;
   }
