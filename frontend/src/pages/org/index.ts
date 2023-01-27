@@ -46,6 +46,10 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
+  // Path after `/orgs/:orgId/`
+  @property({ type: String })
+  orgPath!: string;
+
   @property({ type: Object })
   params!: Params;
 
@@ -259,6 +263,10 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
+    // const activePanel = this.
+    const activePanel = this.orgPath.includes("/members")
+      ? "members"
+      : "information";
     const isAddingMember = this.params.hasOwnProperty("invite");
 
     return html`<btrix-org-settings
@@ -266,6 +274,7 @@ export class Org extends LiteElement {
       .userInfo=${this.userInfo}
       .org=${this.org}
       .orgId=${this.orgId}
+      activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
     ></btrix-org-settings>`;
   }

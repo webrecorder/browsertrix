@@ -11,6 +11,8 @@ import { isOwner, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 
+type Tab = "information" | "members";
+
 /**
  * Usage:
  * ```ts
@@ -37,6 +39,9 @@ export class OrgSettings extends LiteElement {
   @property({ type: Object })
   org!: OrgData;
 
+  @property({ type: String })
+  activePanel: Tab = "information";
+
   @property({ type: Boolean })
   isAddingMember = false;
 
@@ -44,10 +49,14 @@ export class OrgSettings extends LiteElement {
   private successfullyInvitedEmail?: string;
 
   @state()
-  private isEditingOrgName = false;
-
-  @state()
   private isSavingOrgName = false;
+
+  private get tabLabels() {
+    return {
+      information: msg("Org Information"),
+      members: msg("Members"),
+    };
+  }
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -60,59 +69,68 @@ export class OrgSettings extends LiteElement {
       return this.renderAddMember();
     }
 
-    return html`<btrix-section-heading
-        >${msg("Org Information")}</btrix-section-heading
-      >
-      <section class="mt-5 mb-10">${this.renderOrgName()}</section>
-      <btrix-section-heading>${msg("Org Members")}</btrix-section-heading>
-      <section class="mt-5">${this.renderMembers()}</section>`;
+    return html`<header class="mb-5">
+        <h2 class="text-xl leading-10">${msg("Org Settings")}</h2>
+      </header>
+
+      <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
+        <header slot="header">${this.tabLabels[this.activePanel]}</header>
+        ${this.renderTab("information", "settings")}
+        ${this.renderTab("members", "settings/members")}
+
+        <btrix-tab-panel name="information"
+          >${this.renderInformation()}</btrix-tab-panel
+        >
+        <btrix-tab-panel name="members"
+          >${this.renderMembers()}</btrix-tab-panel
+        >
+      </btrix-tab-list>`;
   }
 
-  private renderOrgName() {
-    return html`<form
-      @submit=${this.onOrgNameSubmit}
-      @reset=${() => (this.isEditingOrgName = false)}
-    >
-      <div class="flex items-end">
-        <div class="flex-1 mr-3">
-          <sl-input
-            name="orgName"
-            label=${msg("Org Name")}
-            autocomplete="off"
-            value=${this.org.name}
-            ?readonly=${!this.isEditingOrgName}
-            ?required=${this.isEditingOrgName}
-          ></sl-input>
+  private renderTab(name: Tab, path: string) {
+    const isActive = name === this.activePanel;
+    return html`
+      <a
+        slot="nav"
+        href=${`/orgs/${this.orgId}/${path}`}
+        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+          ? "text-blue-600 bg-blue-50 shadow-sm"
+          : "text-neutral-600 hover:bg-neutral-50"}"
+        @click=${this.navLink}
+        aria-selected=${isActive}
+        tabindex="0"
+      >
+        ${this.tabLabels[name]}
+      </a>
+    `;
+  }
+
+  private renderInformation() {
+    console.log(this.org);
+    return html`<div class="rounded border p-5">
+      <form @submit=${this.onOrgNameSubmit}>
+        <div class="flex items-end">
+          <div class="flex-1 mr-3">
+            <sl-input
+              name="orgName"
+              label=${msg("Org Name")}
+              autocomplete="off"
+              value=${this.org.name}
+              required
+            ></sl-input>
+          </div>
+          <div class="flex-0">
+            <sl-button
+              type="submit"
+              variant="primary"
+              ?disabled=${this.isSavingOrgName}
+              ?loading=${this.isSavingOrgName}
+              >${msg("Save Changes")}</sl-button
+            >
+          </div>
         </div>
-        <div class="flex-0">
-          ${when(
-            this.isEditingOrgName,
-            () => html`
-              <sl-button type="reset" class="mr-1">${msg("Cancel")}</sl-button>
-              <sl-button
-                type="submit"
-                variant="primary"
-                ?disabled=${this.isSavingOrgName}
-                ?loading=${this.isSavingOrgName}
-                >${msg("Save Changes")}</sl-button
-              >
-            `,
-            () => html`
-              <sl-button
-                @click=${(e: MouseEvent) => {
-                  this.isEditingOrgName = true;
-                  (e.target as SlButton)
-                    .closest("form")
-                    ?.querySelector("sl-input")
-                    ?.focus();
-                }}
-                >${msg("Edit")}</sl-button
-              >
-            `
-          )}
-        </div>
-      </div>
-    </form>`;
+      </form>
+    </div>`;
   }
 
   private renderMembers() {
@@ -204,7 +222,7 @@ export class OrgSettings extends LiteElement {
 
   private async onOrgNameSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!this.org) return;
+
     const { orgName } = serialize(e.target as HTMLFormElement);
 
     this.isSavingOrgName = true;
@@ -222,12 +240,6 @@ export class OrgSettings extends LiteElement {
         duration: 8000,
       });
 
-      this.org = {
-        ...this.org,
-        name: orgName as string,
-      };
-
-      this.isEditingOrgName = false;
       this.dispatchEvent(
         new CustomEvent("update-user-info", { bubbles: true })
       );

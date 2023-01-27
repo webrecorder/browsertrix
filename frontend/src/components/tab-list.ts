@@ -168,15 +168,19 @@ export class TabList extends LitElement {
       top: var(--sl-spacing-medium);
     }
 
-    ul {
+    .tablist {
       display: flex;
-      margin: 0 0 0 var(--track-width);
+      margin: 0;
       list-style: none;
       padding: 0;
     }
 
+    .show-indicator .tablist {
+      margin-left: var(--track-width);
+    }
+
     @media only screen and (min-width: ${SCREEN_LG}px) {
-      ul {
+      .tablist {
         display: block;
       }
     }
@@ -201,9 +205,9 @@ export class TabList extends LitElement {
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
-      ul,
-      .track,
-      .indicator {
+      .tablist,
+      .show-indicator .track,
+      .show-indicator .indicator {
         display: block;
       }
     }
@@ -216,6 +220,9 @@ export class TabList extends LitElement {
   // If panels are linear, the current panel in progress
   @property({ type: String })
   progressPanel?: string;
+
+  @property({ type: Boolean })
+  hideIndicator = false;
 
   @queryAsync(".track")
   private trackElem!: HTMLElement;
@@ -233,7 +240,7 @@ export class TabList extends LitElement {
   }
 
   private async repositionIndicator(activeTab?: TabElement, animate = true) {
-    if (!activeTab) return;
+    if (!activeTab || this.hideIndicator) return;
 
     const trackElem = await this.trackElem;
     const indicatorElem = await this.indicatorElem;
@@ -274,12 +281,17 @@ export class TabList extends LitElement {
         @sl-resize=${() =>
           this.repositionIndicator(this.getTab(this.progressPanel))}
       >
-        <div class="nav ${this.progressPanel ? "linear" : "nonlinear"}">
+        <div
+          class="nav ${this.progressPanel ? "linear" : "nonlinear"} ${this
+            .hideIndicator
+            ? "hide-indicator"
+            : "show-indicator"}"
+        >
           <div class="track" role="presentation">
             <div class="indicator" role="presentation"></div>
           </div>
 
-          <ul role="tablist">
+          <ul class="tablist" role="tablist">
             <slot name="nav"></slot>
           </ul>
         </div>
