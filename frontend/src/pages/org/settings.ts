@@ -3,7 +3,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlButton } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -73,7 +72,21 @@ export class OrgSettings extends LiteElement {
       </header>
 
       <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
-        <header slot="header">${this.tabLabels[this.activePanel]}</header>
+        <header slot="header" class="flex items-end justify-between h-5">
+          <h3>${this.tabLabels[this.activePanel]}</h3>
+          ${when(
+            this.activePanel === "members",
+            () => html`
+              <sl-button
+                href=${`/orgs/${this.orgId}/settings/members?invite`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
+                >${msg("Invite New Member")}</sl-button
+              >
+            `
+          )}
+        </header>
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
 
@@ -110,6 +123,7 @@ export class OrgSettings extends LiteElement {
           <div class="flex-1 mr-3">
             <sl-input
               name="orgName"
+              size="small"
               label=${msg("Org Name")}
               autocomplete="off"
               value=${this.org.name}
@@ -119,6 +133,7 @@ export class OrgSettings extends LiteElement {
           <div class="flex-0">
             <sl-button
               type="submit"
+              size="small"
               variant="primary"
               ?disabled=${this.isSavingOrgName}
               ?loading=${this.isSavingOrgName}
@@ -132,38 +147,33 @@ export class OrgSettings extends LiteElement {
 
   private renderMembers() {
     return html`
-      <div class="text-right">
-        <sl-button
-          href=${`/orgs/${this.orgId}/settings/members?invite`}
-          variant="primary"
-          @click=${this.navLink}
-          >${msg("Invite New Member")}</sl-button
-        >
-      </div>
-
-      <div role="table">
-        <div class="border-b" role="rowgroup">
+      <div role="table" class="rounded border">
+        <div class="border-b bg-neutral-50" role="rowgroup">
           <div class="flex font-medium" role="row">
-            <div class="w-1/2 px-3 py-2" role="columnheader" aria-sort="none">
+            <div class="flex-1 px-3 py-1" role="columnheader" aria-sort="none">
               ${msg("Name")}
             </div>
-            <div class="px-3 py-2" role="columnheader" aria-sort="none">
+            <div
+              class="flex-0 w-52 px-3 py-1"
+              role="columnheader"
+              aria-sort="none"
+            >
               ${msg("Role", { desc: "Organization member's role" })}
             </div>
           </div>
         </div>
         <div role="rowgroup">
           ${Object.entries(this.org.users!).map(
-            ([id, { name, role }]) => html`
-              <div class="border-b flex" role="row">
-                <div class="w-1/2 p-3" role="cell">
-                  ${name ||
-                  html`<span class="text-gray-400">${msg("Member")}</span>`}
-                </div>
-                <div class="p-3" role="cell">
-                  ${isOwner(role)
+            ([id, user]) => html`
+              <div
+                class="border-b last:border-none flex items-center"
+                role="row"
+              >
+                <div class="flex-1 p-3" role="cell">${user.name}</div>
+                <div class="flex-0 w-52 p-3" role="cell">
+                  ${isOwner(user.role)
                     ? msg("Admin")
-                    : role === AccessCode.crawler
+                    : user.role === AccessCode.crawler
                     ? msg("Crawler")
                     : msg("Viewer")}
                 </div>
@@ -183,6 +193,14 @@ export class OrgSettings extends LiteElement {
         ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
       </btrix-dialog>
     `;
+  }
+
+  private renderUserRole(user: { name: string; role: typeof AccessCode }) {
+    return html`<sl-select value=${user.role} size="small">
+      <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
+      <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
+      <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
+    </sl-select>`;
   }
 
   private hideInviteDialog() {
