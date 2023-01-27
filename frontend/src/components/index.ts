@@ -10,9 +10,6 @@ import("./locale-picker").then(({ LocalePicker }) => {
 import("./account-settings").then(({ AccountSettings }) => {
   customElements.define("btrix-account-settings", AccountSettings);
 });
-import("./org-invite-form").then(({ OrgInviteForm }) => {
-  customElements.define("btrix-org-invite-form", OrgInviteForm);
-});
 import("./config-editor").then(({ ConfigEditor }) => {
   customElements.define("btrix-config-editor", ConfigEditor);
 });
