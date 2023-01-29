@@ -3,13 +3,14 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlButton } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isOwner, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
+
+type Tab = "information" | "members";
 
 /**
  * Usage:
@@ -37,131 +38,142 @@ export class OrgSettings extends LiteElement {
   @property({ type: Object })
   org!: OrgData;
 
+  @property({ type: String })
+  activePanel: Tab = "information";
+
   @property({ type: Boolean })
   isAddingMember = false;
 
   @state()
-  private successfullyInvitedEmail?: string;
-
-  @state()
-  private isEditingOrgName = false;
+  private isAddMemberFormVisible = false;
 
   @state()
   private isSavingOrgName = false;
 
+  @state()
+  private isSubmittingInvite = false;
+
+  private get tabLabels() {
+    return {
+      information: msg("Org Information"),
+      members: msg("Members"),
+    };
+  }
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
-      this.successfullyInvitedEmail = undefined;
+      this.isAddMemberFormVisible = true;
     }
   }
 
   render() {
-    if (this.isAddingMember) {
-      return this.renderAddMember();
-    }
+    return html`<header class="mb-5">
+        <h2 class="text-xl leading-10">${msg("Org Settings")}</h2>
+      </header>
 
-    return html`<btrix-section-heading
-        >${msg("Org Information")}</btrix-section-heading
-      >
-      <section class="mt-5 mb-10">${this.renderOrgName()}</section>
-      <btrix-section-heading>${msg("Org Members")}</btrix-section-heading>
-      <section class="mt-5">${this.renderMembers()}</section>`;
-  }
-
-  private renderOrgName() {
-    return html`<form
-      @submit=${this.onOrgNameSubmit}
-      @reset=${() => (this.isEditingOrgName = false)}
-    >
-      <div class="flex items-end">
-        <div class="flex-1 mr-3">
-          <sl-input
-            name="orgName"
-            label=${msg("Org Name")}
-            autocomplete="off"
-            value=${this.org.name}
-            ?readonly=${!this.isEditingOrgName}
-            ?required=${this.isEditingOrgName}
-          ></sl-input>
-        </div>
-        <div class="flex-0">
+      <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
+        <header slot="header" class="flex items-end justify-between h-5">
+          <h3>${this.tabLabels[this.activePanel]}</h3>
           ${when(
-            this.isEditingOrgName,
+            this.activePanel === "members",
             () => html`
-              <sl-button type="reset" class="mr-1">${msg("Cancel")}</sl-button>
               <sl-button
-                type="submit"
+                href=${`/orgs/${this.orgId}/settings/members?invite`}
                 variant="primary"
-                ?disabled=${this.isSavingOrgName}
-                ?loading=${this.isSavingOrgName}
-                >${msg("Save Changes")}</sl-button
-              >
-            `,
-            () => html`
-              <sl-button
-                @click=${(e: MouseEvent) => {
-                  this.isEditingOrgName = true;
-                  (e.target as SlButton)
-                    .closest("form")
-                    ?.querySelector("sl-input")
-                    ?.focus();
-                }}
-                >${msg("Edit")}</sl-button
+                size="small"
+                @click=${this.navLink}
+                >${msg("Invite New Member")}</sl-button
               >
             `
           )}
+        </header>
+        ${this.renderTab("information", "settings")}
+        ${this.renderTab("members", "settings/members")}
+
+        <btrix-tab-panel name="information"
+          >${this.renderInformation()}</btrix-tab-panel
+        >
+        <btrix-tab-panel name="members"
+          >${this.renderMembers()}</btrix-tab-panel
+        >
+      </btrix-tab-list>`;
+  }
+
+  private renderTab(name: Tab, path: string) {
+    const isActive = name === this.activePanel;
+    return html`
+      <a
+        slot="nav"
+        href=${`/orgs/${this.orgId}/${path}`}
+        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+          ? "text-blue-600 bg-blue-50 shadow-sm"
+          : "text-neutral-600 hover:bg-neutral-50"}"
+        @click=${this.navLink}
+        aria-selected=${isActive}
+      >
+        ${this.tabLabels[name]}
+      </a>
+    `;
+  }
+
+  private renderInformation() {
+    return html`<div class="rounded border p-5">
+      <form @submit=${this.onOrgNameSubmit}>
+        <div class="flex items-end">
+          <div class="flex-1 mr-3">
+            <sl-input
+              name="orgName"
+              size="small"
+              label=${msg("Org Name")}
+              autocomplete="off"
+              value=${this.org.name}
+              required
+            ></sl-input>
+          </div>
+          <div class="flex-0">
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?disabled=${this.isSavingOrgName}
+              ?loading=${this.isSavingOrgName}
+              >${msg("Save Changes")}</sl-button
+            >
+          </div>
         </div>
-      </div>
-    </form>`;
+      </form>
+    </div>`;
   }
 
   private renderMembers() {
-    let successMessage;
-
-    if (this.successfullyInvitedEmail) {
-      successMessage = html`
-        <div class="my-3">
-          <btrix-alert variant="success"
-            >${msg(
-              str`Successfully invited ${this.successfullyInvitedEmail}`
-            )}</btrix-alert
-          >
-        </div>
-      `;
-    }
-    return html`${successMessage}
-
-      <div class="text-right">
-        <sl-button
-          href=${`/orgs/${this.orgId}/settings/members?invite`}
-          @click=${this.navLink}
-          >${msg("Add Member")}</sl-button
-        >
-      </div>
-
-      <div role="table">
-        <div class="border-b" role="rowgroup">
+    return html`
+      <div role="table" class="rounded border">
+        <div class="border-b bg-neutral-50" role="rowgroup">
           <div class="flex font-medium" role="row">
-            <div class="w-1/2 px-3 py-2" role="columnheader" aria-sort="none">
+            <div class="flex-1 px-3 py-1" role="columnheader" aria-sort="none">
               ${msg("Name")}
             </div>
-            <div class="px-3 py-2" role="columnheader" aria-sort="none">
+            <div
+              class="flex-0 w-52 px-3 py-1"
+              role="columnheader"
+              aria-sort="none"
+            >
               ${msg("Role", { desc: "Organization member's role" })}
             </div>
           </div>
         </div>
         <div role="rowgroup">
           ${Object.entries(this.org.users!).map(
-            ([id, { name, role }]) => html`
-              <div class="border-b flex" role="row">
-                <div class="w-1/2 p-3" role="cell">
-                  ${name ||
-                  html`<span class="text-gray-400">${msg("Member")}</span>`}
-                </div>
-                <div class="p-3" role="cell">
-                  ${isOwner(role)
+            ([id, user]) => html`
+              <div
+                class="border-b last:border-none flex items-center"
+                role="row"
+              >
+                <div class="flex-1 p-3" role="cell">${user.name}</div>
+                <div class="flex-0 w-52 p-3" role="cell">
+                  ${isOwner(user.role)
                     ? msg("Admin")
-                    : role === AccessCode.crawler
+                    : user.role === AccessCode.crawler
                     ? msg("Crawler")
                     : msg("Viewer")}
                 </div>
@@ -169,43 +181,99 @@ export class OrgSettings extends LiteElement {
             `
           )}
         </div>
-      </div>`;
-  }
-
-  private renderAddMember() {
-    return html`
-      <div class="mb-5">
-        <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/settings/members`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Settings")}</span
-          >
-        </a>
       </div>
 
-      <div class="border rounded-lg p-4 md:p-8 md:pt-6">
-        <h2 class="text-lg font-medium mb-4">${msg("Add New Member")}</h2>
-        <btrix-org-invite-form
-          @success=${this.onInviteSuccess}
-          @cancel=${() => this.navTo(`/orgs/${this.orgId}/settings/members`)}
-          .authState=${this.authState}
-          .orgId=${this.orgId}
-        ></btrix-org-invite-form>
+      <btrix-dialog
+        label=${msg("Invite New Member")}
+        ?open=${this.isAddingMember}
+        @sl-request-close=${this.hideInviteDialog}
+        @sl-show=${() => (this.isAddMemberFormVisible = true)}
+        @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
+      >
+        ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
+      </btrix-dialog>
+    `;
+  }
+
+  private renderUserRole(user: { name: string; role: typeof AccessCode }) {
+    return html`<sl-select value=${user.role} size="small">
+      <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
+      <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
+      <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
+    </sl-select>`;
+  }
+
+  private hideInviteDialog() {
+    this.navTo(`/orgs/${this.orgId}/settings/members`);
+  }
+
+  private renderInviteForm() {
+    return html`
+      <form
+        id="orgInviteForm"
+        @submit=${this.onOrgInviteSubmit}
+        @reset=${this.hideInviteDialog}
+      >
+        <div class="mb-5">
+          <sl-input
+            id="inviteEmail"
+            name="inviteEmail"
+            type="email"
+            label=${msg("Email")}
+            placeholder=${msg("org-member@email.com", {
+              desc: "Placeholder text for email to invite",
+            })}
+            required
+          >
+          </sl-input>
+        </div>
+        <div class="mb-5">
+          <sl-radio-group
+            name="role"
+            label="Permission"
+            value=${AccessCode.viewer}
+          >
+            <sl-radio value=${AccessCode.owner}>
+              ${msg("Admin — Can create crawls and manage org members")}
+            </sl-radio>
+            <sl-radio value=${AccessCode.crawler}>
+              ${msg("Crawler — Can create crawls")}
+            </sl-radio>
+            <sl-radio value=${AccessCode.viewer}>
+              ${msg("Viewer — Can view crawls")}
+            </sl-radio>
+          </sl-radio-group>
+        </div>
+      </form>
+      <div slot="footer" class="flex justify-between">
+        <sl-button form="orgInviteForm" type="reset" size="small"
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          form="orgInviteForm"
+          variant="primary"
+          type="submit"
+          size="small"
+          ?loading=${this.isSubmittingInvite}
+          ?disabled=${this.isSubmittingInvite}
+          >${msg("Invite")}</sl-button
+        >
       </div>
     `;
   }
 
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
+  }
+
   private async onOrgNameSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!this.org) return;
-    const { orgName } = serialize(e.target as HTMLFormElement);
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const { orgName } = serialize(formEl);
 
     this.isSavingOrgName = true;
 
@@ -222,19 +290,14 @@ export class OrgSettings extends LiteElement {
         duration: 8000,
       });
 
-      this.org = {
-        ...this.org,
-        name: orgName as string,
-      };
-
-      this.isEditingOrgName = false;
       this.dispatchEvent(
         new CustomEvent("update-user-info", { bubbles: true })
       );
-    } catch (e) {
-      console.debug(e);
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't update organization name at this time."),
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't update organization name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -243,12 +306,48 @@ export class OrgSettings extends LiteElement {
     this.isSavingOrgName = false;
   }
 
-  private onInviteSuccess(
-    event: CustomEvent<{ inviteEmail: string; isExistingUser: boolean }>
-  ) {
-    this.successfullyInvitedEmail = event.detail.inviteEmail;
+  async onOrgInviteSubmit(e: SubmitEvent) {
+    e.preventDefault();
 
-    this.navTo(`/orgs/${this.orgId}/settings/members`);
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const { inviteEmail, role } = serialize(formEl);
+
+    this.isSubmittingInvite = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/invite`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: Number(role),
+          }),
+        }
+      );
+
+      this.notify({
+        message: msg(str`Successfully invited ${inviteEmail}.`),
+        variant: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+
+      this.hideInviteDialog();
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't invite user at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingInvite = false;
   }
 }
 

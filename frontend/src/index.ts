@@ -572,6 +572,9 @@ export class App extends LiteElement {
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           orgId=${this.viewState.params.orgId}
+          orgPath=${this.viewState.pathname.split(
+            this.viewState.params.orgId
+          )[1]}
           orgTab=${this.viewState.params.orgTab as OrgTab}
         ></btrix-org>`;
 

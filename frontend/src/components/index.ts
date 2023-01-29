@@ -10,9 +10,6 @@ import("./locale-picker").then(({ LocalePicker }) => {
 import("./account-settings").then(({ AccountSettings }) => {
   customElements.define("btrix-account-settings", AccountSettings);
 });
-import("./org-invite-form").then(({ OrgInviteForm }) => {
-  customElements.define("btrix-org-invite-form", OrgInviteForm);
-});
 import("./config-editor").then(({ ConfigEditor }) => {
   customElements.define("btrix-config-editor", ConfigEditor);
 });
@@ -100,6 +97,9 @@ import("./tag-input").then(({ TagInput }) => {
 });
 import("./tag").then(({ Tag }) => {
   customElements.define("btrix-tag", Tag);
+});
+import("./dialog").then(({ Dialog }) => {
+  customElements.define("btrix-dialog", Dialog);
 });
 
 customElements.define("btrix-alert", Alert);
