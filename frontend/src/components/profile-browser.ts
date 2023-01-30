@@ -112,7 +112,7 @@ export class ProfileBrowser extends LiteElement {
         <div
           class="${this.isFullscreen
             ? "w-screen h-screen"
-            : "aspect-4/3 border-t"} relative bg-neutral-50 overflow-hidden"
+            : "aspect-video border-t"} relative bg-neutral-50 overflow-hidden"
           aria-live="polite"
         >
           ${this.renderBrowser()}
