@@ -92,7 +92,7 @@ export class ProfileBrowser extends LiteElement {
         >
           ${this.renderBrowser()}
         </div>
-        <div class="flex-0 border rounded-lg lg:w-72">
+        <div class="flex-0 border rounded-lg lg:w-72 bg-white">
           ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
           ${this.renderOrigins()} ${this.renderNewOrigins()}
         </div>
