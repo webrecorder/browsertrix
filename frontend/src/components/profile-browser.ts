@@ -92,9 +92,8 @@ export class ProfileBrowser extends LiteElement {
       changedProperties.get("showOriginSidebar") !== undefined
     ) {
       const hiddenClassList = [
-        "translate-x-full",
-        "pl-8",
-        "opacity-50",
+        "translate-x-2/3",
+        "opacity-0",
         "pointer-events-none",
       ];
       if (this.showOriginSidebar) {
@@ -116,9 +115,13 @@ export class ProfileBrowser extends LiteElement {
           ${this.renderBrowser()}
           <div
             id="profileBrowserSidebar"
-            class="lg:absolute lg:top-4 lg:bottom-4 lg:right-0 lg:mr-4 lg:w-72 shadow-lg overflow-auto border rounded-lg bg-white transition-all duration-300"
+            class="lg:absolute top-0 right-0 bottom-0 p-4 lg:w-80 flex transition-all duration-300 ease-out"
           >
-            ${this.renderOrigins()} ${this.renderNewOrigins()}
+            <div
+              class="shadow-lg overflow-auto border rounded-lg bg-white flex-1"
+            >
+              ${this.renderOrigins()} ${this.renderNewOrigins()}
+            </div>
           </div>
         </div>
       </div>
