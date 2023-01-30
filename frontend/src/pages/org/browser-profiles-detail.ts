@@ -174,7 +174,7 @@ export class BrowserProfilesDetail extends LiteElement {
           <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
         </header>
 
-        <div class="rounded p-2 bg-slate-50">
+        <div>
           <div class="mb-2 flex justify-between items-center">
             <div class="text-sm text-neutral-500 mx-1">
               ${this.browserId
@@ -227,7 +227,7 @@ export class BrowserProfilesDetail extends LiteElement {
               ? ""
               : html`
                   <div
-                    class="outline absolute top-0 left-0 h-full flex flex-col items-center justify-center"
+                    class="absolute top-3 left-4 right-80 aspect-4/3 flex flex-col items-center justify-center"
                   >
                     <p class="mb-4 text-neutral-600 max-w-prose">
                       ${msg(

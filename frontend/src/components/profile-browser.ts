@@ -85,14 +85,14 @@ export class ProfileBrowser extends LiteElement {
 
   render() {
     return html`
-      <div id="interactive-browser" class="">
+      <div id="interactive-browser" class="lg:flex w-full">
         <div
-          class="border w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
+          class="flex-1 aspect-4/3 border rounded-lg bg-neutral-50 overflow-hidden mb-3 lg:mb-0 lg:mr-5"
           aria-live="polite"
         >
           ${this.renderBrowser()}
         </div>
-        <div class="border">
+        <div class="flex-0 border rounded-lg lg:w-72">
           ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
           ${this.renderOrigins()} ${this.renderNewOrigins()}
         </div>
