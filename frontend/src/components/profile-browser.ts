@@ -1,5 +1,5 @@
 // import { LitElement, html } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, query } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
 import { msg, localized, str } from "@lit/localize";
 
@@ -54,7 +54,13 @@ export class ProfileBrowser extends LiteElement {
   private isFullscreen = false;
 
   @state()
+  private showOriginSidebar = true;
+
+  @state()
   private newOrigins: string[] = [];
+
+  @query("#profileBrowserSidebar")
+  private sidebar?: HTMLElement;
 
   private pollTimerId?: number;
 
@@ -69,7 +75,7 @@ export class ProfileBrowser extends LiteElement {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
   }
 
-  updated(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("browserId")) {
       if (this.browserId) {
         window.clearTimeout(this.pollTimerId);
@@ -81,21 +87,65 @@ export class ProfileBrowser extends LiteElement {
         window.clearTimeout(this.pollTimerId);
       }
     }
+    if (
+      changedProperties.has("showOriginSidebar") &&
+      changedProperties.get("showOriginSidebar") !== undefined
+    ) {
+      const hiddenClassList = [
+        "translate-x-full",
+        "pl-8",
+        "opacity-50",
+        "pointer-events-none",
+      ];
+      if (this.showOriginSidebar) {
+        this.sidebar?.classList.remove(...hiddenClassList);
+      } else {
+        this.sidebar?.classList.add(...hiddenClassList);
+      }
+    }
   }
 
   render() {
     return html`
-      <div id="interactive-browser" class="lg:flex w-full">
+      <div id="interactive-browser" class="w-full">
+        ${this.renderControlBar()}
         <div
-          class="flex-1 aspect-4/3 border rounded-lg bg-neutral-50 overflow-hidden mb-3 lg:mb-0 lg:mr-5"
+          class="relative aspect-video border rounded-lg bg-neutral-50 overflow-hidden mb-3"
           aria-live="polite"
         >
           ${this.renderBrowser()}
+          <div
+            id="profileBrowserSidebar"
+            class="lg:absolute lg:top-4 lg:bottom-4 lg:right-0 lg:mr-4 lg:w-72 shadow-lg overflow-auto border rounded-lg bg-white transition-all duration-300"
+          >
+            ${this.renderOrigins()} ${this.renderNewOrigins()}
+          </div>
         </div>
-        <div class="flex-0 border rounded-lg lg:w-72 bg-white">
-          ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
-          ${this.renderOrigins()} ${this.renderNewOrigins()}
+      </div>
+    `;
+  }
+
+  private renderControlBar() {
+    if (this.isFullscreen) {
+      return html`
+        <div
+          class="fixed top-2 left-1/2 bg-white rounded-lg shadow z-50 -translate-x-1/2 flex items-center text-base"
+        >
+          ${this.renderSidebarButton()}
+          <sl-icon-button
+            name="fullscreen-exit"
+            @click=${() => document.exitFullscreen()}
+          ></sl-icon-button>
         </div>
+      `;
+    }
+    return html`
+      <div class="text-right text-base mb-2">
+        ${this.renderSidebarButton()}
+        <sl-icon-button
+          name="arrows-fullscreen"
+          @click=${() => this.enterFullscreen("interactive-browser")}
+        ></sl-icon-button>
       </div>
     `;
   }
@@ -130,37 +180,13 @@ export class ProfileBrowser extends LiteElement {
     return "";
   }
 
-  private renderFullscreenButton() {
-    if (!this.browserId) return;
-
+  private renderSidebarButton() {
     return html`
-      <div class="p-2 text-right">
-        <sl-button
-          size="small"
-          @click=${() =>
-            this.isFullscreen
-              ? document.exitFullscreen()
-              : this.enterFullscreen("interactive-browser")}
-        >
-          ${this.isFullscreen
-            ? html`
-                <sl-icon
-                  slot="prefix"
-                  name="fullscreen-exit"
-                  label=${msg("Exit fullscreen")}
-                ></sl-icon>
-                ${msg("Exit")}
-              `
-            : html`
-                <sl-icon
-                  slot="prefix"
-                  name="arrows-fullscreen"
-                  label=${msg("Enter fullscreen")}
-                ></sl-icon>
-                ${msg("Fullscreen")}
-              `}
-        </sl-button>
-      </div>
+      <sl-icon-button
+        name="layout-sidebar-reverse"
+        class="${this.showOriginSidebar ? "text-blue-600" : ""}"
+        @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
+      ></sl-icon-button>
     `;
   }
 
@@ -337,8 +363,8 @@ export class ProfileBrowser extends LiteElement {
   private async enterFullscreen(id: string) {
     try {
       document.getElementById(id)!.requestFullscreen({
-        // Show browser navigation controls
-        navigationUI: "show",
+        // Hide browser navigation controls
+        navigationUI: "hide",
       });
     } catch (err) {
       console.error(err);

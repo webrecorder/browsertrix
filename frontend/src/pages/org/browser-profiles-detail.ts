@@ -222,7 +222,9 @@ export class BrowserProfilesDetail extends LiteElement {
               .origins=${this.profile?.origins}
               @load=${() => (this.isBrowserLoaded = true)}
             ></btrix-profile-browser>
+          </main>
 
+          <main class="relative">
             ${this.browserId || this.isBrowserLoading
               ? ""
               : html`
