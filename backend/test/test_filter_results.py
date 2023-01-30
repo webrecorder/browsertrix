@@ -3,23 +3,8 @@ import requests
 from .conftest import API_PREFIX
 
 
-def test_create_new_config_crawler_user(
-    crawler_auth_headers, default_org_id, sample_crawl_data
-):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
-        headers=crawler_auth_headers,
-        json=sample_crawl_data,
-    )
-
-    assert r.status_code == 200
-
-    data = r.json()
-    assert data["added"]
-    assert data["run_now_job"] == None
-
-
 def test_get_config_by_user(crawler_auth_headers, default_org_id, crawler_userid):
+    """Crawlconfig already created for user in test_crawlconfigs."""
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?userid={crawler_userid}",
         headers=crawler_auth_headers,
