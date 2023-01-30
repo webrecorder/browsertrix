@@ -26,10 +26,6 @@ const POLL_INTERVAL_SECONDS = 2;
  */
 @localized()
 export class ProfileBrowser extends LiteElement {
-  // TODO remove sidebar constaint once devtools panel
-  // is hidden on the backend
-  static SIDE_BAR_WIDTH = 288;
-
   @property({ type: Object })
   authState!: AuthState;
 
@@ -89,20 +85,16 @@ export class ProfileBrowser extends LiteElement {
 
   render() {
     return html`
-      <div id="interactive-browser" class="lg:flex relative">
-        <div class="grow lg:rounded-lg border overflow-hidden bg-slate-50">
-          <div
-            class="w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
-            aria-live="polite"
-          >
-            ${this.renderBrowser()}
-          </div>
-          <div
-            class="rounded-b lg:rounded-b-none lg:rounded-r border w-72  bg-white absolute h-full top-0 right-0"
-          >
-            ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
-            ${this.renderOrigins()} ${this.renderNewOrigins()}
-          </div>
+      <div id="interactive-browser" class="">
+        <div
+          class="border w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
+          aria-live="polite"
+        >
+          ${this.renderBrowser()}
+        </div>
+        <div class="border">
+          ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
+          ${this.renderOrigins()} ${this.renderNewOrigins()}
         </div>
       </div>
     `;
@@ -111,14 +103,9 @@ export class ProfileBrowser extends LiteElement {
   private renderBrowser() {
     if (this.hasFetchError) {
       return html`
-        <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
-          <btrix-alert
-            variant="danger"
-            style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-          >
-            ${msg(`The interactive browser is not available.`)}
-          </btrix-alert>
-        </div>
+        <btrix-alert variant="danger">
+          ${msg(`The interactive browser is not available.`)}
+        </btrix-alert>
       `;
     }
 
@@ -134,10 +121,7 @@ export class ProfileBrowser extends LiteElement {
 
     if (this.browserId && !this.isIframeLoaded) {
       return html`
-        <div
-          class="w-full h-full flex items-center justify-center text-3xl"
-          style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-        >
+        <div class="w-full h-full flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
         </div>
       `;
@@ -381,12 +365,7 @@ export class ProfileBrowser extends LiteElement {
     el.addEventListener("load", () => {
       // TODO see if we can make this work locally without CORs errors
       try {
-        //el.style.width = "132%";
         el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-        el.contentWindow?.localStorage.setItem(
-          "InspectorView.screencastSplitViewState",
-          `{"vertical":{"size":${ProfileBrowser.SIDE_BAR_WIDTH}}}`
-        );
       } catch (e) {}
     });
   }

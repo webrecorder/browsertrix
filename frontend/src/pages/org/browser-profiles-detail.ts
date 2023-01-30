@@ -227,8 +227,7 @@ export class BrowserProfilesDetail extends LiteElement {
               ? ""
               : html`
                   <div
-                    class="absolute top-0 left-0 h-full flex flex-col items-center justify-center"
-                    style="right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
+                    class="outline absolute top-0 left-0 h-full flex flex-col items-center justify-center"
                   >
                     <p class="mb-4 text-neutral-600 max-w-prose">
                       ${msg(
