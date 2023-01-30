@@ -7,6 +7,7 @@ import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 
 const POLL_INTERVAL_SECONDS = 2;
+const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
 
 /**
  * View embedded profile browser
@@ -54,7 +55,7 @@ export class ProfileBrowser extends LiteElement {
   private isFullscreen = false;
 
   @state()
-  private showOriginSidebar = true;
+  private showOriginSidebar = false;
 
   @state()
   private newOrigins: string[] = [];
@@ -91,16 +92,16 @@ export class ProfileBrowser extends LiteElement {
       changedProperties.has("showOriginSidebar") &&
       changedProperties.get("showOriginSidebar") !== undefined
     ) {
-      const hiddenClassList = [
-        "translate-x-2/3",
-        "opacity-0",
-        "pointer-events-none",
-      ];
-      if (this.showOriginSidebar) {
-        this.sidebar?.classList.remove(...hiddenClassList);
-      } else {
-        this.sidebar?.classList.add(...hiddenClassList);
-      }
+      this.animateSidebar();
+    }
+  }
+
+  private animateSidebar() {
+    if (!this.sidebar) return;
+    if (this.showOriginSidebar) {
+      this.sidebar.classList.remove(...hiddenClassList);
+    } else {
+      this.sidebar.classList.add(...hiddenClassList);
     }
   }
 
@@ -109,13 +110,17 @@ export class ProfileBrowser extends LiteElement {
       <div id="interactive-browser" class="w-full">
         ${this.renderControlBar()}
         <div
-          class="relative aspect-video border rounded-lg bg-neutral-50 overflow-hidden mb-3"
+          class="${this.isFullscreen
+            ? "w-screen h-screen"
+            : "aspect-4/3 border-t"} relative bg-neutral-50 overflow-hidden"
           aria-live="polite"
         >
           ${this.renderBrowser()}
           <div
             id="profileBrowserSidebar"
-            class="lg:absolute top-0 right-0 bottom-0 p-4 lg:w-80 flex transition-all duration-300 ease-out"
+            class="${hiddenClassList.join(
+              " "
+            )} lg:absolute top-0 right-0 bottom-0 lg:w-80 lg:p-4 flex transition-all duration-300 ease-out"
           >
             <div
               class="shadow-lg overflow-auto border rounded-lg bg-white flex-1"
@@ -142,8 +147,9 @@ export class ProfileBrowser extends LiteElement {
         </div>
       `;
     }
+
     return html`
-      <div class="text-right text-base mb-2">
+      <div class="text-right text-base p-1">
         ${this.renderSidebarButton()}
         <sl-icon-button
           name="arrows-fullscreen"

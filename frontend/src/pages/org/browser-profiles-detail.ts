@@ -1,10 +1,10 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { ProfileBrowser } from "../../components/profile-browser";
 import { Profile } from "./types";
 
 /**
@@ -80,7 +80,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <header class="md:flex items-center justify-between mb-3">
-        <h2 class="text-xl md:text-2xl font-semibold md:h-9 mb-1">
+        <h2 class="text-xl font-semibold md:h-9 mb-1">
           ${this.profile?.name
             ? html`${this.profile?.name}
                 <sl-button
@@ -169,88 +169,48 @@ export class BrowserProfilesDetail extends LiteElement {
         </dl>
       </section>
 
-      <section>
-        <header>
-          <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
-        </header>
-
-        <div>
-          <div class="mb-2 flex justify-between items-center">
-            <div class="text-sm text-neutral-500 mx-1">
-              ${this.browserId
-                ? html`
-                    ${msg(
-                      "Interact with the browsing tool to make changes to your browser profile."
-                    )}
-                  `
-                : ""}
-            </div>
-
-            <div>
-              ${this.browserId && !this.isBrowserLoading
-                ? html`
-                    <sl-button size="small" @click=${this.cancelEditBrowser}
-                      >${msg("Cancel")}</sl-button
-                    >
-                    <sl-button
-                      variant="primary"
-                      size="small"
-                      ?loading=${this.isSubmittingBrowserChange}
-                      ?disabled=${this.isSubmittingBrowserChange ||
-                      !this.isBrowserLoaded}
-                      @click=${this.saveBrowser}
-                      >${msg("Save")}</sl-button
-                    >
-                  `
-                : html`
-                    <sl-button
-                      size="small"
-                      ?loading=${this.isBrowserLoading}
-                      ?disabled=${this.isBrowserLoading}
-                      @click=${this.duplicateProfile}
-                      >${msg("Duplicate")}</sl-button
-                    >
-                  `}
-            </div>
-          </div>
-
-          <main class="relative">
-            <btrix-profile-browser
-              .authState=${this.authState}
-              orgId=${this.orgId}
-              browserId=${ifDefined(this.browserId)}
-              .origins=${this.profile?.origins}
-              @load=${() => (this.isBrowserLoaded = true)}
-            ></btrix-profile-browser>
-          </main>
-
-          <main class="relative">
-            ${this.browserId || this.isBrowserLoading
-              ? ""
-              : html`
-                  <div
-                    class="absolute top-3 left-4 right-80 aspect-4/3 flex flex-col items-center justify-center"
-                  >
-                    <p class="mb-4 text-neutral-600 max-w-prose">
-                      ${msg(
-                        "Load browser to view or edit websites in the profile."
-                      )}
-                    </p>
-                    <sl-button
-                      variant="primary"
-                      outline
-                      @click=${this.startBrowserPreview}
-                      ><sl-icon
-                        slot="prefix"
-                        name="collection-play-fill"
-                      ></sl-icon>
-                      ${msg("Load Browser")}</sl-button
-                    >
-                  </div>
-                `}
-          </main>
-        </div>
-      </section>
+      <div class="flex">
+        <section class="flex-1">
+          <header class="mb-2">
+            <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
+          </header>
+          ${when(
+            this.browserId || this.isBrowserLoading,
+            () => html`
+              <div class="border rounded-lg overflow-hidden">
+                <btrix-profile-browser
+                  .authState=${this.authState}
+                  orgId=${this.orgId}
+                  browserId=${ifDefined(this.browserId)}
+                  .origins=${this.profile?.origins}
+                  @load=${() => (this.isBrowserLoaded = true)}
+                ></btrix-profile-browser>
+                <div class="border-t">
+                  ${this.renderBrowserProfileControls()}
+                </div>
+              </div>
+            `,
+            () => html`<div
+              class="border rounded-lg bg-neutral-50 aspect-4/3 flex flex-col items-center justify-center"
+            >
+              <p class="mb-4 text-neutral-600 max-w-prose">
+                ${msg(
+                  "Edit the profile to make changes or view its present configuration"
+                )}
+              </p>
+              <sl-button @click=${this.startBrowserPreview}
+                ><sl-icon slot="prefix" name="pencil-square"></sl-icon> ${msg(
+                  "Edit Browser Profile"
+                )}</sl-button
+              >
+            </div>`
+          )}
+        </section>
+        ${when(
+          !(this.browserId || this.isBrowserLoading),
+          this.renderVisitedSites
+        )}
+      </div>
 
       <sl-dialog
         label=${msg(str`Edit Profile`)}
@@ -261,6 +221,48 @@ export class BrowserProfilesDetail extends LiteElement {
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : ""}
       </sl-dialog> `;
+  }
+
+  private renderVisitedSites = () => {
+    return html`
+      <section class="flex-grow-1 lg:w-80 lg:pl-6 flex flex-col">
+        <header class="flex-0 mb-2">
+          <h3 class="text-lg font-medium">${msg("Visited Sites")}</h3>
+        </header>
+        <div class="border rounded-lg p-4 flex-1 overflow-auto">
+          <ul class="font-monostyle text-neutral-800">
+            ${this.profile?.origins.map((origin) => html`<li>${origin}</li>`)}
+          </ul>
+        </div>
+      </section>
+    `;
+  };
+
+  private renderBrowserProfileControls() {
+    return html`
+      <div class="flex justify-between p-4">
+        <div class="max-w-prose">
+          <p class="text-xs text-neutral-500 mx-1">
+            ${msg(
+              "Interact with the browsing tool to set up the browser profile.  Crawl configs that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here."
+            )}
+          </p>
+        </div>
+        <div>
+          <sl-button size="small" @click=${this.cancelEditBrowser}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            variant="primary"
+            size="small"
+            ?loading=${this.isSubmittingBrowserChange}
+            ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
+            @click=${this.saveBrowser}
+            >${msg("Save Browser Profile")}</sl-button
+          >
+        </div>
+      </div>
+    `;
   }
 
   private renderMenu() {
