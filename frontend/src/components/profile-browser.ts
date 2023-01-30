@@ -120,7 +120,7 @@ export class ProfileBrowser extends LiteElement {
             id="profileBrowserSidebar"
             class="${hiddenClassList.join(
               " "
-            )} lg:absolute top-0 right-0 bottom-0 lg:w-80 lg:p-4 flex transition-all duration-300 ease-out"
+            )} lg:absolute top-0 right-0 bottom-0 lg:w-80 lg:p-3 flex transition-all duration-300 ease-out"
           >
             <div
               class="shadow-lg overflow-auto border rounded-lg bg-white flex-1"

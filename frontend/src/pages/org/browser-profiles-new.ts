@@ -103,12 +103,14 @@ export class BrowserProfilesNew extends LiteElement {
         </sl-button>
       </div>
 
-      <btrix-profile-browser
-        .authState=${this.authState}
-        orgId=${this.orgId}
-        browserId=${this.browserId}
-        initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
-      ></btrix-profile-browser>
+      <div class="border rounded-lg">
+        <btrix-profile-browser
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          browserId=${this.browserId}
+          initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
+        ></btrix-profile-browser>
+      </div>
 
       <sl-dialog
         label=${msg(str`Save Browser Profile`)}
@@ -196,9 +198,7 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `/orgs/${this.orgId}/browser-profiles/profile/${data.id}`
-      );
+      this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
     } catch (e) {
       this.isSubmitting = false;
 
