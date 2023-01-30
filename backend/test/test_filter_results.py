@@ -3,19 +3,13 @@ import requests
 from .conftest import API_PREFIX
 
 
-def get_sample_crawl_data():
-    return {
-        "runNow": False,
-        "name": "Test Crawl",
-        "config": {"seeds": ["https://example.com/"]},
-    }
-
-
-def test_create_new_config_crawler_user(crawler_auth_headers, default_org_id):
+def test_create_new_config_crawler_user(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
-        json=get_sample_crawl_data(),
+        json=sample_crawl_data,
     )
 
     assert r.status_code == 200
