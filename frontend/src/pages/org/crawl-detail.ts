@@ -4,7 +4,13 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import Fuse from "fuse.js";
 
+import type {
+  Tags,
+  TagInputEvent,
+  TagsChangeEvent,
+} from "../../components/tag-input";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -47,9 +53,6 @@ export class CrawlDetail extends LiteElement {
   showOrgLink = false;
 
   @property({ type: String })
-  orgId?: string;
-
-  @property({ type: String })
   crawlId?: string;
 
   @state()
@@ -73,7 +76,19 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
+  @state()
+  private tagOptions: Tags = [];
+
+  @state()
+  private tagsToSave: Tags = [];
+
   private timerId?: number;
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    shouldSort: false,
+    threshold: 0.2, // stricter; default is 0.6
+  });
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
@@ -122,6 +137,9 @@ export class CrawlDetail extends LiteElement {
           this.crawlDone();
         }
       }
+    }
+    if (changedProperties.has("crawl") && this.crawl) {
+      this.tagsToSave = this.crawl.tags || [];
     }
   }
 
@@ -195,7 +213,7 @@ export class CrawlDetail extends LiteElement {
                     <sl-icon-button
                       class="text-base"
                       name="pencil"
-                      @click=${() => (this.openDialogName = "details")}
+                      @click=${this.openDetailEditor}
                     ></sl-icon-button>
                   </div>
                 `,
@@ -852,9 +870,10 @@ export class CrawlDetail extends LiteElement {
       >
         <btrix-tag-input
           .initialTags=${this.crawl.tags}
-          .tagOptions=${[]}
-          @tag-input=${console.log}
-          @tags-change=${console.log}
+          .tagOptions=${this.tagOptions}
+          @tag-input=${this.onTagInput}
+          @tags-change=${(e: TagsChangeEvent) =>
+            (this.tagsToSave = e.detail.tags)}
         ></btrix-tag-input>
       </form>
       <div slot="footer" class="flex justify-between">
@@ -1006,10 +1025,38 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
+  private onTagInput = (e: TagInputEvent) => {
+    const { value } = e.detail;
+    if (!value) return;
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
+  };
+
+  private async fetchTags() {
+    if (!this.crawl) return;
+    try {
+      const tags = await this.apiFetch(
+        `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      this.fuse.setCollection(tags as any);
+    } catch (e) {
+      // Fail silently, since users can still enter tags
+      console.debug(e);
+    }
+  }
+
+  private openDetailEditor() {
+    this.fetchTags();
+    this.openDialogName = "details";
+  }
+
   private async onSubmitDetails(e: SubmitEvent) {
     e.preventDefault();
 
     const params = serialize(e.target as HTMLFormElement);
+    params.tags = this.tagsToSave;
     console.log(params);
     this.isSubmittingUpdate = true;
     // try {
