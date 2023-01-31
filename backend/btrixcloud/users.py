@@ -488,6 +488,11 @@ def init_users_api(app, user_manager):
         await user_manager.invites.remove_invite(token)
         return {"removed": True}
 
+    @users_router.get("/invites", tags=["invites"])
+    async def get_pending_invites(user: User = Depends(current_active_user)):
+        pending_invites = await user_manager.invites.get_pending_invites()
+        return {"pending_invites": pending_invites}
+
     app.include_router(users_router, prefix="/users", tags=["users"])
 
     return fastapi_users

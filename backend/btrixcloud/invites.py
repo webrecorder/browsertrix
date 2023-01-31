@@ -189,6 +189,11 @@ class InviteOps:
 
         return False
 
+    async def get_pending_invites(self):
+        """return list of pending invites."""
+        invites = self.invites.find()
+        return [invite async for invite in invites]
+
 
 def init_invites(mdb, email):
     """init InviteOps"""
