@@ -2,6 +2,7 @@ name: Deploy to Dev Cluster
 
 on:
   workflow_dispatch:
+    inputs:
 
 jobs:
   build_do_image:
