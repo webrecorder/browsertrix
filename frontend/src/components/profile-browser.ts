@@ -1,6 +1,5 @@
 // import { LitElement, html } from "lit";
 import { property, state, query } from "lit/decorators.js";
-import { ref } from "lit/directives/ref.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
@@ -63,6 +62,9 @@ export class ProfileBrowser extends LiteElement {
   @query("#profileBrowserSidebar")
   private sidebar?: HTMLElement;
 
+  @query("#iframeWrapper")
+  private iframeWrapper?: HTMLElement;
+
   @query("iframe")
   private iframe?: HTMLIFrameElement;
 
@@ -110,12 +112,13 @@ export class ProfileBrowser extends LiteElement {
 
   render() {
     return html`
-      <div id="interactive-browser" class="w-full">
+      <div id="interactive-browser" class="w-full h-full flex flex-col">
         ${this.renderControlBar()}
         <div
+          id="iframeWrapper"
           class="${this.isFullscreen
             ? "w-screen h-screen"
-            : "aspect-4/3 border-t"} relative bg-neutral-50 overflow-hidden"
+            : "border-t"} flex-1 relative bg-neutral-50 overflow-hidden"
           aria-live="polite"
         >
           ${this.renderBrowser()}
@@ -390,7 +393,7 @@ export class ProfileBrowser extends LiteElement {
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
-  private onFullscreenChange = () => {
+  private onFullscreenChange = async () => {
     if (document.fullscreenElement) {
       this.isFullscreen = true;
     } else {

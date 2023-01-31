@@ -177,15 +177,18 @@ export class BrowserProfilesDetail extends LiteElement {
           ${when(
             this.browserId || this.isBrowserLoading,
             () => html`
-              <div class="border rounded-lg overflow-hidden">
+              <div
+                class="border rounded-lg overflow-hidden h-screen flex flex-col"
+              >
                 <btrix-profile-browser
+                  class="flex-1"
                   .authState=${this.authState}
                   orgId=${this.orgId}
                   browserId=${ifDefined(this.browserId)}
                   .origins=${this.profile?.origins}
                   @load=${() => (this.isBrowserLoaded = true)}
                 ></btrix-profile-browser>
-                <div class="border-t">
+                <div class="flex-0 border-t">
                   ${this.renderBrowserProfileControls()}
                 </div>
               </div>
