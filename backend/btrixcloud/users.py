@@ -25,7 +25,7 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import MongoDBUserDatabase
 
-from .invites import InvitePending, InviteRequest
+from .invites import InvitePending, InviteRequest, UserRole
 
 
 # ============================================================================
@@ -432,7 +432,14 @@ def init_users_api(app, user_manager):
         user_orgs = await user_manager.org_ops.get_orgs_for_user(user)
         if user_orgs:
             user_info["orgs"] = [
-                {"id": org.id, "name": org.name, "default": org.default}
+                {
+                    "id": org.id,
+                    "name": org.name,
+                    "default": org.default,
+                    "role": UserRole.SUPERADMIN
+                    if user.is_superuser
+                    else org.users.get(str(user.id)),
+                }
                 for org in user_orgs
             ]
         print(f"user info with orgs: {user_info}", flush=True)

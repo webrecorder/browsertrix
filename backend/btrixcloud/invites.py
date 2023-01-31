@@ -19,6 +19,7 @@ class UserRole(IntEnum):
     VIEWER = 10
     CRAWLER = 20
     OWNER = 40
+    SUPERADMIN = 100
 
 
 # ============================================================================
