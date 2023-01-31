@@ -3,7 +3,8 @@ name: Deploy to Dev Cluster
 on:
   workflow_dispatch:
     inputs:
-      test: value
+      registry: registry.digitalocean.com
+      registry_path: registry.digitalocean.com/btrix
 
 jobs:
   build_do_images:
@@ -20,7 +21,7 @@ jobs:
         name: Login to Regsitry
         uses: docker/login-action@v2
         with:
-          registry: registry.digitalocean.com
+          registry: ${{ inputs.registry }}
           username: ${{ secrets.DO_API_TOKEN }}
           password: ${{ secrets.DO_API_TOKEN }}
 
@@ -29,7 +30,7 @@ jobs:
         with:
           context: backend
           push: true
-          tags: registry.digitalocean.com/btrix/webrecorder/browsertrix-backend:latest
+          tags: ${{ inputs.registry_path }}/webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -38,7 +39,7 @@ jobs:
         with:
           context: frontend
           push: true
-          tags: registry.digitalocean.com/btrix/webrecorder/browsertrix-frontend:latest
+          tags: ${{ inputs.registry_path }}/btrix/webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
