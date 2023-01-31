@@ -136,6 +136,7 @@ class Organization(BaseMongoModel):
                 result["users"][id_] = {
                     "role": role,
                     "name": org_user.get("name", ""),
+                    "email": org_user.get("email", ""),
                 }
 
         return result

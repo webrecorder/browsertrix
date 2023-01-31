@@ -151,7 +151,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         """return list of user names for given ids"""
         user_ids = [UUID4(id_) for id_ in user_ids]
         cursor = self.user_db.collection.find(
-            {"id": {"$in": user_ids}}, projection=["id", "name"]
+            {"id": {"$in": user_ids}}, projection=["id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 
@@ -363,6 +363,7 @@ class BearerOrQueryTransport(BearerTransport):
 
 
 # ============================================================================
+# pylint: disable=too-many-locals
 def init_users_api(app, user_manager):
     """init fastapi_users"""
     bearer_transport = BearerOrQueryTransport(tokenUrl="auth/jwt/login")
@@ -489,7 +490,7 @@ def init_users_api(app, user_manager):
         return {"removed": True}
 
     @users_router.get("/invites", tags=["invites"])
-    async def get_pending_invites(user: User = Depends(current_active_user)):
+    async def get_pending_invites():
         pending_invites = await user_manager.invites.get_pending_invites()
         return {"pending_invites": pending_invites}
 

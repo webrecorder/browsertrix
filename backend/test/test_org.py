@@ -16,6 +16,34 @@ def test_ensure_only_one_default_org(admin_auth_headers):
     assert len(orgs_with_same_name) == 1
 
 
+def test_get_org_admin(admin_auth_headers, default_org_id):
+    """org owners should receive details on users."""
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == default_org_id
+    assert data["name"]
+
+    users = data["users"]
+    assert users
+    for _, value in users.items():
+        assert value["name"]
+        assert value["email"]
+        assert value["role"]
+
+
+def test_get_org_crawler(crawler_auth_headers, default_org_id):
+    """non-owners should *not* receive details on users."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}", headers=crawler_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == default_org_id
+    assert data["name"]
+    assert data.get("users") is None
+
+
 def test_rename_org(admin_auth_headers, default_org_id):
     UPDATED_NAME = "updated org name"
     rename_data = {"name": UPDATED_NAME}
