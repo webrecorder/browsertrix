@@ -1,12 +1,12 @@
 // import { LitElement, html } from "lit";
-import { property, state } from "lit/decorators.js";
-import { ref } from "lit/directives/ref.js";
+import { property, state, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 
 const POLL_INTERVAL_SECONDS = 2;
+const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
 
 /**
  * View embedded profile browser
@@ -26,10 +26,6 @@ const POLL_INTERVAL_SECONDS = 2;
  */
 @localized()
 export class ProfileBrowser extends LiteElement {
-  // TODO remove sidebar constaint once devtools panel
-  // is hidden on the backend
-  static SIDE_BAR_WIDTH = 288;
-
   @property({ type: Object })
   authState!: AuthState;
 
@@ -58,7 +54,19 @@ export class ProfileBrowser extends LiteElement {
   private isFullscreen = false;
 
   @state()
+  private showOriginSidebar = false;
+
+  @state()
   private newOrigins: string[] = [];
+
+  @query("#profileBrowserSidebar")
+  private sidebar?: HTMLElement;
+
+  @query("#iframeWrapper")
+  private iframeWrapper?: HTMLElement;
+
+  @query("iframe")
+  private iframe?: HTMLIFrameElement;
 
   private pollTimerId?: number;
 
@@ -73,7 +81,7 @@ export class ProfileBrowser extends LiteElement {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
   }
 
-  updated(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("browserId")) {
       if (this.browserId) {
         window.clearTimeout(this.pollTimerId);
@@ -85,25 +93,74 @@ export class ProfileBrowser extends LiteElement {
         window.clearTimeout(this.pollTimerId);
       }
     }
+    if (
+      changedProperties.has("showOriginSidebar") &&
+      changedProperties.get("showOriginSidebar") !== undefined
+    ) {
+      this.animateSidebar();
+    }
+  }
+
+  private animateSidebar() {
+    if (!this.sidebar) return;
+    if (this.showOriginSidebar) {
+      this.sidebar.classList.remove(...hiddenClassList);
+    } else {
+      this.sidebar.classList.add(...hiddenClassList);
+    }
   }
 
   render() {
     return html`
-      <div id="interactive-browser" class="lg:flex relative">
-        <div class="grow lg:rounded-lg border overflow-hidden bg-slate-50">
+      <div id="interactive-browser" class="w-full h-full flex flex-col">
+        ${this.renderControlBar()}
+        <div
+          id="iframeWrapper"
+          class="${this.isFullscreen
+            ? "w-screen h-screen"
+            : "border-t"} flex-1 relative bg-neutral-50 overflow-hidden"
+          aria-live="polite"
+        >
+          ${this.renderBrowser()}
           <div
-            class="w-full ${this.isFullscreen ? "h-screen" : "h-96"}"
-            aria-live="polite"
+            id="profileBrowserSidebar"
+            class="${hiddenClassList.join(
+              " "
+            )} lg:absolute top-0 right-0 bottom-0 lg:w-80 lg:p-3 flex transition-all duration-300 ease-out"
           >
-            ${this.renderBrowser()}
-          </div>
-          <div
-            class="rounded-b lg:rounded-b-none lg:rounded-r border w-72  bg-white absolute h-full top-0 right-0"
-          >
-            ${document.fullscreenEnabled ? this.renderFullscreenButton() : ""}
-            ${this.renderOrigins()} ${this.renderNewOrigins()}
+            <div
+              class="shadow-lg overflow-auto border rounded-lg bg-white flex-1"
+            >
+              ${this.renderOrigins()} ${this.renderNewOrigins()}
+            </div>
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  private renderControlBar() {
+    if (this.isFullscreen) {
+      return html`
+        <div
+          class="fixed top-2 left-1/2 bg-white rounded-lg shadow z-50 -translate-x-1/2 flex items-center text-base"
+        >
+          ${this.renderSidebarButton()}
+          <sl-icon-button
+            name="fullscreen-exit"
+            @click=${() => document.exitFullscreen()}
+          ></sl-icon-button>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="text-right text-base p-1">
+        ${this.renderSidebarButton()}
+        <sl-icon-button
+          name="arrows-fullscreen"
+          @click=${() => this.enterFullscreen("interactive-browser")}
+        ></sl-icon-button>
       </div>
     `;
   }
@@ -111,14 +168,9 @@ export class ProfileBrowser extends LiteElement {
   private renderBrowser() {
     if (this.hasFetchError) {
       return html`
-        <div style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;">
-          <btrix-alert
-            variant="danger"
-            style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-          >
-            ${msg(`The interactive browser is not available.`)}
-          </btrix-alert>
-        </div>
+        <btrix-alert variant="danger">
+          ${msg(`The interactive browser is not available.`)}
+        </btrix-alert>
       `;
     }
 
@@ -128,16 +180,12 @@ export class ProfileBrowser extends LiteElement {
         title=${msg("Interactive browser for creating browser profile")}
         src=${this.iframeSrc}
         @load=${this.onIframeLoad}
-        ${ref((el) => this.onIframeRef(el as HTMLIFrameElement))}
       ></iframe>`;
     }
 
     if (this.browserId && !this.isIframeLoaded) {
       return html`
-        <div
-          class="w-full h-full flex items-center justify-center text-3xl"
-          style="padding-right: ${ProfileBrowser.SIDE_BAR_WIDTH}px;"
-        >
+        <div class="w-full h-full flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
         </div>
       `;
@@ -146,37 +194,13 @@ export class ProfileBrowser extends LiteElement {
     return "";
   }
 
-  private renderFullscreenButton() {
-    if (!this.browserId) return;
-
+  private renderSidebarButton() {
     return html`
-      <div class="p-2 text-right">
-        <sl-button
-          size="small"
-          @click=${() =>
-            this.isFullscreen
-              ? document.exitFullscreen()
-              : this.enterFullscreen("interactive-browser")}
-        >
-          ${this.isFullscreen
-            ? html`
-                <sl-icon
-                  slot="prefix"
-                  name="fullscreen-exit"
-                  label=${msg("Exit fullscreen")}
-                ></sl-icon>
-                ${msg("Exit")}
-              `
-            : html`
-                <sl-icon
-                  slot="prefix"
-                  name="arrows-fullscreen"
-                  label=${msg("Enter fullscreen")}
-                ></sl-icon>
-                ${msg("Fullscreen")}
-              `}
-        </sl-button>
-      </div>
+      <sl-icon-button
+        name="layout-sidebar-reverse"
+        class="${this.showOriginSidebar ? "text-blue-600" : ""}"
+        @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
+      ></sl-icon-button>
     `;
   }
 
@@ -353,8 +377,8 @@ export class ProfileBrowser extends LiteElement {
   private async enterFullscreen(id: string) {
     try {
       document.getElementById(id)!.requestFullscreen({
-        // Show browser navigation controls
-        navigationUI: "show",
+        // Hide browser navigation controls
+        navigationUI: "hide",
       });
     } catch (err) {
       console.error(err);
@@ -363,31 +387,17 @@ export class ProfileBrowser extends LiteElement {
 
   private onIframeLoad() {
     this.isIframeLoaded = true;
-
+    try {
+      this.iframe?.contentWindow?.localStorage.setItem("uiTheme", '"default"');
+    } catch (e) {}
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
-  private onFullscreenChange = () => {
+  private onFullscreenChange = async () => {
     if (document.fullscreenElement) {
       this.isFullscreen = true;
     } else {
       this.isFullscreen = false;
     }
   };
-
-  private onIframeRef(el: HTMLIFrameElement) {
-    if (!el) return;
-
-    el.addEventListener("load", () => {
-      // TODO see if we can make this work locally without CORs errors
-      try {
-        //el.style.width = "132%";
-        el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-        el.contentWindow?.localStorage.setItem(
-          "InspectorView.screencastSplitViewState",
-          `{"vertical":{"size":${ProfileBrowser.SIDE_BAR_WIDTH}}}`
-        );
-      } catch (e) {}
-    });
-  }
 }

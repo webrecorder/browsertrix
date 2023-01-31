@@ -88,27 +88,32 @@ export class BrowserProfilesNew extends LiteElement {
           `
         : ""}
 
-      <div class="flex items-center justify-between mb-3 p-2 bg-slate-50">
-        <p class="text-sm text-slate-600 mr-3 p-1">
-          ${msg(
-            "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
-          )}
-        </p>
-
-        <sl-button
-          variant="primary"
-          @click=${() => (this.isDialogVisible = true)}
+      <div class="h-screen flex flex-col">
+        <div
+          class="flex-0 flex items-center justify-between mb-3 p-2 bg-slate-50"
         >
-          ${msg("Next")}
-        </sl-button>
-      </div>
+          <p class="text-sm text-slate-600 mr-3 p-1">
+            ${msg(
+              "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
+            )}
+          </p>
 
-      <btrix-profile-browser
-        .authState=${this.authState}
-        orgId=${this.orgId}
-        browserId=${this.browserId}
-        initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
-      ></btrix-profile-browser>
+          <sl-button
+            variant="primary"
+            @click=${() => (this.isDialogVisible = true)}
+          >
+            ${msg("Next")}
+          </sl-button>
+        </div>
+
+        <btrix-profile-browser
+          class="flex-1 border rounded-lg overflow-hidden"
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          browserId=${this.browserId}
+          initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
+        ></btrix-profile-browser>
+      </div>
 
       <sl-dialog
         label=${msg(str`Save Browser Profile`)}
@@ -196,9 +201,7 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `/orgs/${this.orgId}/browser-profiles/profile/${data.id}`
-      );
+      this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
     } catch (e) {
       this.isSubmitting = false;
 
