@@ -25,6 +25,10 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
+  // Hide tag field, e.g. if embedded in crawl detail view
+  @property({ type: Boolean })
+  hideTags = false;
+
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
     string
@@ -52,14 +56,17 @@ export class ConfigDetails extends LiteElement {
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.renderSetting(
-            msg("Tags"),
-            crawlConfig?.tags?.length
-              ? crawlConfig.tags.map(
-                  (tag) => html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                )
-              : undefined
-          )}
+          ${this.hideTags
+            ? ""
+            : this.renderSetting(
+                msg("Tags"),
+                crawlConfig?.tags?.length
+                  ? crawlConfig.tags.map(
+                      (tag) =>
+                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                    )
+                  : undefined
+              )}
         </btrix-desc-list>
       </section>
       <section id="crawler-settings" class="mb-8">

@@ -825,6 +825,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <btrix-config-details
         .crawlConfig=${this.crawlConfig}
+        hideTags
       ></btrix-config-details>
     `;
   }
