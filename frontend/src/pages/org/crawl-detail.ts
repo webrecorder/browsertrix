@@ -1055,40 +1055,41 @@ export class CrawlDetail extends LiteElement {
   private async onSubmitDetails(e: SubmitEvent) {
     e.preventDefault();
 
-    const params = serialize(e.target as HTMLFormElement);
-    params.tags = this.tagsToSave;
-    console.log(params);
+    const params = {
+      tags: this.tagsToSave,
+    };
     this.isSubmittingUpdate = true;
-    // try {
-    //   const data = await this.apiFetch(
-    //     `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}`,
-    //     this.authState!,
-    //     {
-    //       method: "PATCH",
-    //       body: JSON.stringify(params),
-    //     }
-    //   );
 
-    //   console.log(data);
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        }
+      );
 
-    //   if (data.success === true) {
-    //     this.notify({
-    //       message: msg("Successfully saved crawl details."),
-    //       variant: "success",
-    //       icon: "check2-circle",
-    //     });
-    //   } else {
-    //     throw data;
-    //   }
-    // } catch (e) {
-    //   this.notify({
-    //     message: msg("Sorry, couldn't save crawl details at this time."),
-    //     variant: "danger",
-    //     icon: "exclamation-octagon",
-    //   });
-    // }
+      console.log(data);
 
-    // this.isSubmittingUpdate = false;
+      if (data.success === true) {
+        this.notify({
+          message: msg("Successfully saved crawl details."),
+          variant: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw data;
+      }
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't save crawl details at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
   }
 
   private async scale(value: Crawl["scale"]) {
