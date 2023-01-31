@@ -1,6 +1,13 @@
 name: Cluster Run (K3d-Admin-Logging)
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'chart/**'
 
 jobs:
   btrix-k3d-admin-logging-test:
