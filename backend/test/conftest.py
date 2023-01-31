@@ -182,3 +182,13 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
 @pytest.fixture(scope="session")
 def crawler_config_id(crawler_crawl_id):
     return _crawler_config_id
+
+
+@pytest.fixture(scope="session")
+def sample_crawl_data():
+    return {
+        "runNow": False,
+        "name": "Test Crawl",
+        "config": {"seeds": ["https://example.com/"]},
+        "tags": ["tag1", "tag2"],
+    }

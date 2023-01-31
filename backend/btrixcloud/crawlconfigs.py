@@ -178,12 +178,13 @@ class CrawlConfigsResponse(BaseModel):
 
 # ============================================================================
 class UpdateCrawlConfig(BaseModel):
-    """Update crawl config name or crawl schedule"""
+    """Update crawl config name, crawl schedule, or tags"""
 
     name: Optional[str]
     schedule: Optional[str]
     profileid: Optional[str]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -312,7 +313,7 @@ class CrawlConfigOps:
         await asyncio.gather(inc, add)
 
     async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
-        """Update name, scale and/or schedule for an existing crawl config"""
+        """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         # set update query
         query = update.dict(
@@ -578,7 +579,7 @@ class CrawlConfigOps:
         return result.inserted_id
 
     async def get_crawl_config_tags(self, org):
-        """get distinct tags from all crawl configs for this orge"""
+        """get distinct tags from all crawl configs for this org"""
         return await self.crawl_configs.distinct("tags", {"oid": org.id})
 
 
