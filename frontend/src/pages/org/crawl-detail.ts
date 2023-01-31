@@ -419,7 +419,7 @@ export class CrawlDetail extends LiteElement {
                     }}
                   >
                     <sl-icon
-                      class="inline-block align-middle"
+                      class="inline-block align-middle mr-1"
                       name="arrow-clockwise"
                     ></sl-icon>
                     <span class="inline-block align-middle">
@@ -428,6 +428,20 @@ export class CrawlDetail extends LiteElement {
                   </li>
                 `
               )}
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${this.openDetailEditor}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="pencil"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Edit Tags")}
+                </span>
+              </li>
+              <hr />
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
@@ -441,7 +455,6 @@ export class CrawlDetail extends LiteElement {
                   ${msg("Edit Crawl Config")}
                 </span>
               </li>
-              <hr />
             `
           )}
           <li
