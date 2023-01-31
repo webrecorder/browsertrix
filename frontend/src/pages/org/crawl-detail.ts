@@ -182,7 +182,14 @@ export class CrawlDetail extends LiteElement {
         break;
       default:
         sectionContent = html`
-          <div>${this.renderPanel(msg("Overview"), this.renderOverview())}</div>
+          <div class="grid gap-5 grid-cols-1 lg:grid-cols-2">
+            <div class="col-span-1">
+              ${this.renderPanel(msg("Overview"), this.renderOverview())}
+            </div>
+            <div class="col-span-1">
+              ${this.renderPanel(msg("Tags"), this.renderMeta())}
+            </div>
+          </div>
         `;
         break;
     }
@@ -424,7 +431,7 @@ export class CrawlDetail extends LiteElement {
   private renderPanel(title: string, content: any) {
     return html`
       <h3 class="text-lg font-medium mb-2">${title}</h3>
-      <div class="rounded-lg border p-4">${content}</div>
+      <div class="rounded-lg border p-5">${content}</div>
     `;
   }
 
@@ -611,102 +618,110 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5">
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Started")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <sl-format-date
-                    date=${`${this.crawl.started}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Finished")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.finished
-                    ? html`<sl-format-date
-                        date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                      ></sl-format-date>`
-                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Reason")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.manual
-                    ? msg(
-                        html`Manual start by
-                          <span
-                            >${this.crawl?.userName || this.crawl?.userid}</span
-                          >`
-                      )
-                    : msg(html`Scheduled run`)}
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
-          <dd class="truncate">
-            ${this.crawl
-              ? html`<btrix-copy-button
-                    value=${this.crawl.id}
-                  ></btrix-copy-button>
-                  <code class="text-xs" title=${this.crawl.id}
-                    >${this.crawl.id}</code
-                  > `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Started")}>
+          ${this.crawl
+            ? html`
+                <sl-format-date
+                  date=${`${this.crawl.started}Z` /** Z for UTC */}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                  time-zone-name="short"
+                ></sl-format-date>
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Finished")}>
+          ${this.crawl
+            ? html`
+                ${this.crawl.finished
+                  ? html`<sl-format-date
+                      date=${`${this.crawl.finished}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>`
+                  : html`<span class="text-0-400">${msg("Pending")}</span>`}
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Reason")}>
+          ${this.crawl
+            ? html`
+                ${this.crawl.manual
+                  ? msg(
+                      html`Manual start by
+                        <span
+                          >${this.crawl?.userName || this.crawl?.userid}</span
+                        >`
+                    )
+                  : msg(html`Scheduled run`)}
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Crawl ID")}>
+          ${this.crawl
+            ? html`<btrix-copy-button
+                  value=${this.crawl.id}
+                ></btrix-copy-button>
+                <code class="text-xs" title=${this.crawl.id}
+                  >${this.crawl.id}</code
+                > `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
         ${this.showOrgLink
           ? html`
-              <div class="col-span-1">
-                <dt class="text-sm text-0-600">${msg("Organization")}</dt>
-                <dd>
-                  ${this.crawl
-                    ? html`
-                        <a
-                          class="font-medium text-neutral-700 hover:text-neutral-900"
-                          href=${`/orgs/${this.crawl.oid}/crawls`}
-                          @click=${this.navLink}
-                        >
-                          <sl-icon
-                            class="inline-block align-middle"
-                            name="link-45deg"
-                          ></sl-icon>
-                          <span class="inline-block align-middle">
-                            ${msg("View Organization")}
-                          </span>
-                        </a>
-                      `
-                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-                </dd>
-              </div>
+              <btrix-desc-list-item label=${msg("Organization")}>
+                ${this.crawl
+                  ? html`
+                      <a
+                        class="font-medium text-neutral-700 hover:text-neutral-900"
+                        href=${`/orgs/${this.crawl.oid}/crawls`}
+                        @click=${this.navLink}
+                      >
+                        <sl-icon
+                          class="inline-block align-middle"
+                          name="link-45deg"
+                        ></sl-icon>
+                        <span class="inline-block align-middle">
+                          ${msg("View Organization")}
+                        </span>
+                      </a>
+                    `
+                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+              </btrix-desc-list-item>
             `
           : ""}
-      </dl>
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderMeta() {
+    return html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Tags")}>
+          ${when(
+            this.crawl,
+            () =>
+              when(
+                this.crawl?.tags?.length,
+                () =>
+                  this.crawl!.tags!.map(
+                    (tag) =>
+                      html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                  ),
+                () => html`${msg("None")}`
+              ),
+            () => html`<sl-skeleton></sl-skeleton>`
+          )}
+        </btrix-desc-list-item>
+      </btrix-desc-list>
     `;
   }
 

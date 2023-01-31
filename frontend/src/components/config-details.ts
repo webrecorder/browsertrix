@@ -43,7 +43,7 @@ export class ConfigDetails extends LiteElement {
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
       <section id="crawl-information" class="mb-8">
-        <btrix-section-heading>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>
             ${this.renderAnchorLink("crawl-information")}${msg(
               "Crawl Information"
@@ -63,7 +63,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawler-settings" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("crawler-settings")}
             ${msg("Crawler Settings")}
@@ -104,7 +104,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="browser-settings" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("browser-settings")}
             ${msg("Browser Settings")}
@@ -138,7 +138,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawl-scheduling" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("crawl-scheduling")}
             ${msg("Crawl Scheduling")}
