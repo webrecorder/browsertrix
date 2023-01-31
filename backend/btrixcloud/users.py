@@ -236,6 +236,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         """custom post registration callback, also receive the UserCreate object"""
 
         print(f"User {user.id} has registered.")
+        add_to_default_org = False
 
         if user_create.newOrg is True:
             print(f"Creating new organization for {user.id}")
@@ -249,25 +250,34 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 storage_name="default",
                 user=user,
             )
-        else:
-            default_org = await self.org_ops.get_default_org()
-            if default_org:
-                await self.org_ops.add_user_to_org(default_org, user.id)
 
         is_verified = hasattr(user_create, "is_verified") and user_create.is_verified
 
         if user_create.inviteToken:
+            new_user_invite = None
             try:
-                await self.org_ops.handle_new_user_invite(user_create.inviteToken, user)
+                new_user_invite = await self.org_ops.handle_new_user_invite(
+                    user_create.inviteToken, user
+                )
             except HTTPException as exc:
                 print(exc)
+
+            if new_user_invite and not new_user_invite.oid:
+                add_to_default_org = True
 
             if not is_verified:
                 # if user has been invited, mark as verified immediately
                 await self._update(user, {"is_verified": True})
 
-        elif not is_verified:
-            asyncio.create_task(self.request_verify(user, request))
+        else:
+            add_to_default_org = True
+            if not is_verified:
+                asyncio.create_task(self.request_verify(user, request))
+
+        if add_to_default_org:
+            default_org = await self.org_ops.get_default_org()
+            if default_org:
+                await self.org_ops.add_user_to_org(default_org, user.id)
 
     async def on_after_forgot_password(
         self, user: UserDB, token: str, request: Optional[Request] = None

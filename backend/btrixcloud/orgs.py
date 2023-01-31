@@ -278,7 +278,7 @@ class OrgOps:
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
-        return True
+        return new_user_invite
 
     async def add_user_by_invite(self, invite: InvitePending, user: User):
         """Add user to an org from an InvitePending, if any.
