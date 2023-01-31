@@ -1,0 +1,70 @@
+name: Deploy to Dev Cluster
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry: registry.digitalocean.com
+      registry_path: registry.digitalocean.com/btrix
+
+jobs:
+  build_do_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+        name: Login to Regsitry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.DO_API_TOKEN }}
+          password: ${{ secrets.DO_API_TOKEN }}
+
+      - name: Build Backend
+        uses: docker/build-push-action@v3
+        with:
+          context: backend
+          push: true
+          tags: ${{ inputs.registry_path }}/webrecorder/browsertrix-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          push: true
+          tags: ${{ inputs.registry_path }}/btrix/webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+
+      - name: Get Kubeconfig
+        env:
+            KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+            DEV_VALUES: ${{ secrets.DEV_VALUES }}
+
+        run: |
+          echo $KUBECONFIG_DATA > ./.kubeconfig
+          echo $DEV_VALUES > ./dev-values.yaml
+
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 3.10.2
+
+      - name: Start Cluster with Helm
+        run: |
+          export KUBECONFIG=./.kubeconfig
+          helm upgrade --install -f ./chart/values.yaml -f ./dev-values.yaml btrix ./chart/
+
+        
+ 
