@@ -18,7 +18,7 @@ jobs:
         with:
           driver-opts: network=host
 
-        name: Login to Regsitry
+      - name: Login to Regsitry
         uses: docker/login-action@v2
         with:
           registry: ${{ inputs.registry }}
