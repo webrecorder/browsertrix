@@ -3,6 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
@@ -67,7 +68,7 @@ export class CrawlDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "scale";
+  private openDialogName?: "scale" | "details";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -187,7 +188,19 @@ export class CrawlDetail extends LiteElement {
               ${this.renderPanel(msg("Overview"), this.renderOverview())}
             </div>
             <div class="col-span-1">
-              ${this.renderPanel(msg("Tags"), this.renderMeta())}
+              ${this.renderPanel(
+                html`
+                  <div class="flex items-center justify-between">
+                    ${msg("Tags")}
+                    <sl-icon-button
+                      class="text-base"
+                      name="pencil"
+                      @click=${() => (this.openDialogName = "details")}
+                    ></sl-icon-button>
+                  </div>
+                `,
+                this.renderDetails()
+              )}
             </div>
           </div>
         `;
@@ -224,15 +237,25 @@ export class CrawlDetail extends LiteElement {
         </section>
       </main>
 
-      <sl-dialog
-        label=${msg(str`Change Crawler Instances`)}
+      <btrix-dialog
+        label=${msg("Change Crawler Instances")}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${this.isDialogVisible ? this.renderEditScale() : ""}
-      </sl-dialog>
+      </btrix-dialog>
+
+      <btrix-dialog
+        label=${msg("Edit Tags")}
+        ?open=${this.openDialogName === "details"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditDetails() : ""}
+      </btrix-dialog>
     `;
   }
 
@@ -428,7 +451,7 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderPanel(title: string, content: any) {
+  private renderPanel(title: any, content: any) {
     return html`
       <h3 class="text-lg font-medium mb-2">${title}</h3>
       <div class="rounded-lg border p-5">${content}</div>
@@ -702,7 +725,7 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderMeta() {
+  private renderDetails() {
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Tags")}>
@@ -808,12 +831,44 @@ export class CrawlDetail extends LiteElement {
           )}
         </sl-radio-group>
       </div>
-
-      <div class="mt-5 text-right">
+      <div slot="footer" class="flex justify-between">
         <sl-button
-          variant="text"
+          size="small"
           @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
+        >
+      </div>
+    `;
+  }
+
+  private renderEditDetails() {
+    if (!this.crawl) return;
+
+    return html`
+      <form
+        id="crawlDetailsForm"
+        @submit=${this.onSubmitDetails}
+        @reset=${() => (this.openDialogName = undefined)}
+      >
+        <btrix-tag-input
+          .initialTags=${this.crawl.tags}
+          .tagOptions=${[]}
+          @tag-input=${console.log}
+          @tags-change=${console.log}
+        ></btrix-tag-input>
+      </form>
+      <div slot="footer" class="flex justify-between">
+        <sl-button form="crawlDetailsForm" type="reset" size="small"
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          form="crawlDetailsForm"
+          variant="primary"
+          type="submit"
+          size="small"
+          ?loading=${this.isSubmittingUpdate}
+          ?disabled=${this.isSubmittingUpdate}
+          >${msg("Save")}</sl-button
         >
       </div>
     `;
@@ -949,6 +1004,44 @@ export class CrawlDetail extends LiteElement {
         });
       }
     }
+  }
+
+  private async onSubmitDetails(e: SubmitEvent) {
+    e.preventDefault();
+
+    const params = serialize(e.target as HTMLFormElement);
+    console.log(params);
+    this.isSubmittingUpdate = true;
+    // try {
+    //   const data = await this.apiFetch(
+    //     `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}`,
+    //     this.authState!,
+    //     {
+    //       method: "PATCH",
+    //       body: JSON.stringify(params),
+    //     }
+    //   );
+
+    //   console.log(data);
+
+    //   if (data.success === true) {
+    //     this.notify({
+    //       message: msg("Successfully saved crawl details."),
+    //       variant: "success",
+    //       icon: "check2-circle",
+    //     });
+    //   } else {
+    //     throw data;
+    //   }
+    // } catch (e) {
+    //   this.notify({
+    //     message: msg("Sorry, couldn't save crawl details at this time."),
+    //     variant: "danger",
+    //     icon: "exclamation-octagon",
+    //   });
+    // }
+
+    // this.isSubmittingUpdate = false;
   }
 
   private async scale(value: Crawl["scale"]) {
