@@ -3,9 +3,10 @@ name: Deploy to Dev Cluster
 on:
   workflow_dispatch:
     inputs:
+      test: value
 
 jobs:
-  build_do_image:
+  build_do_images:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
