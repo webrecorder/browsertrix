@@ -63,6 +63,9 @@ export class ProfileBrowser extends LiteElement {
   @query("#profileBrowserSidebar")
   private sidebar?: HTMLElement;
 
+  @query("iframe")
+  private iframe?: HTMLIFrameElement;
+
   private pollTimerId?: number;
 
   connectedCallback() {
@@ -112,7 +115,7 @@ export class ProfileBrowser extends LiteElement {
         <div
           class="${this.isFullscreen
             ? "w-screen h-screen"
-            : "aspect-video border-t"} relative bg-neutral-50 overflow-hidden"
+            : "aspect-4/3 border-t"} relative bg-neutral-50 overflow-hidden"
           aria-live="polite"
         >
           ${this.renderBrowser()}
@@ -174,7 +177,6 @@ export class ProfileBrowser extends LiteElement {
         title=${msg("Interactive browser for creating browser profile")}
         src=${this.iframeSrc}
         @load=${this.onIframeLoad}
-        ${ref((el) => this.onIframeRef(el as HTMLIFrameElement))}
       ></iframe>`;
     }
 
@@ -382,7 +384,9 @@ export class ProfileBrowser extends LiteElement {
 
   private onIframeLoad() {
     this.isIframeLoaded = true;
-
+    try {
+      this.iframe?.contentWindow?.localStorage.setItem("uiTheme", '"default"');
+    } catch (e) {}
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
@@ -393,15 +397,4 @@ export class ProfileBrowser extends LiteElement {
       this.isFullscreen = false;
     }
   };
-
-  private onIframeRef(el: HTMLIFrameElement) {
-    if (!el) return;
-
-    el.addEventListener("load", () => {
-      // TODO see if we can make this work locally without CORs errors
-      try {
-        el.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-      } catch (e) {}
-    });
-  }
 }
