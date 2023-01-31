@@ -431,7 +431,10 @@ export class CrawlDetail extends LiteElement {
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
-                @click=${this.openDetailEditor}
+                @click=${(e: any) => {
+                  this.openDetailEditor();
+                  e.target.closest("sl-dropdown").hide();
+                }}
               >
                 <sl-icon
                   class="inline-block align-middle mr-1"
@@ -866,6 +869,7 @@ export class CrawlDetail extends LiteElement {
       <div slot="footer" class="flex justify-between">
         <sl-button
           size="small"
+          type="reset"
           @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
         >

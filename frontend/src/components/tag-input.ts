@@ -279,8 +279,16 @@ export class TagInput extends LitElement {
   }
 
   private onBlur(e: FocusEvent) {
-    if (this.menu?.contains(e.relatedTarget as HTMLElement)) {
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (this.menu?.contains(relatedTarget)) {
       // Keep focus on form control if moving to menu selection
+      return;
+    }
+    if (
+      relatedTarget.tagName.includes("BUTTON") &&
+      relatedTarget.getAttribute("type") === "reset"
+    ) {
+      // Don't add tag if resetting form
       return;
     }
     const input = e.target as HTMLInputElement;
