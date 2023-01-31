@@ -4,6 +4,8 @@ ingress:
   tls: false
 
 ingress_class: "nginx"
+# for microk8s's ingress controller
+# ingress_class: "public" 
 
 addons:
   admin:
@@ -16,6 +18,7 @@ btrix-admin-logging:
       enabled: false
     ingress:
       tls: false
+      class: "nginx"
       host: "myhostname"
     elasticsearch:
       local: true

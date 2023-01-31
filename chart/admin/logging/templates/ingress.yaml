@@ -6,7 +6,7 @@ metadata:
   name: kibana-main
   namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: "{{ .Values.logging.ingress.class | default "nginx" }}"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/enable-cors: "true"
