@@ -144,7 +144,10 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          sectionContent = this.renderWatch();
+          sectionContent = this.renderPanel(
+            msg("Watch Crawl"),
+            this.renderWatch()
+          );
         } else {
           // TODO loading indicator?
           return "";
@@ -153,23 +156,34 @@ export class CrawlDetail extends LiteElement {
         break;
       }
       case "replay":
-        sectionContent = this.renderReplay();
+        sectionContent = this.renderPanel(
+          msg("Replay Crawl"),
+          this.renderReplay()
+        );
         break;
       case "files":
-        sectionContent = this.renderFiles();
+        sectionContent = this.renderPanel(
+          msg("Download Files"),
+          this.renderFiles()
+        );
         break;
       case "logs":
-        sectionContent = this.renderLogs();
+        sectionContent = this.renderPanel(msg("Logs"), this.renderLogs());
         break;
       case "exclusions":
-        sectionContent = this.renderExclusions();
+        sectionContent = this.renderPanel(
+          msg("Crawl Exclusions"),
+          this.renderExclusions()
+        );
         break;
 
       case "config":
-        sectionContent = this.renderConfig();
+        sectionContent = this.renderPanel(msg("Config"), this.renderConfig());
         break;
       default:
-        sectionContent = this.renderOverview();
+        sectionContent = html`
+          <div>${this.renderPanel(msg("Overview"), this.renderOverview())}</div>
+        `;
         break;
     }
 
@@ -193,15 +207,13 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="rounded-lg border mb-4">
+        <section class="rounded-lg border mb-7">
           ${this.renderSummary()}
         </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5 md:rounded-lg md:border md:p-6">
-            ${sectionContent}
-          </div>
+          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
         </section>
       </main>
 
@@ -230,12 +242,12 @@ export class CrawlDetail extends LiteElement {
         <li
           class="relative"
           role="menuitem"
-          aria-selected=${isActive ? "true" : "false"}
+          aria-selected=${isActive.toString()}
         >
           <a
-            class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
-              ? "text-primary bg-slate-50"
-              : "text-neutral-500 hover:text-neutral-900"}"
+            class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+              ? "text-blue-600 bg-blue-50 shadow-sm"
+              : "text-neutral-600 hover:bg-neutral-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
@@ -409,6 +421,13 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private renderPanel(title: string, content: any) {
+    return html`
+      <h3 class="text-lg font-medium mb-2">${title}</h3>
+      <div class="rounded-lg border p-4">${content}</div>
+    `;
+  }
+
   private renderSummary() {
     return html`
       <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
@@ -506,21 +525,6 @@ export class CrawlDetail extends LiteElement {
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      <header class="flex justify-between">
-        <h3 class="text-lg font-medium leading-none mb-2">
-          ${msg("Watch Crawl")}
-        </h3>
-        ${isRunning && document.fullscreenEnabled
-          ? html`
-              <sl-icon-button
-                name="arrows-fullscreen"
-                label=${msg("Fullscreen")}
-                @click=${() => this.enterFullscreen("screencast-crawl")}
-              ></sl-icon-button>
-            `
-          : ""}
-      </header>
-
       ${isStarting
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
@@ -556,10 +560,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderExclusions() {
-    return html`<h3 class="text-lg font-medium leading-none mb-4">
-        ${msg("Queue Exclusions")}
-      </h3>
-
+    return html`
       <btrix-exclusion-editor
         orgId=${ifDefined(this.crawl?.oid)}
         crawlId=${ifDefined(this.crawl?.id)}
@@ -567,7 +568,8 @@ export class CrawlDetail extends LiteElement {
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
-      ></btrix-exclusion-editor> `;
+      ></btrix-exclusion-editor>
+    `;
   }
 
   private renderReplay() {
@@ -580,23 +582,6 @@ export class CrawlDetail extends LiteElement {
     const canReplay = replaySource && this.hasFiles;
 
     return html`
-      <header class="flex justify-between">
-        <h3 class="text-lg font-medium leading-none mb-2">${msg(
-          "Replay Crawl"
-        )}</h3>
-        ${
-          document.fullscreenEnabled && canReplay
-            ? html`
-                <sl-icon-button
-                  name="arrows-fullscreen"
-                  label=${msg("Fullscreen")}
-                  @click=${() => this.enterFullscreen("replay-crawl")}
-                ></sl-icon-button>
-              `
-            : ""
-        }
-      </header>
-
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
       ${
         canReplay
@@ -727,10 +712,6 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium leading-none mb-2">
-        ${msg("Download Files")}
-      </h3>
-
       ${this.hasFiles
         ? html`
             <ul class="border rounded text-sm">
