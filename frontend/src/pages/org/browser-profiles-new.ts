@@ -88,23 +88,26 @@ export class BrowserProfilesNew extends LiteElement {
           `
         : ""}
 
-      <div class="flex items-center justify-between mb-3 p-2 bg-slate-50">
-        <p class="text-sm text-slate-600 mr-3 p-1">
-          ${msg(
-            "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
-          )}
-        </p>
-
-        <sl-button
-          variant="primary"
-          @click=${() => (this.isDialogVisible = true)}
+      <div class="h-screen flex flex-col">
+        <div
+          class="flex-0 flex items-center justify-between mb-3 p-2 bg-slate-50"
         >
-          ${msg("Next")}
-        </sl-button>
-      </div>
+          <p class="text-sm text-slate-600 mr-3 p-1">
+            ${msg(
+              "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
+            )}
+          </p>
 
-      <div class="border rounded-lg">
+          <sl-button
+            variant="primary"
+            @click=${() => (this.isDialogVisible = true)}
+          >
+            ${msg("Next")}
+          </sl-button>
+        </div>
+
         <btrix-profile-browser
+          class="flex-1 border rounded-lg overflow-hidden"
           .authState=${this.authState}
           orgId=${this.orgId}
           browserId=${this.browserId}
