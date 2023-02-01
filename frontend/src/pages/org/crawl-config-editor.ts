@@ -57,6 +57,7 @@ type NewCrawlConfigParams = CrawlConfigParams & {
 
 const STEPS = [
   "crawlSetup",
+  "crawlLimits",
   "browserSettings",
   "crawlScheduling",
   "crawlInformation",
@@ -114,6 +115,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     activeTab,
     tabs: {
       crawlSetup: { error: false, completed: hasConfigId },
+      crawlLimits: {
+        error: false,
+        completed: hasConfigId,
+      },
       browserSettings: {
         error: false,
         completed: hasConfigId,
@@ -464,6 +469,7 @@ export class CrawlConfigEditor extends LiteElement {
   render() {
     const tabLabels: Record<StepName, string> = {
       crawlSetup: msg("Crawl Scope"),
+      crawlLimits: msg("Crawl Limits"),
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Crawl Scheduling"),
       crawlInformation: msg("Crawl Information"),
@@ -514,6 +520,9 @@ export class CrawlConfigEditor extends LiteElement {
               `,
               { isFirst: true }
             )}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
+            ${this.renderPanelContent(this.renderCrawlLimits())}
           </btrix-tab-panel>
           <btrix-tab-panel
             name="newJobConfig-browserSettings"
@@ -862,7 +871,6 @@ https://example.com/path`}
           )}
         `
       )}
-      ${this.renderCrawlScale()}
     `;
   };
 
@@ -1122,13 +1130,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderHelpTextCol(
         html`Specify exclusion rules for what pages should not be visited.`
       )}
-      ${this.renderCrawlScale()}
     `;
   };
 
-  private renderCrawlScale() {
+  private renderCrawlLimits() {
     return html`
-      ${this.renderSectionHeading(msg("Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
