@@ -687,7 +687,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     async def scale_crawl(
         scale: CrawlScale, crawl_id, org: Organization = Depends(org_crawl_dep)
     ):
-
         result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
@@ -740,7 +739,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-
         return await ops.add_exclusion(crawl_id, regex, org, user)
 
     @app.delete(
@@ -753,7 +751,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-
         return await ops.remove_exclusion(crawl_id, regex, org, user)
 
     return ops

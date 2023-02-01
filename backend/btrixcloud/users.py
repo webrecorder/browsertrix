@@ -475,7 +475,6 @@ def init_users_api(app, user_manager):
     async def get_existing_user_invite_info(
         token: str, user: User = Depends(current_active_user)
     ):
-
         try:
             invite = user.invites[token]
         except:

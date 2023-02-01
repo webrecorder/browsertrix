@@ -17,7 +17,7 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
     async def _do_scale(self, new_scale):
         crawl = await self._get_crawl()
         if not crawl:
-            raise Exception("crawl_not_found")
+            raise RuntimeError("crawl_not_found")
 
         # if making scale smaller, ensure existing crawlers saved their data
         pods = []

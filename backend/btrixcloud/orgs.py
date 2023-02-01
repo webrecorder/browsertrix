@@ -315,6 +315,7 @@ class OrgOps:
 
 
 # ============================================================================
+# pylint: disable=too-many-statements
 def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals
@@ -422,7 +423,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-
         other_user = await user_manager.user_db.get_by_email(update.email)
         if not other_user:
             raise HTTPException(
@@ -443,7 +443,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-
         if await invites.invite_user(
             invite,
             user,

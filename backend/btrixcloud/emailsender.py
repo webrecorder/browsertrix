@@ -6,6 +6,7 @@ import ssl
 
 from email.message import EmailMessage
 
+
 # pylint: disable=too-few-public-methods
 class EmailSender:
     """SMTP Email Sender"""
