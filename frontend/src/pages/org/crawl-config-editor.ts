@@ -74,7 +74,7 @@ type FormState = {
   primarySeedUrl: string;
   urlList: string;
   includeLinkedPages: boolean;
-  allowedExternalUrlList: string;
+  customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
   scopeType: CrawlConfigParams["config"]["scopeType"];
@@ -135,7 +135,7 @@ const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
-  allowedExternalUrlList: "",
+  customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
@@ -901,6 +901,16 @@ https://example.com/path`}
             >`
         );
         break;
+      case "custom":
+        helpText = msg(
+          html`Will crawl all page URLs that begin with
+            <span class="text-blue-500 break-word"
+              >${exampleDomain}${examplePathname}</span
+            >
+            or any URL that begins with those specified in
+            <em>Extra URLs in Scope</em>`
+        );
+        break;
       default:
         helpText = "";
         break;
@@ -968,27 +978,36 @@ https://example.com/path`}
           <sl-menu-item value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
           </sl-menu-item>
+          <sl-menu-item value="custom">
+            ${this.scopeTypeLabels["custom"]}
+          </sl-menu-item>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
         html`Tells the crawler which pages it can visit.`
       )}
-      ${this.renderSectionHeading(msg("Additional Pages"))}
-      ${this.renderFormCol(html`
-        <sl-textarea
-          name="allowedExternalUrlList"
-          label=${msg("Extra URLs in Scope")}
-          rows="3"
-          autocomplete="off"
-          value=${this.formState.allowedExternalUrlList}
-          placeholder=${`https://example.org/page/
-https://example.net`}
-          ?disabled=${this.formState.scopeType === "page-spa"}
-        ></sl-textarea>
-      `)}
-      ${this.renderHelpTextCol(
-        html`If the crawler finds pages outside of the Start URL Scope they will only be saved if they begin with URLs listed here.`
+      ${when(
+        this.formState.scopeType === "custom",
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-textarea
+              name="customIncludeUrlList"
+              label=${msg("Extra URLs in Scope")}
+              rows="3"
+              autocomplete="off"
+              value=${this.formState.customIncludeUrlList}
+              placeholder=${`https://webrecorder.net/blog
+https://archiveweb.page`}
+              required
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(
+            html`If the crawler finds pages outside of the Start URL Scope they
+            will only be saved if they begin with URLs listed here.`
+          )}
+        `
       )}
+      ${this.renderSectionHeading(msg("Additional Pages"))}
       ${this.renderFormCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1096,8 +1115,8 @@ https://example.net`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Increasing parallel crawler instances can speed up crawls, but
-        may increase the chances of getting rate limited.`
+        html`Increasing parallel crawler instances can speed up crawls, but may
+        increase the chances of getting rate limited.`
       )}
     `;
   }
@@ -1793,20 +1812,21 @@ https://example.net`}
 
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
     const primarySeedUrl = this.formState.primarySeedUrl.replace(/\/$/, "");
-    const externalUrlList = this.formState.allowedExternalUrlList
-      ? urlListToArray(this.formState.allowedExternalUrlList).map((str) =>
+    const includeUrlList = this.formState.customIncludeUrlList
+      ? urlListToArray(this.formState.customIncludeUrlList).map((str) =>
           str.replace(/\/$/, "")
         )
       : [];
     let scopeType = this.formState.scopeType;
     const include = [];
-    if (externalUrlList.length) {
+    if (includeUrlList.length) {
       const { host, origin } = new URL(primarySeedUrl);
       scopeType = "custom";
 
       // Replicate scope type with regex
       switch (this.formState.scopeType) {
         case "prefix":
+        case "custom":
           include.push(`${regexEscape(primarySeedUrl)}\/.*`);
           break;
         case "host":
@@ -1822,7 +1842,7 @@ https://example.net`}
           break;
       }
 
-      externalUrlList.forEach((url) => {
+      includeUrlList.forEach((url) => {
         include.push(`${regexEscape(url)}\/.*`);
       });
     }
