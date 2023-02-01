@@ -464,6 +464,11 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         await user_manager.user_db.update(user)
         return {"added": True}
 
+    @router.get("/invites", tags=["invites"])
+    async def get_pending_org_invites(org: Organization = Depends(org_owner_dep)):
+        pending_invites = await user_manager.invites.get_pending_invites(org)
+        return {"pending_invites": pending_invites}
+
     @router.post("/remove", tags=["invites"])
     async def remove_user_from_org(
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)

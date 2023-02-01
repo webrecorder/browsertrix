@@ -18,6 +18,8 @@ CRAWLER_PW = "crawlerPASSWORD!"
 _admin_config_id = None
 _crawler_config_id = None
 
+NON_DEFAULT_ORG_NAME = "Non-default org"
+
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
@@ -49,6 +51,27 @@ def default_org_id(admin_auth_headers):
                     return org["id"]
         except:
             print("Waiting for default org id")
+            time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def non_default_org_id(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": NON_DEFAULT_ORG_NAME},
+    )
+    assert r.status_code == 200
+
+    while True:
+        r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+        data = r.json()
+        try:
+            for org in data["orgs"]:
+                if org["name"] == NON_DEFAULT_ORG_NAME:
+                    return org["id"]
+        except:
+            print("Waiting for non-default org id")
             time.sleep(5)
 
 
