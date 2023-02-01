@@ -1088,17 +1088,17 @@ export class CrawlDetail extends LiteElement {
         }
       );
 
-      console.log(data);
-
-      if (data.success === true) {
-        this.notify({
-          message: msg("Successfully saved crawl details."),
-          variant: "success",
-          icon: "check2-circle",
-        });
-      } else {
+      if (!data.success) {
         throw data;
       }
+
+      this.fetchCrawl();
+      this.notify({
+        message: msg("Successfully saved crawl details."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.openDialogName = undefined;
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save crawl details at this time."),
