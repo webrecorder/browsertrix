@@ -53,6 +53,7 @@ class Seed(BaseModel):
     sitemap: Union[bool, HttpUrl, None]
     allowHash: Optional[bool]
     depth: Optional[int]
+    extraHops: Optional[int] = 0
 
 
 # ============================================================================
