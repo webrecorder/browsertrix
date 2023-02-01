@@ -1049,10 +1049,11 @@ https://example.net`}
         Crawl Scope.`,
         false
       )}
+      ${this.renderSectionHeading(msg("Additional URLs"))}
       ${this.renderFormCol(html`
         <sl-textarea
           name="urlList"
-          label=${msg("List of Additional URLs")}
+          label=${msg("List of URLs")}
           rows="3"
           autocomplete="off"
           value=${this.formState.urlList}
