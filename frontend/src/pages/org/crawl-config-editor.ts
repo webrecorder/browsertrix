@@ -468,11 +468,11 @@ export class CrawlConfigEditor extends LiteElement {
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlSetup: msg("Crawl Scope"),
-      crawlLimits: msg("Crawl Limits"),
+      crawlSetup: msg("Scope"),
+      crawlLimits: msg("Limits"),
       browserSettings: msg("Browser Settings"),
-      crawlScheduling: msg("Crawl Scheduling"),
-      crawlInformation: msg("Crawl Information"),
+      crawlScheduling: msg("Scheduling"),
+      crawlInformation: msg("Information"),
       confirmSettings: msg("Confirm Settings"),
     };
 
@@ -611,7 +611,7 @@ export class CrawlConfigEditor extends LiteElement {
   ) {
     return html`
       <div class="border rounded-lg flex flex-col h-full">
-        <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="flex-1 p-6 grid grid-cols-5 gap-4">
           ${content}
           ${when(this.serverError, () =>
             this.renderErrorAlert(this.serverError!)
@@ -718,19 +718,19 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
-      <btrix-section-heading class="col-span-1 md:col-span-5">
+      <btrix-section-heading class="col-span-5">
         <h4>${content}</h4>
       </btrix-section-heading>
     `;
   }
 
   private renderFormCol = (content: TemplateResult) => {
-    return html`<div class="col-span-1 md:col-span-3">${content}</div> `;
+    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
   private renderHelpTextCol(content: TemplateResult, padTop = true) {
     return html`
-      <div class="col-span-1 md:col-span-2 flex${padTop ? " pt-6" : ""}">
+      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
         <div class="text-base mr-2">
           <sl-icon name="info-circle"></sl-icon>
         </div>
@@ -1049,51 +1049,57 @@ https://example.net`}
         Crawl Scope.`,
         false
       )}
-      ${this.renderSectionHeading(msg("Additional URLs"))}
-      ${this.renderFormCol(html`
-        <sl-textarea
-          name="urlList"
-          label=${msg("List of URLs")}
-          rows="3"
-          autocomplete="off"
-          value=${this.formState.urlList}
-          placeholder=${`https://webrecorder.net/blog
+      <div class="col-span-5">
+        <btrix-details>
+          <span slot="title">${msg("Additional URLs")}</span>
+          <div class="grid grid-cols-5 gap-4 py-2">
+            ${this.renderFormCol(html`
+              <sl-textarea
+                name="urlList"
+                label=${msg("List of URLs")}
+                rows="3"
+                autocomplete="off"
+                value=${this.formState.urlList}
+                placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
-          @sl-input=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              inputEl.invalid &&
-              !urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              inputEl.setCustomValidity("");
-              inputEl.helpText = "";
-            }
-          }}
-          @sl-blur=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              inputEl.value &&
-              urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              const text = msg("Please fix invalid URL in list.");
-              inputEl.invalid = true;
-              inputEl.helpText = text;
-              inputEl.setCustomValidity(text);
-            } else {
-              await this.updateComplete;
-              if (!this.formState.jobName) {
-                this.setDefaultJobName();
-              }
-            }
-          }}
-        ></sl-textarea>
-      `)}
-      ${this.renderHelpTextCol(
-        html`The crawler will visit and record each URL listed here. Other links
-        on these pages will not be crawled.`
-      )}
+                @sl-input=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  if (
+                    inputEl.invalid &&
+                    !urlListToArray(inputEl.value).some((url) => !validURL(url))
+                  ) {
+                    inputEl.setCustomValidity("");
+                    inputEl.helpText = "";
+                  }
+                }}
+                @sl-blur=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  if (
+                    inputEl.value &&
+                    urlListToArray(inputEl.value).some((url) => !validURL(url))
+                  ) {
+                    const text = msg("Please fix invalid URL in list.");
+                    inputEl.invalid = true;
+                    inputEl.helpText = text;
+                    inputEl.setCustomValidity(text);
+                  } else {
+                    await this.updateComplete;
+                    if (!this.formState.jobName) {
+                      this.setDefaultJobName();
+                    }
+                  }
+                }}
+              ></sl-textarea>
+            `)}
+            ${this.renderHelpTextCol(
+              html`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled.`
+            )}
+          </div>
+        </btrix-details>
+      </div>
       ${this.renderSectionHeading(msg("Page Limits"))}
       ${this.renderFormCol(html`
         <sl-input
@@ -1447,7 +1453,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
     return html`
-      <div class="col-span-1 md:col-span-5">
+      <div class="col-span-5">
         <btrix-alert variant="danger">${errorMessage}</btrix-alert>
       </div>
     `;
@@ -1473,7 +1479,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${errorAlert}
 
-      <div class="col-span-1 md:col-span-5">
+      <div class="col-span-5">
         ${when(this.progressState.activeTab === "confirmSettings", () => {
           // Prevent parsing and rendering tab when not visible
           const crawlConfig = this.parseConfig();
