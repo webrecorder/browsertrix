@@ -220,7 +220,7 @@ export class ConfigDetails extends LiteElement {
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig.extraHops || seedsConfig.include)
+        Boolean(primarySeedConfig.extraHops ?? seedsConfig.extraHops)
       )}
       ${this.renderSetting(
         msg("List of Additional URLs"),
@@ -235,7 +235,7 @@ export class ConfigDetails extends LiteElement {
       ${this.renderSetting(
         msg("Max Pages"),
         seedsConfig.limit
-          ? msg(str`${crawlConfig?.config.limit} pages`)
+          ? msg(str`${primarySeedConfig.limit ?? seedsConfig.limit} pages`)
           : msg("Unlimited")
       )}
     `;

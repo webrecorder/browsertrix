@@ -1896,7 +1896,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        extraHops: this.formState.includeLinkedPages ? 1 : 0,
         lang: this.formState.lang || null,
         blockAds: this.formState.blockAds,
         exclude: trimExclusions(this.formState.exclusions),
@@ -1914,6 +1913,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const config = {
       seeds: urlListToArray(this.formState.urlList),
       scopeType: "page" as FormState["scopeType"],
+      extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
     return config;
@@ -1938,6 +1938,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.formState.scopeType === "custom"
           ? includeUrlList.map((url) => `${regexEscape(url)}\/.*`)
           : [],
+      extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
     const config: SeedConfig = {
       seeds: [primarySeed, ...additionalSeedUrlList],
