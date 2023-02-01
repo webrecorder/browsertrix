@@ -32,3 +32,9 @@ def test_pending_invites(admin_auth_headers, default_org_id):
     assert invite["oid"] == default_org_id
     assert invite["created"]
     assert invite["role"]
+
+
+def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
+    # Verify that only superusers can see pending invites
+    r = requests.get(f"{API_PREFIX}/users/invites", headers=crawler_auth_headers)
+    assert r.status_code == 403

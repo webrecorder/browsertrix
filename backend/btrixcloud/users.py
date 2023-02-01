@@ -490,7 +490,10 @@ def init_users_api(app, user_manager):
         return {"removed": True}
 
     @users_router.get("/invites", tags=["invites"])
-    async def get_pending_invites():
+    async def get_pending_invites(user: User = Depends(current_active_user)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         pending_invites = await user_manager.invites.get_pending_invites()
         return {"pending_invites": pending_invites}
 
