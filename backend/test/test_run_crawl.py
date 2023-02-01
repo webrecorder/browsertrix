@@ -107,6 +107,7 @@ def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
     data = r.json()
     assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
 
+    # Submit patch request to update tags
     UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
@@ -125,3 +126,13 @@ def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+
+    # Submit empty patch request and ensure it returns 400
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={"tags": []},
+    )
+    assert r.status_code == 400
+    data = r.json()
+    assert data["detail"] == "no_update_data"
