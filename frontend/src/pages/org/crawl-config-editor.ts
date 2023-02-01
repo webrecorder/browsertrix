@@ -187,7 +187,7 @@ function validURL(url: string) {
 
 const trimExclusions = flow(uniq, compact);
 const urlListToArray = (str: string) =>
-  str.trim().replace(/,/g, " ").split(/\s+/g);
+  str.length ? str.trim().replace(/,/g, " ").split(/\s+/g) : [];
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
 
 @localized()
@@ -473,7 +473,7 @@ export class CrawlConfigEditor extends LiteElement {
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Scheduling"),
       crawlInformation: msg("Information"),
-      confirmSettings: msg("Confirm Settings"),
+      confirmSettings: msg("Review Config"),
     };
 
     return html`
@@ -707,7 +707,7 @@ export class CrawlConfigEditor extends LiteElement {
                         slot="suffix"
                         name="chevron-double-right"
                       ></sl-icon>
-                      ${msg("Confirm & Save")}
+                      ${msg("Review & Save")}
                     </sl-button>
                   </div>
                 `
@@ -844,7 +844,6 @@ https://example.com/path`}
       ${when(
         this.formState.includeLinkedPages || this.jobType === "custom",
         () => html`
-          ${this.renderSectionHeading(msg("Page Limits"))}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
@@ -1049,6 +1048,29 @@ https://example.net`}
         Crawl Scope.`,
         false
       )}
+      ${this.renderFormCol(html`
+        <btrix-queue-exclusion-table
+          .exclusions=${this.formState.exclusions}
+          pageSize="10"
+          editable
+          removable
+          @on-remove=${this.handleRemoveRegex}
+          @on-change=${this.handleChangeRegex}
+        ></btrix-queue-exclusion-table>
+        <sl-button
+          class="w-full mt-1"
+          @click=${() =>
+            this.updateFormState({
+              exclusions: [""],
+            })}
+        >
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          <span class="text-neutral-600">${msg("Add More")}</span>
+        </sl-button>
+      `)}
+      ${this.renderHelpTextCol(
+        html`Specify exclusion rules for what pages should not be visited.`
+      )}
       <div class="col-span-5">
         <btrix-details>
           <span slot="title">${msg("Additional URLs")}</span>
@@ -1100,48 +1122,54 @@ https://archiveweb.page/images/${"logo.svg"}`}
           </div>
         </btrix-details>
       </div>
-      ${this.renderSectionHeading(msg("Page Limits"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageLimit"
-          label=${msg("Max Pages")}
-          type="number"
-          defaultValue=${this.formState.pageLimit || ""}
-          placeholder=${msg("Unlimited")}
-        >
-          <span slot="suffix">${msg("pages")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
-      that will be crawled.`)}
-      ${this.renderFormCol(html`
-        <btrix-queue-exclusion-table
-          .exclusions=${this.formState.exclusions}
-          pageSize="10"
-          editable
-          removable
-          @on-remove=${this.handleRemoveRegex}
-          @on-change=${this.handleChangeRegex}
-        ></btrix-queue-exclusion-table>
-        <sl-button
-          class="w-full mt-1"
-          @click=${() =>
-            this.updateFormState({
-              exclusions: [""],
-            })}
-        >
-          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-          <span class="text-neutral-600">${msg("Add More")}</span>
-        </sl-button>
-      `)}
-      ${this.renderHelpTextCol(
-        html`Specify exclusion rules for what pages should not be visited.`
-      )}
     `;
   };
 
   private renderCrawlLimits() {
+    // Max Pages minimum value cannot be lower than seed count
+    const minPages = Math.max(
+      1,
+      urlListToArray(this.formState.urlList).length +
+        (this.jobType === "seed-crawl" ? 1 : 0)
+    );
     return html`
+      ${this.renderFormCol(html`
+        <sl-mutation-observer
+          attr="min"
+          @sl-mutation=${(e: CustomEvent) => {
+            // Input `min` attribute changes dynamically in response
+            // to number of seed URLs. Watch for changes to `min`
+            // and set validity accordingly
+            const mutationRecord = e.detail.mutationList[0];
+            const inputEl = mutationRecord.target as SlInput;
+            console.log("target:", inputEl);
+            if (inputEl.value && Number(inputEl.value) < minPages) {
+              const text = msg(
+                str`Must be more than number of crawl URLs (${minPages})`
+              );
+              inputEl.invalid = true;
+              inputEl.helpText = text;
+              inputEl.setCustomValidity(text);
+            } else {
+              inputEl.setCustomValidity("");
+              inputEl.helpText = "";
+            }
+          }}
+        >
+          <sl-input
+            name="pageLimit"
+            label=${msg("Max Pages")}
+            type="number"
+            value=${this.formState.pageLimit ?? ""}
+            min=${minPages}
+            placeholder=${msg("Unlimited")}
+          >
+            <span slot="suffix">${msg("pages")}</span>
+          </sl-input>
+        </sl-mutation-observer>
+      `)}
+      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
+      that will be crawled.`)}
       ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
