@@ -42,11 +42,11 @@ jobs:
 
       - name: Get Kubeconfig
         env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
           DEV_VALUES: ${{ secrets.DEV_VALUES }}
 
         run: |
-          printf "$DEV_ENV_FILE" >> ./.kubeconfig
+          printf "$KUBECONFIG_DATA" >> ./.kubeconfig
           chmod 400 ./.kubeconfig
           printf "$DEV_VALUES" >> ./dev-values.yaml
 
