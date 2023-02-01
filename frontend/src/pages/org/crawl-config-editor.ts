@@ -1136,24 +1136,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
-          @sl-mutation=${(e: CustomEvent) => {
+          @sl-mutation=${async (e: CustomEvent) => {
             // Input `min` attribute changes dynamically in response
             // to number of seed URLs. Watch for changes to `min`
             // and set validity accordingly
             const mutationRecord = e.detail.mutationList[0];
             const inputEl = mutationRecord.target as SlInput;
-            console.log("target:", inputEl);
-            if (inputEl.value && Number(inputEl.value) < minPages) {
-              const text = msg(
-                str`Must be more than number of crawl URLs (${minPages})`
-              );
-              inputEl.invalid = true;
-              inputEl.helpText = text;
-              inputEl.setCustomValidity(text);
-            } else {
-              inputEl.setCustomValidity("");
-              inputEl.helpText = "";
-            }
+            await inputEl.updateComplete;
+            inputEl.checkValidity();
+            await inputEl.updateComplete;
+            this.syncTabErrorState(inputEl);
           }}
         >
           <sl-input
@@ -1165,6 +1157,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             placeholder=${msg("Unlimited")}
           >
             <span slot="suffix">${msg("pages")}</span>
+            <div slot="help-text">
+              ${minPages === 1
+                ? msg(str`Minimum ${minPages} page`)
+                : msg(str`Minimum ${minPages} pages`)}
+            </div>
           </sl-input>
         </sl-mutation-observer>
       `)}
@@ -1639,14 +1636,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private syncTabErrorState(el: HTMLElement) {
-    const currentTab = this.progressState.activeTab as StepName;
     const panelEl = el.closest("btrix-tab-panel")!;
+    const tabName = panelEl
+      .getAttribute("name")!
+      .replace("newJobConfig-", "") as StepName;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid && this.progressState.tabs[currentTab].error) {
+    if (!hasInvalid && this.progressState.tabs[tabName].error) {
       this.updateProgressState({
         tabs: {
-          [currentTab]: { error: false },
+          [tabName]: { error: false },
+        },
+      });
+    } else if (hasInvalid && !this.progressState.tabs[tabName].error) {
+      this.updateProgressState({
+        tabs: {
+          [tabName]: { error: true },
         },
       });
     }
