@@ -2,9 +2,6 @@ name: Deploy to Dev Cluster
 
 on:
   workflow_dispatch:
-    inputs:
-      registry: registry.digitalocean.com
-      registry_path: registry.digitalocean.com/btrix
 
 jobs:
   build_do_images:
@@ -18,10 +15,10 @@ jobs:
         with:
           driver-opts: network=host
 
-        name: Login to Regsitry
+      - name: Login to Regsitry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.registry }}
+          registry: ${{ secrets.DO_REGISTRY }}
           username: ${{ secrets.DO_API_TOKEN }}
           password: ${{ secrets.DO_API_TOKEN }}
 
@@ -30,7 +27,7 @@ jobs:
         with:
           context: backend
           push: true
-          tags: ${{ inputs.registry_path }}/webrecorder/browsertrix-backend:latest
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -39,19 +36,19 @@ jobs:
         with:
           context: frontend
           push: true
-          tags: ${{ inputs.registry_path }}/btrix/webrecorder/browsertrix-frontend:latest
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/btrix/webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
-
       - name: Get Kubeconfig
         env:
-            KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
-            DEV_VALUES: ${{ secrets.DEV_VALUES }}
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+          DEV_VALUES: ${{ secrets.DEV_VALUES }}
 
         run: |
-          echo $KUBECONFIG_DATA > ./.kubeconfig
-          echo $DEV_VALUES > ./dev-values.yaml
+          printf "$KUBECONFIG_DATA" >> ./.kubeconfig
+          chmod 400 ./.kubeconfig
+          printf "$DEV_VALUES" >> ./dev-values.yaml
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
@@ -63,8 +60,4 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          export KUBECONFIG=./.kubeconfig
-          helm upgrade --install -f ./chart/values.yaml -f ./dev-values.yaml btrix ./chart/
-
-        
- 
+          KUBECONFIG=./.kubeconfig helm upgrade --install -f ./chart/values.yaml -f ./dev-values.yaml btrix ./chart/
