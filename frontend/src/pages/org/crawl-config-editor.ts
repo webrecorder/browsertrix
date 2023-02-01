@@ -185,9 +185,12 @@ function validURL(url: string) {
   );
 }
 
-const trimExclusions = flow(uniq, compact);
-const urlListToArray = (str: string) =>
-  str.length ? str.trim().replace(/,/g, " ").split(/\s+/g) : [];
+const trimArray = flow(uniq, compact);
+const urlListToArray = flow(
+  (str: string) =>
+    str.length ? str.trim().replace(/,/g, " ").split(/\s+/g) : [],
+  trimArray
+);
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
 
 @localized()
@@ -944,6 +947,8 @@ https://example.com/path`}
         helpText = "";
         break;
     }
+    const exclusions = trimArray(this.formState.exclusions || []);
+    const additionalUrlList = urlListToArray(this.formState.urlList);
 
     return html`
       ${this.renderFormCol(html`
@@ -1048,32 +1053,51 @@ https://example.net`}
         Crawl Scope.`,
         false
       )}
-      ${this.renderFormCol(html`
-        <btrix-queue-exclusion-table
-          .exclusions=${this.formState.exclusions}
-          pageSize="10"
-          editable
-          removable
-          @on-remove=${this.handleRemoveRegex}
-          @on-change=${this.handleChangeRegex}
-        ></btrix-queue-exclusion-table>
-        <sl-button
-          class="w-full mt-1"
-          @click=${() =>
-            this.updateFormState({
-              exclusions: [""],
-            })}
+      <div class="col-span-5">
+        <btrix-details ?open=${exclusions.length > 0}>
+          <span slot="title"
+            >${msg("Exclusions")}
+            ${exclusions.length
+              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+              : ""}</span
+          >
+          <div class="grid grid-cols-5 gap-4 py-2">
+            ${this.renderFormCol(html`
+              <btrix-queue-exclusion-table
+                label=""
+                .exclusions=${this.formState.exclusions}
+                pageSize="10"
+                editable
+                removable
+                @on-remove=${this.handleRemoveRegex}
+                @on-change=${this.handleChangeRegex}
+              ></btrix-queue-exclusion-table>
+              <sl-button
+                class="w-full mt-1"
+                @click=${() =>
+                  this.updateFormState({
+                    exclusions: [""],
+                  })}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                <span class="text-neutral-600">${msg("Add More")}</span>
+              </sl-button>
+            `)}
+            ${this.renderHelpTextCol(
+              html`Specify exclusion rules for what pages should not be visited.`
+            )}
+          </div></btrix-details
         >
-          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-          <span class="text-neutral-600">${msg("Add More")}</span>
-        </sl-button>
-      `)}
-      ${this.renderHelpTextCol(
-        html`Specify exclusion rules for what pages should not be visited.`
-      )}
+      </div>
+
       <div class="col-span-5">
         <btrix-details>
-          <span slot="title">${msg("Additional URLs")}</span>
+          <span slot="title">
+            ${msg("Additional URLs")}
+            ${additionalUrlList.length
+              ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
+              : ""}
+          </span>
           <div class="grid grid-cols-5 gap-4 py-2">
             ${this.renderFormCol(html`
               <sl-textarea
@@ -1898,7 +1922,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
         lang: this.formState.lang || null,
         blockAds: this.formState.blockAds,
-        exclude: trimExclusions(this.formState.exclusions),
+        exclude: trimArray(this.formState.exclusions),
       },
     };
 
