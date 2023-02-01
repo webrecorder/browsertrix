@@ -47,6 +47,7 @@ jobs:
 
         run: |
           echo $KUBECONFIG_DATA > ./.kubeconfig
+          chmod 400 ./.kubeconfig
           echo $DEV_VALUES > ./dev-values.yaml
 
       - name: Install Kubectl
@@ -59,5 +60,4 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          export KUBECONFIG=./.kubeconfig
-          helm upgrade --install -f ./chart/values.yaml -f ./dev-values.yaml btrix ./chart/
+          KUBECONFIG=./.kubeconfig helm upgrade --install -f ./chart/values.yaml -f ./dev-values.yaml btrix ./chart/
