@@ -46,9 +46,9 @@ jobs:
           DEV_VALUES: ${{ secrets.DEV_VALUES }}
 
         run: |
-          echo $KUBECONFIG_DATA > ./.kubeconfig
+          printf "$DEV_ENV_FILE" >> ./.kubeconfig
           chmod 400 ./.kubeconfig
-          echo $DEV_VALUES > ./dev-values.yaml
+          printf "$DEV_VALUES" >> ./dev-values.yaml
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
