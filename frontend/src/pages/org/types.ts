@@ -28,23 +28,29 @@ export type Crawl = {
   completions?: number;
 };
 
+type ScopeType =
+  | "prefix"
+  | "host"
+  | "domain"
+  | "page"
+  | "page-spa"
+  | "any"
+  | "custom";
+
 export type Seed = {
-  scopeType:
-    | "prefix"
-    | "host"
-    | "domain"
-    | "page"
-    | "page-spa"
-    | "any"
-    | "custom";
+  url: string;
+  scopeType: ScopeType;
   include?: string[];
   exclude?: string[];
   limit?: number | null;
+  extraHops?: number | null;
 };
 
-export type SeedConfig = Seed & {
-  seeds: (string | ({ url: string } & Seed))[];
-  extraHops?: number | null;
+export type SeedConfig = Pick<
+  Seed,
+  "scopeType" | "include" | "exclude" | "limit" | "extraHops"
+> & {
+  seeds: (string | Seed)[];
   lang?: string | null;
   blockAds?: boolean;
   behaviorTimeout?: number | null;

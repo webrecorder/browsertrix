@@ -46,6 +46,8 @@ import type {
   Profile,
   InitialCrawlConfig,
   JobType,
+  Seed,
+  SeedConfig,
 } from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
@@ -581,7 +583,7 @@ export class CrawlConfigEditor extends LiteElement {
   ) {
     return html`
       <div class="border rounded-lg flex flex-col h-full">
-        <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-4">
           ${content}
           ${when(this.serverError, () =>
             this.renderErrorAlert(this.serverError!)
@@ -646,6 +648,8 @@ export class CrawlConfigEditor extends LiteElement {
                   ${this.formState.scheduleType === "now" ||
                   this.formState.runNow
                     ? msg("Save & Run Crawl")
+                    : this.formState.scheduleType === "none"
+                    ? msg("Save Crawl Config")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
               : html`
@@ -761,7 +765,6 @@ https://example.com/path`}
             <sl-select
               name="scopeType"
               label=${msg("Crawl Scope")}
-              defaultValue=${this.formState.scopeType}
               value=${this.formState.scopeType}
               @sl-select=${(e: Event) =>
                 this.updateFormState({
@@ -955,7 +958,6 @@ https://example.com/path`}
         <sl-select
           name="scopeType"
           label=${msg("Start URL Scope")}
-          defaultValue=${this.formState.scopeType}
           value=${this.formState.scopeType}
           @sl-select=${(e: Event) =>
             this.updateFormState({
@@ -996,8 +998,8 @@ https://example.com/path`}
               rows="3"
               autocomplete="off"
               value=${this.formState.customIncludeUrlList}
-              placeholder=${`https://webrecorder.net/blog
-https://archiveweb.page`}
+              placeholder=${`https://example.org
+https://example.net`}
               required
             ></sl-textarea>
           `)}
@@ -1007,7 +1009,6 @@ https://archiveweb.page`}
           )}
         `
       )}
-      ${this.renderSectionHeading(msg("Additional Pages"))}
       ${this.renderFormCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1020,6 +1021,50 @@ https://archiveweb.page`}
         html`If checked, the crawler will visit pages one link away outside of
         Crawl Scope.`,
         false
+      )}
+      ${this.renderFormCol(html`
+        <sl-textarea
+          name="urlList"
+          label=${msg("List of Additional URLs")}
+          rows="3"
+          autocomplete="off"
+          value=${this.formState.urlList}
+          placeholder=${`https://webrecorder.net/blog
+https://archiveweb.page/images/${"logo.svg"}`}
+          @sl-input=${async (e: Event) => {
+            const inputEl = e.target as SlInput;
+            await inputEl.updateComplete;
+            if (
+              inputEl.invalid &&
+              !urlListToArray(inputEl.value).some((url) => !validURL(url))
+            ) {
+              inputEl.setCustomValidity("");
+              inputEl.helpText = "";
+            }
+          }}
+          @sl-blur=${async (e: Event) => {
+            const inputEl = e.target as SlInput;
+            await inputEl.updateComplete;
+            if (
+              inputEl.value &&
+              urlListToArray(inputEl.value).some((url) => !validURL(url))
+            ) {
+              const text = msg("Please fix invalid URL in list.");
+              inputEl.invalid = true;
+              inputEl.helpText = text;
+              inputEl.setCustomValidity(text);
+            } else {
+              await this.updateComplete;
+              if (!this.formState.jobName) {
+                this.setDefaultJobName();
+              }
+            }
+          }}
+        ></sl-textarea>
+      `)}
+      ${this.renderHelpTextCol(
+        html`The crawler will visit and record each URL listed here. Other links
+        on these pages will not be crawled.`
       )}
       ${this.renderSectionHeading(msg("Page Limits"))}
       ${this.renderFormCol(html`
@@ -1661,7 +1706,6 @@ https://archiveweb.page`}
     }
 
     const config = this.parseConfig();
-
     this.isSubmitting = true;
 
     try {
@@ -1817,39 +1861,24 @@ https://archiveweb.page`}
           str.replace(/\/$/, "")
         )
       : [];
-    let scopeType = this.formState.scopeType;
-    const include = [];
-    if (includeUrlList.length) {
-      const { host, origin } = new URL(primarySeedUrl);
-      scopeType = "custom";
-
-      // Replicate scope type with regex
-      switch (this.formState.scopeType) {
-        case "prefix":
-        case "custom":
-          include.push(`${regexEscape(primarySeedUrl)}\/.*`);
-          break;
-        case "host":
-          include.push(`${regexEscape(origin)}\/.*`);
-          break;
-        case "domain":
-          include.push(
-            `${regexEscape(origin)}\/.*`,
-            `.*\.${regexEscape(host)}\/.*`
-          );
-          break;
-        default:
-          break;
-      }
-
-      includeUrlList.forEach((url) => {
-        include.push(`${regexEscape(url)}\/.*`);
-      });
-    }
-    const config = {
-      seeds: [primarySeedUrl],
-      scopeType,
-      include,
+    const additionalSeedUrlList = this.formState.urlList
+      ? urlListToArray(this.formState.urlList).map((str) =>
+          str.replace(/\/$/, "")
+        )
+      : [];
+    const primarySeed: Seed = {
+      url: primarySeedUrl,
+      scopeType: this.formState.scopeType,
+      include:
+        this.formState.scopeType === "custom"
+          ? includeUrlList.map((url) => `${regexEscape(url)}\/.*`)
+          : [],
+    };
+    const config: SeedConfig = {
+      seeds: [primarySeed, ...additionalSeedUrlList],
+      scopeType: additionalSeedUrlList.length
+        ? "page"
+        : this.formState.scopeType,
     };
     return config;
   }
