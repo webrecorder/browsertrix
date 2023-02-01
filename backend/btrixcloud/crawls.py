@@ -148,6 +148,13 @@ class CrawlCompleteIn(BaseModel):
 
 
 # ============================================================================
+class UpdateCrawl(BaseModel):
+    """Update crawl tags"""
+
+    tags: Optional[List[str]] = []
+
+
+# ============================================================================
 class CrawlOps:
     """Crawl Ops"""
 
@@ -367,6 +374,27 @@ class CrawlOps:
         except pymongo.errors.DuplicateKeyError:
             # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
             return False
+
+    async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
+        """Update existing crawl (tags only for now)"""
+        query = update.dict(
+            exclude_unset=True, exclude_defaults=True, exclude_none=True
+        )
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
+        # update in db
+        result = await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id},
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
+
+        return {"success": True}
 
     async def update_crawl_state(self, crawl_id: str, state: str):
         """called only when job container is being stopped/canceled"""
@@ -679,6 +707,12 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         return crawls[0]
+
+    @app.patch("/orgs/{oid}/crawls/{crawl_id}", tags=["crawls"])
+    async def update_crawl(
+        update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await ops.update_crawl(crawl_id, org, update)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/scale",
