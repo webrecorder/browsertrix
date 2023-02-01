@@ -812,8 +812,6 @@ https://example.com/path`}
               <sl-menu-item value="domain">
                 ${this.scopeTypeLabels["domain"]}
               </sl-menu-item>
-              <sl-divider></sl-divider>
-              <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
               <sl-menu-item value="page-spa">
                 ${this.scopeTypeLabels["page-spa"]}
               </sl-menu-item>
@@ -1006,8 +1004,6 @@ https://example.com/path`}
           <sl-menu-item value="domain">
             ${this.scopeTypeLabels["domain"]}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
           <sl-menu-item value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
           </sl-menu-item>
