@@ -381,10 +381,29 @@ export class CrawlConfigEditor extends LiteElement {
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialCrawlConfig) return {};
     const formState: Partial<FormState> = {};
-    const { seeds, scopeType } = this.initialCrawlConfig.config;
+    const seedsConfig = this.initialCrawlConfig.config;
+    const { seeds } = seedsConfig;
+    let primarySeedConfig: SeedConfig | Seed = seedsConfig;
     if (this.initialCrawlConfig.jobType === "seed-crawl") {
-      formState.primarySeedUrl =
-        typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
+      if (typeof seeds[0] === "string") {
+        formState.primarySeedUrl = seeds[0];
+      } else {
+        primarySeedConfig = seeds[0];
+        formState.primarySeedUrl = primarySeedConfig.url;
+      }
+      if (
+        primarySeedConfig.scopeType === "custom" &&
+        primarySeedConfig.include?.length
+      ) {
+        formState.customIncludeUrlList = primarySeedConfig.include
+          // Unescape regex
+          .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
+          .join("\n");
+      }
+      const additionalSeeds = seeds.slice(1);
+      if (additionalSeeds.length) {
+        formState.urlList = additionalSeeds.join("\n");
+      }
     } else {
       // Treat "custom" like URL list
       formState.urlList = seeds
@@ -392,7 +411,7 @@ export class CrawlConfigEditor extends LiteElement {
         .join("\n");
 
       if (this.initialCrawlConfig.jobType === "custom") {
-        formState.scopeType = scopeType || "page";
+        formState.scopeType = seedsConfig.scopeType || "page";
       }
     }
 
@@ -424,9 +443,8 @@ export class CrawlConfigEditor extends LiteElement {
     if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
       formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
     }
-    if (typeof this.initialCrawlConfig.config.behaviorTimeout === "number") {
-      formState.pageTimeoutMinutes =
-        this.initialCrawlConfig.config.behaviorTimeout / 60;
+    if (typeof seedsConfig.behaviorTimeout === "number") {
+      formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
@@ -434,10 +452,11 @@ export class CrawlConfigEditor extends LiteElement {
       browserProfile: this.initialCrawlConfig.profileid
         ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
-      scopeType: this.initialCrawlConfig.config
-        .scopeType as FormState["scopeType"],
-      exclusions: this.initialCrawlConfig.config.exclude,
-      includeLinkedPages: Boolean(this.initialCrawlConfig.config.extraHops),
+      scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
+      exclusions: seedsConfig.exclude,
+      includeLinkedPages: Boolean(
+        primarySeedConfig.extraHops || seedsConfig.extraHops
+      ),
       ...formState,
     };
   }
