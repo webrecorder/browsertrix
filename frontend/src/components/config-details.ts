@@ -178,7 +178,7 @@ export class ConfigDetails extends LiteElement {
         `
       )}
       ${this.renderSetting(
-        msg("Include Linked Pages"),
+        msg("Include Any Linked Page"),
         Boolean(crawlConfig?.config.extraHops)
       )}
     `;

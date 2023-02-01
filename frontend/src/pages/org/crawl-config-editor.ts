@@ -835,7 +835,7 @@ https://example.com/path`}
         name="includeLinkedPages"
         ?checked=${this.formState.includeLinkedPages}
       >
-        ${msg("Include Linked Pages")}
+        ${msg("Include Any Linked Page")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away from a Crawl
