@@ -151,7 +151,7 @@ class CrawlCompleteIn(BaseModel):
 class UpdateCrawl(BaseModel):
     """Update crawl tags"""
 
-    tags: List[Optional[str]] = []
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================
