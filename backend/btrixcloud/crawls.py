@@ -151,7 +151,7 @@ class CrawlCompleteIn(BaseModel):
 class UpdateCrawl(BaseModel):
     """Update crawl tags"""
 
-    tags: Optional[List[str]] = []
+    tags: List[Optional[str]] = []
 
 
 # ============================================================================
@@ -377,9 +377,7 @@ class CrawlOps:
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
         """Update existing crawl (tags only for now)"""
-        query = update.dict(
-            exclude_unset=True, exclude_defaults=True, exclude_none=True
-        )
+        query = update.dict(exclude_unset=True, exclude_none=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")

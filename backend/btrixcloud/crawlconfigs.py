@@ -317,9 +317,7 @@ class CrawlConfigOps:
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         # set update query
-        query = update.dict(
-            exclude_unset=True, exclude_defaults=True, exclude_none=True
-        )
+        query = update.dict(exclude_unset=True, exclude_none=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
