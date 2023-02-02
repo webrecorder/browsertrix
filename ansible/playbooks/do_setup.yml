@@ -98,7 +98,7 @@
       # skip_ansible_lint
       ansible.builtin.command: >-
         doctl kubernetes cluster create {{ k8s_name }} --1-clicks ingress-nginx,cert-manager --node-pool
-        "{{ node_pools|join(',') }}"
+        "{{ node_pools | select('match','name=*') | list |join(',') }}"
         --region={{ droplet_region }}
 
       async: 1800
