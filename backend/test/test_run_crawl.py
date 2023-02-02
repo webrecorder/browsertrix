@@ -96,3 +96,49 @@ def test_verify_wacz():
 
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
     assert '"https://webrecorder.net/"' in pages
+
+
+def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+
+    # Submit patch request to update tags
+    UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={"tags": UPDATED_TAGS},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["success"]
+
+    # Verify update was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+
+    # Verify deleting all tags works as well
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={"tags": []},
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["tags"] == []
