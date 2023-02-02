@@ -4,6 +4,7 @@ from kubernetes_asyncio import client, config
 from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.client.api_client import ApiClient
 
+
 # pylint: disable=too-few-public-methods
 class K8sAPI:
     """K8S API accessors"""

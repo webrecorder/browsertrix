@@ -198,8 +198,9 @@ class K8SManager(BaseCrawlManager, K8sAPI):
                 f"storage-{storage_name}",
                 namespace=self.namespace,
             )
+        # pylint: disable=broad-except
         except Exception:
-            # pylint: disable=broad-except,raise-missing-from
+            # pylint: disable=broad-exception-raised,raise-missing-from
             raise Exception(f"Storage {storage_name} not found")
 
         return None

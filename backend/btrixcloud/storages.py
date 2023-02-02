@@ -99,7 +99,7 @@ async def get_presigned_url(org, crawlfile, crawl_manager, duration=3600):
         s3storage = org.storage
 
     else:
-        raise Exception("No Default Storage Found, Invalid Storage Type")
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
 
     async with get_s3_client(s3storage, s3storage.use_access_for_presign) as (
         client,

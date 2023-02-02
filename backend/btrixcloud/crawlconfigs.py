@@ -521,7 +521,6 @@ class CrawlConfigOps:
             status = "deleted"
 
         else:
-
             if not await self.crawl_configs.find_one_and_update(
                 {"_id": crawlconfig.id, "inactive": {"$ne": True}},
                 {"$set": query},
@@ -656,7 +655,6 @@ def init_crawl_config_api(
 
     @router.delete("/{cid}")
     async def make_inactive(cid: str, org: Organization = Depends(org_crawl_dep)):
-
         crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org)
 
         if not crawlconfig:
