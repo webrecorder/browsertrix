@@ -920,7 +920,7 @@ https://example.com/path`}
             <span class="text-blue-500 break-word"
               >${exampleDomain}${examplePathname}</span
             >
-            and links that stay within the same URL, e.g. hash anchor links:
+            hash anchor links, e.g.
             <span class="text-blue-500 break-word"
               >${exampleDomain}${examplePathname}</span
             ><span class="text-blue-500 font-medium break-word"
@@ -992,6 +992,9 @@ https://example.com/path`}
             })}
         >
           <div slot="help-text">${helpText}</div>
+          <sl-menu-item value="page-spa">
+            ${this.scopeTypeLabels["page-spa"]}
+          </sl-menu-item>
           <sl-menu-item value="prefix">
             ${this.scopeTypeLabels["prefix"]}
           </sl-menu-item>
@@ -1003,9 +1006,6 @@ https://example.com/path`}
           </sl-menu-item>
           <sl-menu-item value="custom">
             ${this.scopeTypeLabels["custom"]}
-          </sl-menu-item>
-          <sl-menu-item value="page-spa">
-            ${this.scopeTypeLabels["page-spa"]}
           </sl-menu-item>
         </sl-select>
       `)}
