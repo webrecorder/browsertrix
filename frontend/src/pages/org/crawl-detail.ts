@@ -202,10 +202,10 @@ export class CrawlDetail extends LiteElement {
       default:
         sectionContent = html`
           <div class="grid gap-5 grid-cols-1 lg:grid-cols-2">
-            <div class="col-span-1">
+            <div class="col-span-1 flex flex-col">
               ${this.renderPanel(msg("Overview"), this.renderOverview())}
             </div>
-            <div class="col-span-1">
+            <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
                 html`
                   <div class="flex items-center justify-between">
@@ -487,8 +487,8 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h3 class="text-lg font-medium mb-2">${title}</h3>
-      <div class="rounded-lg border p-5">${content}</div>
+      <h3 class="flex-0 text-lg font-medium mb-2">${title}</h3>
+      <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }
 
