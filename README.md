@@ -14,7 +14,7 @@ See [Features](https://browsertrix.cloud/features) for a high-level list of plan
 
 ## Documentation
 
-The full docs for using, deplyoing and developing Browsertrix Cloud are available at: [https://docs.browsertrix.cloud](https://docs.browsertrix.cloud)
+The full docs for using, deploying and developing Browsertrix Cloud are available at: [https://docs.browsertrix.cloud](https://docs.browsertrix.cloud)
 
 ## Deployment 
 
