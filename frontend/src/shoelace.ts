@@ -18,6 +18,7 @@ import "@shoelace-style/shoelace/dist/components/resize-observer/resize-observer
 import "@shoelace-style/shoelace/dist/components/select/select";
 import "@shoelace-style/shoelace/dist/components/switch/switch";
 import "@shoelace-style/shoelace/dist/components/textarea/textarea";
+import "@shoelace-style/shoelace/dist/components/mutation-observer/mutation-observer";
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog"
 );

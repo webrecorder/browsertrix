@@ -46,6 +46,8 @@ import type {
   Profile,
   InitialCrawlConfig,
   JobType,
+  Seed,
+  SeedConfig,
 } from "./types";
 
 type NewCrawlConfigParams = CrawlConfigParams & {
@@ -55,6 +57,7 @@ type NewCrawlConfigParams = CrawlConfigParams & {
 
 const STEPS = [
   "crawlSetup",
+  "crawlLimits",
   "browserSettings",
   "crawlScheduling",
   "crawlInformation",
@@ -74,7 +77,7 @@ type FormState = {
   primarySeedUrl: string;
   urlList: string;
   includeLinkedPages: boolean;
-  allowedExternalUrlList: string;
+  customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
   scopeType: CrawlConfigParams["config"]["scopeType"];
@@ -112,6 +115,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     activeTab,
     tabs: {
       crawlSetup: { error: false, completed: hasConfigId },
+      crawlLimits: {
+        error: false,
+        completed: hasConfigId,
+      },
       browserSettings: {
         error: false,
         completed: hasConfigId,
@@ -135,7 +142,7 @@ const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
-  allowedExternalUrlList: "",
+  customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
   pageTimeoutMinutes: null,
   scopeType: "host",
@@ -178,9 +185,12 @@ function validURL(url: string) {
   );
 }
 
-const trimExclusions = flow(uniq, compact);
-const urlListToArray = (str: string) =>
-  str.trim().replace(/,/g, " ").split(/\s+/g);
+const trimArray = flow(uniq, compact);
+const urlListToArray = flow(
+  (str: string) =>
+    str.length ? str.trim().replace(/,/g, " ").split(/\s+/g) : [],
+  trimArray
+);
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
 
 @localized()
@@ -243,12 +253,12 @@ export class CrawlConfigEditor extends LiteElement {
   private readonly daysOfWeek = getLocalizedWeekDays();
 
   private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
-    prefix: msg("Path Begins with This URL"),
+    prefix: msg("Pages in the Same Directory"),
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Single Page App (In-Page Links Only)"),
+    "page-spa": msg("Hashtag Links Only"),
     page: msg("Page"),
-    custom: msg("Custom"),
+    custom: msg("Custom Page Prefix"),
     any: msg("Any"),
   };
 
@@ -379,10 +389,29 @@ export class CrawlConfigEditor extends LiteElement {
   private getInitialFormState(): Partial<FormState> {
     if (!this.initialCrawlConfig) return {};
     const formState: Partial<FormState> = {};
-    const { seeds, scopeType } = this.initialCrawlConfig.config;
+    const seedsConfig = this.initialCrawlConfig.config;
+    const { seeds } = seedsConfig;
+    let primarySeedConfig: SeedConfig | Seed = seedsConfig;
     if (this.initialCrawlConfig.jobType === "seed-crawl") {
-      formState.primarySeedUrl =
-        typeof seeds[0] === "string" ? seeds[0] : seeds[0].url;
+      if (typeof seeds[0] === "string") {
+        formState.primarySeedUrl = seeds[0];
+      } else {
+        primarySeedConfig = seeds[0];
+        formState.primarySeedUrl = primarySeedConfig.url;
+      }
+      if (
+        primarySeedConfig.scopeType === "custom" &&
+        primarySeedConfig.include?.length
+      ) {
+        formState.customIncludeUrlList = primarySeedConfig.include
+          // Unescape regex
+          .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
+          .join("\n");
+      }
+      const additionalSeeds = seeds.slice(1);
+      if (additionalSeeds.length) {
+        formState.urlList = additionalSeeds.join("\n");
+      }
     } else {
       // Treat "custom" like URL list
       formState.urlList = seeds
@@ -390,7 +419,7 @@ export class CrawlConfigEditor extends LiteElement {
         .join("\n");
 
       if (this.initialCrawlConfig.jobType === "custom") {
-        formState.scopeType = scopeType || "page";
+        formState.scopeType = seedsConfig.scopeType || "page";
       }
     }
 
@@ -422,9 +451,8 @@ export class CrawlConfigEditor extends LiteElement {
     if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
       formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
     }
-    if (typeof this.initialCrawlConfig.config.behaviorTimeout === "number") {
-      formState.pageTimeoutMinutes =
-        this.initialCrawlConfig.config.behaviorTimeout / 60;
+    if (typeof seedsConfig.behaviorTimeout === "number") {
+      formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
@@ -432,21 +460,23 @@ export class CrawlConfigEditor extends LiteElement {
       browserProfile: this.initialCrawlConfig.profileid
         ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
-      scopeType: this.initialCrawlConfig.config
-        .scopeType as FormState["scopeType"],
-      exclusions: this.initialCrawlConfig.config.exclude,
-      includeLinkedPages: Boolean(this.initialCrawlConfig.config.extraHops),
+      scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
+      exclusions: seedsConfig.exclude,
+      includeLinkedPages: Boolean(
+        primarySeedConfig.extraHops || seedsConfig.extraHops
+      ),
       ...formState,
     };
   }
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlSetup: msg("Crawl Scope"),
+      crawlSetup: msg("Scope"),
+      crawlLimits: msg("Limits"),
       browserSettings: msg("Browser Settings"),
-      crawlScheduling: msg("Crawl Scheduling"),
-      crawlInformation: msg("Crawl Information"),
-      confirmSettings: msg("Confirm Settings"),
+      crawlScheduling: msg("Scheduling"),
+      crawlInformation: msg("Information"),
+      confirmSettings: msg("Review Config"),
     };
 
     return html`
@@ -493,6 +523,9 @@ export class CrawlConfigEditor extends LiteElement {
               `,
               { isFirst: true }
             )}
+          </btrix-tab-panel>
+          <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
+            ${this.renderPanelContent(this.renderCrawlLimits())}
           </btrix-tab-panel>
           <btrix-tab-panel
             name="newJobConfig-browserSettings"
@@ -581,7 +614,7 @@ export class CrawlConfigEditor extends LiteElement {
   ) {
     return html`
       <div class="border rounded-lg flex flex-col h-full">
-        <div class="flex-1 p-6 grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="flex-1 p-6 grid grid-cols-5 gap-4">
           ${content}
           ${when(this.serverError, () =>
             this.renderErrorAlert(this.serverError!)
@@ -646,6 +679,8 @@ export class CrawlConfigEditor extends LiteElement {
                   ${this.formState.scheduleType === "now" ||
                   this.formState.runNow
                     ? msg("Save & Run Crawl")
+                    : this.formState.scheduleType === "none"
+                    ? msg("Save Crawl Config")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
               : html`
@@ -675,7 +710,7 @@ export class CrawlConfigEditor extends LiteElement {
                         slot="suffix"
                         name="chevron-double-right"
                       ></sl-icon>
-                      ${msg("Confirm & Save")}
+                      ${msg("Review & Save")}
                     </sl-button>
                   </div>
                 `
@@ -686,19 +721,19 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
-      <btrix-section-heading class="col-span-1 md:col-span-5">
+      <btrix-section-heading class="col-span-5">
         <h4>${content}</h4>
       </btrix-section-heading>
     `;
   }
 
   private renderFormCol = (content: TemplateResult) => {
-    return html`<div class="col-span-1 md:col-span-3">${content}</div> `;
+    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
   private renderHelpTextCol(content: TemplateResult, padTop = true) {
     return html`
-      <div class="col-span-1 md:col-span-2 flex${padTop ? " pt-6" : ""}">
+      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
         <div class="text-base mr-2">
           <sl-icon name="info-circle"></sl-icon>
         </div>
@@ -761,7 +796,6 @@ https://example.com/path`}
             <sl-select
               name="scopeType"
               label=${msg("Crawl Scope")}
-              defaultValue=${this.formState.scopeType}
               value=${this.formState.scopeType}
               @sl-select=${(e: Event) =>
                 this.updateFormState({
@@ -778,8 +812,6 @@ https://example.com/path`}
               <sl-menu-item value="domain">
                 ${this.scopeTypeLabels["domain"]}
               </sl-menu-item>
-              <sl-divider></sl-divider>
-              <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
               <sl-menu-item value="page-spa">
                 ${this.scopeTypeLabels["page-spa"]}
               </sl-menu-item>
@@ -803,7 +835,7 @@ https://example.com/path`}
         name="includeLinkedPages"
         ?checked=${this.formState.includeLinkedPages}
       >
-        ${msg("Include Linked Pages")}
+        ${msg("Include Any Linked Page")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         html`If checked, the crawler will visit pages one link away from a Crawl
@@ -813,7 +845,6 @@ https://example.com/path`}
       ${when(
         this.formState.includeLinkedPages || this.jobType === "custom",
         () => html`
-          ${this.renderSectionHeading(msg("Page Limits"))}
           ${this.renderFormCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
@@ -840,12 +871,11 @@ https://example.com/path`}
           )}
         `
       )}
-      ${this.renderCrawlScale()}
     `;
   };
 
   private renderSeededCrawlSetup = () => {
-    const urlPlaceholder = "https://example.com";
+    const urlPlaceholder = "https://example.com/path/page.html";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
       try {
@@ -862,14 +892,11 @@ https://example.com/path`}
     switch (this.formState.scopeType) {
       case "prefix":
         helpText = msg(
-          html`Will crawl all page URLs that begin with
-            <span class="text-blue-500 break-word"
-              >${exampleDomain}${examplePathname}</span
-            >, e.g.
+          html`Will crawl all pages and paths in the same directory, e.g.
             <span class="text-blue-500 break-word break-word"
-              >${exampleDomain}${examplePathname}</span
+              >${exampleDomain}</span
             ><span class="text-blue-500 font-medium break-word"
-              >/path/page.html</span
+              >/path/page-2</span
             >`
         );
         break;
@@ -893,7 +920,7 @@ https://example.com/path`}
             <span class="text-blue-500 break-word"
               >${exampleDomain}${examplePathname}</span
             >
-            and links that stay within the same URL, e.g. hash anchor links:
+            hash anchor links, e.g.
             <span class="text-blue-500 break-word"
               >${exampleDomain}${examplePathname}</span
             ><span class="text-blue-500 font-medium break-word"
@@ -901,10 +928,22 @@ https://example.com/path`}
             >`
         );
         break;
+      case "custom":
+        helpText = msg(
+          html`Will crawl all page URLs that begin with
+            <span class="text-blue-500 break-word"
+              >${exampleDomain}${examplePathname}</span
+            >
+            or any URL that begins with those specified in
+            <em>Extra URLs in Scope</em>`
+        );
+        break;
       default:
         helpText = "";
         break;
     }
+    const exclusions = trimArray(this.formState.exclusions || []);
+    const additionalUrlList = urlListToArray(this.formState.urlList);
 
     return html`
       ${this.renderFormCol(html`
@@ -945,7 +984,6 @@ https://example.com/path`}
         <sl-select
           name="scopeType"
           label=${msg("Start URL Scope")}
-          defaultValue=${this.formState.scopeType}
           value=${this.formState.scopeType}
           @sl-select=${(e: Event) =>
             this.updateFormState({
@@ -954,6 +992,9 @@ https://example.com/path`}
             })}
         >
           <div slot="help-text">${helpText}</div>
+          <sl-menu-item value="page-spa">
+            ${this.scopeTypeLabels["page-spa"]}
+          </sl-menu-item>
           <sl-menu-item value="prefix">
             ${this.scopeTypeLabels["prefix"]}
           </sl-menu-item>
@@ -963,31 +1004,34 @@ https://example.com/path`}
           <sl-menu-item value="domain">
             ${this.scopeTypeLabels["domain"]}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Advanced Options")}</sl-menu-label>
-          <sl-menu-item value="page-spa">
-            ${this.scopeTypeLabels["page-spa"]}
+          <sl-menu-item value="custom">
+            ${this.scopeTypeLabels["custom"]}
           </sl-menu-item>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
         html`Tells the crawler which pages it can visit.`
       )}
-      ${this.renderSectionHeading(msg("Additional Pages"))}
-      ${this.renderFormCol(html`
-        <sl-textarea
-          name="allowedExternalUrlList"
-          label=${msg("Extra URLs in Scope")}
-          rows="3"
-          autocomplete="off"
-          value=${this.formState.allowedExternalUrlList}
-          placeholder=${`https://example.org/page/
+      ${when(
+        this.formState.scopeType === "custom",
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-textarea
+              name="customIncludeUrlList"
+              label=${msg("Extra URLs in Scope")}
+              rows="3"
+              autocomplete="off"
+              value=${this.formState.customIncludeUrlList}
+              placeholder=${`https://example.org
 https://example.net`}
-          ?disabled=${this.formState.scopeType === "page-spa"}
-        ></sl-textarea>
-      `)}
-      ${this.renderHelpTextCol(
-        html`If the crawler finds pages outside of the Start URL Scope they will only be saved if they begin with URLs listed here.`
+              required
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(
+            html`If the crawler finds pages outside of the Start URL Scope they
+            will only be saved if they begin with URLs listed here.`
+          )}
+        `
       )}
       ${this.renderFormCol(html`
         <sl-checkbox
@@ -1002,50 +1046,144 @@ https://example.net`}
         Crawl Scope.`,
         false
       )}
-      ${this.renderSectionHeading(msg("Page Limits"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageLimit"
-          label=${msg("Max Pages")}
-          type="number"
-          defaultValue=${this.formState.pageLimit || ""}
-          placeholder=${msg("Unlimited")}
+      <div class="col-span-5">
+        <btrix-details ?open=${exclusions.length > 0}>
+          <span slot="title"
+            >${msg("Exclusions")}
+            ${exclusions.length
+              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+              : ""}</span
+          >
+          <div class="grid grid-cols-5 gap-4 py-2">
+            ${this.renderFormCol(html`
+              <btrix-queue-exclusion-table
+                label=""
+                .exclusions=${this.formState.exclusions}
+                pageSize="10"
+                editable
+                removable
+                @on-remove=${this.handleRemoveRegex}
+                @on-change=${this.handleChangeRegex}
+              ></btrix-queue-exclusion-table>
+              <sl-button
+                class="w-full mt-1"
+                @click=${() =>
+                  this.updateFormState({
+                    exclusions: [""],
+                  })}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                <span class="text-neutral-600">${msg("Add More")}</span>
+              </sl-button>
+            `)}
+            ${this.renderHelpTextCol(
+              html`Specify exclusion rules for what pages should not be visited.`
+            )}
+          </div></btrix-details
         >
-          <span slot="suffix">${msg("pages")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
-      that will be crawled.`)}
-      ${this.renderFormCol(html`
-        <btrix-queue-exclusion-table
-          .exclusions=${this.formState.exclusions}
-          pageSize="10"
-          editable
-          removable
-          @on-remove=${this.handleRemoveRegex}
-          @on-change=${this.handleChangeRegex}
-        ></btrix-queue-exclusion-table>
-        <sl-button
-          class="w-full mt-1"
-          @click=${() =>
-            this.updateFormState({
-              exclusions: [""],
-            })}
-        >
-          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-          <span class="text-neutral-600">${msg("Add More")}</span>
-        </sl-button>
-      `)}
-      ${this.renderHelpTextCol(
-        html`Specify exclusion rules for what pages should not be visited.`
-      )}
-      ${this.renderCrawlScale()}
+      </div>
+
+      <div class="col-span-5">
+        <btrix-details>
+          <span slot="title">
+            ${msg("Additional URLs")}
+            ${additionalUrlList.length
+              ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
+              : ""}
+          </span>
+          <div class="grid grid-cols-5 gap-4 py-2">
+            ${this.renderFormCol(html`
+              <sl-textarea
+                name="urlList"
+                label=${msg("List of URLs")}
+                rows="3"
+                autocomplete="off"
+                value=${this.formState.urlList}
+                placeholder=${`https://webrecorder.net/blog
+https://archiveweb.page/images/${"logo.svg"}`}
+                @sl-input=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  if (
+                    inputEl.invalid &&
+                    !urlListToArray(inputEl.value).some((url) => !validURL(url))
+                  ) {
+                    inputEl.setCustomValidity("");
+                    inputEl.helpText = "";
+                  }
+                }}
+                @sl-blur=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  if (
+                    inputEl.value &&
+                    urlListToArray(inputEl.value).some((url) => !validURL(url))
+                  ) {
+                    const text = msg("Please fix invalid URL in list.");
+                    inputEl.invalid = true;
+                    inputEl.helpText = text;
+                    inputEl.setCustomValidity(text);
+                  } else {
+                    await this.updateComplete;
+                    if (!this.formState.jobName) {
+                      this.setDefaultJobName();
+                    }
+                  }
+                }}
+              ></sl-textarea>
+            `)}
+            ${this.renderHelpTextCol(
+              html`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled.`
+            )}
+          </div>
+        </btrix-details>
+      </div>
     `;
   };
 
-  private renderCrawlScale() {
+  private renderCrawlLimits() {
+    // Max Pages minimum value cannot be lower than seed count
+    const minPages = Math.max(
+      1,
+      urlListToArray(this.formState.urlList).length +
+        (this.jobType === "seed-crawl" ? 1 : 0)
+    );
     return html`
-      ${this.renderSectionHeading(msg("Crawl Limits"))}
+      ${this.renderFormCol(html`
+        <sl-mutation-observer
+          attr="min"
+          @sl-mutation=${async (e: CustomEvent) => {
+            // Input `min` attribute changes dynamically in response
+            // to number of seed URLs. Watch for changes to `min`
+            // and set validity accordingly
+            const mutationRecord = e.detail.mutationList[0];
+            const inputEl = mutationRecord.target as SlInput;
+            await inputEl.updateComplete;
+            inputEl.checkValidity();
+            await inputEl.updateComplete;
+            this.syncTabErrorState(inputEl);
+          }}
+        >
+          <sl-input
+            name="pageLimit"
+            label=${msg("Max Pages")}
+            type="number"
+            value=${this.formState.pageLimit ?? ""}
+            min=${minPages}
+            placeholder=${msg("Unlimited")}
+          >
+            <span slot="suffix">${msg("pages")}</span>
+            <div slot="help-text">
+              ${minPages === 1
+                ? msg(str`Minimum ${minPages} page`)
+                : msg(str`Minimum ${minPages} pages`)}
+            </div>
+          </sl-input>
+        </sl-mutation-observer>
+      `)}
+      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
+      that will be crawled.`)}
       ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
@@ -1057,6 +1195,7 @@ https://example.net`}
               this.defaultBehaviorTimeoutMinutes
           )}
           ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          min="1"
           required
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -1072,6 +1211,7 @@ https://example.net`}
           label=${msg("Crawl Time Limit")}
           value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
           placeholder=${msg("Unlimited")}
+          min="1"
           type="number"
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -1096,8 +1236,8 @@ https://example.net`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Increasing parallel crawler instances can speed up crawls, but
-        may increase the chances of getting rate limited.`
+        html`Increasing parallel crawler instances can speed up crawls, but may
+        increase the chances of getting rate limited.`
       )}
     `;
   }
@@ -1357,7 +1497,7 @@ https://example.net`}
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
     return html`
-      <div class="col-span-1 md:col-span-5">
+      <div class="col-span-5">
         <btrix-alert variant="danger">${errorMessage}</btrix-alert>
       </div>
     `;
@@ -1383,7 +1523,7 @@ https://example.net`}
     return html`
       ${errorAlert}
 
-      <div class="col-span-1 md:col-span-5">
+      <div class="col-span-5">
         ${when(this.progressState.activeTab === "confirmSettings", () => {
           // Prevent parsing and rendering tab when not visible
           const crawlConfig = this.parseConfig();
@@ -1515,14 +1655,22 @@ https://example.net`}
   };
 
   private syncTabErrorState(el: HTMLElement) {
-    const currentTab = this.progressState.activeTab as StepName;
     const panelEl = el.closest("btrix-tab-panel")!;
+    const tabName = panelEl
+      .getAttribute("name")!
+      .replace("newJobConfig-", "") as StepName;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid && this.progressState.tabs[currentTab].error) {
+    if (!hasInvalid && this.progressState.tabs[tabName].error) {
       this.updateProgressState({
         tabs: {
-          [currentTab]: { error: false },
+          [tabName]: { error: false },
+        },
+      });
+    } else if (hasInvalid && !this.progressState.tabs[tabName].error) {
+      this.updateProgressState({
+        tabs: {
+          [tabName]: { error: true },
         },
       });
     }
@@ -1541,7 +1689,7 @@ https://example.net`}
         value = elem.value;
         break;
       case "sl-input": {
-        if ((elem as SlInput).type === "number") {
+        if ((elem as SlInput).type === "number" && elem.value !== "") {
           value = +elem.value;
         } else {
           value = elem.value;
@@ -1613,16 +1761,19 @@ https://example.net`}
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
     if (tagName !== "sl-input") return;
-
     const { key } = event;
     if ((el as SlInput).type === "number") {
       // Prevent typing non-numeric keys
-      if (key.length === 1 && /\D/.test(key)) {
+      if (
+        !event.metaKey &&
+        !event.shiftKey &&
+        key.length === 1 &&
+        /\D/.test(key)
+      ) {
         event.preventDefault();
         return;
       }
     }
-
     if (
       key === "Enter" &&
       this.progressState.activeTab !== STEPS[STEPS.length - 1]
@@ -1642,7 +1793,6 @@ https://example.net`}
     }
 
     const config = this.parseConfig();
-
     this.isSubmitting = true;
 
     try {
@@ -1768,10 +1918,9 @@ https://example.net`}
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        extraHops: this.formState.includeLinkedPages ? 1 : 0,
         lang: this.formState.lang || null,
         blockAds: this.formState.blockAds,
-        exclude: trimExclusions(this.formState.exclusions),
+        exclude: trimArray(this.formState.exclusions),
       },
     };
 
@@ -1786,6 +1935,7 @@ https://example.net`}
     const config = {
       seeds: urlListToArray(this.formState.urlList),
       scopeType: "page" as FormState["scopeType"],
+      extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
     return config;
@@ -1793,43 +1943,33 @@ https://example.net`}
 
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
     const primarySeedUrl = this.formState.primarySeedUrl.replace(/\/$/, "");
-    const externalUrlList = this.formState.allowedExternalUrlList
-      ? urlListToArray(this.formState.allowedExternalUrlList).map((str) =>
+    const includeUrlList = this.formState.customIncludeUrlList
+      ? urlListToArray(this.formState.customIncludeUrlList).map((str) =>
           str.replace(/\/$/, "")
         )
       : [];
-    let scopeType = this.formState.scopeType;
-    const include = [];
-    if (externalUrlList.length) {
-      const { host, origin } = new URL(primarySeedUrl);
-      scopeType = "custom";
-
-      // Replicate scope type with regex
-      switch (this.formState.scopeType) {
-        case "prefix":
-          include.push(`${regexEscape(primarySeedUrl)}\/.*`);
-          break;
-        case "host":
-          include.push(`${regexEscape(origin)}\/.*`);
-          break;
-        case "domain":
-          include.push(
-            `${regexEscape(origin)}\/.*`,
-            `.*\.${regexEscape(host)}\/.*`
-          );
-          break;
-        default:
-          break;
-      }
-
-      externalUrlList.forEach((url) => {
-        include.push(`${regexEscape(url)}\/.*`);
-      });
-    }
-    const config = {
-      seeds: [primarySeedUrl],
-      scopeType,
-      include,
+    const additionalSeedUrlList = this.formState.urlList
+      ? urlListToArray(this.formState.urlList).map((str) =>
+          str.replace(/\/$/, "")
+        )
+      : [];
+    const primarySeed: Seed = {
+      url: primarySeedUrl,
+      scopeType: this.formState.scopeType,
+      include:
+        this.formState.scopeType === "custom"
+          ? [
+              `${regexEscape(primarySeedUrl)}\/.*`,
+              ...includeUrlList.map((url) => `${regexEscape(url)}\/.*`),
+            ]
+          : [],
+      extraHops: this.formState.includeLinkedPages ? 1 : 0,
+    };
+    const config: SeedConfig = {
+      seeds: [primarySeed, ...additionalSeedUrlList],
+      scopeType: additionalSeedUrlList.length
+        ? "page"
+        : this.formState.scopeType,
     };
     return config;
   }
