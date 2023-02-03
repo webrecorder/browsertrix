@@ -22,6 +22,13 @@ jobs:
           username: ${{ secrets.DO_API_TOKEN }}
           password: ${{ secrets.DO_API_TOKEN }}
 
+      -
+        name: Set Env Vars
+        run: |
+          echo VERSION=`cat version.txt` >> $GITHUB_ENV
+          echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
+          echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
+
       - name: Build Backend
         uses: docker/build-push-action@v3
         with:
