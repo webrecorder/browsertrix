@@ -1172,7 +1172,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
             value=${this.formState.pageLimit ?? ""}
             min=${minPages}
             placeholder=${msg("Unlimited")}
-            clearable
           >
             <span slot="suffix">${msg("pages")}</span>
             <div slot="help-text">
@@ -1214,7 +1213,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           placeholder=${msg("Unlimited")}
           min="1"
           type="number"
-          clearable
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
