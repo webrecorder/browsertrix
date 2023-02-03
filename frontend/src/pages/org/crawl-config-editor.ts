@@ -253,12 +253,12 @@ export class CrawlConfigEditor extends LiteElement {
   private readonly daysOfWeek = getLocalizedWeekDays();
 
   private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
-    prefix: msg("Path Begins with This URL"),
+    prefix: msg("Pages in the Same Directory"),
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Single Page App (In-Page Links Only)"),
+    "page-spa": msg("Hashtag Links Only"),
     page: msg("Page"),
-    custom: msg("Custom"),
+    custom: msg("Custom Page Prefix"),
     any: msg("Any"),
   };
 
@@ -875,7 +875,7 @@ https://example.com/path`}
   };
 
   private renderSeededCrawlSetup = () => {
-    const urlPlaceholder = "https://example.com";
+    const urlPlaceholder = "https://example.com/path/page.html";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
       try {
@@ -892,14 +892,11 @@ https://example.com/path`}
     switch (this.formState.scopeType) {
       case "prefix":
         helpText = msg(
-          html`Will crawl all page URLs that begin with
-            <span class="text-blue-500 break-word"
-              >${exampleDomain}${examplePathname}</span
-            >, e.g.
+          html`Will crawl all pages and paths in the same directory, e.g.
             <span class="text-blue-500 break-word break-word"
-              >${exampleDomain}${examplePathname}</span
+              >${exampleDomain}</span
             ><span class="text-blue-500 font-medium break-word"
-              >/path/page.html</span
+              >/path/page-2</span
             >`
         );
         break;
@@ -1004,11 +1001,11 @@ https://example.com/path`}
           <sl-menu-item value="domain">
             ${this.scopeTypeLabels["domain"]}
           </sl-menu-item>
-          <sl-menu-item value="page-spa">
-            ${this.scopeTypeLabels["page-spa"]}
-          </sl-menu-item>
           <sl-menu-item value="custom">
             ${this.scopeTypeLabels["custom"]}
+          </sl-menu-item>
+          <sl-menu-item value="page-spa">
+            ${this.scopeTypeLabels["page-spa"]}
           </sl-menu-item>
         </sl-select>
       `)}
@@ -1963,7 +1960,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: this.formState.scopeType,
       include:
         this.formState.scopeType === "custom"
-          ? includeUrlList.map((url) => `${regexEscape(url)}\/.*`)
+          ? [
+              `${regexEscape(primarySeedUrl)}\/.*`,
+              ...includeUrlList.map((url) => `${regexEscape(url)}\/.*`),
+            ]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
