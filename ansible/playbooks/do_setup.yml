@@ -98,7 +98,7 @@
       # skip_ansible_lint
       ansible.builtin.command: >-
         doctl kubernetes cluster create {{ k8s_name }} --1-clicks ingress-nginx,cert-manager --node-pool
-        "{{ node_pools|join(',') }}"
+        "{{ node_pools | select('match','name=*') | list |join(',') }}"
         --region={{ droplet_region }}
 
       async: 1800
@@ -191,6 +191,13 @@
       ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
       when: use_do_registry
 
+  # Addons
+  # ===========================================
+    - name: d_ocean | addons | run all admin bookstrap scripts
+      ansible.builtin.command: >-
+          ../../chart/admin/logging/scripts/eck_install.sh
+      register: addons_init
+      when: enable_admin_addons
 
   # Helm Output + Deploy
   # ===========================================

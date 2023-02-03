@@ -72,4 +72,22 @@ email:
   password: {{ sender_password }}
   reply_to_email: {{ reply_to_email }}
 
+# Admin Addons
+{% if enable_admin_addons %}
+addons:
+  admin:
+    logging: true
 
+btrix-admin-logging:
+  logging:
+    enabled: true
+    dedicatedNode:
+      enabled: true
+    ingress:
+      tls: true
+      host: "{{ full_domain }}"
+    elasticsearch:
+      local: false
+    kibana:
+      local: false
+{% endif %}
