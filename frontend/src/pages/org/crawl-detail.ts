@@ -305,7 +305,7 @@ export class CrawlDetail extends LiteElement {
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0">
+      <nav class="border-b md:border-b-0 md:mt-10">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
           ${renderNavItem({
