@@ -1175,6 +1175,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             value=${this.formState.pageLimit ?? ""}
             min=${minPages}
             placeholder=${msg("Unlimited")}
+            clearable
           >
             <span slot="suffix">${msg("pages")}</span>
             <div slot="help-text">
@@ -1198,6 +1199,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               this.defaultBehaviorTimeoutMinutes
           )}
           ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          min="1"
           required
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -1213,7 +1215,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("Crawl Time Limit")}
           value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
           placeholder=${msg("Unlimited")}
+          min="1"
           type="number"
+          clearable
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1690,7 +1694,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         value = elem.value;
         break;
       case "sl-input": {
-        if ((elem as SlInput).type === "number") {
+        if ((elem as SlInput).type === "number" && elem.value !== "") {
           value = +elem.value;
         } else {
           value = elem.value;
@@ -1762,16 +1766,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
     if (tagName !== "sl-input") return;
-
     const { key } = event;
     if ((el as SlInput).type === "number") {
       // Prevent typing non-numeric keys
-      if (key.length === 1 && /\D/.test(key)) {
+      if (
+        !event.metaKey &&
+        !event.shiftKey &&
+        key.length === 1 &&
+        /\D/.test(key)
+      ) {
         event.preventDefault();
         return;
       }
     }
-
     if (
       key === "Enter" &&
       this.progressState.activeTab !== STEPS[STEPS.length - 1]
