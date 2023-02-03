@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlInput, SlMenu } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenu, SlPopup } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
 import debounce from "lodash/fp/debounce";
@@ -43,16 +43,11 @@ export class TagInput extends LitElement {
     }
 
     .input__control {
-      align-self: center;
-      width: 100%;
-    }
-
-    .dropdownWrapper {
       flex-grow: 1;
       flex-shrink: 0;
     }
 
-    .dropdownWrapper:not(:first-child) .input__control {
+    .input__control:not(:first-child) {
       padding-left: var(--sl-spacing-small);
       padding-right: var(--sl-spacing-small);
     }
@@ -65,11 +60,12 @@ export class TagInput extends LitElement {
       );
     }
 
+    sl-popup::part(popup) {
+      z-index: 2;
+    }
+
     .dropdown {
       position: absolute;
-      z-index: 9999;
-      margin-top: -0.25rem;
-      margin-left: 0.25rem;
       transform-origin: top left;
     }
 
@@ -139,6 +135,9 @@ export class TagInput extends LitElement {
   @query("sl-menu")
   private menu!: SlMenu;
 
+  @query("sl-popup")
+  private popup!: SlPopup;
+
   connectedCallback() {
     if (this.initialTags) {
       this.tags = this.initialTags;
@@ -153,6 +152,9 @@ export class TagInput extends LitElement {
       } else {
         this.setAttribute("data-invalid", "");
       }
+    }
+    if (changedProperties.has("dropdownIsOpen") && this.dropdownIsOpen) {
+      this.popup.reposition();
     }
   }
 
@@ -176,14 +178,18 @@ export class TagInput extends LitElement {
           @click=${this.onInputWrapperClick}
         >
           ${this.renderTags()}
-          <div
-            class="dropdownWrapper"
-            style="min-width: ${placeholder.length}ch"
+          <sl-popup
+            placement="bottom-start"
+            strategy="fixed"
+            skidding="4"
+            distance="-4"
+            active
           >
             <input
-              slot="trigger"
+              slot="anchor"
               id="input"
               class="input__control"
+              style="min-width: ${placeholder.length}ch"
               @focus=${this.onFocus}
               @blur=${this.onBlur}
               @keydown=${this.onKeydown}
@@ -234,7 +240,7 @@ export class TagInput extends LitElement {
                 </sl-menu-item>
               </sl-menu>
             </div>
-          </div>
+          </sl-popup>
         </div>
       </div>
     `;
@@ -273,8 +279,16 @@ export class TagInput extends LitElement {
   }
 
   private onBlur(e: FocusEvent) {
-    if (this.menu?.contains(e.relatedTarget as HTMLElement)) {
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (this.menu?.contains(relatedTarget)) {
       // Keep focus on form control if moving to menu selection
+      return;
+    }
+    if (
+      relatedTarget.tagName.includes("BUTTON") &&
+      relatedTarget.getAttribute("type") === "reset"
+    ) {
+      // Don't add tag if resetting form
       return;
     }
     const input = e.target as HTMLInputElement;

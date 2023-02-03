@@ -53,6 +53,7 @@ export class DescList extends LitElement {
       display: grid;
       grid-template-columns: auto;
       grid-gap: 1rem;
+      margin: 0;
     }
   `;
 

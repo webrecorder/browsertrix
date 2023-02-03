@@ -17,6 +17,7 @@ export class SectionHeading extends LitElement {
       padding-bottom: var(--sl-spacing-x-small);
       line-height: 1;
       border-bottom: 1px solid var(--sl-panel-border-color);
+      margin-bottom: var(--margin);
     }
   `;
 

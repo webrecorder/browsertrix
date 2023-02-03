@@ -25,6 +25,10 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
+  // Hide tag field, e.g. if embedded in crawl detail view
+  @property({ type: Boolean })
+  hideTags = false;
+
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
     string
@@ -43,7 +47,7 @@ export class ConfigDetails extends LiteElement {
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
       <section id="crawl-information" class="mb-8">
-        <btrix-section-heading>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>
             ${this.renderAnchorLink("crawl-information")}${msg(
               "Crawl Information"
@@ -52,18 +56,21 @@ export class ConfigDetails extends LiteElement {
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.renderSetting(
-            msg("Tags"),
-            crawlConfig?.tags?.length
-              ? crawlConfig.tags.map(
-                  (tag) => html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                )
-              : undefined
-          )}
+          ${this.hideTags
+            ? ""
+            : this.renderSetting(
+                msg("Tags"),
+                crawlConfig?.tags?.length
+                  ? crawlConfig.tags.map(
+                      (tag) =>
+                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                    )
+                  : undefined
+              )}
         </btrix-desc-list>
       </section>
       <section id="crawler-settings" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("crawler-settings")}
             ${msg("Crawler Settings")}
@@ -104,7 +111,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="browser-settings" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("browser-settings")}
             ${msg("Browser Settings")}
@@ -138,7 +145,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawl-scheduling" class="mb-8">
-        <btrix-section-heading
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
             ${this.renderAnchorLink("crawl-scheduling")}
             ${msg("Crawl Scheduling")}

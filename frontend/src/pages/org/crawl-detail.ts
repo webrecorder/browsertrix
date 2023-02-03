@@ -3,7 +3,14 @@ import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import Fuse from "fuse.js";
 
+import type {
+  Tags,
+  TagInputEvent,
+  TagsChangeEvent,
+} from "../../components/tag-input";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -46,9 +53,6 @@ export class CrawlDetail extends LiteElement {
   showOrgLink = false;
 
   @property({ type: String })
-  orgId?: string;
-
-  @property({ type: String })
   crawlId?: string;
 
   @state()
@@ -67,12 +71,24 @@ export class CrawlDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "scale";
+  private openDialogName?: "scale" | "details";
 
   @state()
   private isDialogVisible: boolean = false;
 
+  @state()
+  private tagOptions: Tags = [];
+
+  @state()
+  private tagsToSave: Tags = [];
+
   private timerId?: number;
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    shouldSort: false,
+    threshold: 0.2, // stricter; default is 0.6
+  });
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
@@ -122,6 +138,9 @@ export class CrawlDetail extends LiteElement {
         }
       }
     }
+    if (changedProperties.has("crawl") && this.crawl) {
+      this.tagsToSave = this.crawl.tags || [];
+    }
   }
 
   connectedCallback(): void {
@@ -144,7 +163,10 @@ export class CrawlDetail extends LiteElement {
     switch (this.sectionName) {
       case "watch": {
         if (this.crawl) {
-          sectionContent = this.renderWatch();
+          sectionContent = this.renderPanel(
+            msg("Watch Crawl"),
+            this.renderWatch()
+          );
         } else {
           // TODO loading indicator?
           return "";
@@ -153,23 +175,53 @@ export class CrawlDetail extends LiteElement {
         break;
       }
       case "replay":
-        sectionContent = this.renderReplay();
+        sectionContent = this.renderPanel(
+          msg("Replay Crawl"),
+          this.renderReplay()
+        );
         break;
       case "files":
-        sectionContent = this.renderFiles();
+        sectionContent = this.renderPanel(
+          msg("Download Files"),
+          this.renderFiles()
+        );
         break;
       case "logs":
-        sectionContent = this.renderLogs();
+        sectionContent = this.renderPanel(msg("Logs"), this.renderLogs());
         break;
       case "exclusions":
-        sectionContent = this.renderExclusions();
+        sectionContent = this.renderPanel(
+          msg("Crawl Exclusions"),
+          this.renderExclusions()
+        );
         break;
 
       case "config":
-        sectionContent = this.renderConfig();
+        sectionContent = this.renderPanel(msg("Config"), this.renderConfig());
         break;
       default:
-        sectionContent = this.renderOverview();
+        sectionContent = html`
+          <div class="grid gap-5 grid-cols-1 lg:grid-cols-2">
+            <div class="col-span-1 flex flex-col">
+              ${this.renderPanel(msg("Overview"), this.renderOverview())}
+            </div>
+            <div class="col-span-1 flex flex-col">
+              ${this.renderPanel(
+                html`
+                  <div class="flex items-center justify-between">
+                    ${msg("Tags")}
+                    <sl-icon-button
+                      class="text-base"
+                      name="pencil"
+                      @click=${this.openDetailEditor}
+                    ></sl-icon-button>
+                  </div>
+                `,
+                this.renderDetails()
+              )}
+            </div>
+          </div>
+        `;
         break;
     }
 
@@ -193,27 +245,35 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="rounded-lg border mb-4">
+        <section class="rounded-lg border mb-7">
           ${this.renderSummary()}
         </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5 md:rounded-lg md:border md:p-6">
-            ${sectionContent}
-          </div>
+          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
         </section>
       </main>
 
-      <sl-dialog
-        label=${msg(str`Change Crawler Instances`)}
+      <btrix-dialog
+        label=${msg("Change Crawler Instances")}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${this.isDialogVisible ? this.renderEditScale() : ""}
-      </sl-dialog>
+      </btrix-dialog>
+
+      <btrix-dialog
+        label=${msg("Edit Tags")}
+        ?open=${this.openDialogName === "details"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditDetails() : ""}
+      </btrix-dialog>
     `;
   }
 
@@ -230,12 +290,12 @@ export class CrawlDetail extends LiteElement {
         <li
           class="relative"
           role="menuitem"
-          aria-selected=${isActive ? "true" : "false"}
+          aria-selected=${isActive.toString()}
         >
           <a
-            class="block px-2 py-1 my-1 font-medium rounded hover:bg-neutral-50 ${isActive
-              ? "text-primary bg-slate-50"
-              : "text-neutral-500 hover:text-neutral-900"}"
+            class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+              ? "text-blue-600 bg-blue-50 shadow-sm"
+              : "text-neutral-600 hover:bg-neutral-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
@@ -359,7 +419,7 @@ export class CrawlDetail extends LiteElement {
                     }}
                   >
                     <sl-icon
-                      class="inline-block align-middle"
+                      class="inline-block align-middle mr-1"
                       name="arrow-clockwise"
                     ></sl-icon>
                     <span class="inline-block align-middle">
@@ -368,6 +428,23 @@ export class CrawlDetail extends LiteElement {
                   </li>
                 `
               )}
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  this.openDetailEditor();
+                  e.target.closest("sl-dropdown").hide();
+                }}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="pencil"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Edit Tags")}
+                </span>
+              </li>
+              <hr />
               <li
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
@@ -381,7 +458,6 @@ export class CrawlDetail extends LiteElement {
                   ${msg("Edit Crawl Config")}
                 </span>
               </li>
-              <hr />
             `
           )}
           <li
@@ -406,6 +482,13 @@ export class CrawlDetail extends LiteElement {
           </li>
         </ul>
       </sl-dropdown>
+    `;
+  }
+
+  private renderPanel(title: any, content: any) {
+    return html`
+      <h3 class="flex-0 text-lg font-medium mb-2">${title}</h3>
+      <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }
 
@@ -506,21 +589,6 @@ export class CrawlDetail extends LiteElement {
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      <header class="flex justify-between">
-        <h3 class="text-lg font-medium leading-none mb-2">
-          ${msg("Watch Crawl")}
-        </h3>
-        ${isRunning && document.fullscreenEnabled
-          ? html`
-              <sl-icon-button
-                name="arrows-fullscreen"
-                label=${msg("Fullscreen")}
-                @click=${() => this.enterFullscreen("screencast-crawl")}
-              ></sl-icon-button>
-            `
-          : ""}
-      </header>
-
       ${isStarting
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
@@ -556,10 +624,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderExclusions() {
-    return html`<h3 class="text-lg font-medium leading-none mb-4">
-        ${msg("Queue Exclusions")}
-      </h3>
-
+    return html`
       <btrix-exclusion-editor
         orgId=${ifDefined(this.crawl?.oid)}
         crawlId=${ifDefined(this.crawl?.id)}
@@ -567,7 +632,8 @@ export class CrawlDetail extends LiteElement {
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
-      ></btrix-exclusion-editor> `;
+      ></btrix-exclusion-editor>
+    `;
   }
 
   private renderReplay() {
@@ -580,23 +646,6 @@ export class CrawlDetail extends LiteElement {
     const canReplay = replaySource && this.hasFiles;
 
     return html`
-      <header class="flex justify-between">
-        <h3 class="text-lg font-medium leading-none mb-2">${msg(
-          "Replay Crawl"
-        )}</h3>
-        ${
-          document.fullscreenEnabled && canReplay
-            ? html`
-                <sl-icon-button
-                  name="arrows-fullscreen"
-                  label=${msg("Fullscreen")}
-                  @click=${() => this.enterFullscreen("replay-crawl")}
-                ></sl-icon-button>
-              `
-            : ""
-        }
-      </header>
-
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
       ${
         canReplay
@@ -626,111 +675,115 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5">
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Started")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <sl-format-date
-                    date=${`${this.crawl.started}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Finished")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.finished
-                    ? html`<sl-format-date
-                        date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        time-zone-name="short"
-                      ></sl-format-date>`
-                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Reason")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.manual
-                    ? msg(
-                        html`Manual start by
-                          <span
-                            >${this.crawl?.userName || this.crawl?.userid}</span
-                          >`
-                      )
-                    : msg(html`Scheduled run`)}
-                `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-sm text-0-600">${msg("Crawl ID")}</dt>
-          <dd class="truncate">
-            ${this.crawl
-              ? html`<btrix-copy-button
-                    value=${this.crawl.id}
-                  ></btrix-copy-button>
-                  <code class="text-xs" title=${this.crawl.id}
-                    >${this.crawl.id}</code
-                  > `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-          </dd>
-        </div>
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Started")}>
+          ${this.crawl
+            ? html`
+                <sl-format-date
+                  date=${`${this.crawl.started}Z` /** Z for UTC */}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                  time-zone-name="short"
+                ></sl-format-date>
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Finished")}>
+          ${this.crawl
+            ? html`
+                ${this.crawl.finished
+                  ? html`<sl-format-date
+                      date=${`${this.crawl.finished}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>`
+                  : html`<span class="text-0-400">${msg("Pending")}</span>`}
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Reason")}>
+          ${this.crawl
+            ? html`
+                ${this.crawl.manual
+                  ? msg(
+                      html`Manual start by
+                        <span
+                          >${this.crawl?.userName || this.crawl?.userid}</span
+                        >`
+                    )
+                  : msg(html`Scheduled run`)}
+              `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Crawl ID")}>
+          ${this.crawl
+            ? html`<btrix-copy-button
+                  value=${this.crawl.id}
+                ></btrix-copy-button>
+                <code class="text-xs" title=${this.crawl.id}
+                  >${this.crawl.id}</code
+                > `
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
         ${this.showOrgLink
           ? html`
-              <div class="col-span-1">
-                <dt class="text-sm text-0-600">${msg("Organization")}</dt>
-                <dd>
-                  ${this.crawl
-                    ? html`
-                        <a
-                          class="font-medium text-neutral-700 hover:text-neutral-900"
-                          href=${`/orgs/${this.crawl.oid}/crawls`}
-                          @click=${this.navLink}
-                        >
-                          <sl-icon
-                            class="inline-block align-middle"
-                            name="link-45deg"
-                          ></sl-icon>
-                          <span class="inline-block align-middle">
-                            ${msg("View Organization")}
-                          </span>
-                        </a>
-                      `
-                    : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-                </dd>
-              </div>
+              <btrix-desc-list-item label=${msg("Organization")}>
+                ${this.crawl
+                  ? html`
+                      <a
+                        class="font-medium text-neutral-700 hover:text-neutral-900"
+                        href=${`/orgs/${this.crawl.oid}/crawls`}
+                        @click=${this.navLink}
+                      >
+                        <sl-icon
+                          class="inline-block align-middle"
+                          name="link-45deg"
+                        ></sl-icon>
+                        <span class="inline-block align-middle">
+                          ${msg("View Organization")}
+                        </span>
+                      </a>
+                    `
+                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+              </btrix-desc-list-item>
             `
           : ""}
-      </dl>
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderDetails() {
+    return html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Tags")}>
+          ${when(
+            this.crawl,
+            () =>
+              when(
+                this.crawl?.tags?.length,
+                () =>
+                  this.crawl!.tags!.map(
+                    (tag) =>
+                      html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                  ),
+                () => html`${msg("None")}`
+              ),
+            () => html`<sl-skeleton></sl-skeleton>`
+          )}
+        </btrix-desc-list-item>
+      </btrix-desc-list>
     `;
   }
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium leading-none mb-2">
-        ${msg("Download Files")}
-      </h3>
-
       ${this.hasFiles
         ? html`
             <ul class="border rounded text-sm">
@@ -775,6 +828,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <btrix-config-details
         .crawlConfig=${this.crawlConfig}
+        hideTags
       ></btrix-config-details>
     `;
   }
@@ -812,12 +866,46 @@ export class CrawlDetail extends LiteElement {
           )}
         </sl-radio-group>
       </div>
-
-      <div class="mt-5 text-right">
+      <div slot="footer" class="flex justify-between">
         <sl-button
-          variant="text"
+          size="small"
+          type="reset"
           @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
+        >
+      </div>
+    `;
+  }
+
+  private renderEditDetails() {
+    if (!this.crawl) return;
+
+    return html`
+      <form
+        id="crawlDetailsForm"
+        @submit=${this.onSubmitDetails}
+        @reset=${() => (this.openDialogName = undefined)}
+      >
+        <btrix-tag-input
+          .initialTags=${this.crawl.tags}
+          .tagOptions=${this.tagOptions}
+          @tag-input=${this.onTagInput}
+          @tags-change=${(e: TagsChangeEvent) =>
+            (this.tagsToSave = e.detail.tags)}
+        ></btrix-tag-input>
+      </form>
+      <div slot="footer" class="flex justify-between">
+        <sl-button form="crawlDetailsForm" type="reset" size="small"
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          form="crawlDetailsForm"
+          variant="primary"
+          type="submit"
+          size="small"
+          ?loading=${this.isSubmittingUpdate}
+          ?disabled=${this.isSubmittingUpdate}
+          >${msg("Save")}</sl-button
         >
       </div>
     `;
@@ -953,6 +1041,73 @@ export class CrawlDetail extends LiteElement {
         });
       }
     }
+  }
+
+  private onTagInput = (e: TagInputEvent) => {
+    const { value } = e.detail;
+    if (!value) return;
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
+  };
+
+  private async fetchTags() {
+    if (!this.crawl) return;
+    try {
+      const tags = await this.apiFetch(
+        `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      this.fuse.setCollection(tags as any);
+    } catch (e) {
+      // Fail silently, since users can still enter tags
+      console.debug(e);
+    }
+  }
+
+  private openDetailEditor() {
+    this.fetchTags();
+    this.openDialogName = "details";
+  }
+
+  private async onSubmitDetails(e: SubmitEvent) {
+    e.preventDefault();
+
+    const params = {
+      tags: this.tagsToSave,
+    };
+    this.isSubmittingUpdate = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        }
+      );
+
+      if (!data.success) {
+        throw data;
+      }
+
+      this.fetchCrawl();
+      this.notify({
+        message: msg("Successfully saved crawl details."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.openDialogName = undefined;
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't save crawl details at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
   }
 
   private async scale(value: Crawl["scale"]) {

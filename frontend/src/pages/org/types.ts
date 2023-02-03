@@ -26,6 +26,7 @@ export type Crawl = {
   fileCount?: number;
   fileSize?: number;
   completions?: number;
+  tags?: string[];
 };
 
 export type Seed = {
