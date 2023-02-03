@@ -13,7 +13,14 @@ describe("browsertrix-app", () => {
         name: "Test User",
         is_verified: false,
         is_superuser: false,
-        orgs: [{ id: "test_org_id", name: "test org" }],
+        orgs: [
+          {
+            id: "test_org_id",
+            name: "test org",
+            role: 10,
+            email: "test@org.org",
+          },
+        ],
       })
     );
   });

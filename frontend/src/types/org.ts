@@ -13,16 +13,10 @@ export type OrgData = {
   users?: {
     [id: string]: {
       role: typeof AccessCode[UserRole];
-      name: "string";
+      name: string;
+      email: string;
     };
   };
-};
-
-export type Org = {
-  oid: string;
-  name?: string;
-  id?: string;
-  users?: { [id: string]: OrgData };
 };
 
 export type OrgConfig = any;
