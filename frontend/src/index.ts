@@ -15,7 +15,7 @@ import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
-import type { CurrentUser } from "./types/user";
+import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
 import type { OrgData } from "./utils/orgs";
 import theme from "./theme";
@@ -39,7 +39,7 @@ type APIUser = {
   name: string;
   is_verified: boolean;
   is_superuser: boolean;
-  orgs: OrgData[];
+  orgs: UserOrg[];
 };
 
 type UserSettings = {
@@ -151,6 +151,7 @@ export class App extends LiteElement {
         name: userInfo.name,
         isVerified: userInfo.is_verified,
         isAdmin: userInfo.is_superuser,
+        orgs: userInfo.orgs,
       };
       const settings = this.getPersistedUserSettings(userInfo.id);
       if (settings) {
@@ -158,7 +159,7 @@ export class App extends LiteElement {
       }
       const orgs = userInfo.orgs;
       this.orgs = orgs;
-      if (orgs.length && !this.userInfo.isAdmin && !this.selectedOrgId) {
+      if (orgs.length && !this.userInfo!.isAdmin && !this.selectedOrgId) {
         const firstOrg = orgs[0].id;
         if (orgs.length === 1) {
           // Persist selected org ID since there's no

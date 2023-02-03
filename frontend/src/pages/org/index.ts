@@ -6,7 +6,7 @@ import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
 import type { OrgData } from "../../utils/orgs";
-import { isOwner } from "../../utils/orgs";
+import { isOwner, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import "./crawl-configs-detail";
@@ -62,6 +62,23 @@ export class Org extends LiteElement {
   @state()
   private org?: OrgData | null;
 
+  get userOrg() {
+    if (!this.userInfo) return null;
+    return this.userInfo.orgs.find(({ id }) => id === this.orgId)!;
+  }
+
+  get isOwner() {
+    const userOrg = this.userOrg;
+    if (userOrg) return isOwner(userOrg.role);
+    return false;
+  }
+
+  get isCrawler() {
+    const userOrg = this.userOrg;
+    if (userOrg) return isCrawler(userOrg.role);
+    return false;
+  }
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       try {
@@ -95,8 +112,6 @@ export class Org extends LiteElement {
       `;
     }
 
-    const memberInfo = (this.org.users ?? {})[this.userInfo.id];
-    const isOrgOwner = memberInfo && isOwner(memberInfo.role);
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
@@ -110,7 +125,7 @@ export class Org extends LiteElement {
         tabPanelContent = this.renderBrowserProfiles();
         break;
       case "settings": {
-        if (isOrgOwner) {
+        if (this.isOwner) {
           tabPanelContent = this.renderOrgSettings();
           break;
         }
@@ -123,7 +138,7 @@ export class Org extends LiteElement {
     }
 
     return html`
-      ${this.renderOrgNavBar(isOrgOwner)}
+      ${this.renderOrgNavBar()}
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
@@ -135,20 +150,24 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderOrgNavBar(isOrgOwner: boolean) {
+  private renderOrgNavBar() {
     return html`
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
-          ${this.renderNavTab({
-            tabName: "crawl-configs",
-            label: msg("Crawl Configs"),
-          })}
-          ${this.renderNavTab({
-            tabName: "browser-profiles",
-            label: msg("Browser Profiles"),
-          })}
-          ${when(isOrgOwner, () =>
+          ${when(this.isCrawler, () =>
+            this.renderNavTab({
+              tabName: "crawl-configs",
+              label: msg("Crawl Configs"),
+            })
+          )}
+          ${when(this.isCrawler, () =>
+            this.renderNavTab({
+              tabName: "browser-profiles",
+              label: msg("Browser Profiles"),
+            })
+          )}
+          ${when(this.isOwner, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),
