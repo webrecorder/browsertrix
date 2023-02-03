@@ -95,7 +95,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             ${this.crawlConfig?.name
               ? html`<span
-                  class="inline-block align-middle text-xl leading-10 mr-1"
+                  class="inline-block align-middle text-xl font-semibold leading-10 mr-1"
                   >${this.crawlConfig.name}</span
                 > `
               : ""}
@@ -149,7 +149,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         ${this.renderLastCrawl()} ${this.renderCurrentlyRunningNotice()}
 
         <div class="col-span-1">
-          <h3 class="text-lg font-medium text-neutral-700 mb-2">
+          <h3 class="text-lg font-semibold mb-2">
             ${msg("Crawl Settings")}
           </h3>
           <main class="border rounded-lg py-3 px-5">
@@ -375,7 +375,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlConfig?.lastCrawlId) return;
     return html`
       <section class="col-span-1">
-        <h3 class="text-lg font-medium text-neutral-700 mb-2">
+        <h3 class="text-lg font-semibold mb-2">
           ${this.crawlConfig.currCrawlId
             ? msg("Last Completed Crawl")
             : msg("Latest Crawl")}
