@@ -1,4 +1,4 @@
-name: Deploy to Dev Cluster
+name: "*** Deploy to Dev Cluster ***"
 
 on:
   workflow_dispatch:
@@ -36,7 +36,12 @@ jobs:
         with:
           context: frontend
           push: true
-          tags: ${{ secrets.DO_REGISTRY_PATH }}/btrix/webrecorder/browsertrix-frontend:latest
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
