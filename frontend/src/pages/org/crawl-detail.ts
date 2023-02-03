@@ -332,7 +332,7 @@ export class CrawlDetail extends LiteElement {
       <header class="md:flex justify-between">
         <h2 class="text-xl font-medium mb-3 md:h-8">
           ${msg(
-            html`<span class="font-normal">Crawl of</span> ${this.crawl
+            html`${this.crawl
                 ? this.crawl.configName
                 : html`<sl-skeleton
                     class="inline-block"
