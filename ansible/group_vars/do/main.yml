@@ -3,14 +3,19 @@ project_name: "default"
 
 main_node_size: "s-1vcpu-2gb"
 crawl_node_size: "c-4"
-admin_node_size: "s-4vcpu-8gb"
 droplet_region: "sfo3"
-enable_admin_addons: true
 
 node_pools:
   - name=main-app;size={{ main_node_size }};label=nodeType=main;count=2
   - name=crawling;size={{ crawl_node_size }};label=nodeType=crawling;taint=nodeType=crawling:NoSchedule;auto-scale=true;min-nodes=1;max-nodes=3;count=1
-  - "{% if enable_admin_addons %}name=admin-app;size={{ admin_node_size }};label=nodeType=admin;count=1{% endif %}"
+
+enable_admin_addons: true
+
+admin_node_pool:
+  name: admin-app
+  size: s-4vcpu-8gb
+  label: nodeType=admin
+  count: 1
 
 db_name: "{{ project_name }}"
 k8s_name: "{{ project_name }}"

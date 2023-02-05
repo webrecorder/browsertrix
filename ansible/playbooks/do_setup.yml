@@ -106,6 +106,34 @@
       changed_when: false
       when: cluster_check.stdout.find(k8s_name) == -1
 
+    - name: d_ocean | k8s | test for existing k8s cluster's node pools
+      ansible.builtin.command: doctl kubernetes cluster node-pool list {{ k8s_name }}
+      changed_when: false
+      failed_when: false
+      register: cluster_nodepools_check
+
+    - name: d_ocean | k8s | create a admin node pool in the cluster {{ k8s_name }}
+      # skip_ansible_lint
+      ansible.builtin.command: >-
+        doctl kubernetes cluster node-pool create {{ k8s_name }} 
+          --name {{ admin_node_pool.name }}   --size {{ admin_node_pool.size }} 
+          --label {{ admin_node_pool.label }} --count {{ admin_node_pool.count }} 
+
+      async: 1800
+      poll: 60
+      changed_when: false
+      when: enable_admin_addons and cluster_nodepools_check.stdout.find(admin_node_pool.name) == -1
+
+    - name: d_ocean | k8s | remove a admin node pool from the cluster {{ k8s_name }}
+      # skip_ansible_lint
+      ansible.builtin.command: >-
+        echo "yes" | doctl kubernetes cluster node-pool delete {{ k8s_name }} {{ admin_node_pool.name }}
+
+      async: 1800
+      poll: 60
+      changed_when: false
+      when: not enable_admin_addons and cluster_nodepools_check.stdout.find(admin_node_pool.name) >= 0
+
     - name: d_ocean | k8s | Get information about our cluster
       community.digitalocean.digital_ocean_kubernetes_info:
         oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
