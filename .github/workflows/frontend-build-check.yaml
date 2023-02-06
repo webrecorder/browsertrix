@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: yarn install --frozen-lockfile
+      - name: Unit tests
+        working-directory: frontend
+        run: yarn test
       - name: Localization build
         working-directory: frontend
         run: yarn localize:prepare
