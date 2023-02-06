@@ -11,6 +11,12 @@ import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 
 type Tab = "information" | "members";
+type Invite = {
+  created: string;
+  email: string;
+  inviterEmail: string;
+  role: number;
+};
 
 /**
  * Usage:
@@ -45,7 +51,7 @@ export class OrgSettings extends LiteElement {
   isAddingMember = false;
 
   @state()
-  pendingInvites = [];
+  pendingInvites: Invite[] = [];
 
   @state()
   private isAddMemberFormVisible = false;
@@ -71,7 +77,7 @@ export class OrgSettings extends LiteElement {
       changedProperties.has("activePanel") &&
       this.activePanel === "members"
     ) {
-      // this.fetchPendingInvites();
+      this.fetchPendingInvites();
     }
   }
 
@@ -196,8 +202,50 @@ export class OrgSettings extends LiteElement {
       ${when(
         this.pendingInvites.length,
         () => html`
-          <section>
-            <h3 class="text-lg font-semibold">${msg("Pending Invites")}</h3>
+          <section class="mt-7">
+            <h3 class="text-lg font-semibold mb-2">
+              ${msg("Pending Invites")}
+            </h3>
+
+            <div role="table" class="rounded border">
+              <div class="border-b bg-neutral-50" role="rowgroup">
+                <div class="flex font-medium" role="row">
+                  <div
+                    class="flex-1 px-3 py-1"
+                    role="columnheader"
+                    aria-sort="none"
+                  >
+                    ${msg("Name")}
+                  </div>
+                  <div
+                    class="flex-0 w-52 px-3 py-1"
+                    role="columnheader"
+                    aria-sort="none"
+                  >
+                    ${msg("Role", { desc: "Organization member's role" })}
+                  </div>
+                </div>
+              </div>
+              <div role="rowgroup">
+                ${this.pendingInvites.map(
+                  (user) => html`
+                    <div
+                      class="border-b last:border-none flex items-center"
+                      role="row"
+                    >
+                      <div class="flex-1 p-3" role="cell">${user.email}</div>
+                      <div class="flex-0 w-52 p-3" role="cell">
+                        ${isOwner(user.role)
+                          ? msg("Admin")
+                          : user.role === AccessCode.crawler
+                          ? msg("Crawler")
+                          : msg("Viewer")}
+                      </div>
+                    </div>
+                  `
+                )}
+              </div>
+            </div>
           </section>
         `
       )}
@@ -286,12 +334,15 @@ export class OrgSettings extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
+  private getPendingInvites(): Promise<Invite[]> {
+    return this.apiFetch(`/orgs/${this.org.id}/invites`, this.authState!).then(
+      (data) => data.pending_invites
+    );
+  }
+
   private async fetchPendingInvites() {
     try {
-      this.pendingInvites = await this.apiFetch(
-        `/orgs/${this.org.id}/invites`,
-        this.authState!
-      );
+      this.pendingInvites = await this.getPendingInvites();
     } catch (e: any) {
       console.debug(e);
 
