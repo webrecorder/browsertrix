@@ -305,7 +305,7 @@ export class CrawlDetail extends LiteElement {
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0">
+      <nav class="border-b md:border-b-0 md:mt-10">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
           ${renderNavItem({
@@ -330,9 +330,9 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between">
-        <h2 class="text-xl font-medium mb-3 md:h-8">
+        <h2 class="text-xl font-semibold mb-3 md:h-8">
           ${msg(
-            html`<span class="font-normal">Crawl of</span> ${this.crawl
+            html`${this.crawl
                 ? this.crawl.configName
                 : html`<sl-skeleton
                     class="inline-block"
@@ -487,7 +487,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h3 class="flex-0 text-lg font-medium mb-2">${title}</h3>
+      <h3 class="flex-0 text-lg font-semibold mb-2">${title}</h3>
       <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }

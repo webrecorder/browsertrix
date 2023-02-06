@@ -274,7 +274,7 @@ export class ConfigDetails extends LiteElement {
       >`;
     }
     return html`
-      <btrix-desc-list-item label=${label}> ${content} </btrix-desc-list-item>
+      <btrix-desc-list-item label=${label} class="break-all"> ${content} </btrix-desc-list-item>
     `;
   }
 }
