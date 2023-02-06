@@ -254,7 +254,7 @@ export class OrgSettings extends LiteElement {
     return html`<btrix-icon-button
       name="trash"
       @click=${() =>
-        isInvite ? this.deleteInvite(user) : this.removeMember(user)}
+        isInvite ? this.removeInvite(user) : this.removeMember(user)}
     ></btrix-icon-button>`;
   }
 
