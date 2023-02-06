@@ -272,7 +272,7 @@ export class App extends LiteElement {
               href=${homeHref}
               @click=${(e: any) => {
                 if (isAdmin) {
-                  this.selectedOrgId = undefined;
+                  this.clearSelectedOrg();
                 }
                 this.navLink(e);
               }}
@@ -291,7 +291,7 @@ export class App extends LiteElement {
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/"
                     @click=${(e: any) => {
-                      this.selectedOrgId = undefined;
+                      this.clearSelectedOrg();
                       this.navLink(e);
                     }}
                     >${msg("Dashboard")}</a
@@ -384,15 +384,14 @@ export class App extends LiteElement {
             const { value } = e.detail.item;
             if (value) {
               this.navigate(`/orgs/${value}/crawls`);
+              if (this.userInfo) {
+                this.persistUserSettings(this.userInfo.id, { orgId: value });
+              }
             } else {
-              this.selectedOrgId = undefined;
+              if (this.userInfo) {
+                this.clearSelectedOrg();
+              }
               this.navigate(`/`);
-            }
-
-            if (this.userInfo) {
-              this.persistUserSettings(this.userInfo.id, { orgId: value });
-            } else {
-              console.debug("User info not set");
             }
           }}
         >
@@ -566,6 +565,11 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
+          @update-user-info=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.updateUserInfo();
+          }}
+          @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .orgId=${this.selectedOrgId}
@@ -899,6 +903,13 @@ export class App extends LiteElement {
 
   private unpersistUserSettings(userId: string) {
     window.localStorage.removeItem(`${App.storageKey}.${userId}`);
+  }
+
+  private clearSelectedOrg() {
+    this.selectedOrgId = undefined;
+    if (this.userInfo) {
+      this.persistUserSettings(this.userInfo.id, { orgId: "" });
+    }
   }
 }
 
