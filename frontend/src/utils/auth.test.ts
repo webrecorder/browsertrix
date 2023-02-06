@@ -18,7 +18,7 @@ describe("auth", () => {
       );
 
       const element = new Element();
-      element.connectedCallback();
+      element.update();
 
       expect(dispatchEventSpy.getCall(0).firstArg.type).to.equal("need-login");
     });

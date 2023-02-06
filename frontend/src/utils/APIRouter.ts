@@ -1,4 +1,5 @@
 import UrlPattern from "url-pattern";
+import queryString from "query-string";
 
 type Routes = { [key: string]: UrlPattern };
 type Paths = { [key: string]: string };
@@ -29,20 +30,25 @@ export default class APIRouter {
     }
   }
 
-  match(url: string): ViewState {
+  match(relativePath: string): ViewState {
     for (const [name, pattern] of Object.entries(this.routes)) {
-      const [path, qs] = url.split("?");
-      const urlParams = pattern.match(path);
+      const [path, qs = ""] = relativePath.split("?");
+      const match = pattern.match(path);
 
-      if (urlParams) {
+      if (match) {
+        const queryParams = queryString.parse(qs, {
+          // Only decode if needed, or else `+` in invite emails
+          // may be incorrectly decoded
+          decode: qs.includes("%"),
+        });
         const params = {
-          ...urlParams,
-          ...Object.fromEntries(new URLSearchParams(qs).entries()),
+          ...match,
+          ...queryParams,
         };
-        return { route: name, pathname: url, params };
+        return { route: name, pathname: relativePath, params };
       }
     }
 
-    return { route: null, pathname: url, params: {} };
+    return { route: null, pathname: relativePath, params: {} };
   }
 }

@@ -1,9 +1,25 @@
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
+import commonjsPlugin from "@rollup/plugin-commonjs";
+import { fromRollup } from "@web/dev-server-rollup";
+import { fileURLToPath } from "url";
+
+const commonjs = fromRollup(commonjsPlugin);
 
 export default {
   plugins: [
-    esbuildPlugin({ ts: true }),
+    esbuildPlugin({
+      ts: true,
+      // tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
+      target: "auto",
+    }),
+    commonjs({
+      include: [
+        // web-test-runner expects es modules,
+        // include umd/commonjs modules here:
+        "node_modules/url-pattern/**/*",
+      ],
+    }),
     importMapsPlugin({
       inject: {
         importMap: {
