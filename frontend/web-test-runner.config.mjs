@@ -3,8 +3,17 @@ import { importMapsPlugin } from "@web/dev-server-import-maps";
 import commonjsPlugin from "@rollup/plugin-commonjs";
 import { fromRollup } from "@web/dev-server-rollup";
 import { fileURLToPath } from "url";
+import glob from "glob";
 
 const commonjs = fromRollup(commonjsPlugin);
+
+// Map all css imports to mock file
+const cssImports = {};
+glob.sync("./src/**/*.css").forEach((filepath) => {
+  cssImports[filepath] = fileURLToPath(
+    new URL("./src/__mocks__/css.js", import.meta.url)
+  );
+});
 
 export default {
   plugins: [
@@ -24,12 +33,20 @@ export default {
       inject: {
         importMap: {
           imports: {
-            "tailwindcss/tailwind.css": "/src/__mocks__/css.js",
-            "@shoelace-style/shoelace/dist/themes/light.css":
-              "/src/__mocks__/css.js",
-            "@formatjs/intl-displaynames/should-polyfill":
-              "/src/__mocks__/@formatjs/intl-displaynames/should-polyfill.js",
-            color: "/src/__mocks__/color.js",
+            ...cssImports,
+            "tailwindcss/tailwind.css": fileURLToPath(
+              new URL("./src/__mocks__/css.js", import.meta.url)
+            ),
+            "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
+              new URL("./src/__mocks__/css.js", import.meta.url)
+            ),
+            // "@formatjs/intl-displaynames/should-polyfill": new URL(
+            //   "./src/__mocks__/@formatjs/intl-displaynames/should-polyfill.js",
+            //   import.meta.url
+            // ),
+            color: fileURLToPath(
+              new URL("./src/__mocks__/color.js", import.meta.url)
+            ),
           },
         },
       },
