@@ -16,11 +16,13 @@ glob.sync("./src/**/*.css").forEach((filepath) => {
 });
 
 export default {
+  nodeResolve: true,
+  rootDir: process.cwd(),
   plugins: [
     esbuildPlugin({
       ts: true,
-      // tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
-      target: "auto",
+      tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
+      target: "esnext",
     }),
     commonjs({
       include: [
@@ -34,6 +36,9 @@ export default {
         importMap: {
           imports: {
             ...cssImports,
+            "./src/shoelace": fileURLToPath(
+              new URL("./src/__mocks__/shoelace.js", import.meta.url)
+            ),
             "tailwindcss/tailwind.css": fileURLToPath(
               new URL("./src/__mocks__/css.js", import.meta.url)
             ),
