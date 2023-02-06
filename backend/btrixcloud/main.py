@@ -108,7 +108,7 @@ def main():
 
     asyncio.create_task(
         update_and_prepare_db(
-            mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops
+            mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops, invites
         )
     )
 

@@ -5,8 +5,10 @@ from enum import IntEnum
 from typing import Optional
 import os
 import urllib.parse
+import time
 import uuid
 
+from pymongo.errors import AutoReconnect
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
@@ -66,6 +68,25 @@ class InviteOps:
         self.orgs = mdb["organizations"]
         self.email = email
         self.allow_dupe_invites = os.environ.get("ALLOW_DUPE_INVITES", "0") == "1"
+
+    async def init_index(self):
+        """Create TTL index so that invites auto-expire"""
+        while True:
+            try:
+                # Default to 7 days
+                expire_after_seconds = int(
+                    os.environ.get("INVITE_EXPIRE_SECONDS", "604800")
+                )
+                return await self.invites.create_index(
+                    "created", expireAfterSeconds=expire_after_seconds
+                )
+            # pylint: disable=duplicate-code
+            except AutoReconnect:
+                print(
+                    "Database connection unavailable to create index. Will try again in 5 scconds",
+                    flush=True,
+                )
+                time.sleep(5)
 
     async def add_new_user_invite(
         self,

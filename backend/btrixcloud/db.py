@@ -56,6 +56,7 @@ async def update_and_prepare_db(
     crawl_config_ops,
     crawls_ops,
     coll_ops,
+    invite_ops,
 ):
     """Prepare database for application.
 
@@ -68,7 +69,7 @@ async def update_and_prepare_db(
     """
     if await run_db_migrations(mdb):
         await drop_indexes(mdb)
-    await create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops)
+    await create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops, invite_ops)
     await user_manager.create_super_user()
     await org_ops.create_default_org()
     print("Database updated and ready", flush=True)
@@ -121,13 +122,14 @@ async def drop_indexes(mdb):
 
 
 # ============================================================================
-async def create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops):
+async def create_indexes(org_ops, crawl_config_ops, crawls_ops, coll_ops, invite_ops):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
     await org_ops.init_index()
     await crawl_config_ops.init_index()
     await crawls_ops.init_index()
     await coll_ops.init_index()
+    await invite_ops.init_index()
 
 
 # ============================================================================
