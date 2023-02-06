@@ -11,11 +11,16 @@ import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 
 type Tab = "information" | "members";
-type Invite = {
-  created: string;
+type User = {
   email: string;
-  inviterEmail: string;
   role: number;
+};
+type Member = User & {
+  name: string;
+};
+type Invite = User & {
+  created: string;
+  inviterEmail: string;
 };
 
 /**
@@ -163,41 +168,20 @@ export class OrgSettings extends LiteElement {
 
   private renderMembers() {
     return html`
-      <div role="table" class="rounded border">
-        <div class="border-b bg-neutral-50" role="rowgroup">
-          <div class="flex font-medium" role="row">
-            <div class="flex-1 px-3 py-1" role="columnheader" aria-sort="none">
-              ${msg("Name")}
-            </div>
-            <div
-              class="flex-0 w-52 px-3 py-1"
-              role="columnheader"
-              aria-sort="none"
-            >
-              ${msg("Role", { desc: "Organization member's role" })}
-            </div>
-          </div>
-        </div>
-        <div role="rowgroup">
-          ${Object.entries(this.org.users!).map(
-            ([id, user]) => html`
-              <div
-                class="border-b last:border-none flex items-center"
-                role="row"
-              >
-                <div class="flex-1 p-3" role="cell">${user.name}</div>
-                <div class="flex-0 w-52 p-3" role="cell">
-                  ${isOwner(user.role)
-                    ? msg("Admin")
-                    : user.role === AccessCode.crawler
-                    ? msg("Crawler")
-                    : msg("Viewer")}
-                </div>
-              </div>
-            `
-          )}
-        </div>
-      </div>
+      <section class="rounded border overflow-hidden">
+        <btrix-data-table
+          .columns=${[
+            html`<div class="w-52">${msg("Name")}</div>`,
+            msg("Role", { desc: "Organization member's role" }),
+          ]}
+          .rows=${Object.entries(this.org.users!).map(([id, user]) => [
+            html`<div>${user.name}</div>`,
+            this.renderUserRole(user),
+          ])}
+          .columnWidths=${["100%", "20rem"]}
+        >
+        </btrix-data-table>
+      </section>
 
       ${when(
         this.pendingInvites.length,
@@ -207,44 +191,19 @@ export class OrgSettings extends LiteElement {
               ${msg("Pending Invites")}
             </h3>
 
-            <div role="table" class="rounded border">
-              <div class="border-b bg-neutral-50" role="rowgroup">
-                <div class="flex font-medium" role="row">
-                  <div
-                    class="flex-1 px-3 py-1"
-                    role="columnheader"
-                    aria-sort="none"
-                  >
-                    ${msg("Name")}
-                  </div>
-                  <div
-                    class="flex-0 w-52 px-3 py-1"
-                    role="columnheader"
-                    aria-sort="none"
-                  >
-                    ${msg("Role", { desc: "Organization member's role" })}
-                  </div>
-                </div>
-              </div>
-              <div role="rowgroup">
-                ${this.pendingInvites.map(
-                  (user) => html`
-                    <div
-                      class="border-b last:border-none flex items-center"
-                      role="row"
-                    >
-                      <div class="flex-1 p-3" role="cell">${user.email}</div>
-                      <div class="flex-0 w-52 p-3" role="cell">
-                        ${isOwner(user.role)
-                          ? msg("Admin")
-                          : user.role === AccessCode.crawler
-                          ? msg("Crawler")
-                          : msg("Viewer")}
-                      </div>
-                    </div>
-                  `
-                )}
-              </div>
+            <div class="rounded border overflow-hidden">
+              <btrix-data-table
+                .columns=${[
+                  html`<div class="w-52">${msg("Email")}</div>`,
+                  msg("Role", { desc: "Organization member's role" }),
+                ]}
+                .rows=${this.pendingInvites.map((user) => [
+                  html`<div>${user.email}</div>`,
+                  this.renderUserRole(user),
+                ])}
+                .columnWidths=${["100%", "20rem"]}
+              >
+              </btrix-data-table>
             </div>
           </section>
         `
@@ -262,7 +221,7 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  private renderUserRole(user: { name: string; role: typeof AccessCode }) {
+  private renderUserRole(user: User) {
     return html`<sl-select value=${user.role} size="small">
       <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
       <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
