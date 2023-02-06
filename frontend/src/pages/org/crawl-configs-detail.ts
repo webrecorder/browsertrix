@@ -95,7 +95,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             ${this.crawlConfig?.name
               ? html`<span
-                  class="inline-block align-middle text-xl font-semibold leading-10 mr-1"
+                  class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
                   >${this.crawlConfig.name}</span
                 > `
               : ""}
