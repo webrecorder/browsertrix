@@ -234,8 +234,22 @@ export class OrgSettings extends LiteElement {
     </sl-select>`;
   }
 
-  private renderRemoveUserButton(user: User) {
-    return html`<btrix-icon-button name="trash"></btrix-icon-button>`;
+  private renderRemoveUserButton(user: Member | Invite) {
+    if (user.email === this.userInfo.email) {
+      const { [this.userInfo.id]: currentUser, ...otherUsers } =
+        this.org.users!;
+      const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
+        isOwner(role)
+      );
+      if (!hasOtherAdmin) {
+        // Must be another admin in order to remove self
+        return "";
+      }
+    }
+    return html`<btrix-icon-button
+      name="trash"
+      @click=${() => this.removeUser(user)}
+    ></btrix-icon-button>`;
   }
 
   private hideInviteDialog() {
@@ -403,6 +417,51 @@ export class OrgSettings extends LiteElement {
     }
 
     this.isSubmittingInvite = false;
+  }
+
+  private async removeUser(user: Member | Invite) {
+    if (
+      user.email === this.userInfo.email &&
+      !window.confirm(
+        msg(`Are you sure you want to remove yourself from ${this.org.name}?`)
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          email: user.email,
+        }),
+      });
+
+      this.notify({
+        message: msg(
+          str`Successfully removed ${
+            "name" in user ? user.name : user.email
+          } from ${this.org.name}.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(
+              `Sorry, couldn't remove ${
+                "name" in user ? user.name : user.email
+              } at this time.`
+            ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 
