@@ -455,7 +455,7 @@ def init_users_api(app, user_manager):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await user_manager.invites.invite_user(
+        _, token = await user_manager.invites.invite_user(
             invite,
             user,
             user_manager,
@@ -464,7 +464,10 @@ def init_users_api(app, user_manager):
             headers=request.headers,
         )
 
-        return {"invited": "new_user"}
+        return {
+            "invited": "new_user",
+            "token": token,
+        }
 
     @users_router.get("/invite/{token}", tags=["invites"])
     async def get_invite_info(token: str, email: str):

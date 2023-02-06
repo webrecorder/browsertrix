@@ -3,8 +3,9 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import Optional
-import uuid
 import os
+import urllib.parse
+import uuid
 
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
@@ -135,8 +136,12 @@ class InviteOps:
         allow_existing=False,
         headers: dict = None,
     ):
-        """create new invite for user to join, optionally an org.
-        if allow_existing is false, don't allow invites to existing users"""
+        """Invite user to org (if not specified, to default org).
+
+        If allow_existing is false, don't allow invites to existing users.
+
+        :returns: is_new_user (bool), invite token (str)
+        """
         invite_code = uuid.uuid4().hex
 
         if org:
@@ -152,7 +157,8 @@ class InviteOps:
             oid=oid,
             created=datetime.utcnow(),
             role=invite.role if hasattr(invite, "role") else None,
-            email=invite.email,
+            # URL decode email address just in case
+            email=urllib.parse.unquote(invite.email),
             inviterEmail=user.email,
         )
 
@@ -164,7 +170,7 @@ class InviteOps:
                 org_name,
                 headers,
             )
-            return True
+            return True, invite_code
 
         if not allow_existing:
             raise HTTPException(status_code=400, detail="User already registered")
@@ -187,7 +193,7 @@ class InviteOps:
             other_user.email, user.name, org_name, invite_code, headers
         )
 
-        return False
+        return False, invite_code
 
     async def get_pending_invites(self, org=None):
         """return list of pending invites."""
