@@ -7,7 +7,7 @@ import pickBy from "lodash/fp/pickBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { isOwner, AccessCode } from "../../utils/orgs";
+import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 
@@ -172,14 +172,10 @@ export class OrgSettings extends LiteElement {
     return html`
       <section class="rounded border overflow-hidden">
         <btrix-data-table
-          .columns=${[
-            msg("Name"),
-            msg("Role", { desc: "Organization member's role" }),
-            "",
-          ]}
+          .columns=${[msg("Name"), msg("Role"), ""]}
           .rows=${Object.entries(this.org.users!).map(([id, user]) => [
             user.name,
-            this.renderUserRole(user),
+            this.renderUserRoleSelect(user),
             this.renderRemoveUserButton(user),
           ])}
           .columnWidths=${columnWidths}
@@ -197,9 +193,11 @@ export class OrgSettings extends LiteElement {
 
             <div class="rounded border overflow-hidden">
               <btrix-data-table
-                .columns=${[html`<div class="w-52">${msg("Email")}</div>`]}
+                .columns=${[msg("Email"), msg("Role"), ""]}
                 .rows=${this.pendingInvites.map((user) => [
-                  html`<div>${user.email}</div>`,
+                  user.email,
+                  this.renderUserRole(user),
+                  this.renderRemoveUserButton(user),
                 ])}
                 .columnWidths=${columnWidths}
               >
@@ -221,7 +219,13 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  private renderUserRole(user: Member | Invite) {
+  private renderUserRole({ role }: User) {
+    if (isAdmin(role)) return msg("Admin");
+    if (isCrawler(role)) return msg("Crawler");
+    return msg("Viewer");
+  }
+
+  private renderUserRoleSelect(user: Member) {
     return html`<sl-select
       value=${user.role}
       size="small"
@@ -235,11 +239,12 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderRemoveUserButton(user: Member | Invite) {
+    const isInvite = "inviterEmail" in user;
     if (user.email === this.userInfo.email) {
       const { [this.userInfo.id]: currentUser, ...otherUsers } =
         this.org.users!;
       const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
-        isOwner(role)
+        isAdmin(role)
       );
       if (!hasOtherAdmin) {
         // Must be another admin in order to remove self
@@ -248,7 +253,8 @@ export class OrgSettings extends LiteElement {
     }
     return html`<btrix-icon-button
       name="trash"
-      @click=${() => this.removeUser(user)}
+      @click=${() =>
+        isInvite ? this.deleteInvite(user) : this.removeMember(user)}
     ></btrix-icon-button>`;
   }
 
@@ -454,9 +460,42 @@ export class OrgSettings extends LiteElement {
     }
   }
 
-  private async removeUser(user: Member | Invite) {
+  private async removeInvite(invite: Invite) {
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          email: invite.email,
+        }),
+      });
+
+      this.notify({
+        message: msg(
+          str`Successfully removed ${invite.email} from ${this.org.name}.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.pendingInvites = this.pendingInvites.filter(
+        ({ email }) => email !== invite.email
+      );
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async removeMember(member: Member) {
     if (
-      user.email === this.userInfo.email &&
+      member.email === this.userInfo.email &&
       !window.confirm(
         msg(
           str`Are you sure you want to remove yourself from ${this.org.name}?`
@@ -470,15 +509,15 @@ export class OrgSettings extends LiteElement {
       await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
         method: "POST",
         body: JSON.stringify({
-          email: user.email,
+          email: member.email,
         }),
       });
 
       this.notify({
         message: msg(
-          str`Successfully removed ${
-            "name" in user ? user.name : user.email
-          } from ${this.org.name}.`
+          str`Successfully removed ${member.name || member.email} from ${
+            this.org.name
+          }.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -486,7 +525,7 @@ export class OrgSettings extends LiteElement {
 
       this.org = {
         ...this.org,
-        users: pickBy(({ email }) => email !== user.email)(
+        users: pickBy(({ email }) => email !== member.email)(
           this.org.users
         ) as OrgData["users"],
       };
@@ -498,7 +537,7 @@ export class OrgSettings extends LiteElement {
           ? e.message
           : msg(
               str`Sorry, couldn't remove ${
-                "name" in user ? user.name : user.email
+                member.name || member.email
               } at this time.`
             ),
         variant: "danger",
