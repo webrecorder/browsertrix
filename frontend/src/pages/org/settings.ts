@@ -167,18 +167,21 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
+    const columnWidths = ["100%", "12rem", "1.5rem"];
     return html`
       <section class="rounded border overflow-hidden">
         <btrix-data-table
           .columns=${[
-            html`<div class="w-52">${msg("Name")}</div>`,
+            msg("Name"),
             msg("Role", { desc: "Organization member's role" }),
+            "",
           ]}
           .rows=${Object.entries(this.org.users!).map(([id, user]) => [
-            html`<div>${user.name}</div>`,
+            user.name,
             this.renderUserRole(user),
+            this.renderRemoveUserButton(user),
           ])}
-          .columnWidths=${["100%", "20rem"]}
+          .columnWidths=${columnWidths}
         >
         </btrix-data-table>
       </section>
@@ -196,12 +199,14 @@ export class OrgSettings extends LiteElement {
                 .columns=${[
                   html`<div class="w-52">${msg("Email")}</div>`,
                   msg("Role", { desc: "Organization member's role" }),
+                  "",
                 ]}
                 .rows=${this.pendingInvites.map((user) => [
                   html`<div>${user.email}</div>`,
                   this.renderUserRole(user),
+                  this.renderRemoveUserButton(user),
                 ])}
-                .columnWidths=${["100%", "20rem"]}
+                .columnWidths=${columnWidths}
               >
               </btrix-data-table>
             </div>
@@ -227,6 +232,10 @@ export class OrgSettings extends LiteElement {
       <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
       <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
     </sl-select>`;
+  }
+
+  private renderRemoveUserButton(user: User) {
+    return html`<btrix-icon-button name="trash"></btrix-icon-button>`;
   }
 
   private hideInviteDialog() {

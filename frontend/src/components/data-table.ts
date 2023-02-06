@@ -1,6 +1,8 @@
 import { LitElement, html, css, TemplateResult } from "lit";
 import { property } from "lit/decorators.js";
 
+type CellContent = string | TemplateResult;
+
 /**
  * Styled data table
  *
@@ -12,6 +14,7 @@ import { property } from "lit/decorators.js";
  *     [html`1a`, html`1b`, html`1c`],
  *     [html`2a`, html`2b`, html`2c`],
  *   ]}
+ *   .columnWidths=${["100%", "20rem"]}
  * >
  * </btrix-data-table>
  * ```
@@ -55,7 +58,7 @@ export class DataTable extends LitElement {
       border-top: 1px solid var(--sl-panel-border-color);
     }
 
-    .cell.paddedSmall {
+    .cell.padSmall {
       padding: var(--sl-spacing-2x-small);
     }
 
@@ -70,18 +73,15 @@ export class DataTable extends LitElement {
       line-height: 1rem;
       text-transform: uppercase;
     }
-
-    .tbody .row {
-      line-height: 1.5rem;
-    }
   `;
 
   @property({ type: Array })
-  columns: TemplateResult[] = [];
+  columns: CellContent[] = [];
 
   @property({ type: Array })
-  rows: Array<TemplateResult[]> = [];
+  rows: Array<CellContent[]> = [];
 
+  // Array of CSS widths
   @property({ type: Array })
   columnWidths: string[] = [];
 
@@ -100,7 +100,7 @@ export class DataTable extends LitElement {
     `;
   }
 
-  private renderColumnHeader = (cell: TemplateResult, index: number) => html`
+  private renderColumnHeader = (cell: CellContent, index: number) => html`
     <div
       role="columnheader"
       class="cell padded"
@@ -112,14 +112,17 @@ export class DataTable extends LitElement {
     </div>
   `;
 
-  private renderRow = (cells: TemplateResult[]) => html`
+  private renderRow = (cells: CellContent[]) => html`
     <div role="row" class="row">${cells.map(this.renderCell)}</div>
   `;
 
-  private renderCell = (cell: TemplateResult) => {
-    const paddedSmall = cell.strings[0].startsWith("<sl-select");
+  private renderCell = (cell: CellContent) => {
+    const shouldPadSmall =
+      typeof cell === "string"
+        ? false
+        : cell.strings[0].startsWith("<sl-select");
     return html`
-      <div role="cell" class="cell ${paddedSmall ? "paddedSmall" : "padded"}">
+      <div role="cell" class="cell ${shouldPadSmall ? "padSmall" : "padded"}">
         ${cell}
       </div>
     `;
