@@ -196,7 +196,7 @@ def test_send_and_accept_org_invite(
 
     # Register user
     # Note: This will accept invitation without needing to call the
-    # accept invite endpoint specifically due to post-registration hook.
+    # accept invite endpoint explicitly due to post-registration hook.
     r = requests.post(
         f"{API_PREFIX}/auth/register",
         headers=admin_auth_headers,
