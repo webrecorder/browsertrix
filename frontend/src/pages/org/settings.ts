@@ -45,6 +45,9 @@ export class OrgSettings extends LiteElement {
   isAddingMember = false;
 
   @state()
+  pendingInvites = [];
+
+  @state()
   private isAddMemberFormVisible = false;
 
   @state()
@@ -64,6 +67,12 @@ export class OrgSettings extends LiteElement {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
     }
+    if (
+      changedProperties.has("activePanel") &&
+      this.activePanel === "members"
+    ) {
+      // this.fetchPendingInvites();
+    }
   }
 
   render() {
@@ -73,10 +82,10 @@ export class OrgSettings extends LiteElement {
 
       <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
         <header slot="header" class="flex items-end justify-between h-5">
-          <h3>${this.tabLabels[this.activePanel]}</h3>
           ${when(
             this.activePanel === "members",
             () => html`
+              <h3>${msg("Active Members")}</h3>
               <sl-button
                 href=${`/orgs/${this.orgId}/settings/members?invite`}
                 variant="primary"
@@ -84,7 +93,8 @@ export class OrgSettings extends LiteElement {
                 @click=${this.navLink}
                 >${msg("Invite New Member")}</sl-button
               >
-            `
+            `,
+            () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `
           )}
         </header>
         ${this.renderTab("information", "settings")}
@@ -183,6 +193,15 @@ export class OrgSettings extends LiteElement {
         </div>
       </div>
 
+      ${when(
+        this.pendingInvites.length,
+        () => html`
+          <section>
+            <h3 class="text-lg font-semibold">${msg("Pending Invites")}</h3>
+          </section>
+        `
+      )}
+
       <btrix-dialog
         label=${msg("Invite New Member")}
         ?open=${this.isAddingMember}
@@ -265,6 +284,23 @@ export class OrgSettings extends LiteElement {
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  private async fetchPendingInvites() {
+    try {
+      this.pendingInvites = await this.apiFetch(
+        `/orgs/${this.org.id}/invites`,
+        this.authState!
+      );
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: msg("Sorry, couldn't retrieve pending invites at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async onOrgNameSubmit(e: SubmitEvent) {
