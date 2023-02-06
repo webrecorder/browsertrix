@@ -115,7 +115,7 @@ def test_remove_user_from_org(admin_auth_headers, default_org_id):
     data = r.json()
     assert data["removed"]
 
-def test_remove_non_existant_user(admin_auth_headers, default_org_id):
+def test_remove_non_existent_user(admin_auth_headers, default_org_id):
     # Remove user
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/remove",
