@@ -20,6 +20,7 @@
     "lit": "^2.4.1",
     "lodash": "^4.17.21",
     "pretty-ms": "^7.0.1",
+    "query-string": "^8.1.0",
     "regex-colorize": "^0.0.3",
     "tailwindcss": "^3.1.8",
     "url-pattern": "^1.0.3",
