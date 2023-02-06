@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import pickBy from "lodash/fp/pickBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -196,15 +197,9 @@ export class OrgSettings extends LiteElement {
 
             <div class="rounded border overflow-hidden">
               <btrix-data-table
-                .columns=${[
-                  html`<div class="w-52">${msg("Email")}</div>`,
-                  msg("Role", { desc: "Organization member's role" }),
-                  "",
-                ]}
+                .columns=${[html`<div class="w-52">${msg("Email")}</div>`]}
                 .rows=${this.pendingInvites.map((user) => [
                   html`<div>${user.email}</div>`,
-                  this.renderUserRole(user),
-                  this.renderRemoveUserButton(user),
                 ])}
                 .columnWidths=${columnWidths}
               >
@@ -226,8 +221,13 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  private renderUserRole(user: User) {
-    return html`<sl-select value=${user.role} size="small">
+  private renderUserRole(user: Member | Invite) {
+    return html`<sl-select
+      value=${user.role}
+      size="small"
+      @sl-select=${(e: CustomEvent) =>
+        this.updateUserRole(user, Number(e.detail.item.value))}
+    >
       <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
       <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
       <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
@@ -356,7 +356,6 @@ export class OrgSettings extends LiteElement {
         message: msg("Updated organization name."),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
 
       this.dispatchEvent(
@@ -402,9 +401,9 @@ export class OrgSettings extends LiteElement {
         message: msg(str`Successfully invited ${inviteEmail}.`),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
 
+      this.fetchPendingInvites();
       this.hideInviteDialog();
     } catch (e: any) {
       this.notify({
@@ -417,6 +416,42 @@ export class OrgSettings extends LiteElement {
     }
 
     this.isSubmittingInvite = false;
+  }
+
+  private async updateUserRole(user: Member | Invite, newRole: number) {
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/user-role`, this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: user.email,
+          role: newRole,
+        }),
+      });
+
+      this.notify({
+        message: msg(
+          str`Successfully updated role for ${
+            "name" in user ? user.name : user.email
+          }.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(
+              `Sorry, couldn't update role for ${
+                "name" in user ? user.name : user.email
+              } at this time.`
+            ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async removeUser(user: Member | Invite) {
@@ -445,8 +480,14 @@ export class OrgSettings extends LiteElement {
         ),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
+
+      this.org = {
+        ...this.org,
+        users: pickBy(({ email }) => email !== user.email)(
+          this.org.users
+        ) as OrgData["users"],
+      };
     } catch (e: any) {
       console.debug(e);
 
