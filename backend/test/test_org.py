@@ -147,7 +147,7 @@ def test_get_pending_org_invites(
     invites = data["pending_invites"]
     assert len(invites) == 1
     invite = invites[0]
-    assert invite["_id"]
+    assert invite["id"]
     assert invite["email"] == INVITE_EMAIL
     assert invite["oid"] == non_default_org_id
     assert invite["created"]

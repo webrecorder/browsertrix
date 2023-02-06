@@ -192,10 +192,11 @@ class InviteOps:
     async def get_pending_invites(self, org=None):
         """return list of pending invites."""
         if org:
-            invites = self.invites.find({"oid": org.id})
+            cursor = self.invites.find({"oid": org.id})
         else:
-            invites = self.invites.find()
-        return [invite async for invite in invites]
+            cursor = self.invites.find()
+        results = await cursor.to_list(length=1000)
+        return [InvitePending.from_dict(result) for result in results]
 
 
 def init_invites(mdb, email):
