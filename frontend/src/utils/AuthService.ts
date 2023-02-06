@@ -241,7 +241,7 @@ export default class AuthService {
     this.revoke();
   }
 
-  private startFreshnessCheck() {
+  startFreshnessCheck() {
     window.clearTimeout(this.timerId);
     this.checkFreshness();
   }
@@ -256,7 +256,7 @@ export default class AuthService {
     AuthService.storage.removeItem();
   }
 
-  private persist(auth: Auth) {
+  persist(auth: Auth) {
     this._authState = {
       username: auth.username,
       headers: auth.headers,
@@ -307,7 +307,7 @@ export default class AuthService {
     }
   }
 
-  private async refresh(): Promise<{
+  async refresh(): Promise<{
     headers: Auth["headers"];
     tokenExpiresAt: Auth["tokenExpiresAt"];
   }> {
