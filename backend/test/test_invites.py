@@ -27,7 +27,7 @@ def test_pending_invites(admin_auth_headers, default_org_id):
     invites = data["pending_invites"]
     assert len(invites) == 1
     invite = invites[0]
-    assert invite["_id"]
+    assert invite["id"]
     assert invite["email"] == INVITE_EMAIL
     assert invite["oid"] == default_org_id
     assert invite["created"]
