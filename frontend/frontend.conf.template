@@ -1,6 +1,16 @@
 include ./resolvers/resolvers.conf;
 
 server {
+    listen 8880;
+
+    # health check for k8s
+    location /healthz {
+      return 200;
+    }
+}
+
+
+server {
     listen 80 default_server;
     server_name _;
     proxy_buffering off;
@@ -18,13 +28,13 @@ server {
 
     # fallback to index for any page
     error_page 404 /index.html;
-  
+
     location / {
       root   /usr/share/nginx/html;
       index  index.html index.htm;
     }
 
-    # used in both k8s and docker: RWP_BASE_URL set in Dockerfile
+    # serve replay service worker, RWP_BASE_URL set in Dockerfile
     location /replay/sw.js {
       add_header Content-Type application/javascript;
       return 200 'importScripts("${RWP_BASE_URL}sw.js");';
