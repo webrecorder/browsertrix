@@ -242,7 +242,7 @@ export class CrawlDetail extends LiteElement {
         </a>
       </div>
 
-      <div class="mb-2">${this.renderHeader()}</div>
+      <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
         <section class="rounded-lg border mb-7">
