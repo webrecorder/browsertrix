@@ -6,7 +6,7 @@ import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
 import type { OrgData } from "../../utils/orgs";
-import { isOwner, isCrawler } from "../../utils/orgs";
+import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
 import "./crawl-configs-detail";
@@ -67,9 +67,9 @@ export class Org extends LiteElement {
     return this.userInfo.orgs.find(({ id }) => id === this.orgId)!;
   }
 
-  get isOwner() {
+  get isAdmin() {
     const userOrg = this.userOrg;
-    if (userOrg) return isOwner(userOrg.role);
+    if (userOrg) return isAdmin(userOrg.role);
     return false;
   }
 
@@ -125,7 +125,7 @@ export class Org extends LiteElement {
         tabPanelContent = this.renderBrowserProfiles();
         break;
       case "settings": {
-        if (this.isOwner) {
+        if (this.isAdmin) {
           tabPanelContent = this.renderOrgSettings();
           break;
         }
@@ -167,7 +167,7 @@ export class Org extends LiteElement {
               label: msg("Browser Profiles"),
             })
           )}
-          ${when(this.isOwner, () =>
+          ${when(this.isAdmin || this.userInfo?.isAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),
