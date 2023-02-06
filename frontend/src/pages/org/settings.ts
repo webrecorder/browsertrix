@@ -444,7 +444,7 @@ export class OrgSettings extends LiteElement {
         message: e.isApiError
           ? e.message
           : msg(
-              `Sorry, couldn't update role for ${
+              str`Sorry, couldn't update role for ${
                 "name" in user ? user.name : user.email
               } at this time.`
             ),
@@ -458,7 +458,9 @@ export class OrgSettings extends LiteElement {
     if (
       user.email === this.userInfo.email &&
       !window.confirm(
-        msg(`Are you sure you want to remove yourself from ${this.org.name}?`)
+        msg(
+          str`Are you sure you want to remove yourself from ${this.org.name}?`
+        )
       )
     ) {
       return;
@@ -495,7 +497,7 @@ export class OrgSettings extends LiteElement {
         message: e.isApiError
           ? e.message
           : msg(
-              `Sorry, couldn't remove ${
+              str`Sorry, couldn't remove ${
                 "name" in user ? user.name : user.email
               } at this time.`
             ),
