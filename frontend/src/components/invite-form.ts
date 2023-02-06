@@ -55,7 +55,7 @@ export class InviteForm extends LiteElement {
 
         <div>
           <sl-button
-            variant="primary"
+            size="small"
             type="submit"
             ?loading=${this.isSubmitting}
             ?disabled=${this.isSubmitting}

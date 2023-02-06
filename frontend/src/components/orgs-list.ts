@@ -41,7 +41,7 @@ export class OrgsList extends LiteElement {
                 (this.userInfo.isAdmin ||
                   isOwner(org.users[this.userInfo.id].role))
                   ? html`<sl-tag size="small" variant="primary"
-                      >${msg("Owner")}</sl-tag
+                      >${msg("Admin")}</sl-tag
                     >`
                   : ""}
               </li>

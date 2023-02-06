@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, localized, str } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
 import type { AuthState } from "../utils/AuthService";
 import type { CurrentUser } from "../types/user";
@@ -22,6 +23,15 @@ export class Home extends LiteElement {
 
   @state()
   private orgList?: OrgData[];
+
+  @state()
+  private isAddingOrg = false;
+
+  @state()
+  private isAddOrgFormVisible = false;
+
+  @state()
+  private isSubmittingNewOrg = false;
 
   connectedCallback() {
     if (this.authState) {
@@ -81,56 +91,7 @@ export class Home extends LiteElement {
 
   private renderLoggedInAdmin() {
     if (this.orgList!.length) {
-      return html`
-        <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
-          <form
-            @submit=${(e: SubmitEvent) => {
-              const formData = new FormData(e.target as HTMLFormElement);
-              const id = formData.get("crawlId");
-              this.navTo(`/crawls/crawl/${id}`);
-            }}
-          >
-            <div class="flex flex-wrap items-center">
-              <div
-                class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
-              >
-                ${msg("Go to Crawl")}
-              </div>
-              <div class="grow mt-2 md:mt-0 md:mr-2">
-                <sl-input
-                  name="crawlId"
-                  placeholder=${msg("Enter Crawl ID")}
-                  required
-                ></sl-input>
-              </div>
-              <div class="grow-0 mt-2 md:mt-0 text-right">
-                <sl-button variant="neutral" type="submit">
-                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
-                  ${msg("Go")}</sl-button
-                >
-              </div>
-            </div>
-          </form>
-        </section>
-
-        <div class="grid grid-cols-3 gap-8">
-          <div class="col-span-3 md:col-span-2">
-            <section>
-              <h2 class="text-lg font-medium mb-3 mt-2">${msg("All Organizations")}</h2>
-              <btrix-orgs-list
-                .userInfo=${this.userInfo}
-                .orgList=${this.orgList}
-              ></btrix-orgs-list>
-            </section>
-          </div>
-          <div class="col-span-3 md:col-span-1 md:mt-12">
-            <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-              <h2 class="text-lg font-medium mb-4">${msg("Invite a User")}</h2>
-              ${this.renderInvite()}
-            </section>
-          </div>
-        </div>
-      `;
+      return this.renderAdminOrgs();
     }
 
     return html`
@@ -141,6 +102,113 @@ export class Home extends LiteElement {
 
         ${this.renderInvite()}
       </section>
+    `;
+  }
+
+  private renderAdminOrgs() {
+    return html`
+      <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
+        <form
+          @submit=${(e: SubmitEvent) => {
+            const formData = new FormData(e.target as HTMLFormElement);
+            const id = formData.get("crawlId");
+            this.navTo(`/crawls/crawl/${id}`);
+          }}
+        >
+          <div class="flex flex-wrap items-center">
+            <div
+              class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
+            >
+              ${msg("Go to Crawl")}
+            </div>
+            <div class="grow mt-2 md:mt-0 md:mr-2">
+              <sl-input
+                name="crawlId"
+                placeholder=${msg("Enter Crawl ID")}
+                required
+              ></sl-input>
+            </div>
+            <div class="grow-0 mt-2 md:mt-0 text-right">
+              <sl-button variant="neutral" type="submit">
+                <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
+                ${msg("Go")}</sl-button
+              >
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <div class="grid grid-cols-3 gap-8">
+        <div class="col-span-3 md:col-span-2">
+          <section>
+            <header class="flex items-start justify-between">
+              <h2 class="text-lg font-medium mb-3 mt-2">
+                ${msg("All Organizations")}
+              </h2>
+              <sl-button
+                variant="primary"
+                @click=${() => (this.isAddingOrg = true)}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Organization")}
+              </sl-button>
+            </header>
+            <btrix-orgs-list
+              .userInfo=${this.userInfo}
+              .orgList=${this.orgList}
+            ></btrix-orgs-list>
+          </section>
+        </div>
+        <div class="col-span-3 md:col-span-1">
+          <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
+            <h2 class="text-lg font-medium mb-4">${msg("Invite a User")}</h2>
+            ${this.renderInvite()}
+          </section>
+        </div>
+      </div>
+
+      <btrix-dialog
+        label=${msg("New Organization")}
+        ?open=${this.isAddingOrg}
+        @sl-request-close=${() => (this.isAddingOrg = false)}
+        @sl-show=${() => (this.isAddOrgFormVisible = true)}
+        @sl-after-hide=${() => (this.isAddOrgFormVisible = false)}
+      >
+        ${this.isAddOrgFormVisible
+          ? html`
+              <form
+                id="newOrgForm"
+                @reset=${() => (this.isAddingOrg = false)}
+                @submit=${this.onSubmitNewOrg}
+              >
+                <div class="mb-5">
+                  <sl-input
+                    name="name"
+                    label=${msg("Org Name")}
+                    placeholder=${msg("My Organization")}
+                    autocomplete="off"
+                    required
+                  >
+                  </sl-input>
+                </div>
+              </form>
+              <div slot="footer" class="flex justify-between">
+                <sl-button form="newOrgForm" type="reset" size="small"
+                  >${msg("Cancel")}</sl-button
+                >
+                <sl-button
+                  form="newOrgForm"
+                  variant="primary"
+                  type="submit"
+                  size="small"
+                  ?loading=${this.isSubmittingNewOrg}
+                  ?disabled=${this.isSubmittingNewOrg}
+                  >${msg("Create Org")}</sl-button
+                >
+              </div>
+            `
+          : ""}
+      </btrix-dialog>
     `;
   }
 
@@ -187,5 +255,46 @@ export class Home extends LiteElement {
     const data = await this.apiFetch("/orgs", this.authState!);
 
     return data.orgs;
+  }
+
+  private async onSubmitNewOrg(e: SubmitEvent) {
+    e.preventDefault();
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const params = serialize(formEl);
+    this.isSubmittingNewOrg = true;
+
+    try {
+      await this.apiFetch(`/orgs/create`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+
+      this.fetchOrgs();
+      this.notify({
+        message: msg(str`Created new org named "${params.name}".`),
+        variant: "success",
+        icon: "check2-circle",
+        duration: 8000,
+      });
+      this.isAddingOrg = false;
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't create organization at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingNewOrg = false;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }

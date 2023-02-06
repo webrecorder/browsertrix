@@ -268,7 +268,14 @@ export class App extends LiteElement {
           class="max-w-screen-lg mx-auto pl-3 box-border h-12 flex items-center justify-between"
         >
           <div>
-            <a href="${homeHref}" @click="${this.navLink}"
+            <a
+              href=${homeHref}
+              @click=${(e: any) => {
+                if (isAdmin) {
+                  this.clearSelectedOrg();
+                }
+                this.navLink(e);
+              }}
               ><h1 class="text-sm hover:text-neutral-400 font-medium">
                 ${msg("Browsertrix Cloud")}
               </h1></a
@@ -280,6 +287,15 @@ export class App extends LiteElement {
                 <div
                   class="text-xs md:text-sm grid grid-flow-col gap-3 md:gap-5 items-center"
                 >
+                  <a
+                    class="text-neutral-500 hover:text-neutral-400 font-medium"
+                    href="/"
+                    @click=${(e: any) => {
+                      this.clearSelectedOrg();
+                      this.navLink(e);
+                    }}
+                    >${msg("Dashboard")}</a
+                  >
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/crawls"
@@ -366,11 +382,16 @@ export class App extends LiteElement {
         <sl-menu
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
-            this.navigate(`/orgs/${value}${value ? "/crawls" : ""}`);
-            if (this.userInfo) {
-              this.persistUserSettings(this.userInfo.id, { orgId: value });
+            if (value) {
+              this.navigate(`/orgs/${value}/crawls`);
+              if (this.userInfo) {
+                this.persistUserSettings(this.userInfo.id, { orgId: value });
+              }
             } else {
-              console.debug("User info not set");
+              if (this.userInfo) {
+                this.clearSelectedOrg();
+              }
+              this.navigate(`/`);
             }
           }}
         >
@@ -544,6 +565,11 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
+          @update-user-info=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.updateUserInfo();
+          }}
+          @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
           .orgId=${this.selectedOrgId}
@@ -877,6 +903,13 @@ export class App extends LiteElement {
 
   private unpersistUserSettings(userId: string) {
     window.localStorage.removeItem(`${App.storageKey}.${userId}`);
+  }
+
+  private clearSelectedOrg() {
+    this.selectedOrgId = undefined;
+    if (this.userInfo) {
+      this.persistUserSettings(this.userInfo.id, { orgId: "" });
+    }
   }
 }
 
