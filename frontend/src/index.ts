@@ -621,6 +621,7 @@ export class App extends LiteElement {
             return html`<btrix-users-invite
               class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
               @navigate="${this.onNavigateTo}"
+              @logged-in=${this.onLoggedIn}
               @need-login="${this.onNeedLogin}"
               .authState="${this.authService.authState}"
               .userInfo="${this.userInfo}"
