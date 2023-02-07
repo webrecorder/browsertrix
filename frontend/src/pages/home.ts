@@ -165,7 +165,9 @@ export class Home extends LiteElement {
         </div>
         <div class="col-span-3 md:col-span-1">
           <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-            <h2 class="text-lg font-medium mb-3">${msg("Invite a User")}</h2>
+            <h2 class="text-lg font-medium mb-3">
+              ${msg("Invite User to Org")}
+            </h2>
             ${this.renderInvite()}
           </section>
         </div>
@@ -247,14 +249,10 @@ export class Home extends LiteElement {
       (org) => org.default === true
     ) || { name: "" };
     return html`
-      <p class="text-xs text-neutral-500 mb-4">
-        ${msg(
-          html`Users will be added to the default organization
-            <strong class="font-semibold">${defaultOrg.name}</strong>.`
-        )}
-      </p>
       <btrix-invite-form
         .authState=${this.authState}
+        .orgs=${this.orgList}
+        .defaultOrg=${defaultOrg || null}
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;
