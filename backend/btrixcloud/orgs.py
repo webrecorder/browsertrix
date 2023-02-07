@@ -443,22 +443,17 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        invited_str = "new_user"
-        new_user, token = await invites.invite_user(
+        if await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
             allow_existing=True,
             headers=request.headers,
-        )
-        if not new_user:
-            invited_str = "existing_user"
+        ):
+            return {"invited": "new_user"}
 
-        return {
-            "invited": invited_str,
-            "token": token,
-        }
+        return {"invited": "existing_user"}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):

@@ -22,7 +22,6 @@ def test_pending_invites(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["invited"] == "new_user"
-    assert data["token"]
 
     r = requests.get(f"{API_PREFIX}/users/invites", headers=admin_auth_headers)
     assert r.status_code == 200
@@ -74,8 +73,19 @@ def test_send_and_accept_invite(
     data = r.json()
     assert data["invited"] == "new_user"
 
-    token = data["token"]
-    assert token
+    # Look up token
+    r = requests.get(
+        f"{API_PREFIX}/users/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite
+        for invite in data["pending_invites"]
+        if invite["email"] == expected_stored_email
+    ]
+    token = invites_matching_email[0]["id"]
 
     # Register user
     # Note: This will accept invitation without needing to call the

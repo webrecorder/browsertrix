@@ -170,7 +170,7 @@ class InviteOps:
                 org_name,
                 headers,
             )
-            return True, invite_code
+            return True
 
         if not allow_existing:
             raise HTTPException(status_code=400, detail="User already registered")
@@ -193,7 +193,7 @@ class InviteOps:
             other_user.email, user.name, org_name, invite_code, headers
         )
 
-        return False, invite_code
+        return False
 
     async def get_pending_invites(self, org=None):
         """return list of pending invites."""

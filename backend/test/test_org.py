@@ -138,7 +138,6 @@ def test_get_pending_org_invites(
     assert r.status_code == 200
     data = r.json()
     assert data["invited"] == "new_user"
-    assert data["token"]
 
     # Check that only invite to non-default org is returned
     r = requests.get(
@@ -191,8 +190,19 @@ def test_send_and_accept_org_invite(
     data = r.json()
     assert data["invited"] == "new_user"
 
-    token = data["token"]
-    assert token
+    # Look up token
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite
+        for invite in data["pending_invites"]
+        if invite["email"] == expected_stored_email
+    ]
+    token = invites_matching_email[0]["id"]
 
     # Register user
     # Note: This will accept invitation without needing to call the
