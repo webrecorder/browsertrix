@@ -242,7 +242,7 @@ export class CrawlDetail extends LiteElement {
         </a>
       </div>
 
-      <div class="mb-2">${this.renderHeader()}</div>
+      <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
         <section class="rounded-lg border mb-7">
@@ -329,8 +329,8 @@ export class CrawlDetail extends LiteElement {
 
   private renderHeader() {
     return html`
-      <header class="md:flex justify-between">
-        <h2 class="text-xl font-semibold mb-3 md:h-8">
+      <header class="md:flex justify-between items-end">
+        <h2 class="text-xl font-semibold mb-3 md:mr-2">
           ${msg(
             html`${this.crawl
                 ? this.crawl.configName

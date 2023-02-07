@@ -95,7 +95,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             ${this.crawlConfig?.name
               ? html`<span
-                  class="inline-block align-middle text-xl font-semibold leading-10 mr-1"
+                  class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
                   >${this.crawlConfig.name}</span
                 > `
               : ""}
@@ -117,6 +117,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                     this.crawlConfig!.id
                   }?edit`}
                   variant="primary"
+                  size="small"
                   class="mr-2"
                   @click=${this.navLink}
                 >
@@ -298,7 +299,7 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
+        <sl-button slot="trigger" size="small" caret>${msg("Actions")}</sl-button>
 
         <ul
           class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
