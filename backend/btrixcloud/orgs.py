@@ -3,6 +3,7 @@ Organization API handling
 """
 import os
 import time
+import urllib.parse
 import uuid
 
 from typing import Dict, Union, Literal, Optional
@@ -37,6 +38,11 @@ class UpdateRole(InviteToOrgRequest):
 # ============================================================================
 class RemoveFromOrg(InviteRequest):
     """Remove this user from org"""
+
+
+# ============================================================================
+class RemovePendingInvite(InviteRequest):
+    """Delete pending invite to org by email"""
 
 
 # ============================================================================
@@ -467,6 +473,20 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     async def get_pending_org_invites(org: Organization = Depends(org_owner_dep)):
         pending_invites = await user_manager.invites.get_pending_invites(org)
         return {"pending_invites": pending_invites}
+
+    @router.post("/invites/delete", tags=["invites"])
+    async def delete_invite(
+        invite: RemovePendingInvite, org: Organization = Depends(org_owner_dep)
+    ):
+        # URL decode email just in case
+        email = urllib.parse.unquote(invite.email)
+        result = await user_manager.invites.remove_invite_by_email(email, org.id)
+        if result.deleted_count > 0:
+            return {
+                "removed": True,
+                "count": result.deleted_count,
+            }
+        raise HTTPException(status_code=404, detail="invite_not_found")
 
     @router.post("/remove", tags=["invites"])
     async def remove_user_from_org(

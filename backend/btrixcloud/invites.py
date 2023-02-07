@@ -118,6 +118,15 @@ class InviteOps:
         """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 
+    async def remove_invite_by_email(self, email: str, oid: str = None):
+        """remove invite from invite list by email"""
+        query = {"email": email}
+        if oid:
+            query["oid"] = oid
+        # Use delete_many rather than delete_one to clean up any duplicate
+        # invites as well.
+        return await self.invites.delete_many(query)
+
     def accept_user_invite(self, user, invite_token: str):
         """remove invite from user, if valid token, throw if not"""
         invite = user.invites.pop(invite_token, "")
