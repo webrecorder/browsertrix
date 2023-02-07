@@ -45,6 +45,18 @@ export default {
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
               new URL("./src/__mocks__/css.js", import.meta.url)
             ),
+            // FIXME: `@web/dev-server-esbuild` or its dependencies seem to be ignoring .js
+            // extension and shoelace exports and switching it to .ts
+            // Needs a better solution than import mapping individual files.
+            // Maybe related:
+            // - https://github.com/modernweb-dev/web/issues/1929
+            // - https://github.com/modernweb-dev/web/issues/224
+            "@shoelace-style/shoelace/dist/utilities/form.js": fileURLToPath(
+              new URL(
+                "./node_modules/@shoelace-style/shoelace/dist/utilities/form.js",
+                import.meta.url
+              )
+            ),
             // "@formatjs/intl-displaynames/should-polyfill": new URL(
             //   "./src/__mocks__/@formatjs/intl-displaynames/should-polyfill.js",
             //   import.meta.url
