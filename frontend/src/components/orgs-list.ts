@@ -29,21 +29,13 @@ export class OrgsList extends LiteElement {
           (org) =>
             html`
               <li
-                class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
+                class="p-3 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400"
                 role="button"
                 @click=${this.makeOnOrgClick(org)}
               >
                 <span class="font-medium mr-2 transition-colors"
                   >${org.name}</span
                 >
-                ${this.userInfo &&
-                org.users &&
-                (this.userInfo.isAdmin ||
-                  isAdmin(org.users[this.userInfo.id].role))
-                  ? html`<sl-tag size="small" variant="primary"
-                      >${msg("Admin")}</sl-tag
-                    >`
-                  : ""}
               </li>
             `
         )}
