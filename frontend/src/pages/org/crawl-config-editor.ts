@@ -187,8 +187,7 @@ function validURL(url: string) {
 
 const trimArray = flow(uniq, compact);
 const urlListToArray = flow(
-  (str: string) =>
-    str.length ? str.trim().replace(/,/g, " ").split(/\s+/g) : [],
+  (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
