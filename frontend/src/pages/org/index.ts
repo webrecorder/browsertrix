@@ -391,8 +391,9 @@ export class Org extends LiteElement {
 
   private async removeMember(member: Member) {
     if (!this.org) return;
+    const isSelf = member.email === this.userInfo!.email;
     if (
-      member.email === this.userInfo!.email &&
+      isSelf &&
       !window.confirm(
         msg(
           str`Are you sure you want to remove yourself from ${this.org.name}?`
@@ -419,7 +420,12 @@ export class Org extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.org = await this.getOrg(this.orgId);
+      if (isSelf) {
+        // FIXME better UX, this is the only page currently that doesn't require org...
+        this.navTo("/account/settings");
+      } else {
+        this.org = await this.getOrg(this.orgId);
+      }
     } catch (e: any) {
       console.debug(e);
 
