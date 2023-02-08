@@ -1,5 +1,7 @@
 import requests
 
+import pytest
+
 from .conftest import API_PREFIX
 
 
@@ -152,3 +154,80 @@ def test_get_pending_org_invites(
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
+
+
+@pytest.mark.parametrize(
+    "invite_email, expected_stored_email",
+    [
+        # Standard email
+        ("invite-to-accept-org@example.com", "invite-to-accept-org@example.com"),
+        # Email address with comments
+        ("user+comment-org@example.com", "user+comment-org@example.com"),
+        # URL encoded email address with comments
+        (
+            "user%2Bcomment-encoded-org%40example.com",
+            "user+comment-encoded-org@example.com",
+        ),
+        # User email with diacritic characters
+        ("diacritic-tést-org@example.com", "diacritic-tést-org@example.com"),
+        # User email with encoded diacritic characters
+        (
+            "diacritic-t%C3%A9st-encoded-org%40example.com",
+            "diacritic-tést-encoded-org@example.com",
+        ),
+    ],
+)
+def test_send_and_accept_org_invite(
+    admin_auth_headers, non_default_org_id, invite_email, expected_stored_email
+):
+    # Send invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": invite_email, "role": 20},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+
+    # Look up token
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite
+        for invite in data["pending_invites"]
+        if invite["email"] == expected_stored_email
+    ]
+    token = invites_matching_email[0]["id"]
+
+    # Register user
+    # Note: This will accept invitation without needing to call the
+    # accept invite endpoint explicitly due to post-registration hook.
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        headers=admin_auth_headers,
+        json={
+            "name": "accepted",
+            "email": expected_stored_email,
+            "password": "testpw",
+            "inviteToken": token,
+            "newOrg": False,
+        },
+    )
+    assert r.status_code == 201
+
+    # Verify user belongs to org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    users = data["users"]
+    users_with_invited_email = [
+        user for user in users.values() if user["email"] == expected_stored_email
+    ]
+    assert len(users_with_invited_email) == 1
