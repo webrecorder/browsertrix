@@ -41,11 +41,11 @@ def test_add_update_crawl_config(
     assert data["name"] == UPDATED_NAME
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
 
-    # Verify that deleting tags works as well
+    # Verify that deleting tags and name works as well
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
         headers=crawler_auth_headers,
-        json={"tags": []},
+        json={"tags": [], "name": None},
     )
     assert r.status_code == 200
 
@@ -56,5 +56,5 @@ def test_add_update_crawl_config(
     assert r.status_code == 200
 
     data = r.json()
-    assert data["name"] == UPDATED_NAME
+    assert not data["name"]
     assert data["tags"] == []
