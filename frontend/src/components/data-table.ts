@@ -120,7 +120,8 @@ export class DataTable extends LitElement {
     const shouldPadSmall =
       typeof cell === "string"
         ? false
-        : cell.strings[0].startsWith("<sl-select");
+        : // TODO better logic to check template component
+          cell.strings[0].startsWith("<sl-");
     return html`
       <div role="cell" class="cell ${shouldPadSmall ? "padSmall" : "padded"}">
         ${cell}

@@ -18,6 +18,12 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
+import type {
+  Member,
+  OrgNameChangeEvent,
+  UserRoleChangeEvent,
+  OrgRemoveMemberEvent,
+} from "./settings";
 
 export type OrgTab =
   | "crawls"
@@ -61,6 +67,9 @@ export class Org extends LiteElement {
 
   @state()
   private org?: OrgData | null;
+
+  @state()
+  private isSavingOrgName = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -295,6 +304,10 @@ export class Org extends LiteElement {
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
+      ?isSavingOrgName=${this.isSavingOrgName}
+      @org-name-change=${this.onOrgNameChange}
+      @org-user-role-change=${this.onUserRoleChange}
+      @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
   }
 
@@ -302,5 +315,125 @@ export class Org extends LiteElement {
     const data = await this.apiFetch(`/orgs/${orgId}`, this.authState!);
 
     return data;
+  }
+
+  private async onOrgNameChange(e: OrgNameChangeEvent) {
+    this.isSavingOrgName = true;
+
+    try {
+      await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({ name: e.detail.value }),
+      });
+
+      this.notify({
+        message: msg("Updated organization name."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.dispatchEvent(
+        new CustomEvent("update-user-info", { bubbles: true })
+      );
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't update organization name at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSavingOrgName = false;
+  }
+
+  private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
+    this.removeMember(e.detail.member);
+  }
+
+  private async onUserRoleChange(e: UserRoleChangeEvent) {
+    const { user, newRole } = e.detail;
+
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/user-role`, this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: user.email,
+          role: newRole,
+        }),
+      });
+
+      this.notify({
+        message: msg(
+          str`Successfully updated role for ${user.name || user.email}.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.org = await this.getOrg(this.orgId);
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(
+              str`Sorry, couldn't update role for ${
+                user.name || user.email
+              } at this time.`
+            ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async removeMember(member: Member) {
+    if (!this.org) return;
+    if (
+      member.email === this.userInfo!.email &&
+      !window.confirm(
+        msg(
+          str`Are you sure you want to remove yourself from ${this.org.name}?`
+        )
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          email: member.email,
+        }),
+      });
+
+      this.notify({
+        message: msg(
+          str`Successfully removed ${member.name || member.email} from ${
+            this.org.name
+          }.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.org = await this.getOrg(this.orgId);
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(
+              str`Sorry, couldn't remove ${
+                member.name || member.email
+              } at this time.`
+            ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }

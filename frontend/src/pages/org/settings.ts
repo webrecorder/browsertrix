@@ -3,7 +3,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import pickBy from "lodash/fp/pickBy";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -16,13 +15,23 @@ type User = {
   email: string;
   role: number;
 };
-type Member = User & {
-  name: string;
-};
 type Invite = User & {
   created: string;
   inviterEmail: string;
 };
+export type Member = User & {
+  name: string;
+};
+export type OrgNameChangeEvent = CustomEvent<{
+  value: string;
+}>;
+export type UserRoleChangeEvent = CustomEvent<{
+  user: Member;
+  newRole: number;
+}>;
+export type OrgRemoveMemberEvent = CustomEvent<{
+  member: Member;
+}>;
 
 /**
  * Usage:
@@ -35,6 +44,11 @@ type Invite = User & {
  *  ?isAddingMember=${isAddingMember}
  * ></btrix-org-settings>
  * ```
+ *
+ * @events
+ * org-name-change
+ * org-user-role-change
+ * org-remove-member
  */
 @localized()
 export class OrgSettings extends LiteElement {
@@ -56,14 +70,14 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isAddingMember = false;
 
+  @property({ type: Boolean })
+  isSavingOrgName = false;
+
   @state()
   pendingInvites: Invite[] = [];
 
   @state()
   private isAddMemberFormVisible = false;
-
-  @state()
-  private isSavingOrgName = false;
 
   @state()
   private isSubmittingInvite = false;
@@ -168,7 +182,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const columnWidths = ["100%", "12rem", "1.5rem"];
+    const columnWidths = ["100%", "10rem", "1.5rem"];
     return html`
       <section class="rounded border overflow-hidden">
         <btrix-data-table
@@ -176,7 +190,7 @@ export class OrgSettings extends LiteElement {
           .rows=${Object.entries(this.org.users!).map(([id, user]) => [
             user.name,
             this.renderUserRoleSelect(user),
-            this.renderRemoveUserButton(user),
+            this.renderRemoveMemberButton(user),
           ])}
           .columnWidths=${columnWidths}
         >
@@ -197,7 +211,7 @@ export class OrgSettings extends LiteElement {
                 .rows=${this.pendingInvites.map((user) => [
                   user.email,
                   this.renderUserRole(user),
-                  this.renderRemoveUserButton(user),
+                  this.renderRemoveInviteButton(user),
                 ])}
                 .columnWidths=${columnWidths}
               >
@@ -232,8 +246,7 @@ export class OrgSettings extends LiteElement {
     return html`<sl-select
       value=${userRole}
       size="small"
-      @sl-select=${(e: CustomEvent) =>
-        this.updateUserRole(user, Number(e.detail.item.value))}
+      @sl-select=${this.selectUserRole(user)}
     >
       <sl-menu-item value=${AccessCode.owner}>${"Admin"}</sl-menu-item>
       <sl-menu-item value=${AccessCode.crawler}>${"Crawler"}</sl-menu-item>
@@ -241,23 +254,43 @@ export class OrgSettings extends LiteElement {
     </sl-select>`;
   }
 
-  private renderRemoveUserButton(user: Member | Invite) {
-    const isInvite = "inviterEmail" in user;
-    if (user.email === this.userInfo.email) {
-      const { [this.userInfo.id]: currentUser, ...otherUsers } =
+  private renderRemoveMemberButton(member: Member) {
+    let disableButton = false;
+    if (member.email === this.userInfo.email) {
+      const { [this.userInfo.id]: _currentUser, ...otherUsers } =
         this.org.users!;
       const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
         isAdmin(role)
       );
       if (!hasOtherAdmin) {
         // Must be another admin in order to remove self
-        return "";
+        disableButton = true;
       }
     }
+    return html`<sl-icon-button
+      name="trash"
+      ?disabled=${disableButton}
+      style="font-size: 1rem"
+      let
+      disableButton="false;"
+      aria-details=${ifDefined(
+        disableButton === true
+          ? msg("Cannot remove only admin member")
+          : undefined
+      )}
+      @click=${() =>
+        this.dispatchEvent(
+          <OrgRemoveMemberEvent>new CustomEvent("org-remove-member", {
+            detail: { member },
+          })
+        )}
+    ></sl-icon-button>`;
+  }
+
+  private renderRemoveInviteButton(invite: Invite) {
     return html`<btrix-icon-button
       name="trash"
-      @click=${() =>
-        isInvite ? this.removeInvite(user) : this.removeMember(user)}
+      @click=${() => this.removeInvite(invite)}
     ></btrix-icon-button>`;
   }
 
@@ -320,7 +353,7 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  async checkFormValidity(formEl: HTMLFormElement) {
+  private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
   }
@@ -352,36 +385,23 @@ export class OrgSettings extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
 
     const { orgName } = serialize(formEl);
-
-    this.isSavingOrgName = true;
-
-    try {
-      await this.apiFetch(`/orgs/${this.org.id}/rename`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({ name: orgName }),
-      });
-
-      this.notify({
-        message: msg("Updated organization name."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      this.dispatchEvent(
-        new CustomEvent("update-user-info", { bubbles: true })
-      );
-    } catch (e: any) {
-      this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg("Sorry, couldn't update organization name at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSavingOrgName = false;
+    this.dispatchEvent(
+      <OrgNameChangeEvent>new CustomEvent("org-name-change", {
+        detail: { value: orgName },
+      })
+    );
   }
+
+  private selectUserRole = (user: User) => (e: CustomEvent) => {
+    this.dispatchEvent(
+      <UserRoleChangeEvent>new CustomEvent("org-user-role-change", {
+        detail: {
+          user,
+          newRole: Number(e.detail.item.value),
+        },
+      })
+    );
+  };
 
   async onOrgInviteSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -427,50 +447,18 @@ export class OrgSettings extends LiteElement {
     this.isSubmittingInvite = false;
   }
 
-  private async updateUserRole(user: Member | Invite, newRole: number) {
-    try {
-      await this.apiFetch(`/orgs/${this.orgId}/user-role`, this.authState!, {
-        method: "PATCH",
-        body: JSON.stringify({
-          email: user.email,
-          role: newRole,
-        }),
-      });
-
-      this.notify({
-        message: msg(
-          str`Successfully updated role for ${
-            "name" in user ? user.name : user.email
-          }.`
-        ),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (e: any) {
-      console.debug(e);
-
-      this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg(
-              str`Sorry, couldn't update role for ${
-                "name" in user ? user.name : user.email
-              } at this time.`
-            ),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
   private async removeInvite(invite: Invite) {
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({
-          email: invite.email,
-        }),
-      });
+      await this.apiFetch(
+        `/orgs/${this.orgId}/invites/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: invite.email,
+          }),
+        }
+      );
 
       this.notify({
         message: msg(
@@ -490,59 +478,6 @@ export class OrgSettings extends LiteElement {
         message: e.isApiError
           ? e.message
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async removeMember(member: Member) {
-    if (
-      member.email === this.userInfo.email &&
-      !window.confirm(
-        msg(
-          str`Are you sure you want to remove yourself from ${this.org.name}?`
-        )
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({
-          email: member.email,
-        }),
-      });
-
-      this.notify({
-        message: msg(
-          str`Successfully removed ${member.name || member.email} from ${
-            this.org.name
-          }.`
-        ),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      this.org = {
-        ...this.org,
-        users: pickBy(({ email }) => email !== member.email)(
-          this.org.users
-        ) as OrgData["users"],
-      };
-    } catch (e: any) {
-      console.debug(e);
-
-      this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg(
-              str`Sorry, couldn't remove ${
-                member.name || member.email
-              } at this time.`
-            ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
