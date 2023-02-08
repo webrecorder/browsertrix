@@ -116,6 +116,18 @@ def test_remove_user_from_org(admin_auth_headers, default_org_id):
     assert data["removed"]
 
 
+def test_remove_non_existent_user(admin_auth_headers, default_org_id):
+    # Remove user
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/remove",
+        json={"email": "toremove@example.com"},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+    data = r.json()
+    assert data["detail"] == "no_such_org_user"
+
+
 def test_get_pending_org_invites(
     admin_auth_headers, default_org_id, non_default_org_id
 ):

@@ -500,8 +500,12 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
                 raise HTTPException(
                     status_code=400, detail="Can't remove only owner from org"
                 )
+        try:
+            del org.users[str(other_user.id)]
+        except KeyError:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=404, detail="no_such_org_user")
 
-        del org.users[str(other_user.id)]
         await ops.update(org)
         return {"removed": True}
 
