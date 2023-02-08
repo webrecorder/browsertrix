@@ -98,7 +98,7 @@ def test_verify_wacz():
     assert '"https://webrecorder.net/"' in pages
 
 
-def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
@@ -106,13 +106,19 @@ def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+    # Add exception handling for old crawls without notes field
+    try:
+        assert not data["notes"]
+    except KeyError:
+        pass
 
-    # Submit patch request to update tags
+    # Submit patch request to update tags and notes
     UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
+    UPDATED_NOTES = "Lorem ipsum test note."
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
-        json={"tags": UPDATED_TAGS},
+        json={"tags": UPDATED_TAGS, "notes": UPDATED_NOTES},
     )
     assert r.status_code == 200
     data = r.json()
@@ -126,12 +132,14 @@ def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+    assert data["notes"] == UPDATED_NOTES
 
-    # Verify deleting all tags works as well
+    # Verify deleting works as well
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
-        json={"tags": []},
+        # Omitted and None values are ignored, so set notes to empty string.
+        json={"tags": [], "notes": ""},
     )
     assert r.status_code == 200
 
@@ -142,3 +150,4 @@ def test_update_tags(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert data["tags"] == []
+    assert data["notes"] == ""
