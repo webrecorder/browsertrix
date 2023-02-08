@@ -382,7 +382,7 @@ class CrawlOps:
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
         """Update existing crawl (tags and notes only for now)"""
-        query = update.dict(exclude_unset=True, exclude_none=True)
+        query = update.dict(exclude_unset=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
