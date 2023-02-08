@@ -2,8 +2,10 @@ name: Cluster Run (K3d)
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'backend/**'
+      - 'chart/**'
+
   pull_request:
     paths:
       - 'backend/**'
