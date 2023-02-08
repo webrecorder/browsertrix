@@ -3,7 +3,6 @@
 import os
 import smtplib
 import ssl
-import urllib.parse
 
 from email.message import EmailMessage
 
@@ -82,9 +81,6 @@ The verification token is: {token}"""
 
         origin = self.get_origin(headers)
 
-        # URL-encode receiver email before passing as param
-        receiver_email = urllib.parse.quote(receiver_email)
-
         message = f"""
 You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
 
@@ -104,9 +100,6 @@ The invite token is: {token}"""
     ):
         """Send email to invite new user"""
         origin = self.get_origin(headers)
-
-        # URL-encode receiver email before passing as param
-        receiver_email = urllib.parse.quote(receiver_email)
 
         message = f"""
 You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
