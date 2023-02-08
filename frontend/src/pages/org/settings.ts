@@ -226,15 +226,18 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderUserRoleSelect(user: Member) {
+    // Consider superadmins owners
+    const userRole =
+      user.role === AccessCode.superadmin ? AccessCode.owner : user.role;
     return html`<sl-select
-      value=${user.role}
+      value=${userRole}
       size="small"
       @sl-select=${(e: CustomEvent) =>
         this.updateUserRole(user, Number(e.detail.item.value))}
     >
-      <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
-      <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
-      <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
+      <sl-menu-item value=${AccessCode.owner}>${"Admin"}</sl-menu-item>
+      <sl-menu-item value=${AccessCode.crawler}>${"Crawler"}</sl-menu-item>
+      <sl-menu-item value=${AccessCode.viewer}>${"Viewer"}</sl-menu-item>
     </sl-select>`;
   }
 
