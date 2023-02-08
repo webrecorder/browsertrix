@@ -502,6 +502,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
                 )
         try:
             del org.users[str(other_user.id)]
+        # pylint: disable=raise-missing-from
         except KeyError:
             raise HTTPException(status_code=404, detail="no_such_org_user")
 
