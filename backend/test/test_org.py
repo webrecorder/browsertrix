@@ -115,6 +115,7 @@ def test_remove_user_from_org(admin_auth_headers, default_org_id):
     data = r.json()
     assert data["removed"]
 
+
 def test_remove_non_existent_user(admin_auth_headers, default_org_id):
     # Remove user
     r = requests.post(
@@ -124,7 +125,8 @@ def test_remove_non_existent_user(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 404
     data = r.json()
-    assert data["error"] == "no_such_org_user"
+    assert data["detail"] == "no_such_org_user"
+
 
 def test_get_pending_org_invites(
     admin_auth_headers, default_org_id, non_default_org_id
