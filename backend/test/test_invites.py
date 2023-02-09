@@ -71,10 +71,11 @@ def test_invites_expire(admin_auth_headers, default_org_id):
     ]
     assert len(invites_matching_email) == 1
 
-    # Wait 30 seconds to give Mongo time to delete the invite
-    time.sleep(30)
+    # Wait 90 seconds to give Mongo time to delete the invite
+    # See: https://www.mongodb.com/docs/manual/core/index-ttl/#timing-of-the-delete-operation
+    time.sleep(90)
 
-    # Check invites again and verify invite expired
+    # Check invites again and verify invite has been removed
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/invites",
         headers=admin_auth_headers,
