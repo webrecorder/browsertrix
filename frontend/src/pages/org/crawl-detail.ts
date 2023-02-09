@@ -852,8 +852,8 @@ export class CrawlDetail extends LiteElement {
     ];
 
     return html`
-      <div class="text-center">
-        <sl-radio-group value=${this.crawl.scale}>
+      <div>
+        <sl-radio-group value=${this.crawl.scale} help-text="Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.">
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
