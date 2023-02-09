@@ -5,7 +5,6 @@ FastAPI user handling (via fastapi-users)
 import os
 import uuid
 import asyncio
-import urllib.parse
 
 from typing import Dict, Optional
 
