@@ -86,6 +86,8 @@ class Crawl(BaseMongoModel):
     colls: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
+    notes: Optional[str]
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -124,6 +126,8 @@ class ListCrawlOut(BaseMongoModel):
     colls: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
+    notes: Optional[str]
+
 
 # ============================================================================
 class ListCrawls(BaseModel):
@@ -149,9 +153,10 @@ class CrawlCompleteIn(BaseModel):
 
 # ============================================================================
 class UpdateCrawl(BaseModel):
-    """Update crawl tags"""
+    """Update crawl"""
 
     tags: Optional[List[str]] = []
+    notes: Optional[str]
 
 
 # ============================================================================
@@ -376,8 +381,8 @@ class CrawlOps:
             return False
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
-        """Update existing crawl (tags only for now)"""
-        query = update.dict(exclude_unset=True, exclude_none=True)
+        """Update existing crawl (tags and notes only for now)"""
+        query = update.dict(exclude_unset=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
