@@ -43,7 +43,7 @@ def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
     assert r.status_code == 403
 
 
-def test_invites_expire(admin_auth_headers, non_default_org_id):
+def test_invites_expire(admin_auth_headers, default_org_id):
     """Note this test is dependent on chart/test/test.yaml settings.
 
     Namely, it expects `invite_expire_seconds: 10` to be set in chart.
@@ -51,7 +51,7 @@ def test_invites_expire(admin_auth_headers, non_default_org_id):
     # Send invite
     INVITE_EMAIL = "invite-expires@example.com"
     r = requests.post(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        f"{API_PREFIX}/orgs/{default_org_id}/invite",
         headers=admin_auth_headers,
         json={"email": INVITE_EMAIL, "role": 10},
     )
@@ -61,7 +61,7 @@ def test_invites_expire(admin_auth_headers, non_default_org_id):
 
     # Verify invite exists
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        f"{API_PREFIX}/orgs/{default_org_id}/invites",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -71,12 +71,12 @@ def test_invites_expire(admin_auth_headers, non_default_org_id):
     ]
     assert len(invites_matching_email) == 1
 
-    # Wait 15 seconds to be safe
-    time.sleep(15)
+    # Wait 30 seconds to give Mongo time to delete the invite
+    time.sleep(30)
 
     # Check invites again and verify invite expired
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        f"{API_PREFIX}/orgs/{default_org_id}/invites",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
