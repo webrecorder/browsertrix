@@ -1,0 +1,9 @@
+# k3s overrides for nightly ci
+# ----------------------------
+
+# don't pull use, existing images
+backend_pull_policy: "Never"
+frontend_pull_policy: "Never"
+
+
+invite_expire_seconds: 10

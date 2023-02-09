@@ -17,5 +17,3 @@ superuser:
 
 
 local_service_port: 30870
-
-invite_expire_seconds: 10
