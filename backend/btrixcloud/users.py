@@ -25,7 +25,7 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import MongoDBUserDatabase
 
-from .invites import InvitePending, InviteRequest, UserRole
+from .invites import InvitePending, UserRole
 
 
 # ============================================================================
@@ -445,31 +445,6 @@ def init_users_api(app, user_manager):
             ]
         print(f"user info with orgs: {user_info}", flush=True)
         return user_info
-
-    @users_router.post("/invite", tags=["invites"])
-    async def invite_user(
-        invite: InviteRequest,
-        request: Request,
-        user: User = Depends(current_active_user),
-    ):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
-        await user_manager.invites.invite_user(
-            invite,
-            user,
-            user_manager,
-            org=None,
-            allow_existing=False,
-            headers=request.headers,
-        )
-
-        return {"invited": "new_user"}
-
-    @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: str, email: str):
-        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
-        return await user_manager.format_invite(invite)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
