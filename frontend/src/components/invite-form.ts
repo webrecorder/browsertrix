@@ -113,6 +113,9 @@ export class InviteForm extends LiteElement {
     event.preventDefault();
     if (!this.authState || !this.selectedOrgId) return;
 
+    const formEl = event.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
     this.serverError = undefined;
     this.isSubmitting = true;
 
@@ -149,5 +152,10 @@ export class InviteForm extends LiteElement {
     }
 
     this.isSubmitting = false;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }
