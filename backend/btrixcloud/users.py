@@ -459,12 +459,6 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
-    @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: str, email: str):
-        email = urllib.parse.unquote(email)
-        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
-        return await user_manager.format_invite(invite)
-
     @users_router.get("/invites", tags=["invites"])
     async def get_pending_invites(user: User = Depends(current_active_user)):
         if not user.is_superuser:

@@ -1,4 +1,5 @@
 import requests
+import uuid
 
 import pytest
 
@@ -113,6 +114,18 @@ def test_remove_user_from_org(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["removed"]
+
+
+def test_remove_non_existent_user(admin_auth_headers, default_org_id):
+    # Remove user
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/remove",
+        json={"email": "toremove@example.com"},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+    data = r.json()
+    assert data["detail"] == "no_such_org_user"
 
 
 def test_get_pending_org_invites(
@@ -231,3 +244,50 @@ def test_send_and_accept_org_invite(
         user for user in users.values() if user["email"] == expected_stored_email
     ]
     assert len(users_with_invited_email) == 1
+
+
+def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
+    # Invite user to non-default org
+    INVITE_EMAIL = "new-non-default-org-invite-by-email@example.com"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": INVITE_EMAIL, "role": 20},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+
+    # Delete invite by email
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": INVITE_EMAIL},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["removed"]
+    assert data["count"] == 1
+
+    # Verify invite no longer exists
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+    ]
+    assert len(invites_matching_email) == 0
+
+    # Try to delete non-existent email and test we get 404
+    bad_token = str(uuid.uuid4())
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": "not-a-valid-invite@example.com"},
+    )
+    assert r.status_code == 404
+    data = r.json()
+    assert data["detail"] == "invite_not_found"
