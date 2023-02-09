@@ -5,7 +5,7 @@ import type { CurrentUser } from "../types/user";
 import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
-import { isOwner } from "../utils/orgs";
+import { isAdmin } from "../utils/orgs";
 
 @localized()
 export class OrgsList extends LiteElement {
@@ -39,7 +39,7 @@ export class OrgsList extends LiteElement {
                 ${this.userInfo &&
                 org.users &&
                 (this.userInfo.isAdmin ||
-                  isOwner(org.users[this.userInfo.id].role))
+                  isAdmin(org.users[this.userInfo.id].role))
                   ? html`<sl-tag size="small" variant="primary"
                       >${msg("Admin")}</sl-tag
                     >`

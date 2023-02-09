@@ -101,6 +101,9 @@ import("./tag").then(({ Tag }) => {
 import("./dialog").then(({ Dialog }) => {
   customElements.define("btrix-dialog", Dialog);
 });
+import("./data-table").then(({ DataTable }) => {
+  customElements.define("btrix-data-table", DataTable);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

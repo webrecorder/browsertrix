@@ -6,11 +6,32 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { isOwner, AccessCode } from "../../utils/orgs";
+import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 
 type Tab = "information" | "members";
+type User = {
+  email: string;
+  role: number;
+};
+type Invite = User & {
+  created: string;
+  inviterEmail: string;
+};
+export type Member = User & {
+  name: string;
+};
+export type OrgNameChangeEvent = CustomEvent<{
+  value: string;
+}>;
+export type UserRoleChangeEvent = CustomEvent<{
+  user: Member;
+  newRole: number;
+}>;
+export type OrgRemoveMemberEvent = CustomEvent<{
+  member: Member;
+}>;
 
 /**
  * Usage:
@@ -23,6 +44,11 @@ type Tab = "information" | "members";
  *  ?isAddingMember=${isAddingMember}
  * ></btrix-org-settings>
  * ```
+ *
+ * @events
+ * org-name-change
+ * org-user-role-change
+ * org-remove-member
  */
 @localized()
 export class OrgSettings extends LiteElement {
@@ -44,11 +70,14 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isAddingMember = false;
 
-  @state()
-  private isAddMemberFormVisible = false;
+  @property({ type: Boolean })
+  isSavingOrgName = false;
 
   @state()
-  private isSavingOrgName = false;
+  pendingInvites: Invite[] = [];
+
+  @state()
+  private isAddMemberFormVisible = false;
 
   @state()
   private isSubmittingInvite = false;
@@ -64,6 +93,12 @@ export class OrgSettings extends LiteElement {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
     }
+    if (
+      changedProperties.has("activePanel") &&
+      this.activePanel === "members"
+    ) {
+      this.fetchPendingInvites();
+    }
   }
 
   render() {
@@ -73,10 +108,10 @@ export class OrgSettings extends LiteElement {
 
       <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
         <header slot="header" class="flex items-end justify-between h-5">
-          <h3>${this.tabLabels[this.activePanel]}</h3>
           ${when(
             this.activePanel === "members",
             () => html`
+              <h3>${msg("Active Members")}</h3>
               <sl-button
                 href=${`/orgs/${this.orgId}/settings/members?invite`}
                 variant="primary"
@@ -84,7 +119,8 @@ export class OrgSettings extends LiteElement {
                 @click=${this.navLink}
                 >${msg("Invite New Member")}</sl-button
               >
-            `
+            `,
+            () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `
           )}
         </header>
         ${this.renderTab("information", "settings")}
@@ -146,42 +182,44 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
+    const columnWidths = ["100%", "10rem", "1.5rem"];
     return html`
-      <div role="table" class="rounded border">
-        <div class="border-b bg-neutral-50" role="rowgroup">
-          <div class="flex font-medium" role="row">
-            <div class="flex-1 px-3 py-1" role="columnheader" aria-sort="none">
-              ${msg("Name")}
-            </div>
-            <div
-              class="flex-0 w-52 px-3 py-1"
-              role="columnheader"
-              aria-sort="none"
-            >
-              ${msg("Role", { desc: "Organization member's role" })}
-            </div>
-          </div>
-        </div>
-        <div role="rowgroup">
-          ${Object.entries(this.org.users!).map(
-            ([id, user]) => html`
-              <div
-                class="border-b last:border-none flex items-center"
-                role="row"
+      <section class="rounded border overflow-hidden">
+        <btrix-data-table
+          .columns=${[msg("Name"), msg("Role"), ""]}
+          .rows=${Object.entries(this.org.users!).map(([id, user]) => [
+            user.name,
+            this.renderUserRoleSelect(user),
+            this.renderRemoveMemberButton(user),
+          ])}
+          .columnWidths=${columnWidths}
+        >
+        </btrix-data-table>
+      </section>
+
+      ${when(
+        this.pendingInvites.length,
+        () => html`
+          <section class="mt-7">
+            <h3 class="text-lg font-semibold mb-2">
+              ${msg("Pending Invites")}
+            </h3>
+
+            <div class="rounded border overflow-hidden">
+              <btrix-data-table
+                .columns=${[msg("Email"), msg("Role"), ""]}
+                .rows=${this.pendingInvites.map((user) => [
+                  user.email,
+                  this.renderUserRole(user),
+                  this.renderRemoveInviteButton(user),
+                ])}
+                .columnWidths=${columnWidths}
               >
-                <div class="flex-1 p-3" role="cell">${user.name}</div>
-                <div class="flex-0 w-52 p-3" role="cell">
-                  ${isOwner(user.role)
-                    ? msg("Admin")
-                    : user.role === AccessCode.crawler
-                    ? msg("Crawler")
-                    : msg("Viewer")}
-                </div>
-              </div>
-            `
-          )}
-        </div>
-      </div>
+              </btrix-data-table>
+            </div>
+          </section>
+        `
+      )}
 
       <btrix-dialog
         label=${msg("Invite New Member")}
@@ -195,12 +233,65 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  private renderUserRole(user: { name: string; role: typeof AccessCode }) {
-    return html`<sl-select value=${user.role} size="small">
-      <sl-menu-item value=${AccessCode.owner}> ${"Admin"} </sl-menu-item>
-      <sl-menu-item value=${AccessCode.crawler}> ${"Crawler"} </sl-menu-item>
-      <sl-menu-item value=${AccessCode.viewer}> ${"Viewer"} </sl-menu-item>
+  private renderUserRole({ role }: User) {
+    if (isAdmin(role)) return msg("Admin");
+    if (isCrawler(role)) return msg("Crawler");
+    return msg("Viewer");
+  }
+
+  private renderUserRoleSelect(user: Member) {
+    // Consider superadmins owners
+    const userRole =
+      user.role === AccessCode.superadmin ? AccessCode.owner : user.role;
+    return html`<sl-select
+      value=${userRole}
+      size="small"
+      @sl-select=${this.selectUserRole(user)}
+    >
+      <sl-menu-item value=${AccessCode.owner}>${"Admin"}</sl-menu-item>
+      <sl-menu-item value=${AccessCode.crawler}>${"Crawler"}</sl-menu-item>
+      <sl-menu-item value=${AccessCode.viewer}>${"Viewer"}</sl-menu-item>
     </sl-select>`;
+  }
+
+  private renderRemoveMemberButton(member: Member) {
+    let disableButton = false;
+    if (member.email === this.userInfo.email) {
+      const { [this.userInfo.id]: _currentUser, ...otherUsers } =
+        this.org.users!;
+      const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
+        isAdmin(role)
+      );
+      if (!hasOtherAdmin) {
+        // Must be another admin in order to remove self
+        disableButton = true;
+      }
+    }
+    return html`<sl-icon-button
+      name="trash"
+      ?disabled=${disableButton}
+      style="font-size: 1rem"
+      let
+      disableButton="false;"
+      aria-details=${ifDefined(
+        disableButton === true
+          ? msg("Cannot remove only admin member")
+          : undefined
+      )}
+      @click=${() =>
+        this.dispatchEvent(
+          <OrgRemoveMemberEvent>new CustomEvent("org-remove-member", {
+            detail: { member },
+          })
+        )}
+    ></sl-icon-button>`;
+  }
+
+  private renderRemoveInviteButton(invite: Invite) {
+    return html`<btrix-icon-button
+      name="trash"
+      @click=${() => this.removeInvite(invite)}
+    ></btrix-icon-button>`;
   }
 
   private hideInviteDialog() {
@@ -262,9 +353,29 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  async checkFormValidity(formEl: HTMLFormElement) {
+  private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  private getPendingInvites(): Promise<Invite[]> {
+    return this.apiFetch(`/orgs/${this.org.id}/invites`, this.authState!).then(
+      (data) => data.pending_invites
+    );
+  }
+
+  private async fetchPendingInvites() {
+    try {
+      this.pendingInvites = await this.getPendingInvites();
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: msg("Sorry, couldn't retrieve pending invites at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async onOrgNameSubmit(e: SubmitEvent) {
@@ -274,37 +385,23 @@ export class OrgSettings extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
 
     const { orgName } = serialize(formEl);
-
-    this.isSavingOrgName = true;
-
-    try {
-      await this.apiFetch(`/orgs/${this.org.id}/rename`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({ name: orgName }),
-      });
-
-      this.notify({
-        message: msg("Updated organization name."),
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-
-      this.dispatchEvent(
-        new CustomEvent("update-user-info", { bubbles: true })
-      );
-    } catch (e: any) {
-      this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg("Sorry, couldn't update organization name at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSavingOrgName = false;
+    this.dispatchEvent(
+      <OrgNameChangeEvent>new CustomEvent("org-name-change", {
+        detail: { value: orgName },
+      })
+    );
   }
+
+  private selectUserRole = (user: User) => (e: CustomEvent) => {
+    this.dispatchEvent(
+      <UserRoleChangeEvent>new CustomEvent("org-user-role-change", {
+        detail: {
+          user,
+          newRole: Number(e.detail.item.value),
+        },
+      })
+    );
+  };
 
   async onOrgInviteSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -333,9 +430,9 @@ export class OrgSettings extends LiteElement {
         message: msg(str`Successfully invited ${inviteEmail}.`),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
 
+      this.fetchPendingInvites();
       this.hideInviteDialog();
     } catch (e: any) {
       this.notify({
@@ -348,6 +445,43 @@ export class OrgSettings extends LiteElement {
     }
 
     this.isSubmittingInvite = false;
+  }
+
+  private async removeInvite(invite: Invite) {
+    try {
+      await this.apiFetch(
+        `/orgs/${this.orgId}/invites/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: invite.email,
+          }),
+        }
+      );
+
+      this.notify({
+        message: msg(
+          str`Successfully removed ${invite.email} from ${this.org.name}.`
+        ),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.pendingInvites = this.pendingInvites.filter(
+        ({ email }) => email !== invite.email
+      );
+    } catch (e: any) {
+      console.debug(e);
+
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 
