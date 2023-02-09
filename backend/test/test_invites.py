@@ -1,4 +1,5 @@
 import requests
+import time
 
 import pytest
 
@@ -40,3 +41,47 @@ def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
     # Verify that only superusers can see pending invites
     r = requests.get(f"{API_PREFIX}/users/invites", headers=crawler_auth_headers)
     assert r.status_code == 403
+
+
+def test_invites_expire(admin_auth_headers, non_default_org_id):
+    """Note this test is dependent on chart/tests/test.yaml settings.
+
+    Namely, it expects `invite_expire_seconds: 10` to be set in chart.
+    """
+    # Send invite
+    INVITE_EMAIL = "invite-expires@example.com"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": INVITE_EMAIL, "role": 10},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+
+    # Verify invite exists
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+    ]
+    assert len(invites_matching_email) == 1
+
+    # Wait 15 seconds to be safe
+    time.sleep(15)
+
+    # Check invites again and verify invite expired
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+    ]
+    assert len(invites_matching_email) == 0

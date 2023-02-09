@@ -46,7 +46,7 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-ci.yaml btrix ./chart/
+          sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/microk8s-ci.yaml btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v3

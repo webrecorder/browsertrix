@@ -68,7 +68,7 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/k3d-ci.yaml btrix ./chart/
+          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/k3d-ci.yaml btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v3
