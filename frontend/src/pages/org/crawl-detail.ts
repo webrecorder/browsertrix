@@ -256,7 +256,7 @@ export class CrawlDetail extends LiteElement {
       </main>
 
       <btrix-dialog
-        label=${msg("Change Crawler Instances")}
+        label=${msg("Edit Crawler Instances")}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -356,7 +356,7 @@ export class CrawlDetail extends LiteElement {
                     }}
                   >
                     <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                    <span> ${msg("Scale")} </span>
+                    <span> ${msg("Crawler Instances")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.stop}>
                     <sl-icon name="slash-circle" slot="prefix"></sl-icon>
@@ -858,6 +858,7 @@ export class CrawlDetail extends LiteElement {
             ({ value, label }) => html`
               <sl-radio-button
                 value=${value}
+                size="small"
                 @click=${() => this.scale(value)}
                 ?disabled=${this.isSubmittingUpdate}
                 >${label}</sl-radio-button
