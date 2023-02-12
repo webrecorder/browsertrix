@@ -1,8 +1,12 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import sortBy from "lodash/fp/sortBy";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
+import { OrgData } from "../types/org";
+
+const sortByName = sortBy("name");
 
 /**
  * @event success
@@ -12,11 +16,30 @@ export class InviteForm extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
+  @property({ type: Array })
+  orgs: OrgData[] = [];
+
+  @property({ type: Object })
+  defaultOrg: OrgData | null = null;
+
   @state()
   private isSubmitting: boolean = false;
 
   @state()
   private serverError?: string;
+
+  @state()
+  private selectedOrgId?: string;
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("defaultOrg") &&
+      this.defaultOrg &&
+      !this.selectedOrgId
+    ) {
+      this.selectedOrgId = this.defaultOrg.id;
+    }
+  }
 
   render() {
     let formError;
@@ -31,12 +54,31 @@ export class InviteForm extends LiteElement {
       `;
     }
 
+    const sortedOrgs = sortByName(this.orgs) as any as OrgData[];
+
     return html`
       <form
         class="max-w-md"
         @submit=${this.onSubmit}
         aria-describedby="formError"
       >
+        <div class="mb-5">
+          <sl-select
+            label=${msg("Organization")}
+            value=${this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id}
+            @sl-select=${(e: CustomEvent) => {
+              this.selectedOrgId = e.detail.item.value;
+            }}
+            ?disabled=${sortedOrgs.length === 1}
+            required
+          >
+            ${sortedOrgs.map(
+              (org) => html`
+                <sl-menu-item value=${org.id}>${org.name}</sl-menu-item>
+              `
+            )}
+          </sl-select>
+        </div>
         <div class="mb-5">
           <sl-input
             id="inviteEmail"
@@ -53,12 +95,13 @@ export class InviteForm extends LiteElement {
 
         ${formError}
 
-        <div>
+        <div class="text-right">
           <sl-button
+            variant="primary"
             size="small"
             type="submit"
             ?loading=${this.isSubmitting}
-            ?disabled=${this.isSubmitting}
+            ?disabled=${!this.selectedOrgId || this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
         </div>
@@ -68,7 +111,10 @@ export class InviteForm extends LiteElement {
 
   async onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    if (!this.authState) return;
+    if (!this.authState || !this.selectedOrgId) return;
+
+    const formEl = event.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
 
     this.serverError = undefined;
     this.isSubmitting = true;
@@ -77,12 +123,17 @@ export class InviteForm extends LiteElement {
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      const data = await this.apiFetch(`/users/invite`, this.authState, {
-        method: "POST",
-        body: JSON.stringify({
-          email: inviteEmail,
-        }),
-      });
+      const data = await this.apiFetch(
+        `/orgs/${this.selectedOrgId}/invite`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: 10,
+          }),
+        }
+      );
 
       this.dispatchEvent(
         new CustomEvent("success", {
@@ -101,5 +152,10 @@ export class InviteForm extends LiteElement {
     }
 
     this.isSubmitting = false;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }

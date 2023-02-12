@@ -1,4 +1,5 @@
 import { state, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
@@ -138,8 +139,8 @@ export class Home extends LiteElement {
         </form>
       </section>
 
-      <div class="grid grid-cols-3 gap-8">
-        <div class="col-span-3 md:col-span-2">
+      <div class="grid grid-cols-5 gap-8">
+        <div class="col-span-5 md:col-span-3">
           <section>
             <header class="flex items-start justify-between">
               <h2 class="text-lg font-medium mb-3 mt-2">
@@ -156,12 +157,17 @@ export class Home extends LiteElement {
             <btrix-orgs-list
               .userInfo=${this.userInfo}
               .orgList=${this.orgList}
+              .defaultOrg=${ifDefined(
+                this.userInfo?.orgs.find((org) => org.default === true)
+              )}
             ></btrix-orgs-list>
           </section>
         </div>
-        <div class="col-span-3 md:col-span-1">
+        <div class="col-span-5 md:col-span-2">
           <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-            <h2 class="text-lg font-medium mb-4">${msg("Invite a User")}</h2>
+            <h2 class="text-lg font-medium mb-3">
+              ${msg("Invite User to Org")}
+            </h2>
             ${this.renderInvite()}
           </section>
         </div>
@@ -239,9 +245,14 @@ export class Home extends LiteElement {
       `;
     }
 
+    const defaultOrg = this.userInfo?.orgs.find(
+      (org) => org.default === true
+    ) || { name: "" };
     return html`
       <btrix-invite-form
         .authState=${this.authState}
+        .orgs=${this.orgList}
+        .defaultOrg=${defaultOrg || null}
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;
