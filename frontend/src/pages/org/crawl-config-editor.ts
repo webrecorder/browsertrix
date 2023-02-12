@@ -730,7 +730,7 @@ export class CrawlConfigEditor extends LiteElement {
     return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
-  private renderHelpTextCol(content: TemplateResult, padTop = true) {
+  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
     return html`
       <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
         <div class="text-base mr-2">
@@ -785,8 +785,8 @@ https://example.com/path`}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
-        html`The crawler will visit and record each URL listed in the order
-        defined here.`
+        msg(`The crawler will visit and record each URL listed in the order
+        defined here.`)
       )}
       ${when(
         isCustom,
@@ -826,7 +826,7 @@ https://example.com/path`}
             </sl-select>
           `)}
           ${this.renderHelpTextCol(
-            html`Tells the crawler which pages it can visit.`
+            msg(`Tells the crawler which pages it can visit.`)
           )}
         `
       )}
@@ -837,8 +837,8 @@ https://example.com/path`}
         ${msg("Include Any Linked Page")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
-        html`If checked, the crawler will visit pages one link away from a Crawl
-        URL.`,
+        msg(`If checked, the crawler will visit pages one link away from a Crawl
+        URL.`),
         false
       )}
       ${when(
@@ -865,8 +865,8 @@ https://example.com/path`}
             </sl-button>
           `)}
           ${this.renderHelpTextCol(
-            html`Specify exclusion rules for what pages should not be visited.
-            Exclusions apply to all URLs.`
+            msg(`Specify exclusion rules for what pages should not be visited.
+            Exclusions apply to all URLs.`)
           )}
         `
       )}
@@ -978,7 +978,7 @@ https://example.com/path`}
           }}
         ></sl-input>
       `)}
-      ${this.renderHelpTextCol(html`The starting point of your crawl.`)}
+      ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
       ${this.renderFormCol(html`
         <sl-select
           name="scopeType"
@@ -1009,7 +1009,7 @@ https://example.com/path`}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
-        html`Tells the crawler which pages it can visit.`
+        msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
         this.formState.scopeType === "custom",
@@ -1027,8 +1027,8 @@ https://example.net`}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(
-            html`If the crawler finds pages outside of the Start URL Scope they
-            will only be saved if they begin with URLs listed here.`
+            msg(`If the crawler finds pages outside of the Start URL Scope they
+            will only be saved if they begin with URLs listed here.`)
           )}
         `
       )}
@@ -1041,8 +1041,8 @@ https://example.net`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
-        html`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`,
+        msg(`If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.`),
         false
       )}
       <div class="col-span-5">
@@ -1076,7 +1076,9 @@ https://example.net`}
               </sl-button>
             `)}
             ${this.renderHelpTextCol(
-              html`Specify exclusion rules for what pages should not be visited.`
+              msg(
+                `Specify exclusion rules for what pages should not be visited.`
+              )
             )}
           </div></btrix-details
         >
@@ -1132,8 +1134,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              html`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled.`
+              msg(`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled.`)
             )}
           </div>
         </btrix-details>
@@ -1181,8 +1183,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           </sl-input>
         </sl-mutation-observer>
       `)}
-      ${this.renderHelpTextCol(html`Adds a hard limit on the number of pages
-      that will be crawled.`)}
+      ${this.renderHelpTextCol(
+        msg(`Adds a hard limit on the number of pages
+      that will be crawled.`)
+      )}
       ${this.renderFormCol(html`
         <sl-input
           name="pageTimeoutMinutes"
@@ -1201,8 +1205,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Adds a hard time limit for how long the crawler can spend on a
-        single webpage.`
+        msg(`Adds a hard time limit for how long the crawler can spend on a
+        single webpage.`)
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1217,7 +1221,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Gracefully stop the crawler after a specified time limit.`
+        msg(`Gracefully stop the crawler after a specified time limit.`)
       )}
       ${this.renderFormCol(html`
         <sl-radio-group
@@ -1235,8 +1239,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Increasing parallel crawler instances can speed up crawls, but may
-        increase the chances of getting rate limited.`
+        msg(`Increasing parallel crawler instances can speed up crawls, but may
+        increase the chances of getting rate limited.`)
       )}
     `;
   }
@@ -1255,8 +1259,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(
-        html`Choose a custom profile to make use of saved cookies and logged-in
-        accounts.`
+        msg(`Choose a custom profile to make use of saved cookies and logged-in
+        accounts.`)
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
@@ -1264,14 +1268,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
-        html`Blocks advertising content from being loaded. Uses
+        msg(html`Blocks advertising content from being loaded. Uses
           <a
             href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
             class="text-blue-600 hover:text-blue-500"
             target="_blank"
             rel="noopener noreferrer nofollow"
             >Steven Black’s Hosts file</a
-          >.`,
+          >.`),
         false
       )}
       ${this.renderFormCol(html`
@@ -1291,8 +1295,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </btrix-language-select>
       `)}
       ${this.renderHelpTextCol(
-        html`Websites that observe the browser’s language setting may serve
-        content in that language if available.`
+        msg(`Websites that observe the browser’s language setting may serve
+        content in that language if available.`)
       )}
     `;
   }
@@ -1317,8 +1321,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        html`Should a crawl run immediately when setup is complete, on a set
-        day, or on a recurring schedule?`
+        msg(`Should a crawl run immediately when setup is complete, on a set
+        day, or on a recurring schedule?`)
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
     `;
@@ -1351,7 +1355,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
-        html`Limit the frequency for how often a crawl will run.`
+        msg(`Limit the frequency for how often a crawl will run.`)
       )}
       ${when(
         this.formState.scheduleFrequency === "weekly",
@@ -1373,7 +1377,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             </sl-radio-group>
           `)}
           ${this.renderHelpTextCol(
-            html`What day of the week should a crawl run on?`
+            msg(`What day of the week should a crawl run on?`)
           )}
         `
       )}
@@ -1393,7 +1397,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             </sl-input>
           `)}
           ${this.renderHelpTextCol(
-            html`What day of the month should a crawl run on?`
+            msg(`What day of the month should a crawl run on?`)
           )}
         `
       )}
@@ -1434,7 +1438,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </div>
       `)}
       ${this.renderHelpTextCol(
-        html`A crawl will run at this time in your current timezone.`
+        msg(`A crawl will run at this time in your current timezone.`)
       )}
       ${this.renderFormCol(html`<sl-checkbox
         name="runNow"
@@ -1443,8 +1447,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${msg("Also run a crawl immediately on save")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
-        html`If checked, a crawl will run at the time specified above and also
-        once when setup is complete.`,
+        msg(`If checked, a crawl will run at the time specified above and also
+        once when setup is complete.`),
         false
       )}
     `;
@@ -1468,8 +1472,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        html`Customize this crawl config and crawl name. Crawls are named after
-        the starting URL(s) by default.`
+        msg(`Customize this crawl config and crawl name. Crawls are named after
+        the starting URL(s) by default.`)
       )}
       ${this.renderFormCol(
         html`
@@ -1488,8 +1492,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         `
       )}
       ${this.renderHelpTextCol(
-        html`Create or assign this crawl (and its outputs) to one or more tags
-        to help organize your archived data.`
+        msg(`Create or assign this crawl (and its outputs) to one or more tags
+        to help organize your archived data.`)
       )}
     `;
   }
