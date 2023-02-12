@@ -853,7 +853,7 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div>
-        <sl-radio-group value=${this.crawl.scale} help-text="Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.">
+        <sl-radio-group value=${this.crawl.scale} help-text=${msg("Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.")}>
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
