@@ -772,7 +772,10 @@ export class CrawlDetail extends LiteElement {
             () =>
               when(
                 this.crawl!.notes?.length,
-                () => html`<div>${this.crawl!.notes}</div>`,
+                () => html`<pre class="whitespace-pre-line">
+${this.crawl?.notes}
+                </pre
+                >`,
                 () => noneText
               ),
             () => html`<sl-skeleton></sl-skeleton>`
