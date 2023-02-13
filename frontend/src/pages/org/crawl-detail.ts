@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 
 import type {
@@ -29,6 +30,7 @@ const SECTIONS = [
 type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
+const CRAWL_NOTES_MAXLENGTH = 5;
 
 /**
  * Usage:
@@ -273,7 +275,7 @@ export class CrawlDetail extends LiteElement {
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${this.isDialogVisible ? this.renderEditDetails() : ""}
+        ${this.isDialogVisible ? this.renderEditMetadata() : ""}
       </btrix-dialog>
     `;
   }
@@ -761,20 +763,33 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderMetadata() {
+    const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
     return html`
       <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Notes")}>
+          ${when(
+            this.crawl,
+            () =>
+              when(
+                this.crawl!.notes?.length,
+                () => html`<div>${this.crawl!.notes}</div>`,
+                () => noneText
+              ),
+            () => html`<sl-skeleton></sl-skeleton>`
+          )}
+        </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Tags")}>
           ${when(
             this.crawl,
             () =>
               when(
-                this.crawl?.tags?.length,
+                this.crawl!.tags.length,
                 () =>
-                  this.crawl!.tags!.map(
+                  this.crawl!.tags.map(
                     (tag) =>
                       html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
                   ),
-                () => html`${msg("None")}`
+                () => noneText
               ),
             () => html`<sl-skeleton></sl-skeleton>`
           )}
@@ -878,15 +893,44 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderEditDetails() {
+  private renderEditMetadata() {
     if (!this.crawl) return;
 
+    const crawlNotesHelpText = msg(
+      str`Maximum ${CRAWL_NOTES_MAXLENGTH} characters`
+    );
     return html`
       <form
         id="crawlDetailsForm"
-        @submit=${this.onSubmitDetails}
+        @submit=${this.onSubmitMetadata}
         @reset=${() => (this.openDialogName = undefined)}
       >
+        <sl-textarea
+          class="mb-3"
+          name="crawlNotes"
+          label=${msg("Notes")}
+          value=${this.crawl.notes || ""}
+          rows="3"
+          autocomplete="off"
+          resize="auto"
+          help-text=${crawlNotesHelpText}
+          style="--help-text-align: right"
+          @sl-input=${(e: CustomEvent) => {
+            const textarea = e.target as SlTextarea;
+            if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
+              const helpText = msg(
+                str`${
+                  textarea.value.length - CRAWL_NOTES_MAXLENGTH
+                } characters over limit`
+              );
+              textarea.setCustomValidity(helpText);
+              textarea.helpText = helpText;
+            } else {
+              textarea.setCustomValidity("");
+              textarea.helpText = crawlNotesHelpText;
+            }
+          }}
+        ></sl-textarea>
         <btrix-tag-input
           .initialTags=${this.crawl.tags}
           .tagOptions=${this.tagOptions}
@@ -1071,11 +1115,23 @@ export class CrawlDetail extends LiteElement {
     this.openDialogName = "details";
   }
 
-  private async onSubmitDetails(e: SubmitEvent) {
+  private async onSubmitMetadata(e: SubmitEvent) {
     e.preventDefault();
+
+    const { crawlNotes } = serialize(e.target as HTMLFormElement);
+
+    if (
+      crawlNotes === (this.crawl!.notes ?? "") &&
+      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
+    ) {
+      // No changes have been made
+      this.openDialogName = undefined;
+      return;
+    }
 
     const params = {
       tags: this.tagsToSave,
+      notes: crawlNotes,
     };
     this.isSubmittingUpdate = true;
 
