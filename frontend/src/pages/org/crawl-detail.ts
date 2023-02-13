@@ -30,7 +30,7 @@ const SECTIONS = [
 type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
-const CRAWL_NOTES_MAXLENGTH = 5;
+const CRAWL_NOTES_MAXLENGTH = 500;
 
 /**
  * Usage:
@@ -918,13 +918,16 @@ export class CrawlDetail extends LiteElement {
           @sl-input=${(e: CustomEvent) => {
             const textarea = e.target as SlTextarea;
             if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
-              const helpText = msg(
-                str`${
-                  textarea.value.length - CRAWL_NOTES_MAXLENGTH
-                } characters over limit`
+              const overMax = textarea.value.length - CRAWL_NOTES_MAXLENGTH;
+              textarea.setCustomValidity(
+                msg(
+                  str`Please shorten this text to ${CRAWL_NOTES_MAXLENGTH} or less characters.`
+                )
               );
-              textarea.setCustomValidity(helpText);
-              textarea.helpText = helpText;
+              textarea.helpText =
+                overMax === 1
+                  ? msg(str`${overMax} character over limit`)
+                  : msg(str`${overMax} characters over limit`);
             } else {
               textarea.setCustomValidity("");
               textarea.helpText = crawlNotesHelpText;
@@ -1118,7 +1121,9 @@ export class CrawlDetail extends LiteElement {
   private async onSubmitMetadata(e: SubmitEvent) {
     e.preventDefault();
 
-    const { crawlNotes } = serialize(e.target as HTMLFormElement);
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+    const { crawlNotes } = serialize(formEl);
 
     if (
       crawlNotes === (this.crawl!.notes ?? "") &&
@@ -1165,6 +1170,11 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.isSubmittingUpdate = false;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 
   private async scale(value: Crawl["scale"]) {
