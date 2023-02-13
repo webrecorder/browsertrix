@@ -209,15 +209,16 @@ export class CrawlDetail extends LiteElement {
               ${this.renderPanel(
                 html`
                   <div class="flex items-center justify-between">
-                    ${msg("Tags")}
+                    ${msg("Metadata")}
                     <sl-icon-button
                       class="text-base"
                       name="pencil"
-                      @click=${this.openDetailEditor}
+                      @click=${this.openMetadataEditor}
+                      aria-label=${msg("Edit Metadata")}
                     ></sl-icon-button>
                   </div>
                 `,
-                this.renderDetails()
+                this.renderMetadata()
               )}
             </div>
           </div>
@@ -266,7 +267,7 @@ export class CrawlDetail extends LiteElement {
       </btrix-dialog>
 
       <btrix-dialog
-        label=${msg("Edit Tags")}
+        label=${msg("Edit Metadata")}
         ?open=${this.openDialogName === "details"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -333,11 +334,11 @@ export class CrawlDetail extends LiteElement {
         <h2 class="text-xl font-semibold mb-3 md:mr-2">
           ${msg(
             html`${this.crawl
-                ? this.crawl.configName
-                : html`<sl-skeleton
-                    class="inline-block"
-                    style="width: 15em"
-                  ></sl-skeleton>`}`
+              ? this.crawl.configName
+              : html`<sl-skeleton
+                  class="inline-block"
+                  style="width: 15em"
+                ></sl-skeleton>`}`
           )}
         </h2>
         <div
@@ -432,7 +433,7 @@ export class CrawlDetail extends LiteElement {
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
                 @click=${(e: any) => {
-                  this.openDetailEditor();
+                  this.openMetadataEditor();
                   e.target.closest("sl-dropdown").hide();
                 }}
               >
@@ -441,7 +442,7 @@ export class CrawlDetail extends LiteElement {
                   name="pencil"
                 ></sl-icon>
                 <span class="inline-block align-middle">
-                  ${msg("Edit Tags")}
+                  ${msg("Edit Metadata")}
                 </span>
               </li>
               <hr />
@@ -759,7 +760,7 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderDetails() {
+  private renderMetadata() {
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Tags")}>
@@ -1065,7 +1066,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private openDetailEditor() {
+  private openMetadataEditor() {
     this.fetchTags();
     this.openDialogName = "details";
   }
