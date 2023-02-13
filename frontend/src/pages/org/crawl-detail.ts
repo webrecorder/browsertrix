@@ -256,7 +256,7 @@ export class CrawlDetail extends LiteElement {
       </main>
 
       <btrix-dialog
-        label=${msg("Change Crawler Instances")}
+        label=${msg("Edit Crawler Instances")}
         ?open=${this.openDialogName === "scale"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
@@ -356,7 +356,7 @@ export class CrawlDetail extends LiteElement {
                     }}
                   >
                     <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                    <span> ${msg("Scale")} </span>
+                    <span> ${msg("Crawler Instances")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.stop}>
                     <sl-icon name="slash-circle" slot="prefix"></sl-icon>
@@ -852,12 +852,13 @@ export class CrawlDetail extends LiteElement {
     ];
 
     return html`
-      <div class="text-center">
-        <sl-radio-group value=${this.crawl.scale}>
+      <div>
+        <sl-radio-group value=${this.crawl.scale} help-text=${msg("Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.")}>
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
                 value=${value}
+                size="small"
                 @click=${() => this.scale(value)}
                 ?disabled=${this.isSubmittingUpdate}
                 >${label}</sl-radio-button
