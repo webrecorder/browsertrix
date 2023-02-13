@@ -171,6 +171,9 @@ export default class AuthService {
       }
     );
 
+    // NOTE beforeunload being called isn't guaranteed, which
+    // may lead to subtle bugs where the value exists in
+    // localstorage but the app is not actually authenticated.
     window.addEventListener("beforeunload", () => {
       window.localStorage.removeItem(AuthService.storageKey);
     });
@@ -192,7 +195,8 @@ export default class AuthService {
    * Retrieve shared session from another tab/window
    **/
   private static async getSharedSessionAuth(): Promise<AuthState> {
-    return new Promise((resolve) => {
+    let timeoutPromise;
+    const broadcastPromise = new Promise((resolve) => {
       // Check if there's any authenticated tabs
       const value = window.localStorage.getItem(AuthService.storageKey);
       if (value && (JSON.parse(value) as HasAuthStorageData).auth) {
@@ -208,10 +212,33 @@ export default class AuthService {
           }
         };
         AuthService.broadcastChannel.addEventListener("message", cb);
+        // Ensure that `getSharedSessionAuth` is resolved within a reasonable
+        // timeframe, even if another window/tab doesn't respond:
+        timeoutPromise = new Promise((resolve) => {
+          window.setTimeout(() => {
+            resolve(null);
+          }, 10);
+        });
       } else {
         resolve(null);
       }
     });
+
+    return Promise.race([broadcastPromise, timeoutPromise]).then(
+      (value: any) => {
+        try {
+          if (value.username && value.headers && value.tokenExpiresAt) {
+            return value;
+          }
+        } catch {
+          return null;
+        }
+      },
+      (error) => {
+        console.debug(error);
+        return null;
+      }
+    );
   }
 
   constructor() {
