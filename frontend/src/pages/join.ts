@@ -100,6 +100,10 @@ export class Join extends LiteElement {
         inviterName: body.inviterName,
         orgName: body.orgName,
       };
+    } else if (resp.status === 404) {
+      this.serverError = msg(
+        "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation."
+      );
     } else {
       this.serverError = msg("This invitation is not valid");
     }
