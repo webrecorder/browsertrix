@@ -24,6 +24,9 @@ allow_dupe_invites: "0"
 # number of workers for backend api
 backend_workers: 4
 
+# number of seconds before pending invites expire - default is 7 days
+invite_expire_seconds: 604800
+
 # base url for replayweb.page
 rwp_base_url: "https://replayweb.page/"
 

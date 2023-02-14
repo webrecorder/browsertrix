@@ -167,6 +167,7 @@ class OrgOps:
         while True:
             try:
                 return await self.orgs.create_index("name", unique=True)
+            # pylint: disable=duplicate-code
             except AutoReconnect:
                 print(
                     "Database connection unavailable to create index. Will try again in 5 scconds",

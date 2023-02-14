@@ -1,11 +1,8 @@
-# k3s overrides for ci
-# --------------------
+# test overrides
+# --------------
 
-
-# don't pull use, existing images
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
-
 
 mongo_auth:
   # specify either username + password (for local mongo)
@@ -23,4 +20,3 @@ superuser:
 
 
 local_service_port: 30870
-

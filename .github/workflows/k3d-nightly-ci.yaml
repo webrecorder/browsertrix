@@ -1,24 +1,18 @@
-name: Cluster Run (K3d)
+name: Nightly tests (K3d)
 
 on:
-  push:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
-
-  pull_request:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
+  schedule:
+    # Run daily at 8am UTC
+    - cron:  '0 8 1 * *'
 
 jobs:
-  btrix-k3d-test:
+  btrix-k3d-nightly-test:
     runs-on: ubuntu-latest
     steps:
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:
-          cluster-name: btrix-1
+          cluster-name: btrix-nightly
           args: >-
             -p "30870:30870@agent:0:direct"
             --agents 1
@@ -55,8 +49,8 @@ jobs:
 
       - name: 'Import Images'
         run: |
-          k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-1 --verbose
-          k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-1 --verbose
+          k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-nightly --verbose
+          k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-nightly --verbose
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
@@ -68,7 +62,7 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml btrix ./chart/
+          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml --set invite_expire_seconds=10 btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v3
@@ -82,7 +76,7 @@ jobs:
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Run Tests
-        run: pytest -vv ./backend/test/*.py
+        run: pytest -vv ./backend/test_nightly/*.py
 
       - name: Print Backend Logs
         if: ${{ failure() }}
