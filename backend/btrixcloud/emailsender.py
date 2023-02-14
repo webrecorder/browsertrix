@@ -80,7 +80,6 @@ The verification token is: {token}"""
         """Send email to invite new user"""
 
         origin = self.get_origin(headers)
-        expiration_window = get_invite_expiration_window()
 
         message = f"""
 You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
@@ -101,7 +100,6 @@ The invite token is: {token}"""
     ):
         """Send email to invite new user"""
         origin = self.get_origin(headers)
-        expiration_window = get_invite_expiration_window()
 
         message = f"""
 You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
