@@ -7,18 +7,6 @@ import ssl
 from email.message import EmailMessage
 
 
-def get_invite_expiration_window():
-    """Return string with rounded number of days or hours until invites expire."""
-    seconds_in_day = 86400
-    seconds_in_hour = 3600
-    expire_after_seconds = int(os.environ.get("INVITE_EXPIRE_SECONDS", "604800"))
-    days = expire_after_seconds / seconds_in_day
-    if days < 1:
-        hours = expire_after_seconds / seconds_in_hour
-        return f"{hours:.0f} hours"
-    return f"{days:.0f} days"
-
-
 # pylint: disable=too-few-public-methods
 class EmailSender:
     """SMTP Email Sender"""
@@ -99,9 +87,7 @@ You are invited by {sender} to join their organization, "{org_name}" on Browsert
 
 You can join by clicking here: {origin}/join/{token}?email={receiver_email}
 
-The invite token is: {token}
-
-This invitation will expire after {expiration_window}."""
+The invite token is: {token}"""
 
         self._send_encrypted(
             receiver_email,
@@ -122,9 +108,7 @@ You are invited by {sender} to join their organization, "{org_name}" on Browsert
 
 You can join by clicking here: {origin}/invite/accept/{token}?email={receiver_email}
 
-The invite token is: {token}
-
-This invitation will expire after {expiration_window}."""
+The invite token is: {token}"""
 
         self._send_encrypted(
             receiver_email,
