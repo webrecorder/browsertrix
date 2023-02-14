@@ -153,13 +153,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     MicroK8s uses its own container registry, running on port 32000. 
 
-    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry. And, it needs to tag the newly built image and push to the local registry.
-
-    ```
-    $ TAG=`docker images | grep localhost:32000/webrecorder/browsertrix-backend | awk '{ print $3 }'`
-    $ docker tag  $TAG localhost:32000/webrecorder/browsertrix-backend:latest
-    $ docker push      localhost:32000/webrecorder/browsertrix-backend
-    ```
+    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry. 
 
     2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
 
