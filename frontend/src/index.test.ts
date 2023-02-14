@@ -6,11 +6,13 @@ import { App } from "./index";
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
-    stub(window.sessionStorage, "setItem");
+    AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+    window.sessionStorage.clear();
     stub(window.history, "pushState");
   });
 
   afterEach(() => {
+    AuthService.broadcastChannel.close();
     restore();
   });
 

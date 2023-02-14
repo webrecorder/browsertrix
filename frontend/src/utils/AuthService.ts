@@ -27,10 +27,6 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
-type HasAuthStorageData = {
-  auth: boolean;
-};
-
 type AuthRequestEventData = {
   name: "requesting_auth";
 };
