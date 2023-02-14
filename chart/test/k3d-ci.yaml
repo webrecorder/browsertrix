@@ -1,6 +1,0 @@
-# k3s overrides for ci
-# --------------------
-
-# don't pull use, existing images
-backend_pull_policy: "Never"
-frontend_pull_policy: "Never"

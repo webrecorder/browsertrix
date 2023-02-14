@@ -1,6 +1,9 @@
 # test overrides
 # --------------
 
+backend_pull_policy: "Never"
+frontend_pull_policy: "Never"
+
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root

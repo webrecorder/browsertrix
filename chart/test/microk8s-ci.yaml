@@ -4,7 +4,3 @@
 # use local images
 backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
 frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
-
-# don't pull use, existing images
-backend_pull_policy: "IfNotPresent"
-frontend_pull_policy: "IfNotPresent"
