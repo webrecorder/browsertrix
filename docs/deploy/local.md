@@ -138,7 +138,7 @@ First, open `./chart/examples/local-config.yaml` and add the following, which wi
 
 ```
 backend_pull_policy: "Never"
-nginx_pull_policy: "Never"
+frontend_pull_policy: "Never"
 ```
 
 Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
