@@ -159,7 +159,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     ```
     backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-    nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+    frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
     ```
 
 ??? tip "Minikube" 
