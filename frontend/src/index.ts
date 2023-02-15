@@ -12,7 +12,7 @@ import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
-import AuthService from "./utils/AuthService";
+import AuthService, { AuthState } from "./utils/AuthService";
 import type { LoggedInEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
@@ -91,7 +91,12 @@ export class App extends LiteElement {
   private selectedOrgId?: string;
 
   async connectedCallback() {
-    const authState = await AuthService.initSessionStorage();
+    let authState: AuthState = null;
+    try {
+      authState = await AuthService.initSessionStorage();
+    } catch (e: any) {
+      console.debug(e);
+    }
     this.syncViewState();
     if (this.viewState.route === "org") {
       this.selectedOrgId = this.viewState.params.orgId;

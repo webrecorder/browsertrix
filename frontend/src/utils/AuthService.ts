@@ -27,10 +27,6 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
-type HasAuthStorageData = {
-  auth: boolean;
-};
-
 type AuthRequestEventData = {
   name: "requesting_auth";
 };
@@ -171,10 +167,6 @@ export default class AuthService {
       }
     );
 
-    window.addEventListener("beforeunload", () => {
-      window.localStorage.removeItem(AuthService.storageKey);
-    });
-
     return authState;
   }
 
@@ -192,26 +184,43 @@ export default class AuthService {
    * Retrieve shared session from another tab/window
    **/
   private static async getSharedSessionAuth(): Promise<AuthState> {
-    return new Promise((resolve) => {
+    const broadcastPromise = new Promise((resolve) => {
       // Check if there's any authenticated tabs
-      const value = window.localStorage.getItem(AuthService.storageKey);
-      if (value && (JSON.parse(value) as HasAuthStorageData).auth) {
-        // Ask for auth
-        AuthService.broadcastChannel.postMessage(<AuthRequestEventData>{
-          name: "requesting_auth",
-        });
-        // Wait for another tab to respond
-        const cb = ({ data }: any) => {
-          if (data.name === "responding_auth") {
-            AuthService.broadcastChannel.removeEventListener("message", cb);
-            resolve(data.auth);
-          }
-        };
-        AuthService.broadcastChannel.addEventListener("message", cb);
-      } else {
-        resolve(null);
-      }
+      AuthService.broadcastChannel.postMessage(<AuthRequestEventData>{
+        name: "requesting_auth",
+      });
+      // Wait for another tab to respond
+      const cb = ({ data }: any) => {
+        if (data.name === "responding_auth") {
+          AuthService.broadcastChannel.removeEventListener("message", cb);
+          resolve(data.auth);
+        }
+      };
+      AuthService.broadcastChannel.addEventListener("message", cb);
     });
+    // Ensure that `getSharedSessionAuth` is resolved within a reasonable
+    // timeframe, even if another window/tab doesn't respond:
+    const timeoutPromise = new Promise((resolve) => {
+      window.setTimeout(() => {
+        resolve(null);
+      }, 10);
+    });
+
+    return Promise.race([broadcastPromise, timeoutPromise]).then(
+      (value: any) => {
+        try {
+          if (value.username && value.headers && value.tokenExpiresAt) {
+            return value;
+          }
+        } catch {
+          return null;
+        }
+      },
+      (error) => {
+        console.debug(error);
+        return null;
+      }
+    );
   }
 
   constructor() {
@@ -227,16 +236,11 @@ export default class AuthService {
   }
 
   saveLogin(auth: Auth) {
-    window.localStorage.setItem(
-      AuthService.storageKey,
-      JSON.stringify(<HasAuthStorageData>{ auth: true })
-    );
     this.persist(auth);
     this.startFreshnessCheck();
   }
 
   logout() {
-    window.localStorage.removeItem(AuthService.storageKey);
     this.cancelFreshnessCheck();
     this.revoke();
   }
