@@ -188,6 +188,7 @@ def test_delete_crawls_org_owner(
     default_org_id,
     admin_crawl_id,
     crawler_crawl_id,
+    wr_specs_crawl_id,
 ):
     # Test that org owner can delete own crawl
     r = requests.post(
@@ -206,43 +207,17 @@ def test_delete_crawls_org_owner(
     assert r.status_code == 404
 
     # Test that org owner can delete another org user's crawls
-    crawl_data = {
-        "runNow": True,
-        "name": "Crawler User Test Crawl 2",
-        "config": {"seeds": ["https://webrecorder.net/"], "limit": 1},
-    }
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
-        headers=crawler_auth_headers,
-        json=crawl_data,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    new_crawl_id = data["run_now_job"]
-    assert new_crawl_id
-
-    while True:
-        # Wait for crawl to complete before deleting
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{new_crawl_id}/replay.json",
-            headers=crawler_auth_headers,
-        )
-        data = r.json()
-        if data["state"] == "complete":
-            break
-        time.sleep(5)
-
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
-        json={"crawl_ids": [new_crawl_id]},
+        json={"crawl_ids": [wr_specs_crawl_id]},
     )
     assert r.status_code == 200
     data = r.json()
     assert data["deleted"] == 1
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{new_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{wr_specs_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
