@@ -137,8 +137,8 @@ By default, this setup will pull the latest release of Browsertrix Cloud. Howeve
 First, open `./chart/examples/local-config.yaml` and add the following, which will ensure only local images are used:
 
 ```
-api_pull_policy: "Never"
-nginx_pull_policy: "Never"
+backend_pull_policy: "Never"
+frontend_pull_policy: "Never"
 ```
 
 Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
@@ -153,13 +153,13 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     MicroK8s uses its own container registry, running on port 32000. 
 
-    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
+    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry. 
 
     2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
 
     ```
-    api_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-    nginx_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
+    backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+    frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
     ```
 
 ??? tip "Minikube" 
@@ -198,5 +198,3 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     ```
 
 Once the images have been built and any other config changes made per the above instructions, simply run the `helm upgrade...` command again to restart with local images.
-
-
