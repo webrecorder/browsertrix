@@ -392,7 +392,7 @@ export class CrawlsList extends LiteElement {
                 this.searchBy = "";
               }}
             >
-              ${msg("Clear all Filters")}
+              ${msg("Clear all filters")}
             </button>
           </p>
 
