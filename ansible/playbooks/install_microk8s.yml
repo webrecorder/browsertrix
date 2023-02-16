@@ -1,6 +1,7 @@
 ---
 # by default this playbook will add the ip address of your endpoint
 # pass '-e host_name="my-domain.example.edu"' for it to work best
+#
 - name: deploy microk8s 
   gather_facts: true
   hosts: "{{ host_ip | default('inventory_hostname') }}"
@@ -12,6 +13,7 @@
   tasks:
   # ===========================================
   # Install pre-requisites (RedHat)
+  #
   - name: microk8s | enable epel-release (RedHat)
     ansible.builtin.dnf:
       name: "{{ item }}"
@@ -21,6 +23,7 @@
       - epel-release
       - python3
       - python3-pip
+      - python3-firewall
     become: true
     when:
       - ansible_os_family == "RedHat"
@@ -43,8 +46,40 @@
       - ansible_os_family == "RedHat"
     become: true
 
+  - name: microk8s | open microk8s web service
+    ansible.posix.firewalld:
+      service: "{{ item }}"
+      permanent: true
+      immediate: true
+      state: enabled
+    loop:
+      - https
+      - http
+    when:
+      - ansible_os_family == "RedHat"
+
+  - name: microk8s | open microk8s firewall ports
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      permanent: true
+      immediate: true
+      state: enabled
+    loop:
+      - 16443/tcp
+      - 10250/tcp
+      - 10255/tcp
+      - 25000/tcp
+      - 12379/tcp
+      - 10257/tcp
+      - 10259/tcp
+      - 19001/tcp
+      - 4789/udp
+    when:
+      - ansible_os_family == "RedHat"
+
   # ===========================================
   # Install microk8s
+  #
   - name: microk8s | ensure dependencies are installed (Debian)
     ansible.builtin.apt:
       name:
