@@ -1,3 +1,4 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -12,7 +13,12 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlConfig, InitialCrawlConfig } from "./types";
+import type {
+  Crawl,
+  CrawlState,
+  CrawlConfig,
+  InitialCrawlConfig,
+} from "./types";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 
 type CrawlSearchResult = {
@@ -20,6 +26,7 @@ type CrawlSearchResult = {
 };
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
+type FilterField = "state";
 
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -44,6 +51,41 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
+const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
+  {
+    starting: {
+      label: msg("Starting"),
+      icon: html``,
+    },
+    running: {
+      label: msg("Running"),
+      icon: html``,
+    },
+    complete: {
+      label: msg("Complete"),
+      icon: html``,
+    },
+    failed: {
+      label: msg("Failed"),
+      icon: html``,
+    },
+    partial_complete: {
+      label: msg("Partial Complete"),
+      icon: html``,
+    },
+    timed_out: {
+      label: msg("Timed Out"),
+      icon: html``,
+    },
+    stopping: {
+      label: msg("Stopping"),
+      icon: html``,
+    },
+    canceled: {
+      label: msg("Canceled"),
+      icon: html``,
+    },
+  };
 
 function isActive(crawl: Crawl) {
   return (
@@ -101,7 +143,16 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = true;
 
   @state()
-  private filterBy: string = "";
+  private filterBy: {
+    field: FilterField | null;
+    value: CrawlState | undefined;
+  } = {
+    field: null,
+    value: undefined,
+  };
+
+  @state()
+  private searchBy: string = "";
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -114,11 +165,20 @@ export class CrawlsList extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
-  private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
-    return orderBy(({ item }) => item[this.orderBy.field])(
-      this.orderBy.direction
-    )(crawls) as CrawlSearchResult[];
-  }
+  private filterCrawls = (crawls: Crawl[]) =>
+    this.filterBy.field
+      ? crawls.filter(
+          (crawl) =>
+            crawl[this.filterBy.field as FilterField] === this.filterBy.value
+        )
+      : crawls;
+
+  private sortCrawls = (
+    crawlsResults: CrawlSearchResult[]
+  ): CrawlSearchResult[] =>
+    orderBy(({ item }) => item[this.orderBy.field])(this.orderBy.direction)(
+      crawlsResults
+    ) as CrawlSearchResult[];
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -155,7 +215,9 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header class="sticky z-10 mb-3 top-0 py-2 bg-neutral-0">
+        <header
+          class="sticky z-10 mb-3 top-0 p-2 bg-neutral-50 border rounded-lg"
+        >
           ${this.renderControls()}
         </header>
         <section>
@@ -191,8 +253,8 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-2 gap-3 items-center">
-        <div class="col-span-2 md:col-span-1">
+      <div class="grid grid-cols-12 gap-y-2 gap-x-4 items-center">
+        <div class="col-span-12 md:col-span-6">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -204,28 +266,59 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          ${this.userId
-            ? html`<label class="mr-3">
-                <span class="text-neutral-500 mr-1"
-                  >${msg("Show Only Mine")}</span
-                >
-                <sl-switch
-                  @sl-change=${(e: CustomEvent) =>
-                    (this.filterByCurrentUser = (
-                      e.target as SlCheckbox
-                    ).checked)}
-                  ?checked=${this.filterByCurrentUser}
-                ></sl-switch>
-              </label>`
-            : ""}
 
-          <div class="whitespace-nowrap text-neutral-500 mr-2">
-            ${msg("Sort By")}
-          </div>
-          <sl-dropdown
+        <div class="col-span-12 md:col-span-3 flex items-center">
+          <div class="text-neutral-500 mr-2">${msg("View:")}</div>
+          <sl-select
+            class="flex-1"
             placement="bottom-end"
             distance="4"
+            size="small"
+            pill
+            value=${this.filterBy.value}
+            clearable
+            @sl-select=${(e: any) => {
+              const value = e.detail.item.value as CrawlState;
+              if (value) {
+                this.filterBy = {
+                  field: "state",
+                  value: value,
+                };
+              } else {
+                this.filterBy = {
+                  field: null,
+                  value: undefined,
+                };
+              }
+            }}
+          >
+            <sl-menu-item>${msg("All Statuses")}</sl-menu-item>
+            <sl-divider></sl-divider>
+            ${Object.entries(crawlState).map(
+              ([value, { label, icon }]) => html`
+                <sl-menu-item
+                  value=${value}
+                  ?checked=${value === this.filterBy.field}
+                >
+                  <div slot="prefix">${icon}</div>
+                  ${label}</sl-menu-item
+                >
+              `
+            )}
+          </sl-select>
+        </div>
+
+        <div class="col-span-12 md:col-span-3 flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mr-2">
+            ${msg("Sort by:")}
+          </div>
+          <sl-select
+            class="flex-1"
+            placement="bottom-end"
+            distance="4"
+            size="small"
+            pill
+            value=${this.orderBy.field}
             @sl-select=${(e: any) => {
               const field = e.detail.item.value as SortField;
               this.orderBy = {
@@ -236,26 +329,16 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            <sl-button
-              slot="trigger"
-              size="small"
-              pill
-              caret
-              ?disabled=${!this.crawls?.length}
-              >${sortableFields[this.orderBy.field].label}</sl-button
-            >
-            <sl-menu>
-              ${Object.entries(sortableFields).map(
-                ([value, { label }]) => html`
-                  <sl-menu-item
-                    value=${value}
-                    ?checked=${value === this.orderBy.field}
-                    >${label}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-menu>
-          </sl-dropdown>
+            ${Object.entries(sortableFields).map(
+              ([value, { label }]) => html`
+                <sl-menu-item
+                  value=${value}
+                  ?checked=${value === this.orderBy.field}
+                  >${label}</sl-menu-item
+                >
+              `
+            )}
+          </sl-select>
           <sl-icon-button
             name="arrow-down-up"
             label=${msg("Reverse sort")}
@@ -268,24 +351,40 @@ export class CrawlsList extends LiteElement {
           ></sl-icon-button>
         </div>
       </div>
+
+      ${this.userId
+        ? html` <div class="my-1 text-right">
+            <label>
+              <span class="text-neutral-500 text-xs mr-1"
+                >${msg("Show Only Mine")}</span
+              >
+              <sl-switch
+                @sl-change=${(e: CustomEvent) =>
+                  (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+                ?checked=${this.filterByCurrentUser}
+              ></sl-switch>
+            </label>
+          </div>`
+        : ""}
     `;
   }
 
   private renderCrawlList() {
     // Return search results if valid filter string is available,
     // otherwise format crawls list like search results
-    const filterResults =
-      this.filterBy.length >= MIN_SEARCH_LENGTH
-        ? () => this.fuse.search(this.filterBy)
+    const searchResults =
+      this.searchBy.length >= MIN_SEARCH_LENGTH
+        ? () => this.fuse.search(this.searchBy)
         : map((crawl) => ({ item: crawl }));
 
     return html`
       <ul class="border rounded">
         ${flow(
-          filterResults,
-          this.sortCrawls.bind(this),
+          this.filterCrawls,
+          searchResults,
+          this.sortCrawls,
           map(this.renderCrawlItem)
-        )(this.crawls as any)}
+        )(this.crawls || [])}
       </ul>
     `;
   }
@@ -570,7 +669,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private onSearchInput = debounce(200)((e: any) => {
-    this.filterBy = e.target.value;
+    this.searchBy = e.target.value;
   }) as any;
 
   /**
