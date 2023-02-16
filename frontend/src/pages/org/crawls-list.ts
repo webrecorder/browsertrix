@@ -2,6 +2,11 @@ import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import type {
+  SlCheckbox,
+  SlMenuItem,
+  SlSelect,
+} from "@shoelace-style/shoelace";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -18,14 +23,12 @@ import type {
   CrawlConfig,
   InitialCrawlConfig,
 } from "./types";
-import { SlCheckbox } from "@shoelace-style/shoelace";
 
 type CrawlSearchResult = {
   item: Crawl;
 };
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
-type FilterField = "state";
 
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -50,6 +53,15 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
+
+const activeCrawlStates: CrawlState[] = ["starting", "running", "stopping"];
+const inactiveCrawlStates: CrawlState[] = [
+  "complete",
+  "canceled",
+  "partial_complete",
+  "timed_out",
+  "failed",
+];
 const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
   {
     starting: {
@@ -61,7 +73,7 @@ const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
       icon: html``,
     },
     complete: {
-      label: msg("Complete"),
+      label: msg("Completed"),
       icon: html``,
     },
     failed: {
@@ -87,11 +99,7 @@ const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
   };
 
 function isActive(crawl: Crawl) {
-  return (
-    crawl.state === "running" ||
-    crawl.state === "starting" ||
-    crawl.state === "stopping"
-  );
+  return activeCrawlStates.includes(crawl.state);
 }
 
 /**
@@ -142,13 +150,7 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = true;
 
   @state()
-  private filterBy: {
-    field: FilterField | null;
-    value: CrawlState | undefined;
-  } = {
-    field: null,
-    value: undefined,
-  };
+  private filterByState: CrawlState[] = [];
 
   @state()
   private searchBy: string = "";
@@ -166,10 +168,9 @@ export class CrawlsList extends LiteElement {
   private numberFormatter = new Intl.NumberFormat();
 
   private filterCrawls = (crawls: Crawl[]) =>
-    this.filterBy.field
-      ? crawls.filter(
-          (crawl) =>
-            crawl[this.filterBy.field as FilterField] === this.filterBy.value
+    this.filterByState.length
+      ? crawls.filter((crawl) =>
+          this.filterByState.some((state) => crawl.state === state)
         )
       : crawls;
 
@@ -254,7 +255,7 @@ export class CrawlsList extends LiteElement {
   private renderControls() {
     return html`
       <div class="grid grid-cols-12 gap-y-2 gap-x-4 items-center">
-        <div class="col-span-12 md:col-span-6">
+        <div class="col-span-12 md:col-span-5">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -272,7 +273,7 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
 
-        <div class="col-span-12 md:col-span-3 flex items-center">
+        <div class="col-span-12 md:col-span-4 flex items-center">
           <div class="text-neutral-500 mr-2">${msg("View:")}</div>
           <sl-select
             class="flex-1"
@@ -280,33 +281,27 @@ export class CrawlsList extends LiteElement {
             distance="4"
             size="small"
             pill
-            value=${this.filterBy.value}
-            clearable
-            @sl-select=${(e: any) => {
-              const value = e.detail.item.value as CrawlState;
-              if (value) {
-                this.filterBy = {
-                  field: "state",
-                  value: value,
-                };
-              } else {
-                this.filterBy = {
-                  field: null,
-                  value: undefined,
-                };
-              }
+            .value=${this.filterByState}
+            multiple
+            max-tags-visible="1"
+            placeholder=${msg("All Crawls")}
+            @sl-change=${(e: CustomEvent) => {
+              const value = (e.target as SlSelect).value as CrawlState[];
+              this.filterByState = value;
             }}
           >
-            <sl-menu-item>${msg("All Statuses")}</sl-menu-item>
-            <sl-divider></sl-divider>
-            ${Object.entries(crawlState).map(
-              ([value, { label, icon }]) => html`
-                <sl-menu-item
-                  value=${value}
-                  ?checked=${value === this.filterBy.field}
+            ${activeCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
                 >
-                  <div slot="prefix">${icon}</div>
-                  ${label}</sl-menu-item
+              `
+            )}
+            <sl-divider></sl-divider>
+            ${inactiveCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
                 >
               `
             )}
@@ -336,11 +331,7 @@ export class CrawlsList extends LiteElement {
           >
             ${Object.entries(sortableFields).map(
               ([value, { label }]) => html`
-                <sl-menu-item
-                  value=${value}
-                  ?checked=${value === this.orderBy.field}
-                  >${label}</sl-menu-item
-                >
+                <sl-menu-item value=${value}>${label}</sl-menu-item>
               `
             )}
           </sl-select>
@@ -396,7 +387,7 @@ export class CrawlsList extends LiteElement {
             <button
               class="text-neutral-500 font-medium underline hover:no-underline"
               @click=${() => {
-                this.filterBy = { field: null, value: undefined };
+                this.filterByState = [];
                 this.onSearchInput.cancel();
                 this.searchBy = "";
               }}
