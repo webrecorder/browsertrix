@@ -158,6 +158,7 @@ export class CrawlsList extends LiteElement {
   private fuse = new Fuse([], {
     keys: ["cid", "configName"],
     shouldSort: false,
+    threshold: 0.4, // stricter; default is 0.6
   });
 
   private timerId?: number;
@@ -261,6 +262,11 @@ export class CrawlsList extends LiteElement {
             placeholder=${msg("Search by Crawl Config name or ID")}
             clearable
             ?disabled=${!this.crawls?.length}
+            value=${this.searchBy}
+            @sl-clear=${() => {
+              this.onSearchInput.cancel();
+              this.searchBy = "";
+            }}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -376,15 +382,41 @@ export class CrawlsList extends LiteElement {
       this.searchBy.length >= MIN_SEARCH_LENGTH
         ? () => this.fuse.search(this.searchBy)
         : map((crawl) => ({ item: crawl }));
+    const filteredCrawls = flow(
+      this.filterCrawls,
+      searchResults
+    )(this.crawls as Crawl[]);
+
+    if (!filteredCrawls.length) {
+      return html`
+        <div class="border rounded-lg bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching crawls found.")}</span
+            >
+            <button
+              class="text-neutral-500 font-medium underline hover:no-underline"
+              @click=${() => {
+                this.filterBy = { field: null, value: undefined };
+                this.onSearchInput.cancel();
+                this.searchBy = "";
+              }}
+            >
+              ${msg("Clear all Filters")}
+            </button>
+          </p>
+
+          <div></div>
+        </div>
+      `;
+    }
 
     return html`
       <ul class="border rounded">
         ${flow(
-          this.filterCrawls,
-          searchResults,
           this.sortCrawls,
           map(this.renderCrawlItem)
-        )(this.crawls || [])}
+        )(filteredCrawls as CrawlSearchResult[])}
       </ul>
     `;
   }
