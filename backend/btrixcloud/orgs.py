@@ -443,6 +443,14 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
         return {"updated": True}
 
+    @router.get("/invite/{token}", tags=["invites"])
+    async def get_pending_org_invite(org: Organization, token: str, email: str):
+        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
+        if org.id != invite.oid:
+            raise HTTPException(status_code=400, detail="oid_mismatch")
+
+        return await user_manager.format_invite(invite)
+
     @router.post("/invite", tags=["invites"])
     async def invite_user_to_org(
         invite: InviteToOrgRequest,

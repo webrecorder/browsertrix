@@ -1,4 +1,5 @@
 import requests
+import urllib.parse
 import uuid
 
 import pytest
@@ -291,3 +292,61 @@ def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
     data = r.json()
     assert data["detail"] == "invite_not_found"
+
+
+def test_get_org_invite(admin_auth_headers, non_default_org_id):
+    # Invite user to non-default org
+    INVITE_EMAIL = "new-non-default-org-invite-by-email-2@example.com"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": INVITE_EMAIL, "role": 20},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+
+    # Get token
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites_matching_email = [
+        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+    ]
+    token = invites_matching_email[0]["id"]
+
+    # Test that we get invite from /orgs/{oid}/invite/{token}
+    url_encoded_email = urllib.parse.quote(INVITE_EMAIL)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/{token}&email={url_encoded_email}",
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == token
+    assert data["email"] == INVITE_EMAIL
+
+    # Test that we get 400 errors for wrong information
+    r = requests.get(
+        f"{API_PREFIX}/orgs/incorrect-org-id/invite/{token}&email={url_encoded_email}",
+    )
+    assert r.status_code == 400
+    data = r.json()
+    assert data["detail"] == "oid_mismatch"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/incorrect-token&email={url_encoded_email}",
+    )
+    assert r.status_code == 400
+    data = r.json()
+    assert data["detail"] == "Invalid Invite Code"
+
+    incorrect_encoded_email = urllib.parse.quote("wrongemail@example.com")
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/{token}&email={incorrect_encoded_email}",
+    )
+    assert r.status_code == 400
+    data = r.json()
+    assert data["detail"] == "Invalid Invite Code"
