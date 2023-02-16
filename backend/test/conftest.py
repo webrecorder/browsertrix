@@ -203,6 +203,34 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Webrecorder Specs sample crawl",
+        "config": {"seeds": ["https://specs.webrecorder.net/"], "limit": 1},
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return crawl_id
+        time.sleep(5)
+
+
+@pytest.fixture(scope="session")
 def crawler_config_id(crawler_crawl_id):
     return _crawler_config_id
 

@@ -41,3 +41,67 @@ def default_org_id(admin_auth_headers):
         except:
             print("Waiting for default org id")
             time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def crawl_id_wr(admin_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Webrecorder admin test crawl",
+        "tags": ["wr", "nightly testing"],
+        "config": {
+            "seeds": ["https://webrecorder.net/"],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return crawl_id
+        time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def crawl_id_wr_specs(admin_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Webrecorder Specs admin test crawl",
+        "tags": ["wr-specs", "nightly testing"],
+        "config": {
+            "seeds": ["https://specs.webrecorder.net/"],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return crawl_id
+        time.sleep(5)

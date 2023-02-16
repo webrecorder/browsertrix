@@ -18,7 +18,7 @@ import pymongo
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
-from .storages import get_presigned_url
+from .storages import get_presigned_url, delete_crawl_file_object
 
 
 # ============================================================================
@@ -352,12 +352,25 @@ class CrawlOps:
         for update in updates:
             await self.crawls.find_one_and_update(*update)
 
-    async def delete_crawls(self, oid: uuid.UUID, delete_list: DeleteCrawlList):
+    async def delete_crawls(self, org: Organization, delete_list: DeleteCrawlList):
         """Delete a list of crawls by id for given org"""
+        for crawl_id in delete_list.crawl_ids:
+            await self._delete_crawl_files(org, crawl_id)
+
         res = await self.crawls.delete_many(
-            {"_id": {"$in": delete_list.crawl_ids}, "oid": oid}
+            {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         )
+
         return res.deleted_count
+
+    async def _delete_crawl_files(self, org: Organization, crawl_id: str):
+        """Delete files associated with crawl from storage."""
+        crawl_raw = await self.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+        for file_ in crawl.files:
+            status_code = await delete_crawl_file_object(org, file_, self.crawl_manager)
+            if status_code != 204:
+                raise HTTPException(status_code=400, detail="file_deletion_error")
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig):
         """initialize new crawl"""
@@ -651,17 +664,29 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
 
     @app.post("/orgs/{oid}/crawls/delete", tags=["crawls"])
     async def delete_crawls(
-        delete_list: DeleteCrawlList, org: Organization = Depends(org_crawl_dep)
+        delete_list: DeleteCrawlList,
+        user: User = Depends(user_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        try:
-            for crawl_id in delete_list:
-                await crawl_manager.stop_crawl(crawl_id, org.id, graceful=False)
+        # Ensure user has appropriate permissions for all crawls in list:
+        # - Crawler users can delete their own crawls
+        # - Org owners can delete any crawls in org
+        for crawl_id in delete_list.crawl_ids:
+            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+            crawl = Crawl.from_dict(crawl_raw)
+            if (crawl.userid != user.id) and not org.is_owner(user):
+                raise HTTPException(status_code=403, detail="Not Allowed")
 
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
+            if not crawl.finished:
+                try:
+                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
+                except Exception as exc:
+                    # pylint: disable=raise-missing-from
+                    raise HTTPException(
+                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
+                    )
 
-        res = await ops.delete_crawls(org.id, delete_list)
+        res = await ops.delete_crawls(org, delete_list)
 
         return {"deleted": res}
 
