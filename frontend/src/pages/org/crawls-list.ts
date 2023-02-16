@@ -17,19 +17,31 @@ import { SlCheckbox } from "@shoelace-style/shoelace";
 type CrawlSearchResult = {
   item: Crawl;
 };
+type SortField = "started" | "finished" | "configName" | "fileSize";
+type SortDirection = "asc" | "desc";
 
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
-const sortableFieldLabels = {
-  started_desc: msg("Newest"),
-  started_asc: msg("Oldest"),
-  finished_desc: msg("Recently Updated"),
-  finished_asc: msg("Oldest Finished"),
-  state: msg("Status"),
-  configName: msg("Crawl Name"),
-  cid: msg("Crawl Config ID"),
-  fileSize_asc: msg("Smallest Files"),
-  fileSize_desc: msg("Largest Files"),
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  started: {
+    label: msg("Date Created"),
+    defaultDirection: "desc",
+  },
+  finished: {
+    label: msg("Date Completed"),
+    defaultDirection: "desc",
+  },
+  configName: {
+    label: msg("Crawl Name"),
+    defaultDirection: "desc",
+  },
+  fileSize: {
+    label: msg("File Size"),
+    defaultDirection: "desc",
+  },
 };
 
 function isActive(crawl: Crawl) {
@@ -77,8 +89,8 @@ export class CrawlsList extends LiteElement {
 
   @state()
   private orderBy: {
-    field: "started";
-    direction: "asc" | "desc";
+    field: SortField;
+    direction: SortDirection;
   } = {
     field: "started",
     direction: "desc",
@@ -214,10 +226,12 @@ export class CrawlsList extends LiteElement {
             placement="bottom-end"
             distance="4"
             @sl-select=${(e: any) => {
-              const [field, direction] = e.detail.item.value.split("_");
+              const field = e.detail.item.value as SortField;
               this.orderBy = {
                 field: field,
-                direction: direction,
+                direction:
+                  sortableFields[field].defaultDirection ||
+                  this.orderBy.direction,
               };
             }}
           >
@@ -227,18 +241,14 @@ export class CrawlsList extends LiteElement {
               pill
               caret
               ?disabled=${!this.crawls?.length}
-              >${(sortableFieldLabels as any)[this.orderBy.field] ||
-              sortableFieldLabels[
-                `${this.orderBy.field}_${this.orderBy.direction}`
-              ]}</sl-button
+              >${sortableFields[this.orderBy.field].label}</sl-button
             >
             <sl-menu>
-              ${Object.entries(sortableFieldLabels).map(
-                ([value, label]) => html`
+              ${Object.entries(sortableFields).map(
+                ([value, { label }]) => html`
                   <sl-menu-item
                     value=${value}
-                    ?checked=${value ===
-                    `${this.orderBy.field}_${this.orderBy.direction}`}
+                    ?checked=${value === this.orderBy.field}
                     >${label}</sl-menu-item
                   >
                 `
