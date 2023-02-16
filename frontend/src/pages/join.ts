@@ -8,6 +8,9 @@ import AuthService from "../utils/AuthService";
 @localized()
 export class Join extends LiteElement {
   @property({ type: String })
+  orgId?: string;
+
+  @property({ type: String })
   token?: string;
 
   @property({ type: String })
@@ -88,8 +91,14 @@ export class Join extends LiteElement {
   }
 
   private async getInviteInfo() {
+    if (!this.orgId || !this.token || !this.email) {
+      this.serverError = msg("This invitation is not valid");
+      return;
+    }
     const resp = await fetch(
-      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`
+      `/api/orgs/${this.orgId}/invite/${this.token}?email=${encodeURIComponent(
+        this.email
+      )}`
     );
 
     if (resp.status === 200) {

@@ -529,6 +529,7 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate="${this.onNavigateTo}"
           @logged-in="${this.onLoggedIn}"
+          orgId="${this.viewState.params.orgId}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
