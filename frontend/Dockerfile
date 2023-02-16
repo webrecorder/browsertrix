@@ -1,7 +1,4 @@
 # syntax=docker/dockerfile:1.4
-# central place to configure the production replayweb.page loading prefix
-ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
-
 FROM docker.io/library/node:16 as build_deps
 
 WORKDIR /app
@@ -30,10 +27,12 @@ COPY --link src ./src/
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
 ARG VERSION
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
-    VERSION=${VERSION}
+    VERSION=${VERSION} \
+    RWP_BASE_URL=${RWP_BASE_URL}
 
 # Prevent Docker caching node_modules
 RUN yarn build && \

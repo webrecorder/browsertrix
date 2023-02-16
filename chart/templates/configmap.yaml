@@ -62,6 +62,8 @@ data:
 
   RERUN_LAST_MIGRATION: "{{ .Values.rerun_last_migration }}"
 
+  PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes | default 60 }}"
+
 
 ---
 apiVersion: v1
