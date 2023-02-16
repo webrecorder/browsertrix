@@ -321,7 +321,7 @@ def test_get_org_invite(admin_auth_headers, non_default_org_id):
     # Test that we get invite from /orgs/{oid}/invite/{token}
     url_encoded_email = urllib.parse.quote(INVITE_EMAIL)
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/{token}&email={url_encoded_email}",
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/{token}&email={url_encoded_email}",
     )
     assert r.status_code == 200
     data = r.json()
@@ -330,14 +330,14 @@ def test_get_org_invite(admin_auth_headers, non_default_org_id):
 
     # Test that we get 400 errors for wrong information
     r = requests.get(
-        f"{API_PREFIX}/orgs/incorrect-org-id/invite/{token}&email={url_encoded_email}",
+        f"{API_PREFIX}/orgs/incorrect-org-id/invites/{token}&email={url_encoded_email}",
     )
     assert r.status_code == 400
     data = r.json()
     assert data["detail"] == "oid_mismatch"
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/incorrect-token&email={url_encoded_email}",
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/incorrect-token&email={url_encoded_email}",
     )
     assert r.status_code == 400
     data = r.json()
@@ -345,7 +345,7 @@ def test_get_org_invite(admin_auth_headers, non_default_org_id):
 
     incorrect_encoded_email = urllib.parse.quote("wrongemail@example.com")
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invite/{token}&email={incorrect_encoded_email}",
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/{token}&email={incorrect_encoded_email}",
     )
     assert r.status_code == 400
     data = r.json()
