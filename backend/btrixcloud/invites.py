@@ -92,6 +92,7 @@ class InviteOps:
         self,
         new_user_invite: InvitePending,
         org_name: Optional[str],
+        oid: Optional[str],
         headers: Optional[dict],
     ):
         """Add invite for new user"""
@@ -118,6 +119,7 @@ class InviteOps:
             new_user_invite.email,
             new_user_invite.inviterEmail,
             org_name,
+            oid,
             new_user_invite.id,
             headers,
         )
@@ -198,6 +200,7 @@ class InviteOps:
             await self.add_new_user_invite(
                 invite_pending,
                 org_name,
+                oid,
                 headers,
             )
             return True

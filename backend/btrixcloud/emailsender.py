@@ -75,7 +75,7 @@ The verification token is: {token}"""
 
     # pylint: disable=too-many-arguments
     def send_new_user_invite(
-        self, receiver_email, sender, org_name, token, headers=None
+        self, receiver_email, sender, org_name, oid, token, headers=None
     ):
         """Send email to invite new user"""
 
@@ -84,7 +84,7 @@ The verification token is: {token}"""
         message = f"""
 You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
 
-You can join by clicking here: {origin}/join/{token}?email={receiver_email}
+You can join by clicking here: {origin}/join/{token}?email={receiver_email}&oid={oid}
 
 The invite token is: {token}"""
 
