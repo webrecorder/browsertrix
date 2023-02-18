@@ -274,8 +274,8 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
 
-        <div class="flex row-start-2 md:row-start-1 col-span-2 md:col-auto">
-          <div class="flex-column grow md:flex items-center mr-2">
+        <div class="row-start-2 md:row-start-1 col-span-2 md:col-auto grid md:grid-rows-1 gap-y-2 grid-cols-1 md:grid-cols-[fit-content(100%)fit-content(100%)]">
+          <div class="grow flex items-center mr-2">
             <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
             <sl-select
               class="flex-1 md:w-[14.5rem]"
@@ -310,11 +310,11 @@ export class CrawlsList extends LiteElement {
             </sl-select>
           </div>
 
-          <div class="flex-column grow md:flex items-center">
+          <div class="grow flex items-center">
             <div class="whitespace-nowrap text-neutral-500 mr-2 ml-2">
               ${msg("Sort by:")}
             </div>
-            <div class="flex">
+            <div class="grow flex">
             <sl-select
               class="flex-1 md:w-[9.2rem]"
               placement="bottom-end"
