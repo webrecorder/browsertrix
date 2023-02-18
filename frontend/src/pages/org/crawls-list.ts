@@ -254,8 +254,8 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid md:grid-cols-3 grid-cols-2 gap-x-2 gap-y-2 items-center">
-        <div class="row-start-1 col-span-full">
+      <div class="grid grid-cols-1 md:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center">
+        <div class="row-start-1 col-span-1">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -272,8 +272,6 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-
-        <div class="row-start-2 md:row-start-1 col-span-2 md:col-auto grid md:grid-rows-1 gap-y-2 grid-cols-1 md:grid-cols-[fit-content(100%)fit-content(100%)]">
           <div class="grow flex items-center mr-2">
             <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
             <sl-select
@@ -349,7 +347,6 @@ export class CrawlsList extends LiteElement {
             ></sl-icon-button>
             </div>
           </div>
-        </div>
       </div>
 
       ${this.userId
