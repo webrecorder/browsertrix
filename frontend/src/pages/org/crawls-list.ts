@@ -218,7 +218,7 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header
-          class="sticky z-10 mb-3 top-0 p-2 bg-neutral-50 border rounded-lg"
+          class="sticky z-10 mb-3 top-2 p-2 bg-neutral-50 border rounded-lg"
         >
           ${this.renderControls()}
         </header>
@@ -255,8 +255,8 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-12 gap-y-2 gap-x-4 items-center">
-        <div class="col-span-12 md:col-span-5">
+      <div class="grid md:grid-cols-3 grid-cols-2 gap-x-2 gap-y-2 items-center">
+        <div class="row-start-1 col-span-full">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -274,10 +274,10 @@ export class CrawlsList extends LiteElement {
           </sl-input>
         </div>
 
-        <div class="col-span-12 md:col-span-4 flex items-center">
-          <div class="text-neutral-500 mr-2">${msg("View:")}</div>
+        <div class="flex-column md:flex items-center row-start-2 md:row-start-1 self-start">
+          <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
           <sl-select
-            class="flex-1"
+            class="flex-1 md:w-[14.5rem]"
             placement="bottom-end"
             distance="4"
             size="small"
@@ -309,12 +309,13 @@ export class CrawlsList extends LiteElement {
           </sl-select>
         </div>
 
-        <div class="col-span-12 md:col-span-3 flex items-center">
-          <div class="whitespace-nowrap text-neutral-500 mr-2">
+        <div class="flex-column md:flex items-center row-start-2 md:row-start-1 self-start">
+          <div class="whitespace-nowrap text-neutral-500 mr-2 ml-2">
             ${msg("Sort by:")}
           </div>
+          <div class="flex">
           <sl-select
-            class="flex-1"
+            class="flex-1 md:w-[9.2rem]"
             placement="bottom-end"
             distance="4"
             size="small"
@@ -346,11 +347,12 @@ export class CrawlsList extends LiteElement {
               };
             }}
           ></sl-icon-button>
+          </div>
         </div>
       </div>
 
       ${this.userId
-        ? html` <div class="my-1 text-right">
+        ? html` <div class="h-6 mt-2 flex flex-row-reverse">
             <label>
               <span class="text-neutral-500 text-xs mr-1"
                 >${msg("Show Only Mine")}</span
