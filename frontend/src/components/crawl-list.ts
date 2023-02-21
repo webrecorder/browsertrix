@@ -34,7 +34,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 13rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 14rem 11rem 11rem 3rem;
     }
   }
 `;
@@ -83,7 +83,7 @@ export class CrawlListItem extends LitElement {
       }
 
       .desc {
-        color: var(--sl-color-neutral-500);
+        color: var(--sl-color-neutral-600);
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
@@ -243,7 +243,7 @@ export class CrawlList extends LitElement {
       .row {
         display none;
         font-size: var(--sl-font-size-x-small);
-        color: var(--sl-color-neutral-500);
+        color: var(--sl-color-neutral-600);
       }
 
       .col {
@@ -269,7 +269,7 @@ export class CrawlList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & End Time")}</div>
+        <div class="col">${msg("Name & Start Time")}</div>
         <div class="col">${msg("Status")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Config Author")}</div>
