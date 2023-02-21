@@ -4,9 +4,9 @@
  * Usage example:
  * ```ts
  * <btrix-crawl-list>
- *   <btrix-crawl-list-item crawl=${crawl1}>
+ *   <btrix-crawl-list-item .crawl=${crawl1}>
  *   </btrix-crawl-list-item>
- *   <btrix-crawl-list-item crawl=${crawl2}>
+ *   <btrix-crawl-list-item .crawl=${crawl2}>
  *   </btrix-crawl-list-item>
  * </btrix-crawl-list>
  * ```
@@ -17,82 +17,104 @@ import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
 import { Crawl } from "../pages/org/types";
+import { srOnly } from "../utils/css";
+
+const largeBreakpointCss = css`60rem`;
+const rowCss = css`
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  @media only screen and (min-width: 30rem) {
+    .row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media only screen and (min-width: ${largeBreakpointCss}) {
+    .row {
+      grid-template-columns: 1fr 15rem 10rem 10rem 3rem;
+    }
+  }
+`;
+const columnCss = css`
+  .col:not(.action) {
+    padding-left: var(--sl-spacing-small);
+    padding-right: var(--sl-spacing-small);
+  }
+
+  .col:first-child {
+    padding-left: var(--sl-spacing-medium);
+  }
+`;
 
 @localized()
 export class CrawlListItem extends LitElement {
-  static styles = css`
-    .item {
-      display: grid;
-      grid-template-columns: 1fr;
-    }
-
-    .col:not(.action) {
-      padding: var(--sl-spacing-small);
-    }
-
-    .col:first-child {
-      padding-left: var(--sl-spacing-medium);
-    }
-
-    .detail,
-    .desc {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .detail {
-      color: var(--sl-color-neutral-700);
-      font-size: var(--sl-font-size-medium);
-      line-height: 1.4;
-      margin-bottom: var(--sl-spacing-3x-small);
-    }
-
-    .desc {
-      color: var(--sl-color-neutral-500);
-      font-size: var(--sl-font-size-x-small);
-      font-family: var(--font-monostyle-family);
-      font-variation-settings: var(--font-monostyle-variation);
-      line-height: 1.4;
-    }
-
-    .state {
-      text-transform: capitalize;
-    }
-
-    .action sl-icon-button {
-      font-size: 1rem;
-    }
-
-    @media only screen and (min-width: 30rem) {
-      .item {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media only screen and (min-width: 60rem) {
-      .item {
-        grid-template-columns: 25rem 10rem 10rem 1fr min-content;
+  static styles = [
+    rowCss,
+    columnCss,
+    css`
+      .row {
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+        box-shadow: var(--sl-shadow-x-small);
       }
 
-      .action {
-        border-left: 1px solid var(--sl-panel-border-color);
-        display: flex;
-        align-items: stretch;
+      .col {
+        padding-top: var(--sl-spacing-small);
+        padding-bottom: var(--sl-spacing-small);
       }
 
-      .action sl-dropdown {
-        display: flex;
-        align-items: center;
+      .detail,
+      .desc {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-    }
-  `;
+
+      .detail {
+        color: var(--sl-color-neutral-700);
+        font-size: var(--sl-font-size-medium);
+        line-height: 1.4;
+        margin-bottom: var(--sl-spacing-3x-small);
+      }
+
+      .desc {
+        color: var(--sl-color-neutral-500);
+        font-size: var(--sl-font-size-x-small);
+        font-family: var(--font-monostyle-family);
+        font-variation-settings: var(--font-monostyle-variation);
+        line-height: 1.4;
+      }
+
+      .state {
+        text-transform: capitalize;
+      }
+
+      .action sl-icon-button {
+        font-size: 1rem;
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .action {
+          border-left: 1px solid var(--sl-panel-border-color);
+          display: flex;
+          align-items: stretch;
+        }
+
+        .action sl-dropdown {
+          display: flex;
+          align-items: center;
+        }
+      }
+    `,
+  ];
 
   @property({ type: Object })
   crawl?: Crawl;
 
   render() {
-    return html`<article class="item">
+    return html`<article class="row">
       <div class="col">
         <div class="detail">
           ${this.safeRender((crawl) => crawl.configName)}
@@ -187,16 +209,57 @@ export class CrawlListItem extends LitElement {
   }
 }
 
+@localized()
 export class CrawlList extends LitElement {
-  static styles = css``;
+  static styles = [
+    srOnly,
+    rowCss,
+    columnCss,
+    css`
+      .list-header {
+        line-height: 1;
+      }
+      
+      .row {
+        display none;
+        font-size: var(--sl-font-size-x-small);
+        color: var(--sl-color-neutral-500);
+      }
+
+      .col {
+        padding-top: var(--sl-spacing-x-small);
+        padding-bottom: var(--sl-spacing-x-small);
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .row {
+          display: grid;
+        }
+      }
+
+      ::slotted(btrix-crawl-list-item:not(:last-of-type)) {
+        display: block;
+        margin-bottom: var(--sl-spacing-x-small);
+      }
+    `,
+  ];
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
   render() {
-    return html`<div role="list">
-      <slot @slotchange=${this.handleSlotchange}></slot>
-    </div>`;
+    return html` <div class="list-header row">
+        <div class="col">${msg("Name & End Time")}</div>
+        <div class="col">${msg("Status")}</div>
+        <div class="col">${msg("Size")}</div>
+        <div class="col">${msg("Config Author")}</div>
+        <div class="col action">
+          <span class="sr-only">${msg("Actions")}</span>
+        </div>
+      </div>
+      <div role="list">
+        <slot @slotchange=${this.handleSlotchange}></slot>
+      </div>`;
   }
 
   private handleSlotchange() {
