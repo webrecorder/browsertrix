@@ -310,8 +310,8 @@ export class CrawlsList extends LiteElement {
           </sl-select>
         </div>
 
-        <div class="grow flex items-center">
-          <div class="whitespace-nowrap text-neutral-500 mr-2 ml-2">
+        <div class="flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mx-2">
             ${msg("Sort by:")}
           </div>
           <div class="grow flex">
