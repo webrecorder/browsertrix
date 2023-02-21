@@ -10,11 +10,11 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
-from pydantic import BaseModel, UUID4, conint
+from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-
+from .crawlconfigs import Seed
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
@@ -91,11 +91,13 @@ class Crawl(BaseMongoModel):
 
 # ============================================================================
 class CrawlOut(Crawl):
-    """Output for single crawl, add configName and userName"""
+    """Output for single crawl, with additional fields"""
 
     userName: Optional[str]
     configName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
+    firstSeed: Optional[str]
+    seedCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -127,6 +129,9 @@ class ListCrawlOut(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     notes: Optional[str]
+
+    firstSeed: Optional[str]
+    seedCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -252,6 +257,8 @@ class CrawlOps:
 
         results = await cursor.to_list(length=1000)
         crawls = [crawl_cls.from_dict(res) for res in results]
+        crawls = [await self._resolve_crawl_refs(crawl, org) for crawl in crawls]
+
         return crawls
 
     async def get_crawl_raw(self, crawlid: str, org: Organization):
@@ -285,7 +292,7 @@ class CrawlOps:
         return await self._resolve_crawl_refs(crawl, org)
 
     async def _resolve_crawl_refs(
-        self, crawl: Union[CrawlOut, ListCrawlOut], org: Organization
+        self, crawl: Union[CrawlOut, ListCrawlOut], org: Optional[Organization]
     ):
         """Resolve running crawl data"""
         config = await self.crawl_configs.get_crawl_config(
@@ -293,7 +300,16 @@ class CrawlOps:
         )
 
         if config:
-            crawl.configName = config.name
+            if not crawl.configName:
+                crawl.configName = config.name
+
+            if config.config.seeds:
+                first_seed = config.config.seeds[0]
+                if isinstance(first_seed, HttpUrl):
+                    crawl.firstSeed = first_seed
+                elif isinstance(first_seed, Seed):
+                    crawl.firstSeed = first_seed.url
+                crawl.seedCount = len(config.config.seeds)
 
         user = await self.user_manager.get(crawl.userid)
         if user:
