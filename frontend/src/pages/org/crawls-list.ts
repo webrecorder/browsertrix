@@ -277,7 +277,7 @@ export class CrawlsList extends LiteElement {
         <div class="grow flex items-center">
           <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
           <sl-select
-            class="flex-1 md:w-[14.5rem]"
+            class="flex-1 md:min-w-[14.5rem]"
             placement="bottom-end"
             distance="4"
             size="small"
@@ -315,7 +315,7 @@ export class CrawlsList extends LiteElement {
           </div>
           <div class="grow flex">
             <sl-select
-              class="flex-1 md:w-[9.2rem]"
+              class="flex-1 md:min-w-[9.2rem]"
               placement="bottom-end"
               distance="4"
               size="small"
