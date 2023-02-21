@@ -275,8 +275,8 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="grow flex items-center">
-          <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
+        <div class="flex items-center">
+          <div class="text-neutral-500 mx-2">${msg("View:")}</div>
           <sl-select
             class="flex-1 md:min-w-[14.5rem]"
             placement="bottom-end"
