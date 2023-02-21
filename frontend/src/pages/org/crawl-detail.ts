@@ -333,11 +333,11 @@ export class CrawlDetail extends LiteElement {
         <h2 class="text-xl font-semibold mb-3 md:mr-2">
           ${msg(
             html`${this.crawl
-                ? this.crawl.configName
-                : html`<sl-skeleton
-                    class="inline-block"
-                    style="width: 15em"
-                  ></sl-skeleton>`}`
+              ? this.crawl.configName
+              : html`<sl-skeleton
+                  class="inline-block"
+                  style="width: 15em"
+                ></sl-skeleton>`}`
           )}
         </h2>
         <div
@@ -480,6 +480,21 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Config ID")}
           </li>
+          ${when(
+            this.crawl && !this.isActive,
+            () => html`
+              <li
+                class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  e.target.closest("sl-dropdown").hide();
+                  this.deleteCrawl();
+                }}
+              >
+                ${msg("Delete Crawl")}
+              </li>
+            `
+          )}
         </ul>
       </sl-dropdown>
     `;
@@ -853,7 +868,12 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div>
-        <sl-radio-group value=${this.crawl.scale} help-text=${msg("Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.")}>
+        <sl-radio-group
+          value=${this.crawl.scale}
+          help-text=${msg(
+            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
+          )}
+        >
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
@@ -1200,6 +1220,48 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteCrawl() {
+    if (
+      !window.confirm(
+        msg(
+          str`Are you sure you want to delete crawl of ${
+            this.crawl!.configName
+          }?`
+        )
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.crawl!.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [this.crawl!.id],
+          }),
+        }
+      );
+
+      this.navTo(this.crawlsBaseUrl);
+      this.notify({
+        message: msg(`Successfully deleted crawl`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e.isApiError && e.message) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

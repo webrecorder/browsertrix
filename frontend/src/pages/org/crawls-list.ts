@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -396,6 +397,21 @@ export class CrawlsList extends LiteElement {
               >
                 ${msg("View Crawl Config")}
               </li>
+              ${when(
+                !isActive(crawl),
+                () => html`
+                  <li
+                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      e.target.closest("sl-dropdown").hide();
+                      this.deleteCrawl(crawl);
+                    }}
+                  >
+                    ${msg("Delete Crawl")}
+                  </li>
+                `
+              )}
             </ul>
           </sl-dropdown>
         </div>
@@ -553,18 +569,13 @@ export class CrawlsList extends LiteElement {
   private async fetchCrawls(): Promise<void> {
     if (!this.shouldFetch) return;
 
+    this.stopPollTimer();
     try {
       const { crawls } = await this.getCrawls();
 
       this.crawls = crawls;
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
-
-      // Restart timer for next poll
-      this.stopPollTimer();
-      this.timerId = window.setTimeout(() => {
-        this.fetchCrawls();
-      }, 1000 * POLL_INTERVAL_SECONDS);
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawls at this time."),
@@ -572,6 +583,11 @@ export class CrawlsList extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchCrawls();
+    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   private stopPollTimer() {
@@ -711,6 +727,45 @@ export class CrawlsList extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+    }
+  }
+
+  private async deleteCrawl(crawl: Crawl) {
+    if (
+      !window.confirm(
+        msg(str`Are you sure you want to delete crawl of ${crawl.configName}?`)
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${crawl.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [crawl.id],
+          }),
+        }
+      );
+
+      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      this.notify({
+        message: msg(`Successfully deleted crawl`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.fetchCrawls();
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e.isApiError && e.message) ||
+          msg("Sorry, couldn't run crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 
