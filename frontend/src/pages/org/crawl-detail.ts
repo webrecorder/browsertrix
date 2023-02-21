@@ -447,20 +447,25 @@ export class CrawlDetail extends LiteElement {
                   ${msg("Edit Metadata")}
                 </span>
               </li>
-              <hr />
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${() => {
-                  this.navTo(
-                    `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawlTemplateId}?edit`
-                  );
-                }}
-              >
-                <span class="inline-block align-middle">
-                  ${msg("Edit Crawl Config")}
-                </span>
-              </li>
+              ${when(
+                !this.isActive,
+                () => html`
+                  <hr />
+                  <li
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    role="menuitem"
+                    @click=${() => {
+                      this.navTo(
+                        `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawlTemplateId}?edit`
+                      );
+                    }}
+                  >
+                    <span class="inline-block align-middle">
+                      ${msg("Edit Crawl Config")}
+                    </span>
+                  </li>
+                `
+              )}
             `
           )}
           <li
