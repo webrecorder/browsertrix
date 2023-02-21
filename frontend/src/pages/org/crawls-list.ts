@@ -258,7 +258,7 @@ export class CrawlsList extends LiteElement {
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
-        <div class="row-start-1 col-span-1 md:col-span-2 lg:col-span-1">
+        <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <sl-input
             class="w-full"
             slot="trigger"
