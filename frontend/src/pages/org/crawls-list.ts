@@ -416,7 +416,38 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) =>
-    html` <btrix-crawl-list-item .crawl=${crawl}></btrix-crawl-list-item> `;
+    html`
+      <btrix-crawl-list-item .crawl=${crawl}>
+        <sl-menu slot="menu">
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Re-Run Crawl")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Go to Crawl Config")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Copy Config id")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item @click=${() => {}}>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Delete Crawl")}
+          </sl-menu-item>
+        </sl-menu>
+      </btrix-crawl-list-item>
+    `;
 
   private renderActiveDuration(crawl: Crawl) {
     const endTime = this.lastFetched || Date.now();

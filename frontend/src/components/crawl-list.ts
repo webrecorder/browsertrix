@@ -127,9 +127,6 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
-  @property({ type: Boolean })
-  hideActions = false;
-
   render() {
     return html`<article class="row">
       <div class="col truncate">
@@ -199,25 +196,20 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
       </div>
-      ${when(
-        !this.hideActions,
-        () => html`
-          <div class="col action">
-            <sl-dropdown
-              @click=${(e: Event) => e.preventDefault()}
-              distance="4"
-              hoist
-            >
-              <sl-icon-button
-                slot="trigger"
-                name="three-dots-vertical"
-                label=${msg("More")}
-              ></sl-icon-button>
-              <slot name="menu"></slot>
-            </sl-dropdown>
-          </div>
-        `
-      )}
+      <div class="col action">
+        <sl-dropdown
+          @click=${(e: Event) => e.preventDefault()}
+          distance="4"
+          hoist
+        >
+          <sl-icon-button
+            slot="trigger"
+            name="three-dots-vertical"
+            label=${msg("More")}
+          ></sl-icon-button>
+          <slot name="menu"></slot>
+        </sl-dropdown>
+      </div>
     </article>`;
   }
 
