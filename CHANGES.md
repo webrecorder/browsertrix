@@ -1,12 +1,10 @@
-### v1.2.0 Dev
+### v1.3.0 Beta 0
 
-New Features:
-- Updated UI: New Crawl Configuration UI with URL List and Seeded Crawl Job Types
+Release notes coming soon!
 
-Docs improvements
+### v1.2.0
 
-Docker swarm code removed
-
+See: https://github.com/webrecorder/browsertrix-cloud/releases/tag/v1.2.0 for latest release notes.
 
 ### v1.1.0
 
