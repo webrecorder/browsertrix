@@ -3,8 +3,7 @@
  */
 import { css } from "lit";
 
-// From tailwindcss
-// https://tailwindcss.com/docs/screen-readers#screen-reader-only-elements
+// From https://tailwindcss.com/docs/screen-readers#screen-reader-only-elements
 export const srOnly = css`
   .sr-only {
     position: absolute;
@@ -16,5 +15,14 @@ export const srOnly = css`
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+`;
+
+// From https://tailwindcss.com/docs/text-overflow#truncate
+export const truncate = css`
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;

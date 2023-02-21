@@ -13,11 +13,12 @@
  */
 import { LitElement, html, css } from "lit";
 import { property, queryAssignedElements } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
 import { Crawl } from "../pages/org/types";
-import { srOnly } from "../utils/css";
+import { srOnly, truncate } from "../utils/css";
 
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
@@ -33,7 +34,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 10rem 10rem 3rem;
+      grid-template-columns: 1fr 13rem 11rem 11rem 3rem;
     }
   }
 `;
@@ -51,6 +52,7 @@ const columnCss = css`
 @localized()
 export class CrawlListItem extends LitElement {
   static styles = [
+    truncate,
     rowCss,
     columnCss,
     css`
@@ -63,6 +65,7 @@ export class CrawlListItem extends LitElement {
       .col {
         padding-top: var(--sl-spacing-small);
         padding-bottom: var(--sl-spacing-small);
+        white-space: nowrap;
       }
 
       .detail,
@@ -91,6 +94,17 @@ export class CrawlListItem extends LitElement {
         text-transform: capitalize;
       }
 
+      .userName {
+        font-family: var(--font-monostyle-family);
+        font-variation-settings: var(--font-monostyle-variation);
+      }
+
+      .action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
       .action sl-icon-button {
         font-size: 1rem;
       }
@@ -113,9 +127,12 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
+  @property({ type: Boolean })
+  hideActions = false;
+
   render() {
     return html`<article class="row">
-      <div class="col">
+      <div class="col truncate">
         <div class="detail">
           ${this.safeRender((crawl) => crawl.configName)}
         </div>
@@ -134,7 +151,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
       </div>
-      <div class="col">
+      <div class="col truncate">
         <!-- TODO handle active state -->
         <div class="detail state">
           ${this.safeRender((crawl) => crawl.state)}
@@ -151,7 +168,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
       </div>
-      <div class="col">
+      <div class="col truncate">
         <div class="detail">
           ${this.safeRender(
             (crawl) => html`<sl-format-bytes
@@ -170,34 +187,37 @@ export class CrawlListItem extends LitElement {
           })}
         </div>
       </div>
-      <div class="col">
+      <div class="col truncate">
         <div class="detail">
-          ${this.safeRender((crawl) =>
-            crawl.manual ? msg("Manual Start") : msg("Recurring Schedule")
+          ${this.safeRender(
+            (crawl) => html`<span class="userName">${crawl.userName}</span>`
           )}
         </div>
         <div class="desc">
           ${this.safeRender((crawl) =>
-            crawl.manual
-              ? msg(str`by ${crawl.userName}`)
-              : msg(str`Created by ${crawl.userName}`)
+            crawl.manual ? msg("Manual Start") : msg("Scheduled")
           )}
         </div>
       </div>
-      <div class="col action">
-        <sl-dropdown
-          @click=${(e: Event) => e.preventDefault()}
-          distance="4"
-          hoist
-        >
-          <sl-icon-button
-            slot="trigger"
-            name="three-dots-vertical"
-            label=${msg("More")}
-          ></sl-icon-button>
-          <slot name="menu"></slot>
-        </sl-dropdown>
-      </div>
+      ${when(
+        !this.hideActions,
+        () => html`
+          <div class="col action">
+            <sl-dropdown
+              @click=${(e: Event) => e.preventDefault()}
+              distance="4"
+              hoist
+            >
+              <sl-icon-button
+                slot="trigger"
+                name="three-dots-vertical"
+                label=${msg("More")}
+              ></sl-icon-button>
+              <slot name="menu"></slot>
+            </sl-dropdown>
+          </div>
+        `
+      )}
     </article>`;
   }
 
@@ -216,10 +236,10 @@ export class CrawlList extends LitElement {
     rowCss,
     columnCss,
     css`
-      .list-header {
+      .listHeader {
         line-height: 1;
       }
-      
+
       .row {
         display none;
         font-size: var(--sl-font-size-x-small);
@@ -248,7 +268,7 @@ export class CrawlList extends LitElement {
   listItems!: Array<HTMLElement>;
 
   render() {
-    return html` <div class="list-header row">
+    return html` <div class="listHeader row">
         <div class="col">${msg("Name & End Time")}</div>
         <div class="col">${msg("Status")}</div>
         <div class="col">${msg("Size")}</div>
