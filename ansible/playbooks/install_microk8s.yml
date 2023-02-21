@@ -65,14 +65,14 @@
       immediate: true
       state: enabled
     loop:
-      - 16443/tcp
       - 10250/tcp
       - 10255/tcp
-      - 25000/tcp
-      - 12379/tcp
       - 10257/tcp
       - 10259/tcp
+      - 12379/tcp
+      - 16443/tcp
       - 19001/tcp
+      - 25000/tcp
       - 4789/udp
     when:
       - ansible_os_family == "RedHat"
