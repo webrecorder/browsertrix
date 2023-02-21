@@ -254,7 +254,9 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center">
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
+      >
         <div class="row-start-1 col-span-1 md:col-span-2 lg:col-span-1">
           <sl-input
             class="w-full"
@@ -272,46 +274,46 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-          <div class="grow flex items-center mr-2">
-            <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
-            <sl-select
-              class="flex-1 md:w-[14.5rem]"
-              placement="bottom-end"
-              distance="4"
-              size="small"
-              pill
-              .value=${this.filterByState}
-              multiple
-              max-tags-visible="1"
-              placeholder=${msg("All Crawls")}
-              @sl-change=${(e: CustomEvent) => {
-                const value = (e.target as SlSelect).value as CrawlState[];
-                this.filterByState = value;
-              }}
-            >
-              ${activeCrawlStates.map(
-                (state) => html`
-                  <sl-menu-item value=${state}>
-                    ${crawlState[state].label}</sl-menu-item
-                  >
-                `
-              )}
-              <sl-divider></sl-divider>
-              ${inactiveCrawlStates.map(
-                (state) => html`
-                  <sl-menu-item value=${state}>
-                    ${crawlState[state].label}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-select>
-          </div>
+        <div class="grow flex items-center mr-2">
+          <div class="text-neutral-500 mr-2 ml-2">${msg("View:")}</div>
+          <sl-select
+            class="flex-1 md:w-[14.5rem]"
+            placement="bottom-end"
+            distance="4"
+            size="small"
+            pill
+            .value=${this.filterByState}
+            multiple
+            max-tags-visible="1"
+            placeholder=${msg("All Crawls")}
+            @sl-change=${(e: CustomEvent) => {
+              const value = (e.target as SlSelect).value as CrawlState[];
+              this.filterByState = value;
+            }}
+          >
+            ${activeCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
+                >
+              `
+            )}
+            <sl-divider></sl-divider>
+            ${inactiveCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
+                >
+              `
+            )}
+          </sl-select>
+        </div>
 
-          <div class="grow flex items-center">
-            <div class="whitespace-nowrap text-neutral-500 mr-2 ml-2">
-              ${msg("Sort by:")}
-            </div>
-            <div class="grow flex">
+        <div class="grow flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mr-2 ml-2">
+            ${msg("Sort by:")}
+          </div>
+          <div class="grow flex">
             <sl-select
               class="flex-1 md:w-[9.2rem]"
               placement="bottom-end"
@@ -345,8 +347,8 @@ export class CrawlsList extends LiteElement {
                 };
               }}
             ></sl-icon-button>
-            </div>
           </div>
+        </div>
       </div>
 
       ${this.userId
