@@ -352,7 +352,7 @@ export class CrawlsList extends LiteElement {
       </div>
 
       ${this.userId
-        ? html` <div class="h-6 mt-2 flex flex-row-reverse">
+        ? html` <div class="h-6 mt-2 flex justify-end">
             <label>
               <span class="text-neutral-500 text-xs mr-1"
                 >${msg("Show Only Mine")}</span
