@@ -455,7 +455,7 @@ export class CrawlConfigEditor extends LiteElement {
     }
 
     return {
-      jobName: this.initialCrawlConfig.name,
+      jobName: this.initialCrawlConfig.name || "",
       browserProfile: this.initialCrawlConfig.profileid
         ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
@@ -538,10 +538,7 @@ export class CrawlConfigEditor extends LiteElement {
           >
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-crawlMetadata"
-            class="scroll-m-3"
-          >
+          <btrix-tab-panel name="newJobConfig-crawlMetadata" class="scroll-m-3">
             ${this.renderPanelContent(this.renderJobMetadata())}
           </btrix-tab-panel>
           <btrix-tab-panel
@@ -775,11 +772,6 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
-            } else {
-              await this.updateComplete;
-              if (!this.formState.jobName) {
-                this.setDefaultJobName();
-              }
             }
           }}
         ></sl-textarea>
@@ -969,11 +961,6 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
-            } else {
-              await this.updateComplete;
-              if (!this.formState.jobName) {
-                this.setDefaultJobName();
-              }
             }
           }}
         ></sl-input>
@@ -1124,11 +1111,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     inputEl.invalid = true;
                     inputEl.helpText = text;
                     inputEl.setCustomValidity(text);
-                  } else {
-                    await this.updateComplete;
-                    if (!this.formState.jobName) {
-                      this.setDefaultJobName();
-                    }
                   }
                 }}
               ></sl-textarea>
@@ -1455,10 +1437,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const jobNameValue =
-      this.formState.jobName ||
-      (this.jobType === "seed-crawl" && this.formState.primarySeedUrl) ||
-      "";
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -1468,7 +1446,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl config name",
           })}
-          value=${jobNameValue}
+          value=${this.formState.jobName}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -1583,13 +1561,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
     return jobName;
-  }
-
-  private setDefaultJobName() {
-    const jobName = this.getDefaultJobName();
-    if (jobName) {
-      this.updateFormState({ jobName });
-    }
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
@@ -1903,7 +1874,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
-      name: this.formState.jobName || this.getDefaultJobName() || "",
+      name: this.formState.jobName || "",
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || null,
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
