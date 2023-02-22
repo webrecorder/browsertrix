@@ -67,10 +67,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  #CRAWL_ARGS: "{{ .Values.crawler_args }} --redisStoreUrl {{ .Values.redis_url }}"
-  CRAWL_ARGS: "{{ .Values.crawler_args }}"
-  #WEBHOOK_URL: "{{ .Values.redis_url }}/crawls-done"
-
+  CRAWL_ARGS: "{{ .Values.crawler_args }} --workers {{ .Values.crawler_browser_instances | default 1 }}"
 
 ---
 apiVersion: v1
