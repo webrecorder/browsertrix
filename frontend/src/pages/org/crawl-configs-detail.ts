@@ -7,6 +7,11 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlConfig, InitialCrawlConfig, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
+import { getNameFromSeedURLs } from "../../utils/crawler";
+
+type CrawlConfigWithName = CrawlConfig & {
+  nameFromSeedURLs: string | null;
+};
 
 /**
  * Usage:
@@ -29,7 +34,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   isEditing: boolean = false;
 
   @state()
-  private crawlConfig?: CrawlConfig;
+  private crawlConfig?: CrawlConfigWithName;
 
   @state()
   private lastCrawl?: Crawl;
@@ -63,7 +68,11 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async initializeCrawlTemplate() {
     try {
-      this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      const crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      this.crawlConfig = {
+        ...crawlConfig,
+        nameFromSeedURLs: getNameFromSeedURLs(crawlConfig),
+      };
       if (this.crawlConfig.lastCrawlId)
         this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
     } catch (e: any) {
@@ -93,12 +102,11 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <header class="col-span-1 md:flex justify-between items-end">
           <h2>
-            ${this.crawlConfig?.name
-              ? html`<span
-                  class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-                  >${this.crawlConfig.name}</span
-                > `
-              : ""}
+            <span
+              class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
+              >${this.crawlConfig?.name ||
+              this.crawlConfig?.nameFromSeedURLs}</span
+            >
             ${when(
               this.crawlConfig?.inactive,
               () => html`
@@ -571,7 +579,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.crawlConfig = {
         ...this.crawlConfig,
         currCrawlId: crawlId,
-      } as CrawlConfig;
+      } as CrawlConfigWithName;
 
       this.notify({
         message: msg(
