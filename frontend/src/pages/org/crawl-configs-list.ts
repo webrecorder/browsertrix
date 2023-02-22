@@ -17,6 +17,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "../../utils/cron";
+import { getNameFromSeedURLs } from "../../utils/crawler";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 
@@ -31,6 +32,10 @@ const sortableFieldLabels = {
   created_asc: msg("Oldest"),
   lastCrawlTime_desc: msg("Newest Crawl"),
   lastCrawlTime_asc: msg("Oldest Crawl"),
+};
+
+type CrawlConfigWithName = CrawlConfig & {
+  nameFromSeedURLs: string | null;
 };
 
 /**
@@ -51,7 +56,7 @@ export class CrawlTemplatesList extends LiteElement {
   userId!: string;
 
   @state()
-  crawlTemplates?: CrawlConfig[];
+  crawlConfigs?: CrawlConfigWithName[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -82,9 +87,9 @@ export class CrawlTemplatesList extends LiteElement {
 
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["name"],
+    keys: ["name", "config.seeds", "config.seeds.url"],
     shouldSort: false,
-    threshold: 0.4, // stricter; default is 0.6
+    threshold: 0.2, // stricter; default is 0.6
   });
 
   protected async willUpdate(changedProperties: Map<string, any>) {
@@ -93,10 +98,10 @@ export class CrawlTemplatesList extends LiteElement {
       changedProperties.has("filterByCurrentUser")
     ) {
       try {
-        this.crawlTemplates = await this.getCrawlTemplates();
+        await this.fetchCrawlConfigs();
 
         // Update search/filter collection
-        this.fuse.setCollection(this.crawlTemplates as any);
+        this.fuse.setCollection(this.crawlConfigs as any);
       } catch (e) {
         this.notify({
           message: msg("Sorry, couldn't retrieve crawl configs at this time."),
@@ -105,6 +110,17 @@ export class CrawlTemplatesList extends LiteElement {
         });
       }
     }
+  }
+
+  private async fetchCrawlConfigs() {
+    const crawlConfigs = await this.getCrawlTemplates();
+    this.crawlConfigs = crawlConfigs.map(
+      (crawlConfig) =>
+        ({
+          ...crawlConfig,
+          nameFromSeedURLs: getNameFromSeedURLs(crawlConfig),
+        } as CrawlConfigWithName)
+    );
   }
 
   render() {
@@ -127,8 +143,8 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
       </header>
 
-      ${this.crawlTemplates
-        ? this.crawlTemplates.length
+      ${this.crawlConfigs
+        ? this.crawlConfigs.length
           ? this.renderTemplateList()
           : html`
               <div class="border-t border-b py-5">
@@ -173,9 +189,9 @@ export class CrawlTemplatesList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by name")}
+            placeholder=${msg("Search by name or Crawl URL")}
             clearable
-            ?disabled=${!this.crawlTemplates?.length}
+            ?disabled=${!this.crawlConfigs?.length}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -251,7 +267,7 @@ export class CrawlTemplatesList extends LiteElement {
               size="small"
               pill
               caret
-              ?disabled=${!this.crawlTemplates?.length}
+              ?disabled=${!this.crawlConfigs?.length}
               >${(sortableFieldLabels as any)[this.orderBy.field] ||
               sortableFieldLabels[
                 `${this.orderBy.field}_${this.orderBy.direction}`
@@ -303,24 +319,25 @@ export class CrawlTemplatesList extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${flow(...flowFns)(this.crawlTemplates)}
+        ${flow(...flowFns)(this.crawlConfigs)}
       </div>
     `;
   }
 
-  private renderTemplateItem(t: CrawlConfig) {
+  private renderTemplateItem(t: CrawlConfigWithName) {
+    const name = t.name || t.nameFromSeedURLs;
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-      aria-label=${t.name}
+      aria-label=${name}
       href=${`/orgs/${this.orgId}/crawl-configs/config/${t.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
         <div
           class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-          title=${t.name}
+          title=${name}
         >
-          ${t.name}
+          ${name}
         </div>
 
         ${this.renderCardMenu(t)}
@@ -433,7 +450,7 @@ export class CrawlTemplatesList extends LiteElement {
     </a>`;
   }
 
-  private renderCardMenu(t: CrawlConfig) {
+  private renderCardMenu(t: CrawlConfigWithName) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -536,7 +553,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderCardFooter(t: CrawlConfig) {
+  private renderCardFooter(t: CrawlConfigWithName) {
     if (t.inactive) {
       return "";
     }
@@ -605,9 +622,9 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(template: CrawlConfig) {
+  private async duplicateConfig(template: CrawlConfigWithName) {
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${template.name} Copy`),
+      name: msg(str`${template.name || template.nameFromSeedURLs} Copy`),
       config: template.config,
       profileid: template.profileid || null,
       jobType: template.jobType,
@@ -629,7 +646,9 @@ export class CrawlTemplatesList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(template: CrawlConfig): Promise<void> {
+  private async deactivateTemplate(
+    template: CrawlConfigWithName
+  ): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
@@ -640,12 +659,15 @@ export class CrawlTemplatesList extends LiteElement {
       );
 
       this.notify({
-        message: msg(html`Deactivated <strong>${template.name}</strong>.`),
+        message: msg(
+          html`Deactivated
+            <strong>${template.name || template.nameFromSeedURLs}</strong>.`
+        ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlTemplates = this.crawlTemplates!.filter(
+      this.crawlConfigs = this.crawlConfigs!.filter(
         (t) => t.id !== template.id
       );
     } catch {
@@ -657,7 +679,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(template: CrawlConfig): Promise<void> {
+  private async deleteTemplate(template: CrawlConfigWithName): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
@@ -668,12 +690,15 @@ export class CrawlTemplatesList extends LiteElement {
       );
 
       this.notify({
-        message: msg(html`Deleted <strong>${template.name}</strong>.`),
+        message: msg(
+          html`Deleted
+            <strong>${template.name || template.nameFromSeedURLs}</strong>.`
+        ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlTemplates = this.crawlTemplates!.filter(
+      this.crawlConfigs = this.crawlConfigs!.filter(
         (t) => t.id !== template.id
       );
     } catch {
@@ -685,7 +710,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async runNow(template: CrawlConfig): Promise<void> {
+  private async runNow(template: CrawlConfigWithName): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${template.id}/run`,
@@ -704,7 +729,9 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${template.name}</strong>. <br />
+          html`Started crawl from
+            <strong>${template.name || template.nameFromSeedURLs}</strong>.
+            <br />
             <a
               class="underline hover:no-underline"
               href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
@@ -754,7 +781,7 @@ export class CrawlTemplatesList extends LiteElement {
         }
       );
 
-      this.crawlTemplates = this.crawlTemplates?.map((t) =>
+      this.crawlConfigs = this.crawlConfigs?.map((t) =>
         t.id === editedTemplateId
           ? {
               ...t,
