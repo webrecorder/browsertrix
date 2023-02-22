@@ -48,7 +48,7 @@ helm upgrade --install -f ./chart/admin/logging/values.yaml btrix-admin-log ./ch
 ```
 kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'
 ```
-* open `https://hostname/kibana`
+* open `https://hostname/kibana/` (note the trailing slash is required)
 
 ## Import/Export Kibana data
 

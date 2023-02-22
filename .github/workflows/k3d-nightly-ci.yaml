@@ -3,7 +3,7 @@ name: Nightly tests (K3d)
 on:
   schedule:
     # Run daily at 8am UTC
-    - cron:  '0 8 1 * *'
+    - cron:  '0 8 * * *'
 
 jobs:
   btrix-k3d-nightly-test:

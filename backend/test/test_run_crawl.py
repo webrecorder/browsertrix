@@ -75,6 +75,38 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     assert data["fileSize"] == wacz_size
 
 
+def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["firstSeed"] == "https://webrecorder.net/"
+    assert data["seedCount"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    crawls = data["crawls"]
+    assert crawls
+    for crawl in crawls:
+        assert crawl["firstSeed"]
+        assert crawl["seedCount"] > 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawls",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    crawls = data["crawls"]
+    assert crawls
+    for crawl in crawls:
+        assert crawl["firstSeed"]
+        assert crawl["seedCount"] > 0
+
+
 def test_download_wacz():
     r = requests.get(HOST_PREFIX + wacz_path)
     assert r.status_code == 200

@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 
 import type {
@@ -29,6 +30,7 @@ const SECTIONS = [
 type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
+const CRAWL_NOTES_MAXLENGTH = 500;
 
 /**
  * Usage:
@@ -209,15 +211,16 @@ export class CrawlDetail extends LiteElement {
               ${this.renderPanel(
                 html`
                   <div class="flex items-center justify-between">
-                    ${msg("Tags")}
+                    ${msg("Metadata")}
                     <sl-icon-button
                       class="text-base"
                       name="pencil"
-                      @click=${this.openDetailEditor}
+                      @click=${this.openMetadataEditor}
+                      aria-label=${msg("Edit Metadata")}
                     ></sl-icon-button>
                   </div>
                 `,
-                this.renderDetails()
+                this.renderMetadata()
               )}
             </div>
           </div>
@@ -266,13 +269,13 @@ export class CrawlDetail extends LiteElement {
       </btrix-dialog>
 
       <btrix-dialog
-        label=${msg("Edit Tags")}
+        label=${msg("Edit Metadata")}
         ?open=${this.openDialogName === "details"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${this.isDialogVisible ? this.renderEditDetails() : ""}
+        ${this.isDialogVisible ? this.renderEditMetadata() : ""}
       </btrix-dialog>
     `;
   }
@@ -333,11 +336,11 @@ export class CrawlDetail extends LiteElement {
         <h2 class="text-xl font-semibold mb-3 md:mr-2">
           ${msg(
             html`${this.crawl
-                ? this.crawl.configName
-                : html`<sl-skeleton
-                    class="inline-block"
-                    style="width: 15em"
-                  ></sl-skeleton>`}`
+              ? this.crawl.configName
+              : html`<sl-skeleton
+                  class="inline-block"
+                  style="width: 15em"
+                ></sl-skeleton>`}`
           )}
         </h2>
         <div
@@ -432,7 +435,7 @@ export class CrawlDetail extends LiteElement {
                 class="p-2 hover:bg-zinc-100 cursor-pointer"
                 role="menuitem"
                 @click=${(e: any) => {
-                  this.openDetailEditor();
+                  this.openMetadataEditor();
                   e.target.closest("sl-dropdown").hide();
                 }}
               >
@@ -441,7 +444,7 @@ export class CrawlDetail extends LiteElement {
                   name="pencil"
                 ></sl-icon>
                 <span class="inline-block align-middle">
-                  ${msg("Edit Tags")}
+                  ${msg("Edit Metadata")}
                 </span>
               </li>
               <hr />
@@ -480,6 +483,21 @@ export class CrawlDetail extends LiteElement {
           >
             ${msg("Copy Crawl Config ID")}
           </li>
+          ${when(
+            this.crawl && !this.isActive,
+            () => html`
+              <li
+                class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  e.target.closest("sl-dropdown").hide();
+                  this.deleteCrawl();
+                }}
+              >
+                ${msg("Delete Crawl")}
+              </li>
+            `
+          )}
         </ul>
       </sl-dropdown>
     `;
@@ -759,21 +777,37 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderDetails() {
+  private renderMetadata() {
+    const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
     return html`
       <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Notes")}>
+          ${when(
+            this.crawl,
+            () =>
+              when(
+                this.crawl!.notes?.length,
+                () => html`<pre class="whitespace-pre-line font-sans">
+${this.crawl?.notes}
+                </pre
+                >`,
+                () => noneText
+              ),
+            () => html`<sl-skeleton></sl-skeleton>`
+          )}
+        </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Tags")}>
           ${when(
             this.crawl,
             () =>
               when(
-                this.crawl?.tags?.length,
+                this.crawl!.tags.length,
                 () =>
-                  this.crawl!.tags!.map(
+                  this.crawl!.tags.map(
                     (tag) =>
                       html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
                   ),
-                () => html`${msg("None")}`
+                () => noneText
               ),
             () => html`<sl-skeleton></sl-skeleton>`
           )}
@@ -853,7 +887,12 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <div>
-        <sl-radio-group value=${this.crawl.scale} help-text=${msg("Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.")}>
+        <sl-radio-group
+          value=${this.crawl.scale}
+          help-text=${msg(
+            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
+          )}
+        >
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
@@ -878,15 +917,47 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderEditDetails() {
+  private renderEditMetadata() {
     if (!this.crawl) return;
 
+    const crawlNotesHelpText = msg(
+      str`Maximum ${CRAWL_NOTES_MAXLENGTH} characters`
+    );
     return html`
       <form
         id="crawlDetailsForm"
-        @submit=${this.onSubmitDetails}
+        @submit=${this.onSubmitMetadata}
         @reset=${() => (this.openDialogName = undefined)}
       >
+        <sl-textarea
+          class="mb-3"
+          name="crawlNotes"
+          label=${msg("Notes")}
+          value=${this.crawl.notes || ""}
+          rows="3"
+          autocomplete="off"
+          resize="auto"
+          help-text=${crawlNotesHelpText}
+          style="--help-text-align: right"
+          @sl-input=${(e: CustomEvent) => {
+            const textarea = e.target as SlTextarea;
+            if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
+              const overMax = textarea.value.length - CRAWL_NOTES_MAXLENGTH;
+              textarea.setCustomValidity(
+                msg(
+                  str`Please shorten this text to ${CRAWL_NOTES_MAXLENGTH} or less characters.`
+                )
+              );
+              textarea.helpText =
+                overMax === 1
+                  ? msg(str`${overMax} character over limit`)
+                  : msg(str`${overMax} characters over limit`);
+            } else {
+              textarea.setCustomValidity("");
+              textarea.helpText = crawlNotesHelpText;
+            }
+          }}
+        ></sl-textarea>
         <btrix-tag-input
           .initialTags=${this.crawl.tags}
           .tagOptions=${this.tagOptions}
@@ -1066,16 +1137,30 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  private openDetailEditor() {
+  private openMetadataEditor() {
     this.fetchTags();
     this.openDialogName = "details";
   }
 
-  private async onSubmitDetails(e: SubmitEvent) {
+  private async onSubmitMetadata(e: SubmitEvent) {
     e.preventDefault();
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+    const { crawlNotes } = serialize(formEl);
+
+    if (
+      crawlNotes === (this.crawl!.notes ?? "") &&
+      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
+    ) {
+      // No changes have been made
+      this.openDialogName = undefined;
+      return;
+    }
 
     const params = {
       tags: this.tagsToSave,
+      notes: crawlNotes,
     };
     this.isSubmittingUpdate = true;
 
@@ -1109,6 +1194,11 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.isSubmittingUpdate = false;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 
   private async scale(value: Crawl["scale"]) {
@@ -1200,6 +1290,48 @@ export class CrawlDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteCrawl() {
+    if (
+      !window.confirm(
+        msg(
+          str`Are you sure you want to delete crawl of ${
+            this.crawl!.configName
+          }?`
+        )
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.crawl!.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [this.crawl!.id],
+          }),
+        }
+      );
+
+      this.navTo(this.crawlsBaseUrl);
+      this.notify({
+        message: msg(`Successfully deleted crawl`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e.isApiError && e.message) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
