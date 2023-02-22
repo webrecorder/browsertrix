@@ -34,7 +34,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 14rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
     }
   }
 `;
@@ -90,8 +90,8 @@ export class CrawlListItem extends LitElement {
         line-height: 1.4;
       }
 
-      .state {
-        text-transform: capitalize;
+      .finished {
+        margin-left: calc(1rem + var(--sl-spacing-x-small));
       }
 
       .userName {
@@ -149,11 +149,14 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col truncate">
-        <!-- TODO handle active state -->
-        <div class="detail state">
-          ${this.safeRender((crawl) => crawl.state)}
+        <div class="detail">
+          ${this.safeRender(
+            (crawl) => html`
+              <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
+            `
+          )}
         </div>
-        <div class="desc">
+        <div class="desc finished">
           ${this.safeRender((crawl) =>
             msg(
               str`Finished in ${RelativeDuration.humanize(
