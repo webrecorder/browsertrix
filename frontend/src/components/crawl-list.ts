@@ -19,6 +19,7 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
+import type { NavigateEvent } from "../utils/LiteElement";
 
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
@@ -56,10 +57,27 @@ export class CrawlListItem extends LitElement {
     rowCss,
     columnCss,
     css`
+      a {
+        all: unset;
+      }
+
+      .item {
+        cursor: pointer;
+        /* TODO transition */
+      }
+
+      .item:hover {
+        background-color: var(--sl-color-neutral-50);
+      }
+
       .row {
         border: 1px solid var(--sl-panel-border-color);
         border-radius: var(--sl-border-radius-medium);
         box-shadow: var(--sl-shadow-x-small);
+      }
+
+      .row:hover {
+        box-shadow: var(--sl-shadow-small);
       }
 
       .col {
@@ -128,7 +146,21 @@ export class CrawlListItem extends LitElement {
   crawl?: Crawl;
 
   render() {
-    return html`<article class="row">
+    return html`<a
+      class="item row"
+      role="button"
+      href=${`/orgs/${this.crawl?.oid}/crawls/crawl/${this.crawl?.id}`}
+      @click=${(e: MouseEvent) => {
+        e.preventDefault();
+        // TODO consolidate with LiteElement navTo
+        const evt: NavigateEvent = new CustomEvent("navigate", {
+          detail: { url: (e.target as HTMLAnchorElement).href },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(evt);
+      }}
+    >
       <div class="col truncate">
         <div class="detail">
           ${this.safeRender((crawl) => crawl.configName)}
@@ -213,7 +245,7 @@ export class CrawlListItem extends LitElement {
           <slot name="menu"></slot>
         </sl-dropdown>
       </div>
-    </article>`;
+    </a>`;
   }
 
   private safeRender(render: (crawl: Crawl) => any) {
