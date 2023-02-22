@@ -407,30 +407,34 @@ export class CrawlsList extends LiteElement {
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Re-Run Crawl")}
+            <sl-icon
+              name="arrow-clockwise"
+              class="text-success"
+              slot="prefix"
+            ></sl-icon>
+            <span class="text-success">${msg("Re-Run Crawl")}</span>
           </sl-menu-item>
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Crawl Config")}
           </sl-menu-item>
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Copy Config id")}
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Config ID")}
           </sl-menu-item>
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Delete Crawl")}
+            <sl-icon name="trash" class="text-danger" slot="prefix"></sl-icon>
+            <span class="text-danger">${msg("Delete Crawl")}</span>
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>
