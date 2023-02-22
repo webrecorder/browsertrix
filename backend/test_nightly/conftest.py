@@ -105,3 +105,48 @@ def crawl_id_wr_specs(admin_auth_headers, default_org_id):
         if data["state"] == "complete":
             return crawl_id
         time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def crawl_config_info(admin_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Crawl config test",
+        "config": {"seeds": ["https://specs.webrecorder.net/"], "limit": 1},
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_config_id = data["added"]
+    crawl_id = data["run_now_job"]
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Run second crawl from crawlconfig and return info when it finishes
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/run",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    second_crawl_id = data["started"]
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{second_crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return (crawl_config_id, crawl_id, second_crawl_id)
+        time.sleep(5)
