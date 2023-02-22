@@ -1,7 +1,13 @@
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import type {
+  SlCheckbox,
+  SlMenuItem,
+  SlSelect,
+} from "@shoelace-style/shoelace";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -12,33 +18,89 @@ import { CopyButton } from "../../components/copy-button";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlConfig, InitialCrawlConfig } from "./types";
-import { SlCheckbox } from "@shoelace-style/shoelace";
+import type {
+  Crawl,
+  CrawlState,
+  CrawlConfig,
+  InitialCrawlConfig,
+} from "./types";
 
 type CrawlSearchResult = {
   item: Crawl;
 };
+type SortField = "started" | "finished" | "configName" | "fileSize";
+type SortDirection = "asc" | "desc";
 
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
-const sortableFieldLabels = {
-  started_desc: msg("Newest"),
-  started_asc: msg("Oldest"),
-  finished_desc: msg("Recently Updated"),
-  finished_asc: msg("Oldest Finished"),
-  state: msg("Status"),
-  configName: msg("Crawl Name"),
-  cid: msg("Crawl Config ID"),
-  fileSize_asc: msg("Smallest Files"),
-  fileSize_desc: msg("Largest Files"),
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  started: {
+    label: msg("Date Created"),
+    defaultDirection: "desc",
+  },
+  finished: {
+    label: msg("Date Completed"),
+    defaultDirection: "desc",
+  },
+  configName: {
+    label: msg("Crawl Name"),
+    defaultDirection: "desc",
+  },
+  fileSize: {
+    label: msg("File Size"),
+    defaultDirection: "desc",
+  },
 };
 
+const activeCrawlStates: CrawlState[] = ["starting", "running", "stopping"];
+const inactiveCrawlStates: CrawlState[] = [
+  "complete",
+  "canceled",
+  "partial_complete",
+  "timed_out",
+  "failed",
+];
+const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
+  {
+    starting: {
+      label: msg("Starting"),
+      icon: html``,
+    },
+    running: {
+      label: msg("Running"),
+      icon: html``,
+    },
+    complete: {
+      label: msg("Completed"),
+      icon: html``,
+    },
+    failed: {
+      label: msg("Failed"),
+      icon: html``,
+    },
+    partial_complete: {
+      label: msg("Partial Complete"),
+      icon: html``,
+    },
+    timed_out: {
+      label: msg("Timed Out"),
+      icon: html``,
+    },
+    stopping: {
+      label: msg("Stopping"),
+      icon: html``,
+    },
+    canceled: {
+      label: msg("Canceled"),
+      icon: html``,
+    },
+  };
+
 function isActive(crawl: Crawl) {
-  return (
-    crawl.state === "running" ||
-    crawl.state === "starting" ||
-    crawl.state === "stopping"
-  );
+  return activeCrawlStates.includes(crawl.state);
 }
 
 /**
@@ -78,8 +140,8 @@ export class CrawlsList extends LiteElement {
 
   @state()
   private orderBy: {
-    field: "started";
-    direction: "asc" | "desc";
+    field: SortField;
+    direction: SortDirection;
   } = {
     field: "started",
     direction: "desc",
@@ -89,12 +151,16 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = true;
 
   @state()
-  private filterBy: string = "";
+  private filterByState: CrawlState[] = [];
+
+  @state()
+  private searchBy: string = "";
 
   // For fuzzy search:
   private fuse = new Fuse([], {
     keys: ["cid", "configName"],
     shouldSort: false,
+    threshold: 0.4, // stricter; default is 0.6
   });
 
   private timerId?: number;
@@ -102,11 +168,19 @@ export class CrawlsList extends LiteElement {
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
 
-  private sortCrawls(crawls: CrawlSearchResult[]): CrawlSearchResult[] {
-    return orderBy(({ item }) => item[this.orderBy.field])(
-      this.orderBy.direction
-    )(crawls) as CrawlSearchResult[];
-  }
+  private filterCrawls = (crawls: Crawl[]) =>
+    this.filterByState.length
+      ? crawls.filter((crawl) =>
+          this.filterByState.some((state) => crawl.state === state)
+        )
+      : crawls;
+
+  private sortCrawls = (
+    crawlsResults: CrawlSearchResult[]
+  ): CrawlSearchResult[] =>
+    orderBy(({ item }) => item[this.orderBy.field])(this.orderBy.direction)(
+      crawlsResults
+    ) as CrawlSearchResult[];
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -143,7 +217,9 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header class="sticky z-10 mb-3 top-0 py-2 bg-neutral-0">
+        <header
+          class="sticky z-10 mb-3 top-2 p-2 bg-neutral-50 border rounded-lg"
+        >
           ${this.renderControls()}
         </header>
         <section>
@@ -179,103 +255,162 @@ export class CrawlsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="grid grid-cols-2 gap-3 items-center">
-        <div class="col-span-2 md:col-span-1">
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
+      >
+        <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <sl-input
             class="w-full"
             slot="trigger"
             placeholder=${msg("Search by Crawl Config name or ID")}
             clearable
             ?disabled=${!this.crawls?.length}
+            value=${this.searchBy}
+            @sl-clear=${() => {
+              this.onSearchInput.cancel();
+              this.searchBy = "";
+            }}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
-        <div class="col-span-12 md:col-span-1 flex items-center justify-end">
-          ${this.userId
-            ? html`<label class="mr-3">
-                <span class="text-neutral-500 mr-1"
-                  >${msg("Show Only Mine")}</span
-                >
-                <sl-switch
-                  @sl-change=${(e: CustomEvent) =>
-                    (this.filterByCurrentUser = (
-                      e.target as SlCheckbox
-                    ).checked)}
-                  ?checked=${this.filterByCurrentUser}
-                ></sl-switch>
-              </label>`
-            : ""}
-
-          <div class="whitespace-nowrap text-neutral-500 mr-2">
-            ${msg("Sort By")}
-          </div>
-          <sl-dropdown
+        <div class="flex items-center">
+          <div class="text-neutral-500 mx-2">${msg("View:")}</div>
+          <sl-select
+            class="flex-1 md:min-w-[14.5rem]"
             placement="bottom-end"
             distance="4"
-            @sl-select=${(e: any) => {
-              const [field, direction] = e.detail.item.value.split("_");
-              this.orderBy = {
-                field: field,
-                direction: direction,
-              };
+            size="small"
+            pill
+            .value=${this.filterByState}
+            multiple
+            max-tags-visible="1"
+            placeholder=${msg("All Crawls")}
+            @sl-change=${(e: CustomEvent) => {
+              const value = (e.target as SlSelect).value as CrawlState[];
+              this.filterByState = value;
             }}
           >
-            <sl-button
-              slot="trigger"
+            ${activeCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
+                >
+              `
+            )}
+            <sl-divider></sl-divider>
+            ${inactiveCrawlStates.map(
+              (state) => html`
+                <sl-menu-item value=${state}>
+                  ${crawlState[state].label}</sl-menu-item
+                >
+              `
+            )}
+          </sl-select>
+        </div>
+
+        <div class="flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mx-2">
+            ${msg("Sort by:")}
+          </div>
+          <div class="grow flex">
+            <sl-select
+              class="flex-1 md:min-w-[9.2rem]"
+              placement="bottom-end"
+              distance="4"
               size="small"
               pill
-              caret
-              ?disabled=${!this.crawls?.length}
-              >${(sortableFieldLabels as any)[this.orderBy.field] ||
-              sortableFieldLabels[
-                `${this.orderBy.field}_${this.orderBy.direction}`
-              ]}</sl-button
+              value=${this.orderBy.field}
+              @sl-select=${(e: any) => {
+                const field = e.detail.item.value as SortField;
+                this.orderBy = {
+                  field: field,
+                  direction:
+                    sortableFields[field].defaultDirection ||
+                    this.orderBy.direction,
+                };
+              }}
             >
-            <sl-menu>
-              ${Object.entries(sortableFieldLabels).map(
-                ([value, label]) => html`
-                  <sl-menu-item
-                    value=${value}
-                    ?checked=${value ===
-                    `${this.orderBy.field}_${this.orderBy.direction}`}
-                    >${label}</sl-menu-item
-                  >
+              ${Object.entries(sortableFields).map(
+                ([value, { label }]) => html`
+                  <sl-menu-item value=${value}>${label}</sl-menu-item>
                 `
               )}
-            </sl-menu>
-          </sl-dropdown>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
+            </sl-select>
+            <sl-icon-button
+              name="arrow-down-up"
+              label=${msg("Reverse sort")}
+              @click=${() => {
+                this.orderBy = {
+                  ...this.orderBy,
+                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                };
+              }}
+            ></sl-icon-button>
+          </div>
         </div>
       </div>
+
+      ${this.userId
+        ? html` <div class="h-6 mt-2 flex justify-end">
+            <label>
+              <span class="text-neutral-500 text-xs mr-1"
+                >${msg("Show Only Mine")}</span
+              >
+              <sl-switch
+                @sl-change=${(e: CustomEvent) =>
+                  (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+                ?checked=${this.filterByCurrentUser}
+              ></sl-switch>
+            </label>
+          </div>`
+        : ""}
     `;
   }
 
   private renderCrawlList() {
     // Return search results if valid filter string is available,
     // otherwise format crawls list like search results
-    const filterResults =
-      this.filterBy.length >= MIN_SEARCH_LENGTH
-        ? () => this.fuse.search(this.filterBy)
+    const searchResults =
+      this.searchBy.length >= MIN_SEARCH_LENGTH
+        ? () => this.fuse.search(this.searchBy)
         : map((crawl) => ({ item: crawl }));
+    const filteredCrawls = flow(
+      this.filterCrawls,
+      searchResults
+    )(this.crawls as Crawl[]);
+
+    if (!filteredCrawls.length) {
+      return html`
+        <div class="border rounded-lg bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching crawls found.")}</span
+            >
+            <button
+              class="text-neutral-500 font-medium underline hover:no-underline"
+              @click=${() => {
+                this.filterByState = [];
+                this.onSearchInput.cancel();
+                this.searchBy = "";
+              }}
+            >
+              ${msg("Clear all filters")}
+            </button>
+          </p>
+
+          <div></div>
+        </div>
+      `;
+    }
 
     return html`
       <ul class="border rounded">
         ${flow(
-          filterResults,
-          this.sortCrawls.bind(this),
+          this.sortCrawls,
           map(this.renderCrawlItem)
-        )(this.crawls as any)}
+        )(filteredCrawls as CrawlSearchResult[])}
       </ul>
     `;
   }
@@ -560,7 +695,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private onSearchInput = debounce(200)((e: any) => {
-    this.filterBy = e.target.value;
+    this.searchBy = e.target.value;
   }) as any;
 
   /**
