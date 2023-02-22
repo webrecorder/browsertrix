@@ -406,13 +406,14 @@ export class CrawlsList extends LiteElement {
     html`
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
-          <sl-menu-item @click=${() => {}}>
-            <sl-icon
-              name="arrow-clockwise"
-              class="text-success"
-              slot="prefix"
-            ></sl-icon>
-            <span class="text-success">${msg("Re-Run Crawl")}</span>
+          <!-- HACK shoelace doesn't current have a way to override non-hover 
+        color without resetting the --sl-color-neutral-700 variable -->
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--success)"
+            @click=${() => {}}
+          >
+            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+            ${msg("Re-Run Crawl")}
           </sl-menu-item>
           <sl-menu-item @click=${() => {}}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
@@ -432,9 +433,12 @@ export class CrawlsList extends LiteElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          <sl-menu-item @click=${() => {}}>
-            <sl-icon name="trash" class="text-danger" slot="prefix"></sl-icon>
-            <span class="text-danger">${msg("Delete Crawl")}</span>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => {}}
+          >
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Delete Crawl")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>
