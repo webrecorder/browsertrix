@@ -110,7 +110,9 @@ export class CrawlTemplatesDetail extends LiteElement {
           </h2>
           <div class="flex-0 flex">
             ${when(
-              this.crawlConfig && !this.crawlConfig.inactive,
+              this.crawlConfig &&
+                !this.crawlConfig.inactive &&
+                !this.crawlConfig.currCrawlId,
               () => html`
                 <sl-button
                   href=${`/orgs/${this.orgId}/crawl-configs/config/${
@@ -143,16 +145,16 @@ export class CrawlTemplatesDetail extends LiteElement {
           </div>
         </header>
 
+        ${this.renderCurrentlyRunningNotice()}
+
         <section class="col-span-1 border rounded-lg py-2">
           ${this.renderDetails()}
         </section>
 
-        ${this.renderLastCrawl()} ${this.renderCurrentlyRunningNotice()}
+        ${this.renderLastCrawl()}
 
         <div class="col-span-1">
-          <h3 class="text-lg font-semibold mb-2">
-            ${msg("Crawl Settings")}
-          </h3>
+          <h3 class="text-lg font-semibold mb-2">${msg("Crawl Settings")}</h3>
           <main class="border rounded-lg py-3 px-5">
             <btrix-config-details
               .crawlConfig=${this.crawlConfig}
@@ -299,7 +301,9 @@ export class CrawlTemplatesDetail extends LiteElement {
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" size="small" caret>${msg("Actions")}</sl-button>
+        <sl-button slot="trigger" size="small" caret
+          >${msg("Actions")}</sl-button
+        >
 
         <ul
           class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
