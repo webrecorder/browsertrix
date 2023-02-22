@@ -121,6 +121,9 @@ export class CrawlsList extends LiteElement {
   @state()
   private searchBy: string = "";
 
+  @state()
+  private crawlToEdit: Crawl | null = null;
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     keys: ["cid", "configName"],
@@ -365,6 +368,16 @@ export class CrawlsList extends LiteElement {
           map(this.renderCrawlItem)
         )(filteredCrawls as CrawlSearchResult[])}
       </btrix-crawl-list>
+
+      <btrix-crawl-metadata-editor
+        .authState=${this.authState}
+        .crawl=${this.crawlToEdit}
+        ?open=${this.crawlToEdit !== null}
+        @request-close=${() => (this.crawlToEdit = null)}
+        @updated=${
+          /* TODO fetch current page or single crawl */ this.fetchCrawls
+        }
+      ></btrix-crawl-metadata-editor>
     `;
   }
 
@@ -397,7 +410,7 @@ export class CrawlsList extends LiteElement {
                 <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
                 ${msg("Re-Run Crawl")}
               </sl-menu-item>
-              <sl-menu-item @click=${() => {}}>
+              <sl-menu-item @click=${() => (this.crawlToEdit = crawl)}>
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
                 ${msg("Edit Metadata")}
               </sl-menu-item>

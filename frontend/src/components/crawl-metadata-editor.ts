@@ -14,7 +14,13 @@ const CRAWL_NOTES_MAXLENGTH = 500;
 /**
  * Usage:
  * ```ts
- *
+ * <btrix-crawl-metadata-editor
+ *   .authState=${this.authState}
+ *   .crawl=${this.crawl}
+ *   ?open=${this.open}
+ *   @request-close=${this.requestClose}
+ *   @updated=${this.updated}
+ * ></btrix-crawl-metadata-editor>
  * ```
  *
  * @event request-close
