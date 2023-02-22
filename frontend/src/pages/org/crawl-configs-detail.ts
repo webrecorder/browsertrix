@@ -110,22 +110,29 @@ export class CrawlTemplatesDetail extends LiteElement {
           </h2>
           <div class="flex-0 flex">
             ${when(
-              this.crawlConfig &&
-                !this.crawlConfig.inactive &&
-                !this.crawlConfig.currCrawlId,
+              this.crawlConfig && !this.crawlConfig.inactive,
               () => html`
-                <sl-button
-                  href=${`/orgs/${this.orgId}/crawl-configs/config/${
-                    this.crawlConfig!.id
-                  }?edit`}
-                  variant="primary"
-                  size="small"
-                  class="mr-2"
-                  @click=${this.navLink}
+                <sl-tooltip
+                  content=${msg(
+                    "Crawl config cannot be edited while crawl is running."
+                  )}
+                  ?disabled=${!this.crawlConfig!.currCrawlId}
                 >
-                  <sl-icon slot="prefix" name="gear"></sl-icon>
-                  ${msg("Edit Crawl Config")}
-                </sl-button>
+                  <sl-button
+                    href=${`/orgs/${this.orgId}/crawl-configs/config/${
+                      this.crawlConfig!.id
+                    }?edit`}
+                    variant="primary"
+                    size="small"
+                    class="mr-2"
+                    @click=${this.navLink}
+                    ?disabled=${this.crawlConfig!.currCrawlId}
+                  >
+                    <sl-icon slot="prefix" name="gear"></sl-icon>
+                    ${msg("Edit Crawl Config")}
+                  </sl-button>
+                </sl-tooltip>
+
                 ${this.renderMenu()}
               `,
               () =>
@@ -239,7 +246,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       `,
     ];
 
-    if (!this.crawlConfig.inactive) {
+    if (!this.crawlConfig.inactive && !this.crawlConfig.currCrawlId) {
       menuItems.unshift(html`
         <li
           class="p-2 hover:bg-purple-50 cursor-pointer text-purple-600"
@@ -259,7 +266,11 @@ export class CrawlTemplatesDetail extends LiteElement {
       `);
     }
 
-    if (this.crawlConfig.crawlCount && !this.crawlConfig.inactive) {
+    if (
+      this.crawlConfig.crawlCount &&
+      !this.crawlConfig.inactive &&
+      !this.crawlConfig.currCrawlId
+    ) {
       menuItems.push(html`
         <li
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
@@ -281,7 +292,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       `);
     }
 
-    if (!this.crawlConfig.crawlCount) {
+    if (!this.crawlConfig.crawlCount && !this.crawlConfig.currCrawlId) {
       menuItems.push(html`
         <li
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
