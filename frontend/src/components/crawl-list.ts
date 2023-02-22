@@ -17,7 +17,7 @@ import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
-import { Crawl } from "../pages/org/types";
+import type { Crawl } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
 
 const largeBreakpointCss = css`60rem`;
