@@ -14,6 +14,7 @@ import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 
+import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -62,41 +63,6 @@ const inactiveCrawlStates: CrawlState[] = [
   "timed_out",
   "failed",
 ];
-const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
-  {
-    starting: {
-      label: msg("Starting"),
-      icon: html``,
-    },
-    running: {
-      label: msg("Running"),
-      icon: html``,
-    },
-    complete: {
-      label: msg("Completed"),
-      icon: html``,
-    },
-    failed: {
-      label: msg("Failed"),
-      icon: html``,
-    },
-    partial_complete: {
-      label: msg("Partial Complete"),
-      icon: html``,
-    },
-    timed_out: {
-      label: msg("Timed Out"),
-      icon: html``,
-    },
-    stopping: {
-      label: msg("Stopping"),
-      icon: html``,
-    },
-    canceled: {
-      label: msg("Canceled"),
-      icon: html``,
-    },
-  };
 
 function isActive(crawl: Crawl) {
   return activeCrawlStates.includes(crawl.state);
@@ -406,40 +372,68 @@ export class CrawlsList extends LiteElement {
     html`
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
-          <!-- HACK shoelace doesn't current have a way to override non-hover 
-        color without resetting the --sl-color-neutral-700 variable -->
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${() => {}}
-          >
-            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-            ${msg("Re-Run Crawl")}
-          </sl-menu-item>
-          <sl-menu-item @click=${() => {}}>
-            <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
-          </sl-menu-item>
+          ${when(
+            isActive(crawl),
+            // HACK shoelace doesn't current have a way to override non-hover
+            // color without resetting the --sl-color-neutral-700 variable
+            () => html`
+              <sl-menu-item @click=${() => this.stop(crawl)}>
+                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+                ${msg("Stop Gracefully")}
+              </sl-menu-item>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.cancel(crawl)}
+              >
+                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+                ${msg("Cancel Immediately")}
+              </sl-menu-item>
+            `,
+            () => html`
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--success)"
+                @click=${() => this.runNow(crawl)}
+              >
+                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+                ${msg("Re-Run Crawl")}
+              </sl-menu-item>
+              <sl-menu-item @click=${() => {}}>
+                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                ${msg("Edit Metadata")}
+              </sl-menu-item>
+            `
+          )}
           <sl-divider></sl-divider>
-          <sl-menu-item @click=${() => {}}>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}#config`)}
+          >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Crawl Config")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => {}}>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
             <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
             ${msg("Copy Config ID")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => {}}>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
+          >
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => {}}
-          >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Delete Crawl")}
-          </sl-menu-item>
+          ${when(
+            !isActive(crawl),
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.deleteCrawl(crawl)}
+              >
+                <sl-icon name="trash" slot="prefix"></sl-icon>
+                ${msg("Delete Crawl")}
+              </sl-menu-item>
+            `
+          )}
         </sl-menu>
       </btrix-crawl-list-item>
     `;
