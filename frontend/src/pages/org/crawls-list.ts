@@ -14,8 +14,7 @@ import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 
-import { CopyButton } from "../../components/copy-button";
-import { RelativeDuration } from "../../components/relative-duration";
+import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type {
@@ -292,21 +291,9 @@ export class CrawlsList extends LiteElement {
               this.filterByState = value;
             }}
           >
-            ${activeCrawlStates.map(
-              (state) => html`
-                <sl-menu-item value=${state}>
-                  ${crawlState[state].label}</sl-menu-item
-                >
-              `
-            )}
+            ${activeCrawlStates.map(this.renderStatusMenuItem)}
             <sl-divider></sl-divider>
-            ${inactiveCrawlStates.map(
-              (state) => html`
-                <sl-menu-item value=${state}>
-                  ${crawlState[state].label}</sl-menu-item
-                >
-              `
-            )}
+            ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -449,36 +436,11 @@ export class CrawlsList extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderActiveDuration(crawl: Crawl) {
-    const endTime = this.lastFetched || Date.now();
-    const duration = endTime - new Date(`${crawl.started}Z`).valueOf();
-    let unitCount: number;
-    let tickSeconds: number | undefined = undefined;
+  private renderStatusMenuItem = (state: CrawlState) => {
+    const { icon, label } = CrawlStatus.getContent(state);
 
-    // Show second unit if showing seconds or greater than 1 hr
-    const showSeconds = duration < 60 * 2 * 1000;
-    if (showSeconds || duration > 60 * 60 * 1000) {
-      unitCount = 2;
-    } else {
-      unitCount = 1;
-    }
-    // Tick if seconds are showing
-    if (showSeconds) {
-      tickSeconds = 1;
-    } else {
-      tickSeconds = undefined;
-    }
-
-    return html`
-      <btrix-relative-duration
-        class="text-purple-500"
-        value=${`${crawl.started}Z`}
-        endTime=${this.lastFetched || Date.now()}
-        unitCount=${unitCount}
-        tickSeconds=${ifDefined(tickSeconds)}
-      ></btrix-relative-duration>
-    `;
-  }
+    return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
+  };
 
   private onSearchInput = debounce(200)((e: any) => {
     this.searchBy = e.target.value;

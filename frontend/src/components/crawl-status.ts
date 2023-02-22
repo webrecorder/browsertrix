@@ -1,16 +1,16 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, TemplateResult } from "lit";
 import { property, queryAssignedElements } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import startCase from "lodash/fp/startCase";
 
-import type { Crawl } from "../types/crawler";
+import type { CrawlState } from "../types/crawler";
 import { animatePulse } from "../utils/css";
 
 @localized()
 export class CrawlStatus extends LitElement {
   @property({ type: String })
-  state?: Crawl["state"];
+  state?: CrawlState;
 
   static styles = [
     animatePulse,
@@ -49,22 +49,29 @@ export class CrawlStatus extends LitElement {
     `,
   ];
 
-  render() {
+  // TODO look into customizing sl-select multi-select
+  // instead of separate utility function?
+  static getContent(state?: CrawlState): {
+    icon: TemplateResult;
+    label: string;
+  } {
     let icon = html`<sl-icon
       name="dot"
       library="app"
       class="neutral"
+      slot="prefix"
     ></sl-icon>`;
-    let label = html`<sl-skeleton></sl-skeleton>`;
+    let label = "";
 
-    switch (this.state) {
+    switch (state) {
       case "starting": {
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="success animate-pulse"
+          slot="prefix"
         ></sl-icon>`;
-        label = html`<span>${msg("Starting")}</span>`;
+        label = msg("Starting");
         break;
       }
 
@@ -73,8 +80,9 @@ export class CrawlStatus extends LitElement {
           name="dot"
           library="app"
           class="success animate-pulse"
+          slot="prefix"
         ></sl-icon>`;
-        label = html`<span>${msg("Running")}</span>`;
+        label = msg("Running");
         break;
       }
 
@@ -83,14 +91,19 @@ export class CrawlStatus extends LitElement {
           name="dot"
           library="app"
           class="danger animate-pulse"
+          slot="prefix"
         ></sl-icon>`;
-        label = html`<span>${msg("Stopping")}</span>`;
+        label = msg("Stopping");
         break;
       }
 
       case "complete": {
-        icon = html`<sl-icon name="check-circle" class="success"></sl-icon>`;
-        label = html`<span>${msg("Complete")}</span>`;
+        icon = html`<sl-icon
+          name="check-circle"
+          class="success"
+          slot="prefix"
+        ></sl-icon>`;
+        label = msg("Complete");
         break;
       }
 
@@ -98,37 +111,50 @@ export class CrawlStatus extends LitElement {
         icon = html`<sl-icon
           name="exclamation-triangle"
           class="danger"
+          slot="prefix"
         ></sl-icon>`;
-        label = html`<span>${msg("Failed")}</span>`;
+        label = msg("Failed");
         break;
       }
 
       case "partial_complete": {
-        icon = html`<sl-icon name="circle"></sl-icon>`;
-        label = html`<span>${msg("Stopped")}</span>`;
+        icon = html`<sl-icon name="circle" slot="prefix"></sl-icon>`;
+        label = msg("Stopped");
         break;
       }
 
       case "timed_out": {
-        icon = html`<sl-icon name="circle"></sl-icon>`;
-        label = html`<span>${msg("Timed Out")}</span>`;
+        icon = html`<sl-icon name="circle" slot="prefix"></sl-icon>`;
+        label = msg("Timed Out");
         break;
       }
 
       case "canceled": {
-        icon = html`<sl-icon name="x-octagon" class="danger"></sl-icon>`;
-        label = html`<span>${msg("Canceled")}</span>`;
+        icon = html`<sl-icon
+          name="x-octagon"
+          class="danger"
+          slot="prefix"
+        ></sl-icon>`;
+        label = msg("Canceled");
         break;
       }
 
       default: {
-        if (typeof this.state === "string" && (this.state as string).length) {
+        if (typeof state === "string" && (state as string).length) {
           // Handle unknown status
-          label = html`<span>${startCase(this.state)}</span>`;
+          label = startCase(state);
         }
         break;
       }
     }
-    return html`${icon}${label}`;
+    return { icon, label };
+  }
+
+  render() {
+    const { icon, label } = CrawlStatus.getContent(this.state);
+    if (label) {
+      return html`${icon}<span>${label}</span>`;
+    }
+    return html`${icon}<sl-skeleton></sl-skeleton>`;
   }
 }
