@@ -5,7 +5,7 @@ import { css } from "lit";
 
 // From https://tailwindcss.com/docs/screen-readers#screen-reader-only-elements
 export const srOnly = css`
-  .sr-only {
+  .srOnly {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -29,7 +29,7 @@ export const truncate = css`
 
 // From https://tailwindcss.com/docs/animation#pulse
 export const animatePulse = css`
-  .animate-pulse {
+  .animatePulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 

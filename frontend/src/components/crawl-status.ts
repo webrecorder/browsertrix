@@ -34,18 +34,6 @@ export class CrawlStatus extends LitElement {
       sl-skeleton {
         width: 4em;
       }
-
-      .success {
-        color: var(--success);
-      }
-
-      .danger {
-        color: var(--danger);
-      }
-
-      .neutral {
-        color: var(--sl-color-neutral-300);
-      }
     `,
   ];
 
@@ -60,6 +48,7 @@ export class CrawlStatus extends LitElement {
       library="app"
       class="neutral"
       slot="prefix"
+      style="color: var(--sl-color-neutral-300)"
     ></sl-icon>`;
     let label = "";
 
@@ -68,8 +57,9 @@ export class CrawlStatus extends LitElement {
         icon = html`<sl-icon
           name="dot"
           library="app"
-          class="success animate-pulse"
+          class="animatePulse"
           slot="prefix"
+          style="color: var(--success)"
         ></sl-icon>`;
         label = msg("Starting");
         break;
@@ -79,8 +69,9 @@ export class CrawlStatus extends LitElement {
         icon = html`<sl-icon
           name="dot"
           library="app"
-          class="success animate-pulse"
+          class="animatePulse"
           slot="prefix"
+          style="color: var(--success)"
         ></sl-icon>`;
         label = msg("Running");
         break;
@@ -90,8 +81,9 @@ export class CrawlStatus extends LitElement {
         icon = html`<sl-icon
           name="dot"
           library="app"
-          class="danger animate-pulse"
+          class="animatePulse"
           slot="prefix"
+          style="color: var(--danger)"
         ></sl-icon>`;
         label = msg("Stopping");
         break;
@@ -100,8 +92,8 @@ export class CrawlStatus extends LitElement {
       case "complete": {
         icon = html`<sl-icon
           name="check-circle"
-          class="success"
           slot="prefix"
+          style="color: var(--success)"
         ></sl-icon>`;
         label = msg("Complete");
         break;
@@ -110,8 +102,8 @@ export class CrawlStatus extends LitElement {
       case "failed": {
         icon = html`<sl-icon
           name="exclamation-triangle"
-          class="danger"
           slot="prefix"
+          style="color: var(--danger)"
         ></sl-icon>`;
         label = msg("Failed");
         break;
@@ -132,8 +124,8 @@ export class CrawlStatus extends LitElement {
       case "canceled": {
         icon = html`<sl-icon
           name="x-octagon"
-          class="danger"
           slot="prefix"
+          style="color: var(--danger)"
         ></sl-icon>`;
         label = msg("Canceled");
         break;

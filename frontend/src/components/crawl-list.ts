@@ -269,7 +269,7 @@ export class CrawlList extends LitElement {
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Config Author")}</div>
         <div class="col action">
-          <span class="sr-only">${msg("Actions")}</span>
+          <span class="srOnly">${msg("Actions")}</span>
         </div>
       </div>
       <div role="list">
