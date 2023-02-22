@@ -247,8 +247,6 @@ export class CrawlsList extends LiteElement {
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
           <sl-select
             class="flex-1 md:min-w-[14.5rem]"
-            placement="bottom-end"
-            distance="4"
             size="small"
             pill
             .value=${this.filterByState}
@@ -273,8 +271,6 @@ export class CrawlsList extends LiteElement {
           <div class="grow flex">
             <sl-select
               class="flex-1 md:min-w-[9.2rem]"
-              placement="bottom-end"
-              distance="4"
               size="small"
               pill
               value=${this.orderBy.field}

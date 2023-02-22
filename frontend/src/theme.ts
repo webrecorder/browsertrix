@@ -138,6 +138,11 @@ const theme = css`
     padding-left: calc(var(--sl-spacing-2x-small) + 1.5em);
   }
 
+  /* Add border to menu */
+  sl-menu {
+    border: 1px solid var(--sl-panel-border-color);
+  }
+
   /* Validation styles */
   [data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
