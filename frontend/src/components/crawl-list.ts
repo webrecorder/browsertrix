@@ -165,7 +165,7 @@ export class CrawlListItem extends LitElement {
     >
       <div class="col truncate">
         <div class="detail">
-          ${this.safeRender((crawl) => crawl.configName)}
+          ${this.safeRender((crawl) => crawl.configName || crawl.firstSeed)}
         </div>
         <div class="desc">
           ${this.safeRender(
