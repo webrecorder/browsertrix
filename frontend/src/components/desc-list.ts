@@ -51,7 +51,7 @@ export class DescList extends LitElement {
   static styles = css`
     dl {
       display: grid;
-      grid-template-columns: auto;
+      grid-template-columns: 100%;
       grid-gap: 1rem;
       margin: 0;
     }

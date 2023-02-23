@@ -112,6 +112,8 @@ const theme = css`
   sl-select::part(form-control-help-text) {
     margin-top: var(--sl-spacing-x-small);
     font-weight: 400;
+    /* Enable controlling help text text alignment from parent */
+    text-align: var(--help-text-align, left);
   }
 
   /* Elevate select and buttons */

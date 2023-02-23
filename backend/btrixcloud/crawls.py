@@ -10,15 +10,15 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
-from pydantic import BaseModel, UUID4, conint
+from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-
+from .crawlconfigs import Seed
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
-from .storages import get_presigned_url
+from .storages import get_presigned_url, delete_crawl_file_object
 
 
 # ============================================================================
@@ -91,11 +91,13 @@ class Crawl(BaseMongoModel):
 
 # ============================================================================
 class CrawlOut(Crawl):
-    """Output for single crawl, add configName and userName"""
+    """Output for single crawl, with additional fields"""
 
     userName: Optional[str]
     configName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
+    firstSeed: Optional[str]
+    seedCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -127,6 +129,9 @@ class ListCrawlOut(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     notes: Optional[str]
+
+    firstSeed: Optional[str]
+    seedCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -252,6 +257,8 @@ class CrawlOps:
 
         results = await cursor.to_list(length=1000)
         crawls = [crawl_cls.from_dict(res) for res in results]
+        crawls = [await self._resolve_crawl_refs(crawl, org) for crawl in crawls]
+
         return crawls
 
     async def get_crawl_raw(self, crawlid: str, org: Organization):
@@ -285,7 +292,7 @@ class CrawlOps:
         return await self._resolve_crawl_refs(crawl, org)
 
     async def _resolve_crawl_refs(
-        self, crawl: Union[CrawlOut, ListCrawlOut], org: Organization
+        self, crawl: Union[CrawlOut, ListCrawlOut], org: Optional[Organization]
     ):
         """Resolve running crawl data"""
         config = await self.crawl_configs.get_crawl_config(
@@ -293,7 +300,16 @@ class CrawlOps:
         )
 
         if config:
-            crawl.configName = config.name
+            if not crawl.configName:
+                crawl.configName = config.name
+
+            if config.config.seeds:
+                first_seed = config.config.seeds[0]
+                if isinstance(first_seed, HttpUrl):
+                    crawl.firstSeed = first_seed
+                elif isinstance(first_seed, Seed):
+                    crawl.firstSeed = first_seed.url
+                crawl.seedCount = len(config.config.seeds)
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -352,12 +368,25 @@ class CrawlOps:
         for update in updates:
             await self.crawls.find_one_and_update(*update)
 
-    async def delete_crawls(self, oid: uuid.UUID, delete_list: DeleteCrawlList):
+    async def delete_crawls(self, org: Organization, delete_list: DeleteCrawlList):
         """Delete a list of crawls by id for given org"""
+        for crawl_id in delete_list.crawl_ids:
+            await self._delete_crawl_files(org, crawl_id)
+
         res = await self.crawls.delete_many(
-            {"_id": {"$in": delete_list.crawl_ids}, "oid": oid}
+            {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         )
+
         return res.deleted_count
+
+    async def _delete_crawl_files(self, org: Organization, crawl_id: str):
+        """Delete files associated with crawl from storage."""
+        crawl_raw = await self.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+        for file_ in crawl.files:
+            status_code = await delete_crawl_file_object(org, file_, self.crawl_manager)
+            if status_code != 204:
+                raise HTTPException(status_code=400, detail="file_deletion_error")
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig):
         """initialize new crawl"""
@@ -651,17 +680,29 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
 
     @app.post("/orgs/{oid}/crawls/delete", tags=["crawls"])
     async def delete_crawls(
-        delete_list: DeleteCrawlList, org: Organization = Depends(org_crawl_dep)
+        delete_list: DeleteCrawlList,
+        user: User = Depends(user_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        try:
-            for crawl_id in delete_list:
-                await crawl_manager.stop_crawl(crawl_id, org.id, graceful=False)
+        # Ensure user has appropriate permissions for all crawls in list:
+        # - Crawler users can delete their own crawls
+        # - Org owners can delete any crawls in org
+        for crawl_id in delete_list.crawl_ids:
+            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+            crawl = Crawl.from_dict(crawl_raw)
+            if (crawl.userid != user.id) and not org.is_owner(user):
+                raise HTTPException(status_code=403, detail="Not Allowed")
 
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail=f"Error Stopping Crawl: {exc}")
+            if not crawl.finished:
+                try:
+                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
+                except Exception as exc:
+                    # pylint: disable=raise-missing-from
+                    raise HTTPException(
+                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
+                    )
 
-        res = await ops.delete_crawls(org.id, delete_list)
+        res = await ops.delete_crawls(org, delete_list)
 
         return {"deleted": res}
 

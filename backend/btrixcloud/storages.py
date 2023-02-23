@@ -122,3 +122,29 @@ async def get_presigned_url(org, crawlfile, crawl_manager, duration=3600):
             )
 
     return presigned_url
+
+
+# ============================================================================
+async def delete_crawl_file_object(org, crawlfile, crawl_manager):
+    """delete crawl file from storage."""
+    status_code = None
+
+    if crawlfile.def_storage_name:
+        s3storage = await crawl_manager.get_default_storage(crawlfile.def_storage_name)
+
+    elif org.storage.type == "s3":
+        s3storage = org.storage
+
+    else:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    async with get_s3_client(s3storage, s3storage.use_access_for_presign) as (
+        client,
+        bucket,
+        key,
+    ):
+        key += crawlfile.filename
+        response = await client.delete_object(Bucket=bucket, Key=key)
+        status_code = response["ResponseMetadata"]["HTTPStatusCode"]
+
+    return status_code

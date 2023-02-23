@@ -14,6 +14,10 @@ export class Tag extends SLTag {
   static styles = css`
     ${tagStyles}
 
+    :host {
+      max-width: 100%;
+    }
+
     .tag {
       height: var(--tag-height, 1.5rem);
       background-color: var(--sl-color-blue-100);

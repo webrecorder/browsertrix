@@ -26,7 +26,8 @@ export type Crawl = {
   fileCount?: number;
   fileSize?: number;
   completions?: number;
-  tags?: string[];
+  tags: string[];
+  notes: string | null;
 };
 
 type ScopeType =

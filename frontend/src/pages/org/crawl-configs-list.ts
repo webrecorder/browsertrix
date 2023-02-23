@@ -448,7 +448,7 @@ export class CrawlTemplatesList extends LiteElement {
       `,
     ];
 
-    if (!t.inactive) {
+    if (!t.inactive && !this.runningCrawlsMap[t.id]) {
       menuItems.unshift(html`
         <li
           class="p-2 hover:bg-zinc-100 cursor-pointer"
