@@ -139,15 +139,6 @@ class CrawlConfig(BaseMongoModel):
 
     crawlAttemptCount: Optional[int] = 0
 
-    # These fields would ideally be in CrawlConfigOut, but are being
-    # kept here to prevent the need for a migration. Eventually, we
-    # may want to add a migration and move them, as these values are
-    # now generated dynamically in API endpoints as needed.
-    crawlCount: Optional[int] = 0
-    lastCrawlId: Optional[str]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-
     newId: Optional[UUID4]
     oldId: Optional[UUID4]
     inactive: Optional[bool] = False
@@ -164,6 +155,11 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlId: Optional[str]
     profileName: Optional[str]
     userName: Optional[str]
+
+    crawlCount: Optional[int] = 0
+    lastCrawlId: Optional[str]
+    lastCrawlTime: Optional[datetime]
+    lastCrawlState: Optional[str]
 
 
 # ============================================================================
