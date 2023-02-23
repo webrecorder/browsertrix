@@ -6,19 +6,22 @@ test('test', async ({}) => {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await page.goto('http://localhost:9870/');
-  await page.locator('input[name="username"]').click();
-  await page.locator('input[name="username"]').fill('dev@webrecorder.net');
-  await page.locator('input[name="password"]').click();
-  const mySecret = process.env.MY_SECRET;
-  if (mySecret !== undefined && mySecret !== null) {
-    await page.locator('input[name="password"]').fill(mySecret);
-  } else {
-    console.error('MY_SECRET environment variable is not defined or null.');
+  try {
+    await page.goto('http://localhost:9870/');
+    await page.waitForSelector('input[name="username"]');
+    await page.click('input[name="username"]');
+    await page.fill('input[name="username"]', 'dev@webrecorder.net');
+    await page.click('input[name="password"]');
+    const devPassword = process.env.DEV_PASSWORD;
+    if (!devPassword) {
+      throw new Error('DEV_PASSWORD environment variable is not defined or null.');
+    }
+    await page.fill('input[name="password"]', devPassword);
+    await page.click('a:has-text("Log In")');
+  } catch (error) {
+    console.error(error);
     // Handle the error as appropriate
+  } finally {
+    await browser.close();
   }
-  const link = page.locator('a:has-text("Log in")');
-
-  // Close the browser when the test is finished
-  await browser.close();
 });

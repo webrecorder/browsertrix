@@ -6,6 +6,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+     env:
+      DEV_PASSWORD: ${{ secrets.DEV_PASSWORD }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
