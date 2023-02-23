@@ -204,7 +204,7 @@ export class CrawlsList extends LiteElement {
                 </div>
               `}
         </section>
-        <footer class="mt-2">
+        <footer class="m-2">
           <span class="text-0-400 text-xs">
             ${this.lastFetched
               ? msg(html`Last updated:
