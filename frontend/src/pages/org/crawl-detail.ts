@@ -212,12 +212,22 @@ export class CrawlDetail extends LiteElement {
                 html`
                   <div class="flex items-center justify-between">
                     ${msg("Metadata")}
-                    <sl-icon-button
-                      class="text-base"
-                      name="pencil"
-                      @click=${this.openMetadataEditor}
-                      aria-label=${msg("Edit Metadata")}
-                    ></sl-icon-button>
+                    <sl-tooltip
+                      content=${msg(
+                        "Metadata cannot be edited while crawl is running."
+                      )}
+                      ?disabled=${!this.isActive}
+                    >
+                      <sl-icon-button
+                        class=${`text-base${
+                          this.isActive ? " cursor-not-allowed" : ""
+                        }`}
+                        name="pencil"
+                        @click=${this.openMetadataEditor}
+                        aria-label=${msg("Edit Metadata")}
+                        ?disabled=${this.isActive}
+                      ></sl-icon-button>
+                    </sl-tooltip>
                   </div>
                 `,
                 this.renderMetadata()
@@ -429,38 +439,43 @@ export class CrawlDetail extends LiteElement {
                       ${msg("Re-run crawl")}
                     </span>
                   </li>
+                  <li
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    role="menuitem"
+                    @click=${(e: any) => {
+                      this.openMetadataEditor();
+                      e.target.closest("sl-dropdown").hide();
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle mr-1"
+                      name="pencil"
+                    ></sl-icon>
+                    <span class="inline-block align-middle">
+                      ${msg("Edit Metadata")}
+                    </span>
+                  </li>
                 `
               )}
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.openMetadataEditor();
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                <sl-icon
-                  class="inline-block align-middle mr-1"
-                  name="pencil"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Edit Metadata")}
-                </span>
-              </li>
-              <hr />
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${() => {
-                  this.navTo(
-                    `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawlTemplateId}?edit`
-                  );
-                }}
-              >
-                <span class="inline-block align-middle">
-                  ${msg("Edit Crawl Config")}
-                </span>
-              </li>
+              ${when(
+                !this.isActive,
+                () => html`
+                  <hr />
+                  <li
+                    class="p-2 hover:bg-zinc-100 cursor-pointer"
+                    role="menuitem"
+                    @click=${() => {
+                      this.navTo(
+                        `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawlTemplateId}?edit`
+                      );
+                    }}
+                  >
+                    <span class="inline-block align-middle">
+                      ${msg("Edit Crawl Config")}
+                    </span>
+                  </li>
+                `
+              )}
             `
           )}
           <li
