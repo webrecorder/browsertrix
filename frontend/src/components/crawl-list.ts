@@ -168,6 +168,10 @@ export class CrawlListItem extends LitElement {
   crawl?: Crawl;
 
   render() {
+    const isActive =
+      this.crawl &&
+      ["starting", "running", "stopping"].includes(this.crawl.state);
+
     return html`<a
       class="item row"
       role="button"
@@ -243,11 +247,18 @@ export class CrawlListItem extends LitElement {
         <div class="desc">
           ${this.safeRender((crawl) => {
             const pagesComplete = crawl.stats?.done || 0;
-            const pagesFound = crawl.stats?.found || 0;
+            if (isActive) {
+              const pagesFound = crawl.stats?.found || 0;
+              return html`
+                ${+pagesFound === 1
+                  ? msg(str`${pagesComplete} / ${pagesFound} page`)
+                  : msg(str`${pagesComplete} / ${pagesFound} pages`)}
+              `;
+            }
             return html`
-              ${+pagesFound === 1
-                ? msg(str`${pagesComplete} / ${pagesFound} page`)
-                : msg(str`${pagesComplete} / ${pagesFound} pages`)}
+              ${+pagesComplete === 1
+                ? msg(str`${pagesComplete} page`)
+                : msg(str`${pagesComplete} pages`)}
             `;
           })}
         </div>
