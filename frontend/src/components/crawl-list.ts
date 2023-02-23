@@ -150,11 +150,13 @@ export class CrawlListItem extends LitElement {
       class="item row"
       role="button"
       href=${`/orgs/${this.crawl?.oid}/crawls/crawl/${this.crawl?.id}`}
-      @click=${(e: MouseEvent) => {
+      @click=${async (e: MouseEvent) => {
         e.preventDefault();
+        await this.updateComplete;
+        const href = (e.currentTarget as HTMLAnchorElement).href;
         // TODO consolidate with LiteElement navTo
         const evt: NavigateEvent = new CustomEvent("navigate", {
-          detail: { url: (e.target as HTMLAnchorElement).href },
+          detail: { url: href },
           bubbles: true,
           composed: true,
         });
@@ -233,9 +235,14 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col action">
         <sl-dropdown
-          @click=${(e: Event) => e.preventDefault()}
           distance="4"
           hoist
+          @click=${(e: MouseEvent) => {
+            // Prevent anchor link default behavior
+            e.preventDefault();
+            // Stop prop to anchor link
+            e.stopPropagation();
+          }}
         >
           <sl-icon-button
             slot="trigger"
