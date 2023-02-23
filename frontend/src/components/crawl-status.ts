@@ -110,13 +110,16 @@ export class CrawlStatus extends LitElement {
       }
 
       case "partial_complete": {
-        icon = html`<sl-icon name="circle" slot="prefix"></sl-icon>`;
+        icon = html`<sl-icon name="dash-circle" slot="prefix"></sl-icon>`;
         label = msg("Stopped");
         break;
       }
 
       case "timed_out": {
-        icon = html`<sl-icon name="circle" slot="prefix"></sl-icon>`;
+        icon = html`<sl-icon
+          name="exclamation-circle"
+          slot="prefix"
+        ></sl-icon>`;
         label = msg("Timed Out");
         break;
       }

@@ -390,14 +390,14 @@ export class CrawlsList extends LiteElement {
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
               <sl-menu-item @click=${() => this.stop(crawl)}>
-                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-                ${msg("Stop Gracefully")}
+                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+                ${msg("Stop Crawl")}
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
                 @click=${() => this.cancel(crawl)}
               >
-                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+                <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel Immediately")}
               </sl-menu-item>
             `,
