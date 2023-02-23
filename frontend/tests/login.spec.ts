@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test('test', async ({}) => {
   const browser = await chromium.launch({ headless: false });
@@ -18,10 +18,12 @@ test('test', async ({}) => {
     }
     await page.fill('input[name="password"]', devPassword);
     await page.click('a:has-text("Log In")');
+
+    await page.waitForSelector('text=Welcome');
+    const welcomeText = await page.innerText('text=Welcome');
+    expect(welcomeText).toContain('Welcome');
   } catch (error) {
     console.error(error);
     // Handle the error as appropriate
-  } finally {
-    await browser.close();
-  }
+  } 
 });
