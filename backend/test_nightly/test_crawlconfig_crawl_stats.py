@@ -56,7 +56,7 @@ def test_crawlconfig_crawl_stats(admin_auth_headers, default_org_id, crawl_confi
     data = r.json()
     assert data["crawlAttemptCount"] == 2
     assert data["crawlCount"] == 1
-    assert data["lastCrawlId"] == first_crawl_id
+    assert data["lastCrawlId"] == crawl_id
     assert data["lastCrawlState"] == "complete"
     assert data["lastCrawlTime"] == first_crawl_finished
 
