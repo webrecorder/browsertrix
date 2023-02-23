@@ -49,10 +49,6 @@ class BaseMigration:
             "Not implemented in base class - implement in subclass"
         )
 
-    def migrate_down(self):
-        """Perform migration down."""
-        raise NotImplementedError("Downward migrations not yet added")
-
     async def run(self):
         """Run migrations."""
         if await self.migrate_up_needed():
