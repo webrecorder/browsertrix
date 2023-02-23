@@ -123,7 +123,7 @@ export class CrawlListItem extends LitElement {
       }
 
       .desc {
-        color: var(--sl-color-neutral-600);
+        color: var(--sl-color-neutral-500);
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
@@ -214,13 +214,21 @@ export class CrawlListItem extends LitElement {
         </div>
         <div class="desc finished">
           ${this.safeRender((crawl) =>
-            msg(
-              str`Finished in ${RelativeDuration.humanize(
-                new Date(`${crawl.finished}Z`).valueOf() -
-                  new Date(`${crawl.started}Z`).valueOf(),
-                { compact: true }
-              )}`
-            )
+            crawl.finished
+              ? msg(
+                  str`Finished in ${RelativeDuration.humanize(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf(),
+                    { compact: true }
+                  )}`
+                )
+              : msg(
+                  str`Started ${RelativeDuration.humanize(
+                    new Date().valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf(),
+                    { compact: true }
+                  )} ago`
+                )
           )}
         </div>
       </div>
@@ -235,10 +243,11 @@ export class CrawlListItem extends LitElement {
         <div class="desc">
           ${this.safeRender((crawl) => {
             const pagesComplete = crawl.stats?.done || 0;
+            const pagesFound = crawl.stats?.found || 0;
             return html`
-              ${+pagesComplete === 1
-                ? msg(str`${pagesComplete} page`)
-                : msg(str`${pagesComplete} pages`)}
+              ${+pagesFound === 1
+                ? msg(str`${pagesComplete} / ${pagesFound} page`)
+                : msg(str`${pagesComplete} / ${pagesFound} pages`)}
             `;
           })}
         </div>
