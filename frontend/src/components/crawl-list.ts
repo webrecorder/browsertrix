@@ -49,6 +49,12 @@ const columnCss = css`
     padding-left: var(--sl-spacing-medium);
   }
 `;
+// Shared custom variables
+const hostVars = css`
+  :host {
+    --row-offset: var(--sl-spacing-x-small);
+  }
+`;
 
 @localized()
 export class CrawlListItem extends LitElement {
@@ -56,6 +62,7 @@ export class CrawlListItem extends LitElement {
     truncate,
     rowCss,
     columnCss,
+    hostVars,
     css`
       a {
         all: unset;
@@ -63,11 +70,23 @@ export class CrawlListItem extends LitElement {
 
       .item {
         cursor: pointer;
-        /* TODO transition */
+        transition-property: background-color, box-shadow, margin;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
       }
 
       .item:hover {
         background-color: var(--sl-color-neutral-50);
+        margin-left: calc(-1 * var(--row-offset));
+        margin-right: calc(-1 * var(--row-offset));
+      }
+
+      .item:hover .col:nth-child(n + 2) {
+        margin-left: calc(-1 * var(--row-offset));
+      }
+
+      .item:hover .col.action {
+        margin-left: calc(-2 * var(--row-offset));
       }
 
       .row {
@@ -84,6 +103,9 @@ export class CrawlListItem extends LitElement {
         padding-top: var(--sl-spacing-small);
         padding-bottom: var(--sl-spacing-small);
         white-space: nowrap;
+        transition-property: margin;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
       }
 
       .detail,
@@ -269,7 +291,14 @@ export class CrawlList extends LitElement {
     srOnly,
     rowCss,
     columnCss,
+    hostVars,
     css`
+      .listHeader,
+      .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
+      }
+
       .listHeader {
         line-height: 1;
       }
@@ -311,7 +340,7 @@ export class CrawlList extends LitElement {
           <span class="srOnly">${msg("Actions")}</span>
         </div>
       </div>
-      <div role="list">
+      <div class="list" role="list">
         <slot @slotchange=${this.handleSlotchange}></slot>
       </div>`;
   }
