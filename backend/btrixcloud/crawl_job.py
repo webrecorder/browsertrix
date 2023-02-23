@@ -212,27 +212,14 @@ class CrawlJob(ABC):
         await self.update_crawl(state=state, finished=self.finished)
 
         if completed:
-            await self.inc_crawl_complete_stats(state)
+            await self.inc_crawl_complete_stats()
 
-    async def inc_crawl_complete_stats(self, state):
+    async def inc_crawl_complete_stats(self):
         """Increment Crawl Stats"""
 
         duration = int((self.finished - self.started).total_seconds())
 
         print(f"Duration: {duration}", flush=True)
-
-        # init crawl config stats
-        await self.crawl_configs.find_one_and_update(
-            {"_id": self.cid, "inactive": {"$ne": True}},
-            {
-                "$inc": {"crawlCount": 1},
-                "$set": {
-                    "lastCrawlId": self.job_id,
-                    "lastCrawlTime": self.finished,
-                    "lastCrawlState": state,
-                },
-            },
-        )
 
         # init org crawl stats
         yymm = datetime.utcnow().strftime("%Y-%m")

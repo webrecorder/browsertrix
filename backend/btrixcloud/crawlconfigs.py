@@ -139,8 +139,11 @@ class CrawlConfig(BaseMongoModel):
 
     crawlAttemptCount: Optional[int] = 0
 
+    # These fields would ideally be in CrawlConfigOut, but are being
+    # kept here to prevent the need for a migration. Eventually, we
+    # may want to add a migration and move them, as these values are
+    # now generated dynamically in API endpoints as needed.
     crawlCount: Optional[int] = 0
-
     lastCrawlId: Optional[str]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
@@ -400,6 +403,7 @@ class CrawlConfigOps:
         configs = []
         for res in results:
             config = CrawlConfigOut.from_dict(res)
+            config = await self._annotate_with_crawl_stats(config)
             # pylint: disable=invalid-name
             config.currCrawlId = running.get(config.id)
             configs.append(config)
@@ -430,6 +434,25 @@ class CrawlConfigOps:
 
         return None
 
+    async def _annotate_with_crawl_stats(self, crawlconfig: CrawlConfigOut):
+        """Annotate crawlconfig with information about associated crawls"""
+        crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id)
+
+        crawlconfig.crawlCount = len(crawls)
+
+        finished_crawls = [crawl for crawl in crawls if crawl.finished]
+        if not finished_crawls:
+            return crawlconfig
+
+        sorted_crawls = sorted(finished_crawls, key=lambda crawl: crawl.finished)
+        last_crawl = sorted_crawls[-1]
+
+        crawlconfig.lastCrawlId = str(last_crawl.id)
+        crawlconfig.lastCrawlTime = last_crawl.finished
+        crawlconfig.lastCrawlState = last_crawl.state
+
+        return crawlconfig
+
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
         also include inactive crawl configs"""
@@ -454,6 +477,8 @@ class CrawlConfigOps:
             crawlconfig.profileName = await self.profiles.get_profile_name(
                 crawlconfig.profileid, org
             )
+
+        crawlconfig = await self._annotate_with_crawl_stats(crawlconfig)
 
         return crawlconfig
 
