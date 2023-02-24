@@ -18,7 +18,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
-import { srOnly, truncate } from "../utils/css";
+import { srOnly } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
 const largeBreakpointCss = css`60rem`;
@@ -37,6 +37,10 @@ const rowCss = css`
     .row {
       grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
     }
+  }
+
+  .col {
+    grid-column: span 1;
   }
 `;
 const columnCss = css`
@@ -59,7 +63,6 @@ const hostVars = css`
 @localized()
 export class CrawlListItem extends LitElement {
   static styles = [
-    truncate,
     rowCss,
     columnCss,
     hostVars,
@@ -102,17 +105,9 @@ export class CrawlListItem extends LitElement {
       .col {
         padding-top: var(--sl-spacing-small);
         padding-bottom: var(--sl-spacing-small);
-        white-space: nowrap;
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
-      }
-
-      .detail,
-      .desc {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       .detail {
@@ -120,6 +115,8 @@ export class CrawlListItem extends LitElement {
         font-size: var(--sl-font-size-medium);
         line-height: 1.4;
         margin-bottom: var(--sl-spacing-3x-small);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .desc {
@@ -128,6 +125,15 @@ export class CrawlListItem extends LitElement {
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
         line-height: 1.4;
+      }
+
+      .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .primaryUrl {
+        word-break: break-all;
       }
 
       .finished {
@@ -189,9 +195,13 @@ export class CrawlListItem extends LitElement {
         this.dispatchEvent(evt);
       }}
     >
-      <div class="col truncate">
-        <div class="detail">
-          ${this.safeRender((crawl) => crawl.configName || crawl.firstSeed)}
+      <div class="col">
+        <div class="detail url">
+          ${this.safeRender(
+            (crawl) =>
+              crawl.configName ||
+              html`<span class="primaryUrl">${crawl.firstSeed}</span>`
+          )}
         </div>
         <div class="desc">
           ${this.safeRender(
@@ -208,7 +218,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
       </div>
-      <div class="col truncate">
+      <div class="col">
         <div class="detail">
           ${this.safeRender(
             (crawl) => html`
@@ -236,7 +246,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
       </div>
-      <div class="col truncate">
+      <div class="col">
         <div class="detail">
           ${this.safeRender(
             (crawl) => html`<sl-format-bytes
@@ -263,7 +273,7 @@ export class CrawlListItem extends LitElement {
           })}
         </div>
       </div>
-      <div class="col truncate">
+      <div class="col">
         <div class="detail">
           ${this.safeRender(
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
