@@ -108,7 +108,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             )}
           </h2>
-          <div class="flex-0 flex">
+          <div class="flex-0 flex justify-end">
             ${when(
               this.crawlConfig && !this.crawlConfig.inactive,
               () => html`

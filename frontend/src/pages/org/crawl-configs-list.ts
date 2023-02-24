@@ -109,9 +109,23 @@ export class CrawlTemplatesList extends LiteElement {
 
   render() {
     return html`
-      <div class="sticky z-10 mb-2 top-0 py-2 bg-neutral-0">
-        ${this.renderControls()}
-      </div>
+      <header class="contents">
+        <div class="flex justify-between w-full h-8 mb-4">
+          <h1 class="text-xl font-semibold">${msg("Crawl Configs")}</h1>
+          <sl-button
+            href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
+            variant="primary"
+            size="small"
+            @click=${this.navLink}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("New Crawl Config")}
+          </sl-button>
+        </div>
+        <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
+          ${this.renderControls()}
+        </div>
+      </header>
 
       ${this.crawlTemplates
         ? this.crawlTemplates.length
@@ -158,6 +172,7 @@ export class CrawlTemplatesList extends LiteElement {
           <sl-input
             class="w-full"
             slot="trigger"
+            size="small"
             placeholder=${msg("Search by name")}
             clearable
             ?disabled=${!this.crawlTemplates?.length}
@@ -165,17 +180,6 @@ export class CrawlTemplatesList extends LiteElement {
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
-        </div>
-
-        <div class="grow-0 mb-4">
-          <sl-button
-            href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
-            variant="primary"
-            @click=${this.navLink}
-          >
-            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Config")}
-          </sl-button>
         </div>
       </div>
 
@@ -298,7 +302,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
 
     return html`
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         ${flow(...flowFns)(this.crawlTemplates)}
       </div>
     `;

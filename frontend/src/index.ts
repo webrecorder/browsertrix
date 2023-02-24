@@ -274,6 +274,7 @@ export class App extends LiteElement {
         >
           <div>
             <a
+              class="text-sm hover:text-neutral-400 font-medium"
               href=${homeHref}
               @click=${(e: any) => {
                 if (isAdmin) {
@@ -281,10 +282,9 @@ export class App extends LiteElement {
                 }
                 this.navLink(e);
               }}
-              ><h1 class="text-sm hover:text-neutral-400 font-medium">
-                ${msg("Browsertrix Cloud")}
-              </h1></a
             >
+              ${msg("Browsertrix Cloud")}
+            </a>
           </div>
 
           ${isAdmin
