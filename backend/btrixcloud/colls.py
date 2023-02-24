@@ -92,7 +92,7 @@ class CollectionOps:
         return {result["name"]: result["_id"] for result in results}
 
     async def get_collection_crawls(self, oid: uuid.UUID, name: str = None):
-        """fidn collection and get all crawls by collection name per org"""
+        """find collection and get all crawls by collection name per org"""
         collid = None
         if name:
             coll = await self.find_collection(oid, name)
