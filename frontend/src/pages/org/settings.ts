@@ -103,7 +103,7 @@ export class OrgSettings extends LiteElement {
 
   render() {
     return html`<header class="mb-5">
-        <h2 class="text-xl font-semibold leading-10">${msg("Org Settings")}</h2>
+        <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
       </header>
 
       <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>

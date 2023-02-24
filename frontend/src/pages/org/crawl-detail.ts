@@ -343,7 +343,7 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between items-end">
-        <h2 class="text-xl font-semibold mb-3 md:mr-2">
+        <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
           ${msg(
             html`${this.crawl
               ? this.crawl.configName
@@ -352,7 +352,7 @@ export class CrawlDetail extends LiteElement {
                   style="width: 15em"
                 ></sl-skeleton>`}`
           )}
-        </h2>
+        </h1>
         <div
           class="grid gap-2 grid-flow-col ${this.isActive
             ? "justify-between"
@@ -520,7 +520,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h3 class="flex-0 text-lg font-semibold mb-2">${title}</h3>
+      <h2 class="flex-0 text-lg font-semibold mb-2">${title}</h2>
       <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }

@@ -217,10 +217,15 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header
-          class="sticky z-10 mb-3 top-2 p-2 bg-neutral-50 border rounded-lg"
-        >
-          ${this.renderControls()}
+        <header class="contents">
+          <div class="flex w-full h-8 mb-4">
+            <h1 class="text-xl font-semibold">${msg("Crawls")}</h1>
+          </div>
+          <div
+            class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+          >
+            ${this.renderControls()}
+          </div>
         </header>
         <section>
           ${this.crawls.length
@@ -261,6 +266,7 @@ export class CrawlsList extends LiteElement {
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <sl-input
             class="w-full"
+            size="small"
             slot="trigger"
             placeholder=${msg("Search by Crawl Config name or ID")}
             clearable
