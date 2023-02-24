@@ -423,7 +423,9 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
-              this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}#config`)}
+              this.navTo(
+                `/orgs/${crawl.oid}/crawl-configs/config/${crawl.cid}`
+              )}
           >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Crawl Config")}
