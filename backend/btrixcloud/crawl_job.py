@@ -397,7 +397,7 @@ class CrawlJob(ABC):
 
     @abstractmethod
     async def _get_crawl(self):
-        """get runnable object represnting this crawl"""
+        """get runnable object representing this crawl"""
 
     @abstractmethod
     async def _do_scale(self, new_scale):

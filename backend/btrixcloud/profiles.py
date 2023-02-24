@@ -48,7 +48,7 @@ class Profile(BaseMongoModel):
 
 # ============================================================================
 class ProfileWithCrawlConfigs(Profile):
-    """Profile with list of crawlconfigs useing this profile"""
+    """Profile with list of crawlconfigs using this profile"""
 
     crawlconfigs: List[CrawlConfigIdNameOut] = []
 
