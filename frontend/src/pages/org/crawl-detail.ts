@@ -507,27 +507,9 @@ export class CrawlDetail extends LiteElement {
           <dd>
             ${this.crawl
               ? html`
-                  <div class="inline-flex items-baseline justify-between">
-                    <div
-                      class="whitespace-nowrap capitalize${this.isActive
-                        ? " motion-safe:animate-pulse"
-                        : ""}"
-                    >
-                      <span
-                        class="inline-block ${this.crawl.state === "failed"
-                          ? "text-red-500"
-                          : this.crawl.state === "complete"
-                          ? "text-emerald-500"
-                          : this.isActive
-                          ? "text-purple-500"
-                          : "text-zinc-300"}"
-                        style="font-size: 10px; vertical-align: 2px"
-                      >
-                        &#9679;
-                      </span>
-                      ${this.crawl.state.replace(/_/g, " ")}
-                    </div>
-                  </div>
+                  <btrix-crawl-status
+                    state=${this.crawl.state}
+                  ></btrix-crawl-status>
                 `
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
