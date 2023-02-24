@@ -109,10 +109,10 @@ export class CrawlTemplatesList extends LiteElement {
 
   render() {
     return html`
-    <header class="contents">
-    <div class="flex justify-between w-full h-8 mb-4">
-      <h1 class="text-xl font-semibold">${msg("Crawl Configs")}</h1>
-      <sl-button
+      <header class="contents">
+        <div class="flex justify-between w-full h-8 mb-4">
+          <h1 class="text-xl font-semibold">${msg("Crawl Configs")}</h1>
+          <sl-button
             href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
             variant="primary"
             size="small"
@@ -121,11 +121,11 @@ export class CrawlTemplatesList extends LiteElement {
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             ${msg("New Crawl Config")}
           </sl-button>
-    </div>
-      <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
-        ${this.renderControls()}
-      </div>
-    </header>
+        </div>
+        <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
+          ${this.renderControls()}
+        </div>
+      </header>
 
       ${this.crawlTemplates
         ? this.crawlTemplates.length
