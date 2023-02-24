@@ -138,9 +138,12 @@ crawler_namespace: "crawlers"
 crawl_retries: 1000
 
 # browsertrix-crawler args:
-crawler_args: "--timeout 120 --logging stats,behaviors,debug --generateWACZ --text --collection thecrawl --screencastPort 9037 --sizeLimit 100000000000 --timeLimit 18000 --healthCheckPort 6065 --waitOnDone"
+crawler_args: "--logging stats,behaviors,debug --generateWACZ --text --collection thecrawl --screencastPort 9037 --waitOnDone"
 
-crawler_browser_instances: 4
+crawler_browser_instances: 2
+
+crawler_restart_on_size_bytes: 100000000000
+crawler_restart_on_time_seconds: 18000
 
 crawler_requests_cpu: "800m"
 crawler_limits_cpu: "1200m"
@@ -148,7 +151,7 @@ crawler_limits_cpu: "1200m"
 crawler_requests_memory: "512Mi"
 crawler_limits_memory: "768Mi"
 
-crawler_requests_storage: "220Gi"
+crawler_requests_storage: "5Gi"
 
 crawler_liveness_port: 6065
 
