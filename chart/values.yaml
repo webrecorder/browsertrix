@@ -142,16 +142,21 @@ crawler_args: "--logging stats,behaviors,debug --generateWACZ --text --collectio
 
 crawler_browser_instances: 2
 
-crawler_restart_on_size_bytes: 100000000000
-crawler_restart_on_time_seconds: 18000
-
 crawler_requests_cpu: "800m"
 crawler_limits_cpu: "1200m"
 
 crawler_requests_memory: "512Mi"
-crawler_limits_memory: "768Mi"
+crawler_limits_memory: "1024Mi"
 
-crawler_requests_storage: "5Gi"
+# minimum size allocated to each crawler
+# should be at least double crawl session size to ensure space for WACZ
+crawler_requests_storage: "22Gi"
+
+# max size at which crawler will commit current crawl session
+crawler_session_size_limit_bytes: "10000000000"
+
+# max time in seconds after which crawler will restart, if set
+crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
 
