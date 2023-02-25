@@ -30,6 +30,7 @@ import {
   getScheduleInterval,
   getNextDate,
 } from "../../utils/cron";
+import { maxLengthValidator } from "../../utils/form";
 import type { Tab } from "../../components/tab-list";
 import type {
   ExclusionRemoveEvent,
@@ -1437,7 +1438,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const nameMaxLength = 50;
+    const { helpText, validate } = maxLengthValidator(50);
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -1448,9 +1449,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             desc: "Example crawl config name",
           })}
           value=${this.formState.jobName}
-          maxlength=${nameMaxLength}
-          help-text=${msg(str`Max ${nameMaxLength} characters`)}
+          help-text=${helpText}
           style="--help-text-align: right"
+          @sl-input=${validate}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
