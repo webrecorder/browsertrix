@@ -657,7 +657,7 @@ export class CrawlConfigEditor extends LiteElement {
                 type="submit"
                 size="small"
                 variant="primary"
-                ?disabled=${this.isSubmitting || this.formHasError}
+                ?disabled=${this.isSubmitting}
                 ?loading=${this.isSubmitting}
               >
                 ${msg("Save Changes")}
