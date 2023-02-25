@@ -139,15 +139,6 @@ class CrawlConfig(BaseMongoModel):
 
     crawlAttemptCount: Optional[int] = 0
 
-    # These fields would ideally be in CrawlConfigOut, but are being
-    # kept here to prevent the need for a migration. Eventually, we
-    # may want to add a migration and move them, as these values are
-    # now generated dynamically in API endpoints as needed.
-    crawlCount: Optional[int] = 0
-    lastCrawlId: Optional[str]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-
     newId: Optional[UUID4]
     oldId: Optional[UUID4]
     inactive: Optional[bool] = False
@@ -164,6 +155,11 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlId: Optional[str]
     profileName: Optional[str]
     userName: Optional[str]
+
+    crawlCount: Optional[int] = 0
+    lastCrawlId: Optional[str]
+    lastCrawlTime: Optional[datetime]
+    lastCrawlState: Optional[str]
 
 
 # ============================================================================
@@ -436,21 +432,13 @@ class CrawlConfigOps:
 
     async def _annotate_with_crawl_stats(self, crawlconfig: CrawlConfigOut):
         """Annotate crawlconfig with information about associated crawls"""
-        crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id)
-
-        crawlconfig.crawlCount = len(crawls)
-
-        finished_crawls = [crawl for crawl in crawls if crawl.finished]
-        if not finished_crawls:
-            return crawlconfig
-
-        sorted_crawls = sorted(finished_crawls, key=lambda crawl: crawl.finished)
-        last_crawl = sorted_crawls[-1]
-
-        crawlconfig.lastCrawlId = str(last_crawl.id)
-        crawlconfig.lastCrawlTime = last_crawl.finished
-        crawlconfig.lastCrawlState = last_crawl.state
-
+        crawl_stats = await self.crawl_ops.get_latest_crawl_and_count_by_config(
+            cid=crawlconfig.id
+        )
+        crawlconfig.crawlCount = crawl_stats["crawl_count"]
+        crawlconfig.lastCrawlId = crawl_stats["last_crawl_id"]
+        crawlconfig.lastCrawlTime = crawl_stats["last_crawl_finished"]
+        crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
         return crawlconfig
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
