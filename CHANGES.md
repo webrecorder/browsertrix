@@ -1,6 +1,6 @@
-### v1.3.0 Beta 0
+### v1.3.0
 
-Release notes coming soon!
+See: https://github.com/webrecorder/browsertrix-cloud/releases/tag/v1.3.0 for latest release notes.
 
 ### v1.2.0
 
