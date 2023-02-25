@@ -1437,6 +1437,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
+    const nameMaxLength = 50;
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -1447,6 +1448,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             desc: "Example crawl config name",
           })}
           value=${this.formState.jobName}
+          maxlength=${nameMaxLength}
+          help-text=${msg(str`Max ${nameMaxLength} characters`)}
+          style="--help-text-align: right"
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
