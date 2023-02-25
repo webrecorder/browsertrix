@@ -28,6 +28,7 @@ export type Crawl = {
   completions?: number;
   tags: string[];
   notes: string | null;
+  firstSeed: string;
 };
 
 type ScopeType =
