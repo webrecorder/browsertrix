@@ -60,7 +60,7 @@ const STEPS = [
   "crawlLimits",
   "browserSettings",
   "crawlScheduling",
-  "crawlInformation",
+  "crawlMetadata",
   "confirmSettings",
 ] as const;
 type StepName = typeof STEPS[number];
@@ -127,7 +127,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      crawlInformation: {
+      crawlMetadata: {
         error: false,
         completed: hasConfigId,
       },
@@ -474,7 +474,7 @@ export class CrawlConfigEditor extends LiteElement {
       crawlLimits: msg("Limits"),
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Scheduling"),
-      crawlInformation: msg("Information"),
+      crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Config"),
     };
 
@@ -539,10 +539,10 @@ export class CrawlConfigEditor extends LiteElement {
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
           <btrix-tab-panel
-            name="newJobConfig-crawlInformation"
+            name="newJobConfig-crawlMetadata"
             class="scroll-m-3"
           >
-            ${this.renderPanelContent(this.renderJobInformation())}
+            ${this.renderPanelContent(this.renderJobMetadata())}
           </btrix-tab-panel>
           <btrix-tab-panel
             name="newJobConfig-confirmSettings"
@@ -1454,7 +1454,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
-  private renderJobInformation() {
+  private renderJobMetadata() {
     const jobNameValue =
       this.formState.jobName ||
       (this.jobType === "seed-crawl" && this.formState.primarySeedUrl) ||

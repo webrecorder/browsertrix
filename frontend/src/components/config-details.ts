@@ -46,10 +46,10 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
-      <section id="crawl-information" class="mb-8">
+      <section id="crawl-metadata" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>
-            ${this.renderAnchorLink("crawl-information")}${msg(
+            ${this.renderAnchorLink("crawl-metadata")}${msg(
               "Crawl Information"
             )}
           </h4></btrix-section-heading
