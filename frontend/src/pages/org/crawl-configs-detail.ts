@@ -7,11 +7,6 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlConfig, InitialCrawlConfig, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
-import { getNameFromSeedURLs } from "../../utils/crawler";
-
-type CrawlConfigWithName = CrawlConfig & {
-  nameFromSeedURLs: string | null;
-};
 
 /**
  * Usage:
@@ -34,7 +29,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   isEditing: boolean = false;
 
   @state()
-  private crawlConfig?: CrawlConfigWithName;
+  private crawlConfig?: CrawlConfig;
 
   @state()
   private lastCrawl?: Crawl;
@@ -69,10 +64,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async initializeCrawlTemplate() {
     try {
       const crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
-      this.crawlConfig = {
-        ...crawlConfig,
-        nameFromSeedURLs: getNameFromSeedURLs(crawlConfig),
-      };
+      this.crawlConfig = crawlConfig;
       if (this.crawlConfig.lastCrawlId)
         this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
     } catch (e: any) {
@@ -104,8 +96,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             <span
               class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-              >${this.crawlConfig?.name ||
-              this.crawlConfig?.nameFromSeedURLs}</span
+              >${this.getDisplayName()}</span
             >
             ${when(
               this.crawlConfig?.inactive,
@@ -450,6 +441,23 @@ export class CrawlTemplatesDetail extends LiteElement {
     this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
   }
 
+  private getDisplayName() {
+    if (!this.crawlConfig) return "";
+    if (this.crawlConfig.name) return this.crawlConfig.name;
+    const { config } = this.crawlConfig;
+    const firstSeed = config.seeds[0];
+    let firstSeedURL =
+      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    if (config.seeds.length === 1) {
+      return firstSeedURL;
+    }
+    const remainderCount = config.seeds.length - 1;
+    if (remainderCount === 1) {
+      return msg(str`${firstSeed} (+${remainderCount} URL)`);
+    }
+    return msg(str`${firstSeed} (+${remainderCount} URLs)`);
+  }
+
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
     const data: CrawlConfig = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${configId}`,
@@ -579,7 +587,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.crawlConfig = {
         ...this.crawlConfig,
         currCrawlId: crawlId,
-      } as CrawlConfigWithName;
+      } as CrawlConfig;
 
       this.notify({
         message: msg(

@@ -17,7 +17,6 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "../../utils/cron";
-import { getNameFromSeedURLs } from "../../utils/crawler";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 
@@ -32,10 +31,6 @@ const sortableFieldLabels = {
   created_asc: msg("Oldest"),
   lastCrawlTime_desc: msg("Newest Crawl"),
   lastCrawlTime_asc: msg("Oldest Crawl"),
-};
-
-type CrawlConfigWithName = CrawlConfig & {
-  nameFromSeedURLs: string | null;
 };
 
 /**
@@ -56,7 +51,7 @@ export class CrawlTemplatesList extends LiteElement {
   userId!: string;
 
   @state()
-  crawlConfigs?: CrawlConfigWithName[];
+  crawlConfigs?: CrawlConfig[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -114,13 +109,7 @@ export class CrawlTemplatesList extends LiteElement {
 
   private async fetchCrawlConfigs() {
     const crawlConfigs = await this.getCrawlTemplates();
-    this.crawlConfigs = crawlConfigs.map(
-      (crawlConfig) =>
-        ({
-          ...crawlConfig,
-          nameFromSeedURLs: getNameFromSeedURLs(crawlConfig),
-        } as CrawlConfigWithName)
-    );
+    this.crawlConfigs = crawlConfigs;
   }
 
   render() {
@@ -324,12 +313,12 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderTemplateItem(t: CrawlConfigWithName) {
-    const name = t.name || t.nameFromSeedURLs;
+  private renderTemplateItem(crawlConfig: CrawlConfig) {
+    const name = this.getDisplayName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${name}
-      href=${`/orgs/${this.orgId}/crawl-configs/config/${t.id}`}
+      href=${`/orgs/${this.orgId}/crawl-configs/config/${crawlConfig.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
@@ -340,20 +329,20 @@ export class CrawlTemplatesList extends LiteElement {
           ${name}
         </div>
 
-        ${this.renderCardMenu(t)}
+        ${this.renderCardMenu(crawlConfig)}
       </header>
 
       <div class="px-3 pb-3 flex justify-between items-end text-0-800">
         <div class="grid gap-2 text-xs leading-none">
           <div class="overflow-hidden">
             <sl-tooltip
-              content=${t.config.seeds
+              content=${crawlConfig.config.seeds
                 .map((seed) => (typeof seed === "string" ? seed : seed.url))
                 .join(", ")}
             >
               <div class="font-mono whitespace-nowrap truncate text-0-500">
                 <span class="underline decoration-dashed"
-                  >${t.config.seeds
+                  >${crawlConfig.config.seeds
                     .map((seed) => (typeof seed === "string" ? seed : seed.url))
                     .join(", ")}</span
                 >
@@ -361,42 +350,45 @@ export class CrawlTemplatesList extends LiteElement {
             </sl-tooltip>
           </div>
           <div class="font-mono text-purple-500">
-            ${t.crawlCount === 1
-              ? msg(str`${t.crawlCount} crawl`)
-              : msg(str`${(t.crawlCount || 0).toLocaleString()} crawls`)}
+            ${crawlConfig.crawlCount === 1
+              ? msg(str`${crawlConfig.crawlCount} crawl`)
+              : msg(
+                  str`${(crawlConfig.crawlCount || 0).toLocaleString()} crawls`
+                )}
           </div>
           <div>
-            ${t.crawlCount
+            ${crawlConfig.crawlCount
               ? html`<sl-tooltip>
                   <span slot="content" class="capitalize">
                     ${msg(
                       str`Last Crawl: ${
-                        t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")
+                        crawlConfig.lastCrawlState &&
+                        crawlConfig.lastCrawlState.replace(/_/g, " ")
                       }`
                     )}
                   </span>
                   <a
                     class="font-medium hover:underline"
-                    href=${`/orgs/${this.orgId}/crawls/crawl/${t.lastCrawlId}`}
+                    href=${`/orgs/${this.orgId}/crawls/crawl/${crawlConfig.lastCrawlId}`}
                     @click=${(e: any) => {
                       e.stopPropagation();
                       this.navLink(e);
                     }}
                   >
                     <sl-icon
-                      class="inline-block align-middle mr-1 ${t.lastCrawlState ===
+                      class="inline-block align-middle mr-1 ${crawlConfig.lastCrawlState ===
                       "failed"
                         ? "text-neutral-400"
                         : "text-purple-400"}"
-                      name=${t.lastCrawlState === "complete"
+                      name=${crawlConfig.lastCrawlState === "complete"
                         ? "check-circle-fill"
-                        : t.lastCrawlState === "failed"
+                        : crawlConfig.lastCrawlState === "failed"
                         ? "x-circle-fill"
                         : "exclamation-circle-fill"}
                     ></sl-icon
                     ><sl-format-date
                       class="inline-block align-middle text-neutral-600"
-                      date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
+                      date=${`${crawlConfig.lastCrawlTime}Z` /** Z for UTC */}
                       month="2-digit"
                       day="2-digit"
                       year="2-digit"
@@ -416,11 +408,13 @@ export class CrawlTemplatesList extends LiteElement {
                 `}
           </div>
           <div>
-            ${t.schedule
+            ${crawlConfig.schedule
               ? html`
                   <sl-tooltip
                     content=${msg(
-                      str`Next scheduled crawl: ${humanizeNextDate(t.schedule)}`
+                      str`Next scheduled crawl: ${humanizeNextDate(
+                        crawlConfig.schedule
+                      )}`
                     )}
                   >
                     <span>
@@ -429,7 +423,7 @@ export class CrawlTemplatesList extends LiteElement {
                         name="clock-history"
                       ></sl-icon
                       ><span class="inline-block align-middle text-0-600"
-                        >${humanizeSchedule(t.schedule, {
+                        >${humanizeSchedule(crawlConfig.schedule, {
                           length: "short",
                         })}</span
                       >
@@ -445,12 +439,12 @@ export class CrawlTemplatesList extends LiteElement {
                   >`}
           </div>
         </div>
-        ${this.renderCardFooter(t)}
+        ${this.renderCardFooter(crawlConfig)}
       </div>
     </a>`;
   }
 
-  private renderCardMenu(t: CrawlConfigWithName) {
+  private renderCardMenu(t: CrawlConfig) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -553,7 +547,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderCardFooter(t: CrawlConfigWithName) {
+  private renderCardFooter(t: CrawlConfig) {
     if (t.inactive) {
       return "";
     }
@@ -581,6 +575,22 @@ export class CrawlTemplatesList extends LiteElement {
         </button>
       </div>
     `;
+  }
+
+  private getDisplayName(crawlConfig: CrawlConfig) {
+    if (crawlConfig.name) return crawlConfig.name;
+    const { config } = crawlConfig;
+    const firstSeed = config.seeds[0];
+    let firstSeedURL =
+      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    if (config.seeds.length === 1) {
+      return firstSeedURL;
+    }
+    const remainderCount = config.seeds.length - 1;
+    if (remainderCount === 1) {
+      return msg(str`${firstSeed} (+${remainderCount} URL)`);
+    }
+    return msg(str`${firstSeed} (+${remainderCount} URLs)`);
   }
 
   private onSearchInput = debounce(200)((e: any) => {
@@ -622,14 +632,14 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(template: CrawlConfigWithName) {
+  private async duplicateConfig(crawlConfig: CrawlConfig) {
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${template.name || template.nameFromSeedURLs} Copy`),
-      config: template.config,
-      profileid: template.profileid || null,
-      jobType: template.jobType,
-      schedule: template.schedule,
-      tags: template.tags,
+      name: msg(str`${this.getDisplayName(crawlConfig)} Copy`),
+      config: crawlConfig.config,
+      profileid: crawlConfig.profileid || null,
+      jobType: crawlConfig.jobType,
+      schedule: crawlConfig.schedule,
+      tags: crawlConfig.tags,
     };
 
     this.navTo(
@@ -646,12 +656,10 @@ export class CrawlTemplatesList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(
-    template: CrawlConfigWithName
-  ): Promise<void> {
+  private async deactivateTemplate(crawlConfig: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -661,14 +669,14 @@ export class CrawlTemplatesList extends LiteElement {
       this.notify({
         message: msg(
           html`Deactivated
-            <strong>${template.name || template.nameFromSeedURLs}</strong>.`
+            <strong>${this.getDisplayName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
       this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== template.id
+        (t) => t.id !== crawlConfig.id
       );
     } catch {
       this.notify({
@@ -679,10 +687,10 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(template: CrawlConfigWithName): Promise<void> {
+  private async deleteTemplate(crawlConfig: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -691,15 +699,14 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deleted
-            <strong>${template.name || template.nameFromSeedURLs}</strong>.`
+          html`Deleted <strong>${this.getDisplayName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
       this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== template.id
+        (t) => t.id !== crawlConfig.id
       );
     } catch {
       this.notify({
@@ -710,10 +717,10 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async runNow(template: CrawlConfigWithName): Promise<void> {
+  private async runNow(crawlConfig: CrawlConfig): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
         this.authState!,
         {
           method: "POST",
@@ -724,13 +731,13 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.runningCrawlsMap = {
         ...this.runningCrawlsMap,
-        [template.id]: crawlId,
+        [crawlConfig.id]: crawlId,
       };
 
       this.notify({
         message: msg(
           html`Started crawl from
-            <strong>${template.name || template.nameFromSeedURLs}</strong>.
+            <strong>${this.getDisplayName(crawlConfig)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
