@@ -314,7 +314,7 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   private renderTemplateItem(crawlConfig: CrawlConfig) {
-    const name = this.getDisplayName(crawlConfig);
+    const name = this.renderDisplayName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${name}
@@ -577,7 +577,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private getDisplayName(crawlConfig: CrawlConfig) {
+  private renderDisplayName(crawlConfig: CrawlConfig) {
     if (crawlConfig.name) return crawlConfig.name;
     const { config } = crawlConfig;
     const firstSeed = config.seeds[0];
@@ -588,9 +588,15 @@ export class CrawlTemplatesList extends LiteElement {
     }
     const remainderCount = config.seeds.length - 1;
     if (remainderCount === 1) {
-      return msg(str`${firstSeed} (+${remainderCount} URL)`);
+      return msg(
+        html`${firstSeed}
+          <span class="text-neutral-500">+${remainderCount} URL</span>`
+      );
     }
-    return msg(str`${firstSeed} (+${remainderCount} URLs)`);
+    return msg(
+      html`${firstSeed}
+        <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
   }
 
   private onSearchInput = debounce(200)((e: any) => {
@@ -634,7 +640,7 @@ export class CrawlTemplatesList extends LiteElement {
    */
   private async duplicateConfig(crawlConfig: CrawlConfig) {
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${this.getDisplayName(crawlConfig)} Copy`),
+      name: msg(str`${this.renderDisplayName(crawlConfig)} Copy`),
       config: crawlConfig.config,
       profileid: crawlConfig.profileid || null,
       jobType: crawlConfig.jobType,
@@ -669,7 +675,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.notify({
         message: msg(
           html`Deactivated
-            <strong>${this.getDisplayName(crawlConfig)}</strong>.`
+            <strong>${this.renderDisplayName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -699,7 +705,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.getDisplayName(crawlConfig)}</strong>.`
+          html`Deleted <strong>${this.renderDisplayName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -737,7 +743,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.notify({
         message: msg(
           html`Started crawl from
-            <strong>${this.getDisplayName(crawlConfig)}</strong>.
+            <strong>${this.renderDisplayName(crawlConfig)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"

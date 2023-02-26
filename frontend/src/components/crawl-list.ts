@@ -136,6 +136,10 @@ export class CrawlListItem extends LitElement {
         word-break: break-all;
       }
 
+      .additionalUrls {
+        color: var(--sl-color-neutral-500);
+      }
+
       .finished {
         margin-left: calc(1rem + var(--sl-spacing-x-small));
       }
@@ -197,11 +201,28 @@ export class CrawlListItem extends LitElement {
     >
       <div class="col">
         <div class="detail url">
-          ${this.safeRender(
-            (crawl) =>
-              crawl.configName ||
-              html`<span class="primaryUrl">${crawl.firstSeed}</span>`
-          )}
+          ${this.safeRender((crawl) => {
+            if (crawl.configName) return crawl.configName;
+            if (!crawl.firstSeed) return crawl.id;
+            const remainder = crawl.seedCount - 1;
+            let displayName: any = html`<span class="primaryUrl"
+              >${crawl.firstSeed}</span
+            >`;
+            if (remainder) {
+              if (remainder === 1) {
+                displayName = msg(
+                  html`<span class="primaryUrl">${crawl.firstSeed}</span>
+                    <span class="additionalUrls">+${remainder} URL</span>`
+                );
+              } else {
+                displayName = msg(
+                  html`<span class="primaryUrl">${crawl.firstSeed}</span>
+                    <span class="additionalUrls">+${remainder} URLs</span>`
+                );
+              }
+            }
+            return displayName;
+          })}
         </div>
         <div class="desc">
           ${this.safeRender(

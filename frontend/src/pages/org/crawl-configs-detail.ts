@@ -96,7 +96,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             <span
               class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-              >${this.getDisplayName()}</span
+              >${this.renderDisplayName()}</span
             >
             ${when(
               this.crawlConfig?.inactive,
@@ -434,14 +434,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       )}
     `;
   }
-
-  private getNewerVersion() {
-    const versionId = this.crawlConfig?.newId;
-    if (!versionId) return;
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
-  }
-
-  private getDisplayName() {
+  private renderDisplayName() {
     if (!this.crawlConfig) return "";
     if (this.crawlConfig.name) return this.crawlConfig.name;
     const { config } = this.crawlConfig;
@@ -453,9 +446,21 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
     const remainderCount = config.seeds.length - 1;
     if (remainderCount === 1) {
-      return msg(str`${firstSeed} (+${remainderCount} URL)`);
+      return msg(
+        html`${firstSeed}
+          <span class="text-neutral-500">+${remainderCount} URL</span>`
+      );
     }
-    return msg(str`${firstSeed} (+${remainderCount} URLs)`);
+    return msg(
+      html`${firstSeed}
+        <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
+  }
+
+  private getNewerVersion() {
+    const versionId = this.crawlConfig?.newId;
+    if (!versionId) return;
+    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
