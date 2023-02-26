@@ -24,6 +24,7 @@ import type {
   CrawlConfig,
   InitialCrawlConfig,
 } from "./types";
+import type { IntersectEvent } from "../../components/observable";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -376,6 +377,14 @@ export class CrawlsList extends LiteElement {
         )(filteredCrawls as CrawlSearchResult[])}
       </btrix-crawl-list>
 
+      <div class="mt-3 text-center">
+        <btrix-observable @intersect=${this.onIntersect}>
+          <sl-button size="small" @click=${this.loadMore}
+            >${msg("Load more")}</sl-button
+          >
+        </btrix-observable>
+      </div>
+
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
         .crawl=${this.crawlToEdit}
@@ -504,6 +513,17 @@ export class CrawlsList extends LiteElement {
 
   private stopPollTimer() {
     window.clearTimeout(this.timerId);
+  }
+
+  private onIntersect(e: IntersectEvent) {
+    const { entry } = e.detail;
+    if (entry.isIntersecting) {
+      this.loadMore();
+    }
+  }
+
+  private loadMore() {
+    console.log("TODO load more");
   }
 
   private async getCrawls(): Promise<{ crawls: Crawl[] }> {
