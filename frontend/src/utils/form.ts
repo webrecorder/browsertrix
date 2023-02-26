@@ -5,6 +5,12 @@ import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
  * Validate field max length and set custom message
  * Usage:
  * ```
+ * const { helpText, validate } = maxLengthValidator(10)
+ *
+ * <sl-input
+ *   help-text=${helpText}
+ *   @sl-input=${validate}
+ * ></sl-input>
  * ```
  */
 export function maxLengthValidator(maxLength: number): {
