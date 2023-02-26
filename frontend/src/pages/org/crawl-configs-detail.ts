@@ -96,7 +96,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <h2>
             <span
               class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-              >${this.renderDisplayName()}</span
+              >${this.renderName()}</span
             >
             ${when(
               this.crawlConfig?.inactive,
@@ -434,7 +434,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       )}
     `;
   }
-  private renderDisplayName() {
+  private renderName() {
     if (!this.crawlConfig) return "";
     if (this.crawlConfig.name) return this.crawlConfig.name;
     const { config } = this.crawlConfig;

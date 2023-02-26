@@ -314,7 +314,7 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   private renderTemplateItem(crawlConfig: CrawlConfig) {
-    const name = this.renderDisplayName(crawlConfig);
+    const name = this.renderName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${name}
@@ -577,7 +577,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderDisplayName(crawlConfig: CrawlConfig) {
+  private renderName(crawlConfig: CrawlConfig) {
     if (crawlConfig.name) return crawlConfig.name;
     const { config } = crawlConfig;
     const firstSeed = config.seeds[0];
@@ -640,7 +640,7 @@ export class CrawlTemplatesList extends LiteElement {
    */
   private async duplicateConfig(crawlConfig: CrawlConfig) {
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${this.renderDisplayName(crawlConfig)} Copy`),
+      name: msg(str`${this.renderName(crawlConfig)} Copy`),
       config: crawlConfig.config,
       profileid: crawlConfig.profileid || null,
       jobType: crawlConfig.jobType,
@@ -674,8 +674,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deactivated
-            <strong>${this.renderDisplayName(crawlConfig)}</strong>.`
+          html`Deactivated <strong>${this.renderName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -705,7 +704,7 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.renderDisplayName(crawlConfig)}</strong>.`
+          html`Deleted <strong>${this.renderName(crawlConfig)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -743,7 +742,7 @@ export class CrawlTemplatesList extends LiteElement {
       this.notify({
         message: msg(
           html`Started crawl from
-            <strong>${this.renderDisplayName(crawlConfig)}</strong>.
+            <strong>${this.renderName(crawlConfig)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
