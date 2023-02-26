@@ -137,9 +137,6 @@ export class CrawlsList extends LiteElement {
 
   private timerId?: number;
 
-  // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
-
   private filterCrawls = (crawls: Crawl[]) =>
     this.filterByState.length
       ? crawls.filter((crawl) =>

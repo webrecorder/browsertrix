@@ -40,7 +40,7 @@ const rowCss = css`
   }
 
   .col {
-    grid-column: span 1;
+    grid-column: span 1 / span 1;
   }
 `;
 const columnCss = css`
@@ -115,10 +115,7 @@ export class CrawlListItem extends LitElement {
       .detail {
         color: var(--sl-color-neutral-700);
         font-size: var(--sl-font-size-medium);
-        line-height: 1.4;
-        margin-bottom: var(--sl-spacing-3x-small);
-        overflow: hidden;
-        text-overflow: ellipsis;
+        height: 1.5rem;
       }
 
       .desc {
@@ -126,16 +123,11 @@ export class CrawlListItem extends LitElement {
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
-        line-height: 1.4;
+        height: 1rem;
       }
 
       .unknownValue {
         color: var(--sl-color-neutral-500);
-      }
-
-      .name {
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .url {
@@ -196,6 +188,9 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat();
+
   render() {
     const isActive =
       this.crawl &&
@@ -219,7 +214,9 @@ export class CrawlListItem extends LitElement {
       }}
     >
       <div class="col">
-        <div class="detail url">${this.safeRender(this.renderName)}</div>
+        <div class="detail url truncate">
+          ${this.safeRender(this.renderName)}
+        </div>
         <div class="desc">
           ${this.safeRender(
             (crawl) => html`
@@ -275,19 +272,27 @@ export class CrawlListItem extends LitElement {
         </div>
         <div class="desc">
           ${this.safeRender((crawl) => {
-            const pagesComplete = crawl.stats?.done || 0;
+            const pagesComplete = +(crawl.stats?.done || 0);
             if (isActive) {
-              const pagesFound = crawl.stats?.found || 0;
+              const pagesFound = +(crawl.stats?.found || 0);
               return html`
-                ${+pagesFound === 1
-                  ? msg(str`${pagesComplete} / ${pagesFound} page`)
-                  : msg(str`${pagesComplete} / ${pagesFound} pages`)}
+                ${pagesFound === 1
+                  ? msg(
+                      str`${this.numberFormatter.format(
+                        pagesComplete
+                      )} / ${this.numberFormatter.format(pagesFound)} page`
+                    )
+                  : msg(
+                      str`${this.numberFormatter.format(
+                        pagesComplete
+                      )} / ${this.numberFormatter.format(pagesFound)} pages`
+                    )}
               `;
             }
             return html`
-              ${+pagesComplete === 1
-                ? msg(str`${pagesComplete} page`)
-                : msg(str`${pagesComplete} pages`)}
+              ${pagesComplete === 1
+                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
+                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`)}
             `;
           })}
         </div>
@@ -307,7 +312,6 @@ export class CrawlListItem extends LitElement {
       <div class="col action">
         <sl-dropdown
           distance="4"
-          hoist
           @click=${(e: MouseEvent) => {
             // Prevent anchor link default behavior
             e.preventDefault();
