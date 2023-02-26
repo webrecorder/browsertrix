@@ -11,6 +11,8 @@ import type {
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import debounce from "lodash/fp/debounce";
 
+import { dropdown } from "../utils/css";
+
 export type Tags = string[];
 export type TagsChangeEvent = CustomEvent<{
   tags: string[];
@@ -33,114 +35,71 @@ export type TagInputEvent = CustomEvent<{
  */
 @localized()
 export class TagInput extends LitElement {
-  static styles = css`
-    :host {
-      --tag-height: 1.5rem;
-    }
-
-    ${inputCss}
-
-    .input {
-      flex-wrap: wrap;
-      height: auto;
-      overflow: visible;
-      min-height: calc(var(--tag-height) + 1rem);
-    }
-
-    .input__control {
-      flex-grow: 1;
-      flex-shrink: 0;
-    }
-
-    .input__control:not(:first-child) {
-      padding-left: var(--sl-spacing-small);
-      padding-right: var(--sl-spacing-small);
-    }
-
-    btrix-tag {
-      margin-left: var(--sl-spacing-x-small);
-      margin-top: calc(0.5rem - 1px);
-      max-width: calc(
-        100% - var(--sl-spacing-x-small) - var(--sl-spacing-x-small)
-      );
-    }
-
-    sl-popup::part(popup) {
-      z-index: 2;
-    }
-
-    .dropdown {
-      position: absolute;
-      transform-origin: top left;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .animateShow {
-      animation: dropdownShow 100ms ease forwards;
-    }
-
-    .animateHide {
-      animation: dropdownHide 100ms ease forwards;
-    }
-
-    @keyframes dropdownShow {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
+  static styles = [
+    dropdown,
+    inputCss,
+    css`
+      :host {
+        --tag-height: 1.5rem;
       }
 
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes dropdownHide {
-      from {
-        opacity: 1;
-        transform: scale(1);
+      .input {
+        flex-wrap: wrap;
+        height: auto;
+        overflow: visible;
+        min-height: calc(var(--tag-height) + 1rem);
       }
 
-      to {
-        opacity: 0;
-        transform: scale(0.9);
-        display: none;
-      }
-    }
-
-    .shake {
-      animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-      perspective: 1000px;
-    }
-
-    @keyframes shake {
-      10%,
-      90% {
-        transform: translate3d(-1px, 0, 0);
+      .input__control {
+        flex-grow: 1;
+        flex-shrink: 0;
       }
 
-      20%,
-      80% {
-        transform: translate3d(2px, 0, 0);
+      .input__control:not(:first-child) {
+        padding-left: var(--sl-spacing-small);
+        padding-right: var(--sl-spacing-small);
       }
 
-      30%,
-      50%,
-      70% {
-        transform: translate3d(-3px, 0, 0);
+      btrix-tag {
+        margin-left: var(--sl-spacing-x-small);
+        margin-top: calc(0.5rem - 1px);
+        max-width: calc(
+          100% - var(--sl-spacing-x-small) - var(--sl-spacing-x-small)
+        );
       }
 
-      40%,
-      60% {
-        transform: translate3d(3px, 0, 0);
+      sl-popup::part(popup) {
+        z-index: 2;
       }
-    }
-  `;
+
+      .shake {
+        animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+      }
+
+      @keyframes shake {
+        10%,
+        90% {
+          transform: translate3d(-1px, 0, 0);
+        }
+        20%,
+        80% {
+          transform: translate3d(2px, 0, 0);
+        }
+        30%,
+        50%,
+        70% {
+          transform: translate3d(-3px, 0, 0);
+        }
+        40%,
+        60% {
+          transform: translate3d(3px, 0, 0);
+        }
+      }
+    `,
+  ];
 
   @property({ type: Array })
   initialTags?: Tags;
