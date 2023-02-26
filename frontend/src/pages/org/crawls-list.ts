@@ -129,9 +129,9 @@ export class CrawlsList extends LiteElement {
 
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["cid", "configName"],
+    keys: ["cid", "configName", "firstSeed"],
     shouldSort: false,
-    threshold: 0.4, // stricter; default is 0.6
+    threshold: 0.2, // stricter; default is 0.6
   });
 
   private timerId?: number;
@@ -239,7 +239,9 @@ export class CrawlsList extends LiteElement {
             class="w-full"
             size="small"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Config name or ID")}
+            placeholder=${msg(
+              "Search by name, Crawl Start URL, or Crawl Config ID"
+            )}
             clearable
             ?disabled=${!this.crawls?.length}
             value=${this.searchBy}
