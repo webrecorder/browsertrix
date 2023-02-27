@@ -134,6 +134,18 @@ export class CrawlListItem extends LitElement {
         text-overflow: ellipsis;
       }
 
+      .url {
+        display: flex;
+      }
+
+      .url .primaryUrl {
+        flex: 1 1 0%;
+      }
+
+      .url .additionalUrls {
+        flex: none;
+      }
+
       .primaryUrl {
         word-break: break-all;
       }
@@ -202,9 +214,7 @@ export class CrawlListItem extends LitElement {
       }}
     >
       <div class="col">
-        <div class="detail url truncate">
-          ${this.safeRender(this.renderName)}
-        </div>
+        <div class="detail url">${this.safeRender(this.renderName)}</div>
         <div class="desc">
           ${this.safeRender(
             (crawl) => html`
@@ -317,26 +327,26 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderName(crawl: Crawl) {
-    if (crawl.configName) return crawl.configName;
-    if (!crawl.firstSeed) return crawl.id;
+    if (crawl.configName)
+      return html`<span class="truncate">${crawl.configName}</span>`;
+    if (!crawl.firstSeed)
+      return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;
-    let crawlName: any = html`<span class="primaryUrl"
-      >${crawl.firstSeed}</span
-    >`;
+    let nameSuffix: any = "";
     if (remainder) {
       if (remainder === 1) {
-        crawlName = msg(
-          html`<span class="primaryUrl">${crawl.firstSeed}</span>
-            <span class="additionalUrls">+${remainder} URL</span>`
-        );
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
       } else {
-        crawlName = msg(
-          html`<span class="primaryUrl">${crawl.firstSeed}</span>
-            <span class="additionalUrls">+${remainder} URLs</span>`
-        );
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
       }
     }
-    return crawlName;
+    return html`
+      <span class="primaryUrl truncate">${crawl.firstSeed}</span>${nameSuffix}
+    `;
   }
 }
 
