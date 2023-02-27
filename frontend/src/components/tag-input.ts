@@ -358,7 +358,15 @@ export class TagInput extends LitElement {
   private async addTags(tags: Tags) {
     await this.updateComplete;
     this.tags = union(
-      tags.map((v) => v.trim().toLocaleLowerCase()).filter((v) => v),
+      tags
+        .map((v) =>
+          v
+            // Remove zero-width characters
+            .replace(/[\u200B-\u200D\uFEFF]/g, "")
+            .trim()
+            .toLocaleLowerCase()
+        )
+        .filter((v) => v),
       this.tags
     );
     this.dispatchChange();
