@@ -15,7 +15,7 @@ import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 
 import { CopyButton } from "../../components/copy-button";
-import { RelativeDuration } from "../../components/relative-duration";
+import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type {
@@ -63,41 +63,6 @@ const inactiveCrawlStates: CrawlState[] = [
   "timed_out",
   "failed",
 ];
-const crawlState: Record<CrawlState, { label: string; icon?: TemplateResult }> =
-  {
-    starting: {
-      label: msg("Starting"),
-      icon: html``,
-    },
-    running: {
-      label: msg("Running"),
-      icon: html``,
-    },
-    complete: {
-      label: msg("Completed"),
-      icon: html``,
-    },
-    failed: {
-      label: msg("Failed"),
-      icon: html``,
-    },
-    partial_complete: {
-      label: msg("Partial Complete"),
-      icon: html``,
-    },
-    timed_out: {
-      label: msg("Timed Out"),
-      icon: html``,
-    },
-    stopping: {
-      label: msg("Stopping"),
-      icon: html``,
-    },
-    canceled: {
-      label: msg("Canceled"),
-      icon: html``,
-    },
-  };
 
 function isActive(crawl: Crawl) {
   return activeCrawlStates.includes(crawl.state);
@@ -155,6 +120,12 @@ export class CrawlsList extends LiteElement {
 
   @state()
   private searchBy: string = "";
+
+  @state()
+  private crawlToEdit: Crawl | null = null;
+
+  @state()
+  private isEditingCrawl = false;
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -217,10 +188,15 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <main>
-        <header
-          class="sticky z-10 mb-3 top-2 p-2 bg-neutral-50 border rounded-lg"
-        >
-          ${this.renderControls()}
+        <header class="contents">
+          <div class="flex w-full h-8 mb-4">
+            <h1 class="text-xl font-semibold">${msg("Crawls")}</h1>
+          </div>
+          <div
+            class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+          >
+            ${this.renderControls()}
+          </div>
         </header>
         <section>
           ${this.crawls.length
@@ -233,7 +209,7 @@ export class CrawlsList extends LiteElement {
                 </div>
               `}
         </section>
-        <footer class="mt-2">
+        <footer class="m-2">
           <span class="text-0-400 text-xs">
             ${this.lastFetched
               ? msg(html`Last updated:
@@ -261,6 +237,7 @@ export class CrawlsList extends LiteElement {
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <sl-input
             class="w-full"
+            size="small"
             slot="trigger"
             placeholder=${msg("Search by Crawl Config name or ID")}
             clearable
@@ -279,8 +256,6 @@ export class CrawlsList extends LiteElement {
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
           <sl-select
             class="flex-1 md:min-w-[14.5rem]"
-            placement="bottom-end"
-            distance="4"
             size="small"
             pill
             .value=${this.filterByState}
@@ -292,21 +267,9 @@ export class CrawlsList extends LiteElement {
               this.filterByState = value;
             }}
           >
-            ${activeCrawlStates.map(
-              (state) => html`
-                <sl-menu-item value=${state}>
-                  ${crawlState[state].label}</sl-menu-item
-                >
-              `
-            )}
+            ${activeCrawlStates.map(this.renderStatusMenuItem)}
             <sl-divider></sl-divider>
-            ${inactiveCrawlStates.map(
-              (state) => html`
-                <sl-menu-item value=${state}>
-                  ${crawlState[state].label}</sl-menu-item
-                >
-              `
-            )}
+            ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -317,8 +280,6 @@ export class CrawlsList extends LiteElement {
           <div class="grow flex">
             <sl-select
               class="flex-1 md:min-w-[9.2rem]"
-              placement="bottom-end"
-              distance="4"
               size="small"
               pill
               value=${this.orderBy.field}
@@ -406,293 +367,107 @@ export class CrawlsList extends LiteElement {
     }
 
     return html`
-      <ul class="border rounded">
+      <btrix-crawl-list>
         ${flow(
           this.sortCrawls,
           map(this.renderCrawlItem)
         )(filteredCrawls as CrawlSearchResult[])}
-      </ul>
+      </btrix-crawl-list>
+
+      <btrix-crawl-metadata-editor
+        .authState=${this.authState}
+        .crawl=${this.crawlToEdit}
+        ?open=${this.isEditingCrawl}
+        @request-close=${() => (this.isEditingCrawl = false)}
+        @updated=${
+          /* TODO fetch current page or single crawl */ this.fetchCrawls
+        }
+      ></btrix-crawl-metadata-editor>
     `;
   }
 
-  private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) => {
-    return html`<li class="border-t first:border-t-0">
-      <a
-        href=${`${this.crawlsBaseUrl}/crawl/${crawl.id}`}
-        class="grid grid-cols-12 gap-4 p-4 leading-none hover:bg-zinc-50 hover:text-primary transition-colors"
-        @click=${this.navLink}
-      >
-        <div class="col-span-11 md:col-span-5">
-          <div class="font-medium mb-1">${crawl.configName || crawl.cid}</div>
-          <div class="text-0-700 text-sm whitespace-nowrap truncate">
-            <sl-format-date
-              date=${`${crawl.started}Z` /** Z for UTC */}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="numeric"
-              minute="numeric"
-            ></sl-format-date>
-          </div>
-        </div>
-        <div class="md:order-last col-span-1 flex justify-end">
-          <sl-dropdown @click=${(e: Event) => e.preventDefault()} hoist>
-            <sl-icon-button
-              slot="trigger"
-              name="three-dots"
-              label=${msg("More")}
-              style="font-size: 1rem"
-            ></sl-icon-button>
-
-            <ul
-              class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-              role="menu"
-            >
-              ${isActive(crawl)
-                ? html`
-                    <li
-                      class="p-2 hover:bg-zinc-100 cursor-pointer"
-                      role="menuitem"
-                      @click=${(e: any) => {
-                        this.stop(crawl);
-                        e.target.closest("sl-dropdown").hide();
-                      }}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle"
-                        name="slash-circle"
-                      ></sl-icon>
-                      <span class="inline-block align-middle">
-                        ${msg("Stop gracefully")}
-                      </span>
-                    </li>
-                    <li
-                      class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                      role="menuitem"
-                      @click=${(e: any) => {
-                        this.cancel(crawl);
-                        e.target.closest("sl-dropdown").hide();
-                      }}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle"
-                        name="trash3"
-                      ></sl-icon>
-                      <span class="inline-block align-middle">
-                        ${msg("Cancel immediately")}
-                      </span>
-                    </li>
-                    <hr />
-                  `
-                : html`
-                    <li
-                      class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                      role="menuitem"
-                      @click=${(e: any) => {
-                        this.runNow(crawl);
-                        e.target.closest("sl-dropdown").hide();
-                      }}
-                    >
-                      <sl-icon
-                        class="inline-block align-middle"
-                        name="arrow-clockwise"
-                      ></sl-icon>
-                      <span class="inline-block align-middle">
-                        ${msg("Re-run crawl")}
-                      </span>
-                    </li>
-                    <hr />
-                  `}
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  CopyButton.copyToClipboard(crawl.id);
-                  e.target.closest("sl-dropdown").hide();
+  private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) =>
+    html`
+      <btrix-crawl-list-item .crawl=${crawl}>
+        <sl-menu slot="menu">
+          ${when(
+            isActive(crawl),
+            // HACK shoelace doesn't current have a way to override non-hover
+            // color without resetting the --sl-color-neutral-700 variable
+            () => html`
+              <sl-menu-item @click=${() => this.stop(crawl)}>
+                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+                ${msg("Stop Crawl")}
+              </sl-menu-item>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.cancel(crawl)}
+              >
+                <sl-icon name="x-octagon" slot="prefix"></sl-icon>
+                ${msg("Cancel Immediately")}
+              </sl-menu-item>
+            `,
+            () => html`
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--success)"
+                @click=${() => this.runNow(crawl)}
+              >
+                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+                ${msg("Re-Run Crawl")}
+              </sl-menu-item>
+              <sl-menu-item
+                @click=${() => {
+                  this.crawlToEdit = crawl;
+                  this.isEditingCrawl = true;
                 }}
               >
-                ${msg("Copy Crawl ID")}
-              </li>
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  CopyButton.copyToClipboard(crawl.cid);
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                ${msg("Copy Crawl Config ID")}
-              </li>
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.navTo(`${this.crawlsBaseUrl}/crawl/${crawl.id}#config`);
-                }}
-              >
-                ${msg("View Crawl Config")}
-              </li>
-              ${when(
-                !isActive(crawl),
-                () => html`
-                  <li
-                    class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      e.target.closest("sl-dropdown").hide();
-                      this.deleteCrawl(crawl);
-                    }}
-                  >
-                    ${msg("Delete Crawl")}
-                  </li>
-                `
+                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                ${msg("Edit Metadata")}
+              </sl-menu-item>
+            `
+          )}
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${crawl.oid}/crawl-configs/config/${crawl.cid}`
               )}
-            </ul>
-          </sl-dropdown>
-        </div>
-        <div class="col-span-12 md:col-span-2 flex items-start">
-          <div class="mr-2">
-            <!-- TODO switch case in lit template? needed for tailwindcss purging -->
-            <span
-              class="inline-block ${crawl.state === "failed"
-                ? "text-red-500"
-                : crawl.state === "complete"
-                ? "text-emerald-500"
-                : isActive(crawl)
-                ? "text-purple-500 motion-safe:animate-pulse"
-                : "text-zinc-300"}"
-              style="font-size: 10px; vertical-align: 2px"
-            >
-              &#9679;
-            </span>
-          </div>
-          <div>
-            <div
-              class="whitespace-nowrap mb-1 capitalize${isActive(crawl)
-                ? " motion-safe:animate-pulse"
-                : ""}"
-            >
-              ${crawl.state.replace(/_/g, " ")}
-            </div>
-            <div class="text-neutral-500 text-sm whitespace-nowrap truncate">
-              ${crawl.finished
-                ? html`
-                    <sl-relative-time
-                      date=${`${crawl.finished}Z` /** Z for UTC */}
-                    ></sl-relative-time>
-                  `
-                : ""}
-              ${!crawl.finished
-                ? html`
-                    ${crawl.state === "canceled" ? msg("Unknown") : ""}
-                    ${isActive(crawl) ? this.renderActiveDuration(crawl) : ""}
-                  `
-                : ""}
-            </div>
-          </div>
-        </div>
-        <div class="col-span-6 md:col-span-2">
-          ${crawl.finished
-            ? html`
-                <div class="whitespace-nowrap truncate text-sm">
-                  <span class="font-mono text-0-800 tracking-tighter">
-                    <sl-format-bytes
-                      value=${crawl.fileSize || 0}
-                    ></sl-format-bytes>
-                  </span>
-                  <span class="text-neutral-500">
-                    (${crawl.fileCount === 1
-                      ? msg(str`${crawl.fileCount} file`)
-                      : msg(str`${crawl.fileCount} files`)})
-                  </span>
-                </div>
-                <div
-                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
-                >
-                  ${msg(
-                    str`in ${RelativeDuration.humanize(
-                      new Date(`${crawl.finished}Z`).valueOf() -
-                        new Date(`${crawl.started}Z`).valueOf(),
-                      { compact: true }
-                    )}`
-                  )}
-                </div>
-              `
-            : crawl.stats
-            ? html`
-                <div
-                  class="whitespace-nowrap truncate text-sm text-purple-600 font-mono tracking-tighter"
-                >
-                  ${this.numberFormatter.format(+crawl.stats.done)}
-                  <span class="text-0-400">/</span>
-                  ${this.numberFormatter.format(+crawl.stats.found)}
-                </div>
-                <div
-                  class="text-neutral-500 text-sm whitespace-nowrap truncate"
-                >
-                  ${msg("pages crawled")}
-                </div>
-              `
-            : ""}
-        </div>
-        <div class="col-span-6 md:col-span-2">
-          ${crawl.manual
-            ? html`
-                <div class="whitespace-nowrap truncate mb-1">
-                  <span
-                    class="bg-fuchsia-50 text-fuchsia-700 text-sm rounded px-1 leading-4"
-                    >${msg("Manual Start")}</span
-                  >
-                </div>
-                <div
-                  class="ml-1 text-neutral-500 text-sm whitespace-nowrap truncate"
-                >
-                  ${msg(str`by ${crawl.userName || crawl.userid}`)}
-                </div>
-              `
-            : html`
-                <div class="whitespace-nowrap truncate">
-                  <span
-                    class="bg-teal-50 text-teal-700 text-sm rounded px-1 leading-4"
-                    >${msg("Scheduled Run")}</span
-                  >
-                </div>
-              `}
-        </div>
-      </a>
-    </li>`;
-  };
-
-  private renderActiveDuration(crawl: Crawl) {
-    const endTime = this.lastFetched || Date.now();
-    const duration = endTime - new Date(`${crawl.started}Z`).valueOf();
-    let unitCount: number;
-    let tickSeconds: number | undefined = undefined;
-
-    // Show second unit if showing seconds or greater than 1 hr
-    const showSeconds = duration < 60 * 2 * 1000;
-    if (showSeconds || duration > 60 * 60 * 1000) {
-      unitCount = 2;
-    } else {
-      unitCount = 1;
-    }
-    // Tick if seconds are showing
-    if (showSeconds) {
-      tickSeconds = 1;
-    } else {
-      tickSeconds = undefined;
-    }
-
-    return html`
-      <btrix-relative-duration
-        class="text-purple-500"
-        value=${`${crawl.started}Z`}
-        endTime=${this.lastFetched || Date.now()}
-        unitCount=${unitCount}
-        tickSeconds=${ifDefined(tickSeconds)}
-      ></btrix-relative-duration>
+          >
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+            ${msg("Go to Crawl Config")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Config ID")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
+          </sl-menu-item>
+          ${when(
+            !isActive(crawl),
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.deleteCrawl(crawl)}
+              >
+                <sl-icon name="trash" slot="prefix"></sl-icon>
+                ${msg("Delete Crawl")}
+              </sl-menu-item>
+            `
+          )}
+        </sl-menu>
+      </btrix-crawl-list-item>
     `;
-  }
+
+  private renderStatusMenuItem = (state: CrawlState) => {
+    const { icon, label } = CrawlStatus.getContent(state);
+
+    return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
+  };
 
   private onSearchInput = debounce(200)((e: any) => {
     this.searchBy = e.target.value;

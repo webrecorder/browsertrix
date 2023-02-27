@@ -108,7 +108,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               `
             )}
           </h2>
-          <div class="flex-0 flex">
+          <div class="flex-0 flex justify-end">
             ${when(
               this.crawlConfig && !this.crawlConfig.inactive,
               () => html`
@@ -396,7 +396,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             ? msg("Last Completed Crawl")
             : msg("Latest Crawl")}
         </h3>
-        <div class="border rounded shadow-sm">
+        <div>
           <btrix-crawl-list-item .crawl=${this.lastCrawl}>
             <sl-menu slot="menu">
               <sl-menu-item

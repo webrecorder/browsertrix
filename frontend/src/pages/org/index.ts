@@ -111,14 +111,8 @@ export class Org extends LiteElement {
     }
 
     if (!this.org || !this.userInfo) {
-      return html`
-        <div
-          class="absolute top-1/2 left-1/2 -mt-4 -ml-4"
-          style="font-size: 2rem"
-        >
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
+      // TODO combine loading state with tab panel content
+      return "";
     }
 
     let tabPanelContent = "" as any;

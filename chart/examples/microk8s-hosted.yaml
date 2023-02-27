@@ -28,10 +28,12 @@
 
 ingress:
   # required: set host to use tls
-  # host: "..."
+  # uncomment and replace example below with your registered domain
+  # host: "yourdomain.org"
 
   # required: set email to use tls
-  #cert_email: "..."
+  # uncomment and replace example below with your valid email address
+  #cert_email: "you@yourdomain.org"
 
   scheme: "https"
   tls: true
@@ -43,14 +45,15 @@ ingress_class: "public"
 signer:
   enabled: true
 
-  # host: ...
+  # uncomment and replace example below with your registered domain
+  # host: "second.yourdomain.org"
 
 
 # optionally, override default mongodb auth, used for all data storage:
 
 #mongo_auth:
-  #username: root
-  #password: PASSWORD!
+  # username: root
+  # password: PASSWORD!
   
 
 # optionally, set these to custom values

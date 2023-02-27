@@ -314,7 +314,7 @@ export class TagInput extends LitElement {
   }
 
   private onInput = debounce(200)(async (e: InputEvent) => {
-    const input = (e as any).originalTarget as HTMLInputElement;
+    const input = this.input!;
     this.inputValue = input.value;
     if (input.value.length) {
       this.dropdownIsOpen = true;

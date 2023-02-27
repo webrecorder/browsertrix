@@ -291,6 +291,28 @@ class CrawlOps:
 
         return await self._resolve_crawl_refs(crawl, org)
 
+    async def get_latest_crawl_and_count_by_config(self, cid: str):
+        """Get crawl statistics for a crawl_config with id cid."""
+        stats = {
+            "crawl_count": 0,
+            "last_crawl_id": None,
+            "last_crawl_finished": None,
+            "last_crawl_state": None,
+        }
+
+        match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
+        cursor = self.crawls.find(match_query).sort("finished", pymongo.DESCENDING)
+        results = await cursor.to_list(length=1000)
+        if results:
+            stats["crawl_count"] = len(results)
+
+            last_crawl = Crawl.from_dict(results[0])
+            stats["last_crawl_id"] = str(last_crawl.id)
+            stats["last_crawl_finished"] = last_crawl.finished
+            stats["last_crawl_state"] = last_crawl.state
+
+        return stats
+
     async def _resolve_crawl_refs(
         self, crawl: Union[CrawlOut, ListCrawlOut], org: Optional[Organization]
     ):

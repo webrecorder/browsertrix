@@ -10,6 +10,7 @@ ingress:
   scheme: "https"
   tls: true
 
+# optional second-host for signing archives
 signer:
   enabled: true
-  host: "signing.microk8s.browsertrix.cloud"
+  host: "second-host.{{ domain }}"

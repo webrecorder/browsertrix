@@ -104,6 +104,12 @@ import("./dialog").then(({ Dialog }) => {
 import("./data-table").then(({ DataTable }) => {
   customElements.define("btrix-data-table", DataTable);
 });
+import("./crawl-status").then(({ CrawlStatus }) => {
+  customElements.define("btrix-crawl-status", CrawlStatus);
+});
+import("./crawl-metadata-editor").then(({ CrawlMetadataEditor }) => {
+  customElements.define("btrix-crawl-metadata-editor", CrawlMetadataEditor);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

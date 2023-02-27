@@ -1,17 +1,9 @@
-import type { TemplateResult, HTMLTemplateResult } from "lit";
+import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlTextarea } from "@shoelace-style/shoelace";
-import Fuse from "fuse.js";
 
-import type {
-  Tags,
-  TagInputEvent,
-  TagsChangeEvent,
-} from "../../components/tag-input";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -30,7 +22,6 @@ const SECTIONS = [
 type SectionName = typeof SECTIONS[number];
 
 const POLL_INTERVAL_SECONDS = 10;
-const CRAWL_NOTES_MAXLENGTH = 500;
 
 /**
  * Usage:
@@ -73,24 +64,12 @@ export class CrawlDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "scale" | "details";
+  private openDialogName?: "scale" | "metadata";
 
   @state()
   private isDialogVisible: boolean = false;
 
-  @state()
-  private tagOptions: Tags = [];
-
-  @state()
-  private tagsToSave: Tags = [];
-
   private timerId?: number;
-
-  // For fuzzy search:
-  private fuse = new Fuse([], {
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
@@ -139,9 +118,6 @@ export class CrawlDetail extends LiteElement {
           this.crawlDone();
         }
       }
-    }
-    if (changedProperties.has("crawl") && this.crawl) {
-      this.tagsToSave = this.crawl.tags || [];
     }
   }
 
@@ -278,15 +254,13 @@ export class CrawlDetail extends LiteElement {
         ${this.isDialogVisible ? this.renderEditScale() : ""}
       </btrix-dialog>
 
-      <btrix-dialog
-        label=${msg("Edit Metadata")}
-        ?open=${this.openDialogName === "details"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible ? this.renderEditMetadata() : ""}
-      </btrix-dialog>
+      <btrix-crawl-metadata-editor
+        .authState=${this.authState}
+        .crawl=${this.crawl}
+        ?open=${this.openDialogName === "metadata"}
+        @request-close=${() => (this.openDialogName = undefined)}
+        @updated=${() => this.fetchCrawl()}
+      ></btrix-crawl-metadata-editor>
     `;
   }
 
@@ -343,7 +317,7 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between items-end">
-        <h2 class="text-xl font-semibold mb-3 md:mr-2">
+        <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
           ${msg(
             html`${this.crawl
               ? this.crawl.configName
@@ -352,7 +326,7 @@ export class CrawlDetail extends LiteElement {
                   style="width: 15em"
                 ></sl-skeleton>`}`
           )}
-        </h2>
+        </h1>
         <div
           class="grid gap-2 grid-flow-col ${this.isActive
             ? "justify-between"
@@ -520,7 +494,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h3 class="flex-0 text-lg font-semibold mb-2">${title}</h3>
+      <h2 class="flex-0 text-lg font-semibold mb-2">${title}</h2>
       <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }
@@ -533,27 +507,9 @@ export class CrawlDetail extends LiteElement {
           <dd>
             ${this.crawl
               ? html`
-                  <div class="inline-flex items-baseline justify-between">
-                    <div
-                      class="whitespace-nowrap capitalize${this.isActive
-                        ? " motion-safe:animate-pulse"
-                        : ""}"
-                    >
-                      <span
-                        class="inline-block ${this.crawl.state === "failed"
-                          ? "text-red-500"
-                          : this.crawl.state === "complete"
-                          ? "text-emerald-500"
-                          : this.isActive
-                          ? "text-purple-500"
-                          : "text-zinc-300"}"
-                        style="font-size: 10px; vertical-align: 2px"
-                      >
-                        &#9679;
-                      </span>
-                      ${this.crawl.state.replace(/_/g, " ")}
-                    </div>
-                  </div>
+                  <btrix-crawl-status
+                    state=${this.crawl.state}
+                  ></btrix-crawl-status>
                 `
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
@@ -932,72 +888,6 @@ ${this.crawl?.notes}
     `;
   }
 
-  private renderEditMetadata() {
-    if (!this.crawl) return;
-
-    const crawlNotesHelpText = msg(
-      str`Maximum ${CRAWL_NOTES_MAXLENGTH} characters`
-    );
-    return html`
-      <form
-        id="crawlDetailsForm"
-        @submit=${this.onSubmitMetadata}
-        @reset=${() => (this.openDialogName = undefined)}
-      >
-        <sl-textarea
-          class="mb-3"
-          name="crawlNotes"
-          label=${msg("Notes")}
-          value=${this.crawl.notes || ""}
-          rows="3"
-          autocomplete="off"
-          resize="auto"
-          help-text=${crawlNotesHelpText}
-          style="--help-text-align: right"
-          @sl-input=${(e: CustomEvent) => {
-            const textarea = e.target as SlTextarea;
-            if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
-              const overMax = textarea.value.length - CRAWL_NOTES_MAXLENGTH;
-              textarea.setCustomValidity(
-                msg(
-                  str`Please shorten this text to ${CRAWL_NOTES_MAXLENGTH} or less characters.`
-                )
-              );
-              textarea.helpText =
-                overMax === 1
-                  ? msg(str`${overMax} character over limit`)
-                  : msg(str`${overMax} characters over limit`);
-            } else {
-              textarea.setCustomValidity("");
-              textarea.helpText = crawlNotesHelpText;
-            }
-          }}
-        ></sl-textarea>
-        <btrix-tag-input
-          .initialTags=${this.crawl.tags}
-          .tagOptions=${this.tagOptions}
-          @tag-input=${this.onTagInput}
-          @tags-change=${(e: TagsChangeEvent) =>
-            (this.tagsToSave = e.detail.tags)}
-        ></btrix-tag-input>
-      </form>
-      <div slot="footer" class="flex justify-between">
-        <sl-button form="crawlDetailsForm" type="reset" size="small"
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          form="crawlDetailsForm"
-          variant="primary"
-          type="submit"
-          size="small"
-          ?loading=${this.isSubmittingUpdate}
-          ?disabled=${this.isSubmittingUpdate}
-          >${msg("Save")}</sl-button
-        >
-      </div>
-    `;
-  }
-
   private renderInactiveCrawlMessage() {
     return html`
       <div class="rounded border bg-neutral-50 p-3">
@@ -1130,85 +1020,8 @@ ${this.crawl?.notes}
     }
   }
 
-  private onTagInput = (e: TagInputEvent) => {
-    const { value } = e.detail;
-    if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
-  };
-
-  private async fetchTags() {
-    if (!this.crawl) return;
-    try {
-      const tags = await this.apiFetch(
-        `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
-        this.authState!
-      );
-
-      // Update search/filter collection
-      this.fuse.setCollection(tags as any);
-    } catch (e) {
-      // Fail silently, since users can still enter tags
-      console.debug(e);
-    }
-  }
-
   private openMetadataEditor() {
-    this.fetchTags();
-    this.openDialogName = "details";
-  }
-
-  private async onSubmitMetadata(e: SubmitEvent) {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl))) return;
-    const { crawlNotes } = serialize(formEl);
-
-    if (
-      crawlNotes === (this.crawl!.notes ?? "") &&
-      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
-    ) {
-      // No changes have been made
-      this.openDialogName = undefined;
-      return;
-    }
-
-    const params = {
-      tags: this.tagsToSave,
-      notes: crawlNotes,
-    };
-    this.isSubmittingUpdate = true;
-
-    try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}`,
-        this.authState!,
-        {
-          method: "PATCH",
-          body: JSON.stringify(params),
-        }
-      );
-
-      if (!data.success) {
-        throw data;
-      }
-
-      this.fetchCrawl();
-      this.notify({
-        message: msg("Successfully saved crawl details."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-      this.openDialogName = undefined;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't save crawl details at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSubmittingUpdate = false;
+    this.openDialogName = "metadata";
   }
 
   async checkFormValidity(formEl: HTMLFormElement) {

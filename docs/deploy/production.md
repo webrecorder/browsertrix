@@ -3,7 +3,7 @@
 For production and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain
 and (strongly recommended, but not required) second domain for signing web archives. 
 
-We are also experimenting with [Ansible playbooks](./ansible) for cloud deployment setups.
+We are also experimenting with [Ansible playbooks](../deploy/ansible) for cloud deployment setups.
 
 The production deployments also allow using an external mongodb server, and/or external S3-compatible storage instead of the bundled minio.
 
@@ -12,7 +12,7 @@ The production deployments also allow using an external mongodb server, and/or e
 
 For a single-machine production deployment, we recommend using microk8s.
 
-1. Install MicroK8S, as suggested in [the local deployment guide](./local) and ensure the `ingress` and `cert-manager` addons are also enabled.
+1. Install MicroK8S, as suggested in [the local deployment guide](../deploy/local.md) and ensure the `ingress` and `cert-manager` addons are also enabled.
 
 2. Copy `cp ./chart/examples/microk8s-hosted.yaml ./chart/my-config.yaml` to make local changes.
 
