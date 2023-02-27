@@ -110,9 +110,6 @@ import("./crawl-status").then(({ CrawlStatus }) => {
 import("./crawl-metadata-editor").then(({ CrawlMetadataEditor }) => {
   customElements.define("btrix-crawl-metadata-editor", CrawlMetadataEditor);
 });
-import("./observable").then(({ Observable }) => {
-  customElements.define("btrix-observable", Observable);
-});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
