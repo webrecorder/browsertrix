@@ -339,6 +339,7 @@ export class TagInput extends LitElement {
   }
 
   private onPaste(e: ClipboardEvent) {
+    e.preventDefault();
     const text = e.clipboardData?.getData("text");
     if (text) {
       this.addTags(text.split(","));
