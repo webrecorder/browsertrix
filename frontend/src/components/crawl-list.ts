@@ -139,11 +139,12 @@ export class CrawlListItem extends LitElement {
       }
 
       .url .primaryUrl {
-        flex: 1 1 0%;
+        flex: 0 1 auto;
       }
 
       .url .additionalUrls {
         flex: none;
+        margin-left: var(--sl-spacing-2x-small);
       }
 
       .primaryUrl {
