@@ -254,6 +254,7 @@ export class TagInput extends LitElement {
     const removeTag = () => {
       this.tags = this.tags.filter((v) => v !== content);
       this.dispatchChange();
+      this.input?.focus();
     };
     return html`
       <btrix-tag
