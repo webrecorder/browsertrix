@@ -268,6 +268,7 @@ export class TagInput extends LitElement {
 
   private onSelect(e: CustomEvent) {
     this.addTags([e.detail.item.value]);
+    this.input?.focus();
   }
 
   private onFocus(e: FocusEvent) {
@@ -280,16 +281,18 @@ export class TagInput extends LitElement {
 
   private onBlur(e: FocusEvent) {
     const relatedTarget = e.relatedTarget as HTMLElement;
-    if (this.menu?.contains(relatedTarget)) {
-      // Keep focus on form control if moving to menu selection
-      return;
-    }
-    if (
-      relatedTarget.tagName.includes("BUTTON") &&
-      relatedTarget.getAttribute("type") === "reset"
-    ) {
-      // Don't add tag if resetting form
-      return;
+    if (relatedTarget) {
+      if (this.menu?.contains(relatedTarget)) {
+        // Keep focus on form control if moving to menu selection
+        return;
+      }
+      if (
+        relatedTarget.tagName.includes("BUTTON") &&
+        relatedTarget.getAttribute("type") === "reset"
+      ) {
+        // Don't add tag if resetting form
+        return;
+      }
     }
     const input = e.target as HTMLInputElement;
     (input.parentElement as HTMLElement).classList.remove("input--focused");
