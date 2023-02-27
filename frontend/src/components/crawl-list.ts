@@ -18,7 +18,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
-import { srOnly } from "../utils/css";
+import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
 const largeBreakpointCss = css`60rem`;
@@ -63,6 +63,7 @@ const hostVars = css`
 @localized()
 export class CrawlListItem extends LitElement {
   static styles = [
+    truncate,
     rowCss,
     columnCss,
     hostVars,
@@ -108,6 +109,7 @@ export class CrawlListItem extends LitElement {
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
+        overflow: hidden;
       }
 
       .detail {
@@ -200,7 +202,9 @@ export class CrawlListItem extends LitElement {
       }}
     >
       <div class="col">
-        <div class="detail url">${this.safeRender(this.renderName)}</div>
+        <div class="detail url truncate">
+          ${this.safeRender(this.renderName)}
+        </div>
         <div class="desc">
           ${this.safeRender(
             (crawl) => html`
@@ -272,7 +276,7 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col">
-        <div class="detail">
+        <div class="detail truncate">
           ${this.safeRender(
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
           )}
