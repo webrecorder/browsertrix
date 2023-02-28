@@ -435,7 +435,10 @@ export class TagInput extends LitElement {
     const input = e.target as HTMLInputElement;
     if (!input.value) {
       e.preventDefault();
-      const text = e.clipboardData?.getData("text");
+      const text = e.clipboardData
+        ?.getData("text")
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .trim();
       if (text) {
         this.addTags(text.split(","));
       }
