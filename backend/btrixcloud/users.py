@@ -24,9 +24,10 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import MongoDBUserDatabase
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 
 from .invites import InvitePending, UserRole
+from .pagination import Page
 
 
 # ============================================================================

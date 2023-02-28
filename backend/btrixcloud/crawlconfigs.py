@@ -12,10 +12,11 @@ from datetime import datetime
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
+from .pagination import Page
 
 from .db import BaseMongoModel
 

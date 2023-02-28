@@ -11,7 +11,7 @@ from typing import Dict, Union, Literal, Optional, Any
 from pydantic import BaseModel, UUID4
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 
 from .db import BaseMongoModel
 
@@ -24,6 +24,8 @@ from .invites import (
     InviteToOrgRequest,
     UserRole,
 )
+
+from .pagination import Page
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = 3

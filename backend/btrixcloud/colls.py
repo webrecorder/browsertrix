@@ -6,12 +6,13 @@ from typing import Optional, List
 
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 
 from pydantic import BaseModel, UUID4
 
 from .db import BaseMongoModel
 from .orgs import Organization
+from .pagination import Page
 
 
 # ============================================================================

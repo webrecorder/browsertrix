@@ -8,11 +8,12 @@ import os
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, HttpUrl
 import aiohttp
 
 from .orgs import Organization
+from .pagination import Page
 from .users import User
 
 from .db import BaseMongoModel

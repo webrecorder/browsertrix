@@ -10,7 +10,7 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
@@ -19,6 +19,7 @@ from .crawlconfigs import Seed
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
+from .pagination import Page
 from .storages import get_presigned_url, delete_crawl_file_object
 
 
