@@ -141,7 +141,7 @@ export class TagInput extends LitElement {
   private menu!: SlMenu;
 
   @query("sl-popup")
-  private popup!: SlPopup;
+  private combobox!: SlPopup;
 
   connectedCallback() {
     if (this.initialTags) {
@@ -159,7 +159,7 @@ export class TagInput extends LitElement {
       }
     }
     if (changedProperties.has("dropdownIsOpen") && this.dropdownIsOpen) {
-      this.popup.reposition();
+      this.combobox.reposition();
     }
   }
 
@@ -180,8 +180,9 @@ export class TagInput extends LitElement {
         </label>
         <div
           class="input input--medium input--standard"
-          @click=${this.onInputWrapperClick}
           tabindex="-1"
+          @click=${this.onInputWrapperClick}
+          @keydown=${this.onKeydown}
           @focusout=${(e: FocusEvent) => {
             const currentTarget = e.currentTarget as SlMenuItem;
             const relatedTarget = e.relatedTarget as HTMLElement;
@@ -208,7 +209,6 @@ export class TagInput extends LitElement {
               style="min-width: ${placeholder.length}ch"
               @focus=${this.onFocus}
               @blur=${this.onBlur}
-              @keydown=${this.onKeydown}
               @input=${this.onInput}
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
@@ -278,8 +278,10 @@ export class TagInput extends LitElement {
         removable
         @sl-remove=${removeTag}
         title=${content}
-        >${content}</btrix-tag
+        tabindex="-1"
       >
+        ${content}
+      </btrix-tag>
     `;
   };
 
@@ -327,14 +329,42 @@ export class TagInput extends LitElement {
       }
       return;
     }
-    if (e.key === "," || e.key === "Enter") {
-      e.preventDefault();
-
-      const input = e.target as HTMLInputElement;
-      const value = input.value.trim();
-      if (value) {
-        this.addTags([value]);
+    const el = e.target as HTMLElement;
+    const isInputEl = this.input && el === this.input;
+    switch (e.key) {
+      // TODO localize, handle RTL
+      case "ArrowLeft": {
+        if (isInputEl && this.input!.selectionStart! > 0) return;
+        const focusTarget = (isInputEl ? this.combobox : el)
+          .previousElementSibling as HTMLElement | null;
+        focusTarget?.focus();
+        break;
       }
+      case "ArrowRight": {
+        // if (isInputEl && this.input!.selectionEnd! > this.input!.value.length)
+        //   return;
+        if (isInputEl) return;
+        let focusTarget = el.nextElementSibling as HTMLElement | null;
+        if (!focusTarget) return;
+        if (focusTarget === this.combobox) {
+          focusTarget = this.input || null;
+        }
+        focusTarget?.focus();
+        break;
+      }
+      case ",":
+      case "Enter": {
+        e.preventDefault();
+
+        const input = e.target as HTMLInputElement;
+        const value = input.value.trim();
+        if (value) {
+          this.addTags([value]);
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
 
