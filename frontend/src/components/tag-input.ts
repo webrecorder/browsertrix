@@ -1,7 +1,12 @@
 import { LitElement, html, css } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlInput, SlMenu, SlPopup } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlMenu,
+  SlMenuItem,
+  SlPopup,
+} from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
 import debounce from "lodash/fp/debounce";
@@ -301,9 +306,14 @@ export class TagInput extends LitElement {
   }
 
   private onKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown" || (e.key === "Tab" && this.dropdownIsOpen)) {
       e.preventDefault();
-      this.menu?.querySelector("sl-menu-item")?.focus();
+      const menuItem = this.menu?.querySelector("sl-menu-item");
+      if (menuItem) {
+        // Reset roving tabindex set by shoelace
+        this.menu!.setCurrentItem(menuItem);
+        menuItem.focus();
+      }
       return;
     }
     if (e.key === "," || e.key === "Enter") {
