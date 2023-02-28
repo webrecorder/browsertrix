@@ -24,6 +24,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import MongoDBUserDatabase
+from fastapi_pagination import Page, paginate
 
 from .invites import InvitePending, UserRole
 
@@ -463,13 +464,13 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
-    @users_router.get("/invites", tags=["invites"])
+    @users_router.get("/invites", tags=["invites"], response_model=Page[InvitePending])
     async def get_pending_invites(user: User = Depends(current_active_user)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         pending_invites = await user_manager.invites.get_pending_invites()
-        return {"pending_invites": pending_invites}
+        return paginate(pending_invites)
 
     app.include_router(users_router, prefix="/users", tags=["users"])
 

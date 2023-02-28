@@ -6,11 +6,12 @@ import time
 import urllib.parse
 import uuid
 
-from typing import Dict, Union, Literal, Optional
+from typing import Dict, Union, Literal, Optional, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi_pagination import Page, paginate
 
 from .db import BaseMongoModel
 
@@ -113,7 +114,8 @@ class Organization(BaseMongoModel):
         return res >= value
 
     async def serialize_for_user(self, user: User, user_manager):
-        """Serialize based on current user access"""
+        """Serialize result based on current user access"""
+
         exclude = {"storage"}
 
         if not self.is_owner(user):
@@ -122,7 +124,7 @@ class Organization(BaseMongoModel):
         if not self.is_crawler(user):
             exclude.add("usage")
 
-        result = self.dict(
+        result = self.to_dict(
             exclude_unset=True,
             exclude_defaults=True,
             exclude_none=True,
@@ -145,7 +147,18 @@ class Organization(BaseMongoModel):
                     "email": org_user.get("email", ""),
                 }
 
-        return result
+        return OrgOut.from_dict(result)
+
+
+# ============================================================================
+class OrgOut(BaseMongoModel):
+    """Organization API output model"""
+
+    id: UUID4
+    name: str
+    users: Optional[Dict[str, Any]]
+    usage: Optional[Dict[str, int]]
+    default: bool = False
 
 
 # ============================================================================
@@ -375,14 +388,17 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     ops.org_crawl_dep = org_crawl_dep
     ops.org_owner_dep = org_owner_dep
 
-    @app.get("/orgs", tags=["organizations"])
+    @app.get(
+        "/orgs",
+        tags=["organizations"],
+        response_model=Page[OrgOut],
+    )
     async def get_orgs(user: User = Depends(user_dep)):
         results = await ops.get_orgs_for_user(user)
-        return {
-            "orgs": [
-                await res.serialize_for_user(user, user_manager) for res in results
-            ]
-        }
+        serialized_results = [
+            await res.serialize_for_user(user, user_manager) for res in results
+        ]
+        return paginate(serialized_results)
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
@@ -470,10 +486,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         await user_manager.user_db.update(user)
         return {"added": True}
 
-    @router.get("/invites", tags=["invites"])
+    @router.get("/invites", tags=["invites"], response_model=Page[InvitePending])
     async def get_pending_org_invites(org: Organization = Depends(org_owner_dep)):
         pending_invites = await user_manager.invites.get_pending_invites(org)
-        return {"pending_invites": pending_invites}
+        return paginate(pending_invites)
 
     @router.post("/invites/delete", tags=["invites"])
     async def delete_invite(

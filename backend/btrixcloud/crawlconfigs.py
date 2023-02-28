@@ -12,6 +12,7 @@ from datetime import datetime
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_pagination import Page, paginate
 
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
@@ -167,13 +168,6 @@ class CrawlConfigIdNameOut(BaseMongoModel):
     """Crawl Config id and name output only"""
 
     name: str
-
-
-# ============================================================================
-class CrawlConfigsResponse(BaseModel):
-    """model for crawl configs response"""
-
-    crawlConfigs: List[CrawlConfigOut]
 
 
 # ============================================================================
@@ -404,7 +398,7 @@ class CrawlConfigOps:
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 
-        return CrawlConfigsResponse(crawlConfigs=configs)
+        return configs
 
     async def get_crawl_config_ids_for_profile(
         self, profileid: uuid.UUID, org: Optional[Organization] = None
@@ -604,13 +598,14 @@ def init_crawl_config_api(
 
     org_crawl_dep = org_ops.org_crawl_dep
 
-    @router.get("", response_model=CrawlConfigsResponse)
+    @router.get("", response_model=Page[CrawlConfigOut])
     async def get_crawl_configs(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
         tag: Union[List[str], None] = Query(default=None),
     ):
-        return await ops.get_crawl_configs(org, userid=userid, tags=tag)
+        crawl_configs = await ops.get_crawl_configs(org, userid=userid, tags=tag)
+        return paginate(crawl_configs)
 
     @router.get("/tags")
     async def get_crawl_config_tags(org: Organization = Depends(org_crawl_dep)):

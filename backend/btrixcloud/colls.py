@@ -6,6 +6,7 @@ from typing import Optional, List
 
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi_pagination import Page, paginate
 
 from pydantic import BaseModel, UUID4
 
@@ -30,6 +31,14 @@ class CollIn(BaseModel):
 
     name: str
     description: Optional[str]
+
+
+# ============================================================================
+class CollOut(BaseMongoModel):
+    """Collection API output model"""
+
+    id: UUID4
+    name: str
 
 
 # ============================================================================
@@ -89,7 +98,7 @@ class CollectionOps:
         """list all collections for org"""
         cursor = self.collections.find({"org": oid}, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
-        return {result["name"]: result["_id"] for result in results}
+        return [CollOut.from_dict(result) for result in results]
 
     async def get_collection_crawls(self, oid: uuid.UUID, name: str = None):
         """find collection and get all crawls by collection name per org"""
@@ -157,9 +166,10 @@ def init_collections_api(mdb, crawls, orgs, crawl_manager):
 
         return {"collection": coll_id}
 
-    @router.get("")
+    @router.get("", response_model=Page[CollOut])
     async def list_collection_all(org: Organization = Depends(org_viewer_dep)):
-        return await colls.list_collections(org.id)
+        collections = await colls.list_collections(org.id)
+        return paginate(collections)
 
     @router.get("/$all")
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):

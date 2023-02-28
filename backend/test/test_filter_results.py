@@ -9,7 +9,8 @@ def test_get_config_by_user(crawler_auth_headers, default_org_id, crawler_userid
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?userid={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["crawlConfigs"]) == 1
+    assert len(r.json()["items"]) == 1
+    assert r.json()["total"] == 1
 
 
 def test_ensure_crawl_and_admin_user_crawls(
@@ -21,7 +22,8 @@ def test_ensure_crawl_and_admin_user_crawls(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["crawls"]) == 2
+    assert len(r.json()["items"]) == 2
+    assert r.json()["total"] == 2
 
 
 def test_get_crawl_job_by_user(
@@ -31,7 +33,8 @@ def test_get_crawl_job_by_user(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?userid={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["crawls"]) == 1
+    assert len(r.json()["items"]) == 1
+    assert r.json()["total"] == 1
 
 
 def test_get_crawl_job_by_config(
@@ -42,10 +45,12 @@ def test_get_crawl_job_by_config(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?cid={admin_config_id}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["crawls"]) == 1
+    assert len(r.json()["items"]) == 1
+    assert r.json()["total"] == 1
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?cid={crawler_config_id}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["crawls"]) == 1
+    assert len(r.json()["items"]) == 1
+    assert r.json()["total"] == 1
