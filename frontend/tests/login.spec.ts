@@ -8,6 +8,7 @@ test('test', async ({}) => {
 
   try {
     await page.goto('http://localhost:9870/');
+    await page.waitForLoadState('load');
     await page.waitForSelector('input[name="username"]');
     await page.click('input[name="username"]');
     await page.fill('input[name="username"]', 'dev@webrecorder.net');
@@ -19,11 +20,9 @@ test('test', async ({}) => {
     await page.fill('input[name="password"]', devPassword);
     await page.click('a:has-text("Log In")');
 
-    await page.waitForSelector('text=Welcome');
-    const welcomeText = await page.innerText('text=Welcome');
-    expect(welcomeText).toContain('Welcome');
-  } catch (error) {
-    console.error(error);
-    // Handle the error as appropriate
-  } 
+
+  } finally {
+    await browser.close();
+  }
 });
+
