@@ -137,6 +137,9 @@ export class TagInput extends LitElement {
   @query("#input")
   private input?: HTMLInputElement;
 
+  @query("#dropdown")
+  private dropdown!: HTMLDivElement;
+
   @query("sl-menu")
   private menu!: SlMenu;
 
@@ -158,8 +161,18 @@ export class TagInput extends LitElement {
         this.setAttribute("data-invalid", "");
       }
     }
-    if (changedProperties.has("dropdownIsOpen") && this.dropdownIsOpen) {
-      this.combobox.reposition();
+    if (changedProperties.has("dropdownIsOpen")) {
+      if (this.dropdownIsOpen) {
+        this.combobox.reposition();
+      } else if (this.dropdownIsOpen === false) {
+        // Hide on CSS animation end
+        const onAnimationEnd = (e: AnimationEvent) => {
+          if (e.animationName !== "dropdownHide") return;
+          this.dropdownIsOpen = undefined;
+          this.dropdown.removeEventListener("animationend", onAnimationEnd);
+        };
+        this.dropdown.addEventListener("animationend", onAnimationEnd);
+      }
     }
   }
 
