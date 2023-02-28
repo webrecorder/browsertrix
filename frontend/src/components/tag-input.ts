@@ -9,7 +9,6 @@ import type {
   SlTag,
 } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
-import union from "lodash/fp/union";
 import debounce from "lodash/fp/debounce";
 
 export type Tags = string[];
@@ -111,6 +110,36 @@ export class TagInput extends LitElement {
         display: none;
       }
     }
+
+    .shake {
+      animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+
+    @keyframes shake {
+      10%,
+      90% {
+        transform: translate3d(-1px, 0, 0);
+      }
+
+      20%,
+      80% {
+        transform: translate3d(2px, 0, 0);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translate3d(-3px, 0, 0);
+      }
+
+      40%,
+      60% {
+        transform: translate3d(3px, 0, 0);
+      }
+    }
   `;
 
   @property({ type: Array })
@@ -134,6 +163,9 @@ export class TagInput extends LitElement {
 
   @state()
   private dropdownIsOpen?: boolean;
+
+  @query(".form-control")
+  private formControl!: HTMLElement;
 
   @query("#input")
   private input!: HTMLInputElement;
@@ -454,22 +486,45 @@ export class TagInput extends LitElement {
 
   private async addTags(tags: Tags) {
     await this.updateComplete;
-    this.tags = union(
-      tags
-        .map((v) =>
-          v
-            // Remove zero-width characters
-            .replace(/[\u200B-\u200D\uFEFF]/g, "")
-            .trim()
-            .toLocaleLowerCase()
-        )
-        .filter((v) => v),
-      this.tags
-    );
+    const repeatTags: Tags = [];
+    const uniqueTags: Tags = [...this.tags];
+
+    tags.forEach((str) => {
+      const tag = str // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .trim()
+        .toLocaleLowerCase();
+      if (tag) {
+        if (uniqueTags.includes(tag)) {
+          repeatTags.push(tag);
+        } else {
+          uniqueTags.push(tag);
+        }
+      }
+    });
+    this.tags = uniqueTags;
     this.dispatchChange();
     this.dropdownIsOpen = false;
     this.input!.value = "";
+    if (repeatTags.length) {
+      repeatTags.forEach(this.shakeTag);
+    }
   }
+
+  private shakeTag = (tag: string) => {
+    const tagEl = this.formControl.querySelector(
+      `btrix-tag[title="${tag}"]`
+    ) as SlTag;
+    if (!tagEl) return;
+
+    const onAnimationEnd = (e: AnimationEvent) => {
+      if (e.animationName !== "shake") return;
+      tagEl.classList.remove("shake");
+      tagEl.removeEventListener("animationend", onAnimationEnd);
+    };
+    tagEl.addEventListener("animationend", onAnimationEnd);
+    tagEl.classList.add("shake");
+  };
 
   private async dispatchChange() {
     await this.updateComplete;
