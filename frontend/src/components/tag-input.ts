@@ -196,15 +196,9 @@ export class TagInput extends LitElement {
     }
     if (changedProperties.has("dropdownIsOpen")) {
       if (this.dropdownIsOpen) {
-        this.combobox.reposition();
-      } else if (this.dropdownIsOpen === false) {
-        // Hide on CSS animation end
-        const onAnimationEnd = (e: AnimationEvent) => {
-          if (e.animationName !== "dropdownHide") return;
-          this.dropdownIsOpen = undefined;
-          this.dropdown.removeEventListener("animationend", onAnimationEnd);
-        };
-        this.dropdown.addEventListener("animationend", onAnimationEnd);
+        this.openDropdown();
+      } else {
+        this.closeDropdown();
       }
     }
   }
@@ -266,11 +260,17 @@ export class TagInput extends LitElement {
             />
             <div
               id="dropdown"
-              class="dropdown ${this.dropdownIsOpen === true
-                ? "animateShow"
-                : this.dropdownIsOpen === false
-                ? "animateHide"
-                : "hidden"}"
+              class="dropdown hidden"
+              @animationend=${(e: AnimationEvent) => {
+                const el = e.target as HTMLDivElement;
+                if (e.animationName === "dropdownShow") {
+                  el.classList.remove("animateShow");
+                }
+                if (e.animationName === "dropdownHide") {
+                  el.classList.add("hidden");
+                  el.classList.remove("animateHide");
+                }
+              }}
             >
               <sl-menu
                 role="listbox"
@@ -356,11 +356,27 @@ export class TagInput extends LitElement {
         title=${content}
         tabindex="-1"
         @keydown=${onKeydown}
+        @animationend=${(e: AnimationEvent) => {
+          if (e.animationName === "shake") {
+            (e.target as SlTag).classList.remove("shake");
+          }
+        }}
       >
         ${content}
       </btrix-tag>
     `;
   };
+
+  private openDropdown() {
+    this.combobox.reposition();
+    this.dropdown.classList.add("animateShow");
+    this.dropdown.classList.remove("hidden");
+  }
+
+  private closeDropdown() {
+    this.combobox.reposition();
+    this.dropdown.classList.add("animateHide");
+  }
 
   private onSelect(e: CustomEvent) {
     this.addTags([e.detail.item.value]);
@@ -516,13 +532,6 @@ export class TagInput extends LitElement {
       `btrix-tag[title="${tag}"]`
     ) as SlTag;
     if (!tagEl) return;
-
-    const onAnimationEnd = (e: AnimationEvent) => {
-      if (e.animationName !== "shake") return;
-      tagEl.classList.remove("shake");
-      tagEl.removeEventListener("animationend", onAnimationEnd);
-    };
-    tagEl.addEventListener("animationend", onAnimationEnd);
     tagEl.classList.add("shake");
   };
 
