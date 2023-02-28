@@ -437,6 +437,7 @@ export class TagInput extends LitElement {
       e.preventDefault();
       const text = e.clipboardData
         ?.getData("text")
+        // Remove zero-width characters
         .replace(/[\u200B-\u200D\uFEFF]/g, "")
         .trim();
       if (text) {
