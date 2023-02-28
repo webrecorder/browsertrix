@@ -6,6 +6,7 @@ import type {
   SlMenu,
   SlMenuItem,
   SlPopup,
+  SlTag,
 } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import union from "lodash/fp/union";
@@ -195,7 +196,6 @@ export class TagInput extends LitElement {
           class="input input--medium input--standard"
           tabindex="-1"
           @click=${this.onInputWrapperClick}
-          @keydown=${this.onKeydown}
           @focusout=${(e: FocusEvent) => {
             const currentTarget = e.currentTarget as SlMenuItem;
             const relatedTarget = e.relatedTarget as HTMLElement;
@@ -223,6 +223,7 @@ export class TagInput extends LitElement {
               @focus=${this.onFocus}
               @blur=${this.onBlur}
               @input=${this.onInput}
+              @keydown=${this.onKeydown}
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
@@ -280,28 +281,49 @@ export class TagInput extends LitElement {
   }
 
   private renderTag = (content: string) => {
-    const removeTag = () => {
+    const removeTag = (e: CustomEvent | KeyboardEvent) => {
       this.tags = this.tags.filter((v) => v !== content);
       this.dispatchChange();
+
+      const tag = e.currentTarget as SlTag;
+      const focusTarget = tag.previousElementSibling as HTMLElement | null;
+      (focusTarget || this.input).focus();
+    };
+    const onKeydown = (e: KeyboardEvent) => {
+      const el = e.currentTarget as SlTag;
+      switch (e.key) {
+        // TODO localize, handle RTL
+        case "ArrowLeft": {
+          const focusTarget = el.previousElementSibling as HTMLElement | null;
+          focusTarget?.focus();
+          break;
+        }
+        case "ArrowRight": {
+          let focusTarget = el.nextElementSibling as HTMLElement | null;
+          if (!focusTarget) return;
+          if (focusTarget === this.combobox) {
+            focusTarget = this.input || null;
+          }
+          focusTarget?.focus();
+          break;
+        }
+        case "Backspace":
+        case "Delete": {
+          removeTag(e);
+          break;
+        }
+        default:
+          break;
+      }
     };
     return html`
       <btrix-tag
         variant="primary"
         removable
-        @sl-remove=${() => {
-          removeTag();
-          this.input.focus();
-        }}
+        @sl-remove=${removeTag}
         title=${content}
         tabindex="-1"
-        @keydown=${(e: KeyboardEvent) => {
-          if (e.key === "Backspace" || e.key === "Delete") {
-            removeTag();
-            const focusTarget = (e.target as HTMLElement)
-              .previousElementSibling;
-            if (focusTarget) (focusTarget as HTMLElement).focus();
-          }
-        }}
+        @keydown=${onKeydown}
       >
         ${content}
       </btrix-tag>
@@ -342,7 +364,7 @@ export class TagInput extends LitElement {
   }
 
   private onKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowDown" || (e.key === "Tab" && this.dropdownIsOpen)) {
+    if (this.dropdownIsOpen && (e.key === "ArrowDown" || e.key === "Tab")) {
       e.preventDefault();
       const menuItem = this.menu?.querySelector("sl-menu-item");
       if (menuItem) {
@@ -352,13 +374,14 @@ export class TagInput extends LitElement {
       }
       return;
     }
-    const el = e.target as HTMLElement;
-    const isInputEl = this.input && el === this.input;
     switch (e.key) {
+      case "Backspace":
+      case "Delete":
       // TODO localize, handle RTL
       case "ArrowLeft": {
-        if (isInputEl && this.input!.selectionStart! > 0) return;
-        const focusTarget = (isInputEl ? this.combobox : el)
+        if (this.input.selectionStart! > 0) return;
+        e.preventDefault();
+        const focusTarget = this.combobox
           .previousElementSibling as HTMLElement | null;
         focusTarget?.focus();
         break;
@@ -366,19 +389,11 @@ export class TagInput extends LitElement {
       case "ArrowRight": {
         // if (isInputEl && this.input!.selectionEnd! > this.input!.value.length)
         //   return;
-        if (isInputEl) return;
-        let focusTarget = el.nextElementSibling as HTMLElement | null;
-        if (!focusTarget) return;
-        if (focusTarget === this.combobox) {
-          focusTarget = this.input || null;
-        }
-        focusTarget?.focus();
         break;
       }
       case ",":
       case "Enter": {
         e.preventDefault();
-
         const input = e.target as HTMLInputElement;
         const value = input.value.trim();
         if (value) {
