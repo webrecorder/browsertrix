@@ -135,7 +135,7 @@ export class TagInput extends LitElement {
   private dropdownIsOpen?: boolean;
 
   @query("#input")
-  private input?: HTMLInputElement;
+  private input!: HTMLInputElement;
 
   @query("#dropdown")
   private dropdown!: HTMLDivElement;
@@ -177,7 +177,7 @@ export class TagInput extends LitElement {
   }
 
   reportValidity() {
-    this.input?.reportValidity();
+    this.input.reportValidity();
   }
 
   render() {
@@ -248,7 +248,7 @@ export class TagInput extends LitElement {
                   e.stopPropagation();
                   if (e.key === "Escape") {
                     this.dropdownIsOpen = false;
-                    this.input?.focus();
+                    this.input.focus();
                   }
                 }}
                 @sl-select=${this.onSelect}
@@ -290,7 +290,7 @@ export class TagInput extends LitElement {
         removable
         @sl-remove=${() => {
           removeTag();
-          this.input?.focus();
+          this.input.focus();
         }}
         title=${content}
         tabindex="-1"
@@ -310,7 +310,7 @@ export class TagInput extends LitElement {
 
   private onSelect(e: CustomEvent) {
     this.addTags([e.detail.item.value]);
-    this.input?.focus();
+    this.input.focus();
   }
 
   private onFocus(e: FocusEvent) {
@@ -429,7 +429,7 @@ export class TagInput extends LitElement {
 
   private onInputWrapperClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
-      this.input?.focus();
+      this.input.focus();
     }
   }
 
