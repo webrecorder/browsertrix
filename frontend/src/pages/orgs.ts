@@ -6,6 +6,7 @@ import type { CurrentUser } from "../types/user";
 import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
+import type { APIPaginatedList } from "../types/api";
 
 @needLogin
 @localized()
@@ -63,8 +64,11 @@ export class Orgs extends LiteElement {
   }
 
   private async getOrgs(): Promise<OrgData[]> {
-    const data = await this.apiFetch("/orgs", this.authState!);
+    const data: APIPaginatedList = await this.apiFetch(
+      "/orgs",
+      this.authState!
+    );
 
-    return data.orgs;
+    return data.items;
   }
 }

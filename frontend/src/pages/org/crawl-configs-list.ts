@@ -19,6 +19,7 @@ import {
 } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
+import type { APIPaginatedList } from "../../types/api";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -584,14 +585,14 @@ export class CrawlTemplatesList extends LiteElement {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
-    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs${params}`,
       this.authState!
     );
 
     const runningCrawlsMap: RunningCrawlsMap = {};
 
-    data.crawlConfigs.forEach(({ id, currCrawlId }) => {
+    data.items.forEach(({ id, currCrawlId }) => {
       if (currCrawlId) {
         runningCrawlsMap[id] = currCrawlId;
       }
@@ -599,7 +600,7 @@ export class CrawlTemplatesList extends LiteElement {
 
     this.runningCrawlsMap = runningCrawlsMap;
 
-    return data.crawlConfigs;
+    return data.items;
   }
 
   /**
