@@ -270,15 +270,25 @@ export class TagInput extends LitElement {
     const removeTag = () => {
       this.tags = this.tags.filter((v) => v !== content);
       this.dispatchChange();
-      this.input?.focus();
     };
     return html`
       <btrix-tag
         variant="primary"
         removable
-        @sl-remove=${removeTag}
+        @sl-remove=${() => {
+          removeTag();
+          this.input?.focus();
+        }}
         title=${content}
         tabindex="-1"
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "Backspace" || e.key === "Delete") {
+            removeTag();
+            const focusTarget = (e.target as HTMLElement)
+              .previousElementSibling;
+            if (focusTarget) (focusTarget as HTMLElement).focus();
+          }
+        }}
       >
         ${content}
       </btrix-tag>

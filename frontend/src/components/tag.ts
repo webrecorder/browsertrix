@@ -21,17 +21,25 @@ export class Tag extends SLTag {
     css`
       :host {
         max-width: 100%;
-        /* outline: 0; */
       }
 
       :focus {
-        outline: 1px solid red !important;
+        outline: 0;
       }
 
       :focus .tag {
-        background-color: var(--sl-color-blue-400);
-        border-color: var(--sl-color-blue-400);
+        background-color: var(--sl-color-blue-500);
+        border-color: var(--sl-color-blue-500);
+      }
+
+      :focus .tag,
+      :focus .tag__remove {
         color: var(--sl-color-neutral-0);
+      }
+
+      .tag,
+      .tag__remove {
+        transition: background-color 0.1s, color 0.1s;
       }
 
       .tag {
@@ -52,12 +60,11 @@ export class Tag extends SLTag {
       .tag__remove {
         color: var(--sl-color-blue-600);
         border-radius: 100%;
-        transition: background-color 0.1s;
       }
 
       .tag__remove:hover {
         background-color: var(--sl-color-blue-600);
-        color: #fff;
+        color: var(--sl-color-neutral-0);
       }
     `,
   ];
@@ -66,6 +73,6 @@ export class Tag extends SLTag {
 
   render() {
     const template = super.render();
-    return html`<span tabindex="0">${template}</span>`;
+    return html`<span tabindex="-1">${template}</span>`;
   }
 }
