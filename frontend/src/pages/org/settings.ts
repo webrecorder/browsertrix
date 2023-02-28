@@ -9,6 +9,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
+import type { APIPaginatedList } from "../../types/api";
 
 type Tab = "information" | "members";
 type User = {
@@ -358,10 +359,13 @@ export class OrgSettings extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
-  private getPendingInvites(): Promise<Invite[]> {
-    return this.apiFetch(`/orgs/${this.org.id}/invites`, this.authState!).then(
-      (data) => data.pending_invites
-    );
+  private async getPendingInvites(): Promise<Invite[]> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.org.id}/invites`,
+      this.authState!
+    ).then((data) => data.pending_invites);
+
+    return data.items;
   }
 
   private async fetchPendingInvites() {
