@@ -264,6 +264,35 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private renderName() {
+    if (!this.crawl)
+      return html`<sl-skeleton
+        class="inline-block"
+        style="width: 15em"
+      ></sl-skeleton>`;
+
+    if (this.crawl.configName) return this.crawl.configName;
+    if (!this.crawl.firstSeed) return this.crawl.id;
+    const remainder = this.crawl.seedCount - 1;
+    let crawlName: any = html`<span class="break-words"
+      >${this.crawl.firstSeed}</span
+    >`;
+    if (remainder) {
+      if (remainder === 1) {
+        crawlName = msg(
+          html`<span class="break-words">${this.crawl.firstSeed}</span>
+            <span class="text-neutral-500">+${remainder} URL</span>`
+        );
+      } else {
+        crawlName = msg(
+          html`<span class="break-words">${this.crawl.firstSeed}</span>
+            <span class="text-neutral-500">+${remainder} URLs</span>`
+        );
+      }
+    }
+    return crawlName;
+  }
+
   private renderNav() {
     const renderNavItem = ({
       section,
@@ -318,14 +347,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <header class="md:flex justify-between items-end">
         <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
-          ${msg(
-            html`${this.crawl
-              ? this.crawl.configName
-              : html`<sl-skeleton
-                  class="inline-block"
-                  style="width: 15em"
-                ></sl-skeleton>`}`
-          )}
+          ${this.renderName()}
         </h1>
         <div
           class="grid gap-2 grid-flow-col ${this.isActive
@@ -1077,7 +1099,7 @@ ${this.crawl?.notes}
       if (crawlTemplate.currCrawlId) {
         this.notify({
           message: msg(
-            html`Crawl of <strong>${this.crawl.configName}</strong> is already
+            html`Crawl of <strong>${this.renderName()}</strong> is already
               running.
               <br />
               <a
@@ -1109,7 +1131,7 @@ ${this.crawl?.notes}
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${this.crawl.configName}</strong>.`
+          html`Started crawl from <strong>${this.renderName()}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -1127,11 +1149,7 @@ ${this.crawl?.notes}
   private async deleteCrawl() {
     if (
       !window.confirm(
-        msg(
-          str`Are you sure you want to delete crawl of ${
-            this.crawl!.configName
-          }?`
-        )
+        msg(str`Are you sure you want to delete crawl of ${this.renderName()}?`)
       )
     ) {
       return;
@@ -1181,9 +1199,7 @@ ${this.crawl?.notes}
     if (!this.crawl) return;
 
     this.notify({
-      message: msg(
-        html`Done crawling <strong>${this.crawl.configName}</strong>.`
-      ),
+      message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
       variant: "success",
       icon: "check2-circle",
     });

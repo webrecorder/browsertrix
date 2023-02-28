@@ -18,7 +18,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
-import { srOnly } from "../utils/css";
+import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
 const largeBreakpointCss = css`60rem`;
@@ -63,6 +63,7 @@ const hostVars = css`
 @localized()
 export class CrawlListItem extends LitElement {
   static styles = [
+    truncate,
     rowCss,
     columnCss,
     hostVars,
@@ -108,6 +109,7 @@ export class CrawlListItem extends LitElement {
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
+        overflow: hidden;
       }
 
       .detail {
@@ -132,8 +134,25 @@ export class CrawlListItem extends LitElement {
         text-overflow: ellipsis;
       }
 
+      .url {
+        display: flex;
+      }
+
+      .url .primaryUrl {
+        flex: 0 1 auto;
+      }
+
+      .url .additionalUrls {
+        flex: none;
+        margin-left: var(--sl-spacing-2x-small);
+      }
+
       .primaryUrl {
         word-break: break-all;
+      }
+
+      .additionalUrls {
+        color: var(--sl-color-neutral-500);
       }
 
       .finished {
@@ -196,13 +215,7 @@ export class CrawlListItem extends LitElement {
       }}
     >
       <div class="col">
-        <div class="detail url">
-          ${this.safeRender(
-            (crawl) =>
-              crawl.configName ||
-              html`<span class="primaryUrl">${crawl.firstSeed}</span>`
-          )}
-        </div>
+        <div class="detail url">${this.safeRender(this.renderName)}</div>
         <div class="desc">
           ${this.safeRender(
             (crawl) => html`
@@ -274,7 +287,7 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col">
-        <div class="detail">
+        <div class="detail truncate">
           ${this.safeRender(
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
           )}
@@ -312,6 +325,29 @@ export class CrawlListItem extends LitElement {
       return html`<sl-skeleton></sl-skeleton>`;
     }
     return render(this.crawl);
+  }
+
+  private renderName(crawl: Crawl) {
+    if (crawl.configName)
+      return html`<span class="truncate">${crawl.configName}</span>`;
+    if (!crawl.firstSeed)
+      return html`<span class="truncate">${crawl.id}</span>`;
+    const remainder = crawl.seedCount - 1;
+    let nameSuffix: any = "";
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <span class="primaryUrl truncate">${crawl.firstSeed}</span>${nameSuffix}
+    `;
   }
 }
 

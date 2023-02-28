@@ -1,12 +1,12 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlTextarea } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
+import { maxLengthValidator } from "../utils/form";
 import type { Crawl } from "../types/crawler";
 
 const CRAWL_NOTES_MAXLENGTH = 500;
@@ -81,9 +81,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private renderEditMetadata() {
     if (!this.crawl) return;
 
-    const crawlNotesHelpText = msg(
-      str`Maximum ${CRAWL_NOTES_MAXLENGTH} characters`
-    );
+    const { helpText, validate } = maxLengthValidator(CRAWL_NOTES_MAXLENGTH);
     return html`
       <form
         id="crawlDetailsForm"
@@ -98,26 +96,9 @@ export class CrawlMetadataEditor extends LiteElement {
           rows="3"
           autocomplete="off"
           resize="auto"
-          help-text=${crawlNotesHelpText}
+          help-text=${helpText}
           style="--help-text-align: right"
-          @sl-input=${(e: CustomEvent) => {
-            const textarea = e.target as SlTextarea;
-            if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
-              const overMax = textarea.value.length - CRAWL_NOTES_MAXLENGTH;
-              textarea.setCustomValidity(
-                msg(
-                  str`Please shorten this text to ${CRAWL_NOTES_MAXLENGTH} or less characters.`
-                )
-              );
-              textarea.helpText =
-                overMax === 1
-                  ? msg(str`${overMax} character over limit`)
-                  : msg(str`${overMax} characters over limit`);
-            } else {
-              textarea.setCustomValidity("");
-              textarea.helpText = crawlNotesHelpText;
-            }
-          }}
+          @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input
           .initialTags=${this.crawl.tags}

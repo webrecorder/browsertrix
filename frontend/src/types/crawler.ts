@@ -29,6 +29,7 @@ export type Crawl = {
   tags: string[];
   notes: string | null;
   firstSeed: string;
+  seedCount: number;
 };
 
 type ScopeType =

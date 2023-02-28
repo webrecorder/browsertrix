@@ -63,7 +63,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async initializeCrawlTemplate() {
     try {
-      this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      const crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      this.crawlConfig = crawlConfig;
       if (this.crawlConfig.lastCrawlId)
         this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
     } catch (e: any) {
@@ -93,12 +94,10 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <header class="col-span-1 md:flex justify-between items-end">
           <h2>
-            ${this.crawlConfig?.name
-              ? html`<span
-                  class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-                  >${this.crawlConfig.name}</span
-                > `
-              : ""}
+            <span
+              class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
+              >${this.renderName()}</span
+            >
             ${when(
               this.crawlConfig?.inactive,
               () => html`
@@ -434,6 +433,28 @@ export class CrawlTemplatesDetail extends LiteElement {
         () => html`<hr class="flex-0 border-l w-0" style="height: inherit" />`
       )}
     `;
+  }
+  private renderName() {
+    if (!this.crawlConfig) return "";
+    if (this.crawlConfig.name) return this.crawlConfig.name;
+    const { config } = this.crawlConfig;
+    const firstSeed = config.seeds[0];
+    let firstSeedURL =
+      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    if (config.seeds.length === 1) {
+      return firstSeedURL;
+    }
+    const remainderCount = config.seeds.length - 1;
+    if (remainderCount === 1) {
+      return msg(
+        html`${firstSeed}
+          <span class="text-neutral-500">+${remainderCount} URL</span>`
+      );
+    }
+    return msg(
+      html`${firstSeed}
+        <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
   }
 
   private getNewerVersion() {
