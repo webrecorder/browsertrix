@@ -181,6 +181,17 @@ export class TagInput extends LitElement {
         <div
           class="input input--medium input--standard"
           @click=${this.onInputWrapperClick}
+          tabindex="-1"
+          @focusout=${(e: FocusEvent) => {
+            const currentTarget = e.currentTarget as SlMenuItem;
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (
+              this.dropdownIsOpen &&
+              !currentTarget?.contains(relatedTarget)
+            ) {
+              this.dropdownIsOpen = false;
+            }
+          }}
         >
           ${this.renderTags()}
           <sl-popup
