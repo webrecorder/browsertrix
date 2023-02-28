@@ -129,6 +129,10 @@ export class CrawlListItem extends LitElement {
         line-height: 1.4;
       }
 
+      .unknownValue {
+        color: var(--sl-color-neutral-500);
+      }
+
       .name {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -261,10 +265,12 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender(
-            (crawl) => html`<sl-format-bytes
-              value=${crawl.fileSize || 0}
-            ></sl-format-bytes>`
+          ${this.safeRender((crawl) =>
+            isActive
+              ? html`<span class="unknownValue">${msg("In Progress")}</span>`
+              : html`<sl-format-bytes
+                  value=${crawl.fileSize || 0}
+                ></sl-format-bytes>`
           )}
         </div>
         <div class="desc">
