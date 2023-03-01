@@ -25,7 +25,8 @@ type RunningCrawlsMap = {
   [configId: string]: string;
 };
 
-const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser";
+const FILTER_BY_CURRENT_USER_STORAGE_KEY =
+  "btrix.filterByCurrentUser.crawlConfigs";
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),

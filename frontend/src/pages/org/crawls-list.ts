@@ -31,7 +31,7 @@ type CrawlSearchResult = {
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
 
-const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser";
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFields: Record<
