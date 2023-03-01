@@ -85,13 +85,11 @@ class CrawlJob(ABC):
         try:
             result = await self.crawl_configs.find_one({"_id": self.cid})
             crawlconfig = CrawlConfig.from_dict(result)
+            self.scale = self._get_crawl_scale(crawl) or crawlconfig.scale
 
         # pylint: disable=broad-except
         except Exception as exc:
             print(exc)
-
-        if crawl:
-            self.scale = crawl.spec.replicas
 
         # if doesn't exist, create, using scale from config
         if not crawl:
@@ -397,6 +395,10 @@ class CrawlJob(ABC):
     @abstractmethod
     async def _get_crawl(self):
         """get runnable object representing this crawl"""
+
+    @abstractmethod
+    def _get_crawl_scale(self, crawl):
+        """get scale from crawl, if any"""
 
     @abstractmethod
     async def _do_scale(self, new_scale):
