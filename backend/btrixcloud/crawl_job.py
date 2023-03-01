@@ -83,9 +83,7 @@ class CrawlJob(ABC):
         crawlconfig = None
 
         try:
-            result = await self.crawl_configs.find_one(
-                {"_id": self.cid}
-            )
+            result = await self.crawl_configs.find_one({"_id": self.cid})
             crawlconfig = CrawlConfig.from_dict(result)
 
         # pylint: disable=broad-except
