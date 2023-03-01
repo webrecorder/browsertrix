@@ -613,9 +613,7 @@ class CrawlOps:
 
         cid = raw.get("cid")
 
-        await self.crawl_configs.add_remove_exclusion(
-            regex, cid, org, user, add=True
-        )
+        await self.crawl_configs.add_remove_exclusion(regex, cid, org, user, add=True)
 
         # restart crawl pods
         restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
@@ -634,9 +632,7 @@ class CrawlOps:
 
         cid = raw.get("cid")
 
-        await self.crawl_configs.add_remove_exclusion(
-            regex, cid, org, user, add=False
-        )
+        await self.crawl_configs.add_remove_exclusion(regex, cid, org, user, add=False)
 
         # restart crawl pods
         await self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)

@@ -123,9 +123,7 @@ class BaseCrawlManager(ABC):
 
         return await self._create_manual_job(crawlconfig)
 
-    async def update_crawl_config(
-        self, crawlconfig, update
-    ):
+    async def update_crawl_config(self, crawlconfig, update):
         """Update the schedule or scale for existing crawl config"""
 
         has_sched_update = update.schedule is not None
