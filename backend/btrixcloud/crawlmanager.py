@@ -165,6 +165,10 @@ class BaseCrawlManager(ABC):
         """Delete all crawl configs by id"""
         return await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
 
+    def stream_crawl_logs(self, crawl_id):
+        """Return stream of crawl logs as async generator"""
+        return self._stream_crawl_logs(crawl_id)
+
     async def _create_manual_job(self, crawlconfig):
         cid = str(crawlconfig.id)
         ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
@@ -233,3 +237,7 @@ class BaseCrawlManager(ABC):
     @abstractmethod
     async def _delete_crawl_configs(self, label):
         """delete crawl configs by specified label"""
+
+    @abstractmethod
+    async def _stream_crawl_logs(self, crawl_id):
+        """stream logs from crawl"""

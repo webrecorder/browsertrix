@@ -7,8 +7,9 @@ import base64
 import yaml
 import aiohttp
 
-from ..orgs import S3Storage
+from ..crawls import CrawlNotRunning
 from ..crawlmanager import BaseCrawlManager
+from ..orgs import S3Storage
 
 from .k8sapi import K8sAPI
 
@@ -248,6 +249,39 @@ class K8SManager(BaseCrawlManager, K8sAPI):
                         pass
 
         return {"error": "post_failed"}
+
+    async def _stream_crawl_logs(self, crawl_id):
+        """return stream of crawl logs as async generator"""
+        pods = await self.core_api.list_namespaced_pod(
+            namespace=self.namespace,
+            label_selector=f"crawl={crawl_id},role=crawler",
+        )
+
+        if not pods.items:
+            raise CrawlNotRunning("No crawl pod found")
+
+        for pod in pods.items:
+            pod_name = pod.metadata.name
+
+            if not pod_name:
+                raise AttributeError("pod.metadata.name missing")
+
+            resp = await self.core_api.read_namespaced_pod_log(
+                pod_name, self.namespace, follow=True, _preload_content=False
+            )
+            while True:
+                line = await resp.content.readline()
+                if not line:
+                    break
+                decoded_line = line.decode("utf-8").rstrip("\n")
+                try:
+                    result = json.loads(decoded_line)
+                    yield result
+                except json.JSONDecodeError as err:
+                    print(
+                        f"Error decoding json-l line: {result}. Error: {err}",
+                        flush=True,
+                    )
 
     async def _update_scheduled_job(self, crawlconfig):
         """create or remove cron job based on crawlconfig schedule"""
