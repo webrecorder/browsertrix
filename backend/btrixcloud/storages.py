@@ -10,6 +10,7 @@ from aiobotocore.session import get_session
 
 from .orgs import Organization, DefaultStorage, S3Storage
 from .users import User
+from .zip import get_zip_file, extract_and_parse_log_file
 
 
 # ============================================================================
@@ -148,3 +149,39 @@ async def delete_crawl_file_object(org, crawlfile, crawl_manager):
         status_code = response["ResponseMetadata"]["HTTPStatusCode"]
 
     return status_code
+
+
+# ============================================================================
+async def get_wacz_logs(org, crawlfile, crawl_manager):
+    """Return combined and sorted list of log line dicts from all logs in WACZ."""
+    if crawlfile.def_storage_name:
+        s3storage = await crawl_manager.get_default_storage(crawlfile.def_storage_name)
+
+    elif org.storage.type == "s3":
+        s3storage = org.storage
+
+    else:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    async with get_s3_client(s3storage, s3storage.use_access_for_presign) as (
+        client,
+        bucket,
+        key,
+    ):
+        key += crawlfile.filename
+        cd_start, zip_file = await get_zip_file(client, bucket, key)
+        log_files = [
+            f
+            for f in zip_file.filelist
+            if f.filename.startswith("logs/") and not f.is_dir()
+        ]
+
+        combined_log_lines = []
+
+        for log_zipinfo in log_files:
+            parsed_log_lines = await extract_and_parse_log_file(
+                client, bucket, key, log_zipinfo, cd_start
+            )
+            combined_log_lines.extend(parsed_log_lines)
+
+        return combined_log_lines

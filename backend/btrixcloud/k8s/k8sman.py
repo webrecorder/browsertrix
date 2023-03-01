@@ -7,8 +7,8 @@ import base64
 import yaml
 import aiohttp
 
-from ..orgs import S3Storage
 from ..crawlmanager import BaseCrawlManager
+from ..orgs import S3Storage
 
 from .k8sapi import K8sAPI
 
