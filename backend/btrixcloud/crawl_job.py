@@ -17,6 +17,7 @@ import pymongo
 
 from .db import init_db
 from .crawls import Crawl, CrawlFile, CrawlCompleteIn, dt_now
+from .crawlconfigs import CrawlConfig
 
 
 # Seconds before allowing another shutdown attempt
@@ -79,15 +80,27 @@ class CrawlJob(ABC):
     async def async_init(self, template, params):
         """async init for k8s job"""
         crawl = await self._get_crawl()
+        crawlconfig = None
 
-        self.scale = await self.load_initial_scale(crawl)
+        try:
+            result = await self.crawl_configs.find_one(
+                {"_id": self.cid}
+            )
+            crawlconfig = CrawlConfig.from_dict(result)
+
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
+
+        if crawl:
+            self.scale = crawl.spec.replicas
 
         # if doesn't exist, create, using scale from config
         if not crawl:
             params["scale"] = self.scale
             await self.init_job_objects(template, params)
 
-        await self.init_crawl()
+        await self.init_crawl(crawlconfig)
         prev_start_time = None
 
         retry = 3
@@ -249,10 +262,10 @@ class CrawlJob(ABC):
         """update crawl state, and optionally mark as finished"""
         await self.crawls.find_one_and_update({"_id": self.job_id}, {"$set": kwargs})
 
-    async def init_crawl(self):
+    async def init_crawl(self, crawlconfig):
         """create crawl, doesn't exist, mark as starting"""
         try:
-            crawl = self._make_crawl("starting", self.scale)
+            crawl = self._make_crawl("starting", self.scale, crawlconfig)
             await self.crawls.insert_one(crawl.to_dict())
         except pymongo.errors.DuplicateKeyError:
             await self.update_crawl(state="starting", scale=self.scale)
@@ -321,27 +334,15 @@ class CrawlJob(ABC):
 
         return {"success": True}
 
-    # pylint: disable=unused-argument
-    async def load_initial_scale(self, crawl=None):
-        """load scale from config or crawl object if not set"""
-        if self.scale:
-            return self.scale
-
-        try:
-            result = await self.crawl_configs.find_one(
-                {"_id": self.cid}, {"scale": True}
-            )
-            return result["scale"]
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print(exc)
-            return 1
-
-    def _make_crawl(self, state, scale):
+    def _make_crawl(self, state, scale, crawlconfig):
         """Create crawl object for partial or fully complete crawl"""
         return Crawl(
             id=self.job_id,
             state=state,
+            config=crawlconfig.config,
+            profileid=crawlconfig.profileid,
+            schedule=crawlconfig.schedule,
+            crawlTimeout=crawlconfig.crawlTimeout,
             userid=self.userid,
             oid=self.oid,
             cid=self.cid,
@@ -383,9 +384,9 @@ class CrawlJob(ABC):
         async def healthz():
             return {}
 
-        @app.post("/change_config/{cid}")
-        async def change_config(cid: str):
-            return await self._change_crawl_config(cid)
+        @app.post("/rollover")
+        async def restart():
+            return await self._rollover_restart()
 
     @abstractmethod
     async def init_job_objects(self, template, params):
@@ -408,7 +409,7 @@ class CrawlJob(ABC):
         """gracefully shutdown crawl"""
 
     @abstractmethod
-    async def _change_crawl_config(self, cid):
+    async def _rollover_restart(self):
         """change crawl config for this crawl"""
 
     @property

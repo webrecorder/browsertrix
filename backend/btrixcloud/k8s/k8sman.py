@@ -308,12 +308,16 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             namespace=self.namespace, body=cron_job
         )
 
-    async def _update_config_initial_scale(self, crawlconfig, scale):
+    async def _update_config_map(self, crawlconfig, scale=None, update_config=False):
         config_map = await self.core_api.read_namespaced_config_map(
             name=f"crawl-config-{crawlconfig.id}", namespace=self.namespace
         )
 
-        config_map.data["INITIAL_SCALE"] = str(scale)
+        if scale is not None:
+            config_map.data["INITIAL_SCALE"] = str(scale)
+
+        if update_config:
+            config_map.data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
 
         await self.core_api.patch_namespaced_config_map(
             name=config_map.metadata.name, namespace=self.namespace, body=config_map
