@@ -1,5 +1,6 @@
 """ entry point for K8s crawl job which manages the stateful crawl """
 
+import datetime
 from fastapi import FastAPI
 
 from .utils import send_signal_to_pods
@@ -38,26 +39,17 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
             name=crawl.metadata.name, namespace=self.namespace, body=crawl
         )
 
-    async def load_initial_scale(self, crawl=None):
-        """load scale from crawl, if available"""
-        if crawl:
-            return crawl.spec.replicas
-
-        return await super().load_initial_scale()
-
-    async def _change_crawl_config(self, cid):
-        """patch existing crawl statefulset to use new crawlconfig id
-        this will cause the crawl to restart with new config"""
+    async def _rollover_restart(self):
+        """patch existing crawl statefulset with new timestamp to force restart"""
+        now = datetime.datetime.utcnow()
+        now = str(now.isoformat("T") + "Z")
         patch_config = {
             "spec": {
                 "template": {
-                    "spec": {
-                        "volumes": [
-                            {
-                                "name": "crawl-config",
-                                "configMap": {"name": f"crawl-config-{cid}"},
-                            }
-                        ]
+                    "metadata": {
+                        "annotations": {
+                            "btrix.restartedAt": now
+                        }
                     }
                 }
             }

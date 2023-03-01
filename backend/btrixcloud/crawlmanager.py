@@ -123,16 +123,20 @@ class BaseCrawlManager(ABC):
 
         return await self._create_manual_job(crawlconfig)
 
-    async def update_crawlconfig_schedule_or_scale(
-        self, crawlconfig, scale=None, schedule=None
+    async def update_crawl_config(
+        self, crawlconfig, update
     ):
         """Update the schedule or scale for existing crawl config"""
 
-        if schedule is not None:
+        has_sched_update = update.schedule is not None
+        has_scale_update = update.scale is not None
+        has_config_update = update.config is not None
+
+        if has_sched_update:
             await self._update_scheduled_job(crawlconfig)
 
-        if scale is not None:
-            await self._update_config_initial_scale(crawlconfig, scale)
+        if has_scale_update or has_config_update:
+            await self._update_config_map(crawlconfig, update.scale, has_config_update)
 
         return True
 
@@ -148,10 +152,10 @@ class BaseCrawlManager(ABC):
 
         return await self._post_to_job(crawl_id, oid, f"/scale/{scale}")
 
-    async def change_crawl_config(self, crawl_id, oid, new_cid):
-        """Change crawl config and restart"""
+    async def rollover_restart_crawl(self, crawl_id, oid):
+        """Rolling restart of crawl"""
 
-        return await self._post_to_job(crawl_id, oid, f"/change_config/{new_cid}")
+        return await self._post_to_job(crawl_id, oid, "/rollover")
 
     async def delete_crawl_configs_for_org(self, org):
         """Delete all crawl configs for given org"""
@@ -191,8 +195,8 @@ class BaseCrawlManager(ABC):
 
         return self.templates.env.get_template("crawl_job.yaml").render(params)
 
-    async def _update_config_initial_scale(self, crawlconfig, scale):
-        """update initial scale in config, if needed (k8s only)"""
+    async def _update_config_map(self, crawlconfig, scale=None, update_config=False):
+        """update initial scale and crawler config in config, if needed (k8s only)"""
 
     @abstractmethod
     async def check_storage(self, storage_name, is_default=False):

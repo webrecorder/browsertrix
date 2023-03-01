@@ -108,8 +108,6 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
-    oldId: Optional[UUID4]
-
 
 # ============================================================================
 class CrawlConfig(BaseMongoModel):
@@ -135,12 +133,12 @@ class CrawlConfig(BaseMongoModel):
 
     userid: UUID4
 
+    useridLastModified: Optional[UUID4]
+
     profileid: Optional[UUID4]
 
     crawlAttemptCount: Optional[int] = 0
 
-    newId: Optional[UUID4]
-    oldId: Optional[UUID4]
     inactive: Optional[bool] = False
 
     def get_raw_config(self):
@@ -185,6 +183,8 @@ class UpdateCrawlConfig(BaseModel):
     profileid: Optional[str]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     tags: Optional[List[str]] = []
+
+    config: Optional[RawCrawlConfig]
 
 
 # ============================================================================
@@ -238,17 +238,14 @@ class CrawlConfigOps:
         config: CrawlConfigIn,
         org: Organization,
         user: User,
-        for_running_crawl=False,
     ):
         """Add new crawl config"""
         data = config.dict()
         data["oid"] = org.id
         data["userid"] = user.id
+        data["useridLastModified"] = user.id
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
-
-        if for_running_crawl:
-            data["crawlAttemptCount"] = 1
 
         profile_filename = None
         if config.profileid:
@@ -260,22 +257,6 @@ class CrawlConfigOps:
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
-
-        old_id = data.get("oldId")
-
-        if old_id:
-            old_config = await self.get_crawl_config(old_id, org)
-            async with await self.dbclient.start_session() as sesh:
-                async with sesh.start_transaction():
-                    if (
-                        await self.make_inactive_or_delete(
-                            old_config, data["_id"], for_running_crawl=for_running_crawl
-                        )
-                        == "deleted"
-                    ):
-                        data["oldId"] = old_config.oldId
-
-                    result = await self.crawl_configs.insert_one(data)
 
         else:
             result = await self.crawl_configs.insert_one(data)
@@ -310,11 +291,12 @@ class CrawlConfigOps:
         add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
         await asyncio.gather(inc, add)
 
-    async def update_crawl_config(self, cid: uuid.UUID, update: UpdateCrawlConfig):
+    async def update_crawl_config(self, cid: uuid.UUID, user: User, update: UpdateCrawlConfig):
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         # set update query
         query = update.dict(exclude_unset=True)
+        query["useridLastModified"] = user.id
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
@@ -327,6 +309,9 @@ class CrawlConfigOps:
                 update.profileid = (
                     await self.profiles.get_profile(update.profileid)
                 ).id
+
+        if update.config is not None:
+            query["config"] = update.config.dict()
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
@@ -341,11 +326,14 @@ class CrawlConfigOps:
             )
 
         # update schedule in crawl manager first
-        if update.schedule is not None or update.scale is not None:
+        if (update.schedule is not None or
+            update.scale is not None or
+            update.config is not None):
+
             crawlconfig = CrawlConfig.from_dict(result)
             try:
-                await self.crawl_manager.update_crawlconfig_schedule_or_scale(
-                    crawlconfig, update.scale, update.schedule
+                await self.crawl_manager.update_crawl_config(
+                    crawlconfig, update
                 )
             except Exception as exc:
                 print(exc, flush=True)
@@ -490,42 +478,27 @@ class CrawlConfigOps:
     async def make_inactive_or_delete(
         self,
         crawlconfig: CrawlConfig,
-        new_id: uuid.UUID = None,
-        for_running_crawl=False,
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
         query = {"inactive": True}
 
-        if new_id:
-            crawlconfig.newId = query["newId"] = new_id
-
         is_running = await self.get_running_crawl(crawlconfig) is not None
 
-        if is_running != for_running_crawl:
+        if is_running:
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
 
         # set to either "deleted" or "deactivated"
         status = None
 
-        other_crawl_count = crawlconfig.crawlAttemptCount
-        # don't count current crawl, if for running crawl
-        if for_running_crawl:
-            other_crawl_count -= 1
-
         # if no crawls have been run, actually delete
-        if not other_crawl_count:
+        if not crawlconfig.crawlAttemptCount:
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
 
             if result.deleted_count != 1:
                 raise HTTPException(status_code=404, detail="failed_to_delete")
-
-            if crawlconfig.oldId:
-                await self.crawl_configs.find_one_and_update(
-                    {"_id": crawlconfig.oldId}, {"$set": query}
-                )
 
             status = "deleted"
 
@@ -552,7 +525,7 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def copy_add_remove_exclusion(self, regex, cid, org, user, add=True):
+    async def add_remove_exclusion(self, regex, cid, org, user, add=True):
         """create a copy of existing crawl config, with added exclusion regex"""
         # get crawl config
         crawl_config = await self.get_crawl_config(cid, org, active_only=False)
@@ -575,17 +548,12 @@ class CrawlConfigOps:
 
         crawl_config.config.exclude = exclude
 
-        # create new config
-        new_config = CrawlConfigIn(**crawl_config.serialize())
+        update_config = UpdateCrawlConfig(config=crawl_config.config)
 
-        # pylint: disable=invalid-name
-        new_config.oldId = crawl_config.id
+        await self.update_crawl_config(cid, user, update_config)
 
-        result, _ = await self.add_crawl_config(
-            new_config, org, user, for_running_crawl=True
-        )
-
-        return result.inserted_id
+        # todo: just return success here later
+        return cid
 
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
@@ -633,8 +601,9 @@ def init_crawl_config_api(
     async def update_crawl_config(
         update: UpdateCrawlConfig,
         cid: str,
+        user: User = Depends(user_dep),
     ):
-        return await ops.update_crawl_config(uuid.UUID(cid), update)
+        return await ops.update_crawl_config(uuid.UUID(cid), user, update)
 
     @router.post("/{cid}/run")
     async def run_now(
