@@ -31,6 +31,7 @@ type CrawlSearchResult = {
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
 
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFields: Record<
@@ -113,7 +114,7 @@ export class CrawlsList extends LiteElement {
   };
 
   @state()
-  private filterByCurrentUser = true;
+  private filterByCurrentUser = false;
 
   @state()
   private filterByState: CrawlState[] = [];
@@ -150,6 +151,13 @@ export class CrawlsList extends LiteElement {
       crawlsResults
     ) as CrawlSearchResult[];
 
+  constructor() {
+    super();
+    this.filterByCurrentUser =
+      window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+      "true";
+  }
+
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("shouldFetch") ||
@@ -165,6 +173,13 @@ export class CrawlsList extends LiteElement {
         this.fetchCrawls();
       } else {
         this.stopPollTimer();
+      }
+
+      if (changedProperties.has("filterByCurrentUser")) {
+        window.sessionStorage.setItem(
+          FILTER_BY_CURRENT_USER_STORAGE_KEY,
+          this.filterByCurrentUser.toString()
+        );
       }
     }
   }
