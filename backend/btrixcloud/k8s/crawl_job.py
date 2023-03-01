@@ -65,6 +65,11 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
         except:
             return None
 
+    def _get_crawl_scale(self, crawl):
+        """get scale from crawl, if any"""
+
+        return crawl.spec.replicas if crawl else 0
+
     async def _send_shutdown_signal(self, signame):
         pods = await self.core_api.list_namespaced_pod(
             namespace=self.namespace,

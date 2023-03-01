@@ -627,6 +627,7 @@ class CrawlOps:
 
         _, num_removed = await asyncio.gather(restart_c, filter_q)
 
+        # pylint: disable=fixme
         # todo: remove new_cid once frontend is updated
         return {"new_cid": cid, "num_removed": num_removed}
 
@@ -642,6 +643,7 @@ class CrawlOps:
         # restart crawl pods
         await self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
 
+        # pylint: disable=fixme
         # todo: remove new_cid once frontend is updated
         return {"new_cid": cid, "success": True}
 

@@ -553,6 +553,7 @@ class CrawlConfigOps:
 
         await self.update_crawl_config(cid, user, update_config)
 
+        # pylint: disable=fixme
         # todo: just return success here later
         return cid
 
