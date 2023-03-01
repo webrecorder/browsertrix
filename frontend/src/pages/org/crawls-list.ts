@@ -113,7 +113,7 @@ export class CrawlsList extends LiteElement {
   };
 
   @state()
-  private filterByCurrentUser = true;
+  private filterByCurrentUser = false;
 
   @state()
   private filterByState: CrawlState[] = [];

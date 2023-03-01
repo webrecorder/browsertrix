@@ -72,7 +72,7 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   @state()
-  private filterByCurrentUser = true;
+  private filterByCurrentUser = false;
 
   @state()
   private searchBy: string = "";
