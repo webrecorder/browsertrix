@@ -12,13 +12,19 @@
  * ```
  */
 import { LitElement, html, css } from "lit";
-import { property, queryAssignedElements } from "lit/decorators.js";
+import {
+  property,
+  query,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
+import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
-import { srOnly, truncate } from "../utils/css";
+import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
 const largeBreakpointCss = css`60rem`;
@@ -40,7 +46,7 @@ const rowCss = css`
   }
 
   .col {
-    grid-column: span 1;
+    grid-column: span 1 / span 1;
   }
 `;
 const columnCss = css`
@@ -64,6 +70,7 @@ const hostVars = css`
 export class CrawlListItem extends LitElement {
   static styles = [
     truncate,
+    dropdown,
     rowCss,
     columnCss,
     hostVars,
@@ -73,12 +80,26 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
+        contain: content;
+        content-visibility: auto;
+        contain-intrinsic-height: auto 4rem;
         cursor: pointer;
         transition-property: background-color, box-shadow, margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
+        overflow: hidden;
       }
 
+      .item:hover,
+      .item:focus,
+      .item:focus-within {
+        background-color: var(--sl-color-neutral-50);
+      }
+      .dropdown {
+        contain: content;
+        position: absolute;
+        z-index: 99;
+      }
       .item:hover {
         background-color: var(--sl-color-neutral-50);
         margin-left: calc(-1 * var(--row-offset));
@@ -115,10 +136,8 @@ export class CrawlListItem extends LitElement {
       .detail {
         color: var(--sl-color-neutral-700);
         font-size: var(--sl-font-size-medium);
-        line-height: 1.4;
-        margin-bottom: var(--sl-spacing-3x-small);
-        overflow: hidden;
         text-overflow: ellipsis;
+        height: 1.5rem;
       }
 
       .desc {
@@ -126,16 +145,11 @@ export class CrawlListItem extends LitElement {
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
-        line-height: 1.4;
+        height: 1rem;
       }
 
       .unknownValue {
         color: var(--sl-color-neutral-500);
-      }
-
-      .name {
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .url {
@@ -181,13 +195,6 @@ export class CrawlListItem extends LitElement {
       @media only screen and (min-width: ${largeBreakpointCss}) {
         .action {
           border-left: 1px solid var(--sl-panel-border-color);
-          display: flex;
-          align-items: stretch;
-        }
-
-        .action sl-dropdown {
-          display: flex;
-          align-items: center;
         }
       }
     `,
@@ -196,7 +203,36 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
+  @query(".dropdown")
+  dropdown!: HTMLElement;
+
+  @query(".dropdownTrigger")
+  dropdownTrigger!: SlIconButton;
+
+  @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
+  private menuArr!: Array<SlMenu>;
+
+  @state()
+  private dropdownIsOpen?: boolean;
+
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat();
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("dropdownIsOpen")) {
+      if (this.dropdownIsOpen) {
+        this.openDropdown();
+      } else {
+        this.closeDropdown();
+      }
+    }
+  }
+
   render() {
+    return html`${this.renderRow()}${this.renderDropdown()}`;
+  }
+
+  renderRow() {
     const isActive =
       this.crawl &&
       ["starting", "running", "stopping"].includes(this.crawl.state);
@@ -219,7 +255,9 @@ export class CrawlListItem extends LitElement {
       }}
     >
       <div class="col">
-        <div class="detail url">${this.safeRender(this.renderName)}</div>
+        <div class="detail url truncate">
+          ${this.safeRender(this.renderName)}
+        </div>
         <div class="desc">
           ${this.safeRender(
             (crawl) => html`
@@ -265,29 +303,35 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender((crawl) =>
-            isActive
-              ? html`<span class="unknownValue">${msg("In Progress")}</span>`
-              : html`<sl-format-bytes
-                  value=${crawl.fileSize || 0}
-                ></sl-format-bytes>`
+          ${this.safeRender(
+            (crawl) => html`<sl-format-bytes
+              value=${crawl.fileSize || 0}
+            ></sl-format-bytes>`
           )}
         </div>
         <div class="desc">
           ${this.safeRender((crawl) => {
-            const pagesComplete = crawl.stats?.done || 0;
+            const pagesComplete = +(crawl.stats?.done || 0);
             if (isActive) {
-              const pagesFound = crawl.stats?.found || 0;
+              const pagesFound = +(crawl.stats?.found || 0);
               return html`
-                ${+pagesFound === 1
-                  ? msg(str`${pagesComplete} / ${pagesFound} page`)
-                  : msg(str`${pagesComplete} / ${pagesFound} pages`)}
+                ${pagesFound === 1
+                  ? msg(
+                      str`${this.numberFormatter.format(
+                        pagesComplete
+                      )} / ${this.numberFormatter.format(pagesFound)} page`
+                    )
+                  : msg(
+                      str`${this.numberFormatter.format(
+                        pagesComplete
+                      )} / ${this.numberFormatter.format(pagesFound)} pages`
+                    )}
               `;
             }
             return html`
-              ${+pagesComplete === 1
-                ? msg(str`${pagesComplete} page`)
-                : msg(str`${pagesComplete} pages`)}
+              ${pagesComplete === 1
+                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
+                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`)}
             `;
           })}
         </div>
@@ -305,25 +349,51 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col action">
-        <sl-dropdown
-          distance="4"
-          hoist
+        <sl-icon-button
+          class="dropdownTrigger"
+          slot="trigger"
+          name="three-dots-vertical"
+          label=${msg("More")}
           @click=${(e: MouseEvent) => {
             // Prevent anchor link default behavior
             e.preventDefault();
             // Stop prop to anchor link
             e.stopPropagation();
+            this.dropdownIsOpen = true;
           }}
-        >
-          <sl-icon-button
-            slot="trigger"
-            name="three-dots-vertical"
-            label=${msg("More")}
-          ></sl-icon-button>
-          <slot name="menu"></slot>
-        </sl-dropdown>
+          @focusout=${(e: FocusEvent) => {
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (this.menuArr[0]?.contains(relatedTarget)) {
+              // Keep dropdown open if moving to menu selection
+              return;
+            }
+            this.dropdownIsOpen = false;
+          }}
+        ></sl-icon-button>
       </div>
     </a>`;
+  }
+
+  private renderDropdown() {
+    return html`<div
+      class="dropdown hidden"
+      aria-hidden=${!this.dropdownIsOpen}
+      @animationend=${(e: AnimationEvent) => {
+        const el = e.target as HTMLDivElement;
+        if (e.animationName === "dropdownShow") {
+          el.classList.remove("animateShow");
+        }
+        if (e.animationName === "dropdownHide") {
+          el.classList.add("hidden");
+          el.classList.remove("animateHide");
+        }
+      }}
+    >
+      <slot
+        name="menu"
+        @sl-select=${() => (this.dropdownIsOpen = false)}
+      ></slot>
+    </div> `;
   }
 
   private safeRender(render: (crawl: Crawl) => any) {
@@ -355,6 +425,22 @@ export class CrawlListItem extends LitElement {
       <span class="primaryUrl truncate">${crawl.firstSeed}</span>${nameSuffix}
     `;
   }
+
+  private repositionDropdown() {
+    const { x, y } = this.dropdownTrigger.getBoundingClientRect();
+    this.dropdown.style.left = `${x + window.scrollX}px`;
+    this.dropdown.style.top = `${y + window.scrollY - 8}px`;
+  }
+
+  private openDropdown() {
+    this.repositionDropdown();
+    this.dropdown.classList.add("animateShow");
+    this.dropdown.classList.remove("hidden");
+  }
+
+  private closeDropdown() {
+    this.dropdown.classList.add("animateHide");
+  }
 }
 
 @localized()
@@ -365,38 +451,38 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-      .listHeader,
-      .list {
-        margin-left: var(--row-offset);
-        margin-right: var(--row-offset);
-      }
-
-      .listHeader {
-        line-height: 1;
-      }
-
-      .row {
-        display none;
-        font-size: var(--sl-font-size-x-small);
-        color: var(--sl-color-neutral-600);
-      }
-
-      .col {
-        padding-top: var(--sl-spacing-x-small);
-        padding-bottom: var(--sl-spacing-x-small);
-      }
-
-      @media only screen and (min-width: ${largeBreakpointCss}) {
-        .row {
-          display: grid;
-        }
-      }
-
-      ::slotted(btrix-crawl-list-item:not(:last-of-type)) {
-        display: block;
-        margin-bottom: var(--sl-spacing-x-small);
-      }
-    `,
+       .listHeader,
+       .list {
+         margin-left: var(--row-offset);
+         margin-right: var(--row-offset);
+       }
+ 
+       .listHeader {
+         line-height: 1;
+       }
+ 
+       .row {
+         display none;
+         font-size: var(--sl-font-size-x-small);
+         color: var(--sl-color-neutral-600);
+       }
+ 
+       .col {
+         padding-top: var(--sl-spacing-x-small);
+         padding-bottom: var(--sl-spacing-x-small);
+       }
+ 
+       @media only screen and (min-width: ${largeBreakpointCss}) {
+         .row {
+           display: grid;
+         }
+       }
+ 
+       ::slotted(btrix-crawl-list-item:not(:last-of-type)) {
+         display: block;
+         margin-bottom: var(--sl-spacing-x-small);
+       }
+     `,
   ];
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })

@@ -16,14 +16,10 @@ export class CrawlStatus extends LitElement {
     animatePulse,
     css`
       :host {
+        contain: content;
+        display: inline-flex;
+        align-items: center;
         color: var(--sl-color-neutral-700);
-      }
-
-      sl-icon,
-      sl-skeleton,
-      span {
-        display: inline-block;
-        vertical-align: middle;
       }
 
       sl-icon {

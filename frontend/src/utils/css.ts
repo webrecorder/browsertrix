@@ -43,3 +43,47 @@ export const animatePulse = css`
     }
   }
 `;
+
+export const dropdown = css`
+  .dropdown {
+    contain: content;
+    position: absolute;
+    transform-origin: top left;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .animateShow {
+    animation: dropdownShow 100ms ease forwards;
+  }
+
+  .animateHide {
+    animation: dropdownHide 100ms ease forwards;
+  }
+
+  @keyframes dropdownShow {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes dropdownHide {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+`;
