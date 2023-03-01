@@ -317,7 +317,9 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             config_map.data["INITIAL_SCALE"] = str(scale)
 
         if update_config:
-            config_map.data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
+            config_map.data["crawl-config.json"] = json.dumps(
+                crawlconfig.get_raw_config()
+            )
 
         await self.core_api.patch_namespaced_config_map(
             name=config_map.metadata.name, namespace=self.namespace, body=config_map

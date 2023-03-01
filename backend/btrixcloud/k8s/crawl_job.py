@@ -45,13 +45,7 @@ class K8SCrawlJob(K8SJobMixin, CrawlJob):
         now = str(now.isoformat("T") + "Z")
         patch_config = {
             "spec": {
-                "template": {
-                    "metadata": {
-                        "annotations": {
-                            "btrix.restartedAt": now
-                        }
-                    }
-                }
+                "template": {"metadata": {"annotations": {"btrix.restartedAt": now}}}
             }
         }
 

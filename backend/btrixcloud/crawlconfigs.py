@@ -291,7 +291,9 @@ class CrawlConfigOps:
         add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
         await asyncio.gather(inc, add)
 
-    async def update_crawl_config(self, cid: uuid.UUID, user: User, update: UpdateCrawlConfig):
+    async def update_crawl_config(
+        self, cid: uuid.UUID, user: User, update: UpdateCrawlConfig
+    ):
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         # set update query
@@ -326,15 +328,14 @@ class CrawlConfigOps:
             )
 
         # update schedule in crawl manager first
-        if (update.schedule is not None or
-            update.scale is not None or
-            update.config is not None):
-
+        if (
+            update.schedule is not None
+            or update.scale is not None
+            or update.config is not None
+        ):
             crawlconfig = CrawlConfig.from_dict(result)
             try:
-                await self.crawl_manager.update_crawl_config(
-                    crawlconfig, update
-                )
+                await self.crawl_manager.update_crawl_config(crawlconfig, update)
             except Exception as exc:
                 print(exc, flush=True)
                 # pylint: disable=raise-missing-from
