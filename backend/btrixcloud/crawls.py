@@ -11,17 +11,19 @@ import urllib.parse
 from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
+from asyncstdlib import heapq
 from fastapi import Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
 from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
 from .db import BaseMongoModel
-from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import get_presigned_url, delete_crawl_file_object
+from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_log_streams
+from .users import User
 
 
 CRAWL_STATES = (
@@ -487,6 +489,16 @@ class CrawlOps:
             if status_code != 204:
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
+    async def get_wacz_files(self, crawl_id: str, org: Organization):
+        """Return list of WACZ files associated with crawl."""
+        wacz_files = []
+        crawl_raw = await self.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+        for file_ in crawl.files:
+            if file_.filename.endswith(".wacz"):
+                wacz_files.append(file_)
+        return wacz_files
+
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
         crawl = Crawl(
@@ -756,7 +768,7 @@ class CrawlOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals
+# pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user_dep):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name
@@ -1023,6 +1035,39 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         user: User = Depends(user_dep),
     ):
         return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=False)
+
+    @app.get("/orgs/{oid}/crawls/{crawl_id}/logs", tags=["crawls"])
+    async def stream_crawl_logs(
+        crawl_id,
+        org: Organization = Depends(org_viewer_dep),
+        log_level: Optional[str] = None,
+        context: Optional[str] = None,
+    ):
+        crawl = await ops.get_crawl(crawl_id, org)
+
+        async def stream_json_lines(merged_iterator, log_level, context):
+            """Return iterator as generator, filtering as necessary"""
+            async for line_dict in merged_iterator:
+                if log_level and line_dict["logLevel"] != log_level:
+                    continue
+                if context and line_dict["context"] != context:
+                    continue
+
+                # Convert to JSON-lines bytes
+                json_str = json.dumps(line_dict, ensure_ascii=False) + "\n"
+                yield json_str.encode("utf-8")
+
+        # If crawl is finished, stream logs from WACZ files
+        if crawl.finished:
+            logs = []
+            wacz_files = await ops.get_wacz_files(crawl_id, org)
+            for wacz_file in wacz_files:
+                wacz_logs = await get_wacz_log_streams(org, wacz_file, crawl_manager)
+                logs.extend(wacz_logs)
+            heap_iter = heapq.merge(*logs, key=lambda entry: entry["timestamp"])
+            return StreamingResponse(stream_json_lines(heap_iter, log_level, context))
+
+        raise HTTPException(status_code=400, detail="crawl_not_finished")
 
     return ops
 
