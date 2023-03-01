@@ -25,6 +25,7 @@ type RunningCrawlsMap = {
   [configId: string]: string;
 };
 
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser";
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),
@@ -87,6 +88,13 @@ export class CrawlTemplatesList extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  constructor() {
+    super();
+    this.filterByCurrentUser =
+      window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+      "true";
+  }
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("orgId") ||
@@ -104,6 +112,12 @@ export class CrawlTemplatesList extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+    }
+    if (changedProperties.has("filterByCurrentUser")) {
+      window.sessionStorage.setItem(
+        FILTER_BY_CURRENT_USER_STORAGE_KEY,
+        this.filterByCurrentUser.toString()
+      );
     }
   }
 
