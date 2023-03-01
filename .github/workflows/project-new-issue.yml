@@ -1,0 +1,15 @@
+name: Assign new issues to Webrecorder Projects
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  move-issue-column:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: alex-page/github-project-automation-plus@v0.8.3
+        with:
+          project: Webrecorder Projects
+          column: Triage
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
