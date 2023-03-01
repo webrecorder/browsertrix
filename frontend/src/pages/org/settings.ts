@@ -363,7 +363,7 @@ export class OrgSettings extends LiteElement {
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.org.id}/invites`,
       this.authState!
-    ).then((data) => data.pending_invites);
+    );
 
     return data.items;
   }
