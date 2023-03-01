@@ -219,8 +219,12 @@ export class CrawlListItem extends LitElement {
   private numberFormatter = new Intl.NumberFormat();
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("dropdownIsOpen") && this.dropdownIsOpen) {
-      this.repositionDropdown();
+    if (changedProperties.has("dropdownIsOpen")) {
+      if (this.dropdownIsOpen) {
+        this.openDropdown();
+      } else {
+        this.closeDropdown();
+      }
     }
   }
 
@@ -355,7 +359,15 @@ export class CrawlListItem extends LitElement {
             e.preventDefault();
             // Stop prop to anchor link
             e.stopPropagation();
-            this.openDropdown();
+            this.dropdownIsOpen = true;
+          }}
+          @focusout=${(e: FocusEvent) => {
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (this.menuArr[0]?.contains(relatedTarget)) {
+              // Keep dropdown open if moving to menu selection
+              return;
+            }
+            this.dropdownIsOpen = false;
           }}
         ></sl-icon-button>
       </div>
@@ -364,12 +376,18 @@ export class CrawlListItem extends LitElement {
 
   private renderDropdown() {
     return html`<div
-      class="dropdown ${this.dropdownIsOpen === true
-        ? "animateShow"
-        : this.dropdownIsOpen === false
-        ? "animateHide"
-        : "hidden"}"
-      aria-hidden=${this.dropdownIsOpen}
+      class="dropdown hidden"
+      aria-hidden=${!this.dropdownIsOpen}
+      @animationend=${(e: AnimationEvent) => {
+        const el = e.target as HTMLDivElement;
+        if (e.animationName === "dropdownShow") {
+          el.classList.remove("animateShow");
+        }
+        if (e.animationName === "dropdownHide") {
+          el.classList.add("hidden");
+          el.classList.remove("animateHide");
+        }
+      }}
     >
       <slot
         name="menu"
@@ -415,26 +433,13 @@ export class CrawlListItem extends LitElement {
   }
 
   private openDropdown() {
-    this.dropdownIsOpen = true;
-    const menu = this.menuArr[0];
-    // Close on leaving focus
-    const onFocusOut = (e: FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement;
-      if (menu?.contains(relatedTarget)) {
-        // Keep dropdown open if moving to menu selection
-        return;
-      }
-      this.dropdownIsOpen = false;
-      this.dropdownTrigger.removeEventListener("focusout", onFocusOut);
-    };
-    this.dropdownTrigger.addEventListener("focusout", onFocusOut);
-    // Hide on CSS animation end
-    const onAnimationEnd = (e: AnimationEvent) => {
-      if (e.animationName !== "dropdownHide") return;
-      this.dropdownIsOpen = undefined;
-      this.dropdown.removeEventListener("animationend", onAnimationEnd);
-    };
-    this.dropdown.addEventListener("animationend", onAnimationEnd);
+    this.repositionDropdown();
+    this.dropdown.classList.add("animateShow");
+    this.dropdown.classList.remove("hidden");
+  }
+
+  private closeDropdown() {
+    this.dropdown.classList.add("animateHide");
   }
 }
 
