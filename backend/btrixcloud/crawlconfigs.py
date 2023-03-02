@@ -200,12 +200,14 @@ class CrawlConfigIdNameOut(BaseMongoModel):
 class UpdateCrawlConfig(BaseModel):
     """Update crawl config name, crawl schedule, or tags"""
 
+    # metadata: not revision tracked
     name: Optional[str]
+    tags: Optional[List[str]] = []
+
+    # crawl data: revision tracked
     schedule: Optional[str]
     profileid: Optional[str]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
-    tags: Optional[List[str]] = []
-
     config: Optional[RawCrawlConfig]
 
 
@@ -349,11 +351,19 @@ class CrawlConfigOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        orig_dict = orig_crawl_config.dict()
-        orig_dict["cid"] = orig_dict.pop("id", cid)
-        orig_dict["id"] = uuid.uuid4()
-        last_rev = ConfigRevision(**orig_dict)
-        last_rev = await self.config_revs.insert_one(last_rev.to_dict())
+        is_crawl_update = (
+            update.schedule is not None
+            or update.scale is not None
+            or update.config is not None
+        )
+
+        if is_crawl_update:
+            orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
+            orig_dict["cid"] = orig_dict.pop("id", cid)
+            orig_dict["id"] = uuid.uuid4()
+
+            last_rev = ConfigRevision(**orig_dict)
+            last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
         query["userid"] = user.id
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
@@ -383,11 +393,7 @@ class CrawlConfigOps:
             )
 
         # update schedule in crawl manager first
-        if (
-            update.schedule is not None
-            or update.scale is not None
-            or update.config is not None
-        ):
+        if is_crawl_update:
             crawlconfig = CrawlConfig.from_dict(result)
             try:
                 await self.crawl_manager.update_crawl_config(crawlconfig, update)
