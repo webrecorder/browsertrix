@@ -640,7 +640,7 @@ class CrawlConfigOps:
             )
 
         if await self.get_running_crawl(crawlconfig):
-            raise HTTPException(status_code=400, detail=f"crawl_already_running")
+            raise HTTPException(status_code=400, detail="crawl_already_running")
 
         crawl_id = None
         try:
