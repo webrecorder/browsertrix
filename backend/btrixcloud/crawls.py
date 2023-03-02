@@ -83,7 +83,6 @@ class Crawl(BaseMongoModel):
     state: str
 
     scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
-    completions: Optional[int] = 0
     crawlTimeout: Optional[int] = 0
 
     stats: Optional[Dict[str, str]]
@@ -614,41 +613,41 @@ class CrawlOps:
             redis_url, encoding="utf-8", decode_responses=True
         )
 
-    async def add_exclusion(self, crawl_id, regex, org, user):
-        """create new config with additional exclusion, copying existing config"""
+    async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
+        """add new exclusion to config or remove exclusion from config
+        for given crawl_id, update config on crawl"""
 
-        raw = await self.get_crawl_raw(crawl_id, org)
+        crawlraw = await self.crawls.find_one({"_id": crawl_id}, {"cid": True})
 
-        cid = raw.get("cid")
+        cid = crawlraw.get("cid")
 
-        await self.crawl_configs.add_remove_exclusion(regex, cid, org, user, add=True)
+        new_config = await self.crawl_configs.add_or_remove_exclusion(
+            regex, cid, org, user, add
+        )
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id}, {"$set": {"config": new_config}}
+        )
+
+        resp = {"success": True}
+
+        # pylint: disable=fixme
+        # todo: remove new_cid once frontend is updated
+        resp["new_cid"] = cid
 
         # restart crawl pods
         restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
 
-        filter_q = self.filter_crawl_queue(crawl_id, regex)
+        if add:
+            filter_q = self.filter_crawl_queue(crawl_id, regex)
 
-        _, num_removed = await asyncio.gather(restart_c, filter_q)
+            _, num_removed = await asyncio.gather(restart_c, filter_q)
+            resp["num_removed"] = num_removed
 
-        # pylint: disable=fixme
-        # todo: remove new_cid once frontend is updated
-        return {"new_cid": cid, "num_removed": num_removed}
+        else:
+            await restart_c
 
-    async def remove_exclusion(self, crawl_id, regex, org, user):
-        """create new config with exclusion removed, copying existing config"""
-
-        raw = await self.get_crawl_raw(crawl_id, org)
-
-        cid = raw.get("cid")
-
-        await self.crawl_configs.add_remove_exclusion(regex, cid, org, user, add=False)
-
-        # restart crawl pods
-        await self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
-
-        # pylint: disable=fixme
-        # todo: remove new_cid once frontend is updated
-        return {"new_cid": cid, "success": True}
+        return resp
 
 
 # ============================================================================
@@ -843,7 +842,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.add_exclusion(crawl_id, regex, org, user)
+        return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=True)
 
     @app.delete(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
@@ -855,7 +854,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.remove_exclusion(crawl_id, regex, org, user)
+        return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=False)
 
     return ops
 
