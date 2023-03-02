@@ -596,8 +596,8 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def add_remove_exclusion(self, regex, cid, org, user, add=True):
-        """create a copy of existing crawl config, with added exclusion regex"""
+    async def add_or_remove_exclusion(self, regex, cid, org, user, add=True):
+        """added or remove regex to crawl config"""
         # get crawl config
         crawl_config = await self.get_crawl_config(cid, org, active_only=False)
 
@@ -623,9 +623,7 @@ class CrawlConfigOps:
 
         await self.update_crawl_config(cid, org, user, update_config)
 
-        # pylint: disable=fixme
-        # todo: just return success here later
-        return cid
+        return crawl_config.config
 
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
