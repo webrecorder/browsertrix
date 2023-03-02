@@ -47,6 +47,8 @@ class CrawlJob(ABC):
         self.cid = uuid.UUID(os.environ["CRAWL_CONFIG_ID"])
         self.userid = uuid.UUID(os.environ["USER_ID"])
 
+        self.rev = int(os.environ["REV"])
+
         self.is_manual = os.environ.get("RUN_MANUAL") == "1"
         self.tags = os.environ.get("TAGS", "").split(",")
 
@@ -337,6 +339,7 @@ class CrawlJob(ABC):
             state=state,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
+            cid_rev=crawlconfig.rev,
             schedule=crawlconfig.schedule,
             crawlTimeout=crawlconfig.crawlTimeout,
             userid=self.userid,
