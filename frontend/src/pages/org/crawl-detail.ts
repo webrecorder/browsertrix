@@ -297,47 +297,90 @@ export class CrawlDetail extends LiteElement {
     const renderNavItem = ({
       section,
       label,
+      iconLibrary,
+      icon,
     }: {
       section: SectionName;
       label: any;
+      iconLibrary: any;
+      icon: any;
     }) => {
       const isActive = section === this.sectionName;
       return html`
         <li
-          class="relative"
+          class="relative grow"
           role="menuitem"
           aria-selected=${isActive.toString()}
         >
           <a
-            class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
-              ? "text-blue-600 bg-blue-50 shadow-sm"
-              : "text-neutral-600 hover:bg-neutral-50"}"
+            class="flex gap-4 flex-col md:flex-row items-center gap-2 font-semibold rounded-md h-full p-2 ${isActive
+              ? "text-blue-600 bg-blue-100 shadow-sm"
+              : "text-neutral-600 hover:bg-blue-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
+            <sl-icon
+              class="w-4 h-4 shrink-0"
+              name=${icon}
+              aria-hidden="true"
+              library=${iconLibrary}
+            ></sl-icon>
             ${label}
           </a>
         </li>
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0 md:mt-10">
-        <ul class="flex flex-row md:flex-col" role="menu">
-          ${renderNavItem({ section: "overview", label: msg("Overview") })}
+      <nav class="border-b md:border-b-0 pb-4 md:mt-10">
+        <ul
+          class="flex flex-row md:flex-col gap-2 text-center md:text-start"
+          role="menu"
+        >
+          ${renderNavItem({
+            section: "overview",
+            iconLibrary: "default",
+            icon: "info-circle-fill",
+            label: msg("Overview"),
+          })}
           ${renderNavItem({
             section: "exclusions",
+            iconLibrary: "default",
+            icon: "list-ul",
             label: msg("Crawl Queue & Exclusions"),
           })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
+                iconLibrary: "default",
+                icon: "eye-fill",
                 label: msg("Watch Crawl"),
               })
             : ""}
-          ${renderNavItem({ section: "replay", label: msg("Replay") })}
-          ${renderNavItem({ section: "files", label: msg("Files") })}
-          ${renderNavItem({ section: "config", label: msg("Config") })}
-          ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "replay",
+                iconLibrary: "app",
+                icon: "link-replay",
+                label: msg("Replay"),
+              })
+            : ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "files",
+                iconLibrary: "default",
+                icon: "folder-fill",
+                label: msg("Files"),
+              })
+            : ""}
+          ${renderNavItem({
+            section: "config",
+            iconLibrary: "default",
+            icon: "file-code-fill",
+            label: msg("Config"),
+          })}
+          ${
+            /* renderNavItem({ section: "logs", iconLibrary:"default", icon: "terminal-fill", label: msg("Logs") }) */ ""
+          }
         </ul>
       </nav>
     `;
