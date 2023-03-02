@@ -178,12 +178,21 @@ class BaseCrawlManager(ABC):
         return crawl_id
 
     async def _load_job_template(self, crawlconfig, job_id, manual, schedule=None):
+        if crawlconfig.crawlTimeout:
+            crawl_timeout = datetime.datetime.utcnow() + datetime.timedelta(
+                seconds=crawlconfig.crawlTimeout
+            )
+            crawl_timeout = crawl_timeout.isoformat()
+        else:
+            crawl_timeout = ""
+
         params = {
             "id": job_id,
             "cid": str(crawlconfig.id),
             "rev": str(crawlconfig.rev),
             "userid": str(crawlconfig.modifiedBy),
             "oid": str(crawlconfig.oid),
+            "crawl_timeout_exact": crawl_timeout,
             "job_image": self.job_image,
             "job_pull_policy": self.job_pull_policy,
             "manual": "1" if manual else "0",
