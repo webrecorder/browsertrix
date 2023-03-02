@@ -37,7 +37,6 @@ def test_get_crawl_job_by_user(
 def test_get_crawl_job_by_config(
     crawler_auth_headers, default_org_id, admin_config_id, crawler_config_id
 ):
-
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?cid={admin_config_id}",
         headers=crawler_auth_headers,

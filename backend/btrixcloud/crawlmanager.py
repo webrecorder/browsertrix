@@ -179,6 +179,7 @@ class BaseCrawlManager(ABC):
         params = {
             "id": job_id,
             "cid": str(crawlconfig.id),
+            "rev": str(crawlconfig.rev),
             "userid": str(crawlconfig.userid),
             "oid": str(crawlconfig.oid),
             "job_image": self.job_image,

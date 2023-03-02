@@ -68,6 +68,8 @@ class Crawl(BaseMongoModel):
     oid: UUID4
     cid: UUID4
 
+    cid_rev: int = 0
+
     # schedule: Optional[str]
     manual: Optional[bool]
 
@@ -423,6 +425,7 @@ class CrawlOps:
             userid=crawlconfig.userid,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
+            cid_rev=crawlconfig.rev,
             scale=crawlconfig.scale,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
