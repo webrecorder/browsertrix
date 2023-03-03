@@ -212,6 +212,7 @@ class UpdateCrawlConfig(BaseModel):
     # crawl data: revision tracked
     schedule: Optional[str]
     profileid: Optional[str]
+    crawlTimeout: Optional[int]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     config: Optional[RawCrawlConfig]
 
@@ -360,6 +361,7 @@ class CrawlConfigOps:
             update.schedule is not None
             or update.scale is not None
             or update.config is not None
+            or update.crawlTimeout is not None
         )
 
         if is_crawl_update:

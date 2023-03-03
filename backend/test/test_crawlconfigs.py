@@ -67,6 +67,26 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     assert data["config"]["scopeType"] == "domain"
 
 
+def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl_data):
+    # Verify that updating crawl timeout works
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"crawlTimeout": 60},
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+
+    assert data["crawlTimeout"] == 60
+
+
 def test_verify_delete_tags(crawler_auth_headers, default_org_id):
     # Verify that deleting tags and name works as well
     r = requests.patch(
@@ -95,5 +115,6 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert len(data) == 1
-    assert data[0]["config"]["scopeType"] == "prefix"
+    assert len(data) == 2
+    sorted_data = sorted(data, key=lambda revision: revision["rev"])
+    assert sorted_data[0]["config"]["scopeType"] == "prefix"
