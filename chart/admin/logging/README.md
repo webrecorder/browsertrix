@@ -20,6 +20,12 @@ And, edit `chart/examples/local-logging.yaml` for a local test.
 Optionally, when install the logging service only, edit `chart/admin/logging/values.yaml`.
 For a local test, it should use a hostname (not `localhost` but a hostname like `myhostname` registered in `/etc/hosts`)
 
+# Modes
+
+* Lightweight File mode (Fluentd only mode): set `logging.fileMode` to `true`
+  * This will disable Elasticsearch, Kibana and Ingress.
+  * Log files will be planced in each node's `/var/log/fluentd/`.
+
 ## Installation
 
 * run a setup script (will create a namespace and install elastic's CRDS)
@@ -48,7 +54,7 @@ helm upgrade --install -f ./chart/admin/logging/values.yaml btrix-admin-log ./ch
 ```
 kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'
 ```
-* open `https://hostname/kibana/` (DO NOT FORGET THE TRAILING SLASH)
+* open `https://hostname/kibana/` (note the trailing slash is required)
 
 ## Import/Export Kibana data
 
