@@ -2,7 +2,7 @@ logging:
   namespace: btrix-admin
   enabled: true
   dedicatedNode:
-    enabled: false
+    enabled: true
     nodeType: admin
   fileMode: true
   ingress:
