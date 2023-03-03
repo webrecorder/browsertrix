@@ -313,7 +313,7 @@ export class CrawlDetail extends LiteElement {
           aria-selected=${isActive.toString()}
         >
           <a
-            class="flex gap-4 flex-col md:flex-row items-center gap-2 font-semibold rounded-md h-full p-2 ${isActive
+            class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
               ? "text-blue-600 bg-blue-100 shadow-sm"
               : "text-neutral-600 hover:bg-blue-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
