@@ -1,8 +1,11 @@
 {{ if .Values.logging.enabled }}
 
+{{ if not .Values.logging.fileMode }}
 {{ include "es.install" . }}
 {{ include "kb.install" . }}
 {{ include "ingress.install" . }}
+{{ end }}
+
 {{ include "fluentd.install" . }}
 
 {{ end }}
