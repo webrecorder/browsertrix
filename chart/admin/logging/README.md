@@ -24,7 +24,8 @@ For a local test, it should use a hostname (not `localhost` but a hostname like 
 
 * Lightweight File mode (Fluentd only mode): set `logging.fileMode` to `true`
   * This will disable Elasticsearch, Kibana and Ingress.
-  * Log files will be planced in each node's `/var/log/fluentd/`.
+  * Log files will be placed in each node's `/var/log/fluentd/`.
+  * Log file's retention period: 3 days (see `templates/fluentd.yaml`)
 
 ## Installation
 
