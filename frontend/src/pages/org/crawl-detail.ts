@@ -302,8 +302,8 @@ export class CrawlDetail extends LiteElement {
     }: {
       section: SectionName;
       label: any;
-      iconLibrary: any;
-      icon: any;
+      iconLibrary: "app" | "default";
+      icon: string;
     }) => {
       const isActive = section === this.sectionName;
       return html`
