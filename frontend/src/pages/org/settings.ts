@@ -165,32 +165,28 @@ export class OrgSettings extends LiteElement {
 
   private renderInformation() {
     return html`<div class="rounded border p-5">
-      <form @submit=${this.onOrgNameSubmit}>
-        <div class="flex">
-          <div class="flex-1 mr-3">
-            <sl-input
-              name="orgName"
-              size="small"
-              label=${msg("Org Name")}
-              autocomplete="off"
-              value=${this.org.name}
-              required
-              help-text=${this.validateOrgNameLength.helpText}
-              style="--help-text-align: right"
-              @sl-input=${this.validateOrgNameLength.validate}
-            ></sl-input>
-          </div>
-          <div class="flex-07">
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSavingOrgName}
-              ?loading=${this.isSavingOrgName}
-              >${msg("Save Changes")}</sl-button
-            >
-          </div>
-        </div>
+      <form class="inline-control-form" @submit=${this.onOrgNameSubmit}>
+        <sl-input
+          class="inline-control-input"
+          name="orgName"
+          size="small"
+          label=${msg("Org Name")}
+          autocomplete="off"
+          value=${this.org.name}
+          required
+          help-text=${this.validateOrgNameLength.helpText}
+          style="--help-text-align: right"
+          @sl-input=${this.validateOrgNameLength.validate}
+        ></sl-input>
+        <sl-button
+          class="inline-control-button"
+          type="submit"
+          size="small"
+          variant="primary"
+          ?disabled=${this.isSavingOrgName}
+          ?loading=${this.isSavingOrgName}
+          >${msg("Save Changes")}</sl-button
+        >
       </form>
     </div>`;
   }

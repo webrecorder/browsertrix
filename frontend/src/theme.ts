@@ -181,6 +181,39 @@ const theme = css`
     min-width: min-content;
   }
 
+  /* For single-input forms with submit button inline */
+  /* Requires form control and button to be direct children */
+  .inline-control-input,
+  .inline-control-input::part(form-control) {
+    display: contents;
+  }
+
+  .inline-control-form {
+    display: grid;
+    grid-template-areas:
+      "label ."
+      "input button"
+      "help-text .";
+    grid-template-columns: 1fr max-content;
+    column-gap: var(--sl-spacing-small);
+  }
+
+  .inline-control-input::part(form-control-label) {
+    grid-area: label;
+  }
+
+  .inline-control-input::part(form-control-input) {
+    grid-area: input;
+  }
+
+  .inline-control-input::part(form-control-help-text) {
+    grid-area: help-text;
+  }
+
+  .inline-control-button {
+    grid-area: button;
+  }
+
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
     font-family: var(--font-monostyle-family);
