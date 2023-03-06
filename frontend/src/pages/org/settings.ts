@@ -10,6 +10,7 @@ import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 import type { APIPaginatedList } from "../../types/api";
+import { maxLengthValidator } from "../../utils/form";
 
 type Tab = "information" | "members";
 type User = {
@@ -90,6 +91,8 @@ export class OrgSettings extends LiteElement {
     };
   }
 
+  private validateOrgNameLength = maxLengthValidator(50);
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
@@ -163,7 +166,7 @@ export class OrgSettings extends LiteElement {
   private renderInformation() {
     return html`<div class="rounded border p-5">
       <form @submit=${this.onOrgNameSubmit}>
-        <div class="flex items-end">
+        <div class="flex">
           <div class="flex-1 mr-3">
             <sl-input
               name="orgName"
@@ -172,9 +175,12 @@ export class OrgSettings extends LiteElement {
               autocomplete="off"
               value=${this.org.name}
               required
+              help-text=${this.validateOrgNameLength.helpText}
+              style="--help-text-align: right"
+              @sl-input=${this.validateOrgNameLength.validate}
             ></sl-input>
           </div>
-          <div class="flex-0">
+          <div class="flex-07">
             <sl-button
               type="submit"
               size="small"
