@@ -44,17 +44,21 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
+    if (
+      (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
+    ) {
       this.initializeCrawlTemplate();
     }
   }
 
   protected updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("crawlConfig") &&
-      !changedProperties.get("crawlConfig") &&
-      this.crawlConfig &&
-      window.location.hash
+      (changedProperties.has("crawlConfig") &&
+        !changedProperties.get("crawlConfig") &&
+        this.crawlConfig &&
+        window.location.hash) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       // Show section once crawl config is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
@@ -133,20 +137,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 </sl-tooltip>
 
                 ${this.renderMenu()}
-              `,
-              () =>
-                this.crawlConfig?.newId
-                  ? html`
-                      <sl-button
-                        size="small"
-                        variant="text"
-                        @click=${this.getNewerVersion}
-                      >
-                        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                        ${msg("Newer Version")}
-                      </sl-button>
-                    `
-                  : ""
+              `
             )}
           </div>
         </header>
@@ -455,12 +446,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       html`${firstSeed}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
-  }
-
-  private getNewerVersion() {
-    const versionId = this.crawlConfig?.newId;
-    if (!versionId) return;
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
