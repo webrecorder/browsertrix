@@ -22,9 +22,9 @@ class Migration(BaseMigration):
 
         Set new crawl_configs fields and add config details to crawls.
         """
+        # pylint: disable=too-many-locals
         crawls = self.mdb["crawls"]
         crawl_configs = self.mdb["crawl_configs"]
-        users = self.mdb["users"]
 
         # Return early if there are no configs
         crawl_config_results = [res async for res in crawl_configs.find({})]
