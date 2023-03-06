@@ -44,17 +44,21 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
+    if (
+      (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
+    ) {
       this.initializeCrawlTemplate();
     }
   }
 
   protected updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("crawlConfig") &&
-      !changedProperties.get("crawlConfig") &&
-      this.crawlConfig &&
-      window.location.hash
+      (changedProperties.has("crawlConfig") &&
+        !changedProperties.get("crawlConfig") &&
+        this.crawlConfig &&
+        window.location.hash) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       // Show section once crawl config is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
