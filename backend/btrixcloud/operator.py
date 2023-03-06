@@ -16,13 +16,16 @@ BTRIX_JOBS = {}
 
 def init_operator_webhook(app):
     """regsiters webhook handlers for metacontroller"""
+
     @app.post("/operator/sync")
     async def metacontroller_webhook(request: Request):
         # Handle the incoming webhook from Metacontroller
         try:
             payload = await request.json()
         except json.JSONDecodeError as err_json:
-            raise HTTPException(status_code=400, detail="Invalid JSON payload") from err_json
+            raise HTTPException(
+                status_code=400, detail="Invalid JSON payload"
+            ) from err_json
         parent, children = payload["parent"], payload["children"]
         return sync(parent, children)
 

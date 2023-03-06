@@ -4,8 +4,6 @@ import os
 import yaml
 
 from kubernetes_asyncio.utils import create_from_dict
-from kubernetes_asyncio.client.api import custom_objects_api
-from kubernetes_asyncio import config
 
 
 def get_templates_dir():
@@ -31,6 +29,7 @@ async def create_from_yaml(k8s_client, doc, namespace):
 
 
 async def create_custom_from_dict(custom, doc, namespace):
+    """create custom from dict"""
     apiver = doc["apiVersion"].split("/")
     created = await custom["api"].create_namespaced_custom_object(
         group=apiver[0],
