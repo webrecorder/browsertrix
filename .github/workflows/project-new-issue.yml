@@ -9,7 +9,7 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@0.4.1
+      - uses: actions/add-to-project@v0.4.1
         with:
           project-url: https://github.com/orgs/webrecorder/projects/9
           github-token: ${{ secrets.GHPROJECT_TOKEN }}
