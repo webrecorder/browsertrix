@@ -13,7 +13,7 @@ jobs:
         uses: github/update-project-action@v2
         with:
           github_token: ${{ secrets.GHPROJECT_TOKEN }}
-          organization: github
+          organization: webrecorder
           project_number: 9
           content_id: ${{ github.event.issue.id }}
           field: Status
