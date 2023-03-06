@@ -10,6 +10,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi_pagination import add_pagination
 
 from .db import init_db, update_and_prepare_db
 
@@ -113,6 +114,8 @@ def main():
     )
 
     app.include_router(org_ops.router)
+
+    add_pagination(app)
 
     @app.get("/settings")
     async def get_settings():

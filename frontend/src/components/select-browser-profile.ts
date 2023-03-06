@@ -6,6 +6,7 @@ import orderBy from "lodash/fp/orderBy";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement from "../utils/LiteElement";
 import type { Profile } from "../pages/org/types";
+import type { APIPaginatedList } from "../types/api";
 
 /**
  * Browser profile select dropdown
@@ -191,12 +192,12 @@ export class SelectBrowserProfile extends LiteElement {
   }
 
   private async getProfiles(): Promise<Profile[]> {
-    const data = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/profiles`,
       this.authState!
     );
 
-    return data;
+    return data.items;
   }
 
   /**

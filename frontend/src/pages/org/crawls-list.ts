@@ -24,6 +24,7 @@ import type {
   CrawlConfig,
   InitialCrawlConfig,
 } from "./types";
+import type { APIPaginatedList } from "../../types/api";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -495,7 +496,7 @@ export class CrawlsList extends LiteElement {
 
     this.stopPollTimer();
     try {
-      const { crawls } = await this.getCrawls();
+      const crawls = await this.getCrawls();
 
       this.crawls = crawls;
       // Update search/filter collection
@@ -518,18 +519,18 @@ export class CrawlsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(): Promise<{ crawls: Crawl[] }> {
+  private async getCrawls(): Promise<Crawl[]> {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
-    const data = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
       this.authState!
     );
 
     this.lastFetched = Date.now();
 
-    return data;
+    return data.items;
   }
 
   private async cancel(crawl: Crawl) {

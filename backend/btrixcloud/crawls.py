@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
+from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
@@ -18,6 +19,7 @@ from .crawlconfigs import Seed
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
+from .pagination import Page
 from .storages import get_presigned_url, delete_crawl_file_object
 
 
@@ -132,13 +134,6 @@ class ListCrawlOut(BaseMongoModel):
 
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
-
-
-# ============================================================================
-class ListCrawls(BaseModel):
-    """Response model for list of crawls"""
-
-    crawls: List[ListCrawlOut]
 
 
 # ============================================================================
@@ -657,7 +652,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
 
-    @app.get("/orgs/all/crawls", tags=["crawls"], response_model=ListCrawls)
+    @app.get("/orgs/all/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
         userid: Optional[UUID4] = None,
@@ -666,23 +661,17 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return ListCrawls(
-            crawls=await ops.list_crawls(
-                None, userid=userid, cid=cid, running_only=True
-            )
-        )
+        crawls = await ops.list_crawls(None, userid=userid, cid=cid, running_only=True)
+        return paginate(crawls)
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=ListCrawls)
+    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
     ):
-        return ListCrawls(
-            crawls=await ops.list_crawls(
-                org, userid=userid, cid=cid, running_only=False
-            )
-        )
+        crawls = await ops.list_crawls(org, userid=userid, cid=cid, running_only=False)
+        return paginate(crawls)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/cancel",

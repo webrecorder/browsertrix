@@ -7,6 +7,7 @@ import type { AuthState } from "../utils/AuthService";
 import type { CurrentUser } from "../types/user";
 import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
+import type { APIPaginatedList } from "../types/api";
 
 @localized()
 export class Home extends LiteElement {
@@ -263,9 +264,12 @@ export class Home extends LiteElement {
   }
 
   private async getOrgs(): Promise<OrgData[]> {
-    const data = await this.apiFetch("/orgs", this.authState!);
+    const data: APIPaginatedList = await this.apiFetch(
+      "/orgs",
+      this.authState!
+    );
 
-    return data.orgs;
+    return data.items;
   }
 
   private async onSubmitNewOrg(e: SubmitEvent) {

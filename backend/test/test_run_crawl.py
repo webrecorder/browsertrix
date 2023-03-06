@@ -17,8 +17,9 @@ def test_list_orgs(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
 
-    orgs = data["orgs"]
+    orgs = data["items"]
     assert len(orgs) > 0
+    assert data["total"] > 0
 
     org_ids = []
     for org in orgs:
@@ -89,7 +90,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         headers=admin_auth_headers,
     )
     data = r.json()
-    crawls = data["crawls"]
+    crawls = data["items"]
     assert crawls
     for crawl in crawls:
         assert crawl["firstSeed"]
@@ -100,7 +101,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         headers=admin_auth_headers,
     )
     data = r.json()
-    crawls = data["crawls"]
+    crawls = data["items"]
     assert crawls
     for crawl in crawls:
         assert crawl["firstSeed"]

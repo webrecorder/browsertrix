@@ -35,7 +35,7 @@ def default_org_id(admin_auth_headers):
         r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
         data = r.json()
         try:
-            for org in data["orgs"]:
+            for org in data["items"]:
                 if org["default"] is True:
                     return org["id"]
         except:
