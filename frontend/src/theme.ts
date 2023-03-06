@@ -214,6 +214,11 @@ const theme = css`
     grid-area: button;
   }
 
+  /* Inputs with "Max N characters" help text */
+  .with-max-help-text {
+    --help-text-align: right;
+  }
+
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
     font-family: var(--font-monostyle-family);

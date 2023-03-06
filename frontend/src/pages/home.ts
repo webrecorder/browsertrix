@@ -8,6 +8,7 @@ import type { CurrentUser } from "../types/user";
 import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { APIPaginatedList } from "../types/api";
+import { maxLengthValidator } from "../utils/form";
 
 @localized()
 export class Home extends LiteElement {
@@ -34,6 +35,8 @@ export class Home extends LiteElement {
 
   @state()
   private isSubmittingNewOrg = false;
+
+  private validateOrgNameLength = maxLengthValidator(50);
 
   connectedCallback() {
     if (this.authState) {
@@ -190,11 +193,14 @@ export class Home extends LiteElement {
               >
                 <div class="mb-5">
                   <sl-input
+                    class="with-max-help-text"
                     name="name"
                     label=${msg("Org Name")}
                     placeholder=${msg("My Organization")}
                     autocomplete="off"
                     required
+                    help-text=${this.validateOrgNameLength.helpText}
+                    @sl-input=${this.validateOrgNameLength.validate}
                   >
                   </sl-input>
                 </div>

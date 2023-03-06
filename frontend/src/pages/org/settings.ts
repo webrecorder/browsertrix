@@ -167,7 +167,7 @@ export class OrgSettings extends LiteElement {
     return html`<div class="rounded border p-5">
       <form class="inline-control-form" @submit=${this.onOrgNameSubmit}>
         <sl-input
-          class="inline-control-input"
+          class="inline-control-input with-max-help-text"
           name="orgName"
           size="small"
           label=${msg("Org Name")}
@@ -175,7 +175,6 @@ export class OrgSettings extends LiteElement {
           value=${this.org.name}
           required
           help-text=${this.validateOrgNameLength.helpText}
-          style="--help-text-align: right"
           @sl-input=${this.validateOrgNameLength.validate}
         ></sl-input>
         <sl-button
