@@ -89,7 +89,7 @@ export class CrawlMetadataEditor extends LiteElement {
         @reset=${this.requestClose}
       >
         <sl-textarea
-          class="mb-3"
+          class="mb-3 with-max-help-text"
           name="crawlNotes"
           label=${msg("Notes")}
           value=${this.crawl.notes || ""}
@@ -97,7 +97,6 @@ export class CrawlMetadataEditor extends LiteElement {
           autocomplete="off"
           resize="auto"
           help-text=${helpText}
-          style="--help-text-align: right"
           @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input

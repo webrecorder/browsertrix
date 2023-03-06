@@ -1444,6 +1444,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderFormCol(html`
         <sl-input
+          class="with-max-help-text"
           name="jobName"
           label=${msg("Name")}
           autocomplete="off"
@@ -1452,7 +1453,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           })}
           value=${this.formState.jobName}
           help-text=${helpText}
-          style="--help-text-align: right"
           @sl-input=${validate}
         ></sl-input>
       `)}
