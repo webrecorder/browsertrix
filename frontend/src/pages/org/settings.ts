@@ -117,7 +117,14 @@ export class OrgSettings extends LiteElement {
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
-                >${msg("Invite New Member")}</sl-button
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="person-add"
+                  aria-hidden="true"
+                  library="default"
+                ></sl-icon>
+                ${msg("Invite New Member")}</sl-button
               >
             `,
             () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `
