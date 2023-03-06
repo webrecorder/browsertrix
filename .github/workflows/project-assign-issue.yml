@@ -15,6 +15,6 @@ jobs:
           github_token: ${{ secrets.GHPROJECT_TOKEN }}
           organization: webrecorder
           project_number: 9
-          content_id: ${{ github.event.issue.id }}
+          content_id: ${{ github.event.issue.node_id }}
           field: Status
           value: Todo
