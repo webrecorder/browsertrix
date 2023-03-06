@@ -596,12 +596,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${this.crawlConfig!.name}</strong>.
+          html`Started crawl from <strong>${this.renderName()}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
               href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
-              @click=${this.navLink.bind(this)}
+              @click="${this.navLink.bind(this)}"
               >Watch crawl</a
             >`
         ),
