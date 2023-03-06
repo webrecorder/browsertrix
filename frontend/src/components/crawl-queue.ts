@@ -124,18 +124,25 @@ export class CrawlQueue extends LiteElement {
         aria-live="polite"
       ></btrix-numbered-list>
 
-      <footer class="text-center py-2">
-        <span class="text-xs text-neutral-400" aria-live="polite">
-          ${when(
-            this.queue.total === this.queue.results.length,
-            () => html`${msg("End of queue")}`,
-            () => html`
-              <btrix-observable @intersect=${this.onLoadMoreIntersect}>
-                ${this.isLoading ? msg("Loading...") : msg("Load more")}
-              </btrix-observable>
-            `
-          )}
-        </span>
+      <footer class="text-center">
+        ${when(
+          this.queue.total === this.queue.results.length,
+          () =>
+            html`<div class="text-xs text-neutral-400 py-3">
+              ${msg("End of queue")}
+            </div>`,
+          () => html`
+            <btrix-observable @intersect=${this.onLoadMoreIntersect}>
+              <div class="py-3">
+                <sl-icon-button
+                  name="three-dots"
+                  @click=${this.loadMore}
+                  label=${msg("Load more")}
+                ></sl-icon-button>
+              </div>
+            </btrix-observable>
+          `
+        )}
       </footer>
     `;
   }
@@ -166,8 +173,12 @@ export class CrawlQueue extends LiteElement {
 
   private onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
     if (!e.detail.entry.isIntersecting) return;
-    this.pageSize = this.pageSize + 50;
+    this.loadMore();
   });
+
+  private loadMore() {
+    this.pageSize = this.pageSize + 50;
+  }
 
   private async fetchOnUpdate() {
     window.clearInterval(this.timerId);
