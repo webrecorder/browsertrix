@@ -24,6 +24,7 @@ class Migration(BaseMigration):
         """
         crawls = self.mdb["crawls"]
         crawl_configs = self.mdb["crawl_configs"]
+        users = self.mdb["users"]
 
         # Return early if there are no configs
         crawl_config_results = [res async for res in crawl_configs.find({})]
@@ -32,7 +33,9 @@ class Migration(BaseMigration):
 
         utc_now_datetime = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
-        await crawl_configs.update_many({}, [{"$set": {"useridCreated": "$userid"}}])
+        await crawl_configs.update_many({}, [{"$set": {"createdBy": "$userid"}}])
+        await crawl_configs.update_many({}, [{"$set": {"modifiedBy": "$userid"}}])
+        await crawl_configs.update_many({}, {"$unset": {"userid": 1}})
         await crawl_configs.update_many(
             {"created": None}, {"$set": {"created": utc_now_datetime}}
         )
@@ -63,9 +66,11 @@ class Migration(BaseMigration):
         # Test that migration went as expected
         sample_config_result = await crawl_configs.find_one({})
         sample_config = CrawlConfig.from_dict(sample_config_result)
-        if sample_config.useridCreated != sample_config.userid:
+        if not sample_config.createdBy or (
+            sample_config.createdBy != sample_config.modifiedBy
+        ):
             raise MigrationError(
-                "Crawl config useridCreated set incorrectly by migration"
+                "Crawl config createdBy and modifiedBy set incorrectly by migration"
             )
         if sample_config.modified != sample_config.created:
             raise MigrationError(

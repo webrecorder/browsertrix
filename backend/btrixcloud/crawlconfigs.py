@@ -129,8 +129,8 @@ class ConfigRevision(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
-    userid: Optional[UUID4]
     modified: datetime
+    modifiedBy: Optional[UUID4]
 
     rev: int = 0
 
@@ -148,6 +148,10 @@ class CrawlConfig(BaseMongoModel):
     jobType: Optional[JobType] = JobType.CUSTOM
 
     created: datetime
+    createdBy: UUID4
+
+    modified: Optional[datetime]
+    modifiedBy: Optional[UUID4]
 
     colls: Optional[List[str]] = []
     tags: Optional[List[str]] = []
@@ -156,11 +160,6 @@ class CrawlConfig(BaseMongoModel):
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     oid: UUID4
-
-    useridCreated: UUID4
-
-    userid: Optional[UUID4]
-    modified: Optional[datetime]
 
     profileid: Optional[UUID4]
 
@@ -181,7 +180,9 @@ class CrawlConfigOut(CrawlConfig):
 
     currCrawlId: Optional[str]
     profileName: Optional[str]
-    userName: Optional[str]
+
+    createdByName: Optional[str]
+    modifiedByName: Optional[str]
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
@@ -288,8 +289,8 @@ class CrawlConfigOps:
 
         data = config.dict()
         data["oid"] = org.id
-        data["useridCreated"] = user.id
-        data["userid"] = user.id
+        data["createdBy"] = user.id
+        data["modifiedBy"] = user.id
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         data["modified"] = data["created"]
@@ -367,7 +368,7 @@ class CrawlConfigOps:
             last_rev = ConfigRevision(**orig_dict)
             last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
-        query["userid"] = user.id
+        query["modifiedBy"] = user.id
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         if update.profileid is not None:
@@ -421,7 +422,7 @@ class CrawlConfigOps:
             match_query["tags"] = {"$all": tags}
 
         if userid:
-            match_query["userid"] = userid
+            match_query["createdBy"] = userid
 
         # pylint: disable=duplicate-code
         cursor = self.crawl_configs.aggregate(
@@ -430,12 +431,27 @@ class CrawlConfigOps:
                 {
                     "$lookup": {
                         "from": "users",
-                        "localField": "userid",
+                        "localField": "createdBy",
                         "foreignField": "id",
                         "as": "userName",
                     },
                 },
-                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {"$set": {"createdByName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "modifiedBy",
+                        "foreignField": "id",
+                        "as": "modifiedUserName",
+                    },
+                },
+                {
+                    "$set": {
+                        "modifiedByName": {
+                            "$arrayElemAt": ["$modifiedUserName.name", 0]
+                        }
+                    }
+                },
             ]
         )
 
@@ -508,10 +524,15 @@ class CrawlConfigOps:
         if not crawlconfig.inactive:
             crawlconfig.currCrawlId = await self.get_running_crawl(crawlconfig)
 
-        user = await self.user_manager.get(crawlconfig.userid)
+        user = await self.user_manager.get(crawlconfig.createdBy)
         # pylint: disable=invalid-name
         if user:
-            crawlconfig.userName = user.name
+            crawlconfig.createdByName = user.name
+
+        modified_user = await self.user_manager.get(crawlconfig.modifiedBy)
+        # pylint: disable=invalid-name
+        if modified_user:
+            crawlconfig.modifiedByName = modified_user.name
 
         if crawlconfig.profileid:
             crawlconfig.profileName = await self.profiles.get_profile_name(
