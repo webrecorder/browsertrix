@@ -1,48 +1,46 @@
+""" btrixjob operator (working for metacontroller) """
+
 import os
 import json
-import time
 import yaml
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import Request, HTTPException
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from datetime import datetime
 
 from .k8s.utils import get_templates_dir
 
 templates = Jinja2Templates(directory=get_templates_dir())
 
-# curl -v -X POST http://browsertrix-cloud-backend:8000/operator/sync
+BTRIX_JOBS = {}
+
+
 def init_operator_webhook(app):
+    """regsiters webhook handlers for metacontroller"""
     @app.post("/operator/sync")
     async def metacontroller_webhook(request: Request):
         # Handle the incoming webhook from Metacontroller
         try:
             payload = await request.json()
-        except json.JSONDecodeError as e:
-            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        except json.JSONDecodeError as err_json:
+            raise HTTPException(status_code=400, detail="Invalid JSON payload") from err_json
         parent, children = payload["parent"], payload["children"]
         return sync(parent, children)
 
-JOBS = {}
-flag = False
 
+# pylint: disable=too-many-locals,global-variable-not-assigned,too-many-branches
 def sync(parent, children):
-    global JOBS
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
+    """sync with metacontroller"""
+    global BTRIX_JOBS
 
     # Compute status based on observed state.
     jobs = children["Job.batch/v1"]
 
     ready = -1
     active = -1
-    startTime = "N/A"
+    start_time = "N/A"
     jobname = "N/A"
     njobs = len(jobs)
-
-    print(">>>> P >>>>>>", json.dumps(parent, indent=4), flush=True)
-    print(">>>>> C >>>>>", json.dumps(children, indent=4), flush=True)
+    msg = "N/A"
 
     for j in jobs:
         if "ready" in jobs[j]["status"]:
@@ -50,39 +48,54 @@ def sync(parent, children):
         if "active" in jobs[j]["status"]:
             active = jobs[j]["status"]["active"]
         if "startTime" in jobs[j]["status"]:
-            startTime = jobs[j]["status"]["startTime"]
+            start_time = jobs[j]["status"]["startTime"]
 
+    is_first_time = False
     jobname = parent["metadata"]["name"]
-    if jobname not in JOBS:
-        JOBS[jobname] = 0
-        print(jobname, "is not available", active, ready, njobs)
+    if jobname not in BTRIX_JOBS:
+        BTRIX_JOBS[jobname] = 0
+        if njobs == 0:
+            is_first_time = True
+        print("operator", jobname, "is not available", active, ready, njobs, flush=True)
     else:
-        print(jobname, "is", JOBS[jobname], active, ready, njobs)
+        print(
+            "operator",
+            jobname,
+            "is",
+            BTRIX_JOBS[jobname],
+            active,
+            ready,
+            njobs,
+            flush=True,
+        )
 
-    msg = "N/A"
-    if active == -1 and ready == -1 and njobs == 0:
+    if is_first_time and active == -1 and ready == -1 and njobs == 0:
         msg = "INIT"
     elif active == -1 and ready == -1 and njobs == 1:
         msg = "CREATING"
     elif active == 1 and ready == 0 and njobs == 1:
-        if JOBS[jobname] == 0:
-            msg = "STARTING"            
+        if BTRIX_JOBS[jobname] == 0:
+            msg = "STARTING"
         else:
             msg = "FINISHING"
     elif active == 1 and ready == 1 and njobs == 1:
         msg = "RUNNING"
-        JOBS[jobname] = 1
+        BTRIX_JOBS[jobname] = 1
     elif active == -1 and ready == 0 and njobs == 1:
         msg = "FINISHED"
-        del JOBS[jobname]
-    
+    elif active == -1 and ready == -1 and njobs == 0:
+        msg = "FINISHED"
+        del BTRIX_JOBS[jobname]
+
     desired_status = {
         "jobs": len(jobs),
-        "startTime": startTime,
+        "startTime": start_time,
         "active": active,
         "ready": ready,
         "message": msg,
     }
+
+    print("operator", jobname, msg, desired_status, flush=True)
 
     # craw_job template
     spec = parent.get("spec", {})
@@ -107,12 +120,7 @@ def sync(parent, children):
     # convert craw_job in yaml to JSON
     desired_pods = list(yaml.safe_load_all(craw_job))
 
-    global flag
-    if flag:
-        # if active == -1 and ready == 0 and njobs == 1:
-        #     if jobname not in JOBS:
-        #         flag = False
+    if not is_first_time:
         return {"status": [], "children": []}
 
-    flag = True
     return {"status": desired_status, "children": desired_pods}

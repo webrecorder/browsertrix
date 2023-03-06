@@ -7,6 +7,7 @@ from kubernetes_asyncio.utils import create_from_dict
 from kubernetes_asyncio.client.api import custom_objects_api
 from kubernetes_asyncio import config
 
+
 def get_templates_dir():
     """return directory containing templates for loading"""
     return os.path.join(os.path.dirname(__file__), "templates")
@@ -17,11 +18,9 @@ async def create_from_yaml(k8s_client, doc, namespace):
     yml_document_all = yaml.safe_load_all(doc)
     k8s_objects = []
     for yml_document in yml_document_all:
-        custom = k8s_client.get_custom_API(yml_document["kind"])
+        custom = k8s_client.get_custom_api(yml_document["kind"])
         if custom is not None:
-            created = await create_custom_from_dict(
-                custom, yml_document, namespace
-            )
+            created = await create_custom_from_dict(custom, yml_document, namespace)
         else:
             created = await create_from_dict(
                 k8s_client, yml_document, verbose=False, namespace=namespace
@@ -30,6 +29,7 @@ async def create_from_yaml(k8s_client, doc, namespace):
 
     return k8s_objects
 
+
 async def create_custom_from_dict(custom, doc, namespace):
     apiver = doc["apiVersion"].split("/")
     created = await custom["api"].create_namespaced_custom_object(
@@ -37,9 +37,10 @@ async def create_custom_from_dict(custom, doc, namespace):
         version=apiver[1],
         plural=custom["plural"],
         body=doc,
-        namespace=namespace
+        namespace=namespace,
     )
     return created
+
 
 async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
     """send signal to all pods"""

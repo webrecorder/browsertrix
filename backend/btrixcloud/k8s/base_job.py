@@ -91,8 +91,8 @@ class K8SJobMixin(K8sAPI):
         await self.custom_api.delete_namespaced_custom_object(
             group="btrix.cloud",
             version="v1",
-            namespace=self.namespace, 
-            plural="btrixjobs",  
+            namespace=self.namespace,
+            plural="btrixjobs",
             name=self.orig_job_id,
             grace_period_seconds=30,
             propagation_policy="Foreground",
