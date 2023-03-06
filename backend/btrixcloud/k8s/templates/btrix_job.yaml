@@ -1,0 +1,18 @@
+apiVersion: btrix.cloud/v1
+kind: BtrixJob
+metadata:
+  name: job-{{ id }}
+  labels:
+    btrix.type: "btrix_job"
+spec:
+  manual: {{ manual }}
+  id: "{{ id }}"
+  jobId: "job-{{ id }}"
+  userId: "{{ userid }}"
+  orgId: "{{ oid }}"
+  configId: "{{ cid }}"
+  nodeType: "{{ crawler_node_type }}"
+  jobImage: "{{ job_image }}"
+  jobPullPolicy: "{{ job_pull_policy }}"
+  tags: "{{ tags }}"
+

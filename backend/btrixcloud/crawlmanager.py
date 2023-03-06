@@ -189,7 +189,7 @@ class BaseCrawlManager(ABC):
             "tags": ",".join(crawlconfig.tags),
         }
 
-        return self.templates.env.get_template("crawl_job.yaml").render(params)
+        return self.templates.env.get_template("btrix_job.yaml").render(params)
 
     async def _update_config_initial_scale(self, crawlconfig, scale):
         """update initial scale in config, if needed (k8s only)"""

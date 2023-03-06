@@ -25,6 +25,7 @@ from .storages import init_storages_api
 from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
+from .operator import init_operator_webhook
 
 from .k8s.k8sman import K8SManager
 
@@ -112,6 +113,8 @@ def main():
             mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops, invites
         )
     )
+
+    init_operator_webhook(app_root)
 
     app.include_router(org_ops.router)
 
