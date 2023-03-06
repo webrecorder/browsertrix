@@ -8,6 +8,13 @@ export type IntersectEvent = CustomEvent<{
 /**
  * Observe element with Intersection Obserer API.
  *
+ * @example Usage:
+ * ```
+ * <btrix-observable @intersect=${console.log}>
+ *   Observe me!
+ * </btrix-observable>
+ * ```
+ *
  * @event intersect { entry: IntersectionObserverEntry }
  */
 export class Observable extends LitElement {
