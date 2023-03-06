@@ -133,20 +133,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 </sl-tooltip>
 
                 ${this.renderMenu()}
-              `,
-              () =>
-                this.crawlConfig?.newId
-                  ? html`
-                      <sl-button
-                        size="small"
-                        variant="text"
-                        @click=${this.getNewerVersion}
-                      >
-                        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                        ${msg("Newer Version")}
-                      </sl-button>
-                    `
-                  : ""
+              `
             )}
           </div>
         </header>
@@ -455,12 +442,6 @@ export class CrawlTemplatesDetail extends LiteElement {
       html`${firstSeed}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
-  }
-
-  private getNewerVersion() {
-    const versionId = this.crawlConfig?.newId;
-    if (!versionId) return;
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {

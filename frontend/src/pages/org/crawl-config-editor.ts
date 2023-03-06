@@ -53,7 +53,6 @@ import type {
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
-  oldId?: string;
 };
 
 const STEPS = [
@@ -1775,14 +1774,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.isSubmitting = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(config),
-        }
-      );
+      const data = await (this.configId
+        ? this.apiFetch(
+            `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
+            this.authState!,
+            {
+              method: "PATCH",
+              body: JSON.stringify(config),
+            }
+          )
+        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
+            method: "POST",
+            body: JSON.stringify(config),
+          }));
 
       const crawlId = data.run_now_job;
       let message = msg("Crawl config created.");
@@ -1803,7 +1807,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${data.added}`);
+        this.navTo(
+          `/orgs/${this.orgId}/crawl-configs/config/${
+            this.configId || data.added
+          }`
+        );
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1902,10 +1910,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         exclude: trimArray(this.formState.exclusions),
       },
     };
-
-    if (this.configId) {
-      config.oldId = this.configId;
-    }
 
     return config;
   }

@@ -100,8 +100,6 @@ export type CrawlConfig = CrawlConfigParams & {
   lastCrawlTime: string;
   lastCrawlState: CrawlState;
   currCrawlId: string;
-  newId: string | null;
-  oldId: string | null;
   inactive: boolean;
   profileName: string | null;
 };
