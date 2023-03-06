@@ -17,5 +17,4 @@ jobs:
           project_number: 9
           content_id: ${{ github.event.issue.id }}
           field: Status
-          operation: update
           value: Todo
