@@ -77,23 +77,10 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-details open>
-        <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
-        <div slot="summary-description">
-          ${this.queue?.total && this.queue.total > this.pageSize
-            ? html`<btrix-pagination
-                size=${this.pageSize}
-                totalCount=${this.queue.total}
-                @page-change=${(e: CustomEvent) => {
-                  this.page = e.detail.page;
-                }}
-              >
-              </btrix-pagination>`
-            : ""}
-        </div>
-
-        ${this.renderContent()}
-      </btrix-details>
+      <btrix-section-heading style="--margin: var(--sl-spacing-small)"
+        >${msg("Crawl Queue")} ${this.renderBadge()}</btrix-section-heading
+      >
+      ${this.renderContent()}
     `;
   }
 
