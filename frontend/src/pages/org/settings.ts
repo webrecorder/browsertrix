@@ -91,7 +91,7 @@ export class OrgSettings extends LiteElement {
     };
   }
 
-  private validateOrgNameLength = maxLengthValidator(50);
+  private validateOrgNameMax = maxLengthValidator(50);
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -174,8 +174,8 @@ export class OrgSettings extends LiteElement {
           autocomplete="off"
           value=${this.org.name}
           required
-          help-text=${this.validateOrgNameLength.helpText}
-          @sl-input=${this.validateOrgNameLength.validate}
+          help-text=${this.validateOrgNameMax.helpText}
+          @sl-input=${this.validateOrgNameMax.validate}
         ></sl-input>
         <sl-button
           class="inline-control-button"

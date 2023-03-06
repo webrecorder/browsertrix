@@ -9,8 +9,6 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { maxLengthValidator } from "../utils/form";
 import type { Crawl } from "../types/crawler";
 
-const CRAWL_NOTES_MAXLENGTH = 500;
-
 /**
  * Usage:
  * ```ts
@@ -55,6 +53,8 @@ export class CrawlMetadataEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private validateCrawlNotesMax = maxLengthValidator(500);
+
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
       this.fetchTags();
@@ -81,7 +81,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private renderEditMetadata() {
     if (!this.crawl) return;
 
-    const { helpText, validate } = maxLengthValidator(CRAWL_NOTES_MAXLENGTH);
+    const { helpText, validate } = this.validateCrawlNotesMax;
     return html`
       <form
         id="crawlDetailsForm"

@@ -234,6 +234,8 @@ export class CrawlConfigEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private validateNameMax = maxLengthValidator(50);
+
   private get formHasError() {
     return (
       !this.hasRequiredFields() ||
@@ -1438,7 +1440,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const { helpText, validate } = maxLengthValidator(50);
+    const { helpText, validate } = this.validateNameMax;
     return html`
       ${this.renderFormCol(html`
         <sl-input

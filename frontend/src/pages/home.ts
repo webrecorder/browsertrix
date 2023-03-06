@@ -36,7 +36,7 @@ export class Home extends LiteElement {
   @state()
   private isSubmittingNewOrg = false;
 
-  private validateOrgNameLength = maxLengthValidator(50);
+  private validateOrgNameMax = maxLengthValidator(50);
 
   connectedCallback() {
     if (this.authState) {
@@ -199,8 +199,8 @@ export class Home extends LiteElement {
                     placeholder=${msg("My Organization")}
                     autocomplete="off"
                     required
-                    help-text=${this.validateOrgNameLength.helpText}
-                    @sl-input=${this.validateOrgNameLength.validate}
+                    help-text=${this.validateOrgNameMax.helpText}
+                    @sl-input=${this.validateOrgNameMax.validate}
                   >
                   </sl-input>
                 </div>
