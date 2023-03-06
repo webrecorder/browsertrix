@@ -24,7 +24,7 @@ export class CrawlPendingExclusions extends LiteElement {
   private page: number = 1;
 
   @state()
-  private pageSize: number = 30;
+  private pageSize: number = 20;
 
   @state()
   private isOpen: boolean = false;
