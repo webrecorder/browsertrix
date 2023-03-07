@@ -91,9 +91,12 @@ export type CrawlConfig = CrawlConfigParams & {
   id: string;
   oid: string;
   jobType: JobType;
-  createdBy: string;
-  createdByName: string | null;
-  created: string;
+  createdBy: string; // User ID
+  createdByName: string | null; // User full name
+  created: string; // Date string
+  modifiedBy: string; // User ID
+  modifiedByName: string | null; // User full name
+  modified: string; // Date string
   crawlCount: number;
   crawlAttemptCount: number;
   lastCrawlId: string;
