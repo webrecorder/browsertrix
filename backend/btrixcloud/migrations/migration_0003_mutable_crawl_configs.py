@@ -22,7 +22,7 @@ class Migration(BaseMigration):
 
         Set new crawl_configs fields and add config details to crawls.
         """
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, too-many-branches
         crawls = self.mdb["crawls"]
         crawl_configs = self.mdb["crawl_configs"]
 
