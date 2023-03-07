@@ -626,10 +626,6 @@ class CrawlOps:
 
         resp = {"success": True}
 
-        # pylint: disable=fixme
-        # todo: remove new_cid once frontend is updated
-        resp["new_cid"] = cid
-
         # restart crawl pods
         restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
 
