@@ -90,7 +90,7 @@ export class CrawlDetail extends LiteElement {
       throw new Error("Crawls base URL not defined");
     }
 
-    this.fetchData();
+    this.fetchCrawl();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -99,7 +99,7 @@ export class CrawlDetail extends LiteElement {
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
       this.stopPollTimer();
-      this.fetchData();
+      this.fetchCrawl();
     } else {
       const prevCrawl = changedProperties.get("crawl");
 
@@ -964,14 +964,6 @@ ${this.crawl?.notes}
     `;
   }
 
-  private async fetchData({ parallel }: { parallel?: boolean } = {}) {
-    if (parallel) {
-      this.fetchCrawl();
-    } else {
-      await this.fetchCrawl();
-    }
-  }
-
   /**
    * Fetch crawl and update internal state
    */
@@ -1182,7 +1174,7 @@ ${this.crawl?.notes}
   }
 
   private handleExclusionChange(e: CustomEvent) {
-    this.fetchData({ parallel: true });
+    this.fetchCrawl();
   }
 
   private stopPollTimer() {
