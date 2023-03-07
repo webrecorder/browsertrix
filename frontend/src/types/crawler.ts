@@ -1,37 +1,3 @@
-export type CrawlState =
-  | "starting"
-  | "running"
-  | "complete"
-  | "failed"
-  | "partial_complete"
-  | "timed_out"
-  | "stopping"
-  | "canceled";
-
-export type Crawl = {
-  id: string;
-  userid: string;
-  userName: string;
-  oid: string;
-  cid: string;
-  configName: string;
-  schedule: string;
-  manual: boolean;
-  started: string; // UTC ISO date
-  finished?: string; // UTC ISO date
-  state: CrawlState;
-  scale: number;
-  stats: { done: string; found: string } | null;
-  resources?: { name: string; path: string; hash: string; size: number }[];
-  fileCount?: number;
-  fileSize?: number;
-  completions?: number;
-  tags: string[];
-  notes: string | null;
-  firstSeed: string;
-  seedCount: number;
-};
-
 type ScopeType =
   | "prefix"
   | "host"
@@ -91,9 +57,12 @@ export type CrawlConfig = CrawlConfigParams & {
   id: string;
   oid: string;
   jobType: JobType;
-  userid: string;
-  userName: string | null;
-  created: string;
+  createdBy: string; // User ID
+  createdByName: string | null; // User full name
+  created: string; // Date string
+  modifiedBy: string; // User ID
+  modifiedByName: string | null; // User full name
+  modified: string; // Date string
   crawlCount: number;
   crawlAttemptCount: number;
   lastCrawlId: string;
@@ -114,4 +83,39 @@ export type Profile = {
   baseProfileName: string;
   oid: string;
   crawlconfigs: { id: string; name: string }[];
+};
+
+export type CrawlState =
+  | "starting"
+  | "running"
+  | "complete"
+  | "failed"
+  | "partial_complete"
+  | "timed_out"
+  | "stopping"
+  | "canceled";
+
+export type Crawl = {
+  id: string;
+  userid: string;
+  userName: string;
+  oid: string;
+  cid: string;
+  configName: string;
+  schedule: string;
+  manual: boolean;
+  started: string; // UTC ISO date
+  finished?: string; // UTC ISO date
+  state: CrawlState;
+  scale: number;
+  stats: { done: string; found: string } | null;
+  resources?: { name: string; path: string; hash: string; size: number }[];
+  fileCount?: number;
+  fileSize?: number;
+  completions?: number;
+  tags: string[];
+  notes: string | null;
+  firstSeed: string;
+  seedCount: number;
+  config: CrawlConfig;
 };
