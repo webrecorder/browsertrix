@@ -653,6 +653,7 @@ class CrawlConfigOps:
                 crawlconfig, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig)
+            return crawl_id
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
