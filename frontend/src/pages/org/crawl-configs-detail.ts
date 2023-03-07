@@ -357,7 +357,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Created By"),
-          () => this.crawlConfig!.userName
+          () => this.crawlConfig!.createdByName
         )}
         ${this.renderDetailItem(
           msg("Created At"),
