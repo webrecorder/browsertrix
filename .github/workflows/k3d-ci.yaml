@@ -66,6 +66,10 @@ jobs:
         with:
           version: 3.10.2
 
+      - name: Install Metacontroller
+        run: |
+          cd chart/admin/operator; ./install.sh
+
       - name: Start Cluster with Helm
         run: |
           helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml btrix ./chart/
