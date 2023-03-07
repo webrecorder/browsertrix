@@ -110,9 +110,6 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
-    # for now, until frontend is changed
-    oldId: Optional[UUID4]
-
 
 # ============================================================================
 class ConfigRevision(BaseMongoModel):
@@ -273,20 +270,6 @@ class CrawlConfigOps:
         user: User,
     ):
         """Add new crawl config"""
-
-        # for now, to support frontend update logic
-        if config.oldId:
-            cid = config.oldId
-            await self.update_crawl_config(
-                cid, org, user, update=UpdateCrawlConfig(**config.dict())
-            )
-
-            crawl_id = None
-            if config.runNow:
-                crawl_id = await self.run_now(cid, org, user)
-
-            return cid, crawl_id
-
         data = config.dict()
         data["oid"] = org.id
         data["createdBy"] = user.id
