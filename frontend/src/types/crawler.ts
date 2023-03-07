@@ -1,37 +1,3 @@
-export type CrawlState =
-  | "starting"
-  | "running"
-  | "complete"
-  | "failed"
-  | "partial_complete"
-  | "timed_out"
-  | "stopping"
-  | "canceled";
-
-export type Crawl = {
-  id: string;
-  userid: string;
-  userName: string;
-  oid: string;
-  cid: string;
-  configName: string;
-  schedule: string;
-  manual: boolean;
-  started: string; // UTC ISO date
-  finished?: string; // UTC ISO date
-  state: CrawlState;
-  scale: number;
-  stats: { done: string; found: string } | null;
-  resources?: { name: string; path: string; hash: string; size: number }[];
-  fileCount?: number;
-  fileSize?: number;
-  completions?: number;
-  tags: string[];
-  notes: string | null;
-  firstSeed: string;
-  seedCount: number;
-};
-
 type ScopeType =
   | "prefix"
   | "host"
@@ -117,4 +83,39 @@ export type Profile = {
   baseProfileName: string;
   oid: string;
   crawlconfigs: { id: string; name: string }[];
+};
+
+export type CrawlState =
+  | "starting"
+  | "running"
+  | "complete"
+  | "failed"
+  | "partial_complete"
+  | "timed_out"
+  | "stopping"
+  | "canceled";
+
+export type Crawl = {
+  id: string;
+  userid: string;
+  userName: string;
+  oid: string;
+  cid: string;
+  configName: string;
+  schedule: string;
+  manual: boolean;
+  started: string; // UTC ISO date
+  finished?: string; // UTC ISO date
+  state: CrawlState;
+  scale: number;
+  stats: { done: string; found: string } | null;
+  resources?: { name: string; path: string; hash: string; size: number }[];
+  fileCount?: number;
+  fileSize?: number;
+  completions?: number;
+  tags: string[];
+  notes: string | null;
+  firstSeed: string;
+  seedCount: number;
+  config: CrawlConfig;
 };
