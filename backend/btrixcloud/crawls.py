@@ -416,7 +416,7 @@ class CrawlOps:
         crawl = Crawl(
             id=crawl_id,
             state="starting",
-            userid=crawlconfig.userid,
+            userid=crawlconfig.modifiedBy,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
