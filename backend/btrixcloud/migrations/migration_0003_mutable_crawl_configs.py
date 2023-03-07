@@ -51,6 +51,9 @@ class Migration(BaseMigration):
 
         for crawl_result in crawl_results:
             config_result = await crawl_configs.find_one({"_id": crawl_result["cid"]})
+            if not config_result:
+                continue
+
             await crawls.find_one_and_update(
                 {"_id": crawl_result["_id"]},
                 {

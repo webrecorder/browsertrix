@@ -148,7 +148,7 @@ class CrawlConfig(BaseMongoModel):
     jobType: Optional[JobType] = JobType.CUSTOM
 
     created: datetime
-    createdBy: UUID4
+    createdBy: Optional[UUID4]
 
     modified: Optional[datetime]
     modifiedBy: Optional[UUID4]
