@@ -1,0 +1,6 @@
+dependencies:
+- name: metacontroller-helm
+  repository: file://./metacontroller/deploy/helm/metacontroller
+  version: v4.7.8
+digest: sha256:1e6a405a66edbe97c0f2b2f287a9696195f682a00a28ad47ff62ecfed96183a2
+generated: "2023-03-07T08:41:56.001907425-08:00"

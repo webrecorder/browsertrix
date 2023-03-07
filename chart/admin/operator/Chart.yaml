@@ -1,0 +1,10 @@
+apiVersion: v2
+name: btrix-operator
+description: A Helm chart for installing Metacontroller and a custom CompositeController
+version: 1.0.0
+appVersion: 0.1.0
+
+dependencies:
+  - name: metacontroller-helm
+    version: "4.7.8"
+    repository: "file://./metacontroller/deploy/helm/metacontroller"
