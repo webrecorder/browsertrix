@@ -191,7 +191,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     ${this.renderHeader(this.crawlConfig!.id)}
 
     <header>
-      <h2 class="text-xl leading-10">${this.renderName()}</h2>
+      <h2 class="text-xl font-semibold leading-10">${this.renderName()}</h2>
     </header>
 
     <btrix-workflow-editor
