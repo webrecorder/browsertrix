@@ -188,7 +188,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           ></sl-icon>
           <span class="inline-block align-middle"
             >${configId
-              ? msg(str`Back to ${this.crawlConfig?.name}`)
+              ? msg(str`Back to ${this.renderName()}`)
               : msg("Back to Crawl Configs")}</span
           >
         </a>
@@ -200,11 +200,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     ${this.renderHeader(this.crawlConfig!.id)}
 
     <header>
-      <h2 class="text-xl leading-10">
-        ${this.crawlConfig?.name
-          ? html`<span>${this.crawlConfig.name}</span>`
-          : ""}
-      </h2>
+      <h2 class="text-xl leading-10">${this.renderName()}</h2>
     </header>
 
     <btrix-crawl-config-editor
@@ -488,7 +484,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlConfig) return;
 
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${this.crawlConfig.name} Copy`),
+      name: msg(str`${this.renderName()} Copy`),
       config: this.crawlConfig.config,
       profileid: this.crawlConfig.profileid || null,
       jobType: this.crawlConfig.jobType,
@@ -528,9 +524,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       };
 
       this.notify({
-        message: msg(
-          html`Deactivated <strong>${this.crawlConfig.name}</strong>.`
-        ),
+        message: msg(html`Deactivated <strong>${this.renderName()}</strong>.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -561,8 +555,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: isDeactivating
-          ? msg(html`Deactivated <strong>${this.crawlConfig.name}</strong>.`)
-          : msg(html`Deleted <strong>${this.crawlConfig.name}</strong>.`),
+          ? msg(html`Deactivated <strong>${this.renderName()}</strong>.`)
+          : msg(html`Deleted <strong>${this.renderName()}</strong>.`),
         variant: "success",
         icon: "check2-circle",
       });
