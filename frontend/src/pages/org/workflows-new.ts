@@ -1,6 +1,6 @@
 import type { TemplateResult, LitElement } from "lit";
 import { state, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { mergeDeep } from "immutable";
 
@@ -37,6 +37,9 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: String })
   orgId!: string;
+
+  @property({ type: Boolean })
+  isCrawler!: boolean;
 
   // Use custom property accessor to prevent
   // overriding default Workflow values
@@ -98,7 +101,7 @@ export class WorkflowsNew extends LiteElement {
 
     const jobType = this.initialWorkflow.jobType || this.jobType;
 
-    if (jobType) {
+    if (this.isCrawler && jobType) {
       return html`
         ${this.renderHeader()}
         <h2 class="text-xl font-medium mb-6">
@@ -120,11 +123,11 @@ export class WorkflowsNew extends LiteElement {
     return html`
       ${this.renderHeader()}
       <h2 class="text-xl font-medium mb-6">${msg("New Workflow")}</h2>
-      ${this.renderChooseJobType()}
+      ${when(this.isCrawler, this.renderChooseJobType, this.renderNoAccess)}
     `;
   }
 
-  private renderChooseJobType() {
+  private renderChooseJobType = () => {
     return html`
       <style>
         .jobTypeButton:hover img {
@@ -179,7 +182,13 @@ export class WorkflowsNew extends LiteElement {
         </a>
       </div>
     `;
-  }
+  };
+
+  private renderNoAccess = () => html`
+    <btrix-alert variant="danger">
+      ${msg(`You don't have permission to create a new Workflow.`)}
+    </btrix-alert>
+  `;
 }
 
 customElements.define("btrix-workflows-new", WorkflowsNew);

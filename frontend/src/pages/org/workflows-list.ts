@@ -143,15 +143,20 @@ export class WorkflowsList extends LiteElement {
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
           <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
-          <sl-button
-            href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
-            variant="primary"
-            size="small"
-            @click=${this.navLink}
-          >
-            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Workflow")}
-          </sl-button>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-button
+                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Workflow")}
+              </sl-button>
+            `
+          )}
         </div>
         <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
           ${this.renderControls()}
@@ -162,13 +167,11 @@ export class WorkflowsList extends LiteElement {
         this.fetchErrorStatusCode,
         () => html`
           <div>
-            <btrix-alert variant="danger"
-              >${this.fetchErrorStatusCode === 403
-                ? msg(`You don't have access to Workflows.`)
-                : msg(
-                    `Something unexpected went wrong while retrieving Workflows.`
-                  )}</btrix-alert
-            >
+            <btrix-alert variant="danger">
+              ${msg(
+                `Something unexpected went wrong while retrieving Workflows.`
+              )}
+            </btrix-alert>
           </div>
         `,
         () =>
