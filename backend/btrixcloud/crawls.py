@@ -15,7 +15,7 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed, RawCrawlConfig
+from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
@@ -61,13 +61,12 @@ class CrawlFileOut(BaseModel):
 
 
 # ============================================================================
-class Crawl(BaseMongoModel):
+class Crawl(CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
     id: str
 
     userid: UUID4
-    oid: UUID4
     cid: UUID4
 
     cid_rev: int = 0
@@ -78,21 +77,13 @@ class Crawl(BaseMongoModel):
     started: datetime
     finished: Optional[datetime]
 
-    config: RawCrawlConfig
-    profileid: Optional[UUID4]
-    schedule: Optional[str] = ""
-
     state: str
-
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
-    crawlTimeout: Optional[int] = 0
 
     stats: Optional[Dict[str, str]]
 
     files: Optional[List[CrawlFile]] = []
 
     colls: Optional[List[str]] = []
-    tags: Optional[List[str]] = []
 
     notes: Optional[str]
 
@@ -102,7 +93,8 @@ class CrawlOut(Crawl):
     """Output for single crawl, with additional fields"""
 
     userName: Optional[str]
-    configName: Optional[str]
+    name: Optional[str]
+    profileName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
@@ -119,7 +111,7 @@ class ListCrawlOut(BaseMongoModel):
 
     oid: UUID4
     cid: UUID4
-    configName: Optional[str]
+    name: Optional[str]
 
     manual: Optional[bool]
 
@@ -230,7 +222,7 @@ class CrawlOps:
                     "as": "configName",
                 },
             },
-            {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
+            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
             {
                 "$lookup": {
                     "from": "users",
@@ -323,8 +315,8 @@ class CrawlOps:
         )
 
         if config:
-            if not crawl.configName:
-                crawl.configName = config.name
+            if not crawl.name:
+                crawl.name = config.name
 
             if config.config.seeds:
                 first_seed = config.config.seeds[0]
@@ -333,6 +325,11 @@ class CrawlOps:
                 elif isinstance(first_seed, Seed):
                     crawl.firstSeed = first_seed.url
                 crawl.seedCount = len(config.config.seeds)
+
+        if hasattr(crawl, "profileid") and crawl.profileid:
+            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
+                crawl.profileid, org
+            )
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -411,16 +408,17 @@ class CrawlOps:
             if status_code != 204:
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig):
+    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
         crawl = Crawl(
             id=crawl_id,
             state="starting",
-            userid=crawlconfig.modifiedBy,
+            userid=user.id,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
             scale=crawlconfig.scale,
+            jobType=crawlconfig.jobType,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
             schedule=crawlconfig.schedule,

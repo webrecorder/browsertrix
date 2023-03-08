@@ -338,6 +338,7 @@ class CrawlJob(ABC):
             id=self.job_id,
             state=state,
             config=crawlconfig.config,
+            jobType=crawlconfig.jobType,
             profileid=crawlconfig.profileid,
             cid_rev=crawlconfig.rev,
             schedule=crawlconfig.schedule,

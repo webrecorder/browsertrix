@@ -33,8 +33,12 @@ class Migration(BaseMigration):
 
         utc_now_datetime = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
-        await crawl_configs.update_many({}, [{"$set": {"createdBy": "$userid"}}])
-        await crawl_configs.update_many({}, [{"$set": {"modifiedBy": "$userid"}}])
+        await crawl_configs.update_many(
+            {"createdBy": None}, [{"$set": {"createdBy": "$userid"}}]
+        )
+        await crawl_configs.update_many(
+            {"modifiedBy": None}, [{"$set": {"modifiedBy": "$userid"}}]
+        )
         await crawl_configs.update_many({}, {"$unset": {"userid": 1}})
         await crawl_configs.update_many(
             {"created": None}, {"$set": {"created": utc_now_datetime}}
@@ -62,6 +66,7 @@ class Migration(BaseMigration):
                         "profileid": config_result["profileid"],
                         "schedule": config_result["schedule"],
                         "crawlTimeout": config_result["crawlTimeout"],
+                        "jobType": config_result["jobType"],
                     }
                 },
             )

@@ -133,24 +133,14 @@ class ConfigRevision(BaseMongoModel):
 
 
 # ============================================================================
-class CrawlConfig(BaseMongoModel):
-    """Schedulable config"""
+class CrawlConfigCore(BaseMongoModel):
+    """Core data shared between crawls and crawlconfigs"""
 
     schedule: Optional[str] = ""
 
+    jobType: Optional[JobType] = JobType.CUSTOM
     config: RawCrawlConfig
 
-    name: Optional[str]
-
-    jobType: Optional[JobType] = JobType.CUSTOM
-
-    created: datetime
-    createdBy: Optional[UUID4]
-
-    modified: Optional[datetime]
-    modifiedBy: Optional[UUID4]
-
-    colls: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
@@ -159,6 +149,21 @@ class CrawlConfig(BaseMongoModel):
     oid: UUID4
 
     profileid: Optional[UUID4]
+
+
+# ============================================================================
+class CrawlConfig(CrawlConfigCore):
+    """Schedulable config"""
+
+    name: Optional[str]
+
+    created: datetime
+    createdBy: Optional[UUID4]
+
+    modified: Optional[datetime]
+    modifiedBy: Optional[UUID4]
+
+    colls: Optional[List[str]] = []
 
     crawlAttemptCount: Optional[int] = 0
 
@@ -204,7 +209,7 @@ class UpdateCrawlConfig(BaseModel):
 
     # crawl data: revision tracked
     schedule: Optional[str]
-    profileid: Optional[str]
+    profileid: Optional[UUID4]
     crawlTimeout: Optional[int]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     config: Optional[RawCrawlConfig]
@@ -307,18 +312,18 @@ class CrawlConfigOps:
         )
 
         if crawl_id and config.runNow:
-            await self.add_new_crawl(crawl_id, crawlconfig)
+            await self.add_new_crawl(crawl_id, crawlconfig, user)
 
         return result.inserted_id, crawl_id
 
-    async def add_new_crawl(self, crawl_id, crawlconfig):
+    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """increments crawl count for this config and adds new crawl"""
         inc = self.crawl_configs.find_one_and_update(
             {"_id": crawlconfig.id, "inactive": {"$ne": True}},
             {"$inc": {"crawlAttemptCount": 1}},
         )
 
-        add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig)
+        add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
         await asyncio.gather(inc, add)
 
     async def update_crawl_config(
@@ -635,7 +640,7 @@ class CrawlConfigOps:
         """get distinct tags from all crawl configs for this org"""
         return await self.crawl_configs.distinct("tags", {"oid": org.id})
 
-    async def run_now(self, cid, org, user):
+    async def run_now(self, cid: str, org: Organization, user: User):
         """run specified crawlconfig now"""
         crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org)
 
@@ -652,7 +657,7 @@ class CrawlConfigOps:
             crawl_id = await self.crawl_manager.run_crawl_config(
                 crawlconfig, userid=str(user.id)
             )
-            await self.add_new_crawl(crawl_id, crawlconfig)
+            await self.add_new_crawl(crawl_id, crawlconfig, user)
             return crawl_id
 
         except Exception as exc:

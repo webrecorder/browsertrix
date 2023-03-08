@@ -43,7 +43,7 @@ class BaseMigration:
         # Databases from prior to migrations will not have a version set.
         if not db_version:
             return True
-        if db_version < self.migration_version:
+        if db_version <= self.migration_version:
             return True
         return False
 
