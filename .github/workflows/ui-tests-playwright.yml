@@ -18,6 +18,8 @@ jobs:
         run: npx playwright install --with-deps
       - name: Install playwright/test
         run: npm install -D @playwright/test
+      - name: Install sinon @esm-bundle/chai
+        run: npm install sinon @esm-bundle/chai --save-dev
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v3
