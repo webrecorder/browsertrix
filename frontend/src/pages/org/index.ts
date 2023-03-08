@@ -248,7 +248,7 @@ export class Org extends LiteElement {
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       .orgId=${this.orgId!}
-      userId=${this.userInfo!.id}
+      .userInfo=${this.userInfo}
     ></btrix-workflows-list>`;
   }
 

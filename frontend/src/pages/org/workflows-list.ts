@@ -20,6 +20,7 @@ import {
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
+import type { CurrentUser } from "../../types/user";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -50,8 +51,8 @@ export class WorkflowsList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: String })
-  userId!: string;
+  @property({ type: Object })
+  userInfo!: CurrentUser;
 
   @state()
   crawlConfigs?: Workflow[];
@@ -260,20 +261,14 @@ export class WorkflowsList extends LiteElement {
           </button>
         </div>
         <div class="flex items-center justify-end">
-          ${this.userId
-            ? html`<label class="mr-3">
-                <span class="text-neutral-500 mr-1"
-                  >${msg("Show Only Mine")}</span
-                >
-                <sl-switch
-                  @sl-change=${(e: CustomEvent) =>
-                    (this.filterByCurrentUser = (
-                      e.target as SlCheckbox
-                    ).checked)}
-                  ?checked=${this.filterByCurrentUser}
-                ></sl-switch>
-              </label>`
-            : ""}
+          <label class="mr-3">
+            <span class="text-neutral-500 mr-1">${msg("Show Only Mine")}</span>
+            <sl-switch
+              @sl-change=${(e: CustomEvent) =>
+                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+              ?checked=${this.filterByCurrentUser}
+            ></sl-switch>
+          </label>
 
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort By")}
@@ -652,8 +647,9 @@ export class WorkflowsList extends LiteElement {
    * associated with the Workflows
    **/
   private async getWorkflows(): Promise<Workflow[]> {
-    const params =
-      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
+    const params = this.filterByCurrentUser
+      ? `?userid=${this.userInfo.id}`
+      : "";
 
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs${params}`,
