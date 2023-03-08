@@ -24,6 +24,7 @@ import type {
   CrawlConfig,
   InitialCrawlConfig,
 } from "./types";
+import type { APIPaginatedList } from "../../types/api";
 
 type CrawlSearchResult = {
   item: Crawl;
@@ -31,6 +32,7 @@ type CrawlSearchResult = {
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
 
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFields: Record<
@@ -113,7 +115,7 @@ export class CrawlsList extends LiteElement {
   };
 
   @state()
-  private filterByCurrentUser = true;
+  private filterByCurrentUser = false;
 
   @state()
   private filterByState: CrawlState[] = [];
@@ -129,15 +131,12 @@ export class CrawlsList extends LiteElement {
 
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["cid", "configName"],
+    keys: ["cid", "configName", "firstSeed"],
     shouldSort: false,
-    threshold: 0.4, // stricter; default is 0.6
+    threshold: 0.2, // stricter; default is 0.6
   });
 
   private timerId?: number;
-
-  // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
 
   private filterCrawls = (crawls: Crawl[]) =>
     this.filterByState.length
@@ -152,6 +151,13 @@ export class CrawlsList extends LiteElement {
     orderBy(({ item }) => item[this.orderBy.field])(this.orderBy.direction)(
       crawlsResults
     ) as CrawlSearchResult[];
+
+  constructor() {
+    super();
+    this.filterByCurrentUser =
+      window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+      "true";
+  }
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -168,6 +174,13 @@ export class CrawlsList extends LiteElement {
         this.fetchCrawls();
       } else {
         this.stopPollTimer();
+      }
+
+      if (changedProperties.has("filterByCurrentUser")) {
+        window.sessionStorage.setItem(
+          FILTER_BY_CURRENT_USER_STORAGE_KEY,
+          this.filterByCurrentUser.toString()
+        );
       }
     }
   }
@@ -239,7 +252,9 @@ export class CrawlsList extends LiteElement {
             class="w-full"
             size="small"
             slot="trigger"
-            placeholder=${msg("Search by Crawl Config name or ID")}
+            placeholder=${msg(
+              "Search by name, Crawl Start URL, or Crawl Config ID"
+            )}
             clearable
             ?disabled=${!this.crawls?.length}
             value=${this.searchBy}
@@ -481,7 +496,7 @@ export class CrawlsList extends LiteElement {
 
     this.stopPollTimer();
     try {
-      const { crawls } = await this.getCrawls();
+      const crawls = await this.getCrawls();
 
       this.crawls = crawls;
       // Update search/filter collection
@@ -504,18 +519,18 @@ export class CrawlsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(): Promise<{ crawls: Crawl[] }> {
+  private async getCrawls(): Promise<Crawl[]> {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
-    const data = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
       this.authState!
     );
 
     this.lastFetched = Date.now();
 
-    return data;
+    return data.items;
   }
 
   private async cancel(crawl: Crawl) {
@@ -569,7 +584,7 @@ export class CrawlsList extends LiteElement {
     if (crawlTemplate?.currCrawlId) {
       this.notify({
         message: msg(
-          html`Crawl of <strong>${crawl.configName}</strong> is already running.
+          html`Crawl of <strong>${crawl.name}</strong> is already running.
             <br />
             <a
               class="underline hover:no-underline"
@@ -600,7 +615,7 @@ export class CrawlsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${crawl.configName}</strong>.
+          html`Started crawl from <strong>${crawl.name}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
@@ -643,7 +658,7 @@ export class CrawlsList extends LiteElement {
   private async deleteCrawl(crawl: Crawl) {
     if (
       !window.confirm(
-        msg(str`Are you sure you want to delete crawl of ${crawl.configName}?`)
+        msg(str`Are you sure you want to delete crawl of ${crawl.name}?`)
       )
     ) {
       return;
@@ -699,6 +714,7 @@ export class CrawlsList extends LiteElement {
       jobType: template.jobType,
       schedule: template.schedule,
       tags: template.tags,
+      crawlTimeout: template.crawlTimeout,
     };
 
     this.navTo(

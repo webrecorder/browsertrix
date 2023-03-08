@@ -1,10 +1,17 @@
 import { LitElement, html, css } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlInput, SlMenu, SlPopup } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlMenu,
+  SlMenuItem,
+  SlPopup,
+  SlTag,
+} from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
-import union from "lodash/fp/union";
 import debounce from "lodash/fp/debounce";
+
+import { dropdown } from "../utils/css";
 
 export type Tags = string[];
 export type TagsChangeEvent = CustomEvent<{
@@ -28,84 +35,71 @@ export type TagInputEvent = CustomEvent<{
  */
 @localized()
 export class TagInput extends LitElement {
-  static styles = css`
-    :host {
-      --tag-height: 1.5rem;
-    }
-
-    ${inputCss}
-
-    .input {
-      flex-wrap: wrap;
-      height: auto;
-      overflow: visible;
-      min-height: calc(var(--tag-height) + 1rem);
-    }
-
-    .input__control {
-      flex-grow: 1;
-      flex-shrink: 0;
-    }
-
-    .input__control:not(:first-child) {
-      padding-left: var(--sl-spacing-small);
-      padding-right: var(--sl-spacing-small);
-    }
-
-    btrix-tag {
-      margin-left: var(--sl-spacing-x-small);
-      margin-top: calc(0.5rem - 1px);
-      max-width: calc(
-        100% - var(--sl-spacing-x-small) - var(--sl-spacing-x-small)
-      );
-    }
-
-    sl-popup::part(popup) {
-      z-index: 2;
-    }
-
-    .dropdown {
-      position: absolute;
-      transform-origin: top left;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .animateShow {
-      animation: dropdownShow 100ms ease forwards;
-    }
-
-    .animateHide {
-      animation: dropdownHide 100ms ease forwards;
-    }
-
-    @keyframes dropdownShow {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
+  static styles = [
+    dropdown,
+    inputCss,
+    css`
+      :host {
+        --tag-height: 1.5rem;
       }
 
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes dropdownHide {
-      from {
-        opacity: 1;
-        transform: scale(1);
+      .input {
+        flex-wrap: wrap;
+        height: auto;
+        overflow: visible;
+        min-height: calc(var(--tag-height) + 1rem);
       }
 
-      to {
-        opacity: 0;
-        transform: scale(0.9);
-        display: none;
+      .input__control {
+        flex-grow: 1;
+        flex-shrink: 0;
       }
-    }
-  `;
+
+      .input__control:not(:first-child) {
+        padding-left: var(--sl-spacing-small);
+        padding-right: var(--sl-spacing-small);
+      }
+
+      btrix-tag {
+        margin-left: var(--sl-spacing-x-small);
+        margin-top: calc(0.5rem - 1px);
+        max-width: calc(
+          100% - var(--sl-spacing-x-small) - var(--sl-spacing-x-small)
+        );
+      }
+
+      sl-popup::part(popup) {
+        z-index: 2;
+      }
+
+      .shake {
+        animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+      }
+
+      @keyframes shake {
+        10%,
+        90% {
+          transform: translate3d(-1px, 0, 0);
+        }
+        20%,
+        80% {
+          transform: translate3d(2px, 0, 0);
+        }
+        30%,
+        50%,
+        70% {
+          transform: translate3d(-3px, 0, 0);
+        }
+        40%,
+        60% {
+          transform: translate3d(3px, 0, 0);
+        }
+      }
+    `,
+  ];
 
   @property({ type: Array })
   initialTags?: Tags;
@@ -129,14 +123,20 @@ export class TagInput extends LitElement {
   @state()
   private dropdownIsOpen?: boolean;
 
+  @query(".form-control")
+  private formControl!: HTMLElement;
+
   @query("#input")
-  private input?: HTMLInputElement;
+  private input!: HTMLInputElement;
+
+  @query("#dropdown")
+  private dropdown!: HTMLDivElement;
 
   @query("sl-menu")
   private menu!: SlMenu;
 
   @query("sl-popup")
-  private popup!: SlPopup;
+  private combobox!: SlPopup;
 
   connectedCallback() {
     if (this.initialTags) {
@@ -153,13 +153,17 @@ export class TagInput extends LitElement {
         this.setAttribute("data-invalid", "");
       }
     }
-    if (changedProperties.has("dropdownIsOpen") && this.dropdownIsOpen) {
-      this.popup.reposition();
+    if (changedProperties.has("dropdownIsOpen")) {
+      if (this.dropdownIsOpen) {
+        this.openDropdown();
+      } else {
+        this.closeDropdown();
+      }
     }
   }
 
   reportValidity() {
-    this.input?.reportValidity();
+    this.input.reportValidity();
   }
 
   render() {
@@ -175,7 +179,18 @@ export class TagInput extends LitElement {
         </label>
         <div
           class="input input--medium input--standard"
+          tabindex="-1"
           @click=${this.onInputWrapperClick}
+          @focusout=${(e: FocusEvent) => {
+            const currentTarget = e.currentTarget as SlMenuItem;
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (
+              this.dropdownIsOpen &&
+              !currentTarget?.contains(relatedTarget)
+            ) {
+              this.dropdownIsOpen = false;
+            }
+          }}
         >
           ${this.renderTags()}
           <sl-popup
@@ -192,8 +207,8 @@ export class TagInput extends LitElement {
               style="min-width: ${placeholder.length}ch"
               @focus=${this.onFocus}
               @blur=${this.onBlur}
-              @keydown=${this.onKeydown}
               @input=${this.onInput}
+              @keydown=${this.onKeydown}
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
@@ -204,11 +219,17 @@ export class TagInput extends LitElement {
             />
             <div
               id="dropdown"
-              class="dropdown ${this.dropdownIsOpen === true
-                ? "animateShow"
-                : this.dropdownIsOpen === false
-                ? "animateHide"
-                : "hidden"}"
+              class="dropdown hidden"
+              @animationend=${(e: AnimationEvent) => {
+                const el = e.target as HTMLDivElement;
+                if (e.animationName === "dropdownShow") {
+                  el.classList.remove("animateShow");
+                }
+                if (e.animationName === "dropdownHide") {
+                  el.classList.add("hidden");
+                  el.classList.remove("animateHide");
+                }
+              }}
             >
               <sl-menu
                 role="listbox"
@@ -219,7 +240,7 @@ export class TagInput extends LitElement {
                   e.stopPropagation();
                   if (e.key === "Escape") {
                     this.dropdownIsOpen = false;
-                    this.input?.focus();
+                    this.input.focus();
                   }
                 }}
                 @sl-select=${this.onSelect}
@@ -251,9 +272,40 @@ export class TagInput extends LitElement {
   }
 
   private renderTag = (content: string) => {
-    const removeTag = () => {
+    const removeTag = (e: CustomEvent | KeyboardEvent) => {
       this.tags = this.tags.filter((v) => v !== content);
       this.dispatchChange();
+
+      const tag = e.currentTarget as SlTag;
+      const focusTarget = tag.previousElementSibling as HTMLElement | null;
+      (focusTarget || this.input).focus();
+    };
+    const onKeydown = (e: KeyboardEvent) => {
+      const el = e.currentTarget as SlTag;
+      switch (e.key) {
+        // TODO localize, handle RTL
+        case "ArrowLeft": {
+          const focusTarget = el.previousElementSibling as HTMLElement | null;
+          focusTarget?.focus();
+          break;
+        }
+        case "ArrowRight": {
+          let focusTarget = el.nextElementSibling as HTMLElement | null;
+          if (!focusTarget) return;
+          if (focusTarget === this.combobox) {
+            focusTarget = this.input || null;
+          }
+          focusTarget?.focus();
+          break;
+        }
+        case "Backspace":
+        case "Delete": {
+          removeTag(e);
+          break;
+        }
+        default:
+          break;
+      }
     };
     return html`
       <btrix-tag
@@ -261,13 +313,33 @@ export class TagInput extends LitElement {
         removable
         @sl-remove=${removeTag}
         title=${content}
-        >${content}</btrix-tag
+        tabindex="-1"
+        @keydown=${onKeydown}
+        @animationend=${(e: AnimationEvent) => {
+          if (e.animationName === "shake") {
+            (e.target as SlTag).classList.remove("shake");
+          }
+        }}
       >
+        ${content}
+      </btrix-tag>
     `;
   };
 
+  private openDropdown() {
+    this.combobox.reposition();
+    this.dropdown.classList.add("animateShow");
+    this.dropdown.classList.remove("hidden");
+  }
+
+  private closeDropdown() {
+    this.combobox.reposition();
+    this.dropdown.classList.add("animateHide");
+  }
+
   private onSelect(e: CustomEvent) {
     this.addTags([e.detail.item.value]);
+    this.input.focus();
   }
 
   private onFocus(e: FocusEvent) {
@@ -280,16 +352,18 @@ export class TagInput extends LitElement {
 
   private onBlur(e: FocusEvent) {
     const relatedTarget = e.relatedTarget as HTMLElement;
-    if (this.menu?.contains(relatedTarget)) {
-      // Keep focus on form control if moving to menu selection
-      return;
-    }
-    if (
-      relatedTarget.tagName.includes("BUTTON") &&
-      relatedTarget.getAttribute("type") === "reset"
-    ) {
-      // Don't add tag if resetting form
-      return;
+    if (relatedTarget) {
+      if (this.menu?.contains(relatedTarget)) {
+        // Keep focus on form control if moving to menu selection
+        return;
+      }
+      if (
+        relatedTarget.tagName.includes("BUTTON") &&
+        relatedTarget.getAttribute("type") === "reset"
+      ) {
+        // Don't add tag if resetting form
+        return;
+      }
     }
     const input = e.target as HTMLInputElement;
     (input.parentElement as HTMLElement).classList.remove("input--focused");
@@ -297,19 +371,45 @@ export class TagInput extends LitElement {
   }
 
   private onKeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowDown") {
+    if (this.dropdownIsOpen && (e.key === "ArrowDown" || e.key === "Tab")) {
       e.preventDefault();
-      this.menu?.querySelector("sl-menu-item")?.focus();
+      const menuItem = this.menu?.querySelector("sl-menu-item");
+      if (menuItem) {
+        // Reset roving tabindex set by shoelace
+        this.menu!.setCurrentItem(menuItem);
+        menuItem.focus();
+      }
       return;
     }
-    if (e.key === "," || e.key === "Enter") {
-      e.preventDefault();
-
-      const input = e.target as HTMLInputElement;
-      const value = input.value.trim();
-      if (value) {
-        this.addTags([value]);
+    switch (e.key) {
+      case "Backspace":
+      case "Delete":
+      // TODO localize, handle RTL
+      case "ArrowLeft": {
+        if (this.input.selectionStart! > 0) return;
+        e.preventDefault();
+        const focusTarget = this.combobox
+          .previousElementSibling as HTMLElement | null;
+        focusTarget?.focus();
+        break;
       }
+      case "ArrowRight": {
+        // if (isInputEl && this.input!.selectionEnd! > this.input!.value.length)
+        //   return;
+        break;
+      }
+      case ",":
+      case "Enter": {
+        e.preventDefault();
+        const input = e.target as HTMLInputElement;
+        const value = input.value.trim();
+        if (value) {
+          this.addTags([value]);
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
 
@@ -339,28 +439,60 @@ export class TagInput extends LitElement {
   }
 
   private onPaste(e: ClipboardEvent) {
-    const text = e.clipboardData?.getData("text");
-    if (text) {
-      this.addTags(text.split(","));
+    const input = e.target as HTMLInputElement;
+    if (!input.value) {
+      e.preventDefault();
+      const text = e.clipboardData
+        ?.getData("text")
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .trim();
+      if (text) {
+        this.addTags(text.split(","));
+      }
     }
   }
 
   private onInputWrapperClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
-      this.input?.focus();
+      this.input.focus();
     }
   }
 
   private async addTags(tags: Tags) {
     await this.updateComplete;
-    this.tags = union(
-      tags.map((v) => v.trim().toLocaleLowerCase()).filter((v) => v),
-      this.tags
-    );
+    const repeatTags: Tags = [];
+    const uniqueTags: Tags = [...this.tags];
+
+    tags.forEach((str) => {
+      const tag = str // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .trim()
+        .toLocaleLowerCase();
+      if (tag) {
+        if (uniqueTags.includes(tag)) {
+          repeatTags.push(tag);
+        } else {
+          uniqueTags.push(tag);
+        }
+      }
+    });
+    this.tags = uniqueTags;
     this.dispatchChange();
     this.dropdownIsOpen = false;
     this.input!.value = "";
+    if (repeatTags.length) {
+      repeatTags.forEach(this.shakeTag);
+    }
   }
+
+  private shakeTag = (tag: string) => {
+    const tagEl = this.formControl.querySelector(
+      `btrix-tag[title="${tag}"]`
+    ) as SlTag;
+    if (!tagEl) return;
+    tagEl.classList.add("shake");
+  };
 
   private async dispatchChange() {
     await this.updateComplete;

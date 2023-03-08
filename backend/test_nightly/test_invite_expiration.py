@@ -24,7 +24,7 @@ def test_invites_expire(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     invites_matching_email = [
-        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+        invite for invite in data["items"] if invite["email"] == INVITE_EMAIL
     ]
     assert len(invites_matching_email) == 1
 
@@ -40,6 +40,6 @@ def test_invites_expire(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     invites_matching_email = [
-        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+        invite for invite in data["items"] if invite["email"] == INVITE_EMAIL
     ]
     assert len(invites_matching_email) == 0

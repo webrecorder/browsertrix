@@ -10,14 +10,16 @@ from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
+from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed
+from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
+from .pagination import Page
 from .storages import get_presigned_url, delete_crawl_file_object
 
 
@@ -59,14 +61,15 @@ class CrawlFileOut(BaseModel):
 
 
 # ============================================================================
-class Crawl(BaseMongoModel):
+class Crawl(CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
     id: str
 
     userid: UUID4
-    oid: UUID4
     cid: UUID4
+
+    cid_rev: int = 0
 
     # schedule: Optional[str]
     manual: Optional[bool]
@@ -76,15 +79,11 @@ class Crawl(BaseMongoModel):
 
     state: str
 
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
-    completions: Optional[int] = 0
-
     stats: Optional[Dict[str, str]]
 
     files: Optional[List[CrawlFile]] = []
 
     colls: Optional[List[str]] = []
-    tags: Optional[List[str]] = []
 
     notes: Optional[str]
 
@@ -94,7 +93,8 @@ class CrawlOut(Crawl):
     """Output for single crawl, with additional fields"""
 
     userName: Optional[str]
-    configName: Optional[str]
+    name: Optional[str]
+    profileName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
@@ -111,7 +111,7 @@ class ListCrawlOut(BaseMongoModel):
 
     oid: UUID4
     cid: UUID4
-    configName: Optional[str]
+    name: Optional[str]
 
     manual: Optional[bool]
 
@@ -132,13 +132,6 @@ class ListCrawlOut(BaseMongoModel):
 
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
-
-
-# ============================================================================
-class ListCrawls(BaseModel):
-    """Response model for list of crawls"""
-
-    crawls: List[ListCrawlOut]
 
 
 # ============================================================================
@@ -229,7 +222,7 @@ class CrawlOps:
                     "as": "configName",
                 },
             },
-            {"$set": {"configName": {"$arrayElemAt": ["$configName.name", 0]}}},
+            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
             {
                 "$lookup": {
                     "from": "users",
@@ -322,8 +315,8 @@ class CrawlOps:
         )
 
         if config:
-            if not crawl.configName:
-                crawl.configName = config.name
+            if not crawl.name:
+                crawl.name = config.name
 
             if config.config.seeds:
                 first_seed = config.config.seeds[0]
@@ -332,6 +325,11 @@ class CrawlOps:
                 elif isinstance(first_seed, Seed):
                     crawl.firstSeed = first_seed.url
                 crawl.seedCount = len(config.config.seeds)
+
+        if hasattr(crawl, "profileid") and crawl.profileid:
+            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
+                crawl.profileid, org
+            )
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -410,15 +408,21 @@ class CrawlOps:
             if status_code != 204:
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig):
+    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
         crawl = Crawl(
             id=crawl_id,
             state="starting",
-            userid=crawlconfig.userid,
+            userid=user.id,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
+            cid_rev=crawlconfig.rev,
             scale=crawlconfig.scale,
+            jobType=crawlconfig.jobType,
+            config=crawlconfig.config,
+            profileid=crawlconfig.profileid,
+            schedule=crawlconfig.schedule,
+            crawlTimeout=crawlconfig.crawlTimeout,
             manual=True,
             started=ts_now(),
             tags=crawlconfig.tags,
@@ -602,49 +606,37 @@ class CrawlOps:
             redis_url, encoding="utf-8", decode_responses=True
         )
 
-    async def add_exclusion(self, crawl_id, regex, org, user):
-        """create new config with additional exclusion, copying existing config"""
+    async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
+        """add new exclusion to config or remove exclusion from config
+        for given crawl_id, update config on crawl"""
 
-        raw = await self.get_crawl_raw(crawl_id, org)
+        crawlraw = await self.crawls.find_one({"_id": crawl_id}, {"cid": True})
 
-        cid = raw.get("cid")
+        cid = crawlraw.get("cid")
 
-        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
-            regex, cid, org, user, add=True
+        new_config = await self.crawl_configs.add_or_remove_exclusion(
+            regex, cid, org, user, add
         )
 
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$set": {"cid": new_cid}}
+            {"_id": crawl_id, "oid": org.id}, {"$set": {"config": new_config}}
         )
+
+        resp = {"success": True}
 
         # restart crawl pods
-        change_c = self.crawl_manager.change_crawl_config(crawl_id, org.id, new_cid)
+        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
 
-        filter_q = self.filter_crawl_queue(crawl_id, regex)
+        if add:
+            filter_q = self.filter_crawl_queue(crawl_id, regex)
 
-        _, num_removed = await asyncio.gather(change_c, filter_q)
+            _, num_removed = await asyncio.gather(restart_c, filter_q)
+            resp["num_removed"] = num_removed
 
-        return {"new_cid": new_cid, "num_removed": num_removed}
+        else:
+            await restart_c
 
-    async def remove_exclusion(self, crawl_id, regex, org, user):
-        """create new config with exclusion removed, copying existing config"""
-
-        raw = await self.get_crawl_raw(crawl_id, org)
-
-        cid = raw.get("cid")
-
-        new_cid = await self.crawl_configs.copy_add_remove_exclusion(
-            regex, cid, org, user, add=False
-        )
-
-        await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$set": {"cid": new_cid}}
-        )
-
-        # restart crawl pods
-        await self.crawl_manager.change_crawl_config(crawl_id, org.id, new_cid)
-
-        return {"new_cid": new_cid}
+        return resp
 
 
 # ============================================================================
@@ -657,7 +649,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
 
-    @app.get("/orgs/all/crawls", tags=["crawls"], response_model=ListCrawls)
+    @app.get("/orgs/all/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
         userid: Optional[UUID4] = None,
@@ -666,23 +658,17 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return ListCrawls(
-            crawls=await ops.list_crawls(
-                None, userid=userid, cid=cid, running_only=True
-            )
-        )
+        crawls = await ops.list_crawls(None, userid=userid, cid=cid, running_only=True)
+        return paginate(crawls)
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=ListCrawls)
+    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
     ):
-        return ListCrawls(
-            crawls=await ops.list_crawls(
-                org, userid=userid, cid=cid, running_only=False
-            )
-        )
+        crawls = await ops.list_crawls(org, userid=userid, cid=cid, running_only=False)
+        return paginate(crawls)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/cancel",
@@ -839,7 +825,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.add_exclusion(crawl_id, regex, org, user)
+        return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=True)
 
     @app.delete(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
@@ -851,7 +837,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.remove_exclusion(crawl_id, regex, org, user)
+        return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=False)
 
     return ops
 

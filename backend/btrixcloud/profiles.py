@@ -8,10 +8,12 @@ import os
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, HttpUrl
 import aiohttp
 
 from .orgs import Organization
+from .pagination import Page
 from .users import User
 
 from .db import BaseMongoModel
@@ -396,12 +398,13 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
         await browser_get_metadata(browserid, org)
         return browserid
 
-    @router.get("", response_model=List[Profile])
+    @router.get("", response_model=Page[Profile])
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
     ):
-        return await ops.list_profiles(org, userid)
+        profiles = await ops.list_profiles(org, userid)
+        return paginate(profiles)
 
     @router.post("", response_model=Profile)
     async def commit_browser_to_new(

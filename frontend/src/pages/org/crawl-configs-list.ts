@@ -19,12 +19,15 @@ import {
 } from "../../utils/cron";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
+import type { APIPaginatedList } from "../../types/api";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
   [configId: string]: string;
 };
 
+const FILTER_BY_CURRENT_USER_STORAGE_KEY =
+  "btrix.filterByCurrentUser.crawlConfigs";
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),
@@ -51,7 +54,7 @@ export class CrawlTemplatesList extends LiteElement {
   userId!: string;
 
   @state()
-  crawlTemplates?: CrawlConfig[];
+  crawlConfigs?: CrawlConfig[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -72,7 +75,7 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   @state()
-  private filterByCurrentUser = true;
+  private filterByCurrentUser = false;
 
   @state()
   private searchBy: string = "";
@@ -82,10 +85,17 @@ export class CrawlTemplatesList extends LiteElement {
 
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["name"],
+    keys: ["name", "config.seeds", "config.seeds.url"],
     shouldSort: false,
-    threshold: 0.4, // stricter; default is 0.6
+    threshold: 0.2, // stricter; default is 0.6
   });
+
+  constructor() {
+    super();
+    this.filterByCurrentUser =
+      window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+      "true";
+  }
 
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -93,10 +103,10 @@ export class CrawlTemplatesList extends LiteElement {
       changedProperties.has("filterByCurrentUser")
     ) {
       try {
-        this.crawlTemplates = await this.getCrawlTemplates();
+        await this.fetchCrawlConfigs();
 
         // Update search/filter collection
-        this.fuse.setCollection(this.crawlTemplates as any);
+        this.fuse.setCollection(this.crawlConfigs as any);
       } catch (e) {
         this.notify({
           message: msg("Sorry, couldn't retrieve crawl configs at this time."),
@@ -105,6 +115,17 @@ export class CrawlTemplatesList extends LiteElement {
         });
       }
     }
+    if (changedProperties.has("filterByCurrentUser")) {
+      window.sessionStorage.setItem(
+        FILTER_BY_CURRENT_USER_STORAGE_KEY,
+        this.filterByCurrentUser.toString()
+      );
+    }
+  }
+
+  private async fetchCrawlConfigs() {
+    const crawlConfigs = await this.getCrawlTemplates();
+    this.crawlConfigs = crawlConfigs;
   }
 
   render() {
@@ -127,8 +148,8 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
       </header>
 
-      ${this.crawlTemplates
-        ? this.crawlTemplates.length
+      ${this.crawlConfigs
+        ? this.crawlConfigs.length
           ? this.renderTemplateList()
           : html`
               <div class="border-t border-b py-5">
@@ -173,9 +194,9 @@ export class CrawlTemplatesList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by name")}
+            placeholder=${msg("Search by name or Crawl URL")}
             clearable
-            ?disabled=${!this.crawlTemplates?.length}
+            ?disabled=${!this.crawlConfigs?.length}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -251,7 +272,7 @@ export class CrawlTemplatesList extends LiteElement {
               size="small"
               pill
               caret
-              ?disabled=${!this.crawlTemplates?.length}
+              ?disabled=${!this.crawlConfigs?.length}
               >${(sortableFieldLabels as any)[this.orderBy.field] ||
               sortableFieldLabels[
                 `${this.orderBy.field}_${this.orderBy.direction}`
@@ -303,40 +324,41 @@ export class CrawlTemplatesList extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${flow(...flowFns)(this.crawlTemplates)}
+        ${flow(...flowFns)(this.crawlConfigs)}
       </div>
     `;
   }
 
-  private renderTemplateItem(t: CrawlConfig) {
+  private renderTemplateItem(crawlConfig: CrawlConfig) {
+    const name = this.renderName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-      aria-label=${t.name}
-      href=${`/orgs/${this.orgId}/crawl-configs/config/${t.id}`}
+      aria-label=${name}
+      href=${`/orgs/${this.orgId}/crawl-configs/config/${crawlConfig.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
         <div
           class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-          title=${t.name}
+          title=${name}
         >
-          ${t.name}
+          ${name}
         </div>
 
-        ${this.renderCardMenu(t)}
+        ${this.renderCardMenu(crawlConfig)}
       </header>
 
       <div class="px-3 pb-3 flex justify-between items-end text-0-800">
         <div class="grid gap-2 text-xs leading-none">
           <div class="overflow-hidden">
             <sl-tooltip
-              content=${t.config.seeds
+              content=${crawlConfig.config.seeds
                 .map((seed) => (typeof seed === "string" ? seed : seed.url))
                 .join(", ")}
             >
               <div class="font-mono whitespace-nowrap truncate text-0-500">
                 <span class="underline decoration-dashed"
-                  >${t.config.seeds
+                  >${crawlConfig.config.seeds
                     .map((seed) => (typeof seed === "string" ? seed : seed.url))
                     .join(", ")}</span
                 >
@@ -344,42 +366,45 @@ export class CrawlTemplatesList extends LiteElement {
             </sl-tooltip>
           </div>
           <div class="font-mono text-purple-500">
-            ${t.crawlCount === 1
-              ? msg(str`${t.crawlCount} crawl`)
-              : msg(str`${(t.crawlCount || 0).toLocaleString()} crawls`)}
+            ${crawlConfig.crawlCount === 1
+              ? msg(str`${crawlConfig.crawlCount} crawl`)
+              : msg(
+                  str`${(crawlConfig.crawlCount || 0).toLocaleString()} crawls`
+                )}
           </div>
           <div>
-            ${t.crawlCount
+            ${crawlConfig.crawlCount
               ? html`<sl-tooltip>
                   <span slot="content" class="capitalize">
                     ${msg(
                       str`Last Crawl: ${
-                        t.lastCrawlState && t.lastCrawlState.replace(/_/g, " ")
+                        crawlConfig.lastCrawlState &&
+                        crawlConfig.lastCrawlState.replace(/_/g, " ")
                       }`
                     )}
                   </span>
                   <a
                     class="font-medium hover:underline"
-                    href=${`/orgs/${this.orgId}/crawls/crawl/${t.lastCrawlId}`}
+                    href=${`/orgs/${this.orgId}/crawls/crawl/${crawlConfig.lastCrawlId}`}
                     @click=${(e: any) => {
                       e.stopPropagation();
                       this.navLink(e);
                     }}
                   >
                     <sl-icon
-                      class="inline-block align-middle mr-1 ${t.lastCrawlState ===
+                      class="inline-block align-middle mr-1 ${crawlConfig.lastCrawlState ===
                       "failed"
                         ? "text-neutral-400"
                         : "text-purple-400"}"
-                      name=${t.lastCrawlState === "complete"
+                      name=${crawlConfig.lastCrawlState === "complete"
                         ? "check-circle-fill"
-                        : t.lastCrawlState === "failed"
+                        : crawlConfig.lastCrawlState === "failed"
                         ? "x-circle-fill"
                         : "exclamation-circle-fill"}
                     ></sl-icon
                     ><sl-format-date
                       class="inline-block align-middle text-neutral-600"
-                      date=${`${t.lastCrawlTime}Z` /** Z for UTC */}
+                      date=${`${crawlConfig.lastCrawlTime}Z` /** Z for UTC */}
                       month="2-digit"
                       day="2-digit"
                       year="2-digit"
@@ -399,11 +424,13 @@ export class CrawlTemplatesList extends LiteElement {
                 `}
           </div>
           <div>
-            ${t.schedule
+            ${crawlConfig.schedule
               ? html`
                   <sl-tooltip
                     content=${msg(
-                      str`Next scheduled crawl: ${humanizeNextDate(t.schedule)}`
+                      str`Next scheduled crawl: ${humanizeNextDate(
+                        crawlConfig.schedule
+                      )}`
                     )}
                   >
                     <span>
@@ -412,7 +439,7 @@ export class CrawlTemplatesList extends LiteElement {
                         name="clock-history"
                       ></sl-icon
                       ><span class="inline-block align-middle text-0-600"
-                        >${humanizeSchedule(t.schedule, {
+                        >${humanizeSchedule(crawlConfig.schedule, {
                           length: "short",
                         })}</span
                       >
@@ -428,7 +455,7 @@ export class CrawlTemplatesList extends LiteElement {
                   >`}
           </div>
         </div>
-        ${this.renderCardFooter(t)}
+        ${this.renderCardFooter(crawlConfig)}
       </div>
     </a>`;
   }
@@ -566,6 +593,28 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
+  private renderName(crawlConfig: CrawlConfig) {
+    if (crawlConfig.name) return crawlConfig.name;
+    const { config } = crawlConfig;
+    const firstSeed = config.seeds[0];
+    let firstSeedURL =
+      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    if (config.seeds.length === 1) {
+      return firstSeedURL;
+    }
+    const remainderCount = config.seeds.length - 1;
+    if (remainderCount === 1) {
+      return msg(
+        html`${firstSeed}
+          <span class="text-neutral-500">+${remainderCount} URL</span>`
+      );
+    }
+    return msg(
+      html`${firstSeed}
+        <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
+  }
+
   private onSearchInput = debounce(200)((e: any) => {
     this.searchBy = e.target.value;
   }) as any;
@@ -584,14 +633,14 @@ export class CrawlTemplatesList extends LiteElement {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
-    const data: { crawlConfigs: CrawlConfig[] } = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs${params}`,
       this.authState!
     );
 
     const runningCrawlsMap: RunningCrawlsMap = {};
 
-    data.crawlConfigs.forEach(({ id, currCrawlId }) => {
+    data.items.forEach(({ id, currCrawlId }) => {
       if (currCrawlId) {
         runningCrawlsMap[id] = currCrawlId;
       }
@@ -599,20 +648,21 @@ export class CrawlTemplatesList extends LiteElement {
 
     this.runningCrawlsMap = runningCrawlsMap;
 
-    return data.crawlConfigs;
+    return data.items;
   }
 
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(template: CrawlConfig) {
+  private async duplicateConfig(crawlConfig: CrawlConfig) {
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${template.name} Copy`),
-      config: template.config,
-      profileid: template.profileid || null,
-      jobType: template.jobType,
-      schedule: template.schedule,
-      tags: template.tags,
+      name: msg(str`${this.renderName(crawlConfig)} Copy`),
+      config: crawlConfig.config,
+      profileid: crawlConfig.profileid || null,
+      jobType: crawlConfig.jobType,
+      schedule: crawlConfig.schedule,
+      tags: crawlConfig.tags,
+      crawlTimeout: crawlConfig.crawlTimeout,
     };
 
     this.navTo(
@@ -629,10 +679,10 @@ export class CrawlTemplatesList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(template: CrawlConfig): Promise<void> {
+  private async deactivateTemplate(crawlConfig: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -640,13 +690,15 @@ export class CrawlTemplatesList extends LiteElement {
       );
 
       this.notify({
-        message: msg(html`Deactivated <strong>${template.name}</strong>.`),
+        message: msg(
+          html`Deactivated <strong>${this.renderName(crawlConfig)}</strong>.`
+        ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlTemplates = this.crawlTemplates!.filter(
-        (t) => t.id !== template.id
+      this.crawlConfigs = this.crawlConfigs!.filter(
+        (t) => t.id !== crawlConfig.id
       );
     } catch {
       this.notify({
@@ -657,10 +709,10 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(template: CrawlConfig): Promise<void> {
+  private async deleteTemplate(crawlConfig: CrawlConfig): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -668,13 +720,15 @@ export class CrawlTemplatesList extends LiteElement {
       );
 
       this.notify({
-        message: msg(html`Deleted <strong>${template.name}</strong>.`),
+        message: msg(
+          html`Deleted <strong>${this.renderName(crawlConfig)}</strong>.`
+        ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlTemplates = this.crawlTemplates!.filter(
-        (t) => t.id !== template.id
+      this.crawlConfigs = this.crawlConfigs!.filter(
+        (t) => t.id !== crawlConfig.id
       );
     } catch {
       this.notify({
@@ -685,10 +739,10 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async runNow(template: CrawlConfig): Promise<void> {
+  private async runNow(crawlConfig: CrawlConfig): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${template.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
         this.authState!,
         {
           method: "POST",
@@ -699,12 +753,14 @@ export class CrawlTemplatesList extends LiteElement {
 
       this.runningCrawlsMap = {
         ...this.runningCrawlsMap,
-        [template.id]: crawlId,
+        [crawlConfig.id]: crawlId,
       };
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${template.name}</strong>. <br />
+          html`Started crawl from
+            <strong>${this.renderName(crawlConfig)}</strong>.
+            <br />
             <a
               class="underline hover:no-underline"
               href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
@@ -754,7 +810,7 @@ export class CrawlTemplatesList extends LiteElement {
         }
       );
 
-      this.crawlTemplates = this.crawlTemplates?.map((t) =>
+      this.crawlConfigs = this.crawlConfigs?.map((t) =>
         t.id === editedTemplateId
           ? {
               ...t,

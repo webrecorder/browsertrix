@@ -1,15 +1,13 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlTextarea } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
+import { maxLengthValidator } from "../utils/form";
 import type { Crawl } from "../types/crawler";
-
-const CRAWL_NOTES_MAXLENGTH = 500;
 
 /**
  * Usage:
@@ -55,6 +53,8 @@ export class CrawlMetadataEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private validateCrawlNotesMax = maxLengthValidator(500);
+
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
       this.fetchTags();
@@ -81,9 +81,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private renderEditMetadata() {
     if (!this.crawl) return;
 
-    const crawlNotesHelpText = msg(
-      str`Maximum ${CRAWL_NOTES_MAXLENGTH} characters`
-    );
+    const { helpText, validate } = this.validateCrawlNotesMax;
     return html`
       <form
         id="crawlDetailsForm"
@@ -91,33 +89,15 @@ export class CrawlMetadataEditor extends LiteElement {
         @reset=${this.requestClose}
       >
         <sl-textarea
-          class="mb-3"
+          class="mb-3 with-max-help-text"
           name="crawlNotes"
           label=${msg("Notes")}
           value=${this.crawl.notes || ""}
           rows="3"
           autocomplete="off"
           resize="auto"
-          help-text=${crawlNotesHelpText}
-          style="--help-text-align: right"
-          @sl-input=${(e: CustomEvent) => {
-            const textarea = e.target as SlTextarea;
-            if (textarea.value.length > CRAWL_NOTES_MAXLENGTH) {
-              const overMax = textarea.value.length - CRAWL_NOTES_MAXLENGTH;
-              textarea.setCustomValidity(
-                msg(
-                  str`Please shorten this text to ${CRAWL_NOTES_MAXLENGTH} or less characters.`
-                )
-              );
-              textarea.helpText =
-                overMax === 1
-                  ? msg(str`${overMax} character over limit`)
-                  : msg(str`${overMax} characters over limit`);
-            } else {
-              textarea.setCustomValidity("");
-              textarea.helpText = crawlNotesHelpText;
-            }
-          }}
+          help-text=${helpText}
+          @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input
           .initialTags=${this.crawl.tags}

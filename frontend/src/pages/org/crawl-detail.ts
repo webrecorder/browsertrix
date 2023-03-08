@@ -49,13 +49,7 @@ export class CrawlDetail extends LiteElement {
   crawlId?: string;
 
   @state()
-  private crawlTemplateId?: string;
-
-  @state()
   private crawl?: Crawl;
-
-  @state()
-  private crawlConfig?: CrawlConfig;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -96,7 +90,7 @@ export class CrawlDetail extends LiteElement {
       throw new Error("Crawls base URL not defined");
     }
 
-    this.fetchData();
+    this.fetchCrawl();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -104,9 +98,8 @@ export class CrawlDetail extends LiteElement {
 
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
-      this.crawlTemplateId = "";
       this.stopPollTimer();
-      this.fetchData();
+      this.fetchCrawl();
     } else {
       const prevCrawl = changedProperties.get("crawl");
 
@@ -264,51 +257,123 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  private renderName() {
+    if (!this.crawl)
+      return html`<sl-skeleton
+        class="inline-block"
+        style="width: 15em"
+      ></sl-skeleton>`;
+
+    if (this.crawl.name) return this.crawl.name;
+    if (!this.crawl.firstSeed) return this.crawl.id;
+    const remainder = this.crawl.seedCount - 1;
+    let crawlName: any = html`<span class="break-words"
+      >${this.crawl.firstSeed}</span
+    >`;
+    if (remainder) {
+      if (remainder === 1) {
+        crawlName = msg(
+          html`<span class="break-words">${this.crawl.firstSeed}</span>
+            <span class="text-neutral-500">+${remainder} URL</span>`
+        );
+      } else {
+        crawlName = msg(
+          html`<span class="break-words">${this.crawl.firstSeed}</span>
+            <span class="text-neutral-500">+${remainder} URLs</span>`
+        );
+      }
+    }
+    return crawlName;
+  }
+
   private renderNav() {
     const renderNavItem = ({
       section,
       label,
+      iconLibrary,
+      icon,
     }: {
       section: SectionName;
       label: any;
+      iconLibrary: "app" | "default";
+      icon: string;
     }) => {
       const isActive = section === this.sectionName;
       return html`
         <li
-          class="relative"
+          class="relative grow"
           role="menuitem"
           aria-selected=${isActive.toString()}
         >
           <a
-            class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
-              ? "text-blue-600 bg-blue-50 shadow-sm"
-              : "text-neutral-600 hover:bg-neutral-50"}"
+            class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
+              ? "text-blue-600 bg-blue-100 shadow-sm"
+              : "text-neutral-600 hover:bg-blue-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
+            <sl-icon
+              class="w-4 h-4 shrink-0"
+              name=${icon}
+              aria-hidden="true"
+              library=${iconLibrary}
+            ></sl-icon>
             ${label}
           </a>
         </li>
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0 md:mt-10">
-        <ul class="flex flex-row md:flex-col" role="menu">
-          ${renderNavItem({ section: "overview", label: msg("Overview") })}
+      <nav class="border-b md:border-b-0 pb-4 md:mt-10">
+        <ul
+          class="flex flex-row md:flex-col gap-2 text-center md:text-start"
+          role="menu"
+        >
+          ${renderNavItem({
+            section: "overview",
+            iconLibrary: "default",
+            icon: "info-circle-fill",
+            label: msg("Overview"),
+          })}
           ${renderNavItem({
             section: "exclusions",
+            iconLibrary: "default",
+            icon: "list-ul",
             label: msg("Crawl Queue & Exclusions"),
           })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
+                iconLibrary: "default",
+                icon: "eye-fill",
                 label: msg("Watch Crawl"),
               })
             : ""}
-          ${renderNavItem({ section: "replay", label: msg("Replay") })}
-          ${renderNavItem({ section: "files", label: msg("Files") })}
-          ${renderNavItem({ section: "config", label: msg("Config") })}
-          ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "replay",
+                iconLibrary: "app",
+                icon: "link-replay",
+                label: msg("Replay"),
+              })
+            : ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "files",
+                iconLibrary: "default",
+                icon: "folder-fill",
+                label: msg("Files"),
+              })
+            : ""}
+          ${renderNavItem({
+            section: "config",
+            iconLibrary: "default",
+            icon: "file-code-fill",
+            label: msg("Config"),
+          })}
+          ${
+            /* renderNavItem({ section: "logs", iconLibrary:"default", icon: "terminal-fill", label: msg("Logs") }) */ ""
+          }
         </ul>
       </nav>
     `;
@@ -318,14 +383,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <header class="md:flex justify-between items-end">
         <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
-          ${msg(
-            html`${this.crawl
-              ? this.crawl.configName
-              : html`<sl-skeleton
-                  class="inline-block"
-                  style="width: 15em"
-                ></sl-skeleton>`}`
-          )}
+          ${this.renderName()}
         </h1>
         <div
           class="grid gap-2 grid-flow-col ${this.isActive
@@ -392,64 +450,59 @@ export class CrawlDetail extends LiteElement {
           role="menu"
         >
           ${when(
-            this.crawlConfig && !this.crawlConfig.inactive,
+            !this.isActive,
             () => html`
-              ${when(
-                !this.isActive,
-                () => html`
-                  <li
-                    class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      this.runNow();
-                      e.target.closest("sl-dropdown").hide();
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1"
-                      name="arrow-clockwise"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${msg("Re-run crawl")}
-                    </span>
-                  </li>
-                  <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      this.openMetadataEditor();
-                      e.target.closest("sl-dropdown").hide();
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1"
-                      name="pencil"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${msg("Edit Metadata")}
-                    </span>
-                  </li>
-                `
-              )}
-              ${when(
-                !this.isActive,
-                () => html`
-                  <hr />
-                  <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
-                    role="menuitem"
-                    @click=${() => {
-                      this.navTo(
-                        `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawlTemplateId}?edit`
-                      );
-                    }}
-                  >
-                    <span class="inline-block align-middle">
-                      ${msg("Edit Crawl Config")}
-                    </span>
-                  </li>
-                `
-              )}
+              <li
+                class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  this.runNow();
+                  e.target.closest("sl-dropdown").hide();
+                }}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="arrow-clockwise"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Re-run crawl")}
+                </span>
+              </li>
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  this.openMetadataEditor();
+                  e.target.closest("sl-dropdown").hide();
+                }}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="pencil"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Edit Metadata")}
+                </span>
+              </li>
+            `
+          )}
+          ${when(
+            !this.isActive,
+            () => html`
+              <hr />
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${() => {
+                  this.navTo(
+                    `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawl?.cid}?edit`
+                  );
+                }}
+              >
+                <span class="inline-block align-middle">
+                  ${msg("Edit Crawl Config")}
+                </span>
+              </li>
             `
           )}
           <li
@@ -466,7 +519,7 @@ export class CrawlDetail extends LiteElement {
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
             @click=${(e: any) => {
-              CopyButton.copyToClipboard(this.crawlTemplateId || "");
+              CopyButton.copyToClipboard(this.crawl?.cid || "");
               closeDropdown(e);
             }}
           >
@@ -617,7 +670,7 @@ export class CrawlDetail extends LiteElement {
       <btrix-exclusion-editor
         orgId=${ifDefined(this.crawl?.oid)}
         crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawlConfig?.config}
+        .config=${this.crawl?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
@@ -829,10 +882,10 @@ ${this.crawl?.notes}
   }
 
   private renderConfig() {
-    if (!this.crawlConfig) return "";
+    if (!this.crawl?.config) return "";
     return html`
       <btrix-config-details
-        .crawlConfig=${this.crawlConfig}
+        .crawlConfig=${this.crawl}
         hideTags
       ></btrix-config-details>
     `;
@@ -906,22 +959,12 @@ ${this.crawl?.notes}
     `;
   }
 
-  private async fetchData({ parallel }: { parallel?: boolean } = {}) {
-    if (parallel) {
-      this.fetchCrawl();
-    } else {
-      await this.fetchCrawl();
-    }
-    this.fetchCrawlTemplate();
-  }
-
   /**
    * Fetch crawl and update internal state
    */
   private async fetchCrawl(): Promise<void> {
     try {
       this.crawl = await this.getCrawl();
-      this.crawlTemplateId = this.crawlTemplateId || this.crawl.cid;
 
       if (this.isActive) {
         // Restart timer for next poll
@@ -946,30 +989,6 @@ ${this.crawl?.notes}
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
         this.crawlId
       }/replay.json`,
-      this.authState!
-    );
-
-    return data;
-  }
-
-  /**
-   * Fetch crawl config and update internal state
-   */
-  private async fetchCrawlTemplate(): Promise<void> {
-    try {
-      this.crawlConfig = await this.getCrawlTemplate();
-    } catch {
-      // Fail silently since page will mostly still function
-    }
-  }
-
-  private async getCrawlTemplate(): Promise<CrawlConfig> {
-    if (!this.crawl) {
-      throw new Error("missing crawl");
-    }
-
-    const data: CrawlConfig = await this.apiFetch(
-      `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawlTemplateId}`,
       this.authState!
     );
 
@@ -1071,32 +1090,8 @@ ${this.crawl?.notes}
     if (!this.crawl) return;
 
     try {
-      // Get crawl config to check if crawl is already running
-      const crawlTemplate = await this.getCrawlTemplate();
-
-      if (crawlTemplate.currCrawlId) {
-        this.notify({
-          message: msg(
-            html`Crawl of <strong>${this.crawl.configName}</strong> is already
-              running.
-              <br />
-              <a
-                class="underline hover:no-underline"
-                href="/orgs/${this.crawl
-                  .oid}/crawls/crawl/${crawlTemplate.currCrawlId}"
-                @click=${this.navLink.bind(this)}
-                >View crawl</a
-              >`
-          ),
-          variant: "warning",
-          icon: "exclamation-triangle",
-        });
-
-        return;
-      }
-
       const data = await this.apiFetch(
-        `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawlTemplateId}/run`,
+        `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawl.cid}/run`,
         this.authState!,
         {
           method: "POST",
@@ -1109,29 +1104,36 @@ ${this.crawl?.notes}
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${this.crawl.configName}</strong>.`
+          html`Started crawl from <strong>${this.renderName()}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't run crawl at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.isApiError && e.message === "crawl_already_running") {
+        this.notify({
+          message: msg(
+            html`Crawl of <strong>${this.renderName()}</strong> is already
+              running.`
+          ),
+          variant: "warning",
+          icon: "exclamation-triangle",
+        });
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't run crawl at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
   private async deleteCrawl() {
     if (
       !window.confirm(
-        msg(
-          str`Are you sure you want to delete crawl of ${
-            this.crawl!.configName
-          }?`
-        )
+        msg(str`Are you sure you want to delete crawl of ${this.renderName()}?`)
       )
     ) {
       return;
@@ -1167,9 +1169,7 @@ ${this.crawl?.notes}
   }
 
   private handleExclusionChange(e: CustomEvent) {
-    const { cid } = e.detail;
-    this.crawlTemplateId = cid;
-    this.fetchData({ parallel: true });
+    this.fetchCrawl();
   }
 
   private stopPollTimer() {
@@ -1181,9 +1181,7 @@ ${this.crawl?.notes}
     if (!this.crawl) return;
 
     this.notify({
-      message: msg(
-        html`Done crawling <strong>${this.crawl.configName}</strong>.`
-      ),
+      message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
       variant: "success",
       icon: "check2-circle",
     });

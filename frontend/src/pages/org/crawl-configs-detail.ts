@@ -44,17 +44,21 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
+    if (
+      (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
+    ) {
       this.initializeCrawlTemplate();
     }
   }
 
   protected updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("crawlConfig") &&
-      !changedProperties.get("crawlConfig") &&
-      this.crawlConfig &&
-      window.location.hash
+      (changedProperties.has("crawlConfig") &&
+        !changedProperties.get("crawlConfig") &&
+        this.crawlConfig &&
+        window.location.hash) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       // Show section once crawl config is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
@@ -63,7 +67,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
   private async initializeCrawlTemplate() {
     try {
-      this.crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      const crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      this.crawlConfig = crawlConfig;
       if (this.crawlConfig.lastCrawlId)
         this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
     } catch (e: any) {
@@ -93,12 +98,10 @@ export class CrawlTemplatesDetail extends LiteElement {
 
         <header class="col-span-1 md:flex justify-between items-end">
           <h2>
-            ${this.crawlConfig?.name
-              ? html`<span
-                  class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-                  >${this.crawlConfig.name}</span
-                > `
-              : ""}
+            <span
+              class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
+              >${this.renderName()}</span
+            >
             ${when(
               this.crawlConfig?.inactive,
               () => html`
@@ -134,20 +137,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 </sl-tooltip>
 
                 ${this.renderMenu()}
-              `,
-              () =>
-                this.crawlConfig?.newId
-                  ? html`
-                      <sl-button
-                        size="small"
-                        variant="text"
-                        @click=${this.getNewerVersion}
-                      >
-                        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                        ${msg("Newer Version")}
-                      </sl-button>
-                    `
-                  : ""
+              `
             )}
           </div>
         </header>
@@ -189,7 +179,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           ></sl-icon>
           <span class="inline-block align-middle"
             >${configId
-              ? msg(str`Back to ${this.crawlConfig?.name}`)
+              ? msg(str`Back to ${this.renderName()}`)
               : msg("Back to Crawl Configs")}</span
           >
         </a>
@@ -201,11 +191,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     ${this.renderHeader(this.crawlConfig!.id)}
 
     <header>
-      <h2 class="text-xl leading-10">
-        ${this.crawlConfig?.name
-          ? html`<span>${this.crawlConfig.name}</span>`
-          : ""}
-      </h2>
+      <h2 class="text-xl leading-10">${this.renderName()}</h2>
     </header>
 
     <btrix-crawl-config-editor
@@ -367,7 +353,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Created By"),
-          () => this.crawlConfig!.userName
+          () => this.crawlConfig!.createdByName
         )}
         ${this.renderDetailItem(
           msg("Created At"),
@@ -435,11 +421,27 @@ export class CrawlTemplatesDetail extends LiteElement {
       )}
     `;
   }
-
-  private getNewerVersion() {
-    const versionId = this.crawlConfig?.newId;
-    if (!versionId) return;
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
+  private renderName() {
+    if (!this.crawlConfig) return "";
+    if (this.crawlConfig.name) return this.crawlConfig.name;
+    const { config } = this.crawlConfig;
+    const firstSeed = config.seeds[0];
+    let firstSeedURL =
+      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    if (config.seeds.length === 1) {
+      return firstSeedURL;
+    }
+    const remainderCount = config.seeds.length - 1;
+    if (remainderCount === 1) {
+      return msg(
+        html`${firstSeed}
+          <span class="text-neutral-500">+${remainderCount} URL</span>`
+      );
+    }
+    return msg(
+      html`${firstSeed}
+        <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
   }
 
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
@@ -467,12 +469,13 @@ export class CrawlTemplatesDetail extends LiteElement {
     if (!this.crawlConfig) return;
 
     const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${this.crawlConfig.name} Copy`),
+      name: msg(str`${this.renderName()} Copy`),
       config: this.crawlConfig.config,
       profileid: this.crawlConfig.profileid || null,
       jobType: this.crawlConfig.jobType,
       schedule: this.crawlConfig.schedule,
       tags: this.crawlConfig.tags,
+      crawlTimeout: this.crawlConfig.crawlTimeout,
     };
 
     this.navTo(
@@ -507,9 +510,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       };
 
       this.notify({
-        message: msg(
-          html`Deactivated <strong>${this.crawlConfig.name}</strong>.`
-        ),
+        message: msg(html`Deactivated <strong>${this.renderName()}</strong>.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -540,8 +541,8 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: isDeactivating
-          ? msg(html`Deactivated <strong>${this.crawlConfig.name}</strong>.`)
-          : msg(html`Deleted <strong>${this.crawlConfig.name}</strong>.`),
+          ? msg(html`Deactivated <strong>${this.renderName()}</strong>.`)
+          : msg(html`Deleted <strong>${this.renderName()}</strong>.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -575,12 +576,12 @@ export class CrawlTemplatesDetail extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${this.crawlConfig!.name}</strong>.
+          html`Started crawl from <strong>${this.renderName()}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
               href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
-              @click=${this.navLink.bind(this)}
+              @click="${this.navLink.bind(this)}"
               >Watch crawl</a
             >`
         ),

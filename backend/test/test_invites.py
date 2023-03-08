@@ -10,7 +10,7 @@ def test_pending_invites(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/users/invites", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
-    assert data["pending_invites"] == []
+    assert data["items"] == []
 
     # Add a pending invite and check it's returned
     INVITE_EMAIL = "invite-pending@example.com"
@@ -27,8 +27,9 @@ def test_pending_invites(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/users/invites", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
-    invites = data["pending_invites"]
+    invites = data["items"]
     assert len(invites) == 1
+    assert data["total"] == 1
     invite = invites[0]
     assert invite["id"]
     assert invite["email"] == INVITE_EMAIL

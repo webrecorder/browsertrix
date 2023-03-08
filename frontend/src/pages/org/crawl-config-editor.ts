@@ -30,6 +30,7 @@ import {
   getScheduleInterval,
   getNextDate,
 } from "../../utils/cron";
+import { maxLengthValidator } from "../../utils/form";
 import type { Tab } from "../../components/tab-list";
 import type {
   ExclusionRemoveEvent,
@@ -52,7 +53,6 @@ import type {
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
-  oldId?: string;
 };
 
 const STEPS = [
@@ -232,6 +232,8 @@ export class CrawlConfigEditor extends LiteElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
+
+  private validateNameMax = maxLengthValidator(50);
 
   private get formHasError() {
     return (
@@ -455,7 +457,7 @@ export class CrawlConfigEditor extends LiteElement {
     }
 
     return {
-      jobName: this.initialCrawlConfig.name,
+      jobName: this.initialCrawlConfig.name || "",
       browserProfile: this.initialCrawlConfig.profileid
         ? ({ id: this.initialCrawlConfig.profileid } as Profile)
         : undefined,
@@ -538,10 +540,7 @@ export class CrawlConfigEditor extends LiteElement {
           >
             ${this.renderPanelContent(this.renderJobScheduling())}
           </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-crawlMetadata"
-            class="scroll-m-3"
-          >
+          <btrix-tab-panel name="newJobConfig-crawlMetadata" class="scroll-m-3">
             ${this.renderPanelContent(this.renderJobMetadata())}
           </btrix-tab-panel>
           <btrix-tab-panel
@@ -659,7 +658,7 @@ export class CrawlConfigEditor extends LiteElement {
                 type="submit"
                 size="small"
                 variant="primary"
-                ?disabled=${this.isSubmitting || this.formHasError}
+                ?disabled=${this.isSubmitting}
                 ?loading=${this.isSubmitting}
               >
                 ${msg("Save Changes")}
@@ -775,11 +774,6 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
-            } else {
-              await this.updateComplete;
-              if (!this.formState.jobName) {
-                this.setDefaultJobName();
-              }
             }
           }}
         ></sl-textarea>
@@ -969,11 +963,6 @@ https://example.com/path`}
               inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
-            } else {
-              await this.updateComplete;
-              if (!this.formState.jobName) {
-                this.setDefaultJobName();
-              }
             }
           }}
         ></sl-input>
@@ -1124,11 +1113,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     inputEl.invalid = true;
                     inputEl.helpText = text;
                     inputEl.setCustomValidity(text);
-                  } else {
-                    await this.updateComplete;
-                    if (!this.formState.jobName) {
-                      this.setDefaultJobName();
-                    }
                   }
                 }}
               ></sl-textarea>
@@ -1455,20 +1439,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const jobNameValue =
-      this.formState.jobName ||
-      (this.jobType === "seed-crawl" && this.formState.primarySeedUrl) ||
-      "";
+    const { helpText, validate } = this.validateNameMax;
     return html`
       ${this.renderFormCol(html`
         <sl-input
+          class="with-max-help-text"
           name="jobName"
           label=${msg("Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
             desc: "Example crawl config name",
           })}
-          value=${jobNameValue}
+          value=${this.formState.jobName}
+          help-text=${helpText}
+          @sl-input=${validate}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -1583,13 +1567,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
     return jobName;
-  }
-
-  private setDefaultJobName() {
-    const jobName = this.getDefaultJobName();
-    if (jobName) {
-      this.updateFormState({ jobName });
-    }
   }
 
   private async handleRemoveRegex(e: ExclusionRemoveEvent) {
@@ -1799,14 +1776,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.isSubmitting = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(config),
-        }
-      );
+      const data = await (this.configId
+        ? this.apiFetch(
+            `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
+            this.authState!,
+            {
+              method: "PATCH",
+              body: JSON.stringify(config),
+            }
+          )
+        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
+            method: "POST",
+            body: JSON.stringify(config),
+          }));
 
       const crawlId = data.run_now_job;
       let message = msg("Crawl config created.");
@@ -1827,7 +1809,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${data.added}`);
+        this.navTo(
+          `/orgs/${this.orgId}/crawl-configs/config/${
+            this.configId || data.added
+          }`
+        );
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1903,9 +1889,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
-      name: this.formState.jobName || this.getDefaultJobName() || "",
+      name: this.formState.jobName || "",
       scale: this.formState.scale,
-      profileid: this.formState.browserProfile?.id || null,
+      profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
@@ -1920,16 +1906,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           (this.formState.pageTimeoutMinutes ??
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
-        limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        lang: this.formState.lang || null,
+        limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
+        lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
       },
     };
-
-    if (this.configId) {
-      config.oldId = this.configId;
-    }
 
     return config;
   }

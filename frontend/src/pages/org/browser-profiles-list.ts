@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Profile } from "./types";
+import type { APIPaginatedList } from "../../types/api";
 
 /**
  * Usage:
@@ -45,16 +46,16 @@ export class BrowserProfilesList extends LiteElement {
   render() {
     return html`<header>
         <div class="flex justify-between w-full h-8 mb-4">
-        <h1 class="text-xl font-semibold">${msg("Browser Profiles")}</h1>
-        <sl-button
-          href=${`/orgs/${this.orgId}/browser-profiles?new`}
-          variant="primary"
-          size="small"
-          @click=${this.navLink}
-        >
-          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-          ${msg("New Browser Profile")}
-        </sl-button>
+          <h1 class="text-xl font-semibold">${msg("Browser Profiles")}</h1>
+          <sl-button
+            href=${`/orgs/${this.orgId}/browser-profiles?new`}
+            variant="primary"
+            size="small"
+            @click=${this.navLink}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("New Browser Profile")}
+          </sl-button>
         </div>
       </header>
 
@@ -385,12 +386,12 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(): Promise<Profile[]> {
-    const data = await this.apiFetch(
+    const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/profiles`,
       this.authState!
     );
 
-    return data;
+    return data.items;
   }
 
   /**

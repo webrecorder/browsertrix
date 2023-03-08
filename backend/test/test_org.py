@@ -9,8 +9,9 @@ from .conftest import API_PREFIX
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
+    assert data["total"] == 1
 
-    orgs = data["orgs"]
+    orgs = data["items"]
     default_orgs = [org for org in orgs if org["default"]]
     assert len(default_orgs) == 1
 
@@ -84,7 +85,7 @@ def test_create_org(admin_auth_headers):
     assert r.status_code == 200
     data = r.json()
     org_names = []
-    for org in data["orgs"]:
+    for org in data["items"]:
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
 
@@ -159,8 +160,9 @@ def test_get_pending_org_invites(
     )
     assert r.status_code == 200
     data = r.json()
-    invites = data["pending_invites"]
+    invites = data["items"]
     assert len(invites) == 1
+    assert data["total"] == 1
     invite = invites[0]
     assert invite["id"]
     assert invite["email"] == INVITE_EMAIL
@@ -211,9 +213,7 @@ def test_send_and_accept_org_invite(
     assert r.status_code == 200
     data = r.json()
     invites_matching_email = [
-        invite
-        for invite in data["pending_invites"]
-        if invite["email"] == expected_stored_email
+        invite for invite in data["items"] if invite["email"] == expected_stored_email
     ]
     token = invites_matching_email[0]["id"]
 
@@ -277,7 +277,7 @@ def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
     assert r.status_code == 200
     data = r.json()
     invites_matching_email = [
-        invite for invite in data["pending_invites"] if invite["email"] == INVITE_EMAIL
+        invite for invite in data["items"] if invite["email"] == INVITE_EMAIL
     ]
     assert len(invites_matching_email) == 0
 

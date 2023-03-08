@@ -6,7 +6,7 @@ import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
+import type { CrawlConfigCore, Seed, SeedConfig } from "../pages/org/types";
 import { humanizeSchedule } from "../utils/cron";
 
 /**
@@ -20,7 +20,7 @@ import { humanizeSchedule } from "../utils/cron";
 @localized()
 export class ConfigDetails extends LiteElement {
   @property({ type: Object })
-  crawlConfig?: CrawlConfig;
+  crawlConfig?: CrawlConfigCore;
 
   @property({ type: Boolean })
   anchorLinks = false;
@@ -30,7 +30,7 @@ export class ConfigDetails extends LiteElement {
   hideTags = false;
 
   private readonly scopeTypeLabels: Record<
-    CrawlConfig["config"]["scopeType"],
+    CrawlConfigCore["config"]["scopeType"],
     string
   > = {
     prefix: msg("Path Begins with This URL"),
@@ -46,29 +46,6 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
     return html`
-      <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>
-            ${this.renderAnchorLink("crawl-metadata")}${msg(
-              "Crawl Information"
-            )}
-          </h4></btrix-section-heading
-        >
-        <btrix-desc-list>
-          ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.hideTags
-            ? ""
-            : this.renderSetting(
-                msg("Tags"),
-                crawlConfig?.tags?.length
-                  ? crawlConfig.tags.map(
-                      (tag) =>
-                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                    )
-                  : undefined
-              )}
-        </btrix-desc-list>
-      </section>
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
           ><h4>
@@ -166,6 +143,27 @@ export class ConfigDetails extends LiteElement {
                 : undefined
             )
           )}
+        </btrix-desc-list>
+      </section>
+      <section id="crawl-metadata" class="mb-8">
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>
+            ${this.renderAnchorLink("crawl-metadata")}${msg("Crawl Metadata")}
+          </h4></btrix-section-heading
+        >
+        <btrix-desc-list>
+          ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+          ${this.hideTags
+            ? ""
+            : this.renderSetting(
+                msg("Tags"),
+                crawlConfig?.tags?.length
+                  ? crawlConfig.tags.map(
+                      (tag) =>
+                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                    )
+                  : undefined
+              )}
         </btrix-desc-list>
       </section>
     `;
@@ -274,7 +272,9 @@ export class ConfigDetails extends LiteElement {
       >`;
     }
     return html`
-      <btrix-desc-list-item label=${label} class="break-all"> ${content} </btrix-desc-list-item>
+      <btrix-desc-list-item label=${label} class="break-all">
+        ${content}
+      </btrix-desc-list-item>
     `;
   }
 }

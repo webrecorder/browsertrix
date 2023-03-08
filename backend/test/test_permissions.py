@@ -8,9 +8,10 @@ def test_admin_get_org_crawls(admin_auth_headers, default_org_id, admin_crawl_id
         f"{API_PREFIX}/orgs/{default_org_id}/crawls", headers=admin_auth_headers
     )
     data = r.json()
-    crawls = data["crawls"]
+    crawls = data["items"]
     crawl_ids = []
     assert len(crawls) > 0
+    assert data["total"] > 0
     for crawl in crawls:
         assert crawl["oid"] == default_org_id
         crawl_ids.append(crawl["id"])
@@ -22,9 +23,10 @@ def test_viewer_get_org_crawls(viewer_auth_headers, default_org_id, admin_crawl_
         f"{API_PREFIX}/orgs/{default_org_id}/crawls", headers=viewer_auth_headers
     )
     data = r.json()
-    crawls = data["crawls"]
+    crawls = data["items"]
     crawl_ids = []
     assert len(crawls) > 0
+    assert data["total"] > 0
     for crawl in crawls:
         assert crawl["oid"] == default_org_id
         crawl_ids.append(crawl["id"])
