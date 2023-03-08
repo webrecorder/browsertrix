@@ -1,29 +1,29 @@
-name: Playwright UI Tests
-
+name: Playwright Tests
 on:
+  push:
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-
+    types: [opened, synchronize, reopened, edited]
 jobs:
   test:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
       DEV_PASSWORD: ${{ secrets.DEV_PASSWORD }}
     steps:
-      - uses: actions/checkout@v2
-      - name: Install dependencies
-        run: yarn
-      - name: Install playwright browsers
-        run: npx playwright install --with-deps
-      - name: Install playwright/test
-        run: npm install -D @playwright/test
-      - name: Install sinon @esm-bundle/chai
-        run: npm install sinon @esm-bundle/chai --save-dev
-      - name: Run Playwright tests
-        run: npx playwright test
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: playwright-artifact
-          path: playwright/artifact
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - name: Install dependencies
+      run: yarn
+    - name: Install Playwright Browsers
+      run: yarn playwright install --with-deps
+    - name: Run Playwright tests
+      run: yarn playwright test
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
