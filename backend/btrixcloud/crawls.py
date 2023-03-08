@@ -908,7 +908,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         def stream_json_lines(iterator, log_level, context):
             """Return iterator as generator, filtering as necessary"""
             for line_dict in iterator:
-                # Filter
                 if log_level and line_dict["logLevel"] != log_level:
                     continue
                 if context and line_dict["context"] != context:
@@ -921,7 +920,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         async def stream_async_json_lines(iterator, log_level, context):
             """Return async iterator as generator, filtering as necessary"""
             async for line_dict in iterator:
-                # Filter
                 if log_level and line_dict["logLevel"] != log_level:
                     continue
                 if context and line_dict["context"] != context:

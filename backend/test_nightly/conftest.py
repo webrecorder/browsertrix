@@ -150,3 +150,56 @@ def crawl_config_info(admin_auth_headers, default_org_id):
         if data["state"] == "complete":
             return (crawl_config_id, crawl_id, second_crawl_id)
         time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def large_crawl_id(admin_auth_headers, default_org_id):
+    # Start crawl
+    crawl_data = {
+        "runNow": True,
+        "name": "Large Test Crawl",
+        "tags": ["wacz-logs"],
+        "config": {
+            "seeds": ["https://webrecorder.net/"],
+            "scopeType": "domain",
+            "limit": 100,
+            "extraHops": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+
+    # Wait for crawl to start running
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "running":
+            # Give crawl time to start properly
+            time.sleep(30)
+            return crawl_id
+        time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def large_crawl_finished(admin_auth_headers, default_org_id, large_crawl_id):
+    # Wait for crawl to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{large_crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            # Give some time for WACZ files to be stored
+            time.sleep(30)
+            break
+        time.sleep(5)
