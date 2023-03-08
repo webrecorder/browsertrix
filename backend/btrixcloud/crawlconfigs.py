@@ -348,7 +348,7 @@ class CrawlConfigOps:
             or update.crawlTimeout is not None
         )
 
-        if is_crawl_update:
+        if is_crawl_update or update.profileid:
             orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
             orig_dict["cid"] = orig_dict.pop("id", cid)
             orig_dict["id"] = uuid.uuid4()
@@ -472,7 +472,6 @@ class CrawlConfigOps:
 
         cursor = self.crawl_configs.find(query, projection=["_id", "name"])
         results = await cursor.to_list(length=1000)
-        print("for profile", profileid, query, results)
         results = [CrawlConfigIdNameOut.from_dict(res) for res in results]
         return results
 
