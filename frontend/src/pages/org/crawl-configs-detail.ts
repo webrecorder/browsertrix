@@ -44,17 +44,21 @@ export class CrawlTemplatesDetail extends LiteElement {
   };
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("crawlConfigId") && this.crawlConfigId) {
+    if (
+      (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
+    ) {
       this.initializeCrawlTemplate();
     }
   }
 
   protected updated(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("crawlConfig") &&
-      !changedProperties.get("crawlConfig") &&
-      this.crawlConfig &&
-      window.location.hash
+      (changedProperties.has("crawlConfig") &&
+        !changedProperties.get("crawlConfig") &&
+        this.crawlConfig &&
+        window.location.hash) ||
+      (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       // Show section once crawl config is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
@@ -133,20 +137,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                 </sl-tooltip>
 
                 ${this.renderMenu()}
-              `,
-              () =>
-                this.crawlConfig?.newId
-                  ? html`
-                      <sl-button
-                        size="small"
-                        variant="text"
-                        @click=${this.getNewerVersion}
-                      >
-                        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                        ${msg("Newer Version")}
-                      </sl-button>
-                    `
-                  : ""
+              `
             )}
           </div>
         </header>
@@ -362,7 +353,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Created By"),
-          () => this.crawlConfig!.userName
+          () => this.crawlConfig!.createdByName
         )}
         ${this.renderDetailItem(
           msg("Created At"),
@@ -453,12 +444,6 @@ export class CrawlTemplatesDetail extends LiteElement {
     );
   }
 
-  private getNewerVersion() {
-    const versionId = this.crawlConfig?.newId;
-    if (!versionId) return;
-    this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${versionId}`);
-  }
-
   private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
     const data: CrawlConfig = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${configId}`,
@@ -490,6 +475,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       jobType: this.crawlConfig.jobType,
       schedule: this.crawlConfig.schedule,
       tags: this.crawlConfig.tags,
+      crawlTimeout: this.crawlConfig.crawlTimeout,
     };
 
     this.navTo(

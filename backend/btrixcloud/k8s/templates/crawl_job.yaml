@@ -70,6 +70,9 @@ spec:
             - name: CRAWL_CONFIG_ID
               value: "{{ cid }}"
 
+            - name: REV
+              value: "{{ rev }}"
+
             - name: TAGS
               value: "{{ tags }}"
 

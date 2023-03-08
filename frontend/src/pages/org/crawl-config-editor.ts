@@ -53,7 +53,6 @@ import type {
 
 type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
-  oldId?: string;
 };
 
 const STEPS = [
@@ -1775,14 +1774,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.isSubmitting = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(config),
-        }
-      );
+      const data = await (this.configId
+        ? this.apiFetch(
+            `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
+            this.authState!,
+            {
+              method: "PATCH",
+              body: JSON.stringify(config),
+            }
+          )
+        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
+            method: "POST",
+            body: JSON.stringify(config),
+          }));
 
       const crawlId = data.run_now_job;
       let message = msg("Crawl config created.");
@@ -1803,7 +1807,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${data.added}`);
+        this.navTo(
+          `/orgs/${this.orgId}/crawl-configs/config/${
+            this.configId || data.added
+          }`
+        );
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1881,7 +1889,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       jobType: this.jobType || "custom",
       name: this.formState.jobName || "",
       scale: this.formState.scale,
-      profileid: this.formState.browserProfile?.id || null,
+      profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
@@ -1896,16 +1904,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           (this.formState.pageTimeoutMinutes ??
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
-        limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        lang: this.formState.lang || null,
+        limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
+        lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
       },
     };
-
-    if (this.configId) {
-      config.oldId = this.configId;
-    }
 
     return config;
   }

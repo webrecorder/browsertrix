@@ -406,8 +406,7 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderName(crawl: Crawl) {
-    if (crawl.configName)
-      return html`<span class="truncate">${crawl.configName}</span>`;
+    if (crawl.name) return html`<span class="truncate">${crawl.name}</span>`;
     if (!crawl.firstSeed)
       return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;

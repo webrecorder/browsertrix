@@ -20,6 +20,8 @@ const defaultValue = {
     scopeType: "prefix",
     exclude: [""],
   },
+  tags: [],
+  crawlTimeout: null,
 } as InitialCrawlConfig;
 
 /**

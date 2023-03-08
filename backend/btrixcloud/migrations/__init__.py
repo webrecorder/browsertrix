@@ -4,6 +4,10 @@ BaseMigration class to subclass in each migration module
 from pymongo.errors import OperationFailure
 
 
+class MigrationError(Exception):
+    """Custom migration exception class"""
+
+
 class BaseMigration:
     """Base Migration class."""
 
