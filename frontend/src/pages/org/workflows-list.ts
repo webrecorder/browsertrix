@@ -11,7 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Workflow, InitialCrawlConfig } from "./types";
+import type { Workflow, WorkflowParams } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -685,21 +685,16 @@ export class WorkflowsList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawlConfig: Workflow) {
-    const workflow: InitialCrawlConfig = {
-      name: msg(str`${this.renderName(crawlConfig)} Copy`),
-      config: crawlConfig.config,
-      profileid: crawlConfig.profileid || null,
-      jobType: crawlConfig.jobType,
-      schedule: crawlConfig.schedule,
-      tags: crawlConfig.tags,
-      crawlTimeout: crawlConfig.crawlTimeout,
+  private async duplicateConfig(workflow: Workflow) {
+    const workflowParams: WorkflowParams = {
+      ...workflow,
+      name: msg(str`${this.renderName(workflow)} Copy`),
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflow.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
-        workflow,
+        workflow: workflowParams,
       }
     );
 

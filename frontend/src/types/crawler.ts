@@ -25,11 +25,12 @@ export type SeedConfig = Pick<
   blockAds?: boolean;
   behaviorTimeout?: number | null;
   behaviors?: string | null;
+  extraHops?: number | null;
 };
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
 
-export type CrawlConfigParams = {
+export type WorkflowParams = {
   jobType: JobType;
   name: string;
   schedule: string;
@@ -40,22 +41,9 @@ export type CrawlConfigParams = {
   crawlTimeout: number | null;
 };
 
-export type CrawlConfig = CrawlConfigParams & {
+export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;
-};
-
-export type InitialCrawlConfig = Pick<
-  CrawlConfig,
-  "name" | "profileid" | "schedule" | "tags" | "crawlTimeout"
-> & {
-  jobType?: JobType;
-  config: Pick<
-    CrawlConfig["config"],
-    "seeds" | "scopeType" | "exclude" | "behaviorTimeout"
-  > & {
-    extraHops?: CrawlConfig["config"]["extraHops"];
-  };
 };
 
 export type Workflow = CrawlConfig & {

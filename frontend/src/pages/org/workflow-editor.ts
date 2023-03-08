@@ -43,15 +43,14 @@ import type {
   TagsChangeEvent,
 } from "../../components/tag-input";
 import type {
-  CrawlConfigParams,
+  WorkflowParams,
   Profile,
-  InitialCrawlConfig,
   JobType,
   Seed,
   SeedConfig,
 } from "./types";
 
-type NewCrawlConfigParams = CrawlConfigParams & {
+type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
 };
 
@@ -80,12 +79,12 @@ type FormState = {
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: CrawlConfigParams["config"]["scopeType"];
-  exclusions: CrawlConfigParams["config"]["exclude"];
-  pageLimit: CrawlConfigParams["config"]["limit"];
-  scale: CrawlConfigParams["scale"];
-  blockAds: CrawlConfigParams["config"]["blockAds"];
-  lang: CrawlConfigParams["config"]["lang"];
+  scopeType: WorkflowParams["config"]["scopeType"];
+  exclusions: WorkflowParams["config"]["exclude"];
+  pageLimit: WorkflowParams["config"]["limit"];
+  scale: WorkflowParams["scale"];
+  blockAds: WorkflowParams["config"]["blockAds"];
+  lang: WorkflowParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -96,7 +95,7 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: CrawlConfigParams["name"];
+  jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
 };
@@ -207,7 +206,7 @@ export class CrawlConfigEditor extends LiteElement {
   jobType?: JobType;
 
   @property({ type: Object })
-  initialWorkflow?: InitialCrawlConfig;
+  initialWorkflow?: WorkflowParams;
 
   @state()
   private tagOptions: string[] = [];

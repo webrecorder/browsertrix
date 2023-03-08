@@ -6,7 +6,7 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, InitialCrawlConfig } from "./types";
+import type { JobType, WorkflowParams } from "./types";
 import "./workflow-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
@@ -22,7 +22,9 @@ const defaultValue = {
   },
   tags: [],
   crawlTimeout: null,
-} as InitialCrawlConfig;
+  jobType: "custom",
+  scale: 1,
+} as WorkflowParams;
 
 /**
  * Usage:
@@ -44,11 +46,11 @@ export class WorkflowsNew extends LiteElement {
   // Use custom property accessor to prevent
   // overriding default Workflow values
   @property({ type: Object })
-  get initialWorkflow(): InitialCrawlConfig {
+  get initialWorkflow(): WorkflowParams {
     return this._initialWorkflow;
   }
-  private _initialWorkflow: InitialCrawlConfig = defaultValue;
-  set initialWorkflow(val: Partial<InitialCrawlConfig>) {
+  private _initialWorkflow: WorkflowParams = defaultValue;
+  set initialWorkflow(val: Partial<WorkflowParams>) {
     this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
 

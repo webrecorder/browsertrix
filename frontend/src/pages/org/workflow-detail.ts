@@ -5,7 +5,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, Workflow, InitialCrawlConfig, JobType } from "./types";
+import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 
 /**
@@ -469,20 +469,15 @@ export class WorkflowDetail extends LiteElement {
   private async duplicateConfig() {
     if (!this.workflow) return;
 
-    const workflow: InitialCrawlConfig = {
+    const workflowParams: WorkflowParams = {
+      ...this.workflow,
       name: msg(str`${this.renderName()} Copy`),
-      config: this.workflow.config,
-      profileid: this.workflow.profileid || null,
-      jobType: this.workflow.jobType,
-      schedule: this.workflow.schedule,
-      tags: this.workflow.tags,
-      crawlTimeout: this.workflow.crawlTimeout,
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflow.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
-        workflow: workflow,
+        workflow: workflowParams,
       }
     );
 

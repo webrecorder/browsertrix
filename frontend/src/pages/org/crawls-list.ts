@@ -18,7 +18,7 @@ import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlState, Workflow, InitialCrawlConfig } from "./types";
+import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 
 type CrawlSearchResult = {
@@ -699,20 +699,18 @@ export class CrawlsList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawl: Crawl, template: Workflow) {
-    const workflow: InitialCrawlConfig = {
-      name: msg(str`${template.name} Copy`),
-      config: template.config,
-      profileid: template.profileid || null,
-      jobType: template.jobType,
-      schedule: template.schedule,
-      tags: template.tags,
-      crawlTimeout: template.crawlTimeout,
+  private async duplicateConfig(crawl: Crawl, workflow: Workflow) {
+    const workflowParams: WorkflowParams = {
+      ...workflow,
+      name: msg(str`${workflow.name} Copy`),
     };
 
-    this.navTo(`/orgs/${crawl.oid}/workflows?new&jobType=${workflow.jobType}`, {
-      workflow,
-    });
+    this.navTo(
+      `/orgs/${crawl.oid}/workflows?new&jobType=${workflowParams.jobType}`,
+      {
+        workflow: workflowParams,
+      }
+    );
 
     this.notify({
       message: msg(str`Copied Workflowuration to new template.`),
