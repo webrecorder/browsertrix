@@ -495,7 +495,7 @@ export class CrawlDetail extends LiteElement {
                 role="menuitem"
                 @click=${() => {
                   this.navTo(
-                    `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawl?.cid}?edit`
+                    `/orgs/${this.crawl?.oid}/workflows/config/${this.crawl?.cid}?edit`
                   );
                 }}
               >

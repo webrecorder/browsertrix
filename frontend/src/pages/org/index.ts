@@ -25,11 +25,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 
-export type OrgTab =
-  | "crawls"
-  | "crawl-configs"
-  | "browser-profiles"
-  | "settings";
+export type OrgTab = "crawls" | "workflows" | "browser-profiles" | "settings";
 
 type Params = {
   crawlId?: string;
@@ -121,7 +117,7 @@ export class Org extends LiteElement {
       case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
-      case "crawl-configs":
+      case "workflows":
         tabPanelContent = this.renderCrawlTemplates();
         break;
       case "browser-profiles":
@@ -160,7 +156,7 @@ export class Org extends LiteElement {
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
-              tabName: "crawl-configs",
+              tabName: "workflows",
               label: msg("Workflows"),
             })
           )}

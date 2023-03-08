@@ -444,9 +444,7 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
-              this.navTo(
-                `/orgs/${crawl.oid}/crawl-configs/config/${crawl.cid}`
-              )}
+              this.navTo(`/orgs/${crawl.oid}/workflows/config/${crawl.cid}`)}
           >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Workflow")}
@@ -718,7 +716,7 @@ export class CrawlsList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${crawl.oid}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${crawl.oid}/workflows?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }

@@ -122,7 +122,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                   ?disabled=${!this.crawlConfig!.currCrawlId}
                 >
                   <sl-button
-                    href=${`/orgs/${this.orgId}/crawl-configs/config/${
+                    href=${`/orgs/${this.orgId}/workflows/config/${
                       this.crawlConfig!.id
                     }?edit`}
                     variant="primary"
@@ -168,7 +168,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/crawl-configs${
+          href=${`/orgs/${this.orgId}/workflows${
             configId ? `/config/${configId}` : ""
           }`}
           @click=${this.navLink}
@@ -202,7 +202,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       .authState=${this.authState}
       @reset=${(e: Event) =>
         this.navTo(
-          `/orgs/${this.orgId}/crawl-configs/config/${this.crawlConfig!.id}`
+          `/orgs/${this.orgId}/workflows/config/${this.crawlConfig!.id}`
         )}
     ></btrix-workflow-editor>
   `;
@@ -479,7 +479,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }
@@ -537,7 +537,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/crawl-configs`);
+      this.navTo(`/orgs/${this.orgId}/workflows`);
 
       this.notify({
         message: isDeactivating

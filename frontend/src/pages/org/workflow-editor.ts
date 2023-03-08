@@ -1810,9 +1810,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
         this.navTo(
-          `/orgs/${this.orgId}/crawl-configs/config/${
-            this.configId || data.added
-          }`
+          `/orgs/${this.orgId}/workflows/config/${this.configId || data.added}`
         );
       }
     } catch (e: any) {

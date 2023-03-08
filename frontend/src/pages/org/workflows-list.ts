@@ -134,7 +134,7 @@ export class CrawlTemplatesList extends LiteElement {
         <div class="flex justify-between w-full h-8 mb-4">
           <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
           <sl-button
-            href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
+            href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
             variant="primary"
             size="small"
             @click=${this.navLink}
@@ -334,7 +334,7 @@ export class CrawlTemplatesList extends LiteElement {
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${name}
-      href=${`/orgs/${this.orgId}/crawl-configs/config/${crawlConfig.id}`}
+      href=${`/orgs/${this.orgId}/workflows/config/${crawlConfig.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
@@ -486,7 +486,7 @@ export class CrawlTemplatesList extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${t.id}?edit`);
+            this.navTo(`/orgs/${this.orgId}/workflows/config/${t.id}?edit`);
           }}
         >
           <sl-icon
@@ -666,7 +666,7 @@ export class CrawlTemplatesList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${crawlTemplate.jobType}`,
       {
         crawlTemplate,
       }
