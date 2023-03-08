@@ -136,10 +136,8 @@ export class BrowserProfilesDetail extends LiteElement {
           </div>
           <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Crawl Configs")}</span
-              >
-              <sl-tooltip content=${msg("Crawl Configs using this profile")}>
+              <span class="inline-block align-middle">${msg("Workflows")}</span>
+              <sl-tooltip content=${msg("Workflows using this profile")}>
                 <sl-icon
                   class="inline-block align-middle"
                   name="info-circle"
@@ -247,7 +245,7 @@ export class BrowserProfilesDetail extends LiteElement {
         <div class="max-w-prose">
           <p class="text-xs text-neutral-500 mx-1">
             ${msg(
-              "Interact with the browsing tool to set up the browser profile.  Crawl configs that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here."
+              "Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here."
             )}
           </p>
         </div>
@@ -463,7 +461,7 @@ export class BrowserProfilesDetail extends LiteElement {
                 >${data.crawlconfigs
                   .map(({ name }: any) => name)
                   .join(", ")}</strong
-              >. Please remove browser profile from crawl config to continue.`
+              >. Please remove browser profile from Workflow to continue.`
           ),
           variant: "warning",
           icon: "exclamation-triangle",

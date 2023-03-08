@@ -678,7 +678,7 @@ export class CrawlConfigEditor extends LiteElement {
                   this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : this.formState.scheduleType === "none"
-                    ? msg("Save Crawl Config")
+                    ? msg("Save Workflow")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
               : html`
@@ -1448,7 +1448,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example crawl config name",
+            desc: "Example Workflow name",
           })}
           value=${this.formState.jobName}
           help-text=${helpText}
@@ -1456,7 +1456,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this crawl config and crawl name. Crawls are named after
+        msg(`Customize this Workflow and crawl name. Crawls are named after
         the starting URL(s) by default.`)
       )}
       ${this.renderFormCol(
@@ -1495,9 +1495,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
+        : msg(html`There is an issue with this Workflowuration:<br /><br />Crawl
             URL(s) required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
@@ -1791,12 +1791,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }));
 
       const crawlId = data.run_now_job;
-      let message = msg("Crawl config created.");
+      let message = msg("Workflow created.");
 
       if (crawlId) {
         message = msg("Crawl started with new template.");
       } else if (this.configId) {
-        message = msg("Crawl config updated.");
+        message = msg("Workflow updated.");
       }
 
       this.notify({
@@ -1856,7 +1856,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save crawl config. Please fix the following crawl configuration issues:"
+        "Couldn't save Workflow. Please fix the following Workflowuration issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}

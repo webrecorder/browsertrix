@@ -39,7 +39,7 @@ export class CrawlTemplatesNew extends LiteElement {
   orgId!: string;
 
   // Use custom property accessor to prevent
-  // overriding default crawl config values
+  // overriding default Workflow values
   @property({ type: Object })
   get initialCrawlTemplate(): InitialCrawlConfig {
     return this._initialCrawlTemplate;
@@ -62,7 +62,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
   private renderHeader() {
     let href = `/orgs/${this.orgId}/crawl-configs`;
-    let label = msg("Back to Crawl Configs");
+    let label = msg("Back to Workflows");
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
     if (this.jobType && !this.initialCrawlTemplate.jobType) {
@@ -102,7 +102,7 @@ export class CrawlTemplatesNew extends LiteElement {
       return html`
         ${this.renderHeader()}
         <h2 class="text-xl font-medium mb-6">
-          ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
+          ${msg(html`New Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
           .initialCrawlConfig=${this.initialCrawlTemplate}
@@ -119,7 +119,7 @@ export class CrawlTemplatesNew extends LiteElement {
 
     return html`
       ${this.renderHeader()}
-      <h2 class="text-xl font-medium mb-6">${msg("New Crawl Config")}</h2>
+      <h2 class="text-xl font-medium mb-6">${msg("New Workflow")}</h2>
       ${this.renderChooseJobType()}
     `;
   }

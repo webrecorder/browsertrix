@@ -60,7 +60,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         window.location.hash) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
-      // Show section once crawl config is done rendering
+      // Show section once Workflow is done rendering
       document.querySelector(window.location.hash)?.scrollIntoView();
     }
   }
@@ -75,8 +75,8 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.notify({
         message:
           e.statusCode === 404
-            ? msg("Crawl config not found.")
-            : msg("Sorry, couldn't retrieve crawl config at this time."),
+            ? msg("Workflow not found.")
+            : msg("Sorry, couldn't retrieve Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -117,7 +117,7 @@ export class CrawlTemplatesDetail extends LiteElement {
               () => html`
                 <sl-tooltip
                   content=${msg(
-                    "Crawl config cannot be edited while crawl is running."
+                    "Workflow cannot be edited while crawl is running."
                   )}
                   ?disabled=${!this.crawlConfig!.currCrawlId}
                 >
@@ -132,7 +132,7 @@ export class CrawlTemplatesDetail extends LiteElement {
                     ?disabled=${this.crawlConfig!.currCrawlId}
                   >
                     <sl-icon slot="prefix" name="gear"></sl-icon>
-                    ${msg("Edit Crawl Config")}
+                    ${msg("Edit Workflow")}
                   </sl-button>
                 </sl-tooltip>
 
@@ -180,7 +180,7 @@ export class CrawlTemplatesDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${configId
               ? msg(str`Back to ${this.renderName()}`)
-              : msg("Back to Crawl Configs")}</span
+              : msg("Back to Workflows")}</span
           >
         </a>
       </nav>
@@ -226,7 +226,7 @@ export class CrawlTemplatesDetail extends LiteElement {
             name="files"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate crawl config")}</span
+            >${msg("Duplicate Workflow")}</span
           >
         </li>
       `,
@@ -486,7 +486,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     );
 
     this.notify({
-      message: msg(str`Copied crawl configuration to new template.`),
+      message: msg(str`Copied Workflowuration to new template.`),
       variant: "success",
       icon: "check2-circle",
     });
@@ -516,7 +516,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       });
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl config at this time."),
+        message: msg("Sorry, couldn't deactivate Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -549,8 +549,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     } catch {
       this.notify({
         message: isDeactivating
-          ? msg("Sorry, couldn't deactivate crawl config at this time.")
-          : msg("Sorry, couldn't delete crawl config at this time."),
+          ? msg("Sorry, couldn't deactivate Workflow at this time.")
+          : msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

@@ -161,7 +161,7 @@ export class Org extends LiteElement {
           ${when(this.isCrawler, () =>
             this.renderNavTab({
               tabName: "crawl-configs",
-              label: msg("Crawl Configs"),
+              label: msg("Workflows"),
             })
           )}
           ${when(this.isCrawler, () =>

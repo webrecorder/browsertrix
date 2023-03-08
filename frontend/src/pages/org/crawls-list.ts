@@ -253,7 +253,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             slot="trigger"
             placeholder=${msg(
-              "Search by name, Crawl Start URL, or Crawl Config ID"
+              "Search by name, Crawl Start URL, or Workflow ID"
             )}
             clearable
             ?disabled=${!this.crawls?.length}
@@ -449,7 +449,7 @@ export class CrawlsList extends LiteElement {
               )}
           >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-            ${msg("Go to Crawl Config")}
+            ${msg("Go to Workflow")}
           </sl-menu-item>
           <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
             <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
@@ -578,7 +578,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private async runNow(crawl: Crawl) {
-    // Get crawl config to check if crawl is already running
+    // Get Workflow to check if crawl is already running
     const crawlTemplate = await this.getCrawlTemplate(crawl);
 
     if (crawlTemplate?.currCrawlId) {
@@ -632,13 +632,13 @@ export class CrawlsList extends LiteElement {
       if (e.isApiError && e.statusCode === 404) {
         this.notify({
           message: msg(
-            html`Sorry, cannot rerun crawl from a deactivated crawl config.
+            html`Sorry, cannot rerun crawl from a deactivated Workflow.
               <br />
               <button
                 class="underline hover:no-underline"
                 @click="${() => this.duplicateConfig(crawl, crawlTemplate)}"
               >
-                Duplicate crawl config
+                Duplicate Workflow
               </button>`
           ),
           variant: "danger",
@@ -725,7 +725,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.notify({
-      message: msg(str`Copied crawl configuration to new template.`),
+      message: msg(str`Copied Workflowuration to new template.`),
       variant: "success",
       icon: "check2-circle",
     });

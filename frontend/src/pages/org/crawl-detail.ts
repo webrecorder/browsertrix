@@ -500,7 +500,7 @@ export class CrawlDetail extends LiteElement {
                 }}
               >
                 <span class="inline-block align-middle">
-                  ${msg("Edit Crawl Config")}
+                  ${msg("Edit Workflow")}
                 </span>
               </li>
             `
@@ -523,7 +523,7 @@ export class CrawlDetail extends LiteElement {
               closeDropdown(e);
             }}
           >
-            ${msg("Copy Crawl Config ID")}
+            ${msg("Copy Workflow ID")}
           </li>
           ${when(
             this.crawl && !this.isActive,

@@ -109,7 +109,7 @@ export class CrawlTemplatesList extends LiteElement {
         this.fuse.setCollection(this.crawlConfigs as any);
       } catch (e) {
         this.notify({
-          message: msg("Sorry, couldn't retrieve crawl configs at this time."),
+          message: msg("Sorry, couldn't retrieve Workflows at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
         });
@@ -132,7 +132,7 @@ export class CrawlTemplatesList extends LiteElement {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Crawl Configs")}</h1>
+          <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
           <sl-button
             href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
             variant="primary"
@@ -140,7 +140,7 @@ export class CrawlTemplatesList extends LiteElement {
             @click=${this.navLink}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Config")}
+            ${msg("New Workflow")}
           </sl-button>
         </div>
         <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
@@ -154,7 +154,7 @@ export class CrawlTemplatesList extends LiteElement {
           : html`
               <div class="border-t border-b py-5">
                 <p class="text-center text-0-500">
-                  ${msg("No crawl configs yet.")}
+                  ${msg("No Workflows yet.")}
                 </p>
               </div>
             `
@@ -473,7 +473,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="files"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate crawl config")}</span
+            >${msg("Duplicate Workflow")}</span
           >
         </li>
       `,
@@ -494,7 +494,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="pencil-square"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit crawl config")}</span
+            >${msg("Edit Workflow")}</span
           >
         </li>
       `);
@@ -626,8 +626,8 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   /**
-   * Fetch crawl configs and record running crawls
-   * associated with the crawl configs
+   * Fetch Workflows and record running crawls
+   * associated with the Workflows
    **/
   private async getCrawlTemplates(): Promise<CrawlConfig[]> {
     const params =
@@ -673,7 +673,7 @@ export class CrawlTemplatesList extends LiteElement {
     );
 
     this.notify({
-      message: msg(str`Copied crawl configuration to new template.`),
+      message: msg(str`Copied Workflowuration to new template.`),
       variant: "success",
       icon: "check2-circle",
     });
@@ -702,7 +702,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl config at this time."),
+        message: msg("Sorry, couldn't deactivate Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -732,7 +732,7 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete crawl config at this time."),
+        message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
