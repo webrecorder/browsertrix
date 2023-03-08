@@ -43,7 +43,7 @@ import type {
   TagsChangeEvent,
 } from "../../components/tag-input";
 import type {
-  CrawlConfigCore,
+  CrawlConfigParams,
   Profile,
   InitialCrawlConfig,
   JobType,
@@ -51,7 +51,7 @@ import type {
   SeedConfig,
 } from "./types";
 
-type NewCrawlConfigParams = CrawlConfigCore & {
+type NewCrawlConfigParams = CrawlConfigParams & {
   runNow: boolean;
 };
 
@@ -80,12 +80,12 @@ type FormState = {
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: CrawlConfigCore["config"]["scopeType"];
-  exclusions: CrawlConfigCore["config"]["exclude"];
-  pageLimit: CrawlConfigCore["config"]["limit"];
-  scale: CrawlConfigCore["scale"];
-  blockAds: CrawlConfigCore["config"]["blockAds"];
-  lang: CrawlConfigCore["config"]["lang"];
+  scopeType: CrawlConfigParams["config"]["scopeType"];
+  exclusions: CrawlConfigParams["config"]["exclude"];
+  pageLimit: CrawlConfigParams["config"]["limit"];
+  scale: CrawlConfigParams["scale"];
+  blockAds: CrawlConfigParams["config"]["blockAds"];
+  lang: CrawlConfigParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -96,7 +96,7 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: CrawlConfigCore["name"];
+  jobName: CrawlConfigParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
 };

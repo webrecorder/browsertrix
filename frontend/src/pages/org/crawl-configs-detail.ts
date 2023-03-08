@@ -475,6 +475,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       jobType: this.crawlConfig.jobType,
       schedule: this.crawlConfig.schedule,
       tags: this.crawlConfig.tags,
+      crawlTimeout: this.crawlConfig.crawlTimeout,
     };
 
     this.navTo(

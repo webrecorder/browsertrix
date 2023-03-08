@@ -29,17 +29,20 @@ export type SeedConfig = Pick<
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
 
-export type CrawlConfigCore = {
-  oid: string;
+export type CrawlConfigParams = {
   jobType: JobType;
   name: string;
   schedule: string;
   scale: number;
   profileid: string | null;
-  profileName: string | null;
   config: SeedConfig;
-  crawlTimeout: number | null;
   tags: string[];
+  crawlTimeout: number | null;
+};
+
+export type CrawlConfigCore = CrawlConfigParams & {
+  oid: string;
+  profileName: string | null;
 };
 
 export type InitialCrawlConfig = Pick<

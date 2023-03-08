@@ -662,6 +662,7 @@ export class CrawlTemplatesList extends LiteElement {
       jobType: crawlConfig.jobType,
       schedule: crawlConfig.schedule,
       tags: crawlConfig.tags,
+      crawlTimeout: crawlConfig.crawlTimeout,
     };
 
     this.navTo(
