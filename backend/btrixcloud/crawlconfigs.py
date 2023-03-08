@@ -717,10 +717,11 @@ def init_crawl_config_api(
     router = ops.router
 
     org_crawl_dep = org_ops.org_crawl_dep
+    org_viewer_dep = org_ops.org_viewer_dep
 
     @router.get("", response_model=Page[CrawlConfigOut])
     async def get_crawl_configs(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         userid: Optional[UUID4] = None,
         tag: Union[List[str], None] = Query(default=None),
     ):
@@ -728,17 +729,17 @@ def init_crawl_config_api(
         return paginate(crawl_configs)
 
     @router.get("/tags")
-    async def get_crawl_config_tags(org: Organization = Depends(org_crawl_dep)):
+    async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_tags(org)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
-    async def get_crawl_config(cid: str, org: Organization = Depends(org_crawl_dep)):
+    async def get_crawl_config(cid: str, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_out(uuid.UUID(cid), org)
 
     @router.get(
         "/{cid}/revs",
         response_model=List[ConfigRevision],
-        dependencies=[Depends(org_crawl_dep)],
+        dependencies=[Depends(org_viewer_dep)],
     )
     async def get_crawl_config_revisions(cid: str):
         return await ops.get_crawl_config_revs(uuid.UUID(cid))
