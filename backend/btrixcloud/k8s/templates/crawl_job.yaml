@@ -76,8 +76,8 @@ spec:
             - name: TAGS
               value: "{{ tags }}"
 
-            - name: CRAWL_TIMEOUT
-              value: "{{ crawl_timeout }}"
+            - name: CRAWL_EXPIRE_TIME
+              value: "{{ crawl_expire_time }}"
 
             - name: STORE_PATH
               valueFrom:

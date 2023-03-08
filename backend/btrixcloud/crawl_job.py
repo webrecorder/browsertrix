@@ -57,9 +57,9 @@ class CrawlJob(ABC):
         self.storage_path = os.environ.get("STORE_PATH")
         self.storage_name = os.environ.get("STORAGE_NAME")
 
-        self.crawl_timeout = os.environ.get("CRAWL_TIMEOUT")
-        if self.crawl_timeout:
-            self.crawl_timeout = datetime.fromisoformat(self.crawl_timeout)
+        self.crawl_expire_time = os.environ.get("CRAWL_EXPIRE_TIME")
+        if self.crawl_expire_time:
+            self.crawl_expire_time = datetime.fromisoformat(self.crawl_expire_time)
 
         self.last_done = None
         self.last_found = None
@@ -145,11 +145,14 @@ class CrawlJob(ABC):
                 # check crawl status
                 await self.check_crawl_status()
 
-                if self.crawl_timeout and datetime.utcnow() > self.crawl_timeout:
+                if (
+                    self.crawl_expire_time
+                    and datetime.utcnow() > self.crawl_expire_time
+                ):
                     res = await self.graceful_shutdown()
                     if res.get("success"):
                         print(
-                            "Job duration expired at {self.crawl_timeout}, "
+                            "Job duration expired at {self.crawl_expire_time}, "
                             + "gracefully stopping crawl"
                         )
 
