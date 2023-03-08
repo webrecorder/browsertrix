@@ -19,4 +19,7 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v3
-        if: always()
+        if: failure()
+        with:
+          name: playwright-artifact
+          path: playwright/artifact
