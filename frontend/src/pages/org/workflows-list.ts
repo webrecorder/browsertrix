@@ -17,6 +17,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "../../utils/cron";
+import { isCrawler } from "../../utils/orgs";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
@@ -86,6 +87,11 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private filterByScheduled: boolean | null = null;
+
+  private get userRole() {
+    const org = this.userInfo.orgs.find(({ id }) => id === this.orgId);
+    return org!.role;
+  }
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -362,7 +368,9 @@ export class WorkflowsList extends LiteElement {
           ${name}
         </div>
 
-        ${this.renderCardMenu(crawlConfig)}
+        ${when(isCrawler(this.userRole), () =>
+          this.renderCardMenu(crawlConfig)
+        )}
       </header>
 
       <div class="px-3 pb-3 flex justify-between items-end text-0-800">
@@ -585,26 +593,36 @@ export class WorkflowsList extends LiteElement {
       return "";
     }
 
+    const crawlId = this.runningCrawlsMap[t.id];
+
+    if (crawlId) {
+      return html`
+        <button
+          class="text-xs border rounded px-2 h-7 bg-purple-50border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+          @click=${(e: any) => {
+            e.preventDefault();
+            this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}#watch`);
+          }}
+        >
+          <span class="whitespace-nowrap"> ${msg("Watch Crawl")} </span>
+        </button>
+      `;
+    }
+
+    if (!isCrawler(this.userRole)) {
+      return "";
+    }
+
     return html`
       <div>
         <button
-          class="text-xs border rounded px-2 h-7 ${this.runningCrawlsMap[t.id]
-            ? "bg-purple-50"
-            : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+          class="text-xs border rounded px-2 h-7 bg-whiteborder-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
           @click=${(e: any) => {
             e.preventDefault();
-            this.runningCrawlsMap[t.id]
-              ? this.navTo(
-                  `/orgs/${this.orgId}/crawls/crawl/${
-                    this.runningCrawlsMap[t.id]
-                  }#watch`
-                )
-              : this.runNow(t);
+            this.runNow(t);
           }}
         >
-          <span class="whitespace-nowrap">
-            ${this.runningCrawlsMap[t.id] ? msg("Watch crawl") : msg("Run now")}
-          </span>
+          <span class="whitespace-nowrap"> ${msg("Run Now")} </span>
         </button>
       </div>
     `;
