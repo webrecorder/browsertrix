@@ -17,11 +17,9 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "../../utils/cron";
-import { isCrawler } from "../../utils/orgs";
 import "../../components/crawl-scheduler";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
-import type { CurrentUser } from "../../types/user";
 
 type RunningCrawlsMap = {
   /** Map of configId: crawlId */
@@ -52,8 +50,11 @@ export class WorkflowsList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Object })
-  userInfo!: CurrentUser;
+  @property({ type: String })
+  userId!: string;
+
+  @property({ type: Boolean })
+  isCrawler!: boolean;
 
   @state()
   crawlConfigs?: Workflow[];
@@ -87,11 +88,6 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private filterByScheduled: boolean | null = null;
-
-  private get userRole() {
-    const org = this.userInfo.orgs.find(({ id }) => id === this.orgId);
-    return org!.role;
-  }
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -368,9 +364,7 @@ export class WorkflowsList extends LiteElement {
           ${name}
         </div>
 
-        ${when(isCrawler(this.userRole), () =>
-          this.renderCardMenu(crawlConfig)
-        )}
+        ${when(this.isCrawler, () => this.renderCardMenu(crawlConfig))}
       </header>
 
       <div class="px-3 pb-3 flex justify-between items-end text-0-800">
@@ -609,7 +603,7 @@ export class WorkflowsList extends LiteElement {
       `;
     }
 
-    if (!isCrawler(this.userRole)) {
+    if (!this.isCrawler) {
       return "";
     }
 
@@ -665,9 +659,7 @@ export class WorkflowsList extends LiteElement {
    * associated with the Workflows
    **/
   private async getWorkflows(): Promise<Workflow[]> {
-    const params = this.filterByCurrentUser
-      ? `?userid=${this.userInfo.id}`
-      : "";
+    const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs${params}`,

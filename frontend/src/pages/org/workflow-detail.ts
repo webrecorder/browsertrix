@@ -23,13 +23,16 @@ export class WorkflowDetail extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
-  crawlConfigId!: string;
+  workflowId!: string;
 
   @property({ type: Boolean })
   isEditing: boolean = false;
 
+  @property({ type: Boolean })
+  isCrawler!: boolean;
+
   @state()
-  private crawlConfig?: Workflow;
+  private workflow?: Workflow;
 
   @state()
   private lastCrawl?: Crawl;
@@ -45,7 +48,7 @@ export class WorkflowDetail extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (
-      (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
+      (changedProperties.has("workflowId") && this.workflowId) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       this.initWorkflow();
@@ -56,7 +59,7 @@ export class WorkflowDetail extends LiteElement {
     if (
       (changedProperties.has("crawlConfig") &&
         !changedProperties.get("crawlConfig") &&
-        this.crawlConfig &&
+        this.workflow &&
         window.location.hash) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
@@ -67,10 +70,10 @@ export class WorkflowDetail extends LiteElement {
 
   private async initWorkflow() {
     try {
-      const crawlConfig = await this.getWorkflow(this.crawlConfigId);
-      this.crawlConfig = crawlConfig;
-      if (this.crawlConfig.lastCrawlId)
-        this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
+      const crawlConfig = await this.getWorkflow(this.workflowId);
+      this.workflow = crawlConfig;
+      if (this.workflow.lastCrawlId)
+        this.lastCrawl = await this.getCrawl(this.workflow.lastCrawlId);
     } catch (e: any) {
       this.notify({
         message:
@@ -84,10 +87,10 @@ export class WorkflowDetail extends LiteElement {
   }
 
   render() {
-    if (this.isEditing) {
+    if (this.isEditing && this.isCrawler) {
       return html`
         <div class="grid grid-cols-1 gap-7">
-          ${when(this.crawlConfig, this.renderEditor)}
+          ${when(this.workflow, this.renderEditor)}
         </div>
       `;
     }
@@ -103,7 +106,7 @@ export class WorkflowDetail extends LiteElement {
               >${this.renderName()}</span
             >
             ${when(
-              this.crawlConfig?.inactive,
+              this.workflow?.inactive,
               () => html`
                 <btrix-badge class="inline-block align-middle" variant="warning"
                   >${msg("Inactive")}</btrix-badge
@@ -113,23 +116,23 @@ export class WorkflowDetail extends LiteElement {
           </h2>
           <div class="flex-0 flex justify-end">
             ${when(
-              this.crawlConfig && !this.crawlConfig.inactive,
+              this.isCrawler && this.workflow && !this.workflow.inactive,
               () => html`
                 <sl-tooltip
                   content=${msg(
                     "Workflow cannot be edited while crawl is running."
                   )}
-                  ?disabled=${!this.crawlConfig!.currCrawlId}
+                  ?disabled=${!this.workflow!.currCrawlId}
                 >
                   <sl-button
                     href=${`/orgs/${this.orgId}/workflows/config/${
-                      this.crawlConfig!.id
+                      this.workflow!.id
                     }?edit`}
                     variant="primary"
                     size="small"
                     class="mr-2"
                     @click=${this.navLink}
-                    ?disabled=${this.crawlConfig!.currCrawlId}
+                    ?disabled=${this.workflow!.currCrawlId}
                   >
                     <sl-icon slot="prefix" name="gear"></sl-icon>
                     ${msg("Edit Workflow")}
@@ -154,7 +157,7 @@ export class WorkflowDetail extends LiteElement {
           <h3 class="text-lg font-semibold mb-2">${msg("Crawl Settings")}</h3>
           <main class="border rounded-lg py-3 px-5">
             <btrix-config-details
-              .crawlConfig=${this.crawlConfig}
+              .crawlConfig=${this.workflow}
               anchorLinks
             ></btrix-config-details>
           </main>
@@ -188,27 +191,25 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderEditor = () => html`
-    ${this.renderHeader(this.crawlConfig!.id)}
+    ${this.renderHeader(this.workflow!.id)}
 
     <header>
       <h2 class="text-xl font-semibold leading-10">${this.renderName()}</h2>
     </header>
 
     <btrix-workflow-editor
-      .initialWorkflow=${this.crawlConfig}
-      jobType=${this.crawlConfig!.jobType}
-      configId=${this.crawlConfig!.id}
+      .initialWorkflow=${this.workflow}
+      jobType=${this.workflow!.jobType}
+      configId=${this.workflow!.id}
       orgId=${this.orgId}
       .authState=${this.authState}
       @reset=${(e: Event) =>
-        this.navTo(
-          `/orgs/${this.orgId}/workflows/config/${this.crawlConfig!.id}`
-        )}
+        this.navTo(`/orgs/${this.orgId}/workflows/config/${this.workflow!.id}`)}
     ></btrix-workflow-editor>
   `;
 
   private renderMenu() {
-    if (!this.crawlConfig) return;
+    if (!this.workflow) return;
 
     const closeDropdown = (e: any) => {
       e.target.closest("sl-dropdown").hide();
@@ -232,7 +233,7 @@ export class WorkflowDetail extends LiteElement {
       `,
     ];
 
-    if (!this.crawlConfig.inactive && !this.crawlConfig.currCrawlId) {
+    if (!this.workflow.inactive && !this.workflow.currCrawlId) {
       menuItems.unshift(html`
         <li
           class="p-2 hover:bg-purple-50 cursor-pointer text-purple-600"
@@ -253,9 +254,9 @@ export class WorkflowDetail extends LiteElement {
     }
 
     if (
-      this.crawlConfig.crawlCount &&
-      !this.crawlConfig.inactive &&
-      !this.crawlConfig.currCrawlId
+      this.workflow.crawlCount &&
+      !this.workflow.inactive &&
+      !this.workflow.currCrawlId
     ) {
       menuItems.push(html`
         <li
@@ -278,7 +279,7 @@ export class WorkflowDetail extends LiteElement {
       `);
     }
 
-    if (!this.crawlConfig.crawlCount && !this.crawlConfig.currCrawlId) {
+    if (!this.workflow.crawlCount && !this.workflow.currCrawlId) {
       menuItems.push(html`
         <li
           class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
@@ -313,11 +314,11 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderCurrentlyRunningNotice() {
-    if (this.crawlConfig?.currCrawlId) {
+    if (this.workflow?.currCrawlId) {
       return html`
         <a
           class="col-span-1 flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
-          href=${`/orgs/${this.orgId}/crawls/crawl/${this.crawlConfig.currCrawlId}`}
+          href=${`/orgs/${this.orgId}/crawls/crawl/${this.workflow.currCrawlId}`}
           @click=${this.navLink}
         >
           <span>${msg("View currently running crawl")}</span>
@@ -330,19 +331,19 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderDetails() {
-    if (!this.crawlConfig) return;
+    if (!this.workflow) return;
 
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(
           msg("Crawl Count"),
-          () => this.crawlConfig!.crawlCount
+          () => this.workflow!.crawlCount
         )}
         ${this.renderDetailItem(msg("Next Run"), () =>
-          this.crawlConfig!.schedule
+          this.workflow!.schedule
             ? html`
                 <div>
-                  ${humanizeNextDate(this.crawlConfig!.schedule, {
+                  ${humanizeNextDate(this.workflow!.schedule, {
                     length: "short",
                   })}
                 </div>
@@ -353,13 +354,13 @@ export class WorkflowDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Created By"),
-          () => this.crawlConfig!.createdByName
+          () => this.workflow!.createdByName
         )}
         ${this.renderDetailItem(
           msg("Created At"),
           () => html`
             <sl-format-date
-              date=${this.crawlConfig!.created}
+              date=${this.workflow!.created}
               month="2-digit"
               day="2-digit"
               year="numeric"
@@ -374,11 +375,11 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderLastCrawl() {
-    if (!this.crawlConfig?.lastCrawlId) return;
+    if (!this.workflow?.lastCrawlId) return;
     return html`
       <section class="col-span-1">
         <h3 class="text-lg font-semibold mb-2">
-          ${this.crawlConfig.currCrawlId
+          ${this.workflow.currCrawlId
             ? msg("Last Completed Crawl")
             : msg("Latest Crawl")}
         </h3>
@@ -410,7 +411,7 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <btrix-desc-list-item class="py-1" label=${label}>
         ${when(
-          this.crawlConfig,
+          this.workflow,
           renderContent,
           () => html`<sl-skeleton class="w-full"></sl-skeleton>`
         )}
@@ -422,9 +423,9 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
   private renderName() {
-    if (!this.crawlConfig) return "";
-    if (this.crawlConfig.name) return this.crawlConfig.name;
-    const { config } = this.crawlConfig;
+    if (!this.workflow) return "";
+    if (this.workflow.name) return this.workflow.name;
+    const { config } = this.workflow;
     const firstSeed = config.seeds[0];
     let firstSeedURL =
       typeof firstSeed === "string" ? firstSeed : firstSeed.url;
@@ -466,16 +467,16 @@ export class WorkflowDetail extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig() {
-    if (!this.crawlConfig) return;
+    if (!this.workflow) return;
 
     const workflow: InitialCrawlConfig = {
       name: msg(str`${this.renderName()} Copy`),
-      config: this.crawlConfig.config,
-      profileid: this.crawlConfig.profileid || null,
-      jobType: this.crawlConfig.jobType,
-      schedule: this.crawlConfig.schedule,
-      tags: this.crawlConfig.tags,
-      crawlTimeout: this.crawlConfig.crawlTimeout,
+      config: this.workflow.config,
+      profileid: this.workflow.profileid || null,
+      jobType: this.workflow.jobType,
+      schedule: this.workflow.schedule,
+      tags: this.workflow.tags,
+      crawlTimeout: this.workflow.crawlTimeout,
     };
 
     this.navTo(
@@ -493,19 +494,19 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async deactivateTemplate(): Promise<void> {
-    if (!this.crawlConfig) return;
+    if (!this.workflow) return;
 
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${this.crawlConfig.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
         }
       );
 
-      this.crawlConfig = {
-        ...this.crawlConfig,
+      this.workflow = {
+        ...this.workflow,
         inactive: true,
       };
 
@@ -524,13 +525,13 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async deleteTemplate(): Promise<void> {
-    if (!this.crawlConfig) return;
+    if (!this.workflow) return;
 
-    const isDeactivating = this.crawlConfig.crawlCount > 0;
+    const isDeactivating = this.workflow.crawlCount > 0;
 
     try {
       await this.apiFetch(
-        `/orgs${this.orgId}/crawlconfigs/${this.crawlConfig.id}`,
+        `/orgs${this.orgId}/crawlconfigs/${this.workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -560,7 +561,7 @@ export class WorkflowDetail extends LiteElement {
   private async runNow(): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${this.crawlConfig!.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
         this.authState!,
         {
           method: "POST",
@@ -569,8 +570,8 @@ export class WorkflowDetail extends LiteElement {
 
       const crawlId = data.started;
 
-      this.crawlConfig = {
-        ...this.crawlConfig,
+      this.workflow = {
+        ...this.workflow,
         currCrawlId: crawlId,
       } as Workflow;
 

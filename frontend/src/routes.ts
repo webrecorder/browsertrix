@@ -14,7 +14,7 @@ export const ROUTES = {
     "/orgs/:orgId/:orgTab",
     // Optional segments:
     "(/crawl/:crawlId)",
-    "(/config/:crawlConfigId)",
+    "(/config/:workflowId)",
     "(/profile(/:browserProfileId)(/browser/:browserId))",
     "(/members)",
   ].join(""),

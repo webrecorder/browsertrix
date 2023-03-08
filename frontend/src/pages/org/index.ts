@@ -29,7 +29,7 @@ export type OrgTab = "crawls" | "workflows" | "browser-profiles" | "settings";
 
 type Params = {
   crawlId?: string;
-  crawlConfigId?: string;
+  workflowId?: string;
   browserProfileId?: string;
   browserId?: string;
 };
@@ -222,14 +222,15 @@ export class Org extends LiteElement {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
-    if (this.params.crawlConfigId) {
+    if (this.params.workflowId) {
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
-          .orgId=${this.orgId!}
-          .crawlConfigId=${this.params.crawlConfigId}
-          .isEditing=${isEditing}
+          orgId=${this.orgId!}
+          workflowId=${this.params.workflowId}
+          ?isEditing=${isEditing}
+          ?isCrawler=${this.isCrawler}
         ></btrix-workflow-detail>
       `;
     }
@@ -240,15 +241,17 @@ export class Org extends LiteElement {
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
-        .orgId=${this.orgId!}
+        orgId=${this.orgId!}
+        ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
       ></btrix-workflows-new>`;
     }
 
     return html`<btrix-workflows-list
       .authState=${this.authState!}
-      .orgId=${this.orgId!}
-      .userInfo=${this.userInfo}
+      orgId=${this.orgId!}
+      userId=${this.userInfo!.id}
+      ?isCrawler=${this.isCrawler}
     ></btrix-workflows-list>`;
   }
 
