@@ -118,7 +118,7 @@ export class Org extends LiteElement {
         tabPanelContent = this.renderCrawls();
         break;
       case "workflows":
-        tabPanelContent = this.renderCrawlTemplates();
+        tabPanelContent = this.renderWorkflows();
         break;
       case "browser-profiles":
         tabPanelContent = this.renderBrowserProfiles();
@@ -218,7 +218,7 @@ export class Org extends LiteElement {
     ></btrix-crawls-list>`;
   }
 
-  private renderCrawlTemplates() {
+  private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
@@ -235,13 +235,13 @@ export class Org extends LiteElement {
     }
 
     if (isNewResourceTab) {
-      const crawlTemplate = this.viewStateData?.crawlTemplate;
+      const workflow = this.viewStateData?.workflow;
 
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
         .orgId=${this.orgId!}
-        .initialCrawlTemplate=${crawlTemplate}
+        .initialWorkflow=${workflow}
       ></btrix-workflows-new>`;
     }
 

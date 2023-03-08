@@ -8,7 +8,7 @@ import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, CrawlConfig } from "./types";
+import type { Crawl, Workflow } from "./types";
 
 const SECTIONS = [
   "overview",

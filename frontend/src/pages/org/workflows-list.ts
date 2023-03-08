@@ -11,7 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig, InitialCrawlConfig } from "./types";
+import type { Workflow, InitialCrawlConfig } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -43,7 +43,7 @@ const sortableFieldLabels = {
  * ```
  */
 @localized()
-export class CrawlTemplatesList extends LiteElement {
+export class WorkflowsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -54,7 +54,7 @@ export class CrawlTemplatesList extends LiteElement {
   userId!: string;
 
   @state()
-  crawlConfigs?: CrawlConfig[];
+  crawlConfigs?: Workflow[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -63,7 +63,7 @@ export class CrawlTemplatesList extends LiteElement {
   showEditDialog?: boolean = false;
 
   @state()
-  selectedTemplateForEdit?: CrawlConfig;
+  selectedTemplateForEdit?: Workflow;
 
   @state()
   fetchErrorStatusCode?: number;
@@ -105,7 +105,7 @@ export class CrawlTemplatesList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      this.crawlConfigs = await this.fetchCrawlConfigs();
+      this.crawlConfigs = await this.fetchWorkflows();
 
       // Update search/filter collection
       this.fuse.setCollection(this.crawlConfigs as any);
@@ -118,10 +118,10 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async fetchCrawlConfigs() {
+  private async fetchWorkflows() {
     this.fetchErrorStatusCode = undefined;
     try {
-      return await this.getCrawlTemplates();
+      return await this.getWorkflows();
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;
@@ -351,7 +351,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderTemplateItem(crawlConfig: CrawlConfig) {
+  private renderTemplateItem(crawlConfig: Workflow) {
     const name = this.renderName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
@@ -482,7 +482,7 @@ export class CrawlTemplatesList extends LiteElement {
     </a>`;
   }
 
-  private renderCardMenu(t: CrawlConfig) {
+  private renderCardMenu(t: Workflow) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -585,7 +585,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderCardFooter(t: CrawlConfig) {
+  private renderCardFooter(t: Workflow) {
     if (t.inactive) {
       return "";
     }
@@ -615,7 +615,7 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderName(crawlConfig: CrawlConfig) {
+  private renderName(crawlConfig: Workflow) {
     if (crawlConfig.name) return crawlConfig.name;
     const { config } = crawlConfig;
     const firstSeed = config.seeds[0];
@@ -651,7 +651,7 @@ export class CrawlTemplatesList extends LiteElement {
    * Fetch Workflows and record running crawls
    * associated with the Workflows
    **/
-  private async getCrawlTemplates(): Promise<CrawlConfig[]> {
+  private async getWorkflows(): Promise<Workflow[]> {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
@@ -676,8 +676,8 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawlConfig: CrawlConfig) {
-    const crawlTemplate: InitialCrawlConfig = {
+  private async duplicateConfig(crawlConfig: Workflow) {
+    const workflow: InitialCrawlConfig = {
       name: msg(str`${this.renderName(crawlConfig)} Copy`),
       config: crawlConfig.config,
       profileid: crawlConfig.profileid || null,
@@ -688,9 +688,9 @@ export class CrawlTemplatesList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${workflow.jobType}`,
       {
-        crawlTemplate,
+        workflow,
       }
     );
 
@@ -701,7 +701,7 @@ export class CrawlTemplatesList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(crawlConfig: CrawlConfig): Promise<void> {
+  private async deactivateTemplate(crawlConfig: Workflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
@@ -731,7 +731,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(crawlConfig: CrawlConfig): Promise<void> {
+  private async deleteTemplate(crawlConfig: Workflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
@@ -761,7 +761,7 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async runNow(crawlConfig: CrawlConfig): Promise<void> {
+  private async runNow(crawlConfig: Workflow): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
@@ -863,4 +863,4 @@ export class CrawlTemplatesList extends LiteElement {
   }
 }
 
-customElements.define("btrix-workflows-list", CrawlTemplatesList);
+customElements.define("btrix-workflows-list", WorkflowsList);

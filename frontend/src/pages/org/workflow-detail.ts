@@ -5,7 +5,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlConfig, InitialCrawlConfig, JobType } from "./types";
+import type { Crawl, Workflow, InitialCrawlConfig, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 
 /**
@@ -15,7 +15,7 @@ import { humanizeNextDate } from "../../utils/cron";
  * ```
  */
 @localized()
-export class CrawlTemplatesDetail extends LiteElement {
+export class WorkflowDetail extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -29,7 +29,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   isEditing: boolean = false;
 
   @state()
-  private crawlConfig?: CrawlConfig;
+  private crawlConfig?: Workflow;
 
   @state()
   private lastCrawl?: Crawl;
@@ -48,7 +48,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       (changedProperties.has("crawlConfigId") && this.crawlConfigId) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
-      this.initializeCrawlTemplate();
+      this.initWorkflow();
     }
   }
 
@@ -65,9 +65,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     }
   }
 
-  private async initializeCrawlTemplate() {
+  private async initWorkflow() {
     try {
-      const crawlConfig = await this.getCrawlTemplate(this.crawlConfigId);
+      const crawlConfig = await this.getWorkflow(this.crawlConfigId);
       this.crawlConfig = crawlConfig;
       if (this.crawlConfig.lastCrawlId)
         this.lastCrawl = await this.getCrawl(this.crawlConfig.lastCrawlId);
@@ -195,7 +195,7 @@ export class CrawlTemplatesDetail extends LiteElement {
     </header>
 
     <btrix-workflow-editor
-      .initialCrawlConfig=${this.crawlConfig}
+      .initialWorkflow=${this.crawlConfig}
       jobType=${this.crawlConfig!.jobType}
       configId=${this.crawlConfig!.id}
       orgId=${this.orgId}
@@ -444,8 +444,8 @@ export class CrawlTemplatesDetail extends LiteElement {
     );
   }
 
-  private async getCrawlTemplate(configId: string): Promise<CrawlConfig> {
-    const data: CrawlConfig = await this.apiFetch(
+  private async getWorkflow(configId: string): Promise<Workflow> {
+    const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${configId}`,
       this.authState!
     );
@@ -468,7 +468,7 @@ export class CrawlTemplatesDetail extends LiteElement {
   private async duplicateConfig() {
     if (!this.crawlConfig) return;
 
-    const crawlTemplate: InitialCrawlConfig = {
+    const workflow: InitialCrawlConfig = {
       name: msg(str`${this.renderName()} Copy`),
       config: this.crawlConfig.config,
       profileid: this.crawlConfig.profileid || null,
@@ -479,9 +479,9 @@ export class CrawlTemplatesDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${workflow.jobType}`,
       {
-        crawlTemplate,
+        workflow: workflow,
       }
     );
 
@@ -572,7 +572,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       this.crawlConfig = {
         ...this.crawlConfig,
         currCrawlId: crawlId,
-      } as CrawlConfig;
+      } as Workflow;
 
       this.notify({
         message: msg(
@@ -599,4 +599,4 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 }
 
-customElements.define("btrix-workflow-detail", CrawlTemplatesDetail);
+customElements.define("btrix-workflow-detail", WorkflowDetail);

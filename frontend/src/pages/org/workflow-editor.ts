@@ -207,7 +207,7 @@ export class CrawlConfigEditor extends LiteElement {
   jobType?: JobType;
 
   @property({ type: Object })
-  initialCrawlConfig?: InitialCrawlConfig;
+  initialWorkflow?: InitialCrawlConfig;
 
   @state()
   private tagOptions: string[] = [];
@@ -306,10 +306,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (changedProperties.has("authState") && this.authState) {
       this.fetchAPIDefaults();
     }
-    if (
-      changedProperties.get("initialCrawlConfig") &&
-      this.initialCrawlConfig
-    ) {
+    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
       this.initializeEditor();
     }
     if (changedProperties.get("progressState") && this.progressState) {
@@ -388,12 +385,12 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private getInitialFormState(): Partial<FormState> {
-    if (!this.initialCrawlConfig) return {};
+    if (!this.initialWorkflow) return {};
     const formState: Partial<FormState> = {};
-    const seedsConfig = this.initialCrawlConfig.config;
+    const seedsConfig = this.initialWorkflow.config;
     const { seeds } = seedsConfig;
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    if (this.initialCrawlConfig.jobType === "seed-crawl") {
+    if (this.initialWorkflow.jobType === "seed-crawl") {
       if (typeof seeds[0] === "string") {
         formState.primarySeedUrl = seeds[0];
       } else {
@@ -419,17 +416,17 @@ export class CrawlConfigEditor extends LiteElement {
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
-      if (this.initialCrawlConfig.jobType === "custom") {
+      if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
       }
     }
 
-    if (this.initialCrawlConfig.schedule) {
+    if (this.initialWorkflow.schedule) {
       formState.scheduleType = "cron";
       formState.scheduleFrequency = getScheduleInterval(
-        this.initialCrawlConfig.schedule
+        this.initialWorkflow.schedule
       );
-      const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
+      const nextDate = getNextDate(this.initialWorkflow.schedule)!;
       formState.scheduleDayOfMonth = nextDate.getDate();
       formState.scheduleDayOfWeek = nextDate.getDay();
       const hours = nextDate.getHours();
@@ -446,20 +443,20 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
 
-    if (this.initialCrawlConfig.tags?.length) {
-      formState.tags = this.initialCrawlConfig.tags;
+    if (this.initialWorkflow.tags?.length) {
+      formState.tags = this.initialWorkflow.tags;
     }
-    if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
-      formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    if (typeof this.initialWorkflow.crawlTimeout === "number") {
+      formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
     }
     if (typeof seedsConfig.behaviorTimeout === "number") {
       formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
-      jobName: this.initialCrawlConfig.name || "",
-      browserProfile: this.initialCrawlConfig.profileid
-        ? ({ id: this.initialCrawlConfig.profileid } as Profile)
+      jobName: this.initialWorkflow.name || "",
+      browserProfile: this.initialWorkflow.profileid
+        ? ({ id: this.initialWorkflow.profileid } as Profile)
         : undefined,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,

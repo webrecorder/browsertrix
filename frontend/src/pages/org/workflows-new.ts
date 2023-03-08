@@ -31,7 +31,7 @@ const defaultValue = {
  * ```
  */
 @localized()
-export class CrawlTemplatesNew extends LiteElement {
+export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -41,12 +41,12 @@ export class CrawlTemplatesNew extends LiteElement {
   // Use custom property accessor to prevent
   // overriding default Workflow values
   @property({ type: Object })
-  get initialCrawlTemplate(): InitialCrawlConfig {
-    return this._initialCrawlTemplate;
+  get initialWorkflow(): InitialCrawlConfig {
+    return this._initialWorkflow;
   }
-  private _initialCrawlTemplate: InitialCrawlConfig = defaultValue;
-  set initialCrawlTemplate(val: Partial<InitialCrawlConfig>) {
-    this._initialCrawlTemplate = mergeDeep(this._initialCrawlTemplate, val);
+  private _initialWorkflow: InitialCrawlConfig = defaultValue;
+  set initialWorkflow(val: Partial<InitialCrawlConfig>) {
+    this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
 
   @state()
@@ -65,7 +65,7 @@ export class CrawlTemplatesNew extends LiteElement {
     let label = msg("Back to Workflows");
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
-    if (this.jobType && !this.initialCrawlTemplate.jobType) {
+    if (this.jobType && !this.initialWorkflow.jobType) {
       href = `/orgs/${this.orgId}/workflows?new`;
       label = msg("Choose Crawl Type");
     }
@@ -96,7 +96,7 @@ export class CrawlTemplatesNew extends LiteElement {
       custom: msg("Custom"),
     };
 
-    const jobType = this.initialCrawlTemplate.jobType || this.jobType;
+    const jobType = this.initialWorkflow.jobType || this.jobType;
 
     if (jobType) {
       return html`
@@ -105,7 +105,7 @@ export class CrawlTemplatesNew extends LiteElement {
           ${msg(html`New Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
-          .initialCrawlConfig=${this.initialCrawlTemplate}
+          .initialWorkflow=${this.initialWorkflow}
           jobType=${jobType}
           orgId=${this.orgId}
           .authState=${this.authState}
@@ -182,4 +182,4 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 }
 
-customElements.define("btrix-workflows-new", CrawlTemplatesNew);
+customElements.define("btrix-workflows-new", WorkflowsNew);

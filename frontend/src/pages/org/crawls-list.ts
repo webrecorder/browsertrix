@@ -18,12 +18,7 @@ import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type {
-  Crawl,
-  CrawlState,
-  CrawlConfig,
-  InitialCrawlConfig,
-} from "./types";
+import type { Crawl, CrawlState, Workflow, InitialCrawlConfig } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 
 type CrawlSearchResult = {
@@ -577,16 +572,16 @@ export class CrawlsList extends LiteElement {
 
   private async runNow(crawl: Crawl) {
     // Get Workflow to check if crawl is already running
-    const crawlTemplate = await this.getCrawlTemplate(crawl);
+    const workflow = await this.getWorkflow(crawl);
 
-    if (crawlTemplate?.currCrawlId) {
+    if (workflow?.currCrawlId) {
       this.notify({
         message: msg(
           html`Crawl of <strong>${crawl.name}</strong> is already running.
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${crawl.oid}/crawls/crawl/${crawlTemplate.currCrawlId}"
+              href="/orgs/${crawl.oid}/crawls/crawl/${workflow.currCrawlId}"
               @click=${this.navLink.bind(this)}
               >View crawl</a
             >`
@@ -634,7 +629,7 @@ export class CrawlsList extends LiteElement {
               <br />
               <button
                 class="underline hover:no-underline"
-                @click="${() => this.duplicateConfig(crawl, crawlTemplate)}"
+                @click="${() => this.duplicateConfig(crawl, workflow)}"
               >
                 Duplicate Workflow
               </button>`
@@ -692,8 +687,8 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  async getCrawlTemplate(crawl: Crawl): Promise<CrawlConfig> {
-    const data: CrawlConfig = await this.apiFetch(
+  async getWorkflow(crawl: Crawl): Promise<Workflow> {
+    const data: Workflow = await this.apiFetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
       this.authState!
     );
@@ -704,8 +699,8 @@ export class CrawlsList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawl: Crawl, template: CrawlConfig) {
-    const crawlTemplate: InitialCrawlConfig = {
+  private async duplicateConfig(crawl: Crawl, template: Workflow) {
+    const workflow: InitialCrawlConfig = {
       name: msg(str`${template.name} Copy`),
       config: template.config,
       profileid: template.profileid || null,
@@ -715,12 +710,9 @@ export class CrawlsList extends LiteElement {
       crawlTimeout: template.crawlTimeout,
     };
 
-    this.navTo(
-      `/orgs/${crawl.oid}/workflows?new&jobType=${crawlTemplate.jobType}`,
-      {
-        crawlTemplate,
-      }
-    );
+    this.navTo(`/orgs/${crawl.oid}/workflows?new&jobType=${workflow.jobType}`, {
+      workflow,
+    });
 
     this.notify({
       message: msg(str`Copied Workflowuration to new template.`),

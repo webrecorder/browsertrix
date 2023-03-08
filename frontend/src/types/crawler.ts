@@ -40,25 +40,25 @@ export type CrawlConfigParams = {
   crawlTimeout: number | null;
 };
 
-export type CrawlConfigCore = CrawlConfigParams & {
+export type CrawlConfig = CrawlConfigParams & {
   oid: string;
   profileName: string | null;
 };
 
 export type InitialCrawlConfig = Pick<
-  CrawlConfigCore,
+  CrawlConfig,
   "name" | "profileid" | "schedule" | "tags" | "crawlTimeout"
 > & {
   jobType?: JobType;
   config: Pick<
-    CrawlConfigCore["config"],
+    CrawlConfig["config"],
     "seeds" | "scopeType" | "exclude" | "behaviorTimeout"
   > & {
-    extraHops?: CrawlConfigCore["config"]["extraHops"];
+    extraHops?: CrawlConfig["config"]["extraHops"];
   };
 };
 
-export type CrawlConfig = CrawlConfigCore & {
+export type Workflow = CrawlConfig & {
   id: string;
   createdBy: string; // User ID
   createdByName: string | null; // User full name
@@ -97,7 +97,7 @@ export type CrawlState =
   | "stopping"
   | "canceled";
 
-export type Crawl = CrawlConfigCore & {
+export type Crawl = CrawlConfig & {
   id: string;
   userid: string;
   userName: string;
