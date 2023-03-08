@@ -123,7 +123,7 @@ class BaseCrawlManager(ABC):
 
         return await self._create_manual_job(crawlconfig)
 
-    async def update_crawl_config(self, crawlconfig, update):
+    async def update_crawl_config(self, crawlconfig, update, profile_filename=None):
         """Update the schedule or scale for existing crawl config"""
 
         has_sched_update = update.schedule is not None
@@ -133,8 +133,10 @@ class BaseCrawlManager(ABC):
         if has_sched_update:
             await self._update_scheduled_job(crawlconfig)
 
-        if has_scale_update or has_config_update:
-            await self._update_config_map(crawlconfig, update.scale, has_config_update)
+        if has_scale_update or has_config_update or profile_filename:
+            await self._update_config_map(
+                crawlconfig, update.scale, profile_filename, has_config_update
+            )
 
         return True
 
@@ -194,7 +196,9 @@ class BaseCrawlManager(ABC):
 
         return self.templates.env.get_template("crawl_job.yaml").render(params)
 
-    async def _update_config_map(self, crawlconfig, scale=None, update_config=False):
+    async def _update_config_map(
+        self, crawlconfig, scale=None, profile_filename=None, update_config=False
+    ):
         """update initial scale and crawler config in config, if needed (k8s only)"""
 
     @abstractmethod

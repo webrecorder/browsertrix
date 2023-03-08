@@ -102,7 +102,7 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Optional[UUID4]
+    profileid: Optional[str]
 
     colls: Optional[List[str]] = []
     tags: Optional[List[str]] = []
@@ -205,11 +205,11 @@ class UpdateCrawlConfig(BaseModel):
 
     # metadata: not revision tracked
     name: Optional[str]
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str]]
 
     # crawl data: revision tracked
     schedule: Optional[str]
-    profileid: Optional[UUID4]
+    profileid: Optional[str]
     crawlTimeout: Optional[int]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     config: Optional[RawCrawlConfig]
@@ -268,6 +268,20 @@ class CrawlConfigOps:
         """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
 
+    async def _lookup_profile(self, profileid, org):
+        if profileid is None:
+            return None, None
+
+        if profileid == "":
+            return None, ""
+
+        profileid = uuid.UUID(profileid)
+        profile_filename = await self.profiles.get_profile_storage_path(profileid, org)
+        if not profile_filename:
+            raise HTTPException(status_code=400, detail="invalid_profile_id")
+
+        return profileid, profile_filename
+
     async def add_crawl_config(
         self,
         config: CrawlConfigIn,
@@ -283,13 +297,9 @@ class CrawlConfigOps:
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         data["modified"] = data["created"]
 
-        profile_filename = None
-        if config.profileid:
-            profile_filename = await self.profiles.get_profile_storage_path(
-                config.profileid, org
-            )
-            if not profile_filename:
-                raise HTTPException(status_code=400, detail="invalid_profile_id")
+        data["profileid"], profile_filename = await self._lookup_profile(
+            config.profileid, org
+        )
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
@@ -326,6 +336,16 @@ class CrawlConfigOps:
         add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
         await asyncio.gather(inc, add)
 
+    def check_attr_changed(
+        self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, attr_name: str
+    ):
+        """check if attribute is set and has changed. if not changed, clear it on the update"""
+        if getattr(update, attr_name) is not None:
+            if getattr(update, attr_name) != getattr(crawlconfig, attr_name):
+                return True
+
+        return False
+
     async def update_crawl_config(
         self, cid: uuid.UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ):
@@ -335,20 +355,37 @@ class CrawlConfigOps:
         if not orig_crawl_config:
             raise HTTPException(status_code=400, detail="config_not_found")
 
-        # set update query
-        query = update.dict(exclude_unset=True)
+        # indicates if any k8s crawl config settings changed
+        changed = False
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "config")
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "schedule")
+        )
+        changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
 
-        if len(query) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
-        is_crawl_update = (
-            update.schedule is not None
-            or update.scale is not None
-            or update.config is not None
-            or update.crawlTimeout is not None
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "profileid")
         )
 
-        if is_crawl_update or update.profileid:
+        metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
+        metadata_changed = metadata_changed or (
+            update.tags is not None
+            and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
+        )
+
+        if not changed and not metadata_changed:
+            return {
+                "success": True,
+                "settings_changed": changed,
+                "metadata_changed": metadata_changed,
+            }
+
+        if changed:
             orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
             orig_dict["cid"] = orig_dict.pop("id", cid)
             orig_dict["id"] = uuid.uuid4()
@@ -356,17 +393,14 @@ class CrawlConfigOps:
             last_rev = ConfigRevision(**orig_dict)
             last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
+        # set update query
+        query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
-        if update.profileid is not None:
-            # if empty string, set to none, remove profile association
-            if update.profileid == "":
-                update.profileid = None
-            else:
-                update.profileid = (
-                    await self.profiles.get_profile(update.profileid)
-                ).id
+        query["profileid"], profile_filename = await self._lookup_profile(
+            update.profileid, org
+        )
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -383,11 +417,13 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        # update schedule in crawl manager first
-        if is_crawl_update:
+        # update in crawl manager if config, schedule, scale or crawlTimeout changed
+        if changed:
             crawlconfig = CrawlConfig.from_dict(result)
             try:
-                await self.crawl_manager.update_crawl_config(crawlconfig, update)
+                await self.crawl_manager.update_crawl_config(
+                    crawlconfig, update, profile_filename
+                )
             except Exception as exc:
                 print(exc, flush=True)
                 # pylint: disable=raise-missing-from
@@ -395,7 +431,11 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
-        return {"success": True}
+        return {
+            "success": True,
+            "settings_changed": changed,
+            "metadata_changed": metadata_changed,
+        }
 
     async def get_crawl_configs(
         self,

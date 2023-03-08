@@ -22,6 +22,21 @@ def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_dat
     cid = data["added"]
 
 
+def test_update_name_only(crawler_auth_headers, default_org_id):
+    # update name only
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"name": "updated name 1"},
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["success"]
+    assert data["metadata_changed"] == True
+    assert data["settings_changed"] == False
+
+
 def test_update_crawl_config_name_and_tags(crawler_auth_headers, default_org_id):
     # Update crawl config
     r = requests.patch(
@@ -33,6 +48,8 @@ def test_update_crawl_config_name_and_tags(crawler_auth_headers, default_org_id)
 
     data = r.json()
     assert data["success"]
+    assert data["metadata_changed"] == True
+    assert data["settings_changed"] == False
 
 
 def test_verify_update(crawler_auth_headers, default_org_id):
@@ -67,6 +84,21 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     assert data["config"]["scopeType"] == "domain"
 
 
+def test_update_config_no_changes(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"config": {"seeds": ["https://example.com/"], "scopeType": "domain"}},
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["settings_changed"] == False
+    assert data["metadata_changed"] == False
+
+
 def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Verify that updating crawl timeout works
     r = requests.patch(
@@ -75,6 +107,10 @@ def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl
         json={"crawlTimeout": 60},
     )
     assert r.status_code == 200
+    data = r.json()
+
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
