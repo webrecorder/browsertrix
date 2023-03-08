@@ -46,7 +46,10 @@ export class CrawlDetail extends LiteElement {
   showOrgLink = false;
 
   @property({ type: String })
-  crawlId?: string;
+  crawlId!: string;
+
+  @property({ type: Boolean })
+  isCrawler!: boolean;
 
   @state()
   private crawl?: Crawl;
@@ -181,22 +184,27 @@ export class CrawlDetail extends LiteElement {
                 html`
                   <div class="flex items-center justify-between">
                     ${msg("Metadata")}
-                    <sl-tooltip
-                      content=${msg(
-                        "Metadata cannot be edited while crawl is running."
-                      )}
-                      ?disabled=${!this.isActive}
-                    >
-                      <sl-icon-button
-                        class=${`text-base${
-                          this.isActive ? " cursor-not-allowed" : ""
-                        }`}
-                        name="pencil"
-                        @click=${this.openMetadataEditor}
-                        aria-label=${msg("Edit Metadata")}
-                        ?disabled=${this.isActive}
-                      ></sl-icon-button>
-                    </sl-tooltip>
+                    ${when(
+                      this.isCrawler,
+                      () => html`
+                        <sl-tooltip
+                          content=${msg(
+                            "Metadata cannot be edited while crawl is running."
+                          )}
+                          ?disabled=${!this.isActive}
+                        >
+                          <sl-icon-button
+                            class=${`text-base${
+                              this.isActive ? " cursor-not-allowed" : ""
+                            }`}
+                            name="pencil"
+                            @click=${this.openMetadataEditor}
+                            aria-label=${msg("Edit Metadata")}
+                            ?disabled=${this.isActive}
+                          ></sl-icon-button>
+                        </sl-tooltip>
+                      `
+                    )}
                   </div>
                 `,
                 this.renderMetadata()
@@ -418,11 +426,7 @@ export class CrawlDetail extends LiteElement {
                 </sl-button-group>
               `
             : ""}
-          ${this.crawl
-            ? html` ${this.renderMenu()} `
-            : html`<sl-skeleton
-                style="width: 6em; height: 2em;"
-              ></sl-skeleton>`}
+          ${this.crawl && this.isCrawler ? this.renderMenu() : ""}
         </div>
       </header>
     `;
@@ -656,7 +660,7 @@ export class CrawlDetail extends LiteElement {
               <btrix-screencast
                 authToken=${authToken}
                 orgId=${this.crawl.oid}
-                crawlId=${this.crawlId!}
+                crawlId=${this.crawlId}
                 scale=${this.crawl.scale}
               ></btrix-screencast>
             </div>

@@ -79,6 +79,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   userId!: string;
 
+  @property({ type: Boolean })
+  isCrawler!: boolean;
+
   // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -401,74 +404,90 @@ export class CrawlsList extends LiteElement {
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
           ${when(
-            isActive(crawl),
-            // HACK shoelace doesn't current have a way to override non-hover
-            // color without resetting the --sl-color-neutral-700 variable
-            () => html`
-              <sl-menu-item @click=${() => this.stop(crawl)}>
-                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
-                ${msg("Stop Crawl")}
-              </sl-menu-item>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.cancel(crawl)}
-              >
-                <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-                ${msg("Cancel Immediately")}
-              </sl-menu-item>
-            `,
+            this.isCrawler,
+            this.renderCrawlerMenuItemsRenderer(crawl),
             () => html`
               <sl-menu-item
-                style="--sl-color-neutral-700: var(--success)"
-                @click=${() => this.runNow(crawl)}
+                @click=${() =>
+                  this.navTo(`/orgs/${crawl.oid}/crawls/crawl/${crawl.id}`)}
               >
-                <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-                ${msg("Re-Run Crawl")}
-              </sl-menu-item>
-              <sl-menu-item
-                @click=${() => {
-                  this.crawlToEdit = crawl;
-                  this.isEditingCrawl = true;
-                }}
-              >
-                <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Metadata")}
-              </sl-menu-item>
-            `
-          )}
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            @click=${() =>
-              this.navTo(`/orgs/${crawl.oid}/workflows/config/${crawl.cid}`)}
-          >
-            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-            ${msg("Go to Workflow")}
-          </sl-menu-item>
-          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
-            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-            ${msg("Copy Config ID")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
-          >
-            <sl-icon name="tags" slot="prefix"></sl-icon>
-            ${msg("Copy Tags")}
-          </sl-menu-item>
-          ${when(
-            !isActive(crawl),
-            () => html`
-              <sl-divider></sl-divider>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.deleteCrawl(crawl)}
-              >
-                <sl-icon name="trash" slot="prefix"></sl-icon>
-                ${msg("Delete Crawl")}
+                ${msg("View Crawl Details")}
               </sl-menu-item>
             `
           )}
         </sl-menu>
       </btrix-crawl-list-item>
+    `;
+
+  private renderCrawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+    html`
+      ${when(
+        isActive(crawl),
+        // HACK shoelace doesn't current have a way to override non-hover
+        // color without resetting the --sl-color-neutral-700 variable
+        () => html`
+          <sl-menu-item @click=${() => this.stop(crawl)}>
+            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            ${msg("Stop Crawl")}
+          </sl-menu-item>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => this.cancel(crawl)}
+          >
+            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
+            ${msg("Cancel Immediately")}
+          </sl-menu-item>
+        `,
+        () => html`
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--success)"
+            @click=${() => this.runNow(crawl)}
+          >
+            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+            ${msg("Re-Run Crawl")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => {
+              this.crawlToEdit = crawl;
+              this.isEditingCrawl = true;
+            }}
+          >
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+        `
+      )}
+      <sl-divider></sl-divider>
+      <sl-menu-item
+        @click=${() =>
+          this.navTo(`/orgs/${crawl.oid}/workflows/config/${crawl.cid}`)}
+      >
+        <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+        ${msg("Go to Workflow")}
+      </sl-menu-item>
+      <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
+        <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+        ${msg("Copy Config ID")}
+      </sl-menu-item>
+      <sl-menu-item
+        @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
+      >
+        <sl-icon name="tags" slot="prefix"></sl-icon>
+        ${msg("Copy Tags")}
+      </sl-menu-item>
+      ${when(
+        !isActive(crawl),
+        () => html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => this.deleteCrawl(crawl)}
+          >
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${msg("Delete Crawl")}
+          </sl-menu-item>
+        `
+      )}
     `;
 
   private renderStatusMenuItem = (state: CrawlState) => {

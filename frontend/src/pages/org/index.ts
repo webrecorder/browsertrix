@@ -207,12 +207,14 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         crawlId=${this.params.crawlId}
         crawlsBaseUrl=${crawlsBaseUrl}
+        ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
+      ?isCrawler=${this.isCrawler}
       crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.orgTab === "crawls"}
     ></btrix-crawls-list>`;
