@@ -1889,7 +1889,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       jobType: this.jobType || "custom",
       name: this.formState.jobName || "",
       scale: this.formState.scale,
-      profileid: this.formState.browserProfile?.id || null,
+      profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
@@ -1904,8 +1904,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           (this.formState.pageTimeoutMinutes ??
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
-        limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        lang: this.formState.lang || null,
+        limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
+        lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
       },
