@@ -39,8 +39,13 @@ def test_stream_crawl_logs_running(
         assert r.status_code == 200
 
         line_index = 0
+
+        # Wait for stream content
         if not r.content:
-            time.sleep(5)
+            while True:
+                if r.content:
+                    break
+                time.sleep(5)
 
         for line in r.iter_lines():
             if line_index >= LINES_TO_TEST:
@@ -100,6 +105,14 @@ def test_stream_crawl_logs_wacz(
 
         last_timestamp = None
         line_index = 0
+
+        # Wait for stream content
+        if not r.content:
+            while True:
+                if r.content:
+                    break
+                time.sleep(5)
+
         for line in r.iter_lines():
             if line_index >= LINES_TO_TEST:
                 r.close()
