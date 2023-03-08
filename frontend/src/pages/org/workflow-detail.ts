@@ -11,7 +11,7 @@ import { humanizeNextDate } from "../../utils/cron";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-configs-detail></btrix-crawl-configs-detail>
+ * <btrix-workflow-detail></btrix-workflow-detail>
  * ```
  */
 @localized()
@@ -194,7 +194,7 @@ export class CrawlTemplatesDetail extends LiteElement {
       <h2 class="text-xl leading-10">${this.renderName()}</h2>
     </header>
 
-    <btrix-crawl-config-editor
+    <btrix-workflow-editor
       .initialCrawlConfig=${this.crawlConfig}
       jobType=${this.crawlConfig!.jobType}
       configId=${this.crawlConfig!.id}
@@ -204,7 +204,7 @@ export class CrawlTemplatesDetail extends LiteElement {
         this.navTo(
           `/orgs/${this.orgId}/crawl-configs/config/${this.crawlConfig!.id}`
         )}
-    ></btrix-crawl-config-editor>
+    ></btrix-workflow-editor>
   `;
 
   private renderMenu() {
@@ -599,4 +599,4 @@ export class CrawlTemplatesDetail extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-configs-detail", CrawlTemplatesDetail);
+customElements.define("btrix-workflow-detail", CrawlTemplatesDetail);

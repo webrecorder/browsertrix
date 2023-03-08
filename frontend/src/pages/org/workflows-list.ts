@@ -39,7 +39,7 @@ const sortableFieldLabels = {
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-configs-list></btrix-crawl-configs-list>
+ * <btrix-workflows-list></btrix-workflows-list>
  * ```
  */
 @localized()
@@ -837,4 +837,4 @@ export class CrawlTemplatesList extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-configs-list", CrawlTemplatesList);
+customElements.define("btrix-workflows-list", CrawlTemplatesList);

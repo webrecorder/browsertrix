@@ -2005,4 +2005,4 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 }
 
-customElements.define("btrix-crawl-config-editor", CrawlConfigEditor);
+customElements.define("btrix-workflow-editor", CrawlConfigEditor);

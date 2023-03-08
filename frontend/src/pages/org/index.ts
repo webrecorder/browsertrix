@@ -9,9 +9,9 @@ import type { OrgData } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
-import "./crawl-configs-detail";
-import "./crawl-configs-list";
-import "./crawl-configs-new";
+import "./workflow-detail";
+import "./workflows-list";
+import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./browser-profiles-detail";
@@ -230,32 +230,32 @@ export class Org extends LiteElement {
 
     if (this.params.crawlConfigId) {
       return html`
-        <btrix-crawl-configs-detail
+        <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           .orgId=${this.orgId!}
           .crawlConfigId=${this.params.crawlConfigId}
           .isEditing=${isEditing}
-        ></btrix-crawl-configs-detail>
+        ></btrix-workflow-detail>
       `;
     }
 
     if (isNewResourceTab) {
       const crawlTemplate = this.viewStateData?.crawlTemplate;
 
-      return html` <btrix-crawl-configs-new
+      return html` <btrix-workflows-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
         .orgId=${this.orgId!}
         .initialCrawlTemplate=${crawlTemplate}
-      ></btrix-crawl-configs-new>`;
+      ></btrix-workflows-new>`;
     }
 
-    return html`<btrix-crawl-configs-list
+    return html`<btrix-workflows-list
       .authState=${this.authState!}
       .orgId=${this.orgId!}
       userId=${this.userInfo!.id}
-    ></btrix-crawl-configs-list>`;
+    ></btrix-workflows-list>`;
   }
 
   private renderBrowserProfiles() {

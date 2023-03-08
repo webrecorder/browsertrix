@@ -7,7 +7,7 @@ import { mergeDeep } from "immutable";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { JobType, InitialCrawlConfig } from "./types";
-import "./crawl-config-editor";
+import "./workflow-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
@@ -27,7 +27,7 @@ const defaultValue = {
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-configs-new></btrix-crawl-configs-new>
+ * <btrix-workflows-new></btrix-workflows-new>
  * ```
  */
 @localized()
@@ -104,7 +104,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <h2 class="text-xl font-medium mb-6">
           ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
-        <btrix-crawl-config-editor
+        <btrix-workflow-editor
           .initialCrawlConfig=${this.initialCrawlTemplate}
           jobType=${jobType}
           orgId=${this.orgId}
@@ -113,7 +113,7 @@ export class CrawlTemplatesNew extends LiteElement {
             await (e.target as LitElement).updateComplete;
             this.jobType = undefined;
           }}
-        ></btrix-crawl-config-editor>
+        ></btrix-workflow-editor>
       `;
     }
 
@@ -182,4 +182,4 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-configs-new", CrawlTemplatesNew);
+customElements.define("btrix-workflows-new", CrawlTemplatesNew);
