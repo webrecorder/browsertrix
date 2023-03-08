@@ -794,9 +794,13 @@ export class CrawlTemplatesList extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
-    } catch {
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't run crawl at this time."),
+        message:
+          (e.isApiError &&
+            e.statusCode === 403 &&
+            msg("You do not have permission to run crawls.")) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
