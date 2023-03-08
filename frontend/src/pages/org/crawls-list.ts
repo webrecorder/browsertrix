@@ -584,7 +584,7 @@ export class CrawlsList extends LiteElement {
     if (crawlTemplate?.currCrawlId) {
       this.notify({
         message: msg(
-          html`Crawl of <strong>${crawl.configName}</strong> is already running.
+          html`Crawl of <strong>${crawl.name}</strong> is already running.
             <br />
             <a
               class="underline hover:no-underline"
@@ -615,7 +615,7 @@ export class CrawlsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from <strong>${crawl.configName}</strong>.
+          html`Started crawl from <strong>${crawl.name}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
@@ -658,7 +658,7 @@ export class CrawlsList extends LiteElement {
   private async deleteCrawl(crawl: Crawl) {
     if (
       !window.confirm(
-        msg(str`Are you sure you want to delete crawl of ${crawl.configName}?`)
+        msg(str`Are you sure you want to delete crawl of ${crawl.name}?`)
       )
     ) {
       return;

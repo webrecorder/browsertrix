@@ -29,34 +29,34 @@ export type SeedConfig = Pick<
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
 
-export type CrawlConfigParams = {
+export type CrawlConfigCore = {
+  oid: string;
   jobType: JobType;
   name: string;
   schedule: string;
   scale: number;
   profileid: string | null;
+  profileName: string | null;
   config: SeedConfig;
   crawlTimeout?: number | null;
-  tags?: string[];
+  tags: string[];
 };
 
 export type InitialCrawlConfig = Pick<
-  CrawlConfigParams,
+  CrawlConfigCore,
   "name" | "profileid" | "schedule" | "tags" | "crawlTimeout"
 > & {
   jobType?: JobType;
   config: Pick<
-    CrawlConfigParams["config"],
+    CrawlConfigCore["config"],
     "seeds" | "scopeType" | "exclude" | "behaviorTimeout"
   > & {
-    extraHops?: CrawlConfigParams["config"]["extraHops"];
+    extraHops?: CrawlConfigCore["config"]["extraHops"];
   };
 };
 
-export type CrawlConfig = CrawlConfigParams & {
+export type CrawlConfig = CrawlConfigCore & {
   id: string;
-  oid: string;
-  jobType: JobType;
   createdBy: string; // User ID
   createdByName: string | null; // User full name
   created: string; // Date string
@@ -70,7 +70,6 @@ export type CrawlConfig = CrawlConfigParams & {
   lastCrawlState: CrawlState;
   currCrawlId: string;
   inactive: boolean;
-  profileName: string | null;
 };
 
 export type Profile = {
@@ -95,13 +94,12 @@ export type CrawlState =
   | "stopping"
   | "canceled";
 
-export type Crawl = {
+export type Crawl = CrawlConfigCore & {
   id: string;
   userid: string;
   userName: string;
   oid: string;
   cid: string;
-  configName: string;
   schedule: string;
   manual: boolean;
   started: string; // UTC ISO date
@@ -113,9 +111,7 @@ export type Crawl = {
   fileCount?: number;
   fileSize?: number;
   completions?: number;
-  tags: string[];
   notes: string | null;
   firstSeed: string;
   seedCount: number;
-  config: CrawlConfig;
 };

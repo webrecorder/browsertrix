@@ -6,7 +6,7 @@ import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
 import LiteElement, { html } from "../utils/LiteElement";
-import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
+import type { CrawlConfigCore, Seed, SeedConfig } from "../pages/org/types";
 import { humanizeSchedule } from "../utils/cron";
 
 /**
@@ -20,7 +20,7 @@ import { humanizeSchedule } from "../utils/cron";
 @localized()
 export class ConfigDetails extends LiteElement {
   @property({ type: Object })
-  crawlConfig?: CrawlConfig;
+  crawlConfig?: CrawlConfigCore;
 
   @property({ type: Boolean })
   anchorLinks = false;
@@ -30,7 +30,7 @@ export class ConfigDetails extends LiteElement {
   hideTags = false;
 
   private readonly scopeTypeLabels: Record<
-    CrawlConfig["config"]["scopeType"],
+    CrawlConfigCore["config"]["scopeType"],
     string
   > = {
     prefix: msg("Path Begins with This URL"),

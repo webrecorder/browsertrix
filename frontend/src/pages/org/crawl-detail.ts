@@ -264,7 +264,7 @@ export class CrawlDetail extends LiteElement {
         style="width: 15em"
       ></sl-skeleton>`;
 
-    if (this.crawl.configName) return this.crawl.configName;
+    if (this.crawl.name) return this.crawl.name;
     if (!this.crawl.firstSeed) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
     let crawlName: any = html`<span class="break-words"
@@ -450,64 +450,59 @@ export class CrawlDetail extends LiteElement {
           role="menu"
         >
           ${when(
-            this.crawl.config && !this.crawl.config.inactive,
+            !this.isActive,
             () => html`
-              ${when(
-                !this.isActive,
-                () => html`
-                  <li
-                    class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      this.runNow();
-                      e.target.closest("sl-dropdown").hide();
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1"
-                      name="arrow-clockwise"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${msg("Re-run crawl")}
-                    </span>
-                  </li>
-                  <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
-                    role="menuitem"
-                    @click=${(e: any) => {
-                      this.openMetadataEditor();
-                      e.target.closest("sl-dropdown").hide();
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1"
-                      name="pencil"
-                    ></sl-icon>
-                    <span class="inline-block align-middle">
-                      ${msg("Edit Metadata")}
-                    </span>
-                  </li>
-                `
-              )}
-              ${when(
-                !this.isActive,
-                () => html`
-                  <hr />
-                  <li
-                    class="p-2 hover:bg-zinc-100 cursor-pointer"
-                    role="menuitem"
-                    @click=${() => {
-                      this.navTo(
-                        `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawl?.cid}?edit`
-                      );
-                    }}
-                  >
-                    <span class="inline-block align-middle">
-                      ${msg("Edit Crawl Config")}
-                    </span>
-                  </li>
-                `
-              )}
+              <li
+                class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  this.runNow();
+                  e.target.closest("sl-dropdown").hide();
+                }}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="arrow-clockwise"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Re-run crawl")}
+                </span>
+              </li>
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${(e: any) => {
+                  this.openMetadataEditor();
+                  e.target.closest("sl-dropdown").hide();
+                }}
+              >
+                <sl-icon
+                  class="inline-block align-middle mr-1"
+                  name="pencil"
+                ></sl-icon>
+                <span class="inline-block align-middle">
+                  ${msg("Edit Metadata")}
+                </span>
+              </li>
+            `
+          )}
+          ${when(
+            !this.isActive,
+            () => html`
+              <hr />
+              <li
+                class="p-2 hover:bg-zinc-100 cursor-pointer"
+                role="menuitem"
+                @click=${() => {
+                  this.navTo(
+                    `/orgs/${this.crawl?.oid}/crawl-configs/config/${this.crawl?.cid}?edit`
+                  );
+                }}
+              >
+                <span class="inline-block align-middle">
+                  ${msg("Edit Crawl Config")}
+                </span>
+              </li>
             `
           )}
           <li
@@ -675,7 +670,7 @@ export class CrawlDetail extends LiteElement {
       <btrix-exclusion-editor
         orgId=${ifDefined(this.crawl?.oid)}
         crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawl?.config.config}
+        .config=${this.crawl?.config}
         .authState=${this.authState}
         ?isActiveCrawl=${this.crawl && this.isActive}
         @on-success=${this.handleExclusionChange}
@@ -890,7 +885,7 @@ ${this.crawl?.notes}
     if (!this.crawl?.config) return "";
     return html`
       <btrix-config-details
-        .crawlConfig=${this.crawl.config}
+        .crawlConfig=${this.crawl}
         hideTags
       ></btrix-config-details>
     `;
