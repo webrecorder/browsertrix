@@ -1,7 +1,7 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import { parseCron } from "@cheap-glitch/mi-cron";
+import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -66,6 +66,9 @@ export class CrawlTemplatesList extends LiteElement {
   selectedTemplateForEdit?: CrawlConfig;
 
   @state()
+  fetchErrorStatusCode?: number;
+
+  @state()
   private orderBy: {
     field: "created";
     direction: "asc" | "desc";
@@ -102,18 +105,10 @@ export class CrawlTemplatesList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      try {
-        await this.fetchCrawlConfigs();
+      this.crawlConfigs = await this.fetchCrawlConfigs();
 
-        // Update search/filter collection
-        this.fuse.setCollection(this.crawlConfigs as any);
-      } catch (e) {
-        this.notify({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
+      // Update search/filter collection
+      this.fuse.setCollection(this.crawlConfigs as any);
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -124,8 +119,20 @@ export class CrawlTemplatesList extends LiteElement {
   }
 
   private async fetchCrawlConfigs() {
-    const crawlConfigs = await this.getCrawlTemplates();
-    this.crawlConfigs = crawlConfigs;
+    this.fetchErrorStatusCode = undefined;
+    try {
+      return await this.getCrawlTemplates();
+    } catch (e: any) {
+      if (e.isApiError) {
+        this.fetchErrorStatusCode = e.statusCode;
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve Workflows at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
   }
 
   render() {
@@ -148,21 +155,36 @@ export class CrawlTemplatesList extends LiteElement {
         </div>
       </header>
 
-      ${this.crawlConfigs
-        ? this.crawlConfigs.length
-          ? this.renderTemplateList()
-          : html`
-              <div class="border-t border-b py-5">
-                <p class="text-center text-0-500">
-                  ${msg("No Workflows yet.")}
-                </p>
-              </div>
-            `
-        : html`<div
-            class="w-full flex items-center justify-center my-24 text-3xl"
-          >
-            <sl-spinner></sl-spinner>
-          </div>`}
+      ${when(
+        this.fetchErrorStatusCode,
+        () => html`
+          <div>
+            <btrix-alert variant="danger"
+              >${this.fetchErrorStatusCode === 403
+                ? msg(`You don't have access to Workflows.`)
+                : msg(
+                    `Something unexpected went wrong while retrieving Workflows.`
+                  )}</btrix-alert
+            >
+          </div>
+        `,
+        () =>
+          this.crawlConfigs
+            ? this.crawlConfigs.length
+              ? this.renderTemplateList()
+              : html`
+                  <div class="border-t border-b py-5">
+                    <p class="text-center text-0-500">
+                      ${msg("No Workflows yet.")}
+                    </p>
+                  </div>
+                `
+            : html`<div
+                class="w-full flex items-center justify-center my-24 text-3xl"
+              >
+                <sl-spinner></sl-spinner>
+              </div>`
+      )}
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
