@@ -38,7 +38,7 @@ export type CrawlConfigCore = {
   profileid: string | null;
   profileName: string | null;
   config: SeedConfig;
-  crawlTimeout?: number | null;
+  crawlTimeout: number | null;
   tags: string[];
 };
 
