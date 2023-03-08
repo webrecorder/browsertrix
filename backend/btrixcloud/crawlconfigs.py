@@ -369,7 +369,9 @@ class CrawlConfigOps:
         changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
 
         changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "profileid")
+            update.profileid is not None
+            and update.profileid != orig_crawl_config.profileid
+            and ((not update.profileid) != (not orig_crawl_config.profileid))
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
