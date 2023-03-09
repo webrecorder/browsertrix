@@ -24,7 +24,7 @@ export class CrawlPendingExclusions extends LiteElement {
   private page: number = 1;
 
   @state()
-  private pageSize: number = 30;
+  private pageSize: number = 20;
 
   @state()
   private isOpen: boolean = false;
@@ -51,7 +51,14 @@ export class CrawlPendingExclusions extends LiteElement {
         <span slot="title">
           ${msg("Pending Exclusions")} ${this.renderBadge()}
         </span>
-        <div slot="summary-description">
+        <div
+          slot="summary-description"
+          @click=${(e: MouseEvent) => {
+            // Prevent toggle when clicking pagination
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        >
           ${this.isOpen && this.total && this.total > this.pageSize
             ? html`<btrix-pagination
                 size=${this.pageSize}
