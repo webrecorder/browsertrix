@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: yarn
     - name: Install Playwright Browsers
-      run: yarn playwright install --with-deps
+      run:  yarn add playwright && yarn playwright install --with-deps
       working-directory: ./frontend
     - name: Run Playwright tests
       run: yarn playwright test
