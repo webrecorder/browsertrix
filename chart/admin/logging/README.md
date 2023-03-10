@@ -20,6 +20,13 @@ And, edit `chart/examples/local-logging.yaml` for a local test.
 Optionally, when install the logging service only, edit `chart/admin/logging/values.yaml`.
 For a local test, it should use a hostname (not `localhost` but a hostname like `myhostname` registered in `/etc/hosts`)
 
+# Modes
+
+* Lightweight File mode (Fluentd only mode): set `logging.fileMode` to `true`
+  * This will disable Elasticsearch, Kibana and Ingress.
+  * Log files will be placed in each node's `/var/log/fluentd/`.
+  * Log file's retention period: 3 days (see `templates/fluentd.yaml`)
+
 ## Installation
 
 * run a setup script (will create a namespace and install elastic's CRDS)

@@ -2,21 +2,22 @@ logging:
   namespace: btrix-admin
   enabled: true
   dedicatedNode:
-    enabled: false
+    enabled: true
     nodeType: admin
+  fileMode: true
   ingress:
     tls: false
     host: localhost
     path: /kibana
   elasticsearch:
-    local: true
+    local: false
     cpu: 1
     mem: 4Gi
     opt: -Xms2g -Xmx2g
     volumeEnabled: false
     volumeSize: 1Gi
   kibana:
-    local: true
+    local: false
     cpu: 1
     mem: 1Gi
     opt: --max-old-space-size=1024
