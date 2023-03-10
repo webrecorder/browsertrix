@@ -76,6 +76,9 @@ spec:
             - name: TAGS
               value: "{{ tags }}"
 
+            - name: CRAWL_EXPIRE_TIME
+              value: "{{ crawl_expire_time }}"
+
             - name: STORE_PATH
               valueFrom:
                 configMapKeyRef:
