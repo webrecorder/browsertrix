@@ -24,7 +24,7 @@ type ResponseData = {
  * <btrix-exclusion-editor
  *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
- *   .config=${this.crawlTemplate.config}
+ *   .config=${this.workflow.config}
  *   .authState=${this.authState}
  *   ?isActiveCrawl=${isActive}
  * >

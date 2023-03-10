@@ -10,7 +10,7 @@ import {
   humanizeSchedule,
   humanizeNextDate,
 } from "../utils/cron";
-import type { CrawlConfig } from "../pages/org/types";
+import type { Workflow } from "../pages/org/types";
 
 const hours = Array.from({ length: 12 }).map((x, i) => ({
   value: i + 1,
@@ -38,7 +38,7 @@ const minutes = Array.from({ length: 60 }).map((x, i) => ({
 @localized()
 export class CrawlTemplatesScheduler extends LiteElement {
   @property({ type: String })
-  schedule?: CrawlConfig["schedule"];
+  schedule?: Workflow["schedule"];
 
   @property({ type: Boolean })
   isSubmitting: boolean = false;

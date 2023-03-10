@@ -327,7 +327,7 @@ export class BrowserProfilesList extends LiteElement {
                 >${data.crawlconfigs
                   .map(({ name }: any) => name)
                   .join(", ")}</strong
-              >. Please remove browser profile from crawl config to continue.`
+              >. Please remove browser profile from Workflow to continue.`
           ),
           variant: "warning",
           icon: "exclamation-triangle",

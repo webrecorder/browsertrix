@@ -9,9 +9,9 @@ import type { OrgData } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
-import "./crawl-configs-detail";
-import "./crawl-configs-list";
-import "./crawl-configs-new";
+import "./workflow-detail";
+import "./workflows-list";
+import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./browser-profiles-detail";
@@ -25,15 +25,11 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 
-export type OrgTab =
-  | "crawls"
-  | "crawl-configs"
-  | "browser-profiles"
-  | "settings";
+export type OrgTab = "crawls" | "workflows" | "browser-profiles" | "settings";
 
 type Params = {
   crawlId?: string;
-  crawlConfigId?: string;
+  workflowId?: string;
   browserProfileId?: string;
   browserId?: string;
 };
@@ -121,8 +117,8 @@ export class Org extends LiteElement {
       case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
-      case "crawl-configs":
-        tabPanelContent = this.renderCrawlTemplates();
+      case "workflows":
+        tabPanelContent = this.renderWorkflows();
         break;
       case "browser-profiles":
         tabPanelContent = this.renderBrowserProfiles();
@@ -158,12 +154,10 @@ export class Org extends LiteElement {
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
-          ${when(this.isCrawler, () =>
-            this.renderNavTab({
-              tabName: "crawl-configs",
-              label: msg("Crawl Configs"),
-            })
-          )}
+          ${this.renderNavTab({
+            tabName: "workflows",
+            label: msg("Workflows"),
+          })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
               tabName: "browser-profiles",
@@ -213,49 +207,54 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         crawlId=${this.params.crawlId}
         crawlsBaseUrl=${crawlsBaseUrl}
+        ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }
 
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
+      ?isCrawler=${this.isCrawler}
       crawlsBaseUrl=${crawlsBaseUrl}
       ?shouldFetch=${this.orgTab === "crawls"}
     ></btrix-crawls-list>`;
   }
 
-  private renderCrawlTemplates() {
+  private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
-    if (this.params.crawlConfigId) {
+    if (this.params.workflowId) {
       return html`
-        <btrix-crawl-configs-detail
+        <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
-          .orgId=${this.orgId!}
-          .crawlConfigId=${this.params.crawlConfigId}
-          .isEditing=${isEditing}
-        ></btrix-crawl-configs-detail>
+          orgId=${this.orgId!}
+          workflowId=${this.params.workflowId}
+          ?isEditing=${isEditing}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-workflow-detail>
       `;
     }
 
     if (isNewResourceTab) {
-      const crawlTemplate = this.viewStateData?.crawlTemplate;
+      const workflow = this.viewStateData?.workflow;
 
-      return html` <btrix-crawl-configs-new
+      return html` <btrix-workflows-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
-        .orgId=${this.orgId!}
-        .initialCrawlTemplate=${crawlTemplate}
-      ></btrix-crawl-configs-new>`;
+        orgId=${this.orgId!}
+        ?isCrawler=${this.isCrawler}
+        .initialWorkflow=${workflow}
+      ></btrix-workflows-new>`;
     }
 
-    return html`<btrix-crawl-configs-list
+    return html`<btrix-workflows-list
       .authState=${this.authState!}
-      .orgId=${this.orgId!}
+      orgId=${this.orgId!}
       userId=${this.userInfo!.id}
-    ></btrix-crawl-configs-list>`;
+      ?isCrawler=${this.isCrawler}
+    ></btrix-workflows-list>`;
   }
 
   private renderBrowserProfiles() {

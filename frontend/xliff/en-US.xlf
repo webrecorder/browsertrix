@@ -9,20 +9,21 @@
   <source><x id="0" equiv-text="${formattedTime}"/><x id="0" equiv-text="${formattedTime}"/> every day</source>
 </trans-unit>
 <trans-unit id="s2acb3777ed86adb6">
-  <source>Every Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
+  <source><x id="0" equiv-text="${formattedWeekDay}"/>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
 </trans-unit>
 <trans-unit id="s8db39b891b7d8c5d">
-  <source>Day  of every monthDay <x id="0" equiv-text="${days[0]}"/> of every month</source>
+  <source><x id="0" equiv-text="${days[0]}"/>Day <x id="0" equiv-text="${days[0]}"/> of every month</source>
 </trans-unit>
 <trans-unit id="s2bc963c5c7bac2e1">
-  <source>Every day at Every day at <x id="0" equiv-text="${formattedTime}"/></source>
+  <source><x id="0" equiv-text="${formattedTime}"/>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
 </trans-unit>
 <trans-unit id="s3fc21c0b1ae61eb7">
-  <source><x id="1" equiv-text="${formattedTime}"/><x id="0" equiv-text="${formattedWeekDay}"/><x id="1" equiv-text="${formattedTime}"/>Every <x id="0" equiv-text="${formattedWeekDay}"/>
+  <source><x id="0" equiv-text="${formattedWeekDay}"/>Every 
+            at Every <x id="0" equiv-text="${formattedWeekDay}"/>
             at <x id="1" equiv-text="${formattedTime}"/></source>
 </trans-unit>
 <trans-unit id="s478f33dea36e1d3f">
-  <source><x id="1" equiv-text="${formattedTime}"/><x id="0" equiv-text="${days[0]}"/><x id="1" equiv-text="${formattedTime}"/>On day <x id="0" equiv-text="${days[0]}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
+  <source><x id="0" equiv-text="${days[0]}"/>On day  of the month at On day <x id="0" equiv-text="${days[0]}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
 </trans-unit>
 <trans-unit id="s602704084f6c7796">
   <source>URL List</source>
@@ -33,32 +34,14 @@
 <trans-unit id="sf0cab2483f66aa2e">
   <source>Custom</source>
 </trans-unit>
-<trans-unit id="sb16b729479900d33">
-  <source>Crawl config not found.</source>
-</trans-unit>
-<trans-unit id="s9831d5779eb599e9">
-  <source>Sorry, couldn't retrieve crawl config at this time.</source>
-</trans-unit>
 <trans-unit id="s4409ada9c5c2a7f8">
   <source>Inactive</source>
-</trans-unit>
-<trans-unit id="s37bc4fec8a85b974">
-  <source>Edit Crawl Config</source>
-</trans-unit>
-<trans-unit id="s7fd2754b40d517e2">
-  <source>Newer Version</source>
 </trans-unit>
 <trans-unit id="s2734c290e261a94d">
   <source>Crawl Settings</source>
 </trans-unit>
 <trans-unit id="se5784a16a6799dad">
-  <source>Back to Back to <x id="0" equiv-text="${this.crawlConfig?.name}"/></source>
-</trans-unit>
-<trans-unit id="sca5bf3becea9bdbb">
-  <source>Back to Crawl Configs</source>
-</trans-unit>
-<trans-unit id="s7d74dfe9e8b10935">
-  <source>Duplicate crawl config</source>
+  <source><x id="0" equiv-text="${this.crawlConfig?.name}"/>Back to <x id="0" equiv-text="${this.crawlConfig?.name}"/></source>
 </trans-unit>
 <trans-unit id="s8a980d89744f262e">
   <source>Run now</source>
@@ -102,20 +85,11 @@
 <trans-unit id="s1a20a47c9bf221da">
   <source><x id="0" equiv-text="${this.crawlConfig.name}"/><x id="0" equiv-text="${this.crawlConfig.name}"/> Copy</source>
 </trans-unit>
-<trans-unit id="s7a8030e359c57d0f">
-  <source>Copied crawl configuration to new template.</source>
-</trans-unit>
 <trans-unit id="h42f5ec6886d1dafc">
-  <source>Deactivated .Deactivated <x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>.</source>
-</trans-unit>
-<trans-unit id="s2bb7d9f0ab9c6fc7">
-  <source>Sorry, couldn't deactivate crawl config at this time.</source>
+  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>Deactivated <x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="ha6f8533fba325287">
-  <source>Deleted .Deleted <x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>.</source>
-</trans-unit>
-<trans-unit id="s092e542aaf353d20">
-  <source>Sorry, couldn't delete crawl config at this time.</source>
+  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>Deleted <x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig.name}&lt;/strong&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="s46a31b511363ec98">
   <source>Sorry, couldn't run crawl at this time.</source>
@@ -142,10 +116,10 @@
   <source>Crawls will not repeat.</source>
 </trans-unit>
 <trans-unit id="sb2944d202ecd7f12">
-  <source>Schedule: .Schedule: <x id="0" equiv-text="${humanizeSchedule(utcSchedule)}"/>.</source>
+  <source><x id="0" equiv-text="${humanizeSchedule(utcSchedule)}"/>Schedule: <x id="0" equiv-text="${humanizeSchedule(utcSchedule)}"/>.</source>
 </trans-unit>
 <trans-unit id="s02aec27684a72568">
-  <source>Next scheduled run: .Next scheduled run: <x id="0" equiv-text="${humanizeNextDate(utcSchedule)}"/>.</source>
+  <source><x id="0" equiv-text="${humanizeNextDate(utcSchedule)}"/>Next scheduled run: <x id="0" equiv-text="${humanizeNextDate(utcSchedule)}"/>.</source>
 </trans-unit>
 <trans-unit id="s2ceb11be2290bb1b">
   <source>Cancel</source>
@@ -165,20 +139,8 @@
 <trans-unit id="sfea2a6ae828721b5">
   <source>Oldest Crawl</source>
 </trans-unit>
-<trans-unit id="seb371df4f295057a">
-  <source>Sorry, couldn't retrieve crawl configs at this time.</source>
-</trans-unit>
-<trans-unit id="sea4061adb9825ca2">
-  <source>No crawl configs yet.</source>
-</trans-unit>
 <trans-unit id="s2326de08359f43bf">
   <source>Edit Crawl Schedule</source>
-</trans-unit>
-<trans-unit id="s515680ab118c3ca9">
-  <source>Search by name</source>
-</trans-unit>
-<trans-unit id="s97d0d3da1b4ebf34">
-  <source>New Crawl Config</source>
 </trans-unit>
 <trans-unit id="sf993bb199fefbe04">
   <source>All</source>
@@ -199,22 +161,19 @@
   <source>Reverse sort</source>
 </trans-unit>
 <trans-unit id="scb7a7733d5719fee">
-  <source><x id="0" equiv-text="${t.crawlCount}"/><x id="0" equiv-text="${t.crawlCount}"/> crawl</source>
+  <source><x id="0" equiv-text="${t.crawlCount}"/><x id="0" equiv-text="${crawlConfig.crawlCount}"/> crawl</source>
 </trans-unit>
 <trans-unit id="s32b82a13b01237c7">
-  <source><x id="0" equiv-text="${(t.crawlCount || 0).toLocaleString()}"/><x id="0" equiv-text="${(t.crawlCount || 0).toLocaleString()}"/> crawls</source>
+  <source><x id="0" equiv-text="${(t.crawlCount || 0).toLocaleString()}"/><x id="0" equiv-text="${(crawlConfig.crawlCount || 0).toLocaleString()}"/> crawls</source>
 </trans-unit>
 <trans-unit id="s4d5bb650a0b469b6">
-  <source>Last Crawl: Last Crawl: <x id="0" equiv-text="${t.lastCrawlState &amp;&amp; t.lastCrawlState.replace(/_/g, &quot; &quot;)}"/></source>
+  <source><x id="0" equiv-text="${t.lastCrawlState &amp;&amp; t.lastCrawlState.replace(/_/g, &quot; &quot;)}"/>Last Crawl: <x id="0" equiv-text="${crawlConfig.lastCrawlState &amp;&amp;&#10;    crawlConfig.lastCrawlState.replace(/_/g, &quot; &quot;)}"/></source>
 </trans-unit>
 <trans-unit id="seaa5ad80c3e9e638">
   <source>No finished crawls</source>
 </trans-unit>
 <trans-unit id="sf0eca99ba979d858">
-  <source>Next scheduled crawl: Next scheduled crawl: <x id="0" equiv-text="${humanizeNextDate(t.schedule)}"/></source>
-</trans-unit>
-<trans-unit id="sd17c7fd570f1eeb4">
-  <source>Edit crawl config</source>
+  <source><x id="0" equiv-text="${humanizeNextDate(t.schedule)}"/>Next scheduled crawl: <x id="0" equiv-text="${humanizeNextDate(crawlConfig.schedule)}"/></source>
 </trans-unit>
 <trans-unit id="s37a9e8aec5713460">
   <source>More</source>
@@ -238,12 +197,13 @@
   <source>Regex</source>
 </trans-unit>
 <trans-unit id="h8c21d04827e5cb19">
-  <source>Regular Expression syntax error:
-                                    Regular Expression syntax error:
+  <source><x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/>Regular Expression syntax error:
                                     <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></source>
 </trans-unit>
 <trans-unit id="h1a1f28e6632c15d0">
-  <source><x id="1" equiv-text="&lt;/code&gt;"/>Please enter a valid constructor string
+  <source>Please enter a valid constructor string
+                                    pattern. See
+                                    RegExp docs.Please enter a valid constructor string
                                     pattern. See
                                     RegExp docs.Please enter a valid constructor string
                                     pattern. See
@@ -265,7 +225,7 @@
   <source>Exclusion already exists. Please edit or remove to continue</source>
 </trans-unit>
 <trans-unit id="sbe7425a3b5445ba7">
-  <source>Please enter  or more charactersPlease enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
+  <source><x id="0" equiv-text="${MIN_LENGTH}"/>Please enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
 </trans-unit>
 <trans-unit id="s74abf58e08f32710">
   <source>Please enter a valid Regular Expression constructor pattern</source>
@@ -277,7 +237,7 @@
   <source>Tags</source>
 </trans-unit>
 <trans-unit id="s0e3006648a1a80a5">
-  <source>Add “”Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
+  <source><x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
 </trans-unit>
 <trans-unit id="s1442d0b6e28b30d1">
   <source>Path Begins with This URL</source>
@@ -309,23 +269,16 @@
 <trans-unit id="sa348b8b53e07a21b">
   <source>No Schedule</source>
 </trans-unit>
-<trans-unit id="s7f5e8713824283dd">
-  <source>Crawl Setup</source>
-</trans-unit>
 <trans-unit id="s4d34e4682643b600">
   <source>Browser Settings</source>
 </trans-unit>
 <trans-unit id="s4401a1ecb33e9166">
   <source>Crawl Scheduling</source>
 </trans-unit>
-<trans-unit id="s93874f034153264e">
-  <source>Crawl Information</source>
-</trans-unit>
-<trans-unit id="s8c3859f08fa9e420">
-  <source>Confirm Settings</source>
-</trans-unit>
 <trans-unit id="hf77ba6b1d74e2cdb">
-  <source><x id="1" equiv-text="&lt;/span&gt;"/><x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/><x id="1" equiv-text="&lt;/span&gt;"/>Fields marked with
+  <source><x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>Fields marked with
+                  *
+                  are requiredFields marked with
                   <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/>
                   are required</source>
 </trans-unit>
@@ -350,9 +303,6 @@
 <trans-unit id="sc2c5b518e1f5c85a">
   <source>Next Step</source>
 </trans-unit>
-<trans-unit id="s1904084e74fe0ece">
-  <source>Confirm &amp; Save</source>
-</trans-unit>
 <trans-unit id="sb198905daeb019e8">
   <source>List of URLs</source>
 </trans-unit>
@@ -362,56 +312,28 @@
 <trans-unit id="s68eac1025cee6964">
   <source>Crawl Scope</source>
 </trans-unit>
-<trans-unit id="s3d09398e555ee5f9">
-  <source>Advanced Options</source>
-</trans-unit>
-<trans-unit id="seb6942ba0b77a4c8">
-  <source>Include Linked Pages</source>
-</trans-unit>
-<trans-unit id="s1b31db2387f39a76">
-  <source>Page Limits</source>
-</trans-unit>
 <trans-unit id="s234f4d8778048245">
   <source>Add More</source>
 </trans-unit>
-<trans-unit id="ha9f20afdcb93a440">
-  <source><x id="1" equiv-text="&lt;span class=&quot;text-blue-500 break-word break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>Will crawl all page URLs that begin with
-            , e.g.
-            /path/page.htmlWill crawl all page URLs that begin with
-            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>, e.g.
-            <x id="1" equiv-text="&lt;span class=&quot;text-blue-500 break-word break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>/path/page.html<x id="2" equiv-text="&lt;/span&gt;"/></source>
-</trans-unit>
 <trans-unit id="hed4c39f98af5c58f">
-  <source>Will crawl all pages on
-             and ignore pages
-            on any subdomains.Will crawl all pages on
+  <source><x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/>Will crawl all pages on
             <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and ignore pages
             on any subdomains.</source>
 </trans-unit>
 <trans-unit id="ha8f0ffdb034da2d1">
-  <source><x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>Will crawl all pages on
+  <source>Will crawl all pages on
+             and
+            subdomain..Will crawl all pages on
              and
             subdomain..Will crawl all pages on
             <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and
             <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
-</trans-unit>
-<trans-unit id="heb4c236a073db85f">
-  <source><x id="1" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>Will only visit
-            
-            and links that stay within the same URL, e.g. hash anchor links:
-            #example-pageWill only visit
-            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
-            and links that stay within the same URL, e.g. hash anchor links:
-            <x id="1" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>#example-page<x id="2" equiv-text="&lt;/span&gt;"/></source>
 </trans-unit>
 <trans-unit id="s55c00be19b1b3bcd">
   <source>Crawl Start URL</source>
 </trans-unit>
 <trans-unit id="s262c31c801cfbcd9">
   <source>Please enter a valid URL.</source>
-</trans-unit>
-<trans-unit id="s2279075e18f7dd74">
-  <source>Additional Pages</source>
 </trans-unit>
 <trans-unit id="sf755f9abce1b4440">
   <source>Extra URLs in Scope</source>
@@ -428,9 +350,6 @@
 <trans-unit id="sab01daa76a48769f">
   <source>pages</source>
 </trans-unit>
-<trans-unit id="sa4b71eadd80c1750">
-  <source>Crawl Limits</source>
-</trans-unit>
 <trans-unit id="s2fa63aad5fbcf846">
   <source>Crawl Time Limit</source>
 </trans-unit>
@@ -445,9 +364,6 @@
 </trans-unit>
 <trans-unit id="sefcf950b3cc4fc3b">
   <source>Language</source>
-</trans-unit>
-<trans-unit id="sf0fef8b826c4a946">
-  <source>On-Page Behavior</source>
 </trans-unit>
 <trans-unit id="s0db654248c1a0de8">
   <source>Page Time Limit</source>
@@ -471,16 +387,14 @@
   <source>Start Time</source>
 </trans-unit>
 <trans-unit id="h8c7c3a6e07d7c512">
-  <source>Schedule:
-                .Schedule:
+  <source><x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>Schedule:
                 <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="se0baa9b7fb0768e4">
   <source>Invalid date</source>
 </trans-unit>
 <trans-unit id="h30728ea4302f7fe9">
-  <source>Next scheduled run:
-                .Next scheduled run:
+  <source><x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>Next scheduled run:
                 <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="s77f4b38f8714436f">
@@ -489,50 +403,23 @@
 <trans-unit id="sef49aec68fd1dc66">
   <source>Name</source>
 </trans-unit>
-<trans-unit id="sfdbc67e78912a3c6">
-  <source>There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue.</source>
-</trans-unit>
-<trans-unit id="h79212d587bf41ca2">
-  <source><x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/><x id="3" equiv-text="&lt;br&gt;&lt;br&gt;"/><x id="0" equiv-text="&lt;br&gt;&lt;br&gt;"/><x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/><x id="2" equiv-text="&lt;/a&gt;"/><x id="3" equiv-text="&lt;br&gt;&lt;br&gt;"/>There is an issue with this crawl configuration:<x id="0" equiv-text="&lt;br&gt;&lt;br&gt;"/>Crawl
-            URL(s) required in
-            <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>Crawl Setup<x id="2" equiv-text="&lt;/a&gt;"/>. <x id="3" equiv-text="&lt;br&gt;&lt;br&gt;"/>
-            Please fix to continue.</source>
-</trans-unit>
 <trans-unit id="s0d880cda554b2fee">
-  <source><x id="0" equiv-text="${firstUrl}"/><x id="1" equiv-text="${remainder}"/><x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URL</source>
+  <source><x id="1" equiv-text="${remainder}"/> +  more URL<x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URL</source>
 </trans-unit>
 <trans-unit id="s495d73feeec1e7c7">
-  <source><x id="0" equiv-text="${firstUrl}"/><x id="1" equiv-text="${remainder}"/><x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URLs</source>
-</trans-unit>
-<trans-unit id="s9afc1a2cdca10140">
-  <source>Crawl config created.</source>
+  <source><x id="1" equiv-text="${remainder}"/> +  more URLs<x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URLs</source>
 </trans-unit>
 <trans-unit id="s522ab375916f0bc5">
   <source>Crawl started with new template.</source>
-</trans-unit>
-<trans-unit id="s5cc9ad23a05daa51">
-  <source>Crawl config updated.</source>
 </trans-unit>
 <trans-unit id="s2f30d4261790b785">
   <source>Something unexpected went wrong</source>
 </trans-unit>
 <trans-unit id="s286331d9358fc509">
-  <source>Seed URL : Seed URL <x id="0" equiv-text="${loc[loc.length - 1] + 1}"/>: </source>
-</trans-unit>
-<trans-unit id="s140c6ad52981e813">
-  <source>Couldn't save crawl config. Please fix the following crawl configuration issues:</source>
-</trans-unit>
-<trans-unit id="hd293e3974318db7c">
-  <source>New Crawl Config — New Crawl Config — <x id="0" equiv-text="${jobTypeLabels[jobType]}"/></source>
+  <source><x id="0" equiv-text="${loc[loc.length - 1] + 1}"/>Seed URL <x id="0" equiv-text="${loc[loc.length - 1] + 1}"/>: </source>
 </trans-unit>
 <trans-unit id="s24b625d050183fd9">
   <source>Choose Crawl Type</source>
-</trans-unit>
-<trans-unit id="s82ea0469dfd5d9f7">
-  <source>The crawler visits every URL you tell it to and optionally every URL linked on those pages.</source>
-</trans-unit>
-<trans-unit id="s8115df38a9be30e5">
-  <source>The crawler automatically finds new pages and archives them.</source>
 </trans-unit>
 <trans-unit id="sf4de3bfbfaca12e5">
   <source>Copied</source>
@@ -542,9 +429,6 @@
 </trans-unit>
 <trans-unit id="s835ece4609e21de5">
   <source>Back to Crawls</source>
-</trans-unit>
-<trans-unit id="s834531d349a4afa5">
-  <source>Change Crawler Instances</source>
 </trans-unit>
 <trans-unit id="s3d197283cb019b5a">
   <source>Overview</source>
@@ -564,14 +448,6 @@
 <trans-unit id="s606c6789a0e06b07">
   <source>Config</source>
 </trans-unit>
-<trans-unit id="h36a130beb3a0fdb2">
-  <source><x id="0" equiv-text="&lt;span class=&quot;font-normal&quot;&gt;"/><x id="1" equiv-text="&lt;/span&gt; "/><x id="2" equiv-text="&lt;sl-skeleton class=&quot;inline-block&quot; style=&quot;width: 15em&quot;&gt;&lt;/sl-skeleton&gt;${`}"/><x id="0" equiv-text="&lt;span class=&quot;font-normal&quot;&gt;"/>Crawl of<x id="1" equiv-text="&lt;/span&gt; "/>this.crawl
-    ? this.crawl.configName
-    : html `<x id="2" equiv-text="&lt;sl-skeleton class=&quot;inline-block&quot; style=&quot;width: 15em&quot;&gt;&lt;/sl-skeleton&gt;${`}"/></source>
-</trans-unit>
-<trans-unit id="s2706a162264c46f1">
-  <source>Scale</source>
-</trans-unit>
 <trans-unit id="sd9ad53251f2330a5">
   <source>Stop</source>
 </trans-unit>
@@ -580,9 +456,6 @@
 </trans-unit>
 <trans-unit id="s3cc68dd968072be8">
   <source>Copy Crawl ID</source>
-</trans-unit>
-<trans-unit id="s8e0adbb716112b08">
-  <source>Copy Crawl Config ID</source>
 </trans-unit>
 <trans-unit id="sad3e3c8146fc920f">
   <source>Status</source>
@@ -596,17 +469,11 @@
 <trans-unit id="s1582c2bf884b8052">
   <source>Run Duration</source>
 </trans-unit>
-<trans-unit id="s4b10acae683d2978">
-  <source>Fullscreen</source>
-</trans-unit>
 <trans-unit id="s5e72081d8c9517b2">
   <source>Crawl starting...</source>
 </trans-unit>
 <trans-unit id="s9faa4c27631001f6">
   <source>Crawl stopping...</source>
-</trans-unit>
-<trans-unit id="s9c9159084d16016d">
-  <source>Queue Exclusions</source>
 </trans-unit>
 <trans-unit id="s6461cf5ae327ffc9">
   <source>Replay Crawl</source>
@@ -628,11 +495,6 @@
 </trans-unit>
 <trans-unit id="saa29a2ac03cd9d19">
   <source>Reason</source>
-</trans-unit>
-<trans-unit id="h1dc2f6235d169989">
-  <source>Manual start by
-                          Manual start by
-                          <x id="0" equiv-text="&lt;span&gt;${this.crawl?.userName || this.crawl?.userid}&lt;/span&gt;"/></source>
 </trans-unit>
 <trans-unit id="ha2716ea9a1ff43dd">
   <source>Scheduled run</source>
@@ -671,69 +533,23 @@
   <source>Sorry, couldn't change crawl scale at this time.</source>
 </trans-unit>
 <trans-unit id="he8f0460a2fa67c06">
-  <source>Started crawl from .Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/>.</source>
+  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName()}&lt;/strong&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="hb7f88ce8e246f5bf">
-  <source>Done crawling .Done crawling <x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/>.</source>
-</trans-unit>
-<trans-unit id="s0c19d3dfd1fcab16">
-  <source>Recently Updated</source>
-</trans-unit>
-<trans-unit id="s31385699146e401c">
-  <source>Oldest Finished</source>
+  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/>Done crawling <x id="0" equiv-text="&lt;strong&gt;${this.renderName()}&lt;/strong&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="s4e32d5305bc17963">
   <source>Crawl Name</source>
-</trans-unit>
-<trans-unit id="s734509aa09502b67">
-  <source>Crawl Config ID</source>
-</trans-unit>
-<trans-unit id="sf61f26dc9b0f30bb">
-  <source>Smallest Files</source>
-</trans-unit>
-<trans-unit id="sc2c550fc696c22e4">
-  <source>Largest Files</source>
 </trans-unit>
 <trans-unit id="sf76674a7d3d83ab2">
   <source>No crawls yet.</source>
 </trans-unit>
 <trans-unit id="h9dac166dd9cd410c">
-  <source>Last updated:
-                  Last updated:
+  <source><x id="0" equiv-text="&lt;sl-format-date date=&quot;${new Date(this.lastFetched).toString()}&quot; month=&quot;2-digit&quot; day=&quot;2-digit&quot; year=&quot;2-digit&quot; hour=&quot;numeric&quot; minute=&quot;numeric&quot; second=&quot;numeric&quot;&gt;&lt;/sl-format-date&gt;"/>Last updated:
                   <x id="0" equiv-text="&lt;sl-format-date date=&quot;${new Date(this.lastFetched).toString()}&quot; month=&quot;2-digit&quot; day=&quot;2-digit&quot; year=&quot;2-digit&quot; hour=&quot;numeric&quot; minute=&quot;numeric&quot; second=&quot;numeric&quot;&gt;&lt;/sl-format-date&gt;"/></source>
-</trans-unit>
-<trans-unit id="s164e479df036dbb6">
-  <source>Search by Crawl Config name or ID</source>
-</trans-unit>
-<trans-unit id="s0de935f1d2aa83e7">
-  <source>Stop gracefully</source>
-</trans-unit>
-<trans-unit id="sfa4cbcdb77eee14d">
-  <source>Cancel immediately</source>
-</trans-unit>
-<trans-unit id="s15a71ccded3fce9b">
-  <source>View Crawl Config</source>
-</trans-unit>
-<trans-unit id="s94a28fb1d6a34c8d">
-  <source><x id="0" equiv-text="${crawl.fileCount}"/><x id="0" equiv-text="${crawl.fileCount}"/> file</source>
-</trans-unit>
-<trans-unit id="s3387292fb77bd39a">
-  <source><x id="0" equiv-text="${crawl.fileCount}"/><x id="0" equiv-text="${crawl.fileCount}"/> files</source>
-</trans-unit>
-<trans-unit id="sf51117c57a1110ec">
-  <source>in in <x id="0" equiv-text="${RelativeDuration.humanize(new Date(`${crawl.finished}Z`).valueOf() -&#10;    new Date(`${crawl.started}Z`).valueOf(), { compact: true })}"/></source>
-</trans-unit>
-<trans-unit id="sea1b90da8c82de29">
-  <source>pages crawled</source>
 </trans-unit>
 <trans-unit id="s3b720e38dd16e1bb">
   <source>Manual Start</source>
-</trans-unit>
-<trans-unit id="s6946629c1f250ee6">
-  <source>by by <x id="0" equiv-text="${crawl.userName || crawl.userid}"/></source>
-</trans-unit>
-<trans-unit id="s8c684ea90446377d">
-  <source>Scheduled Run</source>
 </trans-unit>
 <trans-unit id="sbf18806bc43052fa">
   <source>Sorry, couldn't retrieve crawls at this time.</source>
@@ -744,26 +560,11 @@
 <trans-unit id="s199ff7df1e40a103">
   <source>Something went wrong, couldn't stop crawl.</source>
 </trans-unit>
-<trans-unit id="h0a9c8227b3b69dd8">
-  <source><x id="1" equiv-text="&lt;/button&gt;"/><x id="0" equiv-text="&lt;br&gt;&#10;              &lt;button class=&quot;underline hover:no-underline&quot; @click=&quot;${() =&gt; this.duplicateConfig(crawl, crawlTemplate)}&quot;&gt;"/><x id="1" equiv-text="&lt;/button&gt;"/>Sorry, cannot rerun crawl from a deactivated crawl config.
-              <x id="0" equiv-text="&lt;br&gt;&#10;              &lt;button class=&quot;underline hover:no-underline&quot; @click=&quot;${() =&gt; this.duplicateConfig(crawl, crawlTemplate)}&quot;&gt;"/>
-                Duplicate crawl config
-              <x id="1" equiv-text="&lt;/button&gt;"/></source>
-</trans-unit>
 <trans-unit id="sb17cfac2c8164164">
   <source>The interactive browser is not available.</source>
 </trans-unit>
 <trans-unit id="s57a303543c58ffda">
   <source>Interactive browser for creating browser profile</source>
-</trans-unit>
-<trans-unit id="s5334c0927cf25b86">
-  <source>Exit fullscreen</source>
-</trans-unit>
-<trans-unit id="s122c4e6c8ff0ed45">
-  <source>Exit</source>
-</trans-unit>
-<trans-unit id="s9b2bb1407142018e">
-  <source>Enter fullscreen</source>
 </trans-unit>
 <trans-unit id="s2bd6e954998248bd">
   <source>Visited Sites</source>
@@ -778,7 +579,7 @@
   <source>Websites that are not in the browser profile yet. Finish editing and save to add these websites to the profile.</source>
 </trans-unit>
 <trans-unit id="sf4d539e610f3a2aa">
-  <source>Go to Go to <x id="0" equiv-text="${url}"/></source>
+  <source><x id="0" equiv-text="${url}"/>Go to <x id="0" equiv-text="${url}"/></source>
 </trans-unit>
 <trans-unit id="s6f6f70a05859338b">
   <source>Sorry, couldn't create browser profile at this time.</source>
@@ -795,29 +596,11 @@
 <trans-unit id="s4ae42fa672dd72bc">
   <source>Created at</source>
 </trans-unit>
-<trans-unit id="s8d69069015564d67">
-  <source>Crawl Configs</source>
-</trans-unit>
-<trans-unit id="s84c41a7a122991bc">
-  <source>Crawl Configs using this profile</source>
-</trans-unit>
 <trans-unit id="s69ec09431b9c3946">
   <source>Browser Profile</source>
 </trans-unit>
-<trans-unit id="s12bb5227af61146c">
-  <source>Interact with the browsing tool to make changes to your browser profile.</source>
-</trans-unit>
 <trans-unit id="s33f85f24c0f5f008">
   <source>Save</source>
-</trans-unit>
-<trans-unit id="sfac15b89e0668996">
-  <source>Duplicate</source>
-</trans-unit>
-<trans-unit id="sd6be7602ff06df77">
-  <source>Load browser to view or edit websites in the profile.</source>
-</trans-unit>
-<trans-unit id="scb4abbe21f8bd751">
-  <source>Load Browser</source>
 </trans-unit>
 <trans-unit id="s8641b6c3688a0cec">
   <source>Edit Profile</source>
@@ -833,10 +616,6 @@
 </trans-unit>
 <trans-unit id="s6393445b8d0c8338">
   <source>Starting up browser with current profile...</source>
-</trans-unit>
-<trans-unit id="h03f28e182479eb95">
-  <source><x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs&#10;    .map(({ name }: any) =&gt; name)&#10;    .join(&quot;, &quot;)}&lt;/strong&gt;"/><x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/><x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs&#10;    .map(({ name }: any) =&gt; name)&#10;    .join(&quot;, &quot;)}&lt;/strong&gt;"/>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, in use by
-              <x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs&#10;    .map(({ name }: any) =&gt; name)&#10;    .join(&quot;, &quot;)}&lt;/strong&gt;"/>. Please remove browser profile from crawl config to continue.</source>
 </trans-unit>
 <trans-unit id="s6a43c0c6daea3998">
   <source>Sorry, couldn't delete browser profile at this time.</source>
@@ -884,7 +663,7 @@
   <source>Back to Profile</source>
 </trans-unit>
 <trans-unit id="h6c440abb1e1a7d78">
-  <source>Extending Extending <x id="0" equiv-text="&lt;strong&gt;${this.params.name}&lt;/strong&gt;"/></source>
+  <source><x id="0" equiv-text="&lt;strong&gt;${this.params.name}&lt;/strong&gt;"/>Extending <x id="0" equiv-text="&lt;strong&gt;${this.params.name}&lt;/strong&gt;"/></source>
 </trans-unit>
 <trans-unit id="sbe1e8a67ef98d230">
   <source>Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step.</source>
@@ -907,15 +686,6 @@
 <trans-unit id="s56f260de740bbd75">
   <source>Successfully created browser profile.</source>
 </trans-unit>
-<trans-unit id="sec0b5ace6765b2a5">
-  <source>Successfully invited Successfully invited <x id="0" equiv-text="${this.successfullyInvitedEmail}"/></source>
-</trans-unit>
-<trans-unit id="s5e155029a998ab6e">
-  <source>Add Member</source>
-</trans-unit>
-<trans-unit id="s751678adb0aa2b23">
-  <source>Member</source>
-</trans-unit>
 <trans-unit id="saae1c70e168b45b4">
   <source>Admin</source>
 </trans-unit>
@@ -924,12 +694,6 @@
 </trans-unit>
 <trans-unit id="s70b4765cad7bc7cf">
   <source>Viewer</source>
-</trans-unit>
-<trans-unit id="s3a5ba3d5eed22464">
-  <source>Back to Members</source>
-</trans-unit>
-<trans-unit id="s049cf53ee4e03bd8">
-  <source>Add New Member</source>
 </trans-unit>
 <trans-unit id="s686306cdb839fb8d">
   <source>Sending...</source>
@@ -961,15 +725,6 @@
 <trans-unit id="s3acf6c15de666f7a">
   <source>Something went wrong changing password</source>
 </trans-unit>
-<trans-unit id="sd69baf2d68934ba1">
-  <source>Can manage crawls and invite others</source>
-</trans-unit>
-<trans-unit id="s3f5eac58a663d0a8">
-  <source>Can manage crawls</source>
-</trans-unit>
-<trans-unit id="s091bfc93121283a6">
-  <source>Can view crawls</source>
-</trans-unit>
 <trans-unit id="s2afc9a717c161490">
   <source>Invite</source>
 </trans-unit>
@@ -987,9 +742,6 @@
 </trans-unit>
 <trans-unit id="s2e11f0fcb900ac43">
   <source>Please fix errors</source>
-</trans-unit>
-<trans-unit id="sb971debc37bf0b54">
-  <source>Owner</source>
 </trans-unit>
 <trans-unit id="s9ad1286ef798a58d">
   <source>Joining as</source>
@@ -1019,13 +771,13 @@
   <source>Page not found</source>
 </trans-unit>
 <trans-unit id="s177e7625ce541f0c">
-  <source>Running in  browser windowsRunning in <x id="0" equiv-text="${browserWindows}"/> browser windows</source>
+  <source><x id="0" equiv-text="${browserWindows}"/>Running in <x id="0" equiv-text="${browserWindows}"/> browser windows</source>
 </trans-unit>
 <trans-unit id="s7ae186ca0312ca74">
   <source>Running in 1 browser window</source>
 </trans-unit>
 <trans-unit id="s94a1f5fb1bdb10a4">
-  <source><x id="0" equiv-text="${this.browsersCount}"/><x id="1" equiv-text="${this.scale}"/><x id="0" equiv-text="${this.browsersCount}"/> browser(s) × <x id="1" equiv-text="${this.scale}"/> crawler(s). Number of crawlers corresponds to scale.</source>
+  <source><x id="1" equiv-text="${this.scale}"/> browser(s) ×  crawler(s). Number of crawlers corresponds to scale.<x id="0" equiv-text="${this.browsersCount}"/> browser(s) × <x id="1" equiv-text="${this.scale}"/> crawler(s). Number of crawlers corresponds to scale.</source>
 </trans-unit>
 <trans-unit id="s1828a9ea3830e8b7">
   <source>Default Profile</source>
@@ -1046,13 +798,13 @@
   <source>Previous page</source>
 </trans-unit>
 <trans-unit id="h7ee8a6e551e702ba">
-  <source><x id="1" equiv-text="${this.pages} "/><x id="0" equiv-text="${this.renderInput()}"/><x id="1" equiv-text="${this.pages} "/> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
+  <source><x id="0" equiv-text="${this.renderInput()}"/>  of  <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
 </trans-unit>
 <trans-unit id="s542ffff558768ea3">
   <source>Next page</source>
 </trans-unit>
 <trans-unit id="s5697808ce744d508">
-  <source>Current page, page Current page, page <x id="0" equiv-text="${this.page}"/></source>
+  <source><x id="0" equiv-text="${this.page}"/>Current page, page <x id="0" equiv-text="${this.page}"/></source>
 </trans-unit>
 <trans-unit id="s01237b2d0230b92f">
   <source>Crawl Queue</source>
@@ -1061,7 +813,7 @@
   <source>No pages queued.</source>
 </trans-unit>
 <trans-unit id="sc5a403492f1b290d">
-  <source><x id="0" equiv-text="${((this.page - 1) * this.pageSize +&#10;    1).toLocaleString()}"/><x id="1" equiv-text="${Math.min(this.page * this.pageSize, this.queue.total).toLocaleString()}"/><x id="2" equiv-text="${this.queue.total.toLocaleString()}"/><x id="0" equiv-text="${((this.page - 1) * this.pageSize +&#10;    1).toLocaleString()}"/>⁠–⁠<x id="1" equiv-text="${Math.min(this.page * this.pageSize, this.queue.total).toLocaleString()}"/> of <x id="2" equiv-text="${this.queue.total.toLocaleString()}"/> URLs</source>
+  <source><x id="1" equiv-text="${Math.min(this.page * this.pageSize, this.queue.total).toLocaleString()}"/><x id="0" equiv-text="${((this.page - 1) * this.pageSize +&#10;    1).toLocaleString()}"/><x id="1" equiv-text="${Math.min(this.page * this.pageSize, this.queue.total).toLocaleString()}"/><x id="2" equiv-text="${this.queue.total.toLocaleString()}"/><x id="0" equiv-text="${((this.page - 1) * this.pageSize +&#10;    1).toLocaleString()}"/>⁠–⁠<x id="1" equiv-text="${Math.min(this.page * this.pageSize, this.queue.total).toLocaleString()}"/> of <x id="2" equiv-text="${this.queue.total.toLocaleString()}"/> URLs</source>
 </trans-unit>
 <trans-unit id="sd3bf15293ab40535">
   <source><x id="0" equiv-text="${this.queue.total.toLocaleString()}"/><x id="0" equiv-text="${this.queue.total.toLocaleString()}"/> URLs</source>
@@ -1073,7 +825,7 @@
   <source>No queue</source>
 </trans-unit>
 <trans-unit id="s813262fab638bbfc">
-  <source>- URLs-<x id="0" equiv-text="${this.matchedTotal.toLocaleString()}"/> URLs</source>
+  <source><x id="0" equiv-text="${this.matchedTotal.toLocaleString()}"/>-<x id="0" equiv-text="${this.matchedTotal.toLocaleString()}"/> URLs</source>
 </trans-unit>
 <trans-unit id="s6c4a20fdba7af262">
   <source>-1 URL</source>
@@ -1082,7 +834,7 @@
   <source>Sorry, couldn't fetch crawl queue at this time.</source>
 </trans-unit>
 <trans-unit id="h98fd4ace98188324">
-  <source>Removed exclusion: Removed exclusion: <x id="0" equiv-text="&lt;code&gt;${regex}&lt;/code&gt;"/></source>
+  <source><x id="0" equiv-text="&lt;code&gt;${regex}&lt;/code&gt;"/>Removed exclusion: <x id="0" equiv-text="&lt;code&gt;${regex}&lt;/code&gt;"/></source>
 </trans-unit>
 <trans-unit id="s13acc5f8f152f1b6">
   <source>Cannot remove exclusion when crawl is no longer running.</source>
@@ -1106,7 +858,7 @@
   <source>Pending Exclusions</source>
 </trans-unit>
 <trans-unit id="s1eee55ca9401677a">
-  <source>+ URLs+<x id="0" equiv-text="${this.total.toLocaleString()}"/> URLs</source>
+  <source><x id="0" equiv-text="${this.total.toLocaleString()}"/>+<x id="0" equiv-text="${this.total.toLocaleString()}"/> URLs</source>
 </trans-unit>
 <trans-unit id="s2bdd9994851a31c4">
   <source>+1 URL</source>
@@ -1124,25 +876,19 @@
   <source>Browser Default</source>
 </trans-unit>
 <trans-unit id="s690e1342b54350b0">
-  <source>Finished in Finished in <x id="0" equiv-text="${RelativeDuration.humanize(new Date(`${crawl.finished}Z`).valueOf() -&#10;    new Date(`${crawl.started}Z`).valueOf(), { compact: true })}"/></source>
+  <source><x id="0" equiv-text="${RelativeDuration.humanize(new Date(`${crawl.finished}Z`).valueOf() -&#10;    new Date(`${crawl.started}Z`).valueOf(), { compact: true })}"/>Finished in <x id="0" equiv-text="${RelativeDuration.humanize(new Date(`${crawl.finished}Z`).valueOf() -&#10;    new Date(`${crawl.started}Z`).valueOf(), { compact: true })}"/></source>
 </trans-unit>
 <trans-unit id="s1b210718400e7ea8">
-  <source><x id="0" equiv-text="${pagesComplete}"/><x id="0" equiv-text="${pagesComplete}"/> page</source>
+  <source><x id="0" equiv-text="${pagesComplete}"/><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> page</source>
 </trans-unit>
 <trans-unit id="s279de934d8a18e21">
-  <source><x id="0" equiv-text="${pagesComplete}"/><x id="0" equiv-text="${pagesComplete}"/> pages</source>
-</trans-unit>
-<trans-unit id="scd887937a1256cc5">
-  <source>Recurring Schedule</source>
-</trans-unit>
-<trans-unit id="sa2964a55cde21dda">
-  <source>Created by Created by <x id="0" equiv-text="${crawl.userName}"/></source>
+  <source><x id="0" equiv-text="${pagesComplete}"/><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> pages</source>
 </trans-unit>
 <trans-unit id="s199102b736c1fc58">
   <source>Crawler Settings</source>
 </trans-unit>
 <trans-unit id="sd7a3204390541f75">
-  <source><x id="0" equiv-text="${crawlConfig?.crawlTimeout / 60}"/><x id="0" equiv-text="${crawlConfig?.crawlTimeout / 60}"/> minute(s)</source>
+  <source><x id="0" equiv-text="${crawlConfig?.crawlTimeout / 60}"/><x id="0" equiv-text="${crawlConfig?.config.behaviorTimeout / 60}"/> minute(s)</source>
 </trans-unit>
 <trans-unit id="s9b8dccb514a0e34c">
   <source>Schedule</source>
@@ -1170,9 +916,6 @@
 </trans-unit>
 <trans-unit id="s09023907b59c38eb">
   <source>Go</source>
-</trans-unit>
-<trans-unit id="s5b4d6397a46053a6">
-  <source>Invite a User</source>
 </trans-unit>
 <trans-unit id="s1f73b04cfa71200e">
   <source>Invite users to start archiving.</source>
@@ -1220,9 +963,8 @@
   <source>Invited by </source>
 </trans-unit>
 <trans-unit id="h5ddf7ceb5e94efad">
-  <source>You've been invited to join
-                You've been invited to join
-                <x id="0" equiv-text="&lt;span class=&quot;text-primary break-words&quot;&gt;${hasInviteInfo&#10;    ? this.inviteInfo.archiveName || msg(&quot;Browsertrix Cloud&quot;)&#10;    : placeholder}&lt;/span&gt;"/></source>
+  <source><x id="0" equiv-text="&lt;span class=&quot;text-primary break-words&quot;&gt;${hasInviteInfo&#10;    ? this.inviteInfo.archiveName || msg(&quot;Browsertrix Cloud&quot;)&#10;    : placeholder}&lt;/span&gt;"/>You've been invited to join
+                <x id="0" equiv-text="&lt;span class=&quot;text-primary break-words&quot;&gt;${hasInviteInfo&#10;    ? this.inviteInfo.orgName || msg(&quot;Browsertrix Cloud&quot;)&#10;    : placeholder}&lt;/span&gt;"/></source>
 </trans-unit>
 <trans-unit id="s47d31e4dbe55f7d9">
   <source>Browsertrix Cloud</source>
@@ -1249,7 +991,7 @@
   <source>Invalid password</source>
 </trans-unit>
 <trans-unit id="s7d90fb0e2d1684a7">
-  <source>Sent invite to Sent invite to <x id="0" equiv-text="${this.invitedEmail}"/></source>
+  <source><x id="0" equiv-text="${this.invitedEmail}"/>Sent invite to <x id="0" equiv-text="${this.invitedEmail}"/></source>
 </trans-unit>
 <trans-unit id="s586d6bd2eca2da93">
   <source>Users</source>
@@ -1267,10 +1009,10 @@
   <source>Decline</source>
 </trans-unit>
 <trans-unit id="sc9a2484754aae7bb">
-  <source>You've joined .You've joined <x id="0" equiv-text="${this.inviteInfo.archiveName}"/>.</source>
+  <source><x id="0" equiv-text="${this.inviteInfo.archiveName}"/>You've joined <x id="0" equiv-text="${this.inviteInfo.orgName}"/>.</source>
 </trans-unit>
 <trans-unit id="s4b97257cf024d907">
-  <source>You've declined to join .You've declined to join <x id="0" equiv-text="${this.inviteInfo.archiveName}"/>.</source>
+  <source><x id="0" equiv-text="${this.inviteInfo.archiveName}"/>You've declined to join <x id="0" equiv-text="${this.inviteInfo.orgName}"/>.</source>
 </trans-unit>
 <trans-unit id="s79e8cc71a5975b04">
   <source>Message</source>
@@ -1300,7 +1042,7 @@
   <source>Welcome to Browsertrix Cloud!</source>
 </trans-unit>
 <trans-unit id="h39aea0d48061020f">
-  <source>A confirmation email was sent to: .A confirmation email was sent to: <x id="0" equiv-text="&lt;br&gt;&#10;              &lt;strong&gt;${email}&lt;/strong&gt;"/>.</source>
+  <source><x id="0" equiv-text="&lt;br&gt;&#10;              &lt;strong&gt;${email}&lt;/strong&gt;"/>A confirmation email was sent to: <x id="0" equiv-text="&lt;br&gt;&#10;              &lt;strong&gt;${email}&lt;/strong&gt;"/>.</source>
 </trans-unit>
 <trans-unit id="sd11e60711d79e788">
   <source>Click the link in your email to confirm your email address.</source>
@@ -1318,7 +1060,7 @@
 </trans-unit>
 <trans-unit id="sb4c8eaf48e4feb37">
   <source>Example (example.com) Weekly Crawl</source>
-  <note from="lit-localize">Example crawl config name</note>
+  <note from="lit-localize">Example Workflow name</note>
 </trans-unit>
 <trans-unit id="sc90335b573830bad">
   <source>Lisa Simpson</source>
@@ -1352,45 +1094,549 @@
   <source>PM</source>
   <note from="lit-localize">Time AM/PM</note>
 </trans-unit>
-<trans-unit id="heb1a61eff55a7331">
-  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig!.name}&lt;/strong&gt;"/><x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this&#10;    .archiveId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/><x id="2" equiv-text="&lt;/a&gt;"/>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.crawlConfig!.name}&lt;/strong&gt;"/>.
-            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this&#10;    .archiveId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+<trans-unit id="s09075b7d9df189b9">
+  <source>Workflow not found.</source>
 </trans-unit>
-<trans-unit id="hc614defe8c6f5d1b">
-  <source><x id="0" equiv-text="&lt;strong&gt;${template.name}&lt;/strong&gt;"/><x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this&#10;    .archiveId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/><x id="2" equiv-text="&lt;/a&gt;"/>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${template.name}&lt;/strong&gt;"/>. <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this&#10;    .archiveId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+<trans-unit id="sf612ca852330362b">
+  <source>Sorry, couldn't retrieve Workflow at this time.</source>
 </trans-unit>
-<trans-unit id="sa0ca791d0f13f0e5">
-  <source>Archive</source>
+<trans-unit id="sfc00ac8a0ca1e594">
+  <source>Workflow cannot be edited while crawl is running.</source>
 </trans-unit>
-<trans-unit id="s6137f33aa33b6786">
-  <source>View Archive</source>
+<trans-unit id="sa74e88ae69ff57ca">
+  <source>Edit Workflow</source>
 </trans-unit>
-<trans-unit id="h4e822e8114781ea2">
-  <source><x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/><x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this.crawl&#10;    .aid}/crawls/crawl/${crawlTemplate.currCrawlId}&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/><x id="2" equiv-text="&lt;/a&gt;"/>Crawl of <x id="0" equiv-text="&lt;strong&gt;${this.crawl.configName}&lt;/strong&gt;"/> is already
-              running.
-              <x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${this.crawl&#10;    .aid}/crawls/crawl/${crawlTemplate.currCrawlId}&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>View crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+<trans-unit id="s7c79cbf9ee2eda85">
+  <source>Back to Workflows</source>
 </trans-unit>
-<trans-unit id="h60c407526233bdcc">
-  <source><x id="0" equiv-text="&lt;strong&gt;${crawl.configName}&lt;/strong&gt;"/><x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/><x id="2" equiv-text="&lt;/a&gt;"/>Crawl of <x id="0" equiv-text="&lt;strong&gt;${crawl.configName}&lt;/strong&gt;"/> is already running.
-            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/archives/${crawl.aid}/crawls/crawl/${crawlTemplate.currCrawlId}&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>View crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+<trans-unit id="s6068ea17740268c3">
+  <source>Duplicate Workflow</source>
 </trans-unit>
-<trans-unit id="scd337013f9001988">
-  <source>Sorry, couldn't retrieve archive at this time.</source>
+<trans-unit id="hc226df43ef96e720">
+  <source><x id="0" equiv-text="${firstSeed}&#10;          &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
 </trans-unit>
-<trans-unit id="sdf57c174052aef12">
-  <source>Your name will be visible to archive collaborators.</source>
+<trans-unit id="h649ef1ec13735ee9">
+  <source><x id="0" equiv-text="${firstSeed}&#10;        &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
 </trans-unit>
-<trans-unit id="s7a6e97af17be4ccd">
-  <source>Teams</source>
+<trans-unit id="s7d9dfe8998225d09">
+  <source>Copied Workflowuration to new template.</source>
 </trans-unit>
-<trans-unit id="s0b23ded1bf217f6a">
-  <source>All Teams</source>
+<trans-unit id="sf6381d743b5f1e4d">
+  <source>Sorry, couldn't deactivate Workflow at this time.</source>
 </trans-unit>
-<trans-unit id="s033ff2afd157fff1">
-  <source>You don't have any archives.</source>
+<trans-unit id="s6ec009ac55d85d6a">
+  <source>Sorry, couldn't delete Workflow at this time.</source>
 </trans-unit>
-<trans-unit id="s36443da197811866">
-  <source>team-member@email.com</source>
+<trans-unit id="h53d1561f11014ce9">
+  <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName()}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/orgs/${this.orgId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="s7bd9565ea1a1da14">
+  <source>Sorry, couldn't retrieve Workflows at this time.</source>
+</trans-unit>
+<trans-unit id="s7b1ef3a631d73f81">
+  <source>Workflows</source>
+</trans-unit>
+<trans-unit id="sf7397f6287e8520a">
+  <source>New Workflow</source>
+</trans-unit>
+<trans-unit id="sa83bf2a7e5ed33e0">
+  <source>No Workflows yet.</source>
+</trans-unit>
+<trans-unit id="se664956daed18e04">
+  <source>Search by name or Crawl URL</source>
+</trans-unit>
+<trans-unit id="h64cede7048165557">
+  <source>Started crawl from
+            <x id="0" equiv-text="&lt;strong&gt;${this.renderName(crawlConfig)}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/orgs/${this.orgId}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="sd77c5f8da91d0729">
+  <source>Maximum <x id="0" equiv-text="${maxLength}"/> characters</source>
+</trans-unit>
+<trans-unit id="s219c523d781b27f0">
+  <source>Please shorten this text to <x id="0" equiv-text="${maxLength}"/> or less characters.</source>
+</trans-unit>
+<trans-unit id="sa1c466807a6fdfb7">
+  <source><x id="0" equiv-text="${overMax}"/> character over limit</source>
+</trans-unit>
+<trans-unit id="s8b6894f4bfec27c0">
+  <source><x id="0" equiv-text="${overMax}"/> characters over limit</source>
+</trans-unit>
+<trans-unit id="sf6d20a78f131dd9e">
+  <source>Pages in the Same Directory</source>
+</trans-unit>
+<trans-unit id="sbf1da5e6f05a7eac">
+  <source>Hashtag Links Only</source>
+</trans-unit>
+<trans-unit id="s0558979b981b9057">
+  <source>Custom Page Prefix</source>
+</trans-unit>
+<trans-unit id="s7d61376257220dab">
+  <source>Scope</source>
+</trans-unit>
+<trans-unit id="sb15d4f1e13d04925">
+  <source>Limits</source>
+</trans-unit>
+<trans-unit id="s27fe8e8cd298d71f">
+  <source>Scheduling</source>
+</trans-unit>
+<trans-unit id="s252a52330d32b900">
+  <source>Metadata</source>
+</trans-unit>
+<trans-unit id="se844aaf0fcefcb31">
+  <source>Review Config</source>
+</trans-unit>
+<trans-unit id="s814a0cb8f2908f75">
+  <source>Save Workflow</source>
+</trans-unit>
+<trans-unit id="sf4626f0918c0d6a0">
+  <source>Review &amp; Save</source>
+</trans-unit>
+<trans-unit id="sde8eef16a4581a29">
+  <source>The crawler will visit and record each URL listed in the order
+        defined here.</source>
+</trans-unit>
+<trans-unit id="s7af85d601db244a7">
+  <source>Tells the crawler which pages it can visit.</source>
+</trans-unit>
+<trans-unit id="scd8de6628aaada05">
+  <source>Include Any Linked Page</source>
+</trans-unit>
+<trans-unit id="s5136cba9c3481508">
+  <source>If checked, the crawler will visit pages one link away from a Crawl
+        URL.</source>
+</trans-unit>
+<trans-unit id="se1ffd5d5cd49cdc4">
+  <source>Specify exclusion rules for what pages should not be visited.
+            Exclusions apply to all URLs.</source>
+</trans-unit>
+<trans-unit id="hb11df4c573fa634b">
+  <source>Will crawl all pages and paths in the same directory, e.g.
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500 break-word break-word&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>/path/page-2<x id="1" equiv-text="&lt;/span&gt;"/></source>
+</trans-unit>
+<trans-unit id="hed557a686cef7d66">
+  <source>Will only visit
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
+            hash anchor links, e.g.
+            <x id="1" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;text-blue-500 font-medium break-word&quot;&gt;"/>#example-page<x id="2" equiv-text="&lt;/span&gt;"/></source>
+</trans-unit>
+<trans-unit id="h3d374d25a98e1821">
+  <source>Will crawl all page URLs that begin with
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500 break-word&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
+            or any URL that begins with those specified in
+            <x id="1" equiv-text="&lt;em&gt;"/>Extra URLs in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
+</trans-unit>
+<trans-unit id="s285f35c68ab11461">
+  <source>The starting point of your crawl.</source>
+</trans-unit>
+<trans-unit id="s7efc078b0771ade6">
+  <source>Start URL Scope</source>
+</trans-unit>
+<trans-unit id="sc8d321269980767e">
+  <source>If the crawler finds pages outside of the Start URL Scope they
+            will only be saved if they begin with URLs listed here.</source>
+</trans-unit>
+<trans-unit id="sba156796788dc6c2">
+  <source>If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.</source>
+</trans-unit>
+<trans-unit id="scbd664e4049d11f3">
+  <source>Specify exclusion rules for what pages should not be visited.</source>
+</trans-unit>
+<trans-unit id="s04d558a299752f1a">
+  <source>Additional URLs</source>
+</trans-unit>
+<trans-unit id="s06b016f70e0346cb">
+  <source>The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled.</source>
+</trans-unit>
+<trans-unit id="sef6464a6d42bbed8">
+  <source>Minimum <x id="0" equiv-text="${minPages}"/> page</source>
+</trans-unit>
+<trans-unit id="sf355b27a8654fc91">
+  <source>Minimum <x id="0" equiv-text="${minPages}"/> pages</source>
+</trans-unit>
+<trans-unit id="sd2956c877fc42042">
+  <source>Adds a hard limit on the number of pages
+      that will be crawled.</source>
+</trans-unit>
+<trans-unit id="s2601555dfa2ef8de">
+  <source>Adds a hard time limit for how long the crawler can spend on a
+        single webpage.</source>
+</trans-unit>
+<trans-unit id="s4ad6912b1925acb3">
+  <source>Gracefully stop the crawler after a specified time limit.</source>
+</trans-unit>
+<trans-unit id="sdc8e3530c2b118d4">
+  <source>Increasing parallel crawler instances can speed up crawls, but may
+        increase the chances of getting rate limited.</source>
+</trans-unit>
+<trans-unit id="s8727d5795d07b569">
+  <source>Choose a custom profile to make use of saved cookies and logged-in
+        accounts.</source>
+</trans-unit>
+<trans-unit id="ha83050ca2f4a6020">
+  <source>Blocks advertising content from being loaded. Uses
+          <x id="0" equiv-text="&lt;a href=&quot;https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>Steven Black’s Hosts file<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+</trans-unit>
+<trans-unit id="s3fb59317f4865eaa">
+  <source>Websites that observe the browser’s language setting may serve
+        content in that language if available.</source>
+</trans-unit>
+<trans-unit id="sd09e09c208f7f321">
+  <source>Should a crawl run immediately when setup is complete, on a set
+        day, or on a recurring schedule?</source>
+</trans-unit>
+<trans-unit id="s680d6fc47b06b8b5">
+  <source>Limit the frequency for how often a crawl will run.</source>
+</trans-unit>
+<trans-unit id="s88d3b00e313183b5">
+  <source>What day of the week should a crawl run on?</source>
+</trans-unit>
+<trans-unit id="sb4ab7b002d655ce9">
+  <source>What day of the month should a crawl run on?</source>
+</trans-unit>
+<trans-unit id="s4174899261b8b308">
+  <source>A crawl will run at this time in your current timezone.</source>
+</trans-unit>
+<trans-unit id="sde9f50b30f566dd5">
+  <source>If checked, a crawl will run at the time specified above and also
+        once when setup is complete.</source>
+</trans-unit>
+<trans-unit id="sfabae0e4a2592019">
+  <source>Customize this Workflow and crawl name. Crawls are named after
+        the starting URL(s) by default.</source>
+</trans-unit>
+<trans-unit id="s5985fcdd14acf484">
+  <source>Create or assign this crawl (and its outputs) to one or more tags
+        to help organize your archived data.</source>
+</trans-unit>
+<trans-unit id="s1af7acc00654b67c">
+  <source>There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue.</source>
+</trans-unit>
+<trans-unit id="h9990be761450fff4">
+  <source>There is an issue with this Workflowuration:<x id="0" equiv-text="&lt;br&gt;&lt;br&gt;"/>Crawl
+            URL(s) required in
+            <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>Crawl Setup<x id="2" equiv-text="&lt;/a&gt;"/>. <x id="3" equiv-text="&lt;br&gt;&lt;br&gt;"/>
+            Please fix to continue.</source>
+</trans-unit>
+<trans-unit id="s265a8f6e25a8c5f2">
+  <source>Workflow created.</source>
+</trans-unit>
+<trans-unit id="sb59e91f2312fbb0b">
+  <source>Workflow updated.</source>
+</trans-unit>
+<trans-unit id="s0d43f0124986c0b3">
+  <source>Couldn't save Workflow. Please fix the following Workflowuration issues:</source>
+</trans-unit>
+<trans-unit id="h6155eba8f75ec1c2">
+  <source>New Workflow — <x id="0" equiv-text="${jobTypeLabels[jobType]}"/></source>
+</trans-unit>
+<trans-unit id="sa179273338680745">
+  <source>The crawler visits every URL specified in a list, and optionally every URL linked on those pages.</source>
+</trans-unit>
+<trans-unit id="s33f30b3e5f460602">
+  <source>The crawler automatically discovers and archives pages starting from a single seed URL.</source>
+</trans-unit>
+<trans-unit id="s4f1ad6b48a5df506">
+  <source>Logs</source>
+</trans-unit>
+<trans-unit id="s734968f3fefed215">
+  <source>Crawl Exclusions</source>
+</trans-unit>
+<trans-unit id="sdd5f4eba5c1d833c">
+  <source>Metadata cannot be edited while crawl is running.</source>
+</trans-unit>
+<trans-unit id="s10f3845975a0351e">
+  <source>Edit Metadata</source>
+</trans-unit>
+<trans-unit id="s30d8ebefaf631d31">
+  <source>Edit Crawler Instances</source>
+</trans-unit>
+<trans-unit id="h49e6bbd0cf76ee3f">
+  <source><x id="0" equiv-text="&lt;span class=&quot;break-words&quot;&gt;${this.crawl.firstSeed}&lt;/span&gt;&#10;            &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainder}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
+</trans-unit>
+<trans-unit id="h3fc47cd542ed1b20">
+  <source><x id="0" equiv-text="&lt;span class=&quot;break-words&quot;&gt;${this.crawl.firstSeed}&lt;/span&gt;&#10;            &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainder}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
+</trans-unit>
+<trans-unit id="s96c92dc644219e36">
+  <source>Copy Workflow ID</source>
+</trans-unit>
+<trans-unit id="scb57efea186060b1">
+  <source>Delete Crawl</source>
+</trans-unit>
+<trans-unit id="h0ce423190a1a4471">
+  <source>Manual start by
+                        <x id="0" equiv-text="&lt;span&gt;${this.crawl?.userName || this.crawl?.userid}&lt;/span&gt;"/></source>
+</trans-unit>
+<trans-unit id="s24761a0cc8d9c0aa">
+  <source>Organization</source>
+</trans-unit>
+<trans-unit id="s3eb0700ca2f3bc97">
+  <source>View Organization</source>
+</trans-unit>
+<trans-unit id="s005053d82b712e0a">
+  <source>Notes</source>
+</trans-unit>
+<trans-unit id="s27d3b781eeee671a">
+  <source>Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited.</source>
+</trans-unit>
+<trans-unit id="h65167310d9d84647">
+  <source>Crawl of <x id="0" equiv-text="&lt;strong&gt;${this.renderName()}&lt;/strong&gt;"/> is already
+              running.</source>
+</trans-unit>
+<trans-unit id="s25e2ed07c8147e9d">
+  <source>Are you sure you want to delete crawl of <x id="0" equiv-text="${this.renderName()}"/>?</source>
+</trans-unit>
+<trans-unit id="s8674d705840bf3f6">
+  <source>Successfully deleted crawl</source>
+</trans-unit>
+<trans-unit id="s4c60317e4731da19">
+  <source>Starting</source>
+</trans-unit>
+<trans-unit id="s85994a70cd39166c">
+  <source>Running</source>
+</trans-unit>
+<trans-unit id="s4f566a3b2235ad29">
+  <source>Stopping</source>
+</trans-unit>
+<trans-unit id="sdcda09c20b09b522">
+  <source>Complete</source>
+</trans-unit>
+<trans-unit id="sbf9c5c5a8e5efad4">
+  <source>Failed</source>
+</trans-unit>
+<trans-unit id="sc5fcb9351a03ab2e">
+  <source>Stopped</source>
+</trans-unit>
+<trans-unit id="se41c3c8346089064">
+  <source>Timed Out</source>
+</trans-unit>
+<trans-unit id="sa30c4d3b566b6b1a">
+  <source>Canceled</source>
+</trans-unit>
+<trans-unit id="s5870292e1ae494dd">
+  <source>Date Created</source>
+</trans-unit>
+<trans-unit id="s873c024ca552f3e4">
+  <source>Date Completed</source>
+</trans-unit>
+<trans-unit id="saa33768e03c45fc8">
+  <source>File Size</source>
+</trans-unit>
+<trans-unit id="sf91174247cd8fb72">
+  <source>Search by name, Crawl Start URL, or Workflow ID</source>
+</trans-unit>
+<trans-unit id="s900a5e61e7ade066">
+  <source>View:</source>
+</trans-unit>
+<trans-unit id="sb090ab524895d2b4">
+  <source>All Crawls</source>
+</trans-unit>
+<trans-unit id="s9b288e9b7f945b0c">
+  <source>Sort by:</source>
+</trans-unit>
+<trans-unit id="s76d9944af031bdb3">
+  <source>No matching crawls found.</source>
+</trans-unit>
+<trans-unit id="s078f25f106da59fe">
+  <source>Clear all filters</source>
+</trans-unit>
+<trans-unit id="sc75900abc0ec0f82">
+  <source>Stop Crawl</source>
+</trans-unit>
+<trans-unit id="sf5ddeacbdec765ed">
+  <source>Cancel Immediately</source>
+</trans-unit>
+<trans-unit id="s908b1e6d186d318b">
+  <source>Re-Run Crawl</source>
+</trans-unit>
+<trans-unit id="sa71de39189a9e9cd">
+  <source>Go to Workflow</source>
+</trans-unit>
+<trans-unit id="sa27145d52630b893">
+  <source>Copy Config ID</source>
+</trans-unit>
+<trans-unit id="saae760a5004a02b5">
+  <source>Copy Tags</source>
+</trans-unit>
+<trans-unit id="h2a6ff8d2d005bc98">
+  <source>Crawl of <x id="0" equiv-text="&lt;strong&gt;${crawl.name}&lt;/strong&gt;"/> is already running.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/orgs/${crawl.oid}/crawls/crawl/${crawlTemplate.currCrawlId}&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>View crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="h10e59c65837671d1">
+  <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${crawl.name}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;/orgs/${crawl.oid}/crawls/crawl/${data.started}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="hb3f6f5aa87a2a8d4">
+  <source>Sorry, cannot rerun crawl from a deactivated Workflow.
+              <x id="0" equiv-text="&lt;br&gt;&#10;              &lt;button class=&quot;underline hover:no-underline&quot; @click=&quot;${() =&gt; this.duplicateConfig(crawl, crawlTemplate)}&quot;&gt;"/>
+                Duplicate Workflow
+              <x id="1" equiv-text="&lt;/button&gt;"/></source>
+</trans-unit>
+<trans-unit id="s3765f5b8ff0c42d6">
+  <source>Workflows using this profile</source>
+</trans-unit>
+<trans-unit id="s4de1cf2dacc29c2a">
+  <source>Edit the profile to make changes or view its present configuration</source>
+</trans-unit>
+<trans-unit id="s67f987f6a3c3de74">
+  <source>Edit Browser Profile</source>
+</trans-unit>
+<trans-unit id="sea9b3d2d873d5c05">
+  <source>Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here.</source>
+</trans-unit>
+<trans-unit id="h132d0ccd2402fb33">
+  <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, in use by
+              <x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs&#10;    .map(({ name }: any) =&gt; name)&#10;    .join(&quot;, &quot;)}&lt;/strong&gt;"/>. Please remove browser profile from Workflow to continue.</source>
+</trans-unit>
+<trans-unit id="s69bed3819e25a7df">
+  <source>Org Information</source>
+</trans-unit>
+<trans-unit id="s121cd82dcf118d06">
+  <source>Org Settings</source>
+</trans-unit>
+<trans-unit id="s52d61e7db1ece998">
+  <source>Active Members</source>
+</trans-unit>
+<trans-unit id="sf5a8607d6239c964">
+  <source>Invite New Member</source>
+</trans-unit>
+<trans-unit id="sde7ccf17ea362380">
+  <source>Org Name</source>
+</trans-unit>
+<trans-unit id="s4605b8ed548bb31a">
+  <source>Pending Invites</source>
+</trans-unit>
+<trans-unit id="s697bd21982bb821b">
+  <source>Cannot remove only admin member</source>
+</trans-unit>
+<trans-unit id="s44767556344cbd9f">
+  <source>Admin — Can create crawls and manage org members</source>
+</trans-unit>
+<trans-unit id="s86e1f8ab45583c75">
+  <source>Crawler — Can create crawls</source>
+</trans-unit>
+<trans-unit id="s67e4fdc06a42723a">
+  <source>Viewer — Can view crawls</source>
+</trans-unit>
+<trans-unit id="s2017def625ae7fbb">
+  <source>Sorry, couldn't retrieve pending invites at this time.</source>
+</trans-unit>
+<trans-unit id="s7cfdd7b9b1ce6231">
+  <source>Successfully invited <x id="0" equiv-text="${inviteEmail}"/>.</source>
+</trans-unit>
+<trans-unit id="s53846234c681dace">
+  <source>Sorry, couldn't invite user at this time.</source>
+</trans-unit>
+<trans-unit id="s63ca31a1df9116e2">
+  <source>Successfully removed <x id="0" equiv-text="${invite.email}"/> from <x id="1" equiv-text="${this.org.name}"/>.</source>
+</trans-unit>
+<trans-unit id="s667558910cf30318">
+  <source>Sorry, couldn't remove <x id="0" equiv-text="${invite.email}"/> at this time.</source>
+</trans-unit>
+<trans-unit id="s66ea9952bbd68025">
+  <source>Sorry, couldn't retrieve organization at this time.</source>
+</trans-unit>
+<trans-unit id="s8f767b75a9093830">
+  <source>Updated organization name.</source>
+</trans-unit>
+<trans-unit id="seab9c5cfdd5b6ee1">
+  <source>Sorry, couldn't update organization name at this time.</source>
+</trans-unit>
+<trans-unit id="s0726c5784ccf9222">
+  <source>Successfully updated role for <x id="0" equiv-text="${user.name || user.email}"/>.</source>
+</trans-unit>
+<trans-unit id="scc21a97f5f1b13b0">
+  <source>Sorry, couldn't update role for <x id="0" equiv-text="${user.name || user.email}"/> at this time.</source>
+</trans-unit>
+<trans-unit id="saafb6030ac4b40dd">
+  <source>Are you sure you want to remove yourself from <x id="0" equiv-text="${this.org.name}"/>?</source>
+</trans-unit>
+<trans-unit id="s11326fd2590f4e5e">
+  <source>Default</source>
+</trans-unit>
+<trans-unit id="s2fd966f953bb23c6">
+  <source>1 member</source>
+</trans-unit>
+<trans-unit id="s537571911a907a86">
+  <source><x id="0" equiv-text="${memberCount}"/> members</source>
+</trans-unit>
+<trans-unit id="sba6856d0379608a3">
+  <source>Your name will be visible to organization collaborators.</source>
+</trans-unit>
+<trans-unit id="sfca36a44cc670205">
+  <source>Started <x id="0" equiv-text="${RelativeDuration.humanize(new Date().valueOf() -&#10;    new Date(`${crawl.started}Z`).valueOf(), { compact: true })}"/> ago</source>
+</trans-unit>
+<trans-unit id="sce4f864763a12cc5">
+  <source>In Progress</source>
+</trans-unit>
+<trans-unit id="sb788f9b4d02fe2b9">
+  <source><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> / <x id="1" equiv-text="${this.numberFormatter.format(pagesFound)}"/> page</source>
+</trans-unit>
+<trans-unit id="s0da3183dc15e5d3e">
+  <source><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> / <x id="1" equiv-text="${this.numberFormatter.format(pagesFound)}"/> pages</source>
+</trans-unit>
+<trans-unit id="s0a959a05c322b9ed">
+  <source>+<x id="0" equiv-text="${remainder}"/> URL</source>
+</trans-unit>
+<trans-unit id="sa7dba145ac288341">
+  <source>Name &amp; Start Time</source>
+</trans-unit>
+<trans-unit id="s78789724e789221c">
+  <source>Size</source>
+</trans-unit>
+<trans-unit id="s624df515142c6fd6">
+  <source>Config Author</source>
+</trans-unit>
+<trans-unit id="s612757c62472bbc5">
+  <source>Crawl Metadata</source>
+</trans-unit>
+<trans-unit id="sc5d32436e3ff3ec7">
+  <source>List of Additional URLs</source>
+</trans-unit>
+<trans-unit id="s84f53a9ae5b34f78">
+  <source>Successfully saved crawl details.</source>
+</trans-unit>
+<trans-unit id="s9e5ae4184a72363a">
+  <source>Sorry, couldn't save crawl details at this time.</source>
+</trans-unit>
+<trans-unit id="sce6f1cb94a02b0bb">
+  <source>Organizations</source>
+</trans-unit>
+<trans-unit id="sb8e7753cf636ad38">
+  <source>All Organizations</source>
+</trans-unit>
+<trans-unit id="s0b93e1d76ac26914">
+  <source>New Organization</source>
+</trans-unit>
+<trans-unit id="s8743a99bf24efa16">
+  <source>Invite User to Org</source>
+</trans-unit>
+<trans-unit id="s734b679e69b9fe4e">
+  <source>My Organization</source>
+</trans-unit>
+<trans-unit id="s8fdbf5db84bb1bfb">
+  <source>Create Org</source>
+</trans-unit>
+<trans-unit id="s4bd7cce2b092e180">
+  <source>You don't have any organizations.</source>
+</trans-unit>
+<trans-unit id="s1184d1f63618dc4e">
+  <source>Created new org named "<x id="0" equiv-text="${params.name}"/>".</source>
+</trans-unit>
+<trans-unit id="sf1c2a4776e202435">
+  <source>Sorry, couldn't create organization at this time.</source>
+</trans-unit>
+<trans-unit id="s418c368c5315bec1">
+  <source>This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.</source>
+</trans-unit>
+<trans-unit id="s7fee95b66225e1fb">
+  <source>Dashboard</source>
+</trans-unit>
+<trans-unit id="s05836f33cb2800d5">
+  <source>org-member@email.com</source>
   <note from="lit-localize">Placeholder text for email to invite</note>
 </trans-unit>
 </body>

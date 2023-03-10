@@ -43,15 +43,14 @@ import type {
   TagsChangeEvent,
 } from "../../components/tag-input";
 import type {
-  CrawlConfigParams,
+  WorkflowParams,
   Profile,
-  InitialCrawlConfig,
   JobType,
   Seed,
   SeedConfig,
 } from "./types";
 
-type NewCrawlConfigParams = CrawlConfigParams & {
+type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
 };
 
@@ -80,12 +79,12 @@ type FormState = {
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: CrawlConfigParams["config"]["scopeType"];
-  exclusions: CrawlConfigParams["config"]["exclude"];
-  pageLimit: CrawlConfigParams["config"]["limit"];
-  scale: CrawlConfigParams["scale"];
-  blockAds: CrawlConfigParams["config"]["blockAds"];
-  lang: CrawlConfigParams["config"]["lang"];
+  scopeType: WorkflowParams["config"]["scopeType"];
+  exclusions: WorkflowParams["config"]["exclude"];
+  pageLimit: WorkflowParams["config"]["limit"];
+  scale: WorkflowParams["scale"];
+  blockAds: WorkflowParams["config"]["blockAds"];
+  lang: WorkflowParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly";
   scheduleDayOfMonth: number;
@@ -96,7 +95,7 @@ type FormState = {
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: CrawlConfigParams["name"];
+  jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
 };
@@ -207,7 +206,7 @@ export class CrawlConfigEditor extends LiteElement {
   jobType?: JobType;
 
   @property({ type: Object })
-  initialCrawlConfig?: InitialCrawlConfig;
+  initialWorkflow?: WorkflowParams;
 
   @state()
   private tagOptions: string[] = [];
@@ -306,10 +305,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (changedProperties.has("authState") && this.authState) {
       this.fetchAPIDefaults();
     }
-    if (
-      changedProperties.get("initialCrawlConfig") &&
-      this.initialCrawlConfig
-    ) {
+    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
       this.initializeEditor();
     }
     if (changedProperties.get("progressState") && this.progressState) {
@@ -388,12 +384,12 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private getInitialFormState(): Partial<FormState> {
-    if (!this.initialCrawlConfig) return {};
+    if (!this.initialWorkflow) return {};
     const formState: Partial<FormState> = {};
-    const seedsConfig = this.initialCrawlConfig.config;
+    const seedsConfig = this.initialWorkflow.config;
     const { seeds } = seedsConfig;
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    if (this.initialCrawlConfig.jobType === "seed-crawl") {
+    if (this.initialWorkflow.jobType === "seed-crawl") {
       if (typeof seeds[0] === "string") {
         formState.primarySeedUrl = seeds[0];
       } else {
@@ -419,17 +415,17 @@ export class CrawlConfigEditor extends LiteElement {
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
-      if (this.initialCrawlConfig.jobType === "custom") {
+      if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
       }
     }
 
-    if (this.initialCrawlConfig.schedule) {
+    if (this.initialWorkflow.schedule) {
       formState.scheduleType = "cron";
       formState.scheduleFrequency = getScheduleInterval(
-        this.initialCrawlConfig.schedule
+        this.initialWorkflow.schedule
       );
-      const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
+      const nextDate = getNextDate(this.initialWorkflow.schedule)!;
       formState.scheduleDayOfMonth = nextDate.getDate();
       formState.scheduleDayOfWeek = nextDate.getDay();
       const hours = nextDate.getHours();
@@ -446,20 +442,20 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
 
-    if (this.initialCrawlConfig.tags?.length) {
-      formState.tags = this.initialCrawlConfig.tags;
+    if (this.initialWorkflow.tags?.length) {
+      formState.tags = this.initialWorkflow.tags;
     }
-    if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
-      formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    if (typeof this.initialWorkflow.crawlTimeout === "number") {
+      formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
     }
     if (typeof seedsConfig.behaviorTimeout === "number") {
       formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
-      jobName: this.initialCrawlConfig.name || "",
-      browserProfile: this.initialCrawlConfig.profileid
-        ? ({ id: this.initialCrawlConfig.profileid } as Profile)
+      jobName: this.initialWorkflow.name || "",
+      browserProfile: this.initialWorkflow.profileid
+        ? ({ id: this.initialWorkflow.profileid } as Profile)
         : undefined,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
@@ -678,7 +674,7 @@ export class CrawlConfigEditor extends LiteElement {
                   this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : this.formState.scheduleType === "none"
-                    ? msg("Save Crawl Config")
+                    ? msg("Save Workflow")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
               : html`
@@ -1448,7 +1444,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("Name")}
           autocomplete="off"
           placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example crawl config name",
+            desc: "Example Workflow name",
           })}
           value=${this.formState.jobName}
           help-text=${helpText}
@@ -1456,7 +1452,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this crawl config and crawl name. Crawls are named after
+        msg(`Customize this Workflow and crawl name. Crawls are named after
         the starting URL(s) by default.`)
       )}
       ${this.renderFormCol(
@@ -1495,9 +1491,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
+        : msg(html`There is an issue with this Workflowuration:<br /><br />Crawl
             URL(s) required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
@@ -1791,12 +1787,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }));
 
       const crawlId = data.run_now_job;
-      let message = msg("Crawl config created.");
+      let message = msg("Workflow created.");
 
       if (crawlId) {
         message = msg("Crawl started with new template.");
       } else if (this.configId) {
-        message = msg("Crawl config updated.");
+        message = msg("Workflow updated.");
       }
 
       this.notify({
@@ -1810,9 +1806,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
         this.navTo(
-          `/orgs/${this.orgId}/crawl-configs/config/${
-            this.configId || data.added
-          }`
+          `/orgs/${this.orgId}/workflows/config/${this.configId || data.added}`
         );
       }
     } catch (e: any) {
@@ -1856,7 +1850,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save crawl config. Please fix the following crawl configuration issues:"
+        "Couldn't save Workflow. Please fix the following Workflowuration issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}
@@ -2005,4 +1999,4 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 }
 
-customElements.define("btrix-crawl-config-editor", CrawlConfigEditor);
+customElements.define("btrix-workflow-editor", CrawlConfigEditor);
