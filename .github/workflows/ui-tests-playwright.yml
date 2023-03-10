@@ -25,11 +25,11 @@ jobs:
       working-directory: ./frontend
     - name: Create env file
       run: |
+        cd frontend
         touch .env
         echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
         echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
         cat .env
-        working-directory: ./frontend
     - name: Run Playwright tests
       run: yarn start && yarn playwright test
       working-directory: ./frontend
