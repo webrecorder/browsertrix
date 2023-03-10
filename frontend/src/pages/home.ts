@@ -51,7 +51,7 @@ export class Home extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
-      this.navTo(`/orgs/${this.orgId}/workflows`);
+      this.navTo(`/orgs/${this.orgId}/crawls`);
     } else if (changedProperties.has("authState") && this.authState) {
       this.fetchOrgs();
     }

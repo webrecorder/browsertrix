@@ -153,11 +153,11 @@ export class Org extends LiteElement {
     return html`
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
+          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Workflows"),
           })}
-          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
               tabName: "browser-profiles",

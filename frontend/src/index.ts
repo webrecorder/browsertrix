@@ -264,7 +264,7 @@ export class App extends LiteElement {
     const isAdmin = this.userInfo?.isAdmin;
     let homeHref = "/";
     if (!isAdmin && this.selectedOrgId) {
-      homeHref = `/orgs/${this.selectedOrgId}/workflows`;
+      homeHref = `/orgs/${this.selectedOrgId}/crawls`;
     }
 
     return html`
@@ -391,7 +391,7 @@ export class App extends LiteElement {
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
             if (value) {
-              this.navigate(`/orgs/${value}/workflows`);
+              this.navigate(`/orgs/${value}/crawls`);
               if (this.userInfo) {
                 this.persistUserSettings(this.userInfo.id, { orgId: value });
               }
