@@ -24,7 +24,7 @@ jobs:
       run:  yarn add playwright && yarn playwright install --with-deps
       working-directory: ./frontend
     - name: Run Playwright tests
-      run: yarn playwright test
+      run: yarn start && yarn playwright test
       working-directory: ./frontend
     - uses: actions/upload-artifact@v3
       if: always()
