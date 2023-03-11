@@ -30,7 +30,7 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Unit tests
         working-directory: frontend
-        run: node --max-old-space-size=4096 $(yarn bin)/jest
+        run: node --max-old-space-size=4096 $(yarn bin)/playwright
       - name: Localization build
         working-directory: frontend
         run: yarn localize:prepare
