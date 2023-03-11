@@ -31,7 +31,7 @@ export type SeedConfig = Pick<
 export type JobType = "url-list" | "seed-crawl" | "custom";
 
 export type WorkflowParams = {
-  jobType: JobType;
+  jobType?: JobType;
   name: string;
   schedule: string;
   scale: number;

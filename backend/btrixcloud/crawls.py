@@ -619,7 +619,7 @@ class CrawlOps:
         )
 
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "oid": org.id}, {"$set": {"config": new_config}}
+            {"_id": crawl_id, "oid": org.id}, {"$set": {"config": new_config.dict()}}
         )
 
         resp = {"success": True}
