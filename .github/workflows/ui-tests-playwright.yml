@@ -48,6 +48,12 @@ jobs:
         API_BASE_URL: ${{ secrets.API_BASE_URL }}
     - name: Run Playwright tests
       run: cd frontend && yarn playwright test
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: playwright-report.json
+        path: playwright-report/
+        retention-days: 30
     - name: Add comment with Playwright tests
       uses: actions/github-script@v4
       if: always()
@@ -55,7 +61,7 @@ jobs:
        script: |
             const { githubContext, eventName, sha, ref } = github;
             const fs = require('fs');
-            const playwrightOutput = fs.readFileSync('test-results.json', 'utf8');
+            const playwrightOutput = fs.readFileSync('playwright-report.json', 'utf8');
             const commentBody = `
             ### Playwright test results
             <details><summary>Show/hide details</summary>
