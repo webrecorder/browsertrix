@@ -54,3 +54,30 @@ jobs:
         name: playwright-report
         path: frontend/playwright-report/
         retention-days: 30
+    - name: Add comment with Playwright tests
+      uses: actions/github-script@v4
+      if: always()
+      with:
+       script: |
+            const { githubContext, eventName, sha, ref } = github;
+            const fs = require('fs');
+            const playwrightOutput = fs.readFileSync('playwright-report.zip', 'utf8');
+            const commentBody = `
+            ### Playwright test results
+            <details><summary>Show/hide details</summary>
+            \`\`\`
+            ${playwrightOutput}
+            \`\`\`
+            </details>
+            `;
+            const issueComment = {
+              body: commentBody,
+              sha: sha,
+              event: eventName,
+              ref: ref,
+            };
+            githubContext.octokit.issues.createComment({
+              ...githubContext.repo,
+              issue_number: githubContext.payload.pull_request.number,
+              ...issueComment,
+            });
