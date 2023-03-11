@@ -52,13 +52,14 @@ jobs:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
       - name: Run Playwright tests
         run: cd frontend && yarn playwright test
-      - uses: actions/upload-artifact@v2
+      - name: Archive Playwright report
+        uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: playwright-report.zip
+          name: playwright-report
           path: frontend/playwright-report/
           retention-days: 30
-      - name: Add comment with Playwright tests
+      - name: Add comment with Playwright test results
         uses: actions/github-script@v4
         if: always()
         with:
