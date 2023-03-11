@@ -2,7 +2,7 @@ name: Playwright Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
@@ -15,70 +15,73 @@ jobs:
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       working-directory: ./frontend
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: 16
-    - name: Install dependencies
-      run: yarn
-    - name: Install Playwright Browsers
-      run: yarn add playwright && yarn playwright install --with-deps
-      working-directory: ./frontend
-    - name: Create env file
-      run: |
-        cd frontend
-        touch .env
-        echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
-        echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
-        cat .env
-    - name: Start the server
-      run: cd frontend && yarn start &
-      id: start-server
-    - name: Wait for server to be ready
-      run: |
-        n=0
-        until [ $n -ge 20 ]
-        do
-          curl --head --silent --fail "${{ secrets.API_BASE_URL }}" > /dev/null && break
-          n=$((n+1))
-          sleep 5
-        done
-        echo "Server is ready"
-      env:
-        API_BASE_URL: ${{ secrets.API_BASE_URL }}
-    - name: Run Playwright tests
-      run: cd frontend && yarn playwright test
-    - uses: actions/upload-artifact@v2
-      if: always()
-      with:
-        name: playwright-report.zip
-        path: frontend/playwright-report/
-        retention-days: 30
-    - name: Add comment with Playwright tests
-      uses: actions/github-script@v4
-      if: always()
-      with:
-       script: |
-            script: |
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - name: Install dependencies
+        run: yarn
+      - name: Install Playwright Browsers
+        run: |
+          yarn add playwright
+          yarn playwright install --with-deps
+        working-directory: ./frontend
+      - name: Create env file
+        run: |
+          cd frontend
+          touch .env
+          echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
+          echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
+          cat .env
+      - name: Start the server
+        run: |
+          cd frontend
+          yarn start &
+        id: start-server
+      - name: Wait for server to be ready
+        run: |
+          n=0
+          until [ $n -ge 20 ]
+          do
+            curl --head --silent --fail "${{ secrets.API_BASE_URL }}" > /dev/null && break
+            n=$((n+1))
+            sleep 5
+          done
+          echo "Server is ready"
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      - name: Run Playwright tests
+        run: cd frontend && yarn playwright test
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: playwright-report.zip
+          path: frontend/playwright-report/
+          retention-days: 30
+      - name: Add comment with Playwright tests
+        uses: actions/github-script@v4
+        if: always()
+        with:
+          script: |
             const { githubContext, eventName, sha, ref } = github;
             const fs = require('fs');
             const playwrightOutput = fs.readFileSync('playwright-report.zip');
             const commentBody = `
-            ### Playwright test results
-            <details><summary>Show/hide details</summary>
-            \`\`\`
-            ${playwrightOutput.toString()}
-            \`\`\`
-            </details>
+              ### Playwright test results
+              <details><summary>Show/hide details</summary>
+              \`\`\`
+              ${playwrightOutput.toString()}
+              \`\`\`
+              </details>
             `;
             const issueComment = {
-            body: commentBody,
-            sha: sha,
-            event: eventName,
-            ref: ref,
+              body: commentBody,
+              sha: sha,
+              event: eventName,
+              ref: ref,
             };
             githubContext.octokit.issues.createComment({
-            ...githubContext.repo,
-            issue_number: githubContext.payload.pull_request.number,
-            ...issueComment,
+              ...githubContext.repo,
+              issue_number: githubContext.payload.pull_request.number,
+              ...issueComment,
             });
