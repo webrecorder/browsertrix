@@ -51,7 +51,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       if: always()
       with:
-        name: playwright-report
+        name: playwright-report.zip
         path: frontend/playwright-report/
         retention-days: 30
     - name: Add comment with Playwright tests
@@ -59,25 +59,26 @@ jobs:
       if: always()
       with:
        script: |
+            script: |
             const { githubContext, eventName, sha, ref } = github;
             const fs = require('fs');
-            const playwrightOutput = fs.readFileSync('playwright-report.zip', 'utf8');
+            const playwrightOutput = fs.readFileSync('playwright-report.zip');
             const commentBody = `
             ### Playwright test results
             <details><summary>Show/hide details</summary>
             \`\`\`
-            ${playwrightOutput}
+            ${playwrightOutput.toString()}
             \`\`\`
             </details>
             `;
             const issueComment = {
-              body: commentBody,
-              sha: sha,
-              event: eventName,
-              ref: ref,
+            body: commentBody,
+            sha: sha,
+            event: eventName,
+            ref: ref,
             };
             githubContext.octokit.issues.createComment({
-              ...githubContext.repo,
-              issue_number: githubContext.payload.pull_request.number,
-              ...issueComment,
+            ...githubContext.repo,
+            issue_number: githubContext.payload.pull_request.number,
+            ...issueComment,
             });
