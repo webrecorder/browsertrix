@@ -22,7 +22,7 @@ const defaultValue = {
   },
   tags: [],
   crawlTimeout: null,
-  jobType: "custom",
+  jobType: undefined,
   scale: 1,
 } as WorkflowParams;
 
