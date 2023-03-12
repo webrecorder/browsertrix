@@ -1,7 +1,7 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import { parseCron } from "@cheap-glitch/mi-cron";
+import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
@@ -11,7 +11,7 @@ import Fuse from "fuse.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { CrawlConfig, InitialCrawlConfig } from "./types";
+import type { Workflow, WorkflowParams } from "./types";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -39,11 +39,11 @@ const sortableFieldLabels = {
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-configs-list></btrix-crawl-configs-list>
+ * <btrix-workflows-list></btrix-workflows-list>
  * ```
  */
 @localized()
-export class CrawlTemplatesList extends LiteElement {
+export class WorkflowsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -53,8 +53,11 @@ export class CrawlTemplatesList extends LiteElement {
   @property({ type: String })
   userId!: string;
 
+  @property({ type: Boolean })
+  isCrawler!: boolean;
+
   @state()
-  crawlConfigs?: CrawlConfig[];
+  crawlConfigs?: Workflow[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -63,7 +66,10 @@ export class CrawlTemplatesList extends LiteElement {
   showEditDialog?: boolean = false;
 
   @state()
-  selectedTemplateForEdit?: CrawlConfig;
+  selectedTemplateForEdit?: Workflow;
+
+  @state()
+  fetchErrorStatusCode?: number;
 
   @state()
   private orderBy: {
@@ -102,18 +108,10 @@ export class CrawlTemplatesList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      try {
-        await this.fetchCrawlConfigs();
+      this.crawlConfigs = await this.fetchWorkflows();
 
-        // Update search/filter collection
-        this.fuse.setCollection(this.crawlConfigs as any);
-      } catch (e) {
-        this.notify({
-          message: msg("Sorry, couldn't retrieve crawl configs at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
+      // Update search/filter collection
+      this.fuse.setCollection(this.crawlConfigs as any);
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -123,46 +121,76 @@ export class CrawlTemplatesList extends LiteElement {
     }
   }
 
-  private async fetchCrawlConfigs() {
-    const crawlConfigs = await this.getCrawlTemplates();
-    this.crawlConfigs = crawlConfigs;
+  private async fetchWorkflows() {
+    this.fetchErrorStatusCode = undefined;
+    try {
+      return await this.getWorkflows();
+    } catch (e: any) {
+      if (e.isApiError) {
+        this.fetchErrorStatusCode = e.statusCode;
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve Workflows at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
   }
 
   render() {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Crawl Configs")}</h1>
-          <sl-button
-            href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=`}
-            variant="primary"
-            size="small"
-            @click=${this.navLink}
-          >
-            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Crawl Config")}
-          </sl-button>
+          <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-button
+                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Workflow")}
+              </sl-button>
+            `
+          )}
         </div>
         <div class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg">
           ${this.renderControls()}
         </div>
       </header>
 
-      ${this.crawlConfigs
-        ? this.crawlConfigs.length
-          ? this.renderTemplateList()
-          : html`
-              <div class="border-t border-b py-5">
-                <p class="text-center text-0-500">
-                  ${msg("No crawl configs yet.")}
-                </p>
-              </div>
-            `
-        : html`<div
-            class="w-full flex items-center justify-center my-24 text-3xl"
-          >
-            <sl-spinner></sl-spinner>
-          </div>`}
+      ${when(
+        this.fetchErrorStatusCode,
+        () => html`
+          <div>
+            <btrix-alert variant="danger">
+              ${msg(
+                `Something unexpected went wrong while retrieving Workflows.`
+              )}
+            </btrix-alert>
+          </div>
+        `,
+        () =>
+          this.crawlConfigs
+            ? this.crawlConfigs.length
+              ? this.renderTemplateList()
+              : html`
+                  <div class="border-t border-b py-5">
+                    <p class="text-center text-0-500">
+                      ${msg("No Workflows yet.")}
+                    </p>
+                  </div>
+                `
+            : html`<div
+                class="w-full flex items-center justify-center my-24 text-3xl"
+              >
+                <sl-spinner></sl-spinner>
+              </div>`
+      )}
 
       <sl-dialog
         label=${msg(str`Edit Crawl Schedule`)}
@@ -238,20 +266,14 @@ export class CrawlTemplatesList extends LiteElement {
           </button>
         </div>
         <div class="flex items-center justify-end">
-          ${this.userId
-            ? html`<label class="mr-3">
-                <span class="text-neutral-500 mr-1"
-                  >${msg("Show Only Mine")}</span
-                >
-                <sl-switch
-                  @sl-change=${(e: CustomEvent) =>
-                    (this.filterByCurrentUser = (
-                      e.target as SlCheckbox
-                    ).checked)}
-                  ?checked=${this.filterByCurrentUser}
-                ></sl-switch>
-              </label>`
-            : ""}
+          <label class="mr-3">
+            <span class="text-neutral-500 mr-1">${msg("Show Only Mine")}</span>
+            <sl-switch
+              @sl-change=${(e: CustomEvent) =>
+                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+              ?checked=${this.filterByCurrentUser}
+            ></sl-switch>
+          </label>
 
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort By")}
@@ -329,12 +351,12 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderTemplateItem(crawlConfig: CrawlConfig) {
+  private renderTemplateItem(crawlConfig: Workflow) {
     const name = this.renderName(crawlConfig);
     return html`<a
       class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
       aria-label=${name}
-      href=${`/orgs/${this.orgId}/crawl-configs/config/${crawlConfig.id}`}
+      href=${`/orgs/${this.orgId}/workflows/config/${crawlConfig.id}`}
       @click=${this.navLink}
     >
       <header class="flex">
@@ -345,7 +367,7 @@ export class CrawlTemplatesList extends LiteElement {
           ${name}
         </div>
 
-        ${this.renderCardMenu(crawlConfig)}
+        ${when(this.isCrawler, () => this.renderCardMenu(crawlConfig))}
       </header>
 
       <div class="px-3 pb-3 flex justify-between items-end text-0-800">
@@ -460,7 +482,7 @@ export class CrawlTemplatesList extends LiteElement {
     </a>`;
   }
 
-  private renderCardMenu(t: CrawlConfig) {
+  private renderCardMenu(t: Workflow) {
     const menuItems: HTMLTemplateResult[] = [
       html`
         <li
@@ -473,7 +495,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="files"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate crawl config")}</span
+            >${msg("Duplicate Workflow")}</span
           >
         </li>
       `,
@@ -486,7 +508,7 @@ export class CrawlTemplatesList extends LiteElement {
           role="menuitem"
           @click=${(e: any) => {
             e.target.closest("sl-dropdown").hide();
-            this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${t.id}?edit`);
+            this.navTo(`/orgs/${this.orgId}/workflows/config/${t.id}?edit`);
           }}
         >
           <sl-icon
@@ -494,7 +516,7 @@ export class CrawlTemplatesList extends LiteElement {
             name="pencil-square"
           ></sl-icon>
           <span class="inline-block align-middle pr-2"
-            >${msg("Edit crawl config")}</span
+            >${msg("Edit Workflow")}</span
           >
         </li>
       `);
@@ -563,37 +585,47 @@ export class CrawlTemplatesList extends LiteElement {
     `;
   }
 
-  private renderCardFooter(t: CrawlConfig) {
+  private renderCardFooter(t: Workflow) {
     if (t.inactive) {
+      return "";
+    }
+
+    const crawlId = this.runningCrawlsMap[t.id];
+
+    if (crawlId) {
+      return html`
+        <button
+          class="text-xs border rounded px-2 h-7 bg-purple-50border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+          @click=${(e: any) => {
+            e.preventDefault();
+            this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}#watch`);
+          }}
+        >
+          <span class="whitespace-nowrap"> ${msg("Watch Crawl")} </span>
+        </button>
+      `;
+    }
+
+    if (!this.isCrawler) {
       return "";
     }
 
     return html`
       <div>
         <button
-          class="text-xs border rounded px-2 h-7 ${this.runningCrawlsMap[t.id]
-            ? "bg-purple-50"
-            : "bg-white"} border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
+          class="text-xs border rounded px-2 h-7 bg-whiteborder-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
           @click=${(e: any) => {
             e.preventDefault();
-            this.runningCrawlsMap[t.id]
-              ? this.navTo(
-                  `/orgs/${this.orgId}/crawls/crawl/${
-                    this.runningCrawlsMap[t.id]
-                  }#watch`
-                )
-              : this.runNow(t);
+            this.runNow(t);
           }}
         >
-          <span class="whitespace-nowrap">
-            ${this.runningCrawlsMap[t.id] ? msg("Watch crawl") : msg("Run now")}
-          </span>
+          <span class="whitespace-nowrap"> ${msg("Run Now")} </span>
         </button>
       </div>
     `;
   }
 
-  private renderName(crawlConfig: CrawlConfig) {
+  private renderName(crawlConfig: Workflow) {
     if (crawlConfig.name) return crawlConfig.name;
     const { config } = crawlConfig;
     const firstSeed = config.seeds[0];
@@ -626,12 +658,11 @@ export class CrawlTemplatesList extends LiteElement {
   };
 
   /**
-   * Fetch crawl configs and record running crawls
-   * associated with the crawl configs
+   * Fetch Workflows and record running crawls
+   * associated with the Workflows
    **/
-  private async getCrawlTemplates(): Promise<CrawlConfig[]> {
-    const params =
-      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
+  private async getWorkflows(): Promise<Workflow[]> {
+    const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs${params}`,
@@ -654,32 +685,27 @@ export class CrawlTemplatesList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(crawlConfig: CrawlConfig) {
-    const crawlTemplate: InitialCrawlConfig = {
-      name: msg(str`${this.renderName(crawlConfig)} Copy`),
-      config: crawlConfig.config,
-      profileid: crawlConfig.profileid || null,
-      jobType: crawlConfig.jobType,
-      schedule: crawlConfig.schedule,
-      tags: crawlConfig.tags,
-      crawlTimeout: crawlConfig.crawlTimeout,
+  private async duplicateConfig(workflow: Workflow) {
+    const workflowParams: WorkflowParams = {
+      ...workflow,
+      name: msg(str`${this.renderName(workflow)} Copy`),
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/crawl-configs?new&jobType=${crawlTemplate.jobType}`,
+      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
-        crawlTemplate,
+        workflow: workflowParams,
       }
     );
 
     this.notify({
-      message: msg(str`Copied crawl configuration to new template.`),
+      message: msg(str`Copied Workflowuration to new template.`),
       variant: "success",
       icon: "check2-circle",
     });
   }
 
-  private async deactivateTemplate(crawlConfig: CrawlConfig): Promise<void> {
+  private async deactivateTemplate(crawlConfig: Workflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
@@ -702,14 +728,14 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't deactivate crawl config at this time."),
+        message: msg("Sorry, couldn't deactivate Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
   }
 
-  private async deleteTemplate(crawlConfig: CrawlConfig): Promise<void> {
+  private async deleteTemplate(crawlConfig: Workflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
@@ -732,14 +758,14 @@ export class CrawlTemplatesList extends LiteElement {
       );
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete crawl config at this time."),
+        message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
   }
 
-  private async runNow(crawlConfig: CrawlConfig): Promise<void> {
+  private async runNow(crawlConfig: Workflow): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
@@ -772,9 +798,13 @@ export class CrawlTemplatesList extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
-    } catch {
+    } catch (e: any) {
       this.notify({
-        message: msg("Sorry, couldn't run crawl at this time."),
+        message:
+          (e.isApiError &&
+            e.statusCode === 403 &&
+            msg("You do not have permission to run crawls.")) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -837,4 +867,4 @@ export class CrawlTemplatesList extends LiteElement {
   }
 }
 
-customElements.define("btrix-crawl-configs-list", CrawlTemplatesList);
+customElements.define("btrix-workflows-list", WorkflowsList);

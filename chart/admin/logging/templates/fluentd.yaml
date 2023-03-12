@@ -35,6 +35,52 @@ subjects:
 - kind: ServiceAccount
   name: fluentd
   namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: {{ .Values.logging.namespace | default "btrix-admin" }}
+  labels:
+    k8s-app: fluentd-logging
+data:
+  fluent.conf: |
+    @include "#{ENV['FLUENTD_SYSTEMD_CONF'] || 'systemd'}.conf"
+    @include "#{ENV['FLUENTD_PROMETHEUS_CONF'] || 'prometheus'}.conf"
+    @include kubernetes.conf
+    @include conf.d/*.conf
+
+    <match **>
+      @type file
+      path /var/log/fluentd/btrix.log
+      time_slice_format %Y%m%d%H%M%S
+      time_slice_wait 10m
+      compress gzip
+
+      <format>
+        @type json
+      </format>
+
+      <buffer>
+        @type file
+        path /var/log/fluentd/buffer
+        flush_thread_count 2
+        flush_interval 5s
+        chunk_limit_size 1m
+        queue_limit_length 64
+        overflow_action block
+      </buffer>
+      
+      <rotate>
+        @type time
+        timekey %Y%m%d%H%M
+        # How often rotate a file. 14400 means 4 hour. default is 86400 seconds (1 day)
+        interval 14400
+        # How long to keep rotated files. 0 means forever. default is 7 days
+        keep 3
+      </rotate>
+    </match>
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -74,6 +120,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          {{ if not .Values.logging.fileMode }}
           - name:  FLUENT_ELASTICSEARCH_HOST
             value: "btrixlog-es-http.{{ .Values.logging.namespace | default "btrix-admin" }}.svc.cluster.local"
           - name:  FLUENT_ELASTICSEARCH_PORT
@@ -99,6 +146,7 @@ spec:
               secretKeyRef:
                 name: btrixlog-es-elastic-user
                 key: elastic
+          {{ end }}
           # =====================
           - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
             value: /var/log/containers/fluent*
@@ -114,6 +162,12 @@ spec:
             cpu: {{ .Values.logging.fluentd.cpu | default "60m" }}
             memory: {{ .Values.logging.fluentd.mem | default "200Mi" }}
         volumeMounts:
+        {{ if .Values.logging.fileMode }}
+        - name: config-volume
+          mountPath: /fluentd/etc/fluent.conf
+          subPath: fluent.conf
+          readOnly: true
+        {{ end }}
         - name: varlog
           mountPath: {{ .Values.logging.fluentd.logVar | default "/var/log" }}
         # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
@@ -121,11 +175,16 @@ spec:
           mountPath: {{ .Values.logging.fluentd.logPathContainers | default "/var/lib/docker/containers" }}
           readOnly: true
         # When actual pod logs in /var/log/pods, the following lines should be used.
-        # - name: dockercontainerlogdirectory
-        #   mountPath: /var/log/pods
-        #   readOnly: true
+        - name: dockercontainerlogdirectory2
+          mountPath: /var/log/pods
+          readOnly: true
       terminationGracePeriodSeconds: 30
       volumes:
+      {{ if .Values.logging.fileMode }}
+      - name: config-volume
+        configMap:
+          name: fluentd-config      
+      {{ end }}
       - name: varlog
         hostPath:
           path: {{ .Values.logging.fluentd.logVar | default "/var/log" }}
@@ -134,7 +193,7 @@ spec:
         hostPath:
           path: {{ .Values.logging.fluentd.logPathContainers | default "/var/lib/docker/containers" }}
       # When actual pod logs in /var/log/pods, the following lines should be used.
-      # - name: dockercontainerlogdirectory
-      #   hostPath:
-      #     path: /var/log/pods
+      - name: dockercontainerlogdirectory2
+        hostPath:
+          path: /var/log/pods
 {{- end -}}

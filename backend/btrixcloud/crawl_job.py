@@ -57,6 +57,10 @@ class CrawlJob(ABC):
         self.storage_path = os.environ.get("STORE_PATH")
         self.storage_name = os.environ.get("STORAGE_NAME")
 
+        self.crawl_expire_time = os.environ.get("CRAWL_EXPIRE_TIME")
+        if self.crawl_expire_time:
+            self.crawl_expire_time = datetime.fromisoformat(self.crawl_expire_time)
+
         self.last_done = None
         self.last_found = None
         self.redis = None
@@ -141,7 +145,7 @@ class CrawlJob(ABC):
                 # check crawl status
                 await self.check_crawl_status()
 
-            # pylint: disable=broad-except
+                # pylint: disable=broad-except
             except Exception as exc:
                 print(f"Retrying crawls done loop: {exc}")
                 await asyncio.sleep(10)
@@ -173,6 +177,15 @@ class CrawlJob(ABC):
             await self.fail_crawl()
 
             await self.delete_crawl()
+
+        # check crawl expiry
+        if self.crawl_expire_time and datetime.utcnow() > self.crawl_expire_time:
+            res = await self.graceful_shutdown()
+            if res.get("success"):
+                print(
+                    "Job duration expired at {self.crawl_expire_time}, "
+                    + "gracefully stopping crawl"
+                )
 
     async def delete_crawl(self):
         """delete crawl stateful sets, services and pvcs"""

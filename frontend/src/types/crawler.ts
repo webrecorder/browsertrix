@@ -25,12 +25,13 @@ export type SeedConfig = Pick<
   blockAds?: boolean;
   behaviorTimeout?: number | null;
   behaviors?: string | null;
+  extraHops?: number | null;
 };
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
 
-export type CrawlConfigParams = {
-  jobType: JobType;
+export type WorkflowParams = {
+  jobType?: JobType;
   name: string;
   schedule: string;
   scale: number;
@@ -40,25 +41,12 @@ export type CrawlConfigParams = {
   crawlTimeout: number | null;
 };
 
-export type CrawlConfigCore = CrawlConfigParams & {
+export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;
 };
 
-export type InitialCrawlConfig = Pick<
-  CrawlConfigCore,
-  "name" | "profileid" | "schedule" | "tags" | "crawlTimeout"
-> & {
-  jobType?: JobType;
-  config: Pick<
-    CrawlConfigCore["config"],
-    "seeds" | "scopeType" | "exclude" | "behaviorTimeout"
-  > & {
-    extraHops?: CrawlConfigCore["config"]["extraHops"];
-  };
-};
-
-export type CrawlConfig = CrawlConfigCore & {
+export type Workflow = CrawlConfig & {
   id: string;
   createdBy: string; // User ID
   createdByName: string | null; // User full name
@@ -97,7 +85,7 @@ export type CrawlState =
   | "stopping"
   | "canceled";
 
-export type Crawl = CrawlConfigCore & {
+export type Crawl = CrawlConfig & {
   id: string;
   userid: string;
   userName: string;

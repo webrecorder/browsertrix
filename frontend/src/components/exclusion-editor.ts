@@ -24,7 +24,7 @@ type ResponseData = {
  * <btrix-exclusion-editor
  *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
- *   .config=${this.crawlTemplate.config}
+ *   .config=${this.workflow.config}
  *   .authState=${this.authState}
  *   ?isActiveCrawl=${isActive}
  * >
@@ -157,7 +157,7 @@ export class ExclusionEditor extends LiteElement {
         }
       );
 
-      if (data.new_cid) {
+      if (data.success) {
         this.notify({
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
@@ -165,9 +165,7 @@ export class ExclusionEditor extends LiteElement {
         });
 
         this.dispatchEvent(
-          new CustomEvent("on-success", {
-            detail: { cid: data.new_cid },
-          })
+          new CustomEvent("on-success")
         );
       } else {
         throw data;
@@ -229,7 +227,7 @@ export class ExclusionEditor extends LiteElement {
         }
       );
 
-      if (data.new_cid) {
+      if (data.success) {
         this.notify({
           message: msg("Exclusion added."),
           variant: "success",
@@ -242,9 +240,7 @@ export class ExclusionEditor extends LiteElement {
 
         onSuccess();
         this.dispatchEvent(
-          new CustomEvent("on-success", {
-            detail: { cid: data.new_cid },
-          })
+          new CustomEvent("on-success")
         );
       } else {
         throw data;

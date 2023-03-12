@@ -1,13 +1,13 @@
 import type { TemplateResult, LitElement } from "lit";
 import { state, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, InitialCrawlConfig } from "./types";
-import "./crawl-config-editor";
+import type { JobType, WorkflowParams } from "./types";
+import "./workflow-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
@@ -22,31 +22,36 @@ const defaultValue = {
   },
   tags: [],
   crawlTimeout: null,
-} as InitialCrawlConfig;
+  jobType: undefined,
+  scale: 1,
+} as WorkflowParams;
 
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-configs-new></btrix-crawl-configs-new>
+ * <btrix-workflows-new></btrix-workflows-new>
  * ```
  */
 @localized()
-export class CrawlTemplatesNew extends LiteElement {
+export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  isCrawler!: boolean;
+
   // Use custom property accessor to prevent
-  // overriding default crawl config values
+  // overriding default Workflow values
   @property({ type: Object })
-  get initialCrawlTemplate(): InitialCrawlConfig {
-    return this._initialCrawlTemplate;
+  get initialWorkflow(): WorkflowParams {
+    return this._initialWorkflow;
   }
-  private _initialCrawlTemplate: InitialCrawlConfig = defaultValue;
-  set initialCrawlTemplate(val: Partial<InitialCrawlConfig>) {
-    this._initialCrawlTemplate = mergeDeep(this._initialCrawlTemplate, val);
+  private _initialWorkflow: WorkflowParams = defaultValue;
+  set initialWorkflow(val: Partial<WorkflowParams>) {
+    this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
 
   @state()
@@ -61,12 +66,12 @@ export class CrawlTemplatesNew extends LiteElement {
   }
 
   private renderHeader() {
-    let href = `/orgs/${this.orgId}/crawl-configs`;
-    let label = msg("Back to Crawl Configs");
+    let href = `/orgs/${this.orgId}/workflows`;
+    let label = msg("Back to Workflows");
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
-    if (this.jobType && !this.initialCrawlTemplate.jobType) {
-      href = `/orgs/${this.orgId}/crawl-configs?new`;
+    if (this.jobType && !this.initialWorkflow.jobType) {
+      href = `/orgs/${this.orgId}/workflows?new`;
       label = msg("Choose Crawl Type");
     }
     return html`
@@ -96,16 +101,16 @@ export class CrawlTemplatesNew extends LiteElement {
       custom: msg("Custom"),
     };
 
-    const jobType = this.initialCrawlTemplate.jobType || this.jobType;
+    const jobType = this.initialWorkflow.jobType || this.jobType;
 
-    if (jobType) {
+    if (this.isCrawler && jobType) {
       return html`
         ${this.renderHeader()}
         <h2 class="text-xl font-medium mb-6">
-          ${msg(html`New Crawl Config &mdash; ${jobTypeLabels[jobType]}`)}
+          ${msg(html`New Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
-        <btrix-crawl-config-editor
-          .initialCrawlConfig=${this.initialCrawlTemplate}
+        <btrix-workflow-editor
+          .initialWorkflow=${this.initialWorkflow}
           jobType=${jobType}
           orgId=${this.orgId}
           .authState=${this.authState}
@@ -113,18 +118,18 @@ export class CrawlTemplatesNew extends LiteElement {
             await (e.target as LitElement).updateComplete;
             this.jobType = undefined;
           }}
-        ></btrix-crawl-config-editor>
+        ></btrix-workflow-editor>
       `;
     }
 
     return html`
       ${this.renderHeader()}
-      <h2 class="text-xl font-medium mb-6">${msg("New Crawl Config")}</h2>
-      ${this.renderChooseJobType()}
+      <h2 class="text-xl font-medium mb-6">${msg("New Workflow")}</h2>
+      ${when(this.isCrawler, this.renderChooseJobType, this.renderNoAccess)}
     `;
   }
 
-  private renderChooseJobType() {
+  private renderChooseJobType = () => {
     return html`
       <style>
         .jobTypeButton:hover img {
@@ -138,7 +143,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=url-list`}
+          href=${`/orgs/${this.orgId}/workflows?new&jobType=url-list`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "url-list";
@@ -159,7 +164,7 @@ export class CrawlTemplatesNew extends LiteElement {
         <a
           role="button"
           class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/crawl-configs?new&jobType=seed-crawl`}
+          href=${`/orgs/${this.orgId}/workflows?new&jobType=seed-crawl`}
           @click=${(e: any) => {
             this.navLink(e);
             this.jobType = "seed-crawl";
@@ -179,7 +184,13 @@ export class CrawlTemplatesNew extends LiteElement {
         </a>
       </div>
     `;
-  }
+  };
+
+  private renderNoAccess = () => html`
+    <btrix-alert variant="danger">
+      ${msg(`You don't have permission to create a new Workflow.`)}
+    </btrix-alert>
+  `;
 }
 
-customElements.define("btrix-crawl-configs-new", CrawlTemplatesNew);
+customElements.define("btrix-workflows-new", WorkflowsNew);
