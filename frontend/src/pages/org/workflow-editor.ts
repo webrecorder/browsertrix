@@ -86,10 +86,10 @@ type FormState = {
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron" | "none";
-  scheduleFrequency: "daily" | "weekly" | "monthly";
-  scheduleDayOfMonth: number;
-  scheduleDayOfWeek: number;
-  scheduleTime: {
+  scheduleFrequency: "daily" | "weekly" | "monthly" | "";
+  scheduleDayOfMonth?: number;
+  scheduleDayOfWeek?: number;
+  scheduleTime?: {
     hour: number;
     minute: number;
     period: "AM" | "PM";
@@ -242,11 +242,14 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private get utcSchedule() {
+    if (!this.formState.scheduleFrequency) {
+      return "";
+    }
     return getUTCSchedule({
-      interval: this.formState.scheduleFrequency,
+      interval: this.formState.scheduleFrequency!,
       dayOfMonth: this.formState.scheduleDayOfMonth,
       dayOfWeek: this.formState.scheduleDayOfWeek,
-      ...this.formState.scheduleTime,
+      ...this.formState.scheduleTime!,
     });
   }
 
@@ -279,6 +282,7 @@ export class CrawlConfigEditor extends LiteElement {
     daily: msg("Daily"),
     weekly: msg("Weekly"),
     monthly: msg("Monthly"),
+    "": "",
   };
 
   @query('form[name="newJobConfig"]')
@@ -383,7 +387,7 @@ export class CrawlConfigEditor extends LiteElement {
     return null;
   }
 
-  private getInitialFormState(): Partial<FormState> {
+  private getInitialFormState(): FormState | {} {
     if (!this.initialWorkflow) return {};
     const formState: Partial<FormState> = {};
     const seedsConfig = this.initialWorkflow.config;
@@ -453,15 +457,27 @@ export class CrawlConfigEditor extends LiteElement {
     }
 
     return {
+      primarySeedUrl: "",
+      urlList: "",
+      customIncludeUrlList: "",
+      crawlTimeoutMinutes: null,
+      pageTimeoutMinutes: null,
+      scale: this.initialWorkflow.scale,
+      blockAds: this.initialWorkflow.config.blockAds,
+      lang: this.initialWorkflow.config.lang,
+      scheduleType: "none",
+      runNow: false,
+      tags: this.initialWorkflow.tags,
       jobName: this.initialWorkflow.name || "",
       browserProfile: this.initialWorkflow.profileid
         ? ({ id: this.initialWorkflow.profileid } as Profile)
-        : undefined,
+        : null,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
       includeLinkedPages: Boolean(
         primarySeedConfig.extraHops || seedsConfig.extraHops
       ),
+      pageLimit: this.initialWorkflow.config.limit ?? undefined,
       ...formState,
     };
   }
@@ -1150,7 +1166,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             name="pageLimit"
             label=${msg("Max Pages")}
             type="number"
-            value=${this.formState.pageLimit ?? ""}
+            value=${this.formState.pageLimit || ""}
             min=${minPages}
             placeholder=${msg("Unlimited")}
           >
@@ -1192,9 +1208,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
-          value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
+          value=${this.formState.crawlTimeoutMinutes || ""}
           placeholder=${msg("Unlimited")}
-          min="1"
+          min="0"
           type="number"
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -1383,9 +1399,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-time-input
-          hour=${ifDefined(this.formState.scheduleTime.hour)}
-          minute=${ifDefined(this.formState.scheduleTime.minute)}
-          period=${ifDefined(this.formState.scheduleTime.period)}
+          hour=${ifDefined(this.formState.scheduleTime?.hour)}
+          minute=${ifDefined(this.formState.scheduleTime?.minute)}
+          period=${ifDefined(this.formState.scheduleTime?.period)}
           @time-change=${(e: TimeInputChangeEvent) => {
             this.updateFormState({
               scheduleTime: e.detail,
