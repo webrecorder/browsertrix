@@ -6,13 +6,12 @@ from typing import Optional, List
 
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi_pagination import paginate
 
 from pydantic import BaseModel, UUID4
 
 from .db import BaseMongoModel
 from .orgs import Organization
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
 # ============================================================================
@@ -95,11 +94,25 @@ class CollectionOps:
 
         return [result["_id"] for result in results]
 
-    async def list_collections(self, oid: uuid.UUID):
+    async def list_collections(
+        self, oid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
         """list all collections for org"""
-        cursor = self.collections.find({"org": oid}, projection=["_id", "name"])
-        results = await cursor.to_list(length=1000)
-        return [CollOut.from_dict(result) for result in results]
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
+        match_query = {"org": oid}
+
+        total = await self.collections.count_documents(match_query)
+
+        cursor = self.collections.find(
+            match_query, projection=["_id", "name"], skip=skip, limit=page_size
+        )
+        results = await cursor.to_list(length=page_size)
+        collections = [CollOut.from_dict(res) for res in results]
+
+        return collections, total
 
     async def get_collection_crawls(self, oid: uuid.UUID, name: str = None):
         """find collection and get all crawls by collection name per org"""
@@ -167,10 +180,16 @@ def init_collections_api(mdb, crawls, orgs, crawl_manager):
 
         return {"collection": coll_id}
 
-    @router.get("", response_model=Page[CollOut])
-    async def list_collection_all(org: Organization = Depends(org_viewer_dep)):
-        collections = await colls.list_collections(org.id)
-        return paginate(collections)
+    @router.get("")
+    async def list_collection_all(
+        org: Organization = Depends(org_viewer_dep),
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        collections, total = await colls.list_collections(
+            org.id, page_size=page_size, page=page
+        )
+        return paginated_format(collections, total, page)
 
     @router.get("/$all")
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):

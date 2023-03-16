@@ -151,6 +151,8 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert len(data) == 2
-    sorted_data = sorted(data, key=lambda revision: revision["rev"])
+    assert data["total"] == 2
+    items = data["items"]
+    assert len(items) == 2
+    sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"

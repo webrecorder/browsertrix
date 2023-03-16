@@ -24,10 +24,9 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import MongoDBUserDatabase
-from fastapi_pagination import paginate
 
 from .invites import InvitePending, UserRole
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
 # ============================================================================
@@ -432,7 +431,12 @@ def init_users_api(app, user_manager):
             "is_superuser": user.is_superuser,
             "is_verified": user.is_verified,
         }
-        user_orgs = await user_manager.org_ops.get_orgs_for_user(user)
+        user_orgs, _ = await user_manager.org_ops.get_orgs_for_user(
+            user,
+            # Set high so that we get all orgs even after reducing default page size
+            page_size=1_000,
+            calculate_total=False,
+        )
         if user_orgs:
             user_info["orgs"] = [
                 {
@@ -465,13 +469,19 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
-    @users_router.get("/invites", tags=["invites"], response_model=Page[InvitePending])
-    async def get_pending_invites(user: User = Depends(current_active_user)):
+    @users_router.get("/invites", tags=["invites"])
+    async def get_pending_invites(
+        user: User = Depends(current_active_user),
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        pending_invites = await user_manager.invites.get_pending_invites()
-        return paginate(pending_invites)
+        pending_invites, total = await user_manager.invites.get_pending_invites(
+            page_size=page_size, page=page
+        )
+        return paginated_format(pending_invites, total, page)
 
     app.include_router(users_router, prefix="/users", tags=["users"])
 
