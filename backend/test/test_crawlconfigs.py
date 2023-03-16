@@ -5,6 +5,7 @@ from .conftest import API_PREFIX
 
 cid = None
 UPDATED_NAME = "Updated name"
+UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
 
@@ -37,12 +38,31 @@ def test_update_name_only(crawler_auth_headers, default_org_id):
     assert data["settings_changed"] == False
 
 
-def test_update_crawl_config_name_and_tags(crawler_auth_headers, default_org_id):
+def test_update_desription_only(crawler_auth_headers, default_org_id):
+    # update description only
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"description": "updated description"},
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["success"]
+    assert data["metadata_changed"] == True
+    assert data["settings_changed"] == False
+
+
+def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
     # Update crawl config
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
         headers=crawler_auth_headers,
-        json={"name": UPDATED_NAME, "tags": UPDATED_TAGS},
+        json={
+            "name": UPDATED_NAME,
+            "description": UPDATED_DESCRIPTION,
+            "tags": UPDATED_TAGS,
+        },
     )
     assert r.status_code == 200
 
@@ -62,6 +82,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
 
     data = r.json()
     assert data["name"] == UPDATED_NAME
+    assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
 
 

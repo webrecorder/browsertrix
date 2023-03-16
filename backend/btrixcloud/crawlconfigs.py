@@ -100,6 +100,8 @@ class CrawlConfigIn(BaseModel):
 
     name: str
 
+    description: Optional[str]
+
     jobType: Optional[JobType] = JobType.CUSTOM
 
     profileid: Optional[str]
@@ -156,6 +158,7 @@ class CrawlConfig(CrawlConfigCore):
     """Schedulable config"""
 
     name: Optional[str]
+    description: Optional[str]
 
     created: datetime
     createdBy: Optional[UUID4]
@@ -206,6 +209,7 @@ class UpdateCrawlConfig(BaseModel):
     # metadata: not revision tracked
     name: Optional[str]
     tags: Optional[List[str]]
+    description: Optional[str]
 
     # crawl data: revision tracked
     schedule: Optional[str]
@@ -375,6 +379,9 @@ class CrawlConfigOps:
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
+        metadata_changed = metadata_changed or self.check_attr_changed(
+            orig_crawl_config, update, "description"
+        )
         metadata_changed = metadata_changed or (
             update.tags is not None
             and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
