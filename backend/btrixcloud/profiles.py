@@ -8,12 +8,11 @@ import os
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, HttpUrl
 import aiohttp
 
 from .orgs import Organization
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import User
 
 from .db import BaseMongoModel
@@ -257,15 +256,29 @@ class ProfileOps:
 
         return {"success": True}
 
-    async def list_profiles(self, org: Organization, userid: Optional[UUID4] = None):
+    async def list_profiles(
+        self,
+        org: Organization,
+        userid: Optional[UUID4] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
         """list all profiles"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
         query = {"oid": org.id}
         if userid:
             query["userid"] = userid
 
-        cursor = self.profiles.find(query)
-        results = await cursor.to_list(length=1000)
-        return [Profile.from_dict(res) for res in results]
+        total = await self.profiles.count_documents(query)
+
+        cursor = self.profiles.find(query, skip=skip, limit=page_size)
+        results = await cursor.to_list(length=page_size)
+        profiles = [Profile.from_dict(res) for res in results]
+
+        return profiles, total
 
     async def get_profile(
         self, profileid: uuid.UUID, org: Optional[Organization] = None
@@ -398,13 +411,17 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
         await browser_get_metadata(browserid, org)
         return browserid
 
-    @router.get("", response_model=Page[Profile])
+    @router.get("")
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
-        profiles = await ops.list_profiles(org, userid)
-        return paginate(profiles)
+        profiles, total = await ops.list_profiles(
+            org, userid, page_size=page_size, page=page
+        )
+        return paginated_format(profiles, total, page)
 
     @router.post("", response_model=Profile)
     async def commit_browser_to_new(

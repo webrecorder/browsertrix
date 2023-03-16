@@ -12,11 +12,10 @@ from datetime import datetime
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import paginate
 
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 from .db import BaseMongoModel
 
@@ -451,8 +450,15 @@ class CrawlConfigOps:
         org: Organization,
         userid: Optional[UUID4] = None,
         tags: Optional[List[str]] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         """Get all crawl configs for an organization is a member of"""
+        # pylint: disable=too-many-locals
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
         match_query = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
@@ -460,6 +466,8 @@ class CrawlConfigOps:
 
         if userid:
             match_query["createdBy"] = userid
+
+        total = await self.crawl_configs.count_documents(match_query)
 
         # pylint: disable=duplicate-code
         cursor = self.crawl_configs.aggregate(
@@ -489,13 +497,20 @@ class CrawlConfigOps:
                         }
                     }
                 },
+                {"$skip": skip},
+                {"$limit": page_size},
             ]
         )
-
-        results = await cursor.to_list(length=1000)
+        results = await cursor.to_list(length=page_size)
 
         # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
-        crawls = await self.crawl_ops.list_crawls(org=org, running_only=True)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            org=org,
+            running_only=True,
+            # Set high so that when we lower default we still get all running crawls
+            page_size=1_000,
+            calculate_total=False,
+        )
 
         running = {}
         for crawl in crawls:
@@ -509,7 +524,7 @@ class CrawlConfigOps:
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 
-        return configs
+        return configs, total
 
     async def get_crawl_config_ids_for_profile(
         self, profileid: uuid.UUID, org: Optional[Organization] = None
@@ -527,7 +542,9 @@ class CrawlConfigOps:
     async def get_running_crawl(self, crawlconfig: CrawlConfig):
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id, running_only=True)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            cid=crawlconfig.id, running_only=True, calculate_total=False
+        )
 
         if len(crawls) == 1:
             return crawls[0].id
@@ -596,14 +613,23 @@ class CrawlConfigOps:
         res = await self.crawl_configs.find_one(query)
         return config_cls.from_dict(res)
 
-    async def get_crawl_config_revs(self, cid: uuid.UUID):
+    async def get_crawl_config_revs(
+        self, cid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
         """return all config revisions for crawlconfig"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
 
-        # pylint: disable=fixme
-        # todo: pagination needed
-        cursor = self.config_revs.find({"cid": cid})
+        match_query = {"cid": cid}
+
+        total = await self.config_revs.count_documents(match_query)
+
+        cursor = self.config_revs.find({"cid": cid}, skip=skip, limit=page_size)
         results = await cursor.to_list(length=1000)
-        return [ConfigRevision.from_dict(res) for res in results]
+        revisions = [ConfigRevision.from_dict(res) for res in results]
+
+        return revisions, total
 
     async def make_inactive_or_delete(
         self,
@@ -726,14 +752,18 @@ def init_crawl_config_api(
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.get("", response_model=Page[CrawlConfigOut])
+    @router.get("")
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
         userid: Optional[UUID4] = None,
         tag: Union[List[str], None] = Query(default=None),
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
-        crawl_configs = await ops.get_crawl_configs(org, userid=userid, tags=tag)
-        return paginate(crawl_configs)
+        crawl_configs, total = await ops.get_crawl_configs(
+            org, userid=userid, tags=tag, page_size=page_size, page=page
+        )
+        return paginated_format(crawl_configs, total, page)
 
     @router.get("/tags")
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
@@ -745,11 +775,15 @@ def init_crawl_config_api(
 
     @router.get(
         "/{cid}/revs",
-        response_model=List[ConfigRevision],
         dependencies=[Depends(org_viewer_dep)],
     )
-    async def get_crawl_config_revisions(cid: str):
-        return await ops.get_crawl_config_revs(uuid.UUID(cid))
+    async def get_crawl_config_revisions(
+        cid: str, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
+        revisions, total = await ops.get_crawl_config_revs(
+            uuid.UUID(cid), page_size=page_size, page=page
+        )
+        return paginated_format(revisions, total, page)
 
     @router.post("/")
     async def add_crawl_config(
