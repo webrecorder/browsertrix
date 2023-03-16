@@ -32,7 +32,7 @@ jobs:
         echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
         cat .env
     - name: Start the server
-      run: cd frontend && yarn start &
+      run: cd frontend && yarn build && yarn serve &
       id: start-server
     - name: Wait for server to be ready
       run: |

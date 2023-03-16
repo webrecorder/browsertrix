@@ -33,6 +33,7 @@
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development --config webpack.dev.js",
+    "serve": "node scripts/serve.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
     "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
     "localize:prepare": "yarn localize:extract && yarn localize:build",

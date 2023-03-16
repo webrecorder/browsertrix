@@ -19,8 +19,8 @@
 /dist/
 
 # dotenv
-.env.local
-.env.*.local
+.env
+.env.*
 
 storybook-static
 custom-elements.json

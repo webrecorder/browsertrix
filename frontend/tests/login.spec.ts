@@ -7,7 +7,7 @@ test('test', async ({}) => {
   const page = await context.newPage();
 
   try {
-    await page.goto('http://localhost:9870/');
+    await page.goto('http://localhost:9871/');
     await page.waitForLoadState('load');
     await page.waitForSelector('input[name="username"]');
     await page.click('input[name="username"]');
