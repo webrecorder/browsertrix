@@ -118,6 +118,7 @@ export class CrawlQueue extends LiteElement {
             href=${url}
             target="_blank"
             rel="noopener noreferrer nofollow"
+            title=${url}
             >${url}</a
           >`,
         }))}

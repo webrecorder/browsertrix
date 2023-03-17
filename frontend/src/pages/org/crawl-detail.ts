@@ -650,7 +650,7 @@ export class CrawlDetail extends LiteElement {
           `
         : this.renderInactiveCrawlMessage()}
 
-      <section class="mt-10">${this.renderExclusions()}</section>
+      <section class="mt-8">${this.renderExclusions()}</section>
 
       <btrix-dialog
         label=${msg("Edit Crawler Instances")}
@@ -712,6 +712,13 @@ export class CrawlDetail extends LiteElement {
               @on-success=${this.handleExclusionChange}
             ></btrix-exclusion-editor>`
           : ""}
+        <div slot="footer">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Done Editing")}</sl-button
+          >
+        </div>
       </btrix-dialog>
     `;
   }

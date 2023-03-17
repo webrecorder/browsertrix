@@ -48,7 +48,7 @@ export class NumberedList extends LitElement {
 
     .item-content {
       --item-height: 1.5rem;
-      contain: strict;
+      contain: paint;
       contain-intrinsic-height: auto var(--item-height);
       content-visibility: auto;
       border-left: var(--sl-panel-border-width) solid
@@ -56,7 +56,8 @@ export class NumberedList extends LitElement {
       border-right: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
       padding: var(--sl-spacing-2x-small) var(--sl-spacing-x-small);
-      height: var(--item-height);
+      line-height: 1;
+      min-height: var(--item-height);
       box-sizing: border-box;
     }
 
