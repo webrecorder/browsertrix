@@ -53,12 +53,12 @@ export class Screencast extends LitElement {
 
     .container {
       display: grid;
-      gap: 0.5rem;
+      gap: 1rem;
     }
 
     .screen-count {
       color: var(--sl-color-neutral-400);
-      font-size: var(--sl-font-size-small);
+      font-size: var(--sl-font-size-x-small);
       margin-bottom: var(--sl-spacing-x-small);
     }
 
@@ -69,19 +69,18 @@ export class Screencast extends LitElement {
     }
 
     .screen {
-      border: 1px solid var(--sl-panel-border-color);
-      border-radius: var(--sl-border-radius-medium);
+      border: 1px solid var(--sl-color-neutral-300);
+      border-radius: var(--sl-border-radius-large);
       overflow: hidden;
     }
 
     .screen[role="button"] {
       cursor: pointer;
-      transition: opacity 0.1s border-color 0.1s;
+      transition: var(--sl-transition-fast) box-shadow;
     }
 
     .screen[role="button"]:hover {
-      opacity: 0.8;
-      border-color: var(--sl-color-neutral-300);
+      box-shadow: var(--sl-shadow-medium);
     }
 
     figure {
@@ -111,7 +110,7 @@ export class Screencast extends LitElement {
     }
 
     .frame {
-      background-color: var(--sl-color-neutral-50);
+      background-color: var(--sl-color-slate-50);
       overflow: hidden;
     }
 
@@ -194,16 +193,19 @@ export class Screencast extends LitElement {
 
     return html`
       <div class="wrapper">
-        ${!this.dataList.length
-          ? html`<div class="spinner">
+        ${
+          !this.dataList.length
+            ? html`<div class="spinner">
               <sl-spinner></sl-spinner>
             </div> `
-          : html`
+            : html`
               <div class="screen-count">
                 <span
-                  >${browserWindows > 1
-                    ? msg(str`Running in ${browserWindows} browser windows`)
-                    : msg(str`Running in 1 browser window`)}</span
+                  >${
+                    browserWindows > 1
+                      ? msg(str`Running in ${browserWindows} browser windows`)
+                      : msg(str`Running in 1 browser window`)
+                  }</span
                 >
                 <sl-tooltip
                   content=${msg(
@@ -212,13 +214,16 @@ export class Screencast extends LitElement {
                   ><sl-icon name="info-circle"></sl-icon
                 ></sl-tooltip>
               </div>
-            `}
+            `
+        }
 
         <div
           class="container"
-          style="grid-template-columns: repeat(${this
-            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
-            .scale}, minmax(2rem, auto))"
+          style="grid-template-columns: repeat(${
+            this.browsersCount
+          }, minmax(0, 1fr)); grid-template-rows: repeat(${
+      this.scale
+    }, minmax(2rem, auto))"
         >
           ${this.dataList.map(
             (pageData) =>
@@ -226,9 +231,11 @@ export class Screencast extends LitElement {
                 class="screen"
                 title=${pageData?.url || ""}
                 role=${pageData ? "button" : "presentation"}
-                @click=${pageData
-                  ? () => (this.focusedScreenData = pageData)
-                  : () => {}}
+                @click=${
+                  pageData
+                    ? () => (this.focusedScreenData = pageData)
+                    : () => {}
+                }
               >
                 <figcaption class="caption">
                   ${pageData?.url || html`&nbsp;`}
@@ -237,9 +244,11 @@ export class Screencast extends LitElement {
                   class="frame"
                   style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
                 >
-                  ${pageData
-                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                    : ""}
+                  ${
+                    pageData
+                      ? html`<img src="data:image/png;base64,${pageData.data}" />`
+                      : ""
+                  }
                 </div>
               </figure>`
           )}
@@ -262,14 +271,16 @@ export class Screencast extends LitElement {
           ${this.focusedScreenData?.url}
         </span>
 
-        ${this.focusedScreenData
-          ? html`
+        ${
+          this.focusedScreenData
+            ? html`
               <img
                 src="data:image/png;base64,${this.focusedScreenData.data}"
                 title="${this.focusedScreenData.url}"
               />
             `
-          : ""}
+            : ""
+        }
       </sl-dialog>
     `;
   }
