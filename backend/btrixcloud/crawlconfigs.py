@@ -441,10 +441,13 @@ class CrawlConfigOps:
     async def get_crawl_configs(
         self,
         org: Organization,
-        userid: Optional[UUID4] = None,
-        tags: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        created_by: Optional[UUID4] = None,
+        modified_by: Optional[UUID4] = None,
+        tags: Optional[List[str]] = None,
+        sort_field: str = None,
+        sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals
@@ -457,15 +460,27 @@ class CrawlConfigOps:
         if tags:
             match_query["tags"] = {"$all": tags}
 
-        if userid:
-            match_query["createdBy"] = userid
+        if created_by:
+            match_query["createdBy"] = created_by
+
+        if modified_by:
+            match_query["modifiedBy"] = modified_by
 
         total = await self.crawl_configs.count_documents(match_query)
 
         # pylint: disable=duplicate-code
-        cursor = self.crawl_configs.aggregate(
+        aggregate = [{"$match": match_query}]
+
+        if sort_field:
+            if sort_field not in ("created, modified"):
+                raise HTTPException(status_code=400, detail="invalid_sort_field")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_field: sort_direction}}])
+
+        aggregate.extend(
             [
-                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "users",
@@ -494,6 +509,8 @@ class CrawlConfigOps:
                 {"$limit": page_size},
             ]
         )
+
+        cursor = self.crawl_configs.aggregate(aggregate)
         results = await cursor.to_list(length=page_size)
 
         # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
@@ -748,13 +765,23 @@ def init_crawl_config_api(
     @router.get("")
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
-        userid: Optional[UUID4] = None,
-        tag: Union[List[str], None] = Query(default=None),
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        created_by: Optional[UUID4] = None,
+        modified_by: Optional[UUID4] = None,
+        tag: Union[List[str], None] = Query(default=None),
+        sort_field: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
         crawl_configs, total = await ops.get_crawl_configs(
-            org, userid=userid, tags=tag, page_size=page_size, page=page
+            org,
+            created_by=created_by,
+            modified_by=modified_by,
+            tags=tag,
+            page_size=page_size,
+            page=page,
+            sort_field=sort_field,
+            sort_direction=sort_direction,
         )
         return paginated_format(crawl_configs, total, page)
 

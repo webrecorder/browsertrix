@@ -22,6 +22,18 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object
 
 
+CRAWL_STATES = (
+    "starting",
+    "running",
+    "stopping",
+    "complete",
+    "canceled",
+    "partial_complete",
+    "timed_out",
+    "failed",
+)
+
+
 # ============================================================================
 class DeleteCrawlList(BaseModel):
     """delete crawl list POST body"""
@@ -185,12 +197,15 @@ class CrawlOps:
         userid: uuid.UUID = None,
         crawl_id: str = None,
         running_only=False,
+        state: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         calculate_total=True,
+        sort_field: str = None,
+        sort_direction: int = -1,
     ):
         """List all finished crawls from the db"""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-many-branches
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -213,6 +228,11 @@ class CrawlOps:
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
 
+        # Override running_only if state list is explicitly passed
+        if state:
+            validated_states = [value for value in state if value in CRAWL_STATES]
+            query["state"] = {"$in": validated_states}
+
         if crawl_id:
             query["_id"] = crawl_id
 
@@ -223,30 +243,43 @@ class CrawlOps:
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
-            {
-                "$lookup": {
-                    "from": "crawl_configs",
-                    "localField": "cid",
-                    "foreignField": "_id",
-                    "as": "configName",
-                },
-            },
-            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
-            {
-                "$lookup": {
-                    "from": "users",
-                    "localField": "userid",
-                    "foreignField": "id",
-                    "as": "userName",
-                },
-            },
-            {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
             {"$set": {"fileSize": {"$sum": "$files.size"}}},
             {"$set": {"fileCount": {"$size": "$files"}}},
             {"$unset": ["files"]},
-            {"$skip": skip},
-            {"$limit": page_size},
         ]
+
+        if sort_field:
+            if sort_field not in ("started, finished, fileSize"):
+                raise HTTPException(status_code=400, detail="invalid_sort_field")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_field: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {"$skip": skip},
+                {"$limit": page_size},
+                {
+                    "$lookup": {
+                        "from": "crawl_configs",
+                        "localField": "cid",
+                        "foreignField": "_id",
+                        "as": "configName",
+                    },
+                },
+                {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "userid",
+                        "foreignField": "id",
+                        "as": "userName",
+                    },
+                },
+                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+            ]
+        )
 
         cursor = self.crawls.aggregate(aggregate)
         results = await cursor.to_list(length=page_size)
@@ -693,39 +726,61 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get("/orgs/all/crawls", tags=["crawls"])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        userid: Optional[UUID4] = None,
+        cid: Optional[UUID4] = None,
+        state: Optional[str] = "",
+        sort_field: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
+
+        if state:
+            state = state.split(",")
+        else:
+            state = None
 
         crawls, total = await ops.list_crawls(
             None,
             userid=userid,
             cid=cid,
             running_only=True,
+            state=state,
             page_size=page_size,
             page=page,
+            sort_field=sort_field,
+            sort_direction=sort_direction,
         )
         return paginated_format(crawls, total, page)
 
     @app.get("/orgs/{oid}/crawls", tags=["crawls"])
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        userid: Optional[UUID4] = None,
+        cid: Optional[UUID4] = None,
+        state: Optional[str] = "",
+        sort_field: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
+        if state:
+            state = state.split(",")
+        else:
+            state = None
+
         crawls, total = await ops.list_crawls(
             org,
             userid=userid,
             cid=cid,
             running_only=False,
+            state=state,
             page_size=page_size,
             page=page,
+            sort_field=sort_field,
+            sort_direction=sort_direction,
         )
         return paginated_format(crawls, total, page)
 
