@@ -90,7 +90,12 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
         headers=crawler_auth_headers,
-        json={"config": {"seeds": ["https://example.com/"], "scopeType": "domain"}},
+        json={
+            "config": {
+                "seeds": [{"url": "https://example.com/"}],
+                "scopeType": "domain",
+            }
+        },
     )
     assert r.status_code == 200
 
@@ -111,7 +116,12 @@ def test_update_config_no_changes(
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
         headers=crawler_auth_headers,
-        json={"config": {"seeds": ["https://example.com/"], "scopeType": "domain"}},
+        json={
+            "config": {
+                "seeds": [{"url": "https://example.com/"}],
+                "scopeType": "domain",
+            }
+        },
     )
     assert r.status_code == 200
 

@@ -1942,7 +1942,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseUrlListConfig(): NewCrawlConfigParams["config"] {
     const config = {
-      seeds: urlListToArray(this.formState.urlList),
+      seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
+        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        return newSeed;
+      }),
       scopeType: "page" as FormState["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
@@ -1956,7 +1959,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ? urlListToArray(this.formState.customIncludeUrlList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
-      ? urlListToArray(this.formState.urlList)
+      ? urlListToArray(this.formState.urlList).map((seedUrl) => {
+        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        return newSeed;
+      })
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
