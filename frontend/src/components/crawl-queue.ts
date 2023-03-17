@@ -77,7 +77,7 @@ export class CrawlQueue extends LiteElement {
   render() {
     return html`
       <btrix-section-heading style="--margin: var(--sl-spacing-small)"
-        >${msg("Crawl Queue")} ${this.renderBadge()}</btrix-section-heading
+        >${msg("Queued URLs")} ${this.renderBadge()}</btrix-section-heading
       >
       ${this.renderContent()}
     `;

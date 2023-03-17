@@ -650,7 +650,7 @@ export class CrawlDetail extends LiteElement {
           `
         : this.renderInactiveCrawlMessage()}
 
-      <section class="mt-5">${this.renderExclusions()}</section>
+      <section class="mt-10">${this.renderExclusions()}</section>
 
       <btrix-dialog
         label=${msg("Edit Crawler Instances")}
@@ -682,6 +682,17 @@ export class CrawlDetail extends LiteElement {
           ${msg("Edit Exclusions")}
         </sl-button>
       </header>
+
+      ${when(
+        this.crawl,
+        () => html`
+          <btrix-crawl-queue
+            orgId=${this.crawl!.oid}
+            crawlId=${this.crawlId}
+            .authState=${this.authState}
+          ></btrix-crawl-queue>
+        `
+      )}
 
       <btrix-dialog
         label=${msg("Crawl Queue Editor")}
