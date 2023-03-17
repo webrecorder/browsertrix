@@ -210,20 +210,23 @@ export class CrawlsList extends LiteElement {
           </div>
         </header>
         <section>
-          ${this.crawls.length
-            ? this.renderCrawlList()
-            : html`
+          ${
+            this.crawls.length
+              ? this.renderCrawlList()
+              : html`
                 <div class="border-t border-b py-5">
                   <p class="text-center text-neutral-500">
                     ${msg("No crawls yet.")}
                   </p>
                 </div>
-              `}
+              `
+          }
         </section>
         <footer class="m-2">
           <span class="text-0-400 text-xs">
-            ${this.lastFetched
-              ? msg(html`Last updated:
+            ${
+              this.lastFetched
+                ? msg(html`Last updated:
                   <sl-format-date
                     date="${new Date(this.lastFetched).toString()}"
                     month="2-digit"
@@ -233,7 +236,8 @@ export class CrawlsList extends LiteElement {
                     minute="numeric"
                     second="numeric"
                   ></sl-format-date>`)
-              : ""}
+                : ""
+            }
           </span>
         </footer>
       </main>
@@ -326,8 +330,9 @@ export class CrawlsList extends LiteElement {
         </div>
       </div>
 
-      ${this.userId
-        ? html` <div class="h-6 mt-2 flex justify-end">
+      ${
+        this.userId
+          ? html` <div class="h-6 mt-2 flex justify-end">
             <label>
               <span class="text-neutral-500 text-xs mr-1"
                 >${msg("Show Only Mine")}</span
@@ -339,7 +344,8 @@ export class CrawlsList extends LiteElement {
               ></sl-switch>
             </label>
           </div>`
-        : ""}
+          : ""
+      }
     `;
   }
 
@@ -471,6 +477,7 @@ export class CrawlsList extends LiteElement {
       </sl-menu-item>
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
+        ?disabled=${!crawl.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
