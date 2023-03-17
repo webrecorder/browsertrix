@@ -31,21 +31,24 @@ jobs:
         echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
         echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
         cat .env
-    - name: Start the server
-      run: cd frontend && yarn build && yarn serve &
-      id: start-server
-    - name: Wait for server to be ready
-      run: |
-        n=0
-        until [ $n -ge 20 ]
-        do
-          curl --head --silent --fail "${{ secrets.API_BASE_URL }}" > /dev/null && break
-          n=$((n+1))
-          sleep 5
-        done
-        echo "Server is ready"
-      env:
-        API_BASE_URL: ${{ secrets.API_BASE_URL }}
+    - name: Build frontend
+      run: cd frontend && yarn build
+      id: build-frontend
+    # - name: Start the server
+    #   run: cd frontend && yarn build && yarn serve &
+    #   id: start-server
+    # - name: Wait for server to be ready
+    #   run: |
+    #     n=0
+    #     until [ $n -ge 20 ]
+    #     do
+    #       curl --head --silent --fail "${{ secrets.API_BASE_URL }}" > /dev/null && break
+    #       n=$((n+1))
+    #       sleep 5
+    #     done
+    #     echo "Server is ready"
+    #   env:
+    #     API_BASE_URL: ${{ secrets.API_BASE_URL }}
     - name: Run Playwright tests
       run: cd frontend && yarn playwright test
     - uses: actions/upload-artifact@v2
