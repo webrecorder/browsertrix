@@ -98,6 +98,7 @@ type FormState = {
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
+  description: WorkflowParams["description"];
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -163,6 +164,7 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
   tags: [],
+  description: null,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -233,6 +235,7 @@ export class CrawlConfigEditor extends LiteElement {
   });
 
   private validateNameMax = maxLengthValidator(50);
+  private validateDescriptionMax = maxLengthValidator(350);
 
   private get formHasError() {
     return (
@@ -469,6 +472,7 @@ export class CrawlConfigEditor extends LiteElement {
       runNow: false,
       tags: this.initialWorkflow.tags,
       jobName: this.initialWorkflow.name || "",
+      description: this.initialWorkflow.description,
       browserProfile: this.initialWorkflow.profileid
         ? ({ id: this.initialWorkflow.profileid } as Profile)
         : null,
@@ -639,19 +643,21 @@ export class CrawlConfigEditor extends LiteElement {
   private renderFooter({ isFirst = false, isLast = false }) {
     return html`
       <div class="px-6 py-4 border-t flex justify-between">
-        ${isFirst
-          ? html`
+        ${
+          isFirst
+            ? html`
               <sl-button size="small" type="reset">
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${this.configId ? msg("Cancel") : msg("Start Over")}
               </sl-button>
             `
-          : html`
+            : html`
               <sl-button size="small" @click=${this.backStep}>
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
               </sl-button>
-            `}
+            `
+        }
         ${when(
           this.configId,
           () => html`
@@ -686,12 +692,14 @@ export class CrawlConfigEditor extends LiteElement {
                   ?disabled=${this.isSubmitting || this.formHasError}
                   ?loading=${this.isSubmitting}
                 >
-                  ${this.formState.scheduleType === "now" ||
-                  this.formState.runNow
-                    ? msg("Save & Run Crawl")
-                    : this.formState.scheduleType === "none"
-                    ? msg("Save Workflow")
-                    : msg("Save & Schedule Crawl")}
+                  ${
+                    this.formState.scheduleType === "now" ||
+                    this.formState.runNow
+                      ? msg("Save & Run Crawl")
+                      : this.formState.scheduleType === "none"
+                      ? msg("Save Workflow")
+                      : msg("Save & Schedule Crawl")
+                  }
                 </sl-button>`
               : html`
                   <div>
@@ -1050,9 +1058,11 @@ https://example.net`}
         <btrix-details ?open=${exclusions.length > 0}>
           <span slot="title"
             >${msg("Exclusions")}
-            ${exclusions.length
-              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-              : ""}</span
+            ${
+              exclusions.length
+                ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+                : ""
+            }</span
           >
           <div class="grid grid-cols-5 gap-4 py-2">
             ${this.renderFormCol(html`
@@ -1089,9 +1099,11 @@ https://example.net`}
         <btrix-details>
           <span slot="title">
             ${msg("Additional URLs")}
-            ${additionalUrlList.length
-              ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
-              : ""}
+            ${
+              additionalUrlList.length
+                ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
+                : ""
+            }
           </span>
           <div class="grid grid-cols-5 gap-4 py-2">
             ${this.renderFormCol(html`
@@ -1172,9 +1184,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
           >
             <span slot="suffix">${msg("pages")}</span>
             <div slot="help-text">
-              ${minPages === 1
-                ? msg(str`Minimum ${minPages} page`)
-                : msg(str`Minimum ${minPages} pages`)}
+              ${
+                minPages === 1
+                  ? msg(str`Minimum ${minPages} page`)
+                  : msg(str`Minimum ${minPages} pages`)
+              }
             </div>
           </sl-input>
         </sl-mutation-observer>
@@ -1415,9 +1429,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${msg(
               html`Schedule:
                 <span class="text-blue-500"
-                  >${utcSchedule
-                    ? humanizeSchedule(utcSchedule)
-                    : msg("Invalid date")}</span
+                  >${
+                    utcSchedule
+                      ? humanizeSchedule(utcSchedule)
+                      : msg("Invalid date")
+                  }</span
                 >.`
             )}
           </p>
@@ -1425,9 +1441,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${msg(
               html`Next scheduled run:
                 <span
-                  >${utcSchedule
-                    ? humanizeNextDate(utcSchedule)
-                    : msg("Invalid date")}</span
+                  >${
+                    utcSchedule
+                      ? humanizeNextDate(utcSchedule)
+                      : msg("Invalid date")
+                  }</span
                 >.`
             )}
           </p>
@@ -1451,7 +1469,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const { helpText, validate } = this.validateNameMax;
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -1459,18 +1476,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="jobName"
           label=${msg("Name")}
           autocomplete="off"
-          placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example Workflow name",
-          })}
+          placeholder=${msg("Our Website (example.com)")}
           value=${this.formState.jobName}
-          help-text=${helpText}
-          @sl-input=${validate}
+          help-text=${this.validateNameMax.helpText}
+          @sl-input=${this.validateNameMax.validate}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
         msg(`Customize this Workflow and crawl name. Crawls are named after
         the starting URL(s) by default.`)
       )}
+      ${this.renderFormCol(html`
+        <sl-textarea
+          class="with-max-help-text"
+          name="description"
+          label=${msg("Description")}
+          autocomplete="off"
+          value=${this.formState.description}
+          help-text=${this.validateDescriptionMax.helpText}
+          @sl-input=${this.validateDescriptionMax.validate}
+        ></sl-textarea>
+      `)}
+      ${this.renderHelpTextCol(msg(`TODO`))}
       ${this.renderFormCol(
         html`
           <btrix-tag-input
@@ -1856,10 +1883,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const renderDetail = ({ loc, msg: detailMsg }: any) => html`
       <li>
-        ${loc.some((v: string) => v === "seeds") &&
-        typeof loc[loc.length - 1] === "number"
-          ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
-          : `${loc[loc.length - 1]}: `}
+        ${
+          loc.some((v: string) => v === "seeds") &&
+          typeof loc[loc.length - 1] === "number"
+            ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
+            : `${loc[loc.length - 1]}: `
+        }
         ${detailMsg}
       </li>
     `;
@@ -1900,6 +1929,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
       name: this.formState.jobName || "",
+      description: this.formState.description,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",

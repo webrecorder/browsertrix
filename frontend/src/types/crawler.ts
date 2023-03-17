@@ -39,6 +39,7 @@ export type WorkflowParams = {
   config: SeedConfig;
   tags: string[];
   crawlTimeout: number | null;
+  description: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {

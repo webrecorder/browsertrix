@@ -13,6 +13,7 @@ import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
 const defaultValue = {
   name: "",
+  description: null,
   profileid: null,
   schedule: "",
   config: {
