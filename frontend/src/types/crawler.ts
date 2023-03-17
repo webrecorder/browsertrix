@@ -20,7 +20,7 @@ export type SeedConfig = Pick<
   Seed,
   "scopeType" | "include" | "exclude" | "limit" | "extraHops"
 > & {
-  seeds: (string | Seed)[];
+  seeds: (Seed)[];
   lang?: string | null;
   blockAds?: boolean;
   behaviorTimeout?: number | null;

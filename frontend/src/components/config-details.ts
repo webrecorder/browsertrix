@@ -177,7 +177,7 @@ export class ConfigDetails extends LiteElement {
         html`
           <ul>
             ${crawlConfig?.config.seeds.map(
-              (url: any) => html` <li>${url}</li> `
+              (seed: Seed) => html` <li>${seed.url}</li> `
             )}
           </ul>
         `
@@ -194,11 +194,7 @@ export class ConfigDetails extends LiteElement {
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = seedsConfig.seeds.slice(1);
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    let primarySeedUrl = seedsConfig.seeds[0];
-    if (typeof seedsConfig.seeds[0] !== "string") {
-      primarySeedConfig = seedsConfig.seeds[0];
-      primarySeedUrl = primarySeedConfig.url;
-    }
+    let primarySeedUrl = seedsConfig.seeds[0].url;
     const includeUrlList = primarySeedConfig.include || seedsConfig.include;
     return html`
       ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl)}

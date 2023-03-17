@@ -61,7 +61,7 @@ class Seed(BaseModel):
 class RawCrawlConfig(BaseModel):
     """Base Crawl Config"""
 
-    seeds: List[Union[HttpUrl, Seed]]
+    seeds: List[Seed]
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
