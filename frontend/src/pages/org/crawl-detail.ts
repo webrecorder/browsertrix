@@ -19,7 +19,7 @@ const SECTIONS = [
   "config",
   "exclusions",
 ] as const;
-type SectionName = typeof SECTIONS[number];
+type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -139,7 +139,17 @@ export class CrawlDetail extends LiteElement {
       case "watch": {
         if (this.crawl) {
           sectionContent = this.renderPanel(
-            msg("Watch Crawl"),
+            html`<span>${msg("Watch Crawl")}</span>
+              <sl-button
+                size="small"
+                @click=${() => {
+                  this.openDialogName = "scale";
+                  this.isDialogVisible = true;
+                }}
+              >
+                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+                <span> ${msg("Crawler Instances")} </span>
+              </sl-button> `,
             this.renderWatch()
           );
         } else {
@@ -151,7 +161,9 @@ export class CrawlDetail extends LiteElement {
       }
       case "replay":
         sectionContent = this.renderPanel(
-          msg("Replay Crawl"),
+          html`<div>
+            <span>msg("Replay Crawl")</span>
+          </div>`,
           this.renderReplay()
         );
         break;
@@ -176,30 +188,28 @@ export class CrawlDetail extends LiteElement {
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
                 html`
-                  <div class="flex items-center justify-between">
-                    ${msg("Metadata")}
-                    ${when(
-                      this.isCrawler,
-                      () => html`
-                        <sl-tooltip
-                          content=${msg(
-                            "Metadata cannot be edited while crawl is running."
-                          )}
-                          ?disabled=${!this.isActive}
-                        >
-                          <sl-icon-button
-                            class=${`text-base${
-                              this.isActive ? " cursor-not-allowed" : ""
-                            }`}
-                            name="pencil"
-                            @click=${this.openMetadataEditor}
-                            aria-label=${msg("Edit Metadata")}
-                            ?disabled=${this.isActive}
-                          ></sl-icon-button>
-                        </sl-tooltip>
-                      `
-                    )}
-                  </div>
+                  ${msg("Metadata")}
+                  ${when(
+                    this.isCrawler,
+                    () => html`
+                      <sl-tooltip
+                        content=${msg(
+                          "Metadata cannot be edited while crawl is running."
+                        )}
+                        ?disabled=${!this.isActive}
+                      >
+                        <sl-icon-button
+                          class=${`text-base${
+                            this.isActive ? " cursor-not-allowed" : ""
+                          }`}
+                          name="pencil"
+                          @click=${this.openMetadataEditor}
+                          aria-label=${msg("Edit Metadata")}
+                          ?disabled=${this.isActive}
+                        ></sl-icon-button>
+                      </sl-tooltip>
+                    `
+                  )}
                 `,
                 this.renderMetadata()
               )}
@@ -308,11 +318,9 @@ export class CrawlDetail extends LiteElement {
           aria-selected=${isActive.toString()}
         >
           <a
-            class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${
-              isActive
-                ? "text-blue-600 bg-blue-100 shadow-sm"
-                : "text-neutral-600 hover:bg-blue-50"
-            }"
+            class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
+              ? "text-blue-600 bg-blue-100 shadow-sm"
+              : "text-neutral-600 hover:bg-blue-50"}"
             href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
@@ -339,36 +347,30 @@ export class CrawlDetail extends LiteElement {
             icon: "info-circle-fill",
             label: msg("Overview"),
           })}
-          ${
-            this.isActive
-              ? renderNavItem({
-                  section: "watch",
-                  iconLibrary: "default",
-                  icon: "eye-fill",
-                  label: msg("Watch Crawl"),
-                })
-              : ""
-          }
-          ${
-            !this.isActive
-              ? renderNavItem({
-                  section: "replay",
-                  iconLibrary: "app",
-                  icon: "link-replay",
-                  label: msg("Replay Crawl"),
-                })
-              : ""
-          }
-          ${
-            !this.isActive
-              ? renderNavItem({
-                  section: "files",
-                  iconLibrary: "default",
-                  icon: "folder-fill",
-                  label: msg("Files"),
-                })
-              : ""
-          }
+          ${this.isActive
+            ? renderNavItem({
+                section: "watch",
+                iconLibrary: "default",
+                icon: "eye-fill",
+                label: msg("Watch Crawl"),
+              })
+            : ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "replay",
+                iconLibrary: "app",
+                icon: "link-replay",
+                label: msg("Replay Crawl"),
+              })
+            : ""}
+          ${!this.isActive
+            ? renderNavItem({
+                section: "files",
+                iconLibrary: "default",
+                icon: "folder-fill",
+                label: msg("Files"),
+              })
+            : ""}
           ${renderNavItem({
             section: "config",
             iconLibrary: "default",
@@ -390,24 +392,13 @@ export class CrawlDetail extends LiteElement {
           ${this.renderName()}
         </h1>
         <div
-          class="grid gap-2 grid-flow-col ${
-            this.isActive ? "justify-between" : "justify-end"
-          }"
+          class="grid gap-2 grid-flow-col ${this.isActive
+            ? "justify-between"
+            : "justify-end"}"
         >
-          ${
-            this.isActive
-              ? html`
+          ${this.isActive
+            ? html`
                 <sl-button-group>
-                  <sl-button
-                    size="small"
-                    @click=${() => {
-                      this.openDialogName = "scale";
-                      this.isDialogVisible = true;
-                    }}
-                  >
-                    <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                    <span> ${msg("Crawler Instances")} </span>
-                  </sl-button>
                   <sl-button size="small" @click=${this.stop}>
                     <sl-icon name="slash-circle" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
@@ -422,8 +413,7 @@ export class CrawlDetail extends LiteElement {
                   </sl-button>
                 </sl-button-group>
               `
-              : ""
-          }
+            : ""}
           ${this.crawl && this.isCrawler ? this.renderMenu() : ""}
         </div>
       </header>
@@ -442,11 +432,9 @@ export class CrawlDetail extends LiteElement {
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
-          >${
-            this.isActive
-              ? html`<sl-icon name="three-dots"></sl-icon>`
-              : msg("Actions")
-          }</sl-button
+          >${this.isActive
+            ? html`<sl-icon name="three-dots"></sl-icon>`
+            : msg("Actions")}</sl-button
         >
 
         <ul
@@ -551,7 +539,12 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h2 id="exclusions" class="flex-0 text-lg font-semibold mb-2">${title}</h2>
+      <h2
+        id="exclusions"
+        class="flex-0 flex items-center justify-between text-lg font-semibold leading-none h-8 min-h-fit mb-2"
+      >
+        ${title}
+      </h2>
       <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }
@@ -562,52 +555,46 @@ export class CrawlDetail extends LiteElement {
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Status")}</dt>
           <dd>
-            ${
-              this.crawl
-                ? html`
+            ${this.crawl
+              ? html`
                   <btrix-crawl-status
                     state=${this.crawl.state}
                   ></btrix-crawl-status>
                 `
-                : html`<sl-skeleton class="h-5"></sl-skeleton>`
-            }
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
           <dd>
-            ${
-              this.crawl?.stats
-                ? html`
+            ${this.crawl?.stats
+              ? html`
                   <span
-                    class="font-mono tracking-tighter${
-                      this.isActive ? " text-purple-600" : ""
-                    }"
+                    class="font-mono tracking-tighter${this.isActive
+                      ? " text-purple-600"
+                      : ""}"
                   >
                     ${this.numberFormatter.format(+this.crawl.stats.done)}
                     <span class="text-0-400">/</span>
                     ${this.numberFormatter.format(+this.crawl.stats.found)}
                   </span>
                 `
-                : this.crawl
-                ? html` <span class="text-0-400">${msg("Unknown")}</span> `
-                : html`<sl-skeleton class="h-5"></sl-skeleton>`
-            }
+              : this.crawl
+              ? html` <span class="text-0-400">${msg("Unknown")}</span> `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
           <dd>
-            ${
-              this.crawl
-                ? html`
-                  ${
-                    this.crawl.finished
-                      ? html`${RelativeDuration.humanize(
-                          new Date(`${this.crawl.finished}Z`).valueOf() -
-                            new Date(`${this.crawl.started}Z`).valueOf()
-                        )}`
-                      : html`
+            ${this.crawl
+              ? html`
+                  ${this.crawl.finished
+                    ? html`${RelativeDuration.humanize(
+                        new Date(`${this.crawl.finished}Z`).valueOf() -
+                          new Date(`${this.crawl.started}Z`).valueOf()
+                      )}`
+                    : html`
                         <span class="text-purple-600">
                           <btrix-relative-duration
                             value=${`${this.crawl.started}Z`}
@@ -615,21 +602,17 @@ export class CrawlDetail extends LiteElement {
                             tickSeconds="1"
                           ></btrix-relative-duration>
                         </span>
-                      `
-                  }
+                      `}
                 `
-                : html`<sl-skeleton class="h-5"></sl-skeleton>`
-            }
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Crawler Instances")}</dt>
           <dd>
-            ${
-              this.crawl
-                ? this.crawl?.scale
-                : html`<sl-skeleton class="h-5"></sl-skeleton>`
-            }
+            ${this.crawl
+              ? this.crawl?.scale
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
       </dl>
@@ -645,26 +628,23 @@ export class CrawlDetail extends LiteElement {
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      ${
-        isStarting
-          ? html`<div class="rounded border p-3">
+      ${isStarting
+        ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
               ${msg("Crawl starting...")}
             </p>
           </div>`
-          : this.isActive
-          ? html`
-            ${
-              isStopping
-                ? html`
+        : this.isActive
+        ? html`
+            ${isStopping
+              ? html`
                   <div class="mb-4">
                     <btrix-alert variant="warning" class="text-sm">
                       ${msg("Crawl stopping...")}
                     </btrix-alert>
                   </div>
                 `
-                : ""
-            }
+              : ""}
 
             <div
               id="screencast-crawl"
@@ -678,8 +658,7 @@ export class CrawlDetail extends LiteElement {
               ></btrix-screencast>
             </div>
           `
-          : this.renderInactiveCrawlMessage()
-      }
+        : this.renderInactiveCrawlMessage()}
 
       <section class="mt-5">
         <h3 class="text-lg font-semibold mb-2">${msg("Crawl URLs")}</h3>
@@ -728,11 +707,9 @@ export class CrawlDetail extends LiteElement {
             </div>`
           : html`
               <p class="text-sm text-neutral-400">
-                ${
-                  this.isActive
-                    ? msg("No files yet.")
-                    : msg("No files to replay.")
-                }
+                ${this.isActive
+                  ? msg("No files yet.")
+                  : msg("No files to replay.")}
               </p>
             `
       }
@@ -744,9 +721,8 @@ export class CrawlDetail extends LiteElement {
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Started")}>
-          ${
-            this.crawl
-              ? html`
+          ${this.crawl
+            ? html`
                 <sl-format-date
                   date=${`${this.crawl.started}Z` /** Z for UTC */}
                   month="2-digit"
@@ -757,16 +733,13 @@ export class CrawlDetail extends LiteElement {
                   time-zone-name="short"
                 ></sl-format-date>
               `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`
-          }
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Finished")}>
-          ${
-            this.crawl
-              ? html`
-                ${
-                  this.crawl.finished
-                    ? html`<sl-format-date
+          ${this.crawl
+            ? html`
+                ${this.crawl.finished
+                  ? html`<sl-format-date
                       date=${`${this.crawl.finished}Z` /** Z for UTC */}
                       month="2-digit"
                       day="2-digit"
@@ -775,49 +748,39 @@ export class CrawlDetail extends LiteElement {
                       minute="numeric"
                       time-zone-name="short"
                     ></sl-format-date>`
-                    : html`<span class="text-0-400">${msg("Pending")}</span>`
-                }
+                  : html`<span class="text-0-400">${msg("Pending")}</span>`}
               `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`
-          }
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Reason")}>
-          ${
-            this.crawl
-              ? html`
-                ${
-                  this.crawl.manual
-                    ? msg(
-                        html`Manual start by
+          ${this.crawl
+            ? html`
+                ${this.crawl.manual
+                  ? msg(
+                      html`Manual start by
                         <span
                           >${this.crawl?.userName || this.crawl?.userid}</span
                         >`
-                      )
-                    : msg(html`Scheduled run`)
-                }
+                    )
+                  : msg(html`Scheduled run`)}
               `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`
-          }
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Crawl ID")}>
-          ${
-            this.crawl
-              ? html`<btrix-copy-button
+          ${this.crawl
+            ? html`<btrix-copy-button
                   value=${this.crawl.id}
                 ></btrix-copy-button>
                 <code class="text-xs" title=${this.crawl.id}
                   >${this.crawl.id}</code
                 > `
-              : html`<sl-skeleton class="h-6"></sl-skeleton>`
-          }
+            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${
-          this.showOrgLink
-            ? html`
+        ${this.showOrgLink
+          ? html`
               <btrix-desc-list-item label=${msg("Organization")}>
-                ${
-                  this.crawl
-                    ? html`
+                ${this.crawl
+                  ? html`
                       <a
                         class="font-medium text-neutral-700 hover:text-neutral-900"
                         href=${`/orgs/${this.crawl.oid}/crawls`}
@@ -832,12 +795,10 @@ export class CrawlDetail extends LiteElement {
                         </span>
                       </a>
                     `
-                    : html`<sl-skeleton class="h-6"></sl-skeleton>`
-                }
+                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
               </btrix-desc-list-item>
             `
-            : ""
-        }
+          : ""}
       </btrix-desc-list>
     `;
   }
@@ -883,9 +844,8 @@ ${this.crawl?.notes}
 
   private renderFiles() {
     return html`
-      ${
-        this.hasFiles
-          ? html`
+      ${this.hasFiles
+        ? html`
             <ul class="border rounded text-sm">
               ${this.crawl!.resources!.map(
                 (file) => html`
@@ -909,16 +869,13 @@ ${this.crawl?.notes}
               )}
             </ul>
           `
-          : html`
+        : html`
             <p class="text-sm text-neutral-400">
-              ${
-                this.isActive
-                  ? msg("No files yet.")
-                  : msg("No files to download.")
-              }
+              ${this.isActive
+                ? msg("No files yet.")
+                : msg("No files to download.")}
             </p>
-          `
-      }
+          `}
     `;
   }
 
@@ -991,16 +948,14 @@ ${this.crawl?.notes}
       <div class="rounded border bg-neutral-50 p-3">
         <p class="text-sm text-neutral-600">
           ${msg("Crawl is not running.")}
-          ${
-            this.hasFiles
-              ? html`<a
+          ${this.hasFiles
+            ? html`<a
                 href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
                 class="text-primary hover:underline"
                 @click=${() => (this.sectionName = "replay")}
                 >View replay</a
               >`
-              : ""
-          }
+            : ""}
         </p>
       </div>
     `;

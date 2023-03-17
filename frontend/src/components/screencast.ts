@@ -188,11 +188,9 @@ export class Screencast extends LitElement {
       <div class="wrapper">
         <div
           class="container"
-          style="grid-template-columns: repeat(${
-            this.browsersCount
-          }, minmax(0, 1fr)); grid-template-rows: repeat(${
-      this.scale
-    }, minmax(2rem, auto))"
+          style="grid-template-columns: repeat(${this
+            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
+            .scale}, minmax(2rem, auto))"
         >
           ${this.dataList.map(
             (pageData) =>
@@ -200,11 +198,9 @@ export class Screencast extends LitElement {
                 class="screen"
                 title=${pageData?.url || ""}
                 role=${pageData ? "button" : "presentation"}
-                @click=${
-                  pageData
-                    ? () => (this.focusedScreenData = pageData)
-                    : () => {}
-                }
+                @click=${pageData
+                  ? () => (this.focusedScreenData = pageData)
+                  : () => {}}
               >
                 <figcaption class="caption">
                   ${pageData?.url || html`&nbsp;`}
@@ -213,11 +209,9 @@ export class Screencast extends LitElement {
                   class="frame"
                   style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
                 >
-                  ${
-                    pageData
-                      ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                      : html`<sl-spinner></sl-spinner>`
-                  }
+                  ${pageData
+                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
+                    : html`<sl-spinner></sl-spinner>`}
                 </div>
               </figure>`
           )}
@@ -240,16 +234,14 @@ export class Screencast extends LitElement {
           ${this.focusedScreenData?.url}
         </span>
 
-        ${
-          this.focusedScreenData
-            ? html`
+        ${this.focusedScreenData
+          ? html`
               <img
                 src="data:image/png;base64,${this.focusedScreenData.data}"
                 title="${this.focusedScreenData.url}"
               />
             `
-            : ""
-        }
+          : ""}
       </sl-dialog>
     `;
   }
