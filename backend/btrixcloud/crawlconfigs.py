@@ -8,6 +8,7 @@ import uuid
 import asyncio
 import re
 from datetime import datetime
+import urllib.parse
 
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
@@ -187,6 +188,8 @@ class CrawlConfigOut(CrawlConfig):
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
+
+    firstSeed: Optional[str]
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
@@ -448,10 +451,16 @@ class CrawlConfigOps:
     async def get_crawl_configs(
         self,
         org: Organization,
-        userid: Optional[UUID4] = None,
-        tags: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        created_by: uuid.UUID = None,
+        modified_by: uuid.UUID = None,
+        first_seed: str = None,
+        name: str = None,
+        description: str = None,
+        tags: Optional[List[str]] = None,
+        sort_by: str = None,
+        sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals
@@ -464,15 +473,87 @@ class CrawlConfigOps:
         if tags:
             match_query["tags"] = {"$all": tags}
 
-        if userid:
-            match_query["createdBy"] = userid
+        if created_by:
+            match_query["createdBy"] = created_by
 
-        total = await self.crawl_configs.count_documents(match_query)
+        if modified_by:
+            match_query["modifiedBy"] = modified_by
+
+        if name:
+            match_query["name"] = name
+
+        if description:
+            match_query["description"] = description
 
         # pylint: disable=duplicate-code
-        cursor = self.crawl_configs.aggregate(
+        aggregate = [
+            {"$match": match_query},
+            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
+            # Set firstSeed
+            {"$set": {"firstSeed": "$firstSeedObject.url"}},
+            {"$unset": ["firstSeedObject"]},
+            {
+                "$lookup": {
+                    "from": "crawls",
+                    "localField": "_id",
+                    "foreignField": "cid",
+                    "as": "configCrawls",
+                },
+            },
+            # Set crawl count
+            {"$set": {"crawlCount": {"$size": "$configCrawls"}}},
+            # Filter workflow crawls on finished and active
+            {
+                "$set": {
+                    "finishedCrawls": {
+                        "$filter": {
+                            "input": "$configCrawls",
+                            "as": "filterCrawls",
+                            "cond": {
+                                "$and": [
+                                    {"$ne": ["$$filterCrawls.finished", None]},
+                                    {"$ne": ["$$filterCrawls.inactive", True]},
+                                ]
+                            },
+                        }
+                    }
+                }
+            },
+            # Sort finished crawls by finished time descending to get latest
+            {
+                "$set": {
+                    "sortedCrawls": {
+                        "$function": {
+                            # pylint: disable=line-too-long
+                            "body": "function(arr) {return arr.sort((a,b) => (a.finished > b.finished) ? -1 : ((b.finished > a.finished) ? 1 : 0));}",
+                            "args": ["$finishedCrawls"],
+                            "lang": "js",
+                        }
+                    }
+                }
+            },
+            {"$unset": ["finishedCrawls"]},
+            {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
+            {"$set": {"lastCrawlId": "$lastCrawl._id"}},
+            {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
+            {"$set": {"lastCrawlState": "$lastCrawl.state"}},
+            {"$unset": ["lastCrawl"]},
+            {"$unset": ["sortedCrawls"]},
+        ]
+
+        if first_seed:
+            aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if sort_by:
+            if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
             [
-                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "users",
@@ -497,11 +578,28 @@ class CrawlConfigOps:
                         }
                     }
                 },
-                {"$skip": skip},
-                {"$limit": page_size},
+                {"$unset": ["firstSeedFormatted"]},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
             ]
         )
-        results = await cursor.to_list(length=page_size)
+
+        cursor = self.crawl_configs.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
 
         # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
         crawls, _ = await self.crawl_ops.list_crawls(
@@ -509,17 +607,14 @@ class CrawlConfigOps:
             running_only=True,
             # Set high so that when we lower default we still get all running crawls
             page_size=1_000,
-            calculate_total=False,
         )
-
         running = {}
         for crawl in crawls:
             running[crawl.cid] = crawl.id
 
         configs = []
-        for res in results:
+        for res in items:
             config = CrawlConfigOut.from_dict(res)
-            config = await self._annotate_with_crawl_stats(config)
             # pylint: disable=invalid-name
             config.currCrawlId = running.get(config.id)
             configs.append(config)
@@ -543,7 +638,7 @@ class CrawlConfigOps:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls, _ = await self.crawl_ops.list_crawls(
-            cid=crawlconfig.id, running_only=True, calculate_total=False
+            cid=crawlconfig.id, running_only=True
         )
 
         if len(crawls) == 1:
@@ -755,13 +850,40 @@ def init_crawl_config_api(
     @router.get("")
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
-        userid: Optional[UUID4] = None,
-        tag: Union[List[str], None] = Query(default=None),
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        # createdBy, kept as userid for API compatibility
+        userid: Optional[UUID4] = None,
+        modified_by: Optional[UUID4] = None,
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        tag: Union[List[str], None] = Query(default=None),
+        sort_by: str = None,
+        sort_direction: int = -1,
     ):
+        # pylint: disable=duplicate-code
+        if first_seed:
+            first_seed = urllib.parse.unquote(first_seed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
+        if description:
+            description = urllib.parse.unquote(description)
+
         crawl_configs, total = await ops.get_crawl_configs(
-            org, userid=userid, tags=tag, page_size=page_size, page=page
+            org,
+            created_by=userid,
+            modified_by=modified_by,
+            first_seed=first_seed,
+            name=name,
+            description=description,
+            tags=tag,
+            page_size=page_size,
+            page=page,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
         )
         return paginated_format(crawl_configs, total, page)
 
