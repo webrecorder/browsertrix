@@ -56,18 +56,6 @@ export class Screencast extends LitElement {
       gap: 1rem;
     }
 
-    .screen-count {
-      color: var(--sl-color-neutral-400);
-      font-size: var(--sl-font-size-x-small);
-      margin-bottom: var(--sl-spacing-x-small);
-    }
-
-    .screen-count span,
-    .screen-count sl-icon {
-      display: inline-block;
-      vertical-align: middle;
-    }
-
     .screen {
       border: 1px solid var(--sl-color-neutral-300);
       border-radius: var(--sl-border-radius-large);
@@ -189,34 +177,8 @@ export class Screencast extends LitElement {
   }
 
   render() {
-    const browserWindows = this.browsersCount * this.scale;
-
     return html`
       <div class="wrapper">
-        ${
-          !this.dataList.length
-            ? html`<div class="spinner">
-              <sl-spinner></sl-spinner>
-            </div> `
-            : html`
-              <div class="screen-count">
-                <span
-                  >${
-                    browserWindows > 1
-                      ? msg(str`Running in ${browserWindows} browser windows`)
-                      : msg(str`Running in 1 browser window`)
-                  }</span
-                >
-                <sl-tooltip
-                  content=${msg(
-                    str`${this.browsersCount} browser(s) × ${this.scale} crawler(s). Number of crawlers corresponds to scale.`
-                  )}
-                  ><sl-icon name="info-circle"></sl-icon
-                ></sl-tooltip>
-              </div>
-            `
-        }
-
         <div
           class="container"
           style="grid-template-columns: repeat(${
