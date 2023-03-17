@@ -15,12 +15,17 @@ jobs:
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       working-directory: ./frontend
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Node
+      uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: '16'
+        cache: 'yarn'
+        cache-dependency-path: frontend/yarn.lock
     - name: Install dependencies
-      run: yarn
+      working-directory: frontend
+      run: yarn install --frozen-lockfile
     - name: Install Playwright Browsers
       run: yarn add playwright && yarn playwright install --with-deps
       working-directory: ./frontend
@@ -34,21 +39,6 @@ jobs:
     - name: Build frontend
       run: cd frontend && yarn build
       id: build-frontend
-    # - name: Start the server
-    #   run: cd frontend && yarn build && yarn serve &
-    #   id: start-server
-    # - name: Wait for server to be ready
-    #   run: |
-    #     n=0
-    #     until [ $n -ge 20 ]
-    #     do
-    #       curl --head --silent --fail "${{ secrets.API_BASE_URL }}" > /dev/null && break
-    #       n=$((n+1))
-    #       sleep 5
-    #     done
-    #     echo "Server is ready"
-    #   env:
-    #     API_BASE_URL: ${{ secrets.API_BASE_URL }}
     - name: Run Playwright tests
       run: cd frontend && yarn playwright test
     - uses: actions/upload-artifact@v2
