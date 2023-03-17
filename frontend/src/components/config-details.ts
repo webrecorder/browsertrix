@@ -153,17 +153,25 @@ export class ConfigDetails extends LiteElement {
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.hideTags
-            ? ""
-            : this.renderSetting(
-                msg("Tags"),
-                crawlConfig?.tags?.length
-                  ? crawlConfig.tags.map(
-                      (tag) =>
-                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                    )
-                  : undefined
-              )}
+          ${this.renderSetting(
+            msg("Description"),
+            html`
+          <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
+          `
+          )}
+          ${
+            this.hideTags
+              ? ""
+              : this.renderSetting(
+                  msg("Tags"),
+                  crawlConfig?.tags?.length
+                    ? crawlConfig.tags.map(
+                        (tag) =>
+                          html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                      )
+                    : undefined
+                )
+          }
         </btrix-desc-list>
       </section>
     `;
@@ -180,7 +188,8 @@ export class ConfigDetails extends LiteElement {
               (url: any) => html` <li>${url}</li> `
             )}
           </ul>
-        `
+        `,
+        true
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page"),
@@ -201,7 +210,7 @@ export class ConfigDetails extends LiteElement {
     }
     const includeUrlList = primarySeedConfig.include || seedsConfig.include;
     return html`
-      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl)}
+      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
@@ -221,7 +230,8 @@ export class ConfigDetails extends LiteElement {
                 )}
               </ul>
             `
-          : msg("None")
+          : msg("None"),
+        true
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
@@ -235,7 +245,8 @@ export class ConfigDetails extends LiteElement {
                 ${additionalUrlList.map((url) => html`<li>${url}</li>`)}
               </ul>
             `
-          : msg("None")
+          : msg("None"),
+        true
       )}
       ${this.renderSetting(
         msg("Max Pages"),
@@ -259,7 +270,7 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private renderSetting(label: string, value: any) {
+  private renderSetting(label: string, value: any, breakAll?: boolean) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -272,7 +283,7 @@ export class ConfigDetails extends LiteElement {
       >`;
     }
     return html`
-      <btrix-desc-list-item label=${label} class="break-all">
+      <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
         ${content}
       </btrix-desc-list-item>
     `;
