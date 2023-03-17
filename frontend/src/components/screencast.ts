@@ -98,7 +98,10 @@ export class Screencast extends LitElement {
     }
 
     .frame {
-      background-color: var(--sl-color-slate-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--sl-color-sky-50);
       overflow: hidden;
     }
 
@@ -109,6 +112,10 @@ export class Screencast extends LitElement {
       box-shadow: 0;
       outline: 0;
       border: 0;
+    }
+
+    sl-spinner {
+      font-size: 1.75rem;
     }
   `;
 
@@ -209,7 +216,7 @@ export class Screencast extends LitElement {
                   ${
                     pageData
                       ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                      : ""
+                      : html`<sl-spinner></sl-spinner>`
                   }
                 </div>
               </figure>`
