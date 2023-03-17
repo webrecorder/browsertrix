@@ -138,10 +138,12 @@ export class CrawlDetail extends LiteElement {
       case "exclusions":
       case "watch": {
         if (this.crawl) {
+          const isRunning = this.crawl.state === "running";
           sectionContent = this.renderPanel(
             html`<span>${msg("Watch Crawl")}</span>
               <sl-button
                 size="small"
+                ?disabled=${!isRunning}
                 @click=${() => {
                   this.openDialogName = "scale";
                   this.isDialogVisible = true;
@@ -161,9 +163,7 @@ export class CrawlDetail extends LiteElement {
       }
       case "replay":
         sectionContent = this.renderPanel(
-          html`<div>
-            <span>msg("Replay Crawl")</span>
-          </div>`,
+          msg("Replay Crawl"),
           this.renderReplay()
         );
         break;
@@ -635,32 +635,36 @@ export class CrawlDetail extends LiteElement {
                   </div>
                 `
               : ""}
-
-            <div
-              id="screencast-crawl"
-              class="${isStopping ? "opacity-40" : ""} transition-opacity"
-            >
-              <btrix-screencast
-                authToken=${authToken}
-                orgId=${this.crawl.oid}
-                crawlId=${this.crawlId}
-                scale=${this.crawl.scale}
-              ></btrix-screencast>
-            </div>
           `
         : this.renderInactiveCrawlMessage()}
+      ${when(
+        isRunning,
+        () => html`
+          <div
+            id="screencast-crawl"
+            class="${isStopping ? "opacity-40" : ""} transition-opacity"
+          >
+            <btrix-screencast
+              authToken=${authToken}
+              orgId=${this.crawl!.oid}
+              crawlId=${this.crawlId}
+              scale=${this.crawl!.scale}
+            ></btrix-screencast>
+          </div>
 
-      <section class="mt-8">${this.renderExclusions()}</section>
+          <section class="mt-8">${this.renderExclusions()}</section>
 
-      <btrix-dialog
-        label=${msg("Edit Crawler Instances")}
-        ?open=${this.openDialogName === "scale"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible ? this.renderEditScale() : ""}
-      </btrix-dialog>
+          <btrix-dialog
+            label=${msg("Edit Crawler Instances")}
+            ?open=${this.openDialogName === "scale"}
+            @sl-request-close=${() => (this.openDialogName = undefined)}
+            @sl-show=${() => (this.isDialogVisible = true)}
+            @sl-after-hide=${() => (this.isDialogVisible = false)}
+          >
+            ${this.isDialogVisible ? this.renderEditScale() : ""}
+          </btrix-dialog>
+        `
+      )}
     `;
   }
 
