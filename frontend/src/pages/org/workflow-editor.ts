@@ -1483,8 +1483,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this Workflow and crawl name. Crawls are named after
-        the starting URL(s) by default.`)
+        msg(`Customize this Workflow's name. Workflows are named after
+        the first Crawl URL by default.`)
       )}
       ${this.renderFormCol(html`
         <sl-textarea
@@ -1497,7 +1497,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
       `)}
-      ${this.renderHelpTextCol(msg(`TODO`))}
+      ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
       ${this.renderFormCol(
         html`
           <btrix-tag-input

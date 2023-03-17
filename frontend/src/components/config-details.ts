@@ -45,6 +45,7 @@ export class ConfigDetails extends LiteElement {
   render() {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
+    console.log(crawlConfig);
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
