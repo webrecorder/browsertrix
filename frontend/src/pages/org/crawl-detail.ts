@@ -61,7 +61,7 @@ export class CrawlDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "scale" | "metadata";
+  private openDialogName?: "scale" | "metadata" | "exclusions";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -248,16 +248,6 @@ export class CrawlDetail extends LiteElement {
           <div class="col-span-6 md:col-span-5">${sectionContent}</div>
         </section>
       </main>
-
-      <btrix-dialog
-        label=${msg("Edit Crawler Instances")}
-        ?open=${this.openDialogName === "scale"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible ? this.renderEditScale() : ""}
-      </btrix-dialog>
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
@@ -660,23 +650,58 @@ export class CrawlDetail extends LiteElement {
           `
         : this.renderInactiveCrawlMessage()}
 
-      <section class="mt-5">
-        <h3 class="text-lg font-semibold mb-2">${msg("Crawl URLs")}</h3>
-        ${this.renderExclusions()}
-      </section>
+      <section class="mt-5">${this.renderExclusions()}</section>
+
+      <btrix-dialog
+        label=${msg("Edit Crawler Instances")}
+        ?open=${this.openDialogName === "scale"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </btrix-dialog>
     `;
   }
 
   private renderExclusions() {
     return html`
-      <btrix-exclusion-editor
-        orgId=${ifDefined(this.crawl?.oid)}
-        crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawl?.config}
-        .authState=${this.authState}
-        ?isActiveCrawl=${this.crawl && this.isActive}
-        @on-success=${this.handleExclusionChange}
-      ></btrix-exclusion-editor>
+      <header class="flex items-center justify-between">
+        <h3 class="leading-none text-lg font-semibold mb-2">
+          ${msg("Crawl URLs")}
+        </h3>
+        <sl-button
+          size="small"
+          variant="primary"
+          @click=${() => {
+            this.openDialogName = "exclusions";
+            this.isDialogVisible = true;
+          }}
+        >
+          <sl-icon slot="prefix" name="table"></sl-icon>
+          ${msg("Edit Exclusions")}
+        </sl-button>
+      </header>
+
+      <btrix-dialog
+        label=${msg("Crawl Queue Editor")}
+        ?open=${this.openDialogName === "exclusions"}
+        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible
+          ? html`<btrix-exclusion-editor
+              orgId=${ifDefined(this.crawl?.oid)}
+              crawlId=${ifDefined(this.crawl?.id)}
+              .config=${this.crawl?.config}
+              .authState=${this.authState}
+              ?isActiveCrawl=${this.crawl && this.isActive}
+              @on-success=${this.handleExclusionChange}
+            ></btrix-exclusion-editor>`
+          : ""}
+      </btrix-dialog>
     `;
   }
 
