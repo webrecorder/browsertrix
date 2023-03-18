@@ -19,7 +19,7 @@ const SECTIONS = [
   "config",
   "exclusions",
 ] as const;
-type SectionName = typeof SECTIONS[number];
+type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -61,7 +61,7 @@ export class CrawlDetail extends LiteElement {
   private isSubmittingUpdate: boolean = false;
 
   @state()
-  private openDialogName?: "scale" | "metadata";
+  private openDialogName?: "scale" | "metadata" | "exclusions";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -135,10 +135,23 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
+      case "exclusions":
       case "watch": {
         if (this.crawl) {
+          const isRunning = this.crawl.state === "running";
           sectionContent = this.renderPanel(
-            msg("Watch Crawl"),
+            html`<span>${msg("Watch Crawl")}</span>
+              <sl-button
+                size="small"
+                ?disabled=${!isRunning}
+                @click=${() => {
+                  this.openDialogName = "scale";
+                  this.isDialogVisible = true;
+                }}
+              >
+                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+                <span> ${msg("Crawler Instances")} </span>
+              </sl-button> `,
             this.renderWatch()
           );
         } else {
@@ -163,13 +176,6 @@ export class CrawlDetail extends LiteElement {
       case "logs":
         sectionContent = this.renderPanel(msg("Logs"), this.renderLogs());
         break;
-      case "exclusions":
-        sectionContent = this.renderPanel(
-          msg("Crawl Exclusions"),
-          this.renderExclusions()
-        );
-        break;
-
       case "config":
         sectionContent = this.renderPanel(msg("Config"), this.renderConfig());
         break;
@@ -182,30 +188,28 @@ export class CrawlDetail extends LiteElement {
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
                 html`
-                  <div class="flex items-center justify-between">
-                    ${msg("Metadata")}
-                    ${when(
-                      this.isCrawler,
-                      () => html`
-                        <sl-tooltip
-                          content=${msg(
-                            "Metadata cannot be edited while crawl is running."
-                          )}
-                          ?disabled=${!this.isActive}
-                        >
-                          <sl-icon-button
-                            class=${`text-base${
-                              this.isActive ? " cursor-not-allowed" : ""
-                            }`}
-                            name="pencil"
-                            @click=${this.openMetadataEditor}
-                            aria-label=${msg("Edit Metadata")}
-                            ?disabled=${this.isActive}
-                          ></sl-icon-button>
-                        </sl-tooltip>
-                      `
-                    )}
-                  </div>
+                  ${msg("Metadata")}
+                  ${when(
+                    this.isCrawler,
+                    () => html`
+                      <sl-tooltip
+                        content=${msg(
+                          "Metadata cannot be edited while crawl is running."
+                        )}
+                        ?disabled=${!this.isActive}
+                      >
+                        <sl-icon-button
+                          class=${`text-base${
+                            this.isActive ? " cursor-not-allowed" : ""
+                          }`}
+                          name="pencil"
+                          @click=${this.openMetadataEditor}
+                          aria-label=${msg("Edit Metadata")}
+                          ?disabled=${this.isActive}
+                        ></sl-icon-button>
+                      </sl-tooltip>
+                    `
+                  )}
                 `,
                 this.renderMetadata()
               )}
@@ -244,16 +248,6 @@ export class CrawlDetail extends LiteElement {
           <div class="col-span-6 md:col-span-5">${sectionContent}</div>
         </section>
       </main>
-
-      <btrix-dialog
-        label=${msg("Edit Crawler Instances")}
-        ?open=${this.openDialogName === "scale"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible ? this.renderEditScale() : ""}
-      </btrix-dialog>
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
@@ -343,12 +337,6 @@ export class CrawlDetail extends LiteElement {
             icon: "info-circle-fill",
             label: msg("Overview"),
           })}
-          ${renderNavItem({
-            section: "exclusions",
-            iconLibrary: "default",
-            icon: "list-ul",
-            label: msg("Crawl Queue & Exclusions"),
-          })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -362,7 +350,7 @@ export class CrawlDetail extends LiteElement {
                 section: "replay",
                 iconLibrary: "app",
                 icon: "link-replay",
-                label: msg("Replay"),
+                label: msg("Replay Crawl"),
               })
             : ""}
           ${!this.isActive
@@ -401,16 +389,6 @@ export class CrawlDetail extends LiteElement {
           ${this.isActive
             ? html`
                 <sl-button-group>
-                  <sl-button
-                    size="small"
-                    @click=${() => {
-                      this.openDialogName = "scale";
-                      this.isDialogVisible = true;
-                    }}
-                  >
-                    <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                    <span> ${msg("Crawler Instances")} </span>
-                  </sl-button>
                   <sl-button size="small" @click=${this.stop}>
                     <sl-icon name="slash-circle" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
@@ -551,7 +529,12 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(title: any, content: any) {
     return html`
-      <h2 class="flex-0 text-lg font-semibold mb-2">${title}</h2>
+      <h2
+        id="exclusions"
+        class="flex-0 flex items-center justify-between text-lg font-semibold leading-none h-8 min-h-fit mb-2"
+      >
+        ${title}
+      </h2>
       <div class="flex-1 rounded-lg border p-5">${content}</div>
     `;
   }
@@ -652,33 +635,95 @@ export class CrawlDetail extends LiteElement {
                   </div>
                 `
               : ""}
-
-            <div
-              id="screencast-crawl"
-              class="${isStopping ? "opacity-40" : ""} transition-opacity"
-            >
-              <btrix-screencast
-                authToken=${authToken}
-                orgId=${this.crawl.oid}
-                crawlId=${this.crawlId}
-                scale=${this.crawl.scale}
-              ></btrix-screencast>
-            </div>
           `
         : this.renderInactiveCrawlMessage()}
+      ${when(
+        isRunning,
+        () => html`
+          <div
+            id="screencast-crawl"
+            class="${isStopping ? "opacity-40" : ""} transition-opacity"
+          >
+            <btrix-screencast
+              authToken=${authToken}
+              orgId=${this.crawl!.oid}
+              crawlId=${this.crawlId}
+              scale=${this.crawl!.scale}
+            ></btrix-screencast>
+          </div>
+
+          <section class="mt-8">${this.renderExclusions()}</section>
+
+          <btrix-dialog
+            label=${msg("Edit Crawler Instances")}
+            ?open=${this.openDialogName === "scale"}
+            @sl-request-close=${() => (this.openDialogName = undefined)}
+            @sl-show=${() => (this.isDialogVisible = true)}
+            @sl-after-hide=${() => (this.isDialogVisible = false)}
+          >
+            ${this.isDialogVisible ? this.renderEditScale() : ""}
+          </btrix-dialog>
+        `
+      )}
     `;
   }
 
   private renderExclusions() {
     return html`
-      <btrix-exclusion-editor
-        orgId=${ifDefined(this.crawl?.oid)}
-        crawlId=${ifDefined(this.crawl?.id)}
-        .config=${this.crawl?.config}
-        .authState=${this.authState}
-        ?isActiveCrawl=${this.crawl && this.isActive}
-        @on-success=${this.handleExclusionChange}
-      ></btrix-exclusion-editor>
+      <header class="flex items-center justify-between">
+        <h3 class="leading-none text-lg font-semibold mb-2">
+          ${msg("Crawl URLs")}
+        </h3>
+        <sl-button
+          size="small"
+          variant="primary"
+          @click=${() => {
+            this.openDialogName = "exclusions";
+            this.isDialogVisible = true;
+          }}
+        >
+          <sl-icon slot="prefix" name="table"></sl-icon>
+          ${msg("Edit Exclusions")}
+        </sl-button>
+      </header>
+
+      ${when(
+        this.crawl,
+        () => html`
+          <btrix-crawl-queue
+            orgId=${this.crawl!.oid}
+            crawlId=${this.crawlId}
+            .authState=${this.authState}
+          ></btrix-crawl-queue>
+        `
+      )}
+
+      <btrix-dialog
+        label=${msg("Crawl Queue Editor")}
+        ?open=${this.openDialogName === "exclusions"}
+        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible
+          ? html`<btrix-exclusion-editor
+              orgId=${ifDefined(this.crawl?.oid)}
+              crawlId=${ifDefined(this.crawl?.id)}
+              .config=${this.crawl?.config}
+              .authState=${this.authState}
+              ?isActiveCrawl=${this.crawl && this.isActive}
+              @on-success=${this.handleExclusionChange}
+            ></btrix-exclusion-editor>`
+          : ""}
+        <div slot="footer">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Done Editing")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
