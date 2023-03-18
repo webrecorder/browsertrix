@@ -31,7 +31,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Test Crawl",
-        "config": {"seeds": ["https://webrecorder.net/"]},
+        "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",

@@ -23,6 +23,9 @@ class Migration(BaseMigration):
         """
         crawl_configs = self.mdb["crawl_configs"]
         crawl_config_results = [res async for res in crawl_configs.find({})]
+        if not crawl_config_results:
+            return
+
         for config_dict in crawl_config_results:
             migrated_seeds = []
             for seed in config_dict["config"]["seeds"]:
@@ -42,3 +45,4 @@ class Migration(BaseMigration):
         for config_dict in crawl_config_results:
             for seed in config_dict["config"]["seeds"]:
                 assert isinstance(seed, Seed)
+                assert seed.url

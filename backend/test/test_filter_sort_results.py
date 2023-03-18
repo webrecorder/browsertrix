@@ -1,4 +1,5 @@
 import requests
+import urllib.parse
 
 from .conftest import API_PREFIX
 
@@ -23,6 +24,32 @@ def test_get_config_by_modified_by(
     )
     assert len(r.json()["items"]) == 1
     assert r.json()["total"] == 1
+
+
+def test_get_configs_by_first_seed(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    first_seed = "https://webrecorder.net/"
+    encoded_first_seed = urllib.parse.quote(first_seed)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?first_seed={encoded_first_seed}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["total"] >= 1
+    for config in r.json()["items"]:
+        assert config["firstSeed"].rstrip("/") == first_seed.rstrip("/")
+
+
+def test_get_configs_by_name(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    name = "Crawler User Test Crawl"
+    encoded_name = urllib.parse.quote(name)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?name={encoded_name}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["total"] >= 1
+    for config in r.json()["items"]:
+        assert config["name"] == name
 
 
 def test_ensure_crawl_and_admin_user_crawls(
@@ -65,6 +92,32 @@ def test_get_crawl_job_by_config(
     )
     assert len(r.json()["items"]) == 1
     assert r.json()["total"] == 1
+
+
+def test_get_crawls_by_first_seed(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    first_seed = "https://webrecorder.net"
+    encoded_first_seed = urllib.parse.quote(first_seed)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?first_seed={encoded_first_seed}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["total"] >= 1
+    for crawl in r.json()["items"]:
+        assert crawl["firstSeed"].rstrip("/") == first_seed.rstrip("/")
+
+
+def test_get_crawls_by_name(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    name = "Crawler User Test Crawl"
+    encoded_name = urllib.parse.quote(name)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?name={encoded_name}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["total"] >= 1
+    for crawl in r.json()["items"]:
+        assert crawl["name"] == name
 
 
 def test_sort_crawls(
@@ -160,6 +213,38 @@ def test_sort_crawls(
             assert crawl["fileSize"] >= last_size
         last_size = crawl["fileSize"]
 
+    # Sort by first seed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=firstSeed",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_first_seed = None
+    for crawl in items:
+        if not crawl["firstSeed"]:
+            continue
+        if last_first_seed:
+            assert crawl["firstSeed"] <= last_first_seed
+        last_first_seed = crawl["firstSeed"]
+
+    # Sort by first seed, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=firstSeed&sort_direction=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_first_seed = None
+    for crawl in items:
+        if not crawl["firstSeed"]:
+            continue
+        if last_first_seed:
+            assert crawl["firstSeed"] >= last_first_seed
+        last_first_seed = crawl["firstSeed"]
+
     # Invalid sort value
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=invalid",
@@ -237,6 +322,38 @@ def test_sort_crawl_configs(
         if last_modified:
             assert crawl["modified"] >= last_modified
         last_modified = crawl["modified"]
+
+    # Sort by first seed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=firstSeed",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_first_seed = None
+    for crawl in items:
+        if not crawl["firstSeed"]:
+            continue
+        if last_first_seed:
+            assert crawl["firstSeed"] <= last_first_seed
+        last_first_seed = crawl["firstSeed"]
+
+    # Sort by first seed, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=firstSeed&sort_direction=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_first_seed = None
+    for crawl in items:
+        if not crawl["firstSeed"]:
+            continue
+        if last_first_seed:
+            assert crawl["firstSeed"] >= last_first_seed
+        last_first_seed = crawl["firstSeed"]
 
     # Invalid sort value
     r = requests.get(

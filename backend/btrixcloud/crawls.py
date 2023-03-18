@@ -5,6 +5,7 @@ import uuid
 import os
 import json
 import re
+import urllib.parse
 
 from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
@@ -198,6 +199,8 @@ class CrawlOps:
         crawl_id: str = None,
         running_only=False,
         state: Optional[List[str]] = None,
+        first_seed: str = None,
+        name: str = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         calculate_total=True,
@@ -246,10 +249,48 @@ class CrawlOps:
             {"$set": {"fileSize": {"$sum": "$files.size"}}},
             {"$set": {"fileCount": {"$size": "$files"}}},
             {"$unset": ["files"]},
+            {
+                "$lookup": {
+                    "from": "crawl_configs",
+                    "localField": "cid",
+                    "foreignField": "_id",
+                    "as": "configConfig",
+                },
+            },
+            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$configConfig.seeds", 0]}}},
+            {"$set": {"firstSeed": "$firstSeedObject.url"}},
+            # Temporarily strip trailing slash for purposes of comparison
+            {
+                "$set": {
+                    "firstSeedFormatted": {
+                        "$rtrim": {
+                            "input": "$firstSeed",
+                            "chars": "/",
+                        }
+                    }
+                }
+            },
+            {"$unset": ["firstSeedObject"]},
+            {
+                "$lookup": {
+                    "from": "crawl_configs",
+                    "localField": "cid",
+                    "foreignField": "_id",
+                    "as": "configName",
+                },
+            },
+            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
         ]
 
+        if name:
+            aggregate.extend([{"$match": {"name": name}}])
+
+        if first_seed:
+            first_seed = first_seed.rstrip("/")
+            aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
+
         if sort_field:
-            if sort_field not in ("started, finished, fileSize"):
+            if sort_field not in ("started, finished, fileSize, firstSeed"):
                 raise HTTPException(status_code=400, detail="invalid_sort_field")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
@@ -262,15 +303,6 @@ class CrawlOps:
                 {"$limit": page_size},
                 {
                     "$lookup": {
-                        "from": "crawl_configs",
-                        "localField": "cid",
-                        "foreignField": "_id",
-                        "as": "configName",
-                    },
-                },
-                {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
-                {
-                    "$lookup": {
                         "from": "users",
                         "localField": "userid",
                         "foreignField": "id",
@@ -278,6 +310,7 @@ class CrawlOps:
                     },
                 },
                 {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {"$unset": ["firstSeedFormatted"]},
             ]
         )
 
@@ -730,7 +763,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
-        state: Optional[str] = "",
+        state: Optional[str] = None,
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
         sort_field: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ):
@@ -739,8 +774,12 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
 
         if state:
             state = state.split(",")
-        else:
-            state = None
+
+        if first_seed:
+            first_seed = urllib.parse.unquote(first_seed)
+
+        if name:
+            name = urllib.parse.unquote(name)
 
         crawls, total = await ops.list_crawls(
             None,
@@ -748,6 +787,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             cid=cid,
             running_only=True,
             state=state,
+            first_seed=first_seed,
+            name=name,
             page_size=page_size,
             page=page,
             sort_field=sort_field,
@@ -762,14 +803,20 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
-        state: Optional[str] = "",
+        state: Optional[str] = None,
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
         sort_field: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ):
         if state:
             state = state.split(",")
-        else:
-            state = None
+
+        if first_seed:
+            first_seed = urllib.parse.unquote(first_seed)
+
+        if name:
+            name = urllib.parse.unquote(name)
 
         crawls, total = await ops.list_crawls(
             org,
@@ -777,6 +824,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             cid=cid,
             running_only=False,
             state=state,
+            first_seed=first_seed,
+            name=name,
             page_size=page_size,
             page=page,
             sort_field=sort_field,

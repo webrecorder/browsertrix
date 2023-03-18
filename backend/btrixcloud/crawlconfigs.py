@@ -8,6 +8,7 @@ import uuid
 import asyncio
 import re
 from datetime import datetime
+import urllib.parse
 
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
@@ -184,6 +185,8 @@ class CrawlConfigOut(CrawlConfig):
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
+
+    firstSeed: Optional[str]
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
@@ -443,8 +446,10 @@ class CrawlConfigOps:
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        created_by: Optional[UUID4] = None,
-        modified_by: Optional[UUID4] = None,
+        created_by: uuid.UUID = None,
+        modified_by: uuid.UUID = None,
+        first_seed: str = None,
+        name: str = None,
         tags: Optional[List[str]] = None,
         sort_field: str = None,
         sort_direction: int = -1,
@@ -466,13 +471,37 @@ class CrawlConfigOps:
         if modified_by:
             match_query["modifiedBy"] = modified_by
 
+        if name:
+            match_query["name"] = name
+
         total = await self.crawl_configs.count_documents(match_query)
 
         # pylint: disable=duplicate-code
-        aggregate = [{"$match": match_query}]
+        aggregate = [
+            {"$match": match_query},
+            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
+            # Set firstSeed
+            {"$set": {"firstSeed": "$firstSeedObject.url"}},
+            # Temporarily strip trailing slash for purposes of comparison
+            {
+                "$set": {
+                    "firstSeedFormatted": {
+                        "$rtrim": {
+                            "input": "$firstSeed",
+                            "chars": "/",
+                        }
+                    }
+                }
+            },
+            {"$unset": ["firstSeedObject"]},
+        ]
+
+        if first_seed:
+            first_seed = first_seed.rstrip("/")
+            aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
 
         if sort_field:
-            if sort_field not in ("created, modified"):
+            if sort_field not in ("created, modified, firstSeed"):
                 raise HTTPException(status_code=400, detail="invalid_sort_field")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
@@ -507,6 +536,7 @@ class CrawlConfigOps:
                 },
                 {"$skip": skip},
                 {"$limit": page_size},
+                {"$unset": ["firstSeedFormatted"]},
             ]
         )
 
@@ -769,14 +799,24 @@ def init_crawl_config_api(
         page: int = 1,
         created_by: Optional[UUID4] = None,
         modified_by: Optional[UUID4] = None,
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
-        sort_field: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
+        sort_field: str = None,
+        sort_direction: int = -1,
     ):
+        if first_seed:
+            first_seed = urllib.parse.unquote(first_seed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
         crawl_configs, total = await ops.get_crawl_configs(
             org,
             created_by=created_by,
             modified_by=modified_by,
+            first_seed=first_seed,
+            name=name,
             tags=tag,
             page_size=page_size,
             page=page,
