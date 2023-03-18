@@ -451,7 +451,7 @@ class CrawlConfigOps:
         first_seed: str = None,
         name: str = None,
         tags: Optional[List[str]] = None,
-        sort_field: str = None,
+        sort_by: str = None,
         sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
@@ -500,13 +500,13 @@ class CrawlConfigOps:
             first_seed = first_seed.rstrip("/")
             aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
 
-        if sort_field:
-            if sort_field not in ("created, modified, firstSeed"):
-                raise HTTPException(status_code=400, detail="invalid_sort_field")
+        if sort_by:
+            if sort_by not in ("created, modified, firstSeed"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_field: sort_direction}}])
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
             [
@@ -802,7 +802,7 @@ def init_crawl_config_api(
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
-        sort_field: str = None,
+        sort_by: str = None,
         sort_direction: int = -1,
     ):
         if first_seed:
@@ -820,7 +820,7 @@ def init_crawl_config_api(
             tags=tag,
             page_size=page_size,
             page=page,
-            sort_field=sort_field,
+            sort_by=sort_by,
             sort_direction=sort_direction,
         )
         return paginated_format(crawl_configs, total, page)

@@ -204,7 +204,7 @@ class CrawlOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         calculate_total=True,
-        sort_field: str = None,
+        sort_by: str = None,
         sort_direction: int = -1,
     ):
         """List all finished crawls from the db"""
@@ -289,13 +289,13 @@ class CrawlOps:
             first_seed = first_seed.rstrip("/")
             aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
 
-        if sort_field:
-            if sort_field not in ("started, finished, fileSize, firstSeed"):
-                raise HTTPException(status_code=400, detail="invalid_sort_field")
+        if sort_by:
+            if sort_by not in ("started, finished, fileSize, firstSeed"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_field: sort_direction}}])
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
             [
@@ -766,7 +766,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         state: Optional[str] = None,
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
-        sort_field: Optional[str] = None,
+        sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ):
         if not user.is_superuser:
@@ -791,7 +791,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             name=name,
             page_size=page_size,
             page=page,
-            sort_field=sort_field,
+            sort_by=sort_by,
             sort_direction=sort_direction,
         )
         return paginated_format(crawls, total, page)
@@ -806,7 +806,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         state: Optional[str] = None,
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
-        sort_field: Optional[str] = None,
+        sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ):
         if state:
@@ -828,7 +828,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             name=name,
             page_size=page_size,
             page=page,
-            sort_field=sort_field,
+            sort_by=sort_by,
             sort_direction=sort_direction,
         )
         return paginated_format(crawls, total, page)

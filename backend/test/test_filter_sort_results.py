@@ -125,7 +125,7 @@ def test_sort_crawls(
 ):
     # Sort by started, descending (default)
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=started",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=started",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -141,7 +141,7 @@ def test_sort_crawls(
 
     # Sort by started, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=started&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=started&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -155,7 +155,7 @@ def test_sort_crawls(
 
     # Sort by finished
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=finished",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=finished",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -171,7 +171,7 @@ def test_sort_crawls(
 
     # Sort by finished, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=finished&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=finished&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -187,7 +187,7 @@ def test_sort_crawls(
 
     # Sort by fileSize
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=fileSize",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=fileSize",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -201,7 +201,7 @@ def test_sort_crawls(
 
     # Sort by fileSize, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=fileSize&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=fileSize&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -215,7 +215,7 @@ def test_sort_crawls(
 
     # Sort by first seed
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=firstSeed",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=firstSeed",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -231,7 +231,7 @@ def test_sort_crawls(
 
     # Sort by first seed, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=firstSeed&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=firstSeed&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -247,15 +247,15 @@ def test_sort_crawls(
 
     # Invalid sort value
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=invalid",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=invalid",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_sort_field"
+    assert r.json()["detail"] == "invalid_sort_by"
 
     # Invalid sort_direction value
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_field=started&sort_direction=0",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sort_by=started&sort_direction=0",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 400
@@ -267,7 +267,7 @@ def test_sort_crawl_configs(
 ):
     # Sort by created, descending (default)
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=created",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=created",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -283,7 +283,7 @@ def test_sort_crawl_configs(
 
     # Sort by created, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=created&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=created&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -297,7 +297,7 @@ def test_sort_crawl_configs(
 
     # Sort by modified
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=modified",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=modified",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -311,7 +311,7 @@ def test_sort_crawl_configs(
 
     # Sort by modified, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=modified&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=modified&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -325,7 +325,7 @@ def test_sort_crawl_configs(
 
     # Sort by first seed
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=firstSeed",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=firstSeed",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -341,7 +341,7 @@ def test_sort_crawl_configs(
 
     # Sort by first seed, ascending
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=firstSeed&sort_direction=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=firstSeed&sort_direction=1",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -357,15 +357,15 @@ def test_sort_crawl_configs(
 
     # Invalid sort value
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=invalid",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=invalid",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_sort_field"
+    assert r.json()["detail"] == "invalid_sort_by"
 
     # Invalid sort_direction value
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_field=created&sort_direction=0",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=created&sort_direction=0",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 400
