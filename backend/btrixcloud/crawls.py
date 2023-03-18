@@ -505,21 +505,21 @@ class CrawlOps:
     async def _crawl_queue_len(self, redis, key):
         try:
             return await redis.zcard(key)
-        except redis.exceptions.ResponseError:
+        except exceptions.ResponseError:
             # fallback to old crawler queue
             return await redis.llen(key)
 
     async def _crawl_queue_range(self, redis, key, offset, count):
         try:
             return await redis.zrangebyscore(key, 0, "inf", offset, count)
-        except redis.exceptions.ResponseError:
+        except exceptions.ResponseError:
             # fallback to old crawler queue
             return reversed(await redis.lrange(key, -offset - count, -offset - 1))
 
     async def _crawl_queue_rem(self, redis, key, values, dircount=1):
         try:
             return await redis.zrem(key, *values)
-        except redis.exceptions.ResponseError:
+        except exceptions.ResponseError:
             # fallback to old crawler queue
             res = 0
             for value in values:
