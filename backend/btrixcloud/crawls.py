@@ -225,7 +225,6 @@ class CrawlOps:
                 },
             },
             {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
-            {"$set": {"description": {"$arrayElemAt": ["$configName.description", 0]}}},
             {
                 "$lookup": {
                     "from": "users",
@@ -320,6 +319,9 @@ class CrawlOps:
         if config:
             if not crawl.name:
                 crawl.name = config.name
+
+            if not crawl.description:
+                crawl.description = config.description
 
             if config.config.seeds:
                 first_seed = config.config.seeds[0]
