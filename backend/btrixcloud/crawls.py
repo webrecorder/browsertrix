@@ -94,6 +94,7 @@ class CrawlOut(Crawl):
 
     userName: Optional[str]
     name: Optional[str]
+    description: Optional[str]
     profileName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
@@ -112,6 +113,7 @@ class ListCrawlOut(BaseMongoModel):
     oid: UUID4
     cid: UUID4
     name: Optional[str]
+    description: Optional[str]
 
     manual: Optional[bool]
 
@@ -223,6 +225,7 @@ class CrawlOps:
                 },
             },
             {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
+            {"$set": {"description": {"$arrayElemAt": ["$configName.description", 0]}}},
             {
                 "$lookup": {
                     "from": "users",

@@ -81,6 +81,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Admin Test Crawl",
+        "description": "Admin Test Crawl description",
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
             "seeds": ["https://webrecorder.net/"],
