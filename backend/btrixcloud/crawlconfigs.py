@@ -2,7 +2,7 @@
 Crawl Config API handling
 """
 
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Any
 from enum import Enum
 import uuid
 import asyncio
@@ -492,6 +492,52 @@ class CrawlConfigOps:
                 }
             },
             {"$unset": ["firstSeedObject"]},
+            {
+                "$lookup": {
+                    "from": "crawls",
+                    "localField": "_id",
+                    "foreignField": "cid",
+                    "as": "configCrawls",
+                },
+            },
+            # Set crawl count
+            {"$set": {"crawlCount": {"$size": "$configCrawls"}}},
+            # Filter workflow crawls on finished and active
+            {
+                "$set": {
+                    "finishedCrawls": {
+                        "$filter": {
+                            "input": "$configCrawls",
+                            "as": "filterCrawls",
+                            "cond": {
+                                "$and": [
+                                    {"$ne": ["$$filterCrawls.finished", None]},
+                                    {"$ne": ["$$filterCrawls.inactive", True]},
+                                ]
+                            },
+                        }
+                    }
+                }
+            },
+            # Sort finished crawls by finished time descending to get latest
+            {
+                "$set": {
+                    "sortedCrawls": {
+                        "$function": {
+                            "body": "function(arr) {return arr.sort((a,b) => (a.finished > b.finished) ? -1 : ((b.finished > a.finished) ? 1 : 0));}",
+                            "args": ["$finishedCrawls"],
+                            "lang": "js",
+                        }
+                    }
+                }
+            },
+            {"$unset": ["finishedCrawls"]},
+            {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
+            {"$set": {"lastCrawlId": "$lastCrawl.id"}},
+            {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
+            {"$set": {"lastCrawlState": "$lastCrawl.state"}},
+            {"$unset": ["lastCrawl"]},
+            {"$unset": ["sortedCrawls"]},
         ]
 
         if first_seed:
@@ -499,7 +545,7 @@ class CrawlConfigOps:
             aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
 
         if sort_by:
-            if sort_by not in ("created, modified, firstSeed"):
+            if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
