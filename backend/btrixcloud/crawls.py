@@ -1,4 +1,5 @@
 """ Crawl API """
+# pylint: disable=too-many-lines
 
 import asyncio
 import uuid

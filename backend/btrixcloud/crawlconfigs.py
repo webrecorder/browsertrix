@@ -2,7 +2,7 @@
 Crawl Config API handling
 """
 
-from typing import List, Union, Optional, Any
+from typing import List, Union, Optional
 from enum import Enum
 import uuid
 import asyncio
@@ -524,6 +524,7 @@ class CrawlConfigOps:
                 "$set": {
                     "sortedCrawls": {
                         "$function": {
+                            # pylint: disable=line-too-long
                             "body": "function(arr) {return arr.sort((a,b) => (a.finished > b.finished) ? -1 : ((b.finished > a.finished) ? 1 : 0));}",
                             "args": ["$finishedCrawls"],
                             "lang": "js",
