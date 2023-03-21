@@ -18,7 +18,7 @@ LINES_TO_TEST = 10
         # Filter log level
         ("info", None),
         # Filter context
-        ("None", "general"),
+        (None, "general"),
         # Filter both
         ("info", "general"),
     ],
@@ -50,7 +50,7 @@ def test_stream_crawl_logs_running(
         for line in r.iter_lines():
             if line_index >= LINES_TO_TEST:
                 r.close()
-                continue
+                return
 
             line = line.decode("utf-8")
             log_line_dict = json.loads(line)
@@ -78,7 +78,7 @@ def test_stream_crawl_logs_running(
         # Filter log level
         ("info", None),
         # Filter context
-        ("None", "general"),
+        (None, "general"),
         # Filter both
         ("info", "general"),
     ],
@@ -116,7 +116,7 @@ def test_stream_crawl_logs_wacz(
         for line in r.iter_lines():
             if line_index >= LINES_TO_TEST:
                 r.close()
-                continue
+                return
 
             line = line.decode("utf-8")
             log_line_dict = json.loads(line)
@@ -125,16 +125,15 @@ def test_stream_crawl_logs_wacz(
             if log_level:
                 assert log_line_dict["logLevel"] == log_level
 
-            assert log_line_dict["timestamp"]
-
             assert log_line_dict["context"]
             if context:
                 assert log_line_dict["context"] == context
             assert log_line_dict["details"] or log_line_dict["details"] == {}
 
             timestamp = log_line_dict["timestamp"]
+            assert timestamp
             if last_timestamp:
-                assert timestamp > last_timestamp
+                assert timestamp >= last_timestamp
             last_timestamp = timestamp
 
             line_index += 1
