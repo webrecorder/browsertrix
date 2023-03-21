@@ -779,6 +779,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         description: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
+        runningOnly: Optional[bool] = True,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
@@ -799,7 +800,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             None,
             userid=userid,
             cid=cid,
-            running_only=True,
+            running_only=runningOnly,
             state=state,
             first_seed=firstSeed,
             name=name,

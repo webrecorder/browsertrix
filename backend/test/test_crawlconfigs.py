@@ -86,6 +86,28 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
 
 
+def test_update_config_invalid_limit(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "seeds": ["https://example.com/"],
+                "scopeType": "domain",
+                "limit": 10,
+            }
+        },
+    )
+
+    assert r.status_code == 400
+
+    data = r.json()
+
+    assert data["detail"] == "crawl_page_limit_exceeds_allowed"
+
+
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",

@@ -27,9 +27,28 @@ def test_list_orgs(admin_auth_headers, default_org_id):
     assert default_org_id in org_ids
 
 
-def test_create_new_config(admin_auth_headers, default_org_id):
+def test_create_new_config_invalid_limit(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
+        "name": "Test Crawl",
+        "config": {"seeds": ["https://webrecorder.net/"], "limit": 10},
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+
+    assert r.status_code == 400
+
+    data = r.json()
+
+    assert data["detail"] == "crawl_page_limit_exceeds_allowed"
+
+
+def test_create_new_config(admin_auth_headers, default_org_id):
+    crawl_data = {
+        "runNow": False,
         "name": "Test Crawl",
         "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
     }
@@ -43,7 +62,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
 
     data = r.json()
     assert data["added"]
-    assert data["run_now_job"]
+    assert data["run_now_job"] == None
 
 
 def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -98,7 +117,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         assert crawl["seedCount"] > 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/all/crawls",
+        f"{API_PREFIX}/orgs/all/crawls?runningOnly=0",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -128,8 +147,19 @@ def test_verify_wacz():
 
     assert "pages/pages.jsonl" in z.namelist()
 
+    # 1 seed page
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
     assert '"https://webrecorder.net/"' in pages
+
+    # 1 seed page + header line
+    assert len(pages.strip().split("\n")) == 2
+
+    # 1 other page
+    pages = z.open("pages/extraPages.jsonl").read().decode("utf-8")
+    assert '"https://webrecorder.net/blog"' in pages
+
+    # 1 other page + header line
+    assert len(pages.strip().split("\n")) == 2
 
 
 def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
