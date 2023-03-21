@@ -45,7 +45,7 @@ export class ConfigDetails extends LiteElement {
   render() {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
-    console.log(crawlConfig);
+
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
@@ -157,22 +157,20 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Description"),
             html`
-          <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
-          `
+              <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
+            `
           )}
-          ${
-            this.hideTags
-              ? ""
-              : this.renderSetting(
-                  msg("Tags"),
-                  crawlConfig?.tags?.length
-                    ? crawlConfig.tags.map(
-                        (tag) =>
-                          html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                      )
-                    : undefined
-                )
-          }
+          ${this.hideTags
+            ? ""
+            : this.renderSetting(
+                msg("Tags"),
+                crawlConfig?.tags?.length
+                  ? crawlConfig.tags.map(
+                      (tag) =>
+                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                    )
+                  : undefined
+              )}
         </btrix-desc-list>
       </section>
     `;
