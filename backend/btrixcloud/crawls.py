@@ -320,8 +320,7 @@ class CrawlOps:
             if not crawl.name:
                 crawl.name = config.name
 
-            if not crawl.description:
-                crawl.description = config.description
+            crawl.description = config.description
 
             if config.config.seeds:
                 first_seed = config.config.seeds[0]
