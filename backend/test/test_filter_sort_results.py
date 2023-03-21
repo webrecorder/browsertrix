@@ -355,6 +355,34 @@ def test_sort_crawl_configs(
             assert crawl["firstSeed"] >= last_first_seed
         last_first_seed = crawl["firstSeed"]
 
+    # Sort by lastCrawlTime
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=lastCrawlTime",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_crawl_time = None
+    for config in items:
+        if last_crawl_time:
+            assert config["lastCrawlTime"] <= last_crawl_time
+        last_crawl_time = config["lastCrawlTime"]
+
+    # Sort by lastCrawlTime, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=lastCrawlTime&sort_direction=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_crawl_time = None
+    for config in items:
+        if last_crawl_time:
+            assert config["lastCrawlTime"] >= last_crawl_time
+        last_crawl_time = config["lastCrawlTime"]
+
     # Invalid sort value
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sort_by=invalid",
