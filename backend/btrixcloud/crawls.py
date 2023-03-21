@@ -203,7 +203,6 @@ class CrawlOps:
         name: str = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        calculate_total=True,
         sort_by: str = None,
         sort_direction: int = -1,
     ):
@@ -238,10 +237,6 @@ class CrawlOps:
 
         if crawl_id:
             query["_id"] = crawl_id
-
-        total = 0
-        if calculate_total:
-            total = await self.crawls.count_documents(query)
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -299,8 +294,6 @@ class CrawlOps:
 
         aggregate.extend(
             [
-                {"$skip": skip},
-                {"$limit": page_size},
                 {
                     "$lookup": {
                         "from": "users",
@@ -311,13 +304,31 @@ class CrawlOps:
                 },
                 {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
                 {"$unset": ["firstSeedFormatted"]},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
             ]
         )
 
+        # Get total
         cursor = self.crawls.aggregate(aggregate)
-        results = await cursor.to_list(length=page_size)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
         crawls = []
-        for result in results:
+        for result in items:
             crawl = ListCrawlOut.from_dict(result)
             crawl = await self._resolve_crawl_refs(crawl, org)
             crawls.append(crawl)
@@ -905,7 +916,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        crawls, _ = await ops.list_crawls(crawl_id=crawl_id, calculate_total=False)
+        crawls, _ = await ops.list_crawls(crawl_id=crawl_id)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
@@ -917,7 +928,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         response_model=ListCrawlOut,
     )
     async def list_single_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        crawls, _ = await ops.list_crawls(org, crawl_id=crawl_id, calculate_total=False)
+        crawls, _ = await ops.list_crawls(org, crawl_id=crawl_id)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 

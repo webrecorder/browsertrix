@@ -474,8 +474,6 @@ class CrawlConfigOps:
         if name:
             match_query["name"] = name
 
-        total = await self.crawl_configs.count_documents(match_query)
-
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": match_query},
@@ -534,14 +532,28 @@ class CrawlConfigOps:
                         }
                     }
                 },
-                {"$skip": skip},
-                {"$limit": page_size},
                 {"$unset": ["firstSeedFormatted"]},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
             ]
         )
 
         cursor = self.crawl_configs.aggregate(aggregate)
-        results = await cursor.to_list(length=page_size)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
 
         # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
         crawls, _ = await self.crawl_ops.list_crawls(
@@ -549,17 +561,14 @@ class CrawlConfigOps:
             running_only=True,
             # Set high so that when we lower default we still get all running crawls
             page_size=1_000,
-            calculate_total=False,
         )
-
         running = {}
         for crawl in crawls:
             running[crawl.cid] = crawl.id
 
         configs = []
-        for res in results:
+        for res in items:
             config = CrawlConfigOut.from_dict(res)
-            config = await self._annotate_with_crawl_stats(config)
             # pylint: disable=invalid-name
             config.currCrawlId = running.get(config.id)
             configs.append(config)
@@ -583,7 +592,7 @@ class CrawlConfigOps:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls, _ = await self.crawl_ops.list_crawls(
-            cid=crawlconfig.id, running_only=True, calculate_total=False
+            cid=crawlconfig.id, running_only=True
         )
 
         if len(crawls) == 1:
