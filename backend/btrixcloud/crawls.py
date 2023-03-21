@@ -94,6 +94,7 @@ class CrawlOut(Crawl):
 
     userName: Optional[str]
     name: Optional[str]
+    description: Optional[str]
     profileName: Optional[str]
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
@@ -112,6 +113,7 @@ class ListCrawlOut(BaseMongoModel):
     oid: UUID4
     cid: UUID4
     name: Optional[str]
+    description: Optional[str]
 
     manual: Optional[bool]
 
@@ -317,6 +319,8 @@ class CrawlOps:
         if config:
             if not crawl.name:
                 crawl.name = config.name
+
+            crawl.description = config.description
 
             if config.config.seeds:
                 first_seed = config.config.seeds[0]

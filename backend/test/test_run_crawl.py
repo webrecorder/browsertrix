@@ -74,6 +74,7 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     )
     data = r.json()
     assert data["fileSize"] == wacz_size
+    assert data["description"] == "Admin Test Crawl description"
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
