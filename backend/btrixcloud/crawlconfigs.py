@@ -1,6 +1,7 @@
 """
 Crawl Config API handling
 """
+# pylint: disable=too-many-lines
 
 from typing import List, Union, Optional
 from enum import Enum
@@ -17,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .search import format_url_for_search, make_combined_ngrams
+from .search import format_url_for_search, make_combined_ngrams, make_ngrams
 
 from .db import BaseMongoModel
 
@@ -499,8 +500,8 @@ class CrawlConfigOps:
         first_seed: str = None,
         name: str = None,
         tags: Optional[List[str]] = None,
-        sort_by: str = None,
-        sort_direction: int = -1,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals
@@ -578,6 +579,117 @@ class CrawlConfigOps:
         if first_seed:
             first_seed = format_url_for_search(first_seed)
             aggregate.extend([{"$match": {"firstSeedSearchFormatted": first_seed}}])
+
+        if sort_by:
+            if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "createdBy",
+                        "foreignField": "id",
+                        "as": "userName",
+                    },
+                },
+                {"$set": {"createdByName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "modifiedBy",
+                        "foreignField": "id",
+                        "as": "modifiedUserName",
+                    },
+                },
+                {
+                    "$set": {
+                        "modifiedByName": {
+                            "$arrayElemAt": ["$modifiedUserName.name", 0]
+                        }
+                    }
+                },
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        cursor = self.crawl_configs.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            org=org,
+            running_only=True,
+            # Set high so that when we lower default we still get all running crawls
+            page_size=1_000,
+        )
+        running = {}
+        for crawl in crawls:
+            running[crawl.cid] = crawl.id
+
+        configs = []
+        for res in items:
+            config = CrawlConfigOut.from_dict(res)
+            # pylint: disable=invalid-name
+            config.currCrawlId = running.get(config.id)
+            configs.append(config)
+
+        return configs, total
+
+    async def search_crawl_configs(
+        self,
+        search: str,
+        org: Organization,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        created_by: Optional[uuid.UUID] = None,
+        modified_by: Optional[uuid.UUID] = None,
+        tags: Optional[List[str]] = None,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
+    ):
+        """Return workflows that match fuzzy search of name and first seed"""
+        # pylint: disable=too-many-locals
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
+        search_ngrams = make_ngrams(search)
+        match_query = {"$text": {"$search": search_ngrams}}
+
+        aggregate = [
+            {"$match": match_query},
+            {"$match": {"oid": org.id, "inactive": {"$ne": True}}},
+        ]
+
+        if created_by:
+            aggregate.extend([{"$match": {"createdBy": created_by}}])
+
+        if modified_by:
+            aggregate.extend([{"$match": {"modifiedBy": modified_by}}])
+
+        if tags:
+            aggregate.extend([{"$match": {"tags": {"$all": tags}}}])
 
         if sort_by:
             if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
@@ -891,8 +1003,8 @@ def init_crawl_config_api(
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
-        sort_by: str = None,
-        sort_direction: int = -1,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
         if first_seed:
             first_seed = urllib.parse.unquote(first_seed)
@@ -909,6 +1021,34 @@ def init_crawl_config_api(
             tags=tag,
             page_size=page_size,
             page=page,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+        )
+        return paginated_format(crawl_configs, total, page)
+
+    @router.get("/search")
+    async def search_crawl_configs(
+        search: str,
+        org: Organization = Depends(org_viewer_dep),
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        created_by: Optional[UUID4] = None,
+        modified_by: Optional[UUID4] = None,
+        tag: Union[List[str], None] = Query(default=None),
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
+    ):
+        search = urllib.parse.unquote(search)
+        search = format_url_for_search(search)
+
+        crawl_configs, total = await ops.search_crawl_configs(
+            search,
+            org,
+            page_size,
+            page,
+            created_by=created_by,
+            modified_by=modified_by,
+            tags=tag,
             sort_by=sort_by,
             sort_direction=sort_direction,
         )

@@ -1,4 +1,7 @@
 import requests
+import urllib.parse
+
+import pytest
 
 from .conftest import API_PREFIX
 
@@ -166,3 +169,44 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert len(items) == 2
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
+
+
+@pytest.mark.parametrize(
+    "search_query, expected_result_count",
+    [
+        # Search by first seed url
+        ("webrecorder.net", 3),
+        ("https://webrecorder.net/", 3),
+        ("specs.webrecorder.net", 1),
+        ("http://specs.webrecorder.net/", 1),
+        ("example.com", 1),
+        ("notinfixtures.com", 0),
+        # Search by name
+        ("Test Crawl", 2),
+        ("Webrecorder Specs sample crawl", 1),
+        ("invalid", 0),
+    ],
+)
+def test_search_crawl_configs(
+    search_query,
+    expected_result_count,
+    crawler_auth_headers,
+    default_org_id,
+    admin_crawl_id,
+    crawler_crawl_id,
+    wr_specs_crawl_id,
+):
+    encoded_search_query = urllib.parse.quote(search_query)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/search?search={encoded_search_query}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == expected_result_count
+    items = data["items"]
+    assert len(items) == expected_result_count
+    for item in items:
+        assert (search_query in item.get("name", "")) or (
+            search_query in item["firstSeed"]
+        )
