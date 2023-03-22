@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .search import make_combined_ngrams
 
 from .db import BaseMongoModel
 
@@ -169,6 +170,8 @@ class CrawlConfig(CrawlConfigCore):
 
     inactive: Optional[bool] = False
 
+    ngrams: Optional[str]
+
     rev: int = 0
 
     def get_raw_config(self):
@@ -256,6 +259,8 @@ class CrawlConfigOps:
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
+        await self.crawl_configs.create_index([("ngrams", pymongo.ASCENDING)])
+
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
 
         await self.config_revs.create_index(
@@ -302,6 +307,10 @@ class CrawlConfigOps:
         data["profileid"], profile_filename = await self._lookup_profile(
             config.profileid, org
         )
+
+        # Make ngrams from first seed and name for search
+        first_seed = format_url_for_search(config.config.seeds[0].url)
+        data["ngrams"] = make_combined_ngrams(first_seed, data.get("name"))
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
@@ -397,6 +406,14 @@ class CrawlConfigOps:
             last_rev = ConfigRevision(**orig_dict)
             last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
+        # Determine if search ngrams need to be updated
+        ngrams_changed = self.check_attr_changed(orig_crawl_config, update, "name")
+        original_first_seed = format_url_for_search(
+            orig_crawl_config.config.seeds[0].url
+        )
+        new_first_seed = format_url_for_search(update.config.seeds[0].url)
+        ngrams_changed = ngrams_changed or (original_first_seed != new_first_seed)
+
         # set update query
         query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
@@ -408,6 +425,11 @@ class CrawlConfigOps:
 
         if update.config is not None:
             query["config"] = update.config.dict()
+
+        if ngrams_changed:
+            first_seed = new_first_seed or original_first_seed
+            name = update.name or orig_crawl_config.name
+            query["ngrams"] = make_combined_ngrams(first_seed, name)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
