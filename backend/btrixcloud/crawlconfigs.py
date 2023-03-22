@@ -259,7 +259,7 @@ class CrawlConfigOps:
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
-        await self.crawl_configs.create_index([("ngrams", pymongo.ASCENDING)])
+        await self.crawl_configs.create_index([("ngrams", "text")])
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
 
