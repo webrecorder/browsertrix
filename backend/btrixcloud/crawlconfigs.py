@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .search import make_combined_ngrams
+from .search import format_url_for_search, make_combined_ngrams
 
 from .db import BaseMongoModel
 
@@ -151,6 +151,12 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID4]
 
+    firstSeed: Optional[str]
+    firstSeedSearchFormatted: Optional[str]
+    name: Optional[str]
+    nameSearchFormatted: Optional[str]
+    ngrams: Optional[str]
+
 
 # ============================================================================
 class CrawlConfig(CrawlConfigCore):
@@ -170,8 +176,6 @@ class CrawlConfig(CrawlConfigCore):
 
     inactive: Optional[bool] = False
 
-    ngrams: Optional[str]
-
     rev: int = 0
 
     def get_raw_config(self):
@@ -188,8 +192,6 @@ class CrawlConfigOut(CrawlConfig):
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
-
-    firstSeed: Optional[str]
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
@@ -308,9 +310,17 @@ class CrawlConfigOps:
             config.profileid, org
         )
 
-        # Make ngrams from first seed and name for search
-        first_seed = format_url_for_search(config.config.seeds[0].url)
-        data["ngrams"] = make_combined_ngrams(first_seed, data.get("name"))
+        first_seed = config.config.seeds[0].url
+        first_seed_search_formatted = format_url_for_search(first_seed)
+        data["firstSeed"] = first_seed
+        data["firstSeedSearchFormatted"] = first_seed_search_formatted
+
+        name_search_formatted = format_url_for_search(data.get("name"))
+        data["nameSearchFormatted"] = name_search_formatted
+
+        data["ngrams"] = make_combined_ngrams(
+            first_seed_search_formatted, name_search_formatted
+        )
 
         if config.colls:
             data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
@@ -361,6 +371,7 @@ class CrawlConfigOps:
         self, cid: uuid.UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ):
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
+        # pylint: disable=too-many-locals,too-many-statements
 
         orig_crawl_config = await self.get_crawl_config(cid, org)
         if not orig_crawl_config:
@@ -411,8 +422,9 @@ class CrawlConfigOps:
         original_first_seed = format_url_for_search(
             orig_crawl_config.config.seeds[0].url
         )
-        new_first_seed = format_url_for_search(update.config.seeds[0].url)
-        ngrams_changed = ngrams_changed or (original_first_seed != new_first_seed)
+
+        updated_seeds = getattr(update, "config") and getattr(update.config, "seeds")
+        ngrams_changed = ngrams_changed or updated_seeds
 
         # set update query
         query = update.dict(exclude_unset=True)
@@ -427,9 +439,23 @@ class CrawlConfigOps:
             query["config"] = update.config.dict()
 
         if ngrams_changed:
-            first_seed = new_first_seed or original_first_seed
+            first_seed = original_first_seed
+            if updated_seeds:
+                first_seed = update.config.seeds[0].url
+            first_seed_search_formatted = format_url_for_search(first_seed)
+            query["firstSeedSearchFormatted"] = first_seed_search_formatted
+
             name = update.name or orig_crawl_config.name
-            query["ngrams"] = make_combined_ngrams(first_seed, name)
+            name_search_formatted = format_url_for_search(name)
+            query["nameSearchFormatted"] = name_search_formatted
+
+            ngrams = make_combined_ngrams(
+                first_seed_search_formatted, name_search_formatted
+            )
+            query["ngrams"] = ngrams
+
+            # Update associated crawl
+            await self.crawl_ops.update_crawl_search_data(cid, first_seed, name, ngrams)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
@@ -493,27 +519,9 @@ class CrawlConfigOps:
         if modified_by:
             match_query["modifiedBy"] = modified_by
 
-        if name:
-            match_query["name"] = name
-
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": match_query},
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
-            # Set firstSeed
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            # Temporarily strip trailing slash for purposes of comparison
-            {
-                "$set": {
-                    "firstSeedFormatted": {
-                        "$rtrim": {
-                            "input": "$firstSeed",
-                            "chars": "/",
-                        }
-                    }
-                }
-            },
-            {"$unset": ["firstSeedObject"]},
             {
                 "$lookup": {
                     "from": "crawls",
@@ -563,9 +571,13 @@ class CrawlConfigOps:
             {"$unset": ["sortedCrawls"]},
         ]
 
+        if name:
+            name = format_url_for_search(name)
+            aggregate.extend([{"$match": {"nameSearchFormatted": name}}])
+
         if first_seed:
-            first_seed = first_seed.rstrip("/")
-            aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
+            first_seed = format_url_for_search(first_seed)
+            aggregate.extend([{"$match": {"firstSeedSearchFormatted": first_seed}}])
 
         if sort_by:
             if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
@@ -601,7 +613,6 @@ class CrawlConfigOps:
                         }
                     }
                 },
-                {"$unset": ["firstSeedFormatted"]},
                 {
                     "$facet": {
                         "items": [

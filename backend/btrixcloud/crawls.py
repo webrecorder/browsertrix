@@ -21,6 +21,7 @@ from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .search import format_url_for_search, make_combined_ngrams
 from .storages import get_presigned_url, delete_crawl_file_object
 
 
@@ -190,6 +191,7 @@ class CrawlOps:
     async def init_index(self):
         """init index for crawls db"""
         await self.crawls.create_index("colls")
+        await self.crawls.create_index([("ngrams", "text")])
 
     async def list_crawls(
         self,
@@ -245,45 +247,15 @@ class CrawlOps:
             {"$set": {"fileSize": {"$sum": "$files.size"}}},
             {"$set": {"fileCount": {"$size": "$files"}}},
             {"$unset": ["files"]},
-            {
-                "$lookup": {
-                    "from": "crawl_configs",
-                    "localField": "cid",
-                    "foreignField": "_id",
-                    "as": "configConfig",
-                },
-            },
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$configConfig.seeds", 0]}}},
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            # Temporarily strip trailing slash for purposes of comparison
-            {
-                "$set": {
-                    "firstSeedFormatted": {
-                        "$rtrim": {
-                            "input": "$firstSeed",
-                            "chars": "/",
-                        }
-                    }
-                }
-            },
-            {"$unset": ["firstSeedObject"]},
-            {
-                "$lookup": {
-                    "from": "crawl_configs",
-                    "localField": "cid",
-                    "foreignField": "_id",
-                    "as": "configName",
-                },
-            },
-            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
         ]
 
         if name:
-            aggregate.extend([{"$match": {"name": name}}])
+            name = format_url_for_search(name)
+            aggregate.extend([{"$match": {"nameSearchFormatted": name}}])
 
         if first_seed:
-            first_seed = first_seed.rstrip("/")
-            aggregate.extend([{"$match": {"firstSeedFormatted": first_seed}}])
+            first_seed = format_url_for_search(first_seed)
+            aggregate.extend([{"$match": {"firstSeedSearchFormatted": first_seed}}])
 
         if sort_by:
             if sort_by not in ("started, finished, fileSize, firstSeed"):
@@ -304,7 +276,6 @@ class CrawlOps:
                     },
                 },
                 {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
-                {"$unset": ["firstSeedFormatted"]},
                 {
                     "$facet": {
                         "items": [
@@ -510,6 +481,18 @@ class CrawlOps:
             tags=crawlconfig.tags,
         )
 
+        # pylint: disable=invalid-name
+        first_seed = crawlconfig.config.seeds[0].url
+        first_seed_search_formatted = format_url_for_search(first_seed)
+        crawl.firstSeed = first_seed
+        crawl.firstSeedSearchFormatted = first_seed_search_formatted
+
+        crawl.name = crawlconfig.name
+        crawl.nameSearchFormatted = format_url_for_search(crawl.name)
+        crawl.ngrams = make_combined_ngrams(
+            first_seed_search_formatted, crawl.nameSearchFormatted
+        )
+
         try:
             await self.crawls.insert_one(crawl.to_dict())
             return True
@@ -549,6 +532,22 @@ class CrawlOps:
                 "_id": crawl_id,
                 "state": {"$in": ["running", "starting", "canceling", "stopping"]},
             },
+            {"$set": data},
+        )
+
+    async def update_crawl_search_data(
+        self, cid: uuid.UUID, first_seed: str, name: str, ngrams: str
+    ):
+        """Update crawl search fields to match updated workflow"""
+        data = {
+            "firstSeed": first_seed,
+            "firstSeedSearchFormatted": format_url_for_search(first_seed),
+            "name": name,
+            "nameSearchFormatted": format_url_for_search(name),
+            "ngrams": ngrams,
+        }
+        await self.crawls.update_many(
+            {"cid": cid},
             {"$set": data},
         )
 
