@@ -1,6 +1,6 @@
 # Running Tests Locally
 
-In this guide, we will show you how to run tests locally for a frontend application using `yarn start` and `npx playwright test`. 
+This guide will show you how to run tests locally for a frontend application using `yarn start` and `npx playwright test`. 
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ Install the project's dependencies:
 
 ## Step 4: Add `.env`
 
-Add an `.env` with the following values:
+Add a `.env` file with the following values:
 
 `API_BASE_URL`
 `DEV_PASSWORD`
@@ -44,11 +44,10 @@ This will open the application in your browser at `http://localhost:5173`.
 
 ## Step 5: Open a new terminal tab
 
-Open a new terminal tab, so that the first one continues to run the application.
+Open a new terminal tab so that the first one continues to run the application.
 
 ## Step 6: Run tests
 
-In the new terminal tab, run the tests using `npx playwright test`.
+Run the tests in the new terminal tab using `npx playwright test`.
 
 This will run the tests and output the results in the terminal.
-
