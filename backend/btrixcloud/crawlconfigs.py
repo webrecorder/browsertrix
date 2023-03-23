@@ -809,6 +809,31 @@ class CrawlConfigOps:
         """get distinct tags from all crawl configs for this org"""
         return await self.crawl_configs.distinct("tags", {"oid": org.id})
 
+    async def get_crawl_config_search_values(self, org):
+        """List unique names, first seeds, and descriptions from all workflows in org"""
+        names = await self.crawl_configs.distinct("name", {"oid": org.id})
+        descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
+        workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
+        crawl_ids = await self.crawl_ops.crawls.distinct("_id", {"oid": org.id})
+
+        # Remove empty strings
+        names = [name for name in names if name]
+        descriptions = [description for description in descriptions if description]
+
+        first_seeds = set()
+        configs = [config async for config in self.crawl_configs.find({"oid": org.id})]
+        for config in configs:
+            first_seed = config["config"]["seeds"][0]["url"]
+            first_seeds.add(first_seed)
+
+        return {
+            "names": names,
+            "descriptions": descriptions,
+            "firstSeeds": list(first_seeds),
+            "workflowIds": workflow_ids,
+            "crawlIds": crawl_ids,
+        }
+
     async def run_now(self, cid: str, org: Organization, user: User):
         """run specified crawlconfig now"""
         crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org)
@@ -890,6 +915,12 @@ def init_crawl_config_api(
     @router.get("/tags")
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_tags(org)
+
+    @router.get("/search-values")
+    async def get_crawl_config_search_values(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_crawl_config_search_values(org)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config(cid: str, org: Organization = Depends(org_viewer_dep)):

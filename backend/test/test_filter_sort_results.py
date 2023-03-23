@@ -299,9 +299,9 @@ def test_sort_crawl_configs(
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] == 8
     items = data["items"]
-    assert len(items) == 5
+    assert len(items) == 8
 
     last_created = None
     for crawl in items:
