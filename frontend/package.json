@@ -44,7 +44,7 @@
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@lit/localize-tools": "^0.6.5",
     "@open-wc/testing": "^3.1.7",
-    "@playwright/test": "^1.31.2",
+    "@playwright/test": "^1.32.0",
     "@rollup/plugin-commonjs": "^18.0.0",
     "@types/color": "^3.0.2",
     "@types/lodash": "^4.14.178",
