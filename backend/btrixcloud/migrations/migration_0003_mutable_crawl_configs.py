@@ -63,9 +63,9 @@ class Migration(BaseMigration):
                 {
                     "$set": {
                         "config": config_result["config"],
-                        "profileid": config_result["profileid"],
-                        "schedule": config_result["schedule"],
-                        "crawlTimeout": config_result["crawlTimeout"],
+                        "profileid": config_result.get("profileid"),
+                        "schedule": config_result.get("schedule"),
+                        "crawlTimeout": config_result.get("crawlTimeout"),
                         "jobType": config_result.get("jobType"),
                     }
                 },
