@@ -66,7 +66,7 @@ class Migration(BaseMigration):
                         "profileid": config_result["profileid"],
                         "schedule": config_result["schedule"],
                         "crawlTimeout": config_result["crawlTimeout"],
-                        "jobType": config_result["jobType"],
+                        "jobType": config_result.get("jobType"),
                     }
                 },
             )
