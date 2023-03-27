@@ -21,6 +21,9 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 
+type Crawls = APIPaginatedList & {
+  items: Crawl[];
+};
 type CrawlSearchResult = {
   item: Crawl;
 };
@@ -101,7 +104,7 @@ export class CrawlsList extends LiteElement {
   private lastFetched?: number;
 
   @state()
-  private crawls?: Crawl[];
+  private crawls?: Crawls;
 
   @state()
   private orderBy: {
@@ -210,7 +213,7 @@ export class CrawlsList extends LiteElement {
           </div>
         </header>
         <section>
-          ${this.crawls.length
+          ${this.crawls.items.length
             ? this.renderCrawlList()
             : html`
                 <div class="border-t border-b py-5">
@@ -254,7 +257,7 @@ export class CrawlsList extends LiteElement {
               "Search by name, Crawl Start URL, or Workflow ID"
             )}
             clearable
-            ?disabled=${!this.crawls?.length}
+            ?disabled=${!this.crawls?.items.length}
             value=${this.searchBy}
             @sl-clear=${() => {
               this.onSearchInput.cancel();
@@ -353,7 +356,7 @@ export class CrawlsList extends LiteElement {
     const filteredCrawls = flow(
       this.filterCrawls,
       searchResults
-    )(this.crawls as Crawl[]);
+    )(this.crawls!.items);
 
     if (!filteredCrawls.length) {
       return html`
@@ -532,18 +535,18 @@ export class CrawlsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(): Promise<Crawl[]> {
+  private async getCrawls(): Promise<Crawls> {
     const params =
       this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
       this.authState!
     );
 
     this.lastFetched = Date.now();
 
-    return data.items;
+    return data;
   }
 
   private async cancel(crawl: Crawl) {
@@ -689,7 +692,11 @@ export class CrawlsList extends LiteElement {
         }
       );
 
-      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      const { items, ...crawlsData } = this.crawls!;
+      this.crawls = {
+        ...crawlsData,
+        items: items.filter((c) => c.id !== crawl.id),
+      };
       this.notify({
         message: msg(`Successfully deleted crawl`),
         variant: "success",
