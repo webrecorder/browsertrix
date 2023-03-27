@@ -347,6 +347,8 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderCrawlList() {
+    if (!this.crawls) return;
+
     // Return search results if valid filter string is available,
     // otherwise format crawls list like search results
     const searchResults =
@@ -356,7 +358,7 @@ export class CrawlsList extends LiteElement {
     const filteredCrawls = flow(
       this.filterCrawls,
       searchResults
-    )(this.crawls!.items);
+    )(this.crawls.items);
 
     if (!filteredCrawls.length) {
       return html`
@@ -389,6 +391,12 @@ export class CrawlsList extends LiteElement {
           map(this.renderCrawlItem)
         )(filteredCrawls as CrawlSearchResult[])}
       </btrix-crawl-list>
+
+      <btrix-pagination
+        page=${this.crawls.page}
+        totalCount=${this.crawls.total}
+        size=${1}
+      ></btrix-pagination>
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
