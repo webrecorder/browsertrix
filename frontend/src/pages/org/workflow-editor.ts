@@ -1951,16 +1951,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
-    const primarySeedUrl = this.formState.primarySeedUrl.replace(/\/$/, "");
+    const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
-      ? urlListToArray(this.formState.customIncludeUrlList).map((str) =>
-          str.replace(/\/$/, "")
-        )
+      ? urlListToArray(this.formState.customIncludeUrlList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
-      ? urlListToArray(this.formState.urlList).map((str) =>
-          str.replace(/\/$/, "")
-        )
+      ? urlListToArray(this.formState.urlList)
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
