@@ -29,10 +29,9 @@ Install the project's dependencies:
 
 ## Step 4: Add `.env`
 
-Add a `.env` file with the following values:
+Add a `.env` file by copying the sample:
 
-`API_BASE_URL`
-`DEV_PASSWORD`
+`cp sample.env.local .env`
 
 ## Step 5: Start the application
 
