@@ -36,6 +36,7 @@ type QueryParams = {
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
 
+const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 1;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
@@ -145,6 +146,9 @@ export class CrawlsList extends LiteElement {
   });
 
   private timerId?: number;
+
+  // Use to cancel requests
+  private getCrawlsController: AbortController | null = null;
 
   private filterCrawls = (crawls: Crawl[]) =>
     this.filterByState.length
@@ -537,12 +541,16 @@ export class CrawlsList extends LiteElement {
       this.crawls = crawls;
       // Update search/filter collection
       this.fuse.setCollection(this.crawls as any);
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawls at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e === ABORT_REASON_THROTTLE) {
+        console.debug("Fetch crawls aborted to throttle");
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve crawls at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     // Restart timer for next poll
@@ -558,17 +566,26 @@ export class CrawlsList extends LiteElement {
   private async getCrawls(
     queryParams: QueryParams = { page: 1, size: INITIAL_PAGE_SIZE }
   ): Promise<Crawls> {
+    if (this.getCrawlsController) {
+      this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
+      this.getCrawlsController = null;
+    }
     const query = queryString.stringify({
       page: queryParams.page || this.crawls?.page || 1,
       size: queryParams.size || this.crawls?.size || INITIAL_PAGE_SIZE,
       userid: this.filterByCurrentUser ? this.userId : undefined,
     });
 
+    this.getCrawlsController = new AbortController();
     const data = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}?${query}`,
-      this.authState!
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
     );
 
+    this.getCrawlsController = null;
     this.lastFetched = Date.now();
 
     return data;
