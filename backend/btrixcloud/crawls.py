@@ -768,16 +768,16 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get("/orgs/all/crawls", tags=["crawls"])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
         state: Optional[str] = None,
-        first_seed: Optional[str] = None,
+        firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
@@ -785,8 +785,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if state:
             state = state.split(",")
 
-        if first_seed:
-            first_seed = urllib.parse.unquote(first_seed)
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
 
         if name:
             name = urllib.parse.unquote(name)
@@ -800,36 +800,36 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             cid=cid,
             running_only=True,
             state=state,
-            first_seed=first_seed,
+            first_seed=firstSeed,
             name=name,
             description=description,
-            page_size=page_size,
+            page_size=pageSize,
             page=page,
-            sort_by=sort_by,
-            sort_direction=sort_direction,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(crawls, total, page)
 
     @app.get("/orgs/{oid}/crawls", tags=["crawls"])
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
         state: Optional[str] = None,
-        first_seed: Optional[str] = None,
+        firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
     ):
         # pylint: disable=duplicate-code
         if state:
             state = state.split(",")
 
-        if first_seed:
-            first_seed = urllib.parse.unquote(first_seed)
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
 
         if name:
             name = urllib.parse.unquote(name)
@@ -843,13 +843,13 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             cid=cid,
             running_only=False,
             state=state,
-            first_seed=first_seed,
+            first_seed=firstSeed,
             name=name,
             description=description,
-            page_size=page_size,
+            page_size=pageSize,
             page=page,
-            sort_by=sort_by,
-            sort_direction=sort_direction,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(crawls, total, page)
 

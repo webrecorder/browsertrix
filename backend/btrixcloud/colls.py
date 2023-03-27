@@ -183,11 +183,11 @@ def init_collections_api(mdb, crawls, orgs, crawl_manager):
     @router.get("")
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
         collections, total = await colls.list_collections(
-            org.id, page_size=page_size, page=page
+            org.id, page_size=pageSize, page=page
         )
         return paginated_format(collections, total, page)
 

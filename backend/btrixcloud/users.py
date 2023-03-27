@@ -472,14 +472,14 @@ def init_users_api(app, user_manager):
     @users_router.get("/invites", tags=["invites"])
     async def get_pending_invites(
         user: User = Depends(current_active_user),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         pending_invites, total = await user_manager.invites.get_pending_invites(
-            page_size=page_size, page=page
+            page_size=pageSize, page=page
         )
         return paginated_format(pending_invites, total, page)
 

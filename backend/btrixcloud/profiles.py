@@ -415,11 +415,11 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
         profiles, total = await ops.list_profiles(
-            org, userid, page_size=page_size, page=page
+            org, userid, page_size=pageSize, page=page
         )
         return paginated_format(profiles, total, page)
 

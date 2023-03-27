@@ -875,21 +875,21 @@ def init_crawl_config_api(
     @router.get("")
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         # createdBy, kept as userid for API compatibility
         userid: Optional[UUID4] = None,
-        modified_by: Optional[UUID4] = None,
-        first_seed: Optional[str] = None,
+        modifiedBy: Optional[UUID4] = None,
+        firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
-        sort_by: str = None,
-        sort_direction: int = -1,
+        sortBy: str = None,
+        sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code
-        if first_seed:
-            first_seed = urllib.parse.unquote(first_seed)
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
 
         if name:
             name = urllib.parse.unquote(name)
@@ -900,15 +900,15 @@ def init_crawl_config_api(
         crawl_configs, total = await ops.get_crawl_configs(
             org,
             created_by=userid,
-            modified_by=modified_by,
-            first_seed=first_seed,
+            modified_by=modifiedBy,
+            first_seed=firstSeed,
             name=name,
             description=description,
             tags=tag,
-            page_size=page_size,
+            page_size=pageSize,
             page=page,
-            sort_by=sort_by,
-            sort_direction=sort_direction,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(crawl_configs, total, page)
 

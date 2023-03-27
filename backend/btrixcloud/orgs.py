@@ -411,11 +411,11 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     @app.get("/orgs", tags=["organizations"])
     async def get_orgs(
         user: User = Depends(user_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
         results, total = await ops.get_orgs_for_user(
-            user, page_size=page_size, page=page
+            user, page_size=pageSize, page=page
         )
         serialized_results = [
             await res.serialize_for_user(user, user_manager) for res in results
@@ -511,11 +511,11 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(
         org: Organization = Depends(org_owner_dep),
-        page_size: int = DEFAULT_PAGE_SIZE,
+        pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
         pending_invites, total = await user_manager.invites.get_pending_invites(
-            org, page_size=page_size, page=page
+            org, page_size=pageSize, page=page
         )
         return paginated_format(pending_invites, total, page)
 
