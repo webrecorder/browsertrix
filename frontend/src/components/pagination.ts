@@ -97,6 +97,7 @@ export class Pagination extends LitElement {
         display: grid;
         grid-template-columns: repeat(2, min-content);
         grid-gap: var(--sl-spacing-x-small);
+        margin: 0 var(--sl-spacing-x-small);
         align-items: center;
         align-items: center;
         font-weight: 600;
@@ -253,24 +254,52 @@ export class Pagination extends LitElement {
   }
 
   private renderPages = () => {
-    const pages = Array.from({ length: this.pages });
-    return html`
-      ${pages.map((_, i) => {
-        const page = i + 1;
-        const isCurrent = page === this.page;
-        return html`<li
-          aria-current=${ifDefined(isCurrent ? "page" : undefined)}
-        >
-          <btrix-button
-            icon
-            variant=${isCurrent ? "primary" : "neutral"}
-            ?raised=${isCurrent}
-            @click=${() => this.onPageChange(page)}
-            >${page}</btrix-button
-          >
-        </li>`;
-      })}
-    `;
+    const pages = Array.from({ length: this.pages }).map((_, i) => i + 1);
+    const middleVisible = 3;
+    const middlePad = Math.floor(middleVisible / 2);
+    const middleEnd = middleVisible * 2 - 1;
+    const endsVisible = 2;
+    if (this.pages > middleVisible + middleEnd) {
+      const currentPageIdx = pages.indexOf(this.page);
+      const firstPages = pages.slice(0, endsVisible);
+      const lastPages = pages.slice(-1 * endsVisible);
+      let middlePages = pages.slice(endsVisible, middleEnd);
+      if (currentPageIdx > middleVisible) {
+        middlePages = pages.slice(
+          Math.min(currentPageIdx - middlePad, this.pages - middleEnd),
+          Math.min(currentPageIdx + middlePad + 1, this.pages - endsVisible)
+        );
+      }
+
+      return html`
+        ${firstPages.map(this.renderPageButton)}
+        ${when(
+          middlePages[0] > firstPages[firstPages.length - 1] + 1,
+          () => html`...`
+        )}
+        ${middlePages.map(this.renderPageButton)}
+        ${when(
+          lastPages[0] > middlePages[middlePages.length - 1] + 1,
+          () => html`...`
+        )}
+        ${lastPages.map(this.renderPageButton)}
+      `;
+    }
+    return html`${pages.map(this.renderPageButton)}`;
+  };
+
+  private renderPageButton = (page: number) => {
+    const isCurrent = page === this.page;
+    return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
+      <btrix-button
+        icon
+        variant=${isCurrent ? "primary" : "neutral"}
+        ?raised=${isCurrent}
+        @click=${() => this.onPageChange(page)}
+        aria-disabled=${isCurrent}
+        >${page}</btrix-button
+      >
+    </li>`;
   };
 
   private onPrev() {

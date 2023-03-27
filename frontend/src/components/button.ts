@@ -70,7 +70,7 @@ export class Button extends LitElement {
       box-shadow: var(--sl-shadow-x-small);
     }
 
-    .raised:not([disabled]):hover {
+    :not([aria-disabled]) .raised:not([disabled]):hover {
       box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
       transform: translateY(1px);
     }
@@ -80,7 +80,7 @@ export class Button extends LitElement {
       color: var(--sl-color-blue-600);
     }
 
-    .primary:hover {
+    :not([aria-disabled]) .primary:hover {
       background-color: var(--sl-color-blue-100);
     }
 
@@ -89,7 +89,7 @@ export class Button extends LitElement {
       color: var(--sl-color-danger-600);
     }
 
-    .danger:hover {
+    :not([aria-disabled]) .danger:hover {
       background-color: var(--sl-color-danger-100);
     }
 

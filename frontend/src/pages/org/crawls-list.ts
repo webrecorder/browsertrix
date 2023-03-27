@@ -234,21 +234,18 @@ export class CrawlsList extends LiteElement {
                 </div>
               `}
         </section>
-        <footer class="m-2">
-          <span class="text-0-400 text-xs">
-            ${this.lastFetched
-              ? msg(html`Last updated:
-                  <sl-format-date
-                    date="${new Date(this.lastFetched).toString()}"
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    second="numeric"
-                  ></sl-format-date>`)
-              : ""}
-          </span>
+
+        <footer class="mt-6 flex justify-center">
+          <btrix-pagination
+            page=${this.crawls.page}
+            totalCount=${this.crawls.total}
+            size=${this.crawls.size}
+            @page-change=${(e: PageChangeEvent) => {
+              this.fetchCrawls({
+                page: e.detail.page,
+              });
+            }}
+          ></btrix-pagination>
         </footer>
       </main>
     `;
@@ -389,8 +386,6 @@ export class CrawlsList extends LiteElement {
               ${msg("Clear all filters")}
             </button>
           </p>
-
-          <div></div>
         </div>
       `;
     }
@@ -402,17 +397,6 @@ export class CrawlsList extends LiteElement {
           map(this.renderCrawlItem)
         )(filteredCrawls as CrawlSearchResult[])}
       </btrix-crawl-list>
-
-      <btrix-pagination
-        page=${this.crawls.page}
-        totalCount=${this.crawls.total}
-        size=${1}
-        @page-change=${(e: PageChangeEvent) => {
-          this.fetchCrawls({
-            page: e.detail.page,
-          });
-        }}
-      ></btrix-pagination>
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
@@ -563,16 +547,14 @@ export class CrawlsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(
-    queryParams: QueryParams = { page: 1, size: INITIAL_PAGE_SIZE }
-  ): Promise<Crawls> {
+  private async getCrawls(queryParams?: QueryParams): Promise<Crawls> {
     if (this.getCrawlsController) {
       this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
       this.getCrawlsController = null;
     }
     const query = queryString.stringify({
-      page: queryParams.page || this.crawls?.page || 1,
-      size: queryParams.size || this.crawls?.size || INITIAL_PAGE_SIZE,
+      page: queryParams?.page || this.crawls?.page || 1,
+      size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
       userid: this.filterByCurrentUser ? this.userId : undefined,
     });
 
