@@ -1,4 +1,4 @@
-# Developer Docs
+# Introduction to Development
 
 Browsertrix Cloud consists of a Python-based backend and TypeScript-based frontend.
 
