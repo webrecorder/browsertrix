@@ -6,7 +6,7 @@ import { allLocales } from "../__generated__/locale-codes";
 import { getLocale, setLocaleFromUrl } from "../utils/localization";
 import { localized } from "@lit/localize";
 
-type LocaleCode = typeof allLocales[number];
+type LocaleCode = (typeof allLocales)[number];
 type LocaleNames = {
   [L in LocaleCode]: string;
 };
