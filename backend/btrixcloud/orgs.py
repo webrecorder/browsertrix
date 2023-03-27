@@ -358,7 +358,7 @@ class OrgOps:
 # pylint: disable=too-many-statements
 def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     """Init organizations api router for /orgs"""
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,invalid-name
 
     ops = OrgOps(mdb, invites)
 

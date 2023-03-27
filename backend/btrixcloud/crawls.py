@@ -759,6 +759,7 @@ class CrawlOps:
 # pylint: disable=too-many-arguments, too-many-locals
 def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user_dep):
     """API for crawl management, including crawl done callback"""
+    # pylint: disable=invalid-name
 
     ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
 

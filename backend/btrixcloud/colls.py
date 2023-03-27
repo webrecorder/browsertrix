@@ -147,6 +147,8 @@ class CollectionOps:
 # ============================================================================
 def init_collections_api(mdb, crawls, orgs, crawl_manager):
     """init collections api"""
+    # pylint: disable=invalid-name
+
     colls = CollectionOps(mdb, crawls, crawl_manager)
 
     org_crawl_dep = orgs.org_crawl_dep

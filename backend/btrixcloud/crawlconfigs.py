@@ -865,6 +865,8 @@ def init_crawl_config_api(
     dbclient, mdb, user_dep, user_manager, org_ops, crawl_manager, profiles
 ):
     """Init /crawlconfigs api routes"""
+    # pylint: disable=invalid-name
+
     ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
 
     router = ops.router

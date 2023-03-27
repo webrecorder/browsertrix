@@ -367,6 +367,8 @@ class BearerOrQueryTransport(BearerTransport):
 # pylint: disable=too-many-locals
 def init_users_api(app, user_manager):
     """init fastapi_users"""
+    # pylint: disable=invalid-name
+
     bearer_transport = BearerOrQueryTransport(tokenUrl="auth/jwt/login")
 
     def get_jwt_strategy() -> JWTStrategy:
