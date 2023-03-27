@@ -3,7 +3,7 @@ Migration 0002 - Ensuring all config.seeds are Seeds not HttpUrls
 """
 from pydantic import HttpUrl
 
-from btrixcloud.crawlconfigs import Seed
+from btrixcloud.crawlconfigs import CrawlConfig, ScopeType, Seed
 from btrixcloud.migrations import BaseMigration
 
 
@@ -27,22 +27,43 @@ class Migration(BaseMigration):
             return
 
         for config_dict in crawl_config_results:
-            migrated_seeds = []
-            for seed in config_dict["config"]["seeds"]:
-                if isinstance(seed, HttpUrl):
-                    new_seed = Seed(url=seed)
-                    migrated_seeds.append(new_seed)
-                elif isinstance(seed, Seed):
-                    migrated_seeds.append(seed)
+            seeds_to_migrate = []
+            seed_dicts = []
 
-            await crawl_configs.find_one_and_update(
-                {"_id": config_dict["_id"]},
-                {"$set": {"config.seeds": migrated_seeds}},
-            )
+            seed_list = config_dict["config"]["seeds"]
+            for seed in seed_list:
+                if isinstance(seed, HttpUrl):
+                    new_seed = Seed(url=str(seed.url), scopeType=ScopeType.PAGE)
+                    seeds_to_migrate.append(new_seed)
+                elif isinstance(seed, str):
+                    new_seed = Seed(url=str(seed), scopeType=ScopeType.PAGE)
+                    seeds_to_migrate.append(new_seed)
+                elif isinstance(seed, Seed):
+                    seeds_to_migrate.append(seed)
+
+            for seed in seeds_to_migrate:
+                seed_dict = {
+                    "url": str(seed.url),
+                    "scopeType": seed.scopeType,
+                    "include": seed.include,
+                    "exclude": seed.exclude,
+                    "sitemap": seed.sitemap,
+                    "allowHash": seed.allowHash,
+                    "depth": seed.depth,
+                    "extraHops": seed.extraHops,
+                }
+                seed_dicts.append(seed_dict)
+
+            if seed_dicts:
+                await crawl_configs.find_one_and_update(
+                    {"_id": config_dict["_id"]},
+                    {"$set": {"config.seeds": seed_dicts}},
+                )
 
         # Test migration
         crawl_config_results = [res async for res in crawl_configs.find({})]
         for config_dict in crawl_config_results:
-            for seed in config_dict["config"]["seeds"]:
+            config = CrawlConfig.from_dict(config_dict)
+            for seed in config.config.seeds:
                 assert isinstance(seed, Seed)
                 assert seed.url
