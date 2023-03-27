@@ -1951,7 +1951,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
-    const primarySeedUrl = this.formState.primarySeedUrl;
+    const primarySeedUrl =
+      this.formState.scopeType === "domain"
+        ? this.formState.primarySeedUrl.replace(/\/$/, "")
+        : this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
       ? urlListToArray(this.formState.customIncludeUrlList)
       : [];
