@@ -13,6 +13,7 @@ import flow from "lodash/fp/flow";
 import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
+import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
@@ -28,9 +29,14 @@ type Crawls = APIPaginatedList & {
 type CrawlSearchResult = {
   item: Crawl;
 };
+type QueryParams = {
+  page?: number;
+  size?: number;
+};
 type SortField = "started" | "finished" | "configName" | "fileSize";
 type SortDirection = "asc" | "desc";
 
+const INITIAL_PAGE_SIZE = 1;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -398,7 +404,9 @@ export class CrawlsList extends LiteElement {
         totalCount=${this.crawls.total}
         size=${1}
         @page-change=${(e: PageChangeEvent) => {
-          console.log(e.detail.page);
+          this.fetchCrawls({
+            page: e.detail.page,
+          });
         }}
       ></btrix-pagination>
 
@@ -519,12 +527,12 @@ export class CrawlsList extends LiteElement {
   /**
    * Fetch crawls and update internal state
    */
-  private async fetchCrawls(): Promise<void> {
+  private async fetchCrawls(params?: QueryParams): Promise<void> {
     if (!this.shouldFetch) return;
 
     this.stopPollTimer();
     try {
-      const crawls = await this.getCrawls();
+      const crawls = await this.getCrawls(params);
 
       this.crawls = crawls;
       // Update search/filter collection
@@ -547,12 +555,17 @@ export class CrawlsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(): Promise<Crawls> {
-    const params =
-      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
+  private async getCrawls(
+    queryParams: QueryParams = { page: 1, size: INITIAL_PAGE_SIZE }
+  ): Promise<Crawls> {
+    const query = queryString.stringify({
+      page: queryParams.page || this.crawls?.page || 1,
+      size: queryParams.size || this.crawls?.size || INITIAL_PAGE_SIZE,
+      userid: this.filterByCurrentUser ? this.userId : undefined,
+    });
 
     const data = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}?${query}`,
       this.authState!
     );
 
