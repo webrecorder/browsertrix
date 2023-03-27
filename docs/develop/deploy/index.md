@@ -1,4 +1,4 @@
-# Introduction
+# Introduction to Deployment
 
 Browsertrix Cloud is designed to be a cloud-native application running in Kubernetes.
 
@@ -7,7 +7,7 @@ However, despite the name, it is perfectly reasonable (and easy!) to deploy Brow
 The main requirements for Browsertrix Cloud are:
 
 - A Kubernetes Cluster
-- Helm 3 (package manager for Kubernetes)
+- [Helm 3](https://helm.sh/) (package manager for Kubernetes)
 
 We have prepared a [Local Deployment](./local) and [Production (Self-Hosted and Cloud) Deployment](./production) guides to help with
 setting up Browsertrix Cloud for different scenarios.

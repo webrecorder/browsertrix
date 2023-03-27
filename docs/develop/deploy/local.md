@@ -4,13 +4,11 @@ To just test out Browsertrix Cloud on your local machine, you'll first need to h
 
 ## Installing Kubernetes
 
-Before running Browsertrix Cloud, you'll need to set up a running Kubernetes cluster.
+Before running Browsertrix Cloud, you'll need to set up a running [Kubernetes](https://kubernetes.io/) cluster.
 
 Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube and k3s.
 
-The instructions below assume you have cloned
-the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally,
-and have local package managers for your platform (eg. `brew` for Mac, `choco` for Windows, etc...) already installed.
+The instructions below assume you have cloned the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally, and have local package managers for your platform (eg. `brew` for Mac, `choco` for Windows, etc...) already installed.
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
@@ -62,7 +60,7 @@ Here are some environment specific instructions for setting up a local cluster f
 
 Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can then run from the Browsertrix Cloud repo directory:
 
-```
+```shell
 helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart/
 ```
 
@@ -81,7 +79,7 @@ Note that the admin user and password will not be reset after creation.
 
 After running the helm command, you should see something like:
 
-```
+```shell
 Release "btrix" does not exist. Installing it now.
 NAME: btrix
 LAST DEPLOYED: <time>
@@ -117,7 +115,7 @@ The outputs of these commands will be helpful if you'd like to report an issue [
 
 To update the cluster, re-run the same command again, which will pull the latest images. In this way, you can upgrade to the latest release of Browsertrix Cloud. The upgrade will preserve the database and current archives.
 
-```
+```shell
 helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart/
 ```
 
@@ -136,7 +134,7 @@ By default, this setup will pull the latest release of Browsertrix Cloud. Howeve
 
 First, open `./chart/examples/local-config.yaml` and add the following, which will ensure only local images are used:
 
-```
+```yaml
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
 ```
@@ -157,7 +155,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
 
-    ```
+    ```yaml
     backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
     frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
     ```
@@ -168,12 +166,13 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     To build the backend image, run:
 
-    ```
+    ```shell
     minikube image build -t webrecorder/browsertrix-backend:latest ./backend
     ```
 
     To build a local frontend image, run:
-    ```
+    
+    ```shell
     minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
     ```
 
@@ -185,14 +184,14 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
 
     2. Serializer the images to .tar:
 
-    ```
+    ```shell
     docker save webrecorder/browsertrix-backend:latest > ./backend.tar
     docker save webrecorder/browsertrix-frontend:latest > ./frontend.tar
     ```
 
     3. Import images into k3s containerd:
 
-    ```
+    ```shell
     k3s ctr images import --base-name webrecorder/browsertrix-backend:latest ./backend.tar
     k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
     ```
