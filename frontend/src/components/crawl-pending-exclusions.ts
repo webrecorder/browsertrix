@@ -48,6 +48,7 @@ export class CrawlPendingExclusions extends LiteElement {
             ? html`<btrix-pagination
                 size=${this.pageSize}
                 totalCount=${this.total}
+                compact
                 @page-change=${(e: CustomEvent) => {
                   this.page = e.detail.page;
                 }}

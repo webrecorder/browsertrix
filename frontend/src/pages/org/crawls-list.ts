@@ -16,6 +16,7 @@ import Fuse from "fuse.js";
 
 import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
+import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
@@ -396,6 +397,9 @@ export class CrawlsList extends LiteElement {
         page=${this.crawls.page}
         totalCount=${this.crawls.total}
         size=${1}
+        @page-change=${(e: PageChangeEvent) => {
+          console.log(e.detail.page);
+        }}
       ></btrix-pagination>
 
       <btrix-crawl-metadata-editor

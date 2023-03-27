@@ -9,6 +9,11 @@ import chevronLeft from "../assets/icons/chevron-left.svg";
 import chevronRight from "../assets/icons/chevron-right.svg";
 import { srOnly } from "../utils/css";
 
+export type PageChangeEvent = CustomEvent<{
+  page: number;
+  pages: number;
+}>;
+
 /**
  * Pagination
  *
@@ -96,6 +101,8 @@ export class Pagination extends LitElement {
         align-items: center;
         font-weight: 600;
         transition: opacity 0.2s;
+        min-height: 1.5rem;
+        min-width: 1.5rem;
       }
 
       .navButton[disabled] {
@@ -137,16 +144,13 @@ export class Pagination extends LitElement {
     super.connectedCallback();
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
-      await this.performUpdate;
       this.calculatePages();
     }
 
     if (changedProperties.get("page") && this.page) {
-      await this.performUpdate;
       this.inputValue = `${this.page}`;
-      this.onPageChange();
     }
   }
 
@@ -227,16 +231,17 @@ export class Pagination extends LitElement {
           }}
           @sl-change=${(e: any) => {
             const page = +e.target.value;
+            let nextPage = page;
 
             if (page < 1) {
-              this.page = 1;
+              nextPage = 1;
             } else if (page > this.pages) {
-              this.page = this.pages;
+              nextPage = this.pages;
             } else {
-              this.page = page;
+              nextPage = page;
             }
 
-            this.inputValue = `${this.page}`;
+            this.onPageChange(nextPage);
           }}
           @focus=${(e: any) => {
             // Select text on focus for easy typing
@@ -248,33 +253,38 @@ export class Pagination extends LitElement {
   }
 
   private renderPages = () => {
-    const pages = Array.from({
-      length: Math.ceil(this.totalCount / this.size),
-    });
+    const pages = Array.from({ length: this.pages });
     return html`
-      ${pages.map(
-        (_, i) =>
-          html`<li
-            aria-current=${ifDefined(i + 1 === this.page ? "page" : undefined)}
+      ${pages.map((_, i) => {
+        const page = i + 1;
+        const isCurrent = page === this.page;
+        return html`<li
+          aria-current=${ifDefined(isCurrent ? "page" : undefined)}
+        >
+          <btrix-button
+            icon
+            variant=${isCurrent ? "primary" : "neutral"}
+            ?raised=${isCurrent}
+            @click=${() => this.onPageChange(page)}
+            >${page}</btrix-button
           >
-            <btrix-button icon raised>${i + 1}</btrix-button>
-          </li>`
-      )}
+        </li>`;
+      })}
     `;
   };
 
   private onPrev() {
-    this.page = this.page > 1 ? this.page - 1 : 1;
+    this.onPageChange(this.page > 1 ? this.page - 1 : 1);
   }
 
   private onNext() {
-    this.page = this.page < this.pages ? this.page + 1 : this.pages;
+    this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
   }
 
-  private onPageChange() {
+  private onPageChange(page: number) {
     this.dispatchEvent(
-      new CustomEvent("page-change", {
-        detail: { page: this.page, pages: this.pages },
+      <PageChangeEvent>new CustomEvent("page-change", {
+        detail: { page: page, pages: this.pages },
       })
     );
   }

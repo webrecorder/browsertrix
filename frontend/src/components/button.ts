@@ -66,13 +66,11 @@ export class Button extends LitElement {
       min-height: 1.5rem;
     }
 
-    .primary,
-    .danger {
+    .raised {
       box-shadow: var(--sl-shadow-x-small);
     }
 
-    .primary:not([disabled]):hover,
-    .dangery:not([disabled]):hover {
+    .raised:not([disabled]):hover {
       box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
       transform: translateY(1px);
     }
@@ -110,6 +108,7 @@ export class Button extends LitElement {
       class=${classMap({
         [this.variant]: true,
         icon: this.icon,
+        raised: this.raised,
       })}
       ?disabled=${this.disabled}
       @click=${this.handleClick}

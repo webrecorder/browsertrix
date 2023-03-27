@@ -142,6 +142,7 @@ export class QueueExclusionForm extends LiteElement {
             <div class="flex-0 w-10 pt-1 text-center">
               <btrix-button
                 variant="primary"
+                raised
                 icon
                 ?disabled=${!this.inputValue ||
                 this.isRegexInvalid ||
