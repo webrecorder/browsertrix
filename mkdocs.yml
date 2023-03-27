@@ -1,4 +1,9 @@
 site_name: Browsertrix Cloud Docs
+repo_url: https://github.com/webrecorder/browsertrix-cloud/
+repo_name: Browsertrix Cloud
+edit_uri: edit/main/docs/
+extra_css:
+    - stylesheets/extra.css
 theme:
   name: material
   features:
@@ -6,12 +11,13 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.instant
+    - navigation.tracking
+    - navigation-indexes
   font:
     text: Inter
     code: Recursive
   palette:
-    primary: teal
-    accent: cyan
+    scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
 
   icon:
@@ -30,3 +36,5 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
 
+extra:
+  generator: false
