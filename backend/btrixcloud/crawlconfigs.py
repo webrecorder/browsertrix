@@ -578,7 +578,6 @@ class CrawlConfigOps:
                         }
                     }
                 },
-                {"$unset": ["firstSeedFormatted"]},
                 {
                     "$facet": {
                         "items": [
