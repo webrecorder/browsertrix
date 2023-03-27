@@ -33,7 +33,7 @@ type QueryParams = {
   page?: number;
   size?: number;
 };
-type SortField = "started" | "finished" | "configName" | "fileSize";
+type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -53,8 +53,8 @@ const sortableFields: Record<
     label: msg("Date Completed"),
     defaultDirection: "desc",
   },
-  configName: {
-    label: msg("Crawl Name"),
+  firstSeed: {
+    label: msg("Crawl Start URL"),
     defaultDirection: "desc",
   },
   fileSize: {
@@ -163,7 +163,8 @@ export class CrawlsList extends LiteElement {
       changedProperties.get("crawlsBaseUrl") ||
       changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
-      changedProperties.has("filterByState")
+      changedProperties.has("filterByState") ||
+      changedProperties.has("orderBy")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
@@ -534,6 +535,8 @@ export class CrawlsList extends LiteElement {
         size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userId : undefined,
         state: this.filterByState,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? 0 : 1,
       },
       {
         arrayFormat: "comma",
