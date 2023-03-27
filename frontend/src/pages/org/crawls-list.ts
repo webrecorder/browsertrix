@@ -150,20 +150,6 @@ export class CrawlsList extends LiteElement {
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  private filterCrawls = (crawls: Crawl[]) =>
-    this.filterByState.length
-      ? crawls.filter((crawl) =>
-          this.filterByState.some((state) => crawl.state === state)
-        )
-      : crawls;
-
-  private sortCrawls = (
-    crawlsResults: CrawlSearchResult[]
-  ): CrawlSearchResult[] =>
-    orderBy(({ item }) => item[this.orderBy.field])(this.orderBy.direction)(
-      crawlsResults
-    ) as CrawlSearchResult[];
-
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -176,7 +162,8 @@ export class CrawlsList extends LiteElement {
       changedProperties.has("shouldFetch") ||
       changedProperties.get("crawlsBaseUrl") ||
       changedProperties.get("crawlsAPIBaseUrl") ||
-      changedProperties.has("filterByCurrentUser")
+      changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("filterByState")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
@@ -360,18 +347,7 @@ export class CrawlsList extends LiteElement {
   private renderCrawlList() {
     if (!this.crawls) return;
 
-    // Return search results if valid filter string is available,
-    // otherwise format crawls list like search results
-    const searchResults =
-      this.searchBy.length >= MIN_SEARCH_LENGTH
-        ? () => this.fuse.search(this.searchBy)
-        : map((crawl) => ({ item: crawl }));
-    const filteredCrawls = flow(
-      this.filterCrawls,
-      searchResults
-    )(this.crawls.items);
-
-    if (!filteredCrawls.length) {
+    if (!this.crawls.items.length) {
       return html`
         <div class="border rounded-lg bg-neutral-50 p-4">
           <p class="text-center">
@@ -395,10 +371,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <btrix-crawl-list>
-        ${flow(
-          this.sortCrawls,
-          map(this.renderCrawlItem)
-        )(filteredCrawls as CrawlSearchResult[])}
+        ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 
       <btrix-crawl-metadata-editor
@@ -413,7 +386,7 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) =>
+  private renderCrawlItem = (crawl: Crawl) =>
     html`
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
@@ -555,11 +528,17 @@ export class CrawlsList extends LiteElement {
       this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
       this.getCrawlsController = null;
     }
-    const query = queryString.stringify({
-      page: queryParams?.page || this.crawls?.page || 1,
-      size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
-      userid: this.filterByCurrentUser ? this.userId : undefined,
-    });
+    const query = queryString.stringify(
+      {
+        page: queryParams?.page || this.crawls?.page || 1,
+        size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        state: this.filterByState,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
 
     this.getCrawlsController = new AbortController();
     const data = await this.apiFetch(
