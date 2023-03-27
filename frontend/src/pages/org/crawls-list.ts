@@ -183,7 +183,10 @@ export class CrawlsList extends LiteElement {
           throw new Error("Crawls base URL not defined");
         }
 
-        this.fetchCrawls();
+        this.fetchCrawls({
+          page: 1,
+          size: INITIAL_PAGE_SIZE,
+        });
       } else {
         this.stopPollTimer();
       }
