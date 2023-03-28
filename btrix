@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# ./btrix: Browsertrix Cloud dev environment utility
+#
+# Usage:
+#
+# $ ./btrix bootstrap
+# Build frontend and backend and upgrade
+# Optional args:
+#   -wait: Wait until pods are ready
+#
+# $ ./btrix reset
+# Uinstall, delete data, then bootstrap
+# Optional args:
+#   -wait: Wait until pods are ready
+#
+# $ ./btrix test
+# Run backend tests
+#
+# $ ./btrix nightly
+# Run nightly backend tests
+
+
+bootstrap(){
+	echo "Building backend..."
+    ./scripts/build-backend.sh
+
+    echo "Building frontend..."
+	./scripts/build-frontend.sh
+
+	echo "Installing..."
+	helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+}
+
+waitUntilReady(){
+	echo "Waiting until ready..."
+	kubectl wait --for=condition=ready pod --all --timeout=300s
+}
+
+reset(){
+	echo "Uninstalling..."
+	helm uninstall btrix
+
+	echo "Deleting data..."
+	kubectl delete pvc --all
+}
+
+run_tests() {
+	echo "Running backend tests..."
+	python -m pytest backend/test/*.py
+}
+
+run_nightly_tests() {
+	echo "Running nightly backend tests..."
+	python -m pytest backend/test_nightly/*.py
+}
+
+
+# bootstrap: build frontend and backend, upgrade and wait until ready
+if [ $1 = "bootstrap" ]; then
+	bootstrap
+
+	if [ $2 = "-wait" ]; then
+		waitUntilReady
+	fi
+fi
+
+# reset: uninstall, delete data, then bootstrap
+if [ $1 = "reset" ]; then
+	reset
+	bootstrap
+
+	if [ $2 = "-wait" ]; then
+		waitUntilReady
+	fi
+fi
+
+# test: run backend tests
+if [ $1 = "test" ]; then
+	run_tests
+fi
+
+# nightly: run nightly backend tests
+if [ $1 = "nightly" ]; then
+	run_nightly_tests
+fi
+
+echo "Done"
