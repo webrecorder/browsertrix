@@ -629,20 +629,19 @@ export class WorkflowsList extends LiteElement {
     if (crawlConfig.name) return crawlConfig.name;
     const { config } = crawlConfig;
     const firstSeed = config.seeds[0];
-    let firstSeedURL =
-      typeof firstSeed === "string" ? firstSeed : firstSeed.url;
+    let firstSeedURL = firstSeed.url;
     if (config.seeds.length === 1) {
       return firstSeedURL;
     }
     const remainderCount = config.seeds.length - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeed}
+        html`${firstSeedURL}
           <span class="text-neutral-500">+${remainderCount} URL</span>`
       );
     }
     return msg(
-      html`${firstSeed}
+      html`${firstSeedURL}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
   }
@@ -699,7 +698,7 @@ export class WorkflowsList extends LiteElement {
     );
 
     this.notify({
-      message: msg(str`Copied Workflowuration to new template.`),
+      message: msg(str`Copied Workflow to new template.`),
       variant: "success",
       icon: "check2-circle",
     });

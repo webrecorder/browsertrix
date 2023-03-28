@@ -1,16 +1,17 @@
 """ Crawl API """
+# pylint: disable=too-many-lines
 
 import asyncio
 import uuid
 import os
 import json
 import re
+import urllib.parse
 
 from typing import Optional, List, Dict, Union
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
-from fastapi_pagination import paginate
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
@@ -19,8 +20,20 @@ from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
 from .db import BaseMongoModel
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object
+
+
+CRAWL_STATES = (
+    "starting",
+    "running",
+    "stopping",
+    "complete",
+    "canceled",
+    "partial_complete",
+    "timed_out",
+    "failed",
+)
 
 
 # ============================================================================
@@ -187,10 +200,21 @@ class CrawlOps:
         collid: uuid.UUID = None,
         userid: uuid.UUID = None,
         crawl_id: str = None,
-        exclude_files=True,
         running_only=False,
+        state: Optional[List[str]] = None,
+        first_seed: str = None,
+        name: str = None,
+        description: str = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: str = None,
+        sort_direction: int = -1,
     ):
         """List all finished crawls from the db"""
+        # pylint: disable=too-many-locals,too-many-branches
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
 
         oid = org.id if org else None
 
@@ -210,51 +234,97 @@ class CrawlOps:
         if running_only:
             query["state"] = {"$in": ["running", "starting", "stopping"]}
 
+        # Override running_only if state list is explicitly passed
+        if state:
+            validated_states = [value for value in state if value in CRAWL_STATES]
+            query["state"] = {"$in": validated_states}
+
         if crawl_id:
             query["_id"] = crawl_id
 
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
+            {"$set": {"fileSize": {"$sum": "$files.size"}}},
+            {"$set": {"fileCount": {"$size": "$files"}}},
+            {"$unset": ["files"]},
+            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
+            {"$set": {"firstSeed": "$firstSeedObject.url"}},
+            {"$unset": ["firstSeedObject"]},
             {
                 "$lookup": {
                     "from": "crawl_configs",
                     "localField": "cid",
                     "foreignField": "_id",
-                    "as": "configName",
+                    "as": "crawlConfig",
                 },
             },
-            {"$set": {"name": {"$arrayElemAt": ["$configName.name", 0]}}},
+            {"$set": {"name": {"$arrayElemAt": ["$crawlConfig.name", 0]}}},
             {
-                "$lookup": {
-                    "from": "users",
-                    "localField": "userid",
-                    "foreignField": "id",
-                    "as": "userName",
-                },
+                "$set": {
+                    "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
+                }
             },
-            {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
         ]
 
-        if exclude_files:
-            aggregate.extend(
-                [
-                    {"$set": {"fileSize": {"$sum": "$files.size"}}},
-                    {"$set": {"fileCount": {"$size": "$files"}}},
-                    {"$unset": ["files"]},
-                ]
-            )
-            crawl_cls = ListCrawlOut
-        else:
-            crawl_cls = CrawlOut
+        if name:
+            aggregate.extend([{"$match": {"name": name}}])
 
+        if description:
+            aggregate.extend([{"$match": {"description": description}}])
+
+        if first_seed:
+            aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if sort_by:
+            if sort_by not in ("started, finished, fileSize, firstSeed"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "userid",
+                        "foreignField": "id",
+                        "as": "userName",
+                    },
+                },
+                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
         cursor = self.crawls.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
 
-        results = await cursor.to_list(length=1000)
-        crawls = [crawl_cls.from_dict(res) for res in results]
-        crawls = [await self._resolve_crawl_refs(crawl, org) for crawl in crawls]
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
 
-        return crawls
+        crawls = []
+        for result in items:
+            crawl = ListCrawlOut.from_dict(result)
+            crawl = await self._resolve_crawl_refs(crawl, org, add_first_seed=False)
+            crawls.append(crawl)
+
+        return crawls, total
 
     async def get_crawl_raw(self, crawlid: str, org: Organization):
         """Get data for single crawl"""
@@ -309,7 +379,10 @@ class CrawlOps:
         return stats
 
     async def _resolve_crawl_refs(
-        self, crawl: Union[CrawlOut, ListCrawlOut], org: Optional[Organization]
+        self,
+        crawl: Union[CrawlOut, ListCrawlOut],
+        org: Optional[Organization],
+        add_first_seed: bool = True,
     ):
         """Resolve running crawl data"""
         config = await self.crawl_configs.get_crawl_config(
@@ -320,14 +393,16 @@ class CrawlOps:
             if not crawl.name:
                 crawl.name = config.name
 
-            crawl.description = config.description
+            if not crawl.description:
+                crawl.description = config.description
 
             if config.config.seeds:
-                first_seed = config.config.seeds[0]
-                if isinstance(first_seed, HttpUrl):
-                    crawl.firstSeed = first_seed
-                elif isinstance(first_seed, Seed):
-                    crawl.firstSeed = first_seed.url
+                if add_first_seed:
+                    first_seed = config.config.seeds[0]
+                    if isinstance(first_seed, HttpUrl):
+                        crawl.firstSeed = first_seed
+                    elif isinstance(first_seed, Seed):
+                        crawl.firstSeed = first_seed.url
                 crawl.seedCount = len(config.config.seeds)
 
         if hasattr(crawl, "profileid") and crawl.profileid:
@@ -684,32 +759,100 @@ class CrawlOps:
 # pylint: disable=too-many-arguments, too-many-locals
 def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user_dep):
     """API for crawl management, including crawl done callback"""
+    # pylint: disable=invalid-name
 
     ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
 
-    @app.get("/orgs/all/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
+    @app.get("/orgs/all/crawls", tags=["crawls"])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
+        state: Optional[str] = None,
+        firstSeed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        crawls = await ops.list_crawls(None, userid=userid, cid=cid, running_only=True)
-        return paginate(crawls)
+        if state:
+            state = state.split(",")
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=Page[ListCrawlOut])
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
+        if description:
+            description = urllib.parse.unquote(description)
+
+        crawls, total = await ops.list_crawls(
+            None,
+            userid=userid,
+            cid=cid,
+            running_only=True,
+            state=state,
+            first_seed=firstSeed,
+            name=name,
+            description=description,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(crawls, total, page)
+
+    @app.get("/orgs/{oid}/crawls", tags=["crawls"])
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
         userid: Optional[UUID4] = None,
         cid: Optional[UUID4] = None,
+        state: Optional[str] = None,
+        firstSeed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
     ):
-        crawls = await ops.list_crawls(org, userid=userid, cid=cid, running_only=False)
-        return paginate(crawls)
+        # pylint: disable=duplicate-code
+        if state:
+            state = state.split(",")
+
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
+        if description:
+            description = urllib.parse.unquote(description)
+
+        crawls, total = await ops.list_crawls(
+            org,
+            userid=userid,
+            cid=cid,
+            running_only=False,
+            state=state,
+            first_seed=firstSeed,
+            name=name,
+            description=description,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(crawls, total, page)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/cancel",
@@ -783,7 +926,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        crawls = await ops.list_crawls(crawl_id=crawl_id)
+        crawls, _ = await ops.list_crawls(crawl_id=crawl_id)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
@@ -795,7 +938,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         response_model=ListCrawlOut,
     )
     async def list_single_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        crawls = await ops.list_crawls(org, crawl_id=crawl_id)
+        crawls, _ = await ops.list_crawls(org, crawl_id=crawl_id)
         if len(crawls) < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
