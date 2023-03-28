@@ -26,7 +26,7 @@ import type { APIPaginatedList } from "../../types/api";
 type Crawls = APIPaginatedList & {
   items: Crawl[];
 };
-type SearchFields = "name" | "firstSeed" | "workflowId";
+type SearchFields = "name" | "firstSeed" | "cid";
 type SearchResult = {
   item: {
     key: SearchFields;
@@ -91,7 +91,7 @@ export class CrawlsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
-    workflowId: msg("Workflow ID"),
+    cid: msg("Workflow ID"),
   };
   @property({ type: Object })
   authState!: AuthState;
@@ -136,10 +136,13 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = false;
 
   @state()
-  private filterByState: CrawlState[] = [];
+  private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private searchBy: string = "";
+  private searchByValue: string = "";
+
+  @state()
+  private searchResultsVisible = false;
 
   @state()
   private crawlToEdit: Crawl | null = null;
@@ -172,7 +175,7 @@ export class CrawlsList extends LiteElement {
       changedProperties.get("crawlsBaseUrl") ||
       changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
-      changedProperties.has("filterByState") ||
+      changedProperties.has("filterBy") ||
       changedProperties.has("orderBy")
     ) {
       if (this.shouldFetch) {
@@ -264,7 +267,19 @@ export class CrawlsList extends LiteElement {
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          <btrix-combobox ?open=${this.searchBy.length >= MIN_SEARCH_LENGTH}>
+          <btrix-combobox
+            ?open=${this.searchResultsVisible}
+            @sl-select=${(e: CustomEvent) => {
+              this.searchResultsVisible = false;
+              const item = e.detail.item as SlMenuItem;
+              const key = item.dataset["key"] as SearchFields;
+              this.searchByValue = item.value;
+              this.filterBy = {
+                ...this.filterBy,
+                [key]: item.value,
+              };
+            }}
+          >
             <sl-input
               size="small"
               placeholder=${msg(
@@ -272,10 +287,13 @@ export class CrawlsList extends LiteElement {
               )}
               clearable
               ?disabled=${!this.crawls?.items.length}
-              value=${this.searchBy}
+              value=${this.searchByValue}
               @sl-clear=${() => {
+                this.searchResultsVisible = false;
                 this.onSearchInput.cancel();
-                this.searchBy = "";
+                this.searchByValue = "";
+                const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
+                this.filterBy = otherFilters;
               }}
               @sl-input=${this.onSearchInput}
             >
@@ -290,13 +308,16 @@ export class CrawlsList extends LiteElement {
             class="flex-1 md:min-w-[14.5rem]"
             size="small"
             pill
-            .value=${this.filterByState}
+            .value=${this.filterBy.state}
             multiple
             max-tags-visible="1"
             placeholder=${msg("All Crawls")}
             @sl-change=${(e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
-              this.filterByState = value;
+              this.filterBy = {
+                ...this.filterBy,
+                state: value,
+              };
             }}
           >
             ${activeCrawlStates.map(this.renderStatusMenuItem)}
@@ -363,14 +384,18 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderSearchResults() {
-    const hasSearchStr = this.searchBy.length >= MIN_SEARCH_LENGTH;
+    const hasSearchStr = this.searchByValue.length >= MIN_SEARCH_LENGTH;
     const searchResults = hasSearchStr
-      ? this.fuse.search(this.searchBy).slice(0, 10)
+      ? this.fuse.search(this.searchByValue).slice(0, 10)
       : [];
     return html`
       ${searchResults.map(
         ({ item }: SearchResult) => html`
-          <sl-menu-item slot="menu-item">
+          <sl-menu-item
+            slot="menu-item"
+            data-key=${item.key}
+            value=${item.value}
+          >
             <span slot="prefix" class="text-xs opacity-60 font-semibold"
               >${msg(str`${CrawlsList.FieldLabels[item.key]}:`)}</span
             >
@@ -402,9 +427,9 @@ export class CrawlsList extends LiteElement {
             <button
               class="text-neutral-500 font-medium underline hover:no-underline"
               @click=${() => {
-                this.filterByState = [];
+                this.filterBy = {};
                 this.onSearchInput.cancel();
-                this.searchBy = "";
+                this.searchByValue = "";
               }}
             >
               ${msg("Clear all filters")}
@@ -530,7 +555,14 @@ export class CrawlsList extends LiteElement {
   };
 
   private onSearchInput = debounce(150)((e: any) => {
-    this.searchBy = e.target.value;
+    this.searchByValue = e.target.value;
+
+    if (
+      this.searchByValue.length >= MIN_SEARCH_LENGTH &&
+      this.searchResultsVisible === false
+    ) {
+      this.searchResultsVisible = true;
+    }
   }) as any;
 
   /**
@@ -573,11 +605,11 @@ export class CrawlsList extends LiteElement {
     }
     const query = queryString.stringify(
       {
+        ...this.filterBy,
         page: queryParams?.page || this.crawls?.page || 1,
         size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
-        // userid: this.filterByCurrentUser ? this.userId : undefined,
-        // state: this.filterByState,
-        // sortBy: this.orderBy.field,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
         // sortDirection: this.orderBy.direction === "desc" ? 0 : 1,
       },
       {
@@ -620,7 +652,7 @@ export class CrawlsList extends LiteElement {
       this.fuse.setCollection([
         ...names.map(toSearchItem("name")),
         ...firstSeeds.map(toSearchItem("firstSeed")),
-        ...workflowIds.map(toSearchItem("workflowId")),
+        ...workflowIds.map(toSearchItem("cid")),
       ] as any);
     } catch (e) {
       console.debug(e);
