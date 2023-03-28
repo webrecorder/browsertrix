@@ -21,6 +21,8 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 from .db import BaseMongoModel
 
+# pylint: disable=too-many-lines
+
 
 # ============================================================================
 class JobType(str, Enum):
@@ -223,7 +225,7 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes,too-many-arguments
+# pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-public-methods
 class CrawlConfigOps:
     """Crawl Config Operations"""
 

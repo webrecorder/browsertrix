@@ -86,7 +86,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
 
 
-def test_update_config_invalid_limit(
+def test_update_config_invalid_format(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
     r = requests.patch(
@@ -95,6 +95,24 @@ def test_update_config_invalid_limit(
         json={
             "config": {
                 "seeds": ["https://example.com/"],
+                "scopeType": "domain",
+                "limit": 10,
+            }
+        },
+    )
+
+    assert r.status_code == 422
+
+
+def test_update_config_invalid_limit(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "seeds": [{"url": "https://example.com/"}],
                 "scopeType": "domain",
                 "limit": 10,
             }
