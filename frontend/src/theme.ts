@@ -56,7 +56,7 @@ const theme = css`
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /* Font weights */
-    --sl-font-weight-medium: 500; // doesn't exist in shoelace
+    --sl-font-weight-medium: 500;
     --sl-font-weight-semibold: 600;
 
     /*
