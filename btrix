@@ -22,67 +22,67 @@
 
 
 bootstrap(){
-	echo "Building backend..."
+    echo "Building backend..."
     ./scripts/build-backend.sh
 
     echo "Building frontend..."
-	./scripts/build-frontend.sh
+    ./scripts/build-frontend.sh
 
-	echo "Installing..."
-	helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+    echo "Installing..."
+    helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
 waitUntilReady(){
-	echo "Waiting until ready..."
-	kubectl wait --for=condition=ready pod --all --timeout=300s
+    echo "Waiting until ready..."
+    kubectl wait --for=condition=ready pod --all --timeout=300s
 }
 
 reset(){
-	echo "Uninstalling..."
-	helm uninstall btrix
+    echo "Uninstalling..."
+    helm uninstall btrix
 
-	echo "Deleting data..."
-	kubectl delete pvc --all
+    echo "Deleting data..."
+    kubectl delete pvc --all
 }
 
 run_tests() {
-	echo "Running backend tests..."
-	python -m pytest backend/test/*.py
+    echo "Running backend tests..."
+    python -m pytest backend/test/*.py
 }
 
 run_nightly_tests() {
-	echo "Running nightly backend tests..."
-	python -m pytest backend/test_nightly/*.py
+    echo "Running nightly backend tests..."
+    python -m pytest backend/test_nightly/*.py
 }
 
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
 if [ $1 = "bootstrap" ]; then
-	bootstrap
+    bootstrap
 
-	if [ $2 = "-wait" ]; then
-		waitUntilReady
-	fi
+    if [ $2 = "-wait" ]; then
+        waitUntilReady
+    fi
 fi
 
 # reset: uninstall, delete data, then bootstrap
 if [ $1 = "reset" ]; then
-	reset
-	bootstrap
+    reset
+    bootstrap
 
-	if [ $2 = "-wait" ]; then
-		waitUntilReady
-	fi
+    if [ $2 = "-wait" ]; then
+        waitUntilReady
+    fi
 fi
 
 # test: run backend tests
 if [ $1 = "test" ]; then
-	run_tests
+    run_tests
 fi
 
 # nightly: run nightly backend tests
 if [ $1 = "nightly" ]; then
-	run_nightly_tests
+    run_nightly_tests
 fi
 
 echo "Done"
