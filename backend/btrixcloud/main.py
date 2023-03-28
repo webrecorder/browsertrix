@@ -54,6 +54,7 @@ def main():
         "defaultBehaviorTimeSeconds": int(
             os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
         ),
+        "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
     }
 
     invites = init_invites(mdb, email)

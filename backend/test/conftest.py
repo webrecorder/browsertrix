@@ -85,7 +85,8 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
-            "limit": 1,
+            # limit now set via 'max_pages_per_crawl' global limit
+            # "limit": 1,
         },
     }
     r = requests.post(
