@@ -57,31 +57,31 @@ run_nightly_tests() {
 
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
-if [ $1 = "bootstrap" ]; then
+if [[ $1 = "bootstrap" ]]; then
     bootstrap
 
-    if [ $2 = "-wait" ]; then
+    if [[ $2 = "-wait" ]]; then
         waitUntilReady
     fi
 fi
 
 # reset: uninstall, delete data, then bootstrap
-if [ $1 = "reset" ]; then
+if [[ $1 = "reset" ]]; then
     reset
     bootstrap
 
-    if [ $2 = "-wait" ]; then
+    if [[ $2 = "-wait" ]]; then
         waitUntilReady
     fi
 fi
 
 # test: run backend tests
-if [ $1 = "test" ]; then
+if [[ $1 = "test" ]]; then
     run_tests
 fi
 
 # nightly: run nightly backend tests
-if [ $1 = "nightly" ]; then
+if [[ $1 = "nightly" ]]; then
     run_nightly_tests
 fi
 
