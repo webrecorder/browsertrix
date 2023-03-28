@@ -26,8 +26,12 @@ import type { APIPaginatedList } from "../../types/api";
 type Crawls = APIPaginatedList & {
   items: Crawl[];
 };
-type CrawlSearchResult = {
-  item: Crawl;
+type SearchFields = "name" | "firstSeed" | "workflowId";
+type SearchResult = {
+  item: {
+    key: SearchFields;
+    value: string;
+  };
 };
 type QueryParams = {
   page?: number;
@@ -84,6 +88,11 @@ function isActive(crawl: Crawl) {
  */
 @localized()
 export class CrawlsList extends LiteElement {
+  static FieldLabels: Record<SearchFields, string> = {
+    name: msg("Name"),
+    firstSeed: msg("Crawl Start URL"),
+    workflowId: msg("Workflow ID"),
+  };
   @property({ type: Object })
   authState!: AuthState;
 
@@ -140,7 +149,7 @@ export class CrawlsList extends LiteElement {
 
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["cid", "configName", "firstSeed"],
+    keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -185,6 +194,13 @@ export class CrawlsList extends LiteElement {
           this.filterByCurrentUser.toString()
         );
       }
+    }
+
+    if (
+      changedProperties.has("crawlsBaseUrl") ||
+      changedProperties.has("crawlsAPIBaseUrl")
+    ) {
+      this.fetchConfigSearchValues();
     }
   }
 
@@ -248,24 +264,25 @@ export class CrawlsList extends LiteElement {
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          <sl-input
-            class="w-full"
-            size="small"
-            slot="trigger"
-            placeholder=${msg(
-              "Search by name, Crawl Start URL, or Workflow ID"
-            )}
-            clearable
-            ?disabled=${!this.crawls?.items.length}
-            value=${this.searchBy}
-            @sl-clear=${() => {
-              this.onSearchInput.cancel();
-              this.searchBy = "";
-            }}
-            @sl-input=${this.onSearchInput}
-          >
-            <sl-icon name="search" slot="prefix"></sl-icon>
-          </sl-input>
+          <btrix-combobox ?open=${this.searchBy.length >= MIN_SEARCH_LENGTH}>
+            <sl-input
+              size="small"
+              placeholder=${msg(
+                "Filter by name, Crawl Start URL, or Workflow ID"
+              )}
+              clearable
+              ?disabled=${!this.crawls?.items.length}
+              value=${this.searchBy}
+              @sl-clear=${() => {
+                this.onSearchInput.cancel();
+                this.searchBy = "";
+              }}
+              @sl-input=${this.onSearchInput}
+            >
+              <sl-icon name="search" slot="prefix"></sl-icon>
+            </sl-input>
+            ${this.renderSearchResults()}
+          </btrix-combobox>
         </div>
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
@@ -342,6 +359,33 @@ export class CrawlsList extends LiteElement {
             </label>
           </div>`
         : ""}
+    `;
+  }
+
+  private renderSearchResults() {
+    const hasSearchStr = this.searchBy.length >= MIN_SEARCH_LENGTH;
+    const searchResults = hasSearchStr
+      ? this.fuse.search(this.searchBy).slice(0, 10)
+      : [];
+    return html`
+      ${searchResults.map(
+        ({ item }: SearchResult) => html`
+          <sl-menu-item slot="menu-item">
+            <span slot="prefix" class="text-xs opacity-60 font-semibold"
+              >${msg(str`${CrawlsList.FieldLabels[item.key]}:`)}</span
+            >
+            ${item.value}
+          </sl-menu-item>
+        `
+      )}
+      ${when(
+        hasSearchStr && !searchResults.length,
+        () => html`
+          <sl-menu-item slot="menu-item" disabled
+            >${msg("No matching crawls found.")}</sl-menu-item
+          >
+        `
+      )}
     `;
   }
 
@@ -485,7 +529,7 @@ export class CrawlsList extends LiteElement {
     return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
   };
 
-  private onSearchInput = debounce(200)((e: any) => {
+  private onSearchInput = debounce(150)((e: any) => {
     this.searchBy = e.target.value;
   }) as any;
 
@@ -500,8 +544,6 @@ export class CrawlsList extends LiteElement {
       const crawls = await this.getCrawls(params);
 
       this.crawls = crawls;
-      // Update search/filter collection
-      this.fuse.setCollection(this.crawls as any);
     } catch (e: any) {
       if (e === ABORT_REASON_THROTTLE) {
         console.debug("Fetch crawls aborted to throttle");
@@ -533,10 +575,10 @@ export class CrawlsList extends LiteElement {
       {
         page: queryParams?.page || this.crawls?.page || 1,
         size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userId : undefined,
-        state: this.filterByState,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? 0 : 1,
+        // userid: this.filterByCurrentUser ? this.userId : undefined,
+        // state: this.filterByState,
+        // sortBy: this.orderBy.field,
+        // sortDirection: this.orderBy.direction === "desc" ? 0 : 1,
       },
       {
         arrayFormat: "comma",
@@ -556,6 +598,33 @@ export class CrawlsList extends LiteElement {
     this.lastFetched = Date.now();
 
     return data;
+  }
+
+  private async fetchConfigSearchValues() {
+    const oid = (this.crawlsAPIBaseUrl || this.crawlsBaseUrl)
+      .split("/orgs/")[1]
+      .split("/")[0];
+    try {
+      const { names, firstSeeds, workflowIds } = await this.apiFetch(
+        `/orgs/${oid}/crawlconfigs/search-values`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem =
+        (key: SearchFields) =>
+        (value: string): SearchResult["item"] => ({
+          key,
+          value,
+        });
+      this.fuse.setCollection([
+        ...names.map(toSearchItem("name")),
+        ...firstSeeds.map(toSearchItem("firstSeed")),
+        ...workflowIds.map(toSearchItem("workflowId")),
+      ] as any);
+    } catch (e) {
+      console.debug(e);
+    }
   }
 
   private async cancel(crawl: Crawl) {
