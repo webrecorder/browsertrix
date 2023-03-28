@@ -47,7 +47,7 @@ export class Button extends LitElement {
       justify-content: center;
       border-radius: var(--sl-border-radius-small);
       box-sizing: border-box;
-      font-weight: 600;
+      font-weight: 500;
       text-align: center;
       cursor: pointer;
       transform: translateY(0px);

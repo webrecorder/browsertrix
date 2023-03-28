@@ -100,7 +100,7 @@ export class Pagination extends LitElement {
         margin: 0 var(--sl-spacing-x-small);
         align-items: center;
         align-items: center;
-        font-weight: 600;
+        font-weight: 500;
         transition: opacity 0.2s;
         min-height: 1.5rem;
         min-width: 1.5rem;
