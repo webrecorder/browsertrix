@@ -8,9 +8,9 @@ hide:
 
 Welcome to the Browsertrix Cloud official user guide and developer docs. These docs will contain the following sections.
 
-- [Developer Docs](./develop) - Information on developing Browsertrix Cloud itself.
-    - [Deployment Guide](./develop/deploy) - How to install and deploy Browsertrix Cloud on your local machine, or in the cloud.
-- [User Guide](./user-guide) - Instructions and reference for using Browsertrix Cloud.
+- [Deployment Guide](./develop/deploy) — How to install and deploy Browsertrix Cloud on your local machine, or in the cloud.
+- [Developer Docs](./develop) — Information on developing Browsertrix Cloud itself.
+- [User Guide](./user-guide) — Instructions and reference for using Browsertrix Cloud.
 
 If you are unfamiliar with Browsertrix Cloud, please check out [our website](https://browsertrix.cloud), or the main repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud)
 
