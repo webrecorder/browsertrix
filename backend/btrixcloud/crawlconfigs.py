@@ -7,7 +7,6 @@ from enum import Enum
 import uuid
 import asyncio
 import re
-import os
 from datetime import datetime
 import urllib.parse
 
