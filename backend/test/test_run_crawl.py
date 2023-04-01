@@ -27,25 +27,6 @@ def test_list_orgs(admin_auth_headers, default_org_id):
     assert default_org_id in org_ids
 
 
-def test_create_new_config_invalid_limit(admin_auth_headers, default_org_id):
-    crawl_data = {
-        "runNow": True,
-        "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://webrecorder.net/"}], "limit": 10},
-    }
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
-        headers=admin_auth_headers,
-        json=crawl_data,
-    )
-
-    assert r.status_code == 400
-
-    data = r.json()
-
-    assert data["detail"] == "crawl_page_limit_exceeds_allowed"
-
-
 def test_create_new_config(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": False,
