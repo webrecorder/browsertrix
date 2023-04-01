@@ -249,8 +249,6 @@ class CrawlConfigOps:
         self.coll_ops = None
         self._file_rx = re.compile("\\W+")
 
-        self.max_pages_per_crawl = int(os.environ.get("MAX_PAGES_PER_CRAWL", 0))
-
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
         self.crawl_ops = ops
@@ -300,8 +298,6 @@ class CrawlConfigOps:
         user: User,
     ):
         """Add new crawl config"""
-
-        self.validate_crawl_limit(config.config)
 
         data = config.dict()
         data["oid"] = org.id
@@ -368,8 +364,6 @@ class CrawlConfigOps:
         orig_crawl_config = await self.get_crawl_config(cid, org)
         if not orig_crawl_config:
             raise HTTPException(status_code=400, detail="config_not_found")
-
-        self.validate_crawl_limit(update.config)
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -866,18 +860,6 @@ class CrawlConfigOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
-
-    def validate_crawl_limit(self, config: Optional[RawCrawlConfig]):
-        """Ensure max pages per crawl limit is not exceeded.
-        Set limit if not provided. if provided config exceeds limit, raise exception
-        """
-        if config and self.max_pages_per_crawl:
-            if config.limit <= 0:
-                config.limit = self.max_pages_per_crawl
-            elif config.limit > self.max_pages_per_crawl:
-                raise HTTPException(
-                    status_code=400, detail="crawl_page_limit_exceeds_allowed"
-                )
 
 
 # ============================================================================
