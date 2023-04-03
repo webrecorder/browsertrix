@@ -483,7 +483,7 @@ def init_users_api(app, user_manager):
         pending_invites, total = await user_manager.invites.get_pending_invites(
             page_size=pageSize, page=page
         )
-        return paginated_format(pending_invites, total, page)
+        return paginated_format(pending_invites, total, page, pageSize)
 
     app.include_router(users_router, prefix="/users", tags=["users"])
 

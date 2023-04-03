@@ -810,7 +810,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
-        return paginated_format(crawls, total, page)
+        return paginated_format(crawls, total, page, pageSize)
 
     @app.get("/orgs/{oid}/crawls", tags=["crawls"])
     async def list_crawls(
@@ -853,7 +853,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
-        return paginated_format(crawls, total, page)
+        return paginated_format(crawls, total, page, pageSize)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/cancel",

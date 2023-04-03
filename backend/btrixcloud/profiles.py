@@ -421,7 +421,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
         profiles, total = await ops.list_profiles(
             org, userid, page_size=pageSize, page=page
         )
-        return paginated_format(profiles, total, page)
+        return paginated_format(profiles, total, page, pageSize)
 
     @router.post("", response_model=Profile)
     async def commit_browser_to_new(

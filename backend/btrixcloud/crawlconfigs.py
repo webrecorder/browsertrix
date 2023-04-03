@@ -933,7 +933,7 @@ def init_crawl_config_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
-        return paginated_format(crawl_configs, total, page)
+        return paginated_format(crawl_configs, total, page, pageSize)
 
     @router.get("/tags")
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
@@ -954,12 +954,12 @@ def init_crawl_config_api(
         dependencies=[Depends(org_viewer_dep)],
     )
     async def get_crawl_config_revisions(
-        cid: str, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+        cid: str, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
     ):
         revisions, total = await ops.get_crawl_config_revs(
-            uuid.UUID(cid), page_size=page_size, page=page
+            uuid.UUID(cid), page_size=pageSize, page=page
         )
-        return paginated_format(revisions, total, page)
+        return paginated_format(revisions, total, page, pageSize)
 
     @router.post("/")
     async def add_crawl_config(
