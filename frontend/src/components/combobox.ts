@@ -1,5 +1,10 @@
 import { LitElement, html, css } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import {
+  state,
+  property,
+  query,
+  queryAssignedElements,
+} from "lit/decorators.js";
 import {
   SlInput,
   SlMenu,
@@ -45,6 +50,12 @@ export class Combobox extends LitElement {
   @query("sl-popup")
   private combobox?: SlPopup;
 
+  @queryAssignedElements({
+    slot: "menu-item",
+    selector: "sl-menu-item:not([disabled])",
+  })
+  private menuItems?: SlMenuItem[];
+
   protected willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open")) {
       if (this.open) {
@@ -63,6 +74,8 @@ export class Combobox extends LitElement {
         sync="width"
         strategy="fixed"
         ?active=${this.isActive}
+        @keydown=${this.onKeydown}
+        @keyup=${this.onKeyup}
       >
         <div slot="anchor" @focusout=${this.onFocusout}>
           <slot></slot>
@@ -91,12 +104,31 @@ export class Combobox extends LitElement {
   }
 
   private async onFocusout(e: FocusEvent) {
-    const currentTarget = e.currentTarget as HTMLDivElement;
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (
       this.open &&
-      (!relatedTarget || !currentTarget.contains(relatedTarget))
+      (!relatedTarget ||
+        !this.menuItems?.some((item) => item === relatedTarget))
     ) {
+      await this.updateComplete;
+      this.dispatchEvent(new CustomEvent("request-close"));
+    }
+  }
+
+  private onKeydown(e: KeyboardEvent) {
+    if (this.open && e.key === "ArrowDown") {
+      if (this.menu && this.menuItems?.length && !this.menu.getCurrentItem()) {
+        // Focus on first menu item
+        e.preventDefault();
+        const menuItem = this.menuItems[0];
+        this.menu!.setCurrentItem(menuItem);
+        menuItem.focus();
+      }
+    }
+  }
+
+  private async onKeyup(e: KeyboardEvent) {
+    if (this.open && e.key === "Escape") {
       await this.updateComplete;
       this.dispatchEvent(new CustomEvent("request-close"));
     }

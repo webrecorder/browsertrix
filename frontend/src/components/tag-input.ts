@@ -372,6 +372,7 @@ export class TagInput extends LitElement {
     this.addTags([input.value]);
   }
 
+  // TODO consolidate with btrix-combobox
   private onKeydown(e: KeyboardEvent) {
     if (this.dropdownIsOpen && (e.key === "ArrowDown" || e.key === "Tab")) {
       e.preventDefault();
@@ -430,6 +431,7 @@ export class TagInput extends LitElement {
     );
   }) as any;
 
+  // TODO consolidate with btrix-combobox
   private onKeyup(e: KeyboardEvent) {
     const input = e.target as HTMLInputElement;
     if (e.key === "Escape") {
