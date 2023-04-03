@@ -420,7 +420,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         serialized_results = [
             await res.serialize_for_user(user, user_manager) for res in results
         ]
-        return paginated_format(serialized_results, total, page)
+        return paginated_format(serialized_results, total, page, pageSize)
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
@@ -517,7 +517,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         pending_invites, total = await user_manager.invites.get_pending_invites(
             org, page_size=pageSize, page=page
         )
-        return paginated_format(pending_invites, total, page)
+        return paginated_format(pending_invites, total, page, pageSize)
 
     @router.post("/invites/delete", tags=["invites"])
     async def delete_invite(
