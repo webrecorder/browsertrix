@@ -17,7 +17,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
-import type { APIPaginatedList } from "../../types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -28,10 +28,6 @@ type SearchResult = {
     key: SearchFields;
     value: string;
   };
-};
-type QueryParams = {
-  page?: number;
-  size?: number;
 };
 type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -188,7 +184,7 @@ export class CrawlsList extends LiteElement {
 
         this.fetchCrawls({
           page: 1,
-          size: INITIAL_PAGE_SIZE,
+          pageSize: INITIAL_PAGE_SIZE,
         });
       } else {
         this.cancelInProgressGetCrawls();
@@ -224,6 +220,8 @@ export class CrawlsList extends LiteElement {
       </div>`;
     }
 
+    const hasCrawlItems = this.crawls.items.length;
+
     return html`
       <main>
         <header class="contents">
@@ -237,10 +235,26 @@ export class CrawlsList extends LiteElement {
           </div>
         </header>
         <section>
-          ${this.crawls.items.length
-            ? this.renderCrawlList()
-            : this.renderEmptyState()}
+          ${hasCrawlItems ? this.renderCrawlList() : this.renderEmptyState()}
         </section>
+
+        ${when(
+          hasCrawlItems || this.crawls.page > 1,
+          () => html`
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                page=${this.crawls!.page}
+                totalCount=${this.crawls!.total}
+                size=${this.crawls!.pageSize}
+                @page-change=${(e: PageChangeEvent) => {
+                  this.fetchCrawls({
+                    page: e.detail.page,
+                  });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        )}
       </main>
     `;
   }
@@ -439,19 +453,6 @@ export class CrawlsList extends LiteElement {
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 
-      <footer class="mt-6 flex justify-center">
-        <btrix-pagination
-          page=${this.crawls.page}
-          totalCount=${this.crawls.total}
-          size=${this.crawls.size}
-          @page-change=${(e: PageChangeEvent) => {
-            this.fetchCrawls({
-              page: e.detail.page,
-            });
-          }}
-        ></btrix-pagination>
-      </footer>
-
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
         .crawl=${this.crawlToEdit}
@@ -591,6 +592,16 @@ export class CrawlsList extends LiteElement {
       `;
     }
 
+    if (this.crawls?.page && this.crawls?.page > 1) {
+      return html`
+        <div class="border-t border-b py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("Could not find page.")}
+          </p>
+        </div>
+      `;
+    }
+
     return html`
       <div class="border-t border-b py-5">
         <p class="text-center text-neutral-500">${msg("No crawls yet.")}</p>
@@ -609,7 +620,7 @@ export class CrawlsList extends LiteElement {
   /**
    * Fetch crawls and update internal state
    */
-  private async fetchCrawls(params?: QueryParams): Promise<void> {
+  private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
     if (!this.shouldFetch) return;
 
     this.cancelInProgressGetCrawls();
@@ -643,12 +654,13 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async getCrawls(queryParams?: QueryParams): Promise<Crawls> {
+  private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
     const query = queryString.stringify(
       {
         ...this.filterBy,
         page: queryParams?.page || this.crawls?.page || 1,
-        size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userId : undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,

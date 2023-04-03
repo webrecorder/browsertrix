@@ -2,5 +2,10 @@ export type APIPaginatedList = {
   items: any[];
   total: number;
   page: number;
-  size: number;
+  pageSize: number;
+};
+
+export type APIPaginationQuery = {
+  page?: number;
+  pageSize?: number;
 };

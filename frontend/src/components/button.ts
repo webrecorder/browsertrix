@@ -64,6 +64,7 @@ export class Button extends LitElement {
     button.icon {
       min-width: 1.5rem;
       min-height: 1.5rem;
+      padding: 0 var(--sl-spacing-2x-small);
     }
 
     .raised {

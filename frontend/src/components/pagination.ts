@@ -111,7 +111,7 @@ export class Pagination extends LitElement {
       }
 
       .navButton:not([disabled]):hover {
-        /* opacity: 0.6; */
+        opacity: 0.8;
       }
 
       .chevron {
@@ -156,7 +156,7 @@ export class Pagination extends LitElement {
   }
 
   render() {
-    if (!this.pages) {
+    if (this.pages < 2) {
       return;
     }
 
