@@ -361,6 +361,7 @@ export class CrawlsList extends LiteElement {
         ?open=${this.searchResultsOpen}
         @request-close=${() => {
           this.searchResultsOpen = false;
+          this.searchByValue = "";
         }}
         @sl-select=${async (e: CustomEvent) => {
           this.searchResultsOpen = false;

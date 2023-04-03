@@ -51,6 +51,11 @@ export class Combobox extends LitElement {
   private combobox?: SlPopup;
 
   @queryAssignedElements({
+    flatten: true,
+  })
+  private anchor?: HTMLElement[];
+
+  @queryAssignedElements({
     slot: "menu-item",
     selector: "sl-menu-item:not([disabled])",
   })
@@ -76,8 +81,9 @@ export class Combobox extends LitElement {
         ?active=${this.isActive}
         @keydown=${this.onKeydown}
         @keyup=${this.onKeyup}
+        @focusout=${this.onFocusout}
       >
-        <div slot="anchor" @focusout=${this.onFocusout}>
+        <div slot="anchor">
           <slot></slot>
         </div>
         <div
@@ -105,9 +111,13 @@ export class Combobox extends LitElement {
 
   private async onFocusout(e: FocusEvent) {
     const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!this.open) {
+      return;
+    }
+
     if (
-      this.open &&
-      (!relatedTarget ||
+      !relatedTarget ||
+      (!this.anchor?.some((item) => item === relatedTarget) &&
         !this.menuItems?.some((item) => item === relatedTarget))
     ) {
       await this.updateComplete;
