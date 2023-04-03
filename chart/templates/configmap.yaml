@@ -69,7 +69,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  CRAWL_ARGS: "{{ .Values.crawler_args }} --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --healthCheckPort {{ .Values.crawler_liveness_port }}"
+  CRAWL_ARGS: "{{ .Values.crawler_args }} --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }}"
 
 ---
 apiVersion: v1
