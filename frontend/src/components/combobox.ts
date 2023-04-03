@@ -16,6 +16,8 @@ import { dropdown } from "../utils/css";
  * Usage:
  * ```ts
  * ```
+ *
+ * @event request-close
  */
 export class Combobox extends LitElement {
   static styles = [dropdown, css``];
@@ -53,7 +55,7 @@ export class Combobox extends LitElement {
         sync="width"
         ?active=${this.isActive}
       >
-        <div slot="anchor">
+        <div slot="anchor" @focusout=${this.onFocusout}>
           <slot></slot>
         </div>
         <div
@@ -77,6 +79,17 @@ export class Combobox extends LitElement {
         </div>
       </sl-popup>
     `;
+  }
+
+  private onFocusout(e: FocusEvent) {
+    const currentTarget = e.currentTarget as HTMLDivElement;
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (
+      this.open &&
+      (!relatedTarget || !currentTarget.contains(relatedTarget))
+    ) {
+      this.dispatchEvent(new CustomEvent("request-close"));
+    }
   }
 
   private async openDropdown() {

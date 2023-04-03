@@ -163,6 +163,10 @@ export class CrawlsList extends LiteElement {
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
+  private get hasSearchStr() {
+    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+  }
+
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -270,6 +274,9 @@ export class CrawlsList extends LiteElement {
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <btrix-combobox
             ?open=${this.searchResultsOpen}
+            @request-close=${() => {
+              this.searchResultsOpen = false;
+            }}
             @sl-select=${(e: CustomEvent) => {
               this.searchResultsOpen = false;
               const item = e.detail.item as SlMenuItem;
@@ -296,6 +303,11 @@ export class CrawlsList extends LiteElement {
                 this.filterBy = otherFilters;
               }}
               @sl-input=${this.onSearchInput}
+              @focus=${() => {
+                if (this.hasSearchStr) {
+                  this.searchResultsOpen = true;
+                }
+              }}
             >
               <sl-icon name="search" slot="prefix"></sl-icon>
             </sl-input>
@@ -384,8 +396,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderSearchResults() {
-    const hasSearchStr = this.searchByValue.length >= MIN_SEARCH_LENGTH;
-    if (!hasSearchStr) {
+    if (!this.hasSearchStr) {
       return html`
         <sl-menu-item slot="menu-item" disabled
           >${msg("Start typing to view crawl filters.")}</sl-menu-item
@@ -563,10 +574,7 @@ export class CrawlsList extends LiteElement {
   private onSearchInput = debounce(150)((e: any) => {
     this.searchByValue = e.target.value;
 
-    if (
-      this.searchResultsOpen === false &&
-      this.searchByValue.length >= MIN_SEARCH_LENGTH
-    ) {
+    if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
   }) as any;

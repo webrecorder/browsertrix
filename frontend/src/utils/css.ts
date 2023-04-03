@@ -48,6 +48,7 @@ export const dropdown = css`
   .dropdown {
     contain: content;
     transform-origin: top left;
+    box-shadow: var(--sl-shadow-medium);
   }
 
   .hidden {

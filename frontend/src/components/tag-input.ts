@@ -30,6 +30,8 @@ export type TagInputEvent = CustomEvent<{
  * ></btrix-tag-input>
  * ```
  *
+ * @TODO consolidate with btrix-combobox
+ *
  * @events tag-input
  * @events tags-change
  */
