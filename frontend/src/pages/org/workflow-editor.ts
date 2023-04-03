@@ -220,7 +220,9 @@ export class CrawlConfigEditor extends LiteElement {
   private progressState!: ProgressState;
 
   @state()
-  private defaultBehaviorTimeoutMinutes?: number;
+  private orgDefaults = {
+    behaviorTimeoutMinutes: DEFAULT_BEHAVIOR_TIMEOUT_MINUTES,
+  };
 
   @state()
   private formState!: FormState;
@@ -1195,9 +1197,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
             this.formState.pageTimeoutMinutes ??
-              this.defaultBehaviorTimeoutMinutes
+              this.orgDefaults.behaviorTimeoutMinutes
           )}
-          ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          ?disabled=${this.orgDefaults.behaviorTimeoutMinutes === undefined}
           min="1"
           required
         >
@@ -1928,7 +1930,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : this.parseUrlListConfig()),
         behaviorTimeout:
           (this.formState.pageTimeoutMinutes ??
-            this.defaultBehaviorTimeoutMinutes ??
+            this.orgDefaults.behaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
@@ -1943,7 +1945,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private parseUrlListConfig(): NewCrawlConfigParams["config"] {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        const newSeed: Seed = { url: seedUrl, scopeType: "page" };
         return newSeed;
       }),
       scopeType: "page" as FormState["scopeType"],
@@ -1960,9 +1962,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
-        return newSeed;
-      })
+          const newSeed: Seed = { url: seedUrl, scopeType: "page" };
+          return newSeed;
+        })
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
@@ -2016,18 +2018,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async fetchAPIDefaults() {
+    const orgDefaults = { ...this.orgDefaults };
     try {
       const data = await this.apiFetch("/settings", this.authState!);
       if (data.defaultBehaviorTimeSeconds) {
-        this.defaultBehaviorTimeoutMinutes =
+        orgDefaults.behaviorTimeoutMinutes =
           data.defaultBehaviorTimeSeconds / 60;
-      } else {
-        this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
       }
     } catch (e: any) {
       console.debug(e);
-      this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
     }
+    this.orgDefaults = orgDefaults;
   }
 }
 
