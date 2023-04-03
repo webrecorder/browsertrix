@@ -192,6 +192,7 @@ const urlListToArray = flow(
   trimArray
 );
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
+const DEFAULT_MAX_PAGES_PER_CRAWL = 100 * 1000;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -222,6 +223,7 @@ export class CrawlConfigEditor extends LiteElement {
   @state()
   private orgDefaults = {
     behaviorTimeoutMinutes: DEFAULT_BEHAVIOR_TIMEOUT_MINUTES,
+    maxPagesPerCrawl: DEFAULT_MAX_PAGES_PER_CRAWL,
   };
 
   @state()
@@ -1174,14 +1176,38 @@ https://archiveweb.page/images/${"logo.svg"}`}
             type="number"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
-            placeholder=${msg("Unlimited")}
+            max=${this.orgDefaults.maxPagesPerCrawl}
+            placeholder=${msg("Maximum Allowed")}
+            @sl-input=${async (e: CustomEvent) => {
+              const inputEl = e.target as SlInput;
+              await inputEl.updateComplete;
+              let helpText = "";
+              if (inputEl.invalid) {
+                const value = +inputEl.value;
+                if (value < minPages) {
+                  helpText =
+                    minPages === 1
+                      ? msg(
+                          str`Minimum ${minPages.toLocaleString()} page per crawl`
+                        )
+                      : msg(
+                          str`Minimum ${minPages.toLocaleString()} pages per crawl`
+                        );
+                } else if (value > this.orgDefaults.maxPagesPerCrawl) {
+                  helpText =
+                    this.orgDefaults.maxPagesPerCrawl === 1
+                      ? msg(
+                          str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} page per crawl`
+                        )
+                      : msg(
+                          str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages per crawl`
+                        );
+                }
+              }
+              inputEl.helpText = helpText;
+            }}
           >
             <span slot="suffix">${msg("pages")}</span>
-            <div slot="help-text">
-              ${minPages === 1
-                ? msg(str`Minimum ${minPages} page`)
-                : msg(str`Minimum ${minPages} pages`)}
-            </div>
           </sl-input>
         </sl-mutation-observer>
       `)}
@@ -2024,6 +2050,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (data.defaultBehaviorTimeSeconds) {
         orgDefaults.behaviorTimeoutMinutes =
           data.defaultBehaviorTimeSeconds / 60;
+      }
+      if (data.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
     } catch (e: any) {
       console.debug(e);
