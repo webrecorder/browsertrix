@@ -192,7 +192,7 @@ const urlListToArray = flow(
   trimArray
 );
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
-const DEFAULT_MAX_PAGES_PER_CRAWL = 100 * 1000;
+const DEFAULT_MAX_PAGES_PER_CRAWL = Infinity;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -1177,7 +1177,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             value=${this.formState.pageLimit || ""}
             min=${minPages}
             max=${this.orgDefaults.maxPagesPerCrawl}
-            placeholder=${msg("Maximum Allowed")}
+            placeholder=${this.orgDefaults.maxPagesPerCrawl === Infinity
+              ? msg("Unlimited")
+              : this.orgDefaults.maxPagesPerCrawl.toLocaleString()}
             @sl-input=${async (e: CustomEvent) => {
               const inputEl = e.target as SlInput;
               await inputEl.updateComplete;
