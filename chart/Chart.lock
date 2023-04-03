@@ -2,5 +2,8 @@ dependencies:
 - name: btrix-admin-logging
   repository: file://./admin/logging
   version: 0.1.0
-digest: sha256:a62579385835818c52ddc8c59d6ec5a17800e60b71a2e75b3a85a02c262bb385
-generated: "2023-01-03T00:22:20.096291-08:00"
+- name: btrix-operator
+  repository: file://./admin/operator
+  version: 0.1.0
+digest: sha256:2b5520763f578c96c2db6d37686eaa2748b71e1ff12b3e5508a7bdd59bcea071
+generated: "2023-04-03T15:39:31.597051233-07:00"

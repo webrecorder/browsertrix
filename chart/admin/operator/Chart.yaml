@@ -1,7 +1,7 @@
 apiVersion: v2
 name: btrix-operator
 description: A Helm chart for installing Metacontroller and a custom CompositeController
-version: 1.0.0
+version: 0.1.0
 appVersion: 0.1.0
 
 dependencies:
