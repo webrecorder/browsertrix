@@ -656,7 +656,7 @@ export class CrawlsList extends LiteElement {
         size: queryParams?.size || this.crawls?.size || INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userId : undefined,
         sortBy: this.orderBy.field,
-        // sortDirection: this.orderBy.direction === "desc" ? 0 : 1,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },
       {
         arrayFormat: "comma",
