@@ -246,19 +246,6 @@ export class CrawlsList extends LiteElement {
             ? this.renderCrawlList()
             : this.renderEmptyState()}
         </section>
-
-        <footer class="mt-6 flex justify-center">
-          <btrix-pagination
-            page=${this.crawls.page}
-            totalCount=${this.crawls.total}
-            size=${this.crawls.size}
-            @page-change=${(e: PageChangeEvent) => {
-              this.fetchCrawls({
-                page: e.detail.page,
-              });
-            }}
-          ></btrix-pagination>
-        </footer>
       </main>
     `;
   }
@@ -456,6 +443,19 @@ export class CrawlsList extends LiteElement {
       <btrix-crawl-list>
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
+
+      <footer class="mt-6 flex justify-center">
+        <btrix-pagination
+          page=${this.crawls.page}
+          totalCount=${this.crawls.total}
+          size=${this.crawls.size}
+          @page-change=${(e: PageChangeEvent) => {
+            this.fetchCrawls({
+              page: e.detail.page,
+            });
+          }}
+        ></btrix-pagination>
+      </footer>
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
