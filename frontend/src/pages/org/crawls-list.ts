@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -151,6 +151,9 @@ export class CrawlsList extends LiteElement {
   @state()
   private isEditingCrawl = false;
 
+  @query("#stateSelect")
+  stateSelect?: SlSelect;
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     keys: ["value"],
@@ -261,7 +264,6 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderControls() {
-    console.log("this.filterBy.state:", this.filterBy.state);
     return html`
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
@@ -272,6 +274,7 @@ export class CrawlsList extends LiteElement {
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
           <sl-select
+            id="stateSelect"
             class="flex-1 md:min-w-[14.5rem]"
             size="small"
             pill
@@ -280,7 +283,6 @@ export class CrawlsList extends LiteElement {
             placeholder=${msg("All Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
-              console.log("value:", value);
               await this.updateComplete;
               this.filterBy = {
                 ...this.filterBy,
@@ -579,6 +581,12 @@ export class CrawlsList extends LiteElement {
                 this.filterBy = {};
                 this.onSearchInput.cancel();
                 this.searchByValue = "";
+                if (this.stateSelect) {
+                  // TODO pass in value to sl-select after upgrading
+                  // shoelace to >=2.0.0-beta.88. Passing an array value
+                  // using beta.85 is currently buggy.
+                  this.stateSelect.value = [];
+                }
               }}
             >
               ${msg("Clear all filters")}
