@@ -78,7 +78,7 @@ type FormState = {
   includeLinkedPages: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
-  pageTimeoutMinutes: number | null;
+  behaviorTimeoutMinutes: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -144,7 +144,7 @@ const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
-  pageTimeoutMinutes: null,
+  behaviorTimeoutMinutes: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: undefined,
@@ -460,7 +460,7 @@ export class CrawlConfigEditor extends LiteElement {
       formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
     }
     if (typeof seedsConfig.behaviorTimeout === "number") {
-      formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
+      formState.behaviorTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
@@ -468,7 +468,7 @@ export class CrawlConfigEditor extends LiteElement {
       urlList: "",
       customIncludeUrlList: "",
       crawlTimeoutMinutes: null,
-      pageTimeoutMinutes: null,
+      behaviorTimeoutMinutes: null,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1216,12 +1216,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageTimeoutMinutes"
+          name="behaviorTimeoutMinutes"
           type="number"
-          label=${msg("Page Time Limit")}
+          label=${msg("Behavior Timeout")}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
-            this.formState.pageTimeoutMinutes ??
+            this.formState.behaviorTimeoutMinutes ??
               this.orgDefaults.behaviorTimeoutMinutes
           )}
           ?disabled=${this.orgDefaults.behaviorTimeoutMinutes === undefined}
@@ -1232,8 +1232,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Adds a hard time limit for how long the crawler can spend on a
-        single webpage.`)
+        msg(`Behaviors will stop running after this amount of time.`)
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1549,8 +1548,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ? msg(
             "There are issues with this Workflow. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this Workflow:<br /><br />Crawl
-            URL(s) required in
+        : msg(html`There is an issue with this Workflow:<br /><br />Crawl URL(s)
+            required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
             >. <br /><br />
@@ -1954,7 +1953,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
         behaviorTimeout:
-          (this.formState.pageTimeoutMinutes ??
+          (this.formState.behaviorTimeoutMinutes ??
             this.orgDefaults.behaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
