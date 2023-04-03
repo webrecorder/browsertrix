@@ -1,4 +1,3 @@
-import type { TemplateResult } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -9,9 +8,6 @@ import type {
   SlSelect,
 } from "@shoelace-style/shoelace";
 import debounce from "lodash/fp/debounce";
-import flow from "lodash/fp/flow";
-import map from "lodash/fp/map";
-import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 
@@ -22,7 +18,6 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList } from "../../types/api";
-import { F } from "lodash/fp";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -42,7 +37,7 @@ type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const INITIAL_PAGE_SIZE = 1;
+const INITIAL_PAGE_SIZE = 50;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
