@@ -20,7 +20,15 @@ import { dropdown } from "../utils/css";
  * @event request-close
  */
 export class Combobox extends LitElement {
-  static styles = [dropdown, css``];
+  static styles = [
+    dropdown,
+    css`
+      :host {
+        position: relative;
+        z-index: 2;
+      }
+    `,
+  ];
 
   @property({ type: Boolean })
   open = false;
@@ -53,6 +61,7 @@ export class Combobox extends LitElement {
         placement="bottom-start"
         shift
         sync="width"
+        strategy="fixed"
         ?active=${this.isActive}
       >
         <div slot="anchor" @focusout=${this.onFocusout}>
