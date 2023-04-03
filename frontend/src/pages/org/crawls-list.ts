@@ -161,6 +161,12 @@ export class CrawlsList extends LiteElement {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
+  private get selectedSearchFilterKey() {
+    return Object.keys(CrawlsList.FieldLabels).find((key) =>
+      Boolean((this.filterBy as any)[key])
+    );
+  }
+
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -350,9 +356,6 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderSearch() {
-    const selectedFilterKey = Object.keys(CrawlsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key])
-    );
     return html`
       <btrix-combobox
         ?open=${this.searchResultsOpen}
@@ -390,7 +393,7 @@ export class CrawlsList extends LiteElement {
           }}
         >
           ${when(
-            selectedFilterKey,
+            this.selectedSearchFilterKey,
             () =>
               html`<sl-tag
                 slot="prefix"
@@ -398,7 +401,7 @@ export class CrawlsList extends LiteElement {
                 pill
                 style="margin-left: var(--sl-spacing-3x-small)"
                 >${CrawlsList.FieldLabels[
-                  selectedFilterKey as SearchFields
+                  this.selectedSearchFilterKey as SearchFields
                 ]}</sl-tag
               >`,
             () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
@@ -610,10 +613,20 @@ export class CrawlsList extends LiteElement {
   }
 
   private onSearchInput = debounce(150)((e: any) => {
-    this.searchByValue = e.target.value;
+    this.searchByValue = e.target.value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
+    }
+
+    if (!this.searchByValue && this.selectedSearchFilterKey) {
+      const {
+        [this.selectedSearchFilterKey as SearchFields]: _,
+        ...otherFilters
+      } = this.filterBy;
+      this.filterBy = {
+        ...otherFilters,
+      };
     }
   }) as any;
 
