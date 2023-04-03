@@ -81,13 +81,14 @@ export class Combobox extends LitElement {
     `;
   }
 
-  private onFocusout(e: FocusEvent) {
+  private async onFocusout(e: FocusEvent) {
     const currentTarget = e.currentTarget as HTMLDivElement;
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (
       this.open &&
       (!relatedTarget || !currentTarget.contains(relatedTarget))
     ) {
+      await this.updateComplete;
       this.dispatchEvent(new CustomEvent("request-close"));
     }
   }

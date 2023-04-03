@@ -193,7 +193,7 @@ export class CrawlsList extends LiteElement {
           size: INITIAL_PAGE_SIZE,
         });
       } else {
-        this.stopPollTimer();
+        this.cancelInProgressGetCrawls();
       }
 
       if (changedProperties.has("filterByCurrentUser")) {
@@ -213,7 +213,7 @@ export class CrawlsList extends LiteElement {
   }
 
   disconnectedCallback(): void {
-    this.stopPollTimer();
+    this.cancelInProgressGetCrawls();
     super.disconnectedCallback();
   }
 
@@ -241,13 +241,7 @@ export class CrawlsList extends LiteElement {
         <section>
           ${this.crawls.items.length
             ? this.renderCrawlList()
-            : html`
-                <div class="border-t border-b py-5">
-                  <p class="text-center text-neutral-500">
-                    ${msg("No crawls yet.")}
-                  </p>
-                </div>
-              `}
+            : this.renderEmptyState()}
         </section>
 
         <footer class="mt-6 flex justify-center">
@@ -267,52 +261,13 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderControls() {
+    console.log("this.filterBy.state:", this.filterBy.state);
     return html`
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          <btrix-combobox
-            ?open=${this.searchResultsOpen}
-            @request-close=${() => {
-              this.searchResultsOpen = false;
-            }}
-            @sl-select=${(e: CustomEvent) => {
-              this.searchResultsOpen = false;
-              const item = e.detail.item as SlMenuItem;
-              const key = item.dataset["key"] as SearchFields;
-              this.searchByValue = item.value;
-              this.filterBy = {
-                ...this.filterBy,
-                [key]: item.value,
-              };
-            }}
-          >
-            <sl-input
-              size="small"
-              placeholder=${msg(
-                "Filter by name, Crawl Start URL, or Workflow ID"
-              )}
-              clearable
-              ?disabled=${!this.crawls?.items.length}
-              value=${this.searchByValue}
-              @sl-clear=${() => {
-                this.searchResultsOpen = false;
-                this.onSearchInput.cancel();
-                const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
-                this.filterBy = otherFilters;
-              }}
-              @sl-input=${this.onSearchInput}
-              @focus=${() => {
-                if (this.hasSearchStr) {
-                  this.searchResultsOpen = true;
-                }
-              }}
-            >
-              <sl-icon name="search" slot="prefix"></sl-icon>
-            </sl-input>
-            ${this.renderSearchResults()}
-          </btrix-combobox>
+          ${this.renderSearch()}
         </div>
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
@@ -320,12 +275,13 @@ export class CrawlsList extends LiteElement {
             class="flex-1 md:min-w-[14.5rem]"
             size="small"
             pill
-            .value=${this.filterBy.state}
             multiple
             max-tags-visible="1"
             placeholder=${msg("All Crawls")}
-            @sl-change=${(e: CustomEvent) => {
+            @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
+              console.log("value:", value);
+              await this.updateComplete;
               this.filterBy = {
                 ...this.filterBy,
                 state: value,
@@ -395,6 +351,66 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
+  private renderSearch() {
+    const selectedFilterKey = Object.keys(CrawlsList.FieldLabels).find((key) =>
+      Boolean((this.filterBy as any)[key])
+    );
+    return html`
+      <btrix-combobox
+        ?open=${this.searchResultsOpen}
+        @request-close=${() => {
+          this.searchResultsOpen = false;
+        }}
+        @sl-select=${async (e: CustomEvent) => {
+          this.searchResultsOpen = false;
+          const item = e.detail.item as SlMenuItem;
+          const key = item.dataset["key"] as SearchFields;
+          this.searchByValue = item.value;
+          await this.updateComplete;
+          this.filterBy = {
+            ...this.filterBy,
+            [key]: item.value,
+          };
+        }}
+      >
+        <sl-input
+          size="small"
+          placeholder=${msg("Filter by name, Crawl Start URL, or Workflow ID")}
+          clearable
+          value=${this.searchByValue}
+          @sl-clear=${() => {
+            this.searchResultsOpen = false;
+            this.onSearchInput.cancel();
+            const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
+            this.filterBy = otherFilters;
+          }}
+          @sl-input=${this.onSearchInput}
+          @focus=${() => {
+            if (this.hasSearchStr) {
+              this.searchResultsOpen = true;
+            }
+          }}
+        >
+          ${when(
+            selectedFilterKey,
+            () =>
+              html`<sl-tag
+                slot="prefix"
+                size="small"
+                pill
+                style="margin-left: var(--sl-spacing-3x-small)"
+                >${CrawlsList.FieldLabels[
+                  selectedFilterKey as SearchFields
+                ]}</sl-tag
+              >`,
+            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
+          )}
+        </sl-input>
+        ${this.renderSearchResults()}
+      </btrix-combobox>
+    `;
+  }
+
   private renderSearchResults() {
     if (!this.hasSearchStr) {
       return html`
@@ -421,8 +437,8 @@ export class CrawlsList extends LiteElement {
             data-key=${item.key}
             value=${item.value}
           >
-            <span slot="prefix" class="text-xs opacity-60 font-semibold"
-              >${msg(str`${CrawlsList.FieldLabels[item.key]}:`)}</span
+            <sl-tag slot="prefix" size="small" pill
+              >${CrawlsList.FieldLabels[item.key]}</sl-tag
             >
             ${item.value}
           </sl-menu-item>
@@ -433,28 +449,6 @@ export class CrawlsList extends LiteElement {
 
   private renderCrawlList() {
     if (!this.crawls) return;
-
-    if (!this.crawls.items.length) {
-      return html`
-        <div class="border rounded-lg bg-neutral-50 p-4">
-          <p class="text-center">
-            <span class="text-neutral-400"
-              >${msg("No matching crawls found.")}</span
-            >
-            <button
-              class="text-neutral-500 font-medium underline hover:no-underline"
-              @click=${() => {
-                this.filterBy = {};
-                this.onSearchInput.cancel();
-                this.searchByValue = "";
-              }}
-            >
-              ${msg("Clear all filters")}
-            </button>
-          </p>
-        </div>
-      `;
-    }
 
     return html`
       <btrix-crawl-list>
@@ -571,6 +565,36 @@ export class CrawlsList extends LiteElement {
     return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
   };
 
+  private renderEmptyState() {
+    if (Object.keys(this.filterBy).length) {
+      return html`
+        <div class="border rounded-lg bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching crawls found.")}</span
+            >
+            <button
+              class="text-neutral-500 font-medium underline hover:no-underline"
+              @click=${() => {
+                this.filterBy = {};
+                this.onSearchInput.cancel();
+                this.searchByValue = "";
+              }}
+            >
+              ${msg("Clear all filters")}
+            </button>
+          </p>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="border-t border-b py-5">
+        <p class="text-center text-neutral-500">${msg("No crawls yet.")}</p>
+      </div>
+    `;
+  }
+
   private onSearchInput = debounce(150)((e: any) => {
     this.searchByValue = e.target.value;
 
@@ -585,7 +609,7 @@ export class CrawlsList extends LiteElement {
   private async fetchCrawls(params?: QueryParams): Promise<void> {
     if (!this.shouldFetch) return;
 
-    this.stopPollTimer();
+    this.cancelInProgressGetCrawls();
     try {
       const crawls = await this.getCrawls(params);
 
@@ -608,15 +632,15 @@ export class CrawlsList extends LiteElement {
     }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
-  private stopPollTimer() {
+  private cancelInProgressGetCrawls() {
     window.clearTimeout(this.timerId);
-  }
-
-  private async getCrawls(queryParams?: QueryParams): Promise<Crawls> {
     if (this.getCrawlsController) {
       this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
       this.getCrawlsController = null;
     }
+  }
+
+  private async getCrawls(queryParams?: QueryParams): Promise<Crawls> {
     const query = queryString.stringify(
       {
         ...this.filterBy,
