@@ -22,6 +22,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList } from "../../types/api";
+import { F } from "lodash/fp";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -142,7 +143,7 @@ export class CrawlsList extends LiteElement {
   private searchByValue: string = "";
 
   @state()
-  private searchResultsVisible = false;
+  private searchResultsOpen = false;
 
   @state()
   private crawlToEdit: Crawl | null = null;
@@ -268,9 +269,9 @@ export class CrawlsList extends LiteElement {
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <btrix-combobox
-            ?open=${this.searchResultsVisible}
+            ?open=${this.searchResultsOpen}
             @sl-select=${(e: CustomEvent) => {
-              this.searchResultsVisible = false;
+              this.searchResultsOpen = false;
               const item = e.detail.item as SlMenuItem;
               const key = item.dataset["key"] as SearchFields;
               this.searchByValue = item.value;
@@ -289,9 +290,8 @@ export class CrawlsList extends LiteElement {
               ?disabled=${!this.crawls?.items.length}
               value=${this.searchByValue}
               @sl-clear=${() => {
-                this.searchResultsVisible = false;
+                this.searchResultsOpen = false;
                 this.onSearchInput.cancel();
-                this.searchByValue = "";
                 const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
                 this.filterBy = otherFilters;
               }}
@@ -385,9 +385,23 @@ export class CrawlsList extends LiteElement {
 
   private renderSearchResults() {
     const hasSearchStr = this.searchByValue.length >= MIN_SEARCH_LENGTH;
-    const searchResults = hasSearchStr
-      ? this.fuse.search(this.searchByValue).slice(0, 10)
-      : [];
+    if (!hasSearchStr) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+        >
+      `;
+    }
+
+    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
+    if (!searchResults.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("No matching crawls found.")}</sl-menu-item
+        >
+      `;
+    }
+
     return html`
       ${searchResults.map(
         ({ item }: SearchResult) => html`
@@ -401,14 +415,6 @@ export class CrawlsList extends LiteElement {
             >
             ${item.value}
           </sl-menu-item>
-        `
-      )}
-      ${when(
-        hasSearchStr && !searchResults.length,
-        () => html`
-          <sl-menu-item slot="menu-item" disabled
-            >${msg("No matching crawls found.")}</sl-menu-item
-          >
         `
       )}
     `;
@@ -558,10 +564,10 @@ export class CrawlsList extends LiteElement {
     this.searchByValue = e.target.value;
 
     if (
-      this.searchByValue.length >= MIN_SEARCH_LENGTH &&
-      this.searchResultsVisible === false
+      this.searchResultsOpen === false &&
+      this.searchByValue.length >= MIN_SEARCH_LENGTH
     ) {
-      this.searchResultsVisible = true;
+      this.searchResultsOpen = true;
     }
   }) as any;
 

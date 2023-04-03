@@ -67,7 +67,7 @@ export class Combobox extends LitElement {
             if (e.animationName === "dropdownHide") {
               el.classList.add("hidden");
               el.classList.remove("animateHide");
-              // this.isActive = false;
+              this.isActive = false;
             }
           }}
         >
@@ -80,8 +80,8 @@ export class Combobox extends LitElement {
   }
 
   private async openDropdown() {
-    // this.isActive = true;
-    // await this.combobox?.updateComplete;
+    this.isActive = true;
+    await this.combobox?.updateComplete;
     this.dropdown?.classList.add("animateShow");
     this.dropdown?.classList.remove("hidden");
   }
