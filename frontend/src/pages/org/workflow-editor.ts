@@ -1166,7 +1166,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
-    const onInputWithMinMax = async (e: CustomEvent) => {
+    const onChangeWithMinMax = async (e: CustomEvent) => {
       const inputEl = e.target as SlInput;
       await inputEl.updateComplete;
       let helpText = "";
@@ -1199,8 +1199,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
               )
             : "Default: Unlimited"}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
-          min="10"
-          @sl-input=${onInputWithMinMax}
+          min="0"
+          @sl-change=${onChangeWithMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1221,8 +1221,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
               )
             : msg("Unlimited")}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
-          min="10"
-          @sl-input=${onInputWithMinMax}
+          min="0"
+          @sl-change=${onChangeWithMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1282,7 +1282,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`
                   )
               : ""}
-            @sl-input=${onInputWithMinMax}
+            @sl-change=${onChangeWithMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
