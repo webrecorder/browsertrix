@@ -1170,7 +1170,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderSectionHeading(msg("Limits Per Page"))}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageLoadTimeoutSec"
+          name="pageLoadTimeoutSeconds"
           type="number"
           label=${msg("Page Load Timeout")}
           placeholder=${msg("Unlimited")}
@@ -1187,7 +1187,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="behaviorTimeoutSec"
+          name="behaviorTimeoutSeconds"
           type="number"
           label=${msg("Behavior Timeout")}
           placeholder=${msg("Unlimited")}
@@ -1207,7 +1207,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageExtraDelaySec"
+          name="pageExtraDelaySeconds"
           type="number"
           label=${msg("Delay Before Next Page")}
           placeholder=${msg("Unlimited")}
