@@ -1235,9 +1235,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
+          name="pageLoadTimeoutMinutes"
+          type="number"
+          label=${msg("Page Load Timeout")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(this.formState.pageLoadTimeoutMinutes ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `The maximum amount of time the crawler will wait for the page to load before trying to crawl the page.`
+        )
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
           name="behaviorTimeoutMinutes"
           type="number"
-          label=${msg("Behavior Timeout")}
+          label=${msg("Page Behavior Timeout")}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
             this.formState.behaviorTimeoutMinutes ??
@@ -1251,7 +1268,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Behaviors will stop running after this amount of time.`)
+        msg(
+          `Behaviors on each page will stop running after this amount of time.`
+        )
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageExtraDelayMinutes"
+          type="number"
+          label=${msg("Delay Before Next Page")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(this.formState.pageExtraDelayMinutes ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Amount of extra time to wait on the page before moving onto the next page. Can be helpful for rate limiting.`
+        )
       )}
       ${this.renderFormCol(html`
         <sl-input
