@@ -5,8 +5,6 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
-    "@formatjs/intl-displaynames": "^5.2.5",
-    "@formatjs/intl-getcanonicallocales": "^1.8.0",
     "@lit/localize": "^0.11.4",
     "@novnc/novnc": "^1.4.0-beta",
     "@shoelace-style/shoelace": "2.0.0-beta.85",
