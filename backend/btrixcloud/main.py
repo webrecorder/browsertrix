@@ -54,6 +54,9 @@ def main():
         "defaultBehaviorTimeSeconds": int(
             os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
         ),
+        "defaultPageLoadTimeSeconds": int(
+            os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 90)
+        ),
         "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
     }
 
