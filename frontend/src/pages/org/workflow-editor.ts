@@ -16,8 +16,6 @@ import compact from "lodash/fp/compact";
 import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
-import RegexColorize from "regex-colorize";
-import ISO6391 from "iso-639-1";
 import Fuse from "fuse.js";
 
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -197,6 +195,12 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
+const DEFAULT_BEHAVIORS = [
+  "autoscroll",
+  "autoplay",
+  "autofetch",
+  "siteSpecific",
+];
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -2033,6 +2037,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
+        behaviors: (this.formState.disableAutoscrollBehavior
+          ? DEFAULT_BEHAVIORS.slice(1)
+          : DEFAULT_BEHAVIORS
+        ).join(","),
       },
     };
 

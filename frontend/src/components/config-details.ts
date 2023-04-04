@@ -136,10 +136,9 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Auto-Scroll Behavior"),
-            crawlConfig?.config.behaviors
-              ? crawlConfig.config.behaviors.includes("autoscroll")
-                ? msg("Enabled")
-                : msg("Disabled")
+            crawlConfig?.config.behaviors &&
+              !crawlConfig.config.behaviors.includes("autoscroll")
+              ? msg("Disabled")
               : html`<span class="text-neutral-400"
                   >${msg("Enabled (default)")}</span
                 >`
