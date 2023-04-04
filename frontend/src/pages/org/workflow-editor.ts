@@ -1207,7 +1207,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout if the page is partially or fully loaded.`
+          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`
         )
       )}
       ${this.renderFormCol(html`

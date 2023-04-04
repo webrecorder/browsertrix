@@ -108,7 +108,7 @@ export class ConfigDetails extends LiteElement {
             msg("Max Pages"),
             when(
               maxPages,
-              () => msg(str`${maxPages} page(s)`),
+              () => msg(str`${maxPages!.toLocaleString()} pages`),
               () =>
                 this.orgDefaults?.maxPagesPerCrawl
                   ? html`<span class="text-neutral-400"
