@@ -101,6 +101,7 @@ type FormState = {
   browserProfile: Profile | null;
   tags: Tags;
   description: WorkflowParams["description"];
+  disableAutoscrollBehavior: boolean;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -169,6 +170,7 @@ const getDefaultFormState = (): FormState => ({
   browserProfile: null,
   tags: [],
   description: null,
+  disableAutoscrollBehavior: false,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -493,11 +495,13 @@ export class CrawlConfigEditor extends LiteElement {
         : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
-      includeLinkedPages: Boolean(
-        primarySeedConfig.extraHops || seedsConfig.extraHops
-      ),
+      includeLinkedPages:
+        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
+      disableAutoscrollBehavior: this.initialWorkflow.config.behaviors
+        ? !this.initialWorkflow.config.behaviors.includes("autoscroll")
+        : defaultFormState.disableAutoscrollBehavior,
       ...formState,
     };
   }
@@ -1229,6 +1233,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Limits how long behaviors can run on each page.`)
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="disableAutoscrollBehavior"
+        ?checked=${this.formState.disableAutoscrollBehavior}
+      >
+        ${msg("Disable Auto-Scroll Behavior")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Prevents browser from automatically scrolling until the end of the page.`
+        ),
+        false
       )}
       ${this.renderFormCol(html`
         <sl-input
