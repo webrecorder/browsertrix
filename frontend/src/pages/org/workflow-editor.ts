@@ -1179,7 +1179,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             max=${this.orgDefaults.maxPagesPerCrawl}
             placeholder=${this.orgDefaults.maxPagesPerCrawl === Infinity
               ? msg("Unlimited")
-              : this.orgDefaults.maxPagesPerCrawl.toLocaleString()}
+              : msg(
+                  str`Maximum Allowed (${this.orgDefaults.maxPagesPerCrawl.toLocaleString()})`
+                )}
             @sl-input=${async (e: CustomEvent) => {
               const inputEl = e.target as SlInput;
               await inputEl.updateComplete;
@@ -1196,14 +1198,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
                           str`Minimum ${minPages.toLocaleString()} pages per crawl`
                         );
                 } else if (value > this.orgDefaults.maxPagesPerCrawl) {
-                  helpText =
-                    this.orgDefaults.maxPagesPerCrawl === 1
-                      ? msg(
-                          str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} page per crawl`
-                        )
-                      : msg(
-                          str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages per crawl`
-                        );
+                  helpText = msg(
+                    str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages per crawl`
+                  );
                 }
               }
               inputEl.helpText = helpText;
@@ -2048,7 +2045,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchAPIDefaults() {
     const orgDefaults = { ...this.orgDefaults };
     try {
-      const data = await this.apiFetch("/settings", this.authState!);
+      const resp = await fetch("/api/settings", {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!resp.ok) {
+        throw new Error(resp.statusText);
+      }
+      const data = await resp.json();
       if (data.defaultBehaviorTimeSeconds) {
         orgDefaults.behaviorTimeoutMinutes =
           data.defaultBehaviorTimeSeconds / 60;
