@@ -224,9 +224,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private orgDefaults?: {
-    behaviorTimeoutSeconds: number;
-    pageLoadTimeoutSeconds: number;
-    maxPagesPerCrawl: number;
+    behaviorTimeoutSeconds: number | null;
+    pageLoadTimeoutSeconds: number | null;
+    maxPagesPerCrawl: number | null;
   };
 
   @state()
@@ -1166,24 +1166,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
-    const maxPlaceholder = (max?: number) =>
-      max
-        ? max === Infinity
-          ? msg("Unlimited")
-          : msg(str`Maximum Allowed (${max.toLocaleString()})`)
-        : "";
-    const onInputWithMax = async (e: CustomEvent) => {
+    const onInputWithMinMax = async (e: CustomEvent) => {
       const inputEl = e.target as SlInput;
       await inputEl.updateComplete;
-      const min = +inputEl.min;
-      const max = +inputEl.max;
       let helpText = "";
       if (inputEl.invalid) {
         const value = +inputEl.value;
-        if (value < min) {
-          helpText = msg(str`Minimum ${min.toLocaleString()}`);
-        } else if (value > max) {
-          helpText = msg(str`Maximum ${max.toLocaleString()}`);
+        const min = inputEl.min;
+        const max = inputEl.max;
+        if (min && value < +min) {
+          helpText = msg(
+            str`Must be more than minimum of ${+min.toLocaleString()}`
+          );
+        } else if (max && value > +max) {
+          helpText = msg(
+            str`Must be less than maximum of ${+max.toLocaleString()}`
+          );
         }
       }
       inputEl.helpText = helpText;
@@ -1195,21 +1193,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="pageLoadTimeoutSeconds"
           type="number"
           label=${msg("Page Load Timeout")}
-          placeholder=${maxPlaceholder(
-            this.orgDefaults?.pageLoadTimeoutSeconds
-          )}
+          placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`
+              )
+            : "Default: Unlimited"}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
-          min="0"
-          max=${ifDefined(this.orgDefaults?.pageLoadTimeoutSeconds)}
-          ?disabled=${!this.orgDefaults}
-          @sl-input=${onInputWithMax}
+          min="10"
+          @sl-input=${onInputWithMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Behaviors will run after this timeout if the page is partially or fully loaded. If page fails to load at all, the behavior will be skipped.`
+          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout if the page is partially or fully loaded.`
         )
       )}
       ${this.renderFormCol(html`
@@ -1217,14 +1215,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="behaviorTimeoutSeconds"
           type="number"
           label=${msg("Behavior Timeout")}
-          placeholder=${maxPlaceholder(
-            this.orgDefaults?.behaviorTimeoutSeconds
-          )}
+          placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`
+              )
+            : msg("Unlimited")}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
-          min="1"
-          max=${ifDefined(this.orgDefaults?.behaviorTimeoutSeconds)}
-          ?disabled=${!this.orgDefaults}
-          @sl-input=${onInputWithMax}
+          min="10"
+          @sl-input=${onInputWithMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1237,7 +1235,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="pageExtraDelaySeconds"
           type="number"
           label=${msg("Delay Before Next Page")}
-          placeholder=${msg("Unlimited")}
+          placeholder=${"Default: 0"}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
           min="0"
         >
@@ -1271,9 +1269,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
             type="number"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
-            max=${this.orgDefaults?.maxPagesPerCrawl}
-            placeholder=${maxPlaceholder(this.orgDefaults?.maxPagesPerCrawl)}
-            @sl-input=${onInputWithMax}
+            max=${ifDefined(
+              this.orgDefaults?.maxPagesPerCrawl &&
+                this.orgDefaults.maxPagesPerCrawl < Infinity
+                ? this.orgDefaults.maxPagesPerCrawl
+                : undefined
+            )}
+            placeholder=${this.orgDefaults?.maxPagesPerCrawl
+              ? this.orgDefaults.maxPagesPerCrawl === Infinity
+                ? msg("Default: Unlimited")
+                : msg(
+                    str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`
+                  )
+              : ""}
+            @sl-input=${onInputWithMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
@@ -1288,7 +1297,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           value=${this.formState.crawlTimeoutMinutes || ""}
-          placeholder=${msg("Unlimited")}
+          placeholder=${msg("Default: Unlimited")}
           min="0"
           type="number"
         >
@@ -2104,8 +2113,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         throw new Error(resp.statusText);
       }
       const orgDefaults = {
-        behaviorTimeoutSeconds: Infinity,
-        pageLoadTimeoutSeconds: Infinity,
+        behaviorTimeoutSeconds: null,
+        pageLoadTimeoutSeconds: null,
         maxPagesPerCrawl: Infinity,
         ...this.orgDefaults,
       };
