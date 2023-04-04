@@ -192,6 +192,7 @@ const urlListToArray = flow(
   trimArray
 );
 const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
+const DEFAULT_MAX_PAGES_PER_CRAWL = Infinity;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -220,7 +221,10 @@ export class CrawlConfigEditor extends LiteElement {
   private progressState!: ProgressState;
 
   @state()
-  private defaultBehaviorTimeoutMinutes?: number;
+  private orgDefaults = {
+    behaviorTimeoutMinutes: DEFAULT_BEHAVIOR_TIMEOUT_MINUTES,
+    maxPagesPerCrawl: DEFAULT_MAX_PAGES_PER_CRAWL,
+  };
 
   @state()
   private formState!: FormState;
@@ -1172,14 +1176,37 @@ https://archiveweb.page/images/${"logo.svg"}`}
             type="number"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
-            placeholder=${msg("Unlimited")}
+            max=${this.orgDefaults.maxPagesPerCrawl}
+            placeholder=${this.orgDefaults.maxPagesPerCrawl === Infinity
+              ? msg("Unlimited")
+              : msg(
+                  str`Maximum Allowed (${this.orgDefaults.maxPagesPerCrawl.toLocaleString()})`
+                )}
+            @sl-input=${async (e: CustomEvent) => {
+              const inputEl = e.target as SlInput;
+              await inputEl.updateComplete;
+              let helpText = "";
+              if (inputEl.invalid) {
+                const value = +inputEl.value;
+                if (value < minPages) {
+                  helpText =
+                    minPages === 1
+                      ? msg(
+                          str`Minimum ${minPages.toLocaleString()} page per crawl`
+                        )
+                      : msg(
+                          str`Minimum ${minPages.toLocaleString()} pages per crawl`
+                        );
+                } else if (value > this.orgDefaults.maxPagesPerCrawl) {
+                  helpText = msg(
+                    str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages per crawl`
+                  );
+                }
+              }
+              inputEl.helpText = helpText;
+            }}
           >
             <span slot="suffix">${msg("pages")}</span>
-            <div slot="help-text">
-              ${minPages === 1
-                ? msg(str`Minimum ${minPages} page`)
-                : msg(str`Minimum ${minPages} pages`)}
-            </div>
           </sl-input>
         </sl-mutation-observer>
       `)}
@@ -1195,9 +1222,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
             this.formState.pageTimeoutMinutes ??
-              this.defaultBehaviorTimeoutMinutes
+              this.orgDefaults.behaviorTimeoutMinutes
           )}
-          ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
+          ?disabled=${this.orgDefaults.behaviorTimeoutMinutes === undefined}
           min="1"
           required
         >
@@ -1928,7 +1955,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : this.parseUrlListConfig()),
         behaviorTimeout:
           (this.formState.pageTimeoutMinutes ??
-            this.defaultBehaviorTimeoutMinutes ??
+            this.orgDefaults.behaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
@@ -1943,7 +1970,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private parseUrlListConfig(): NewCrawlConfigParams["config"] {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        const newSeed: Seed = { url: seedUrl, scopeType: "page" };
         return newSeed;
       }),
       scopeType: "page" as FormState["scopeType"],
@@ -1960,9 +1987,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
-        return newSeed;
-      })
+          const newSeed: Seed = { url: seedUrl, scopeType: "page" };
+          return newSeed;
+        })
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
@@ -2016,18 +2043,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async fetchAPIDefaults() {
+    const orgDefaults = { ...this.orgDefaults };
     try {
-      const data = await this.apiFetch("/settings", this.authState!);
+      const resp = await fetch("/api/settings", {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!resp.ok) {
+        throw new Error(resp.statusText);
+      }
+      const data = await resp.json();
       if (data.defaultBehaviorTimeSeconds) {
-        this.defaultBehaviorTimeoutMinutes =
+        orgDefaults.behaviorTimeoutMinutes =
           data.defaultBehaviorTimeSeconds / 60;
-      } else {
-        this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
+      }
+      if (data.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
     } catch (e: any) {
       console.debug(e);
-      this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
     }
+    this.orgDefaults = orgDefaults;
   }
 }
 

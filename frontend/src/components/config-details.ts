@@ -29,6 +29,12 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   hideTags = false;
 
+  @state()
+  private orgDefaults = {
+    behaviorTimeoutMinutes: Infinity,
+    maxPagesPerCrawl: Infinity,
+  };
+
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
     string
@@ -41,6 +47,11 @@ export class ConfigDetails extends LiteElement {
     custom: msg("Custom"),
     any: msg("Any"),
   };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.fetchAPIDefaults();
+  }
 
   render() {
     const crawlConfig = this.crawlConfig;
@@ -204,6 +215,7 @@ export class ConfigDetails extends LiteElement {
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
     let primarySeedUrl = seedsConfig.seeds[0].url;
     const includeUrlList = primarySeedConfig.include || seedsConfig.include;
+    const maxPages = primarySeedConfig.limit ?? seedsConfig.limit;
     return html`
       ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
@@ -245,9 +257,16 @@ export class ConfigDetails extends LiteElement {
       )}
       ${this.renderSetting(
         msg("Max Pages"),
-        seedsConfig.limit
-          ? msg(str`${primarySeedConfig.limit ?? seedsConfig.limit} pages`)
-          : msg("Unlimited")
+        when(
+          maxPages,
+          () => msg(str`${maxPages} page(s)`),
+          () =>
+            this.orgDefaults.maxPagesPerCrawl < Infinity
+              ? msg(
+                  str`Maximum Allowed (${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages)`
+                )
+              : undefined
+        )
       )}
     `;
   };
@@ -282,5 +301,28 @@ export class ConfigDetails extends LiteElement {
         ${content}
       </btrix-desc-list-item>
     `;
+  }
+
+  private async fetchAPIDefaults() {
+    const orgDefaults = { ...this.orgDefaults };
+    try {
+      const resp = await fetch("/api/settings", {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!resp.ok) {
+        throw new Error(resp.statusText);
+      }
+      const data = await resp.json();
+      if (data.defaultBehaviorTimeSeconds) {
+        orgDefaults.behaviorTimeoutMinutes =
+          data.defaultBehaviorTimeSeconds / 60;
+      }
+      if (data.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      }
+    } catch (e: any) {
+      console.debug(e);
+    }
+    this.orgDefaults = orgDefaults;
   }
 }
