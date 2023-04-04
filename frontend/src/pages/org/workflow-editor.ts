@@ -79,6 +79,8 @@ type FormState = {
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   behaviorTimeoutMinutes: number | null;
+  pageLoadTimeoutMinutes: number | null;
+  pageExtraDelayMinutes: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -145,6 +147,8 @@ const getDefaultFormState = (): FormState => ({
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
   behaviorTimeoutMinutes: null,
+  pageLoadTimeoutMinutes: null,
+  pageExtraDelayMinutes: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: undefined,
@@ -1956,6 +1960,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           (this.formState.behaviorTimeoutMinutes ??
             this.orgDefaults.behaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
+        pageLoadTimeout: this.formState.pageLoadTimeoutMinutes
+          ? this.formState.pageLoadTimeoutMinutes * 60
+          : null,
+        pageExtraDelay: this.formState.pageExtraDelayMinutes
+          ? this.formState.pageExtraDelayMinutes * 60
+          : null,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
@@ -1966,7 +1976,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return config;
   }
 
-  private parseUrlListConfig(): NewCrawlConfigParams["config"] {
+  private parseUrlListConfig(): Pick<
+    NewCrawlConfigParams["config"],
+    "seeds" | "scopeType" | "extraHops"
+  > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
         const newSeed: Seed = { url: seedUrl, scopeType: "page" };
@@ -1979,7 +1992,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return config;
   }
 
-  private parseSeededConfig(): NewCrawlConfigParams["config"] {
+  private parseSeededConfig(): Pick<
+    NewCrawlConfigParams["config"],
+    "seeds" | "scopeType"
+  > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
       ? urlListToArray(this.formState.customIncludeUrlList)
@@ -2002,7 +2018,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
-    const config: SeedConfig = {
+    const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: additionalSeedUrlList.length
         ? "page"
