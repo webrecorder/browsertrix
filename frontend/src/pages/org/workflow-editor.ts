@@ -78,9 +78,9 @@ type FormState = {
   includeLinkedPages: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
-  behaviorTimeoutMinutes: number | null;
-  pageLoadTimeoutMinutes: number | null;
-  pageExtraDelayMinutes: number | null;
+  behaviorTimeoutSec: number | null;
+  pageLoadTimeoutSec: number | null;
+  pageExtraDelaySec: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -146,9 +146,9 @@ const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
-  behaviorTimeoutMinutes: null,
-  pageLoadTimeoutMinutes: null,
-  pageExtraDelayMinutes: null,
+  behaviorTimeoutSec: null,
+  pageLoadTimeoutSec: null,
+  pageExtraDelaySec: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: undefined,
@@ -195,7 +195,7 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
-const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
+const DEFAULT_BEHAVIOR_TIMEOUT_SECONDS = 5 * 60;
 const DEFAULT_MAX_PAGES_PER_CRAWL = Infinity;
 
 @localized()
@@ -226,7 +226,7 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private orgDefaults = {
-    behaviorTimeoutMinutes: DEFAULT_BEHAVIOR_TIMEOUT_MINUTES,
+    behaviorTimeoutSec: DEFAULT_BEHAVIOR_TIMEOUT_SECONDS,
     maxPagesPerCrawl: DEFAULT_MAX_PAGES_PER_CRAWL,
   };
 
@@ -474,18 +474,12 @@ export class CrawlConfigEditor extends LiteElement {
         this.initialWorkflow.crawlTimeout,
         defaultFormState.crawlTimeoutMinutes
       ),
-      behaviorTimeoutMinutes: secondsToMinutes(
-        seedsConfig.behaviorTimeout,
-        defaultFormState.behaviorTimeoutMinutes
-      ),
-      pageLoadTimeoutMinutes: secondsToMinutes(
-        seedsConfig.pageLoadTimeout,
-        defaultFormState.pageLoadTimeoutMinutes
-      ),
-      pageExtraDelayMinutes: secondsToMinutes(
-        seedsConfig.pageExtraDelay,
-        defaultFormState.pageExtraDelayMinutes
-      ),
+      behaviorTimeoutSec:
+        seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSec,
+      pageLoadTimeoutSec:
+        seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSec,
+      pageExtraDelaySec:
+        seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySec,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1235,14 +1229,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageLoadTimeoutMinutes"
+          name="pageLoadTimeoutSec"
           type="number"
           label=${msg("Page Load Timeout")}
           placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageLoadTimeoutMinutes ?? undefined)}
+          value=${ifDefined(this.formState.pageLoadTimeoutSec ?? undefined)}
           min="0"
         >
-          <span slot="suffix">${msg("minutes")}</span>
+          <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -1252,19 +1246,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="behaviorTimeoutMinutes"
+          name="behaviorTimeoutSec"
           type="number"
           label=${msg("Page Behavior Timeout")}
           placeholder=${msg("Unlimited")}
           value=${ifDefined(
-            this.formState.behaviorTimeoutMinutes ??
-              this.orgDefaults.behaviorTimeoutMinutes
+            this.formState.behaviorTimeoutSec ??
+              this.orgDefaults.behaviorTimeoutSec
           )}
-          ?disabled=${this.orgDefaults.behaviorTimeoutMinutes === undefined}
+          ?disabled=${this.orgDefaults.behaviorTimeoutSec === undefined}
           min="1"
           required
         >
-          <span slot="suffix">${msg("minutes")}</span>
+          <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -1274,14 +1268,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageExtraDelayMinutes"
+          name="pageExtraDelaySec"
           type="number"
           label=${msg("Delay Before Next Page")}
           placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageExtraDelayMinutes ?? undefined)}
+          value=${ifDefined(this.formState.pageExtraDelaySec ?? undefined)}
           min="0"
         >
-          <span slot="suffix">${msg("minutes")}</span>
+          <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
@@ -2008,15 +2002,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
         behaviorTimeout:
-          (this.formState.behaviorTimeoutMinutes ??
-            this.orgDefaults.behaviorTimeoutMinutes ??
-            DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
-        pageLoadTimeout: this.formState.pageLoadTimeoutMinutes
-          ? this.formState.pageLoadTimeoutMinutes * 60
-          : null,
-        pageExtraDelay: this.formState.pageExtraDelayMinutes
-          ? this.formState.pageExtraDelayMinutes * 60
-          : null,
+          this.formState.behaviorTimeoutSec ??
+          this.orgDefaults.behaviorTimeoutSec,
+        pageLoadTimeout: this.formState.behaviorTimeoutSec ?? null,
+        pageExtraDelay: this.formState.pageExtraDelaySec ?? null,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
@@ -2118,9 +2107,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         throw new Error(resp.statusText);
       }
       const data = await resp.json();
-      if (data.defaultBehaviorTimeSeconds) {
-        orgDefaults.behaviorTimeoutMinutes =
-          data.defaultBehaviorTimeSeconds / 60;
+      if (data.defaultBehaviorTimeSeconds > 0) {
+        orgDefaults.behaviorTimeoutSec = data.defaultBehaviorTimeSeconds;
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
