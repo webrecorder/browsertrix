@@ -223,10 +223,10 @@ export class CrawlConfigEditor extends LiteElement {
   private progressState!: ProgressState;
 
   @state()
-  private orgDefaults = {
-    behaviorTimeoutSeconds: 5 * 60,
-    pageLoadTimeoutSeconds: Infinity,
-    maxPagesPerCrawl: Infinity,
+  private orgDefaults?: {
+    behaviorTimeoutSeconds: number;
+    pageLoadTimeoutSeconds: number;
+    maxPagesPerCrawl: number;
   };
 
   @state()
@@ -1166,6 +1166,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
+    const maxPlaceholder = (max?: number) =>
+      max
+        ? max === Infinity
+          ? msg("Unlimited")
+          : msg(str`Maximum Allowed (${max.toLocaleString()})`)
+        : "";
+    const onInputWithMax = async (e: CustomEvent) => {
+      const inputEl = e.target as SlInput;
+      await inputEl.updateComplete;
+      const min = +inputEl.min;
+      const max = +inputEl.max;
+      let helpText = "";
+      if (inputEl.invalid) {
+        const value = +inputEl.value;
+        if (value < min) {
+          helpText = msg(str`Minimum ${min.toLocaleString()}`);
+        } else if (value > max) {
+          helpText = msg(str`Maximum ${max.toLocaleString()}`);
+        }
+      }
+      inputEl.helpText = helpText;
+    };
     return html`
       ${this.renderSectionHeading(msg("Limit Per Page"))}
       ${this.renderFormCol(html`
@@ -1173,9 +1195,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="pageLoadTimeoutSeconds"
           type="number"
           label=${msg("Page Load Timeout")}
-          placeholder=${msg("Unlimited")}
+          placeholder=${maxPlaceholder(
+            this.orgDefaults?.pageLoadTimeoutSeconds
+          )}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
+          max=${ifDefined(this.orgDefaults?.pageLoadTimeoutSeconds)}
+          ?disabled=${!this.orgDefaults}
+          @sl-input=${onInputWithMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1190,14 +1217,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="behaviorTimeoutSeconds"
           type="number"
           label=${msg("Behavior Timeout")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(
-            this.formState.behaviorTimeoutSeconds ??
-              this.orgDefaults.behaviorTimeoutSeconds
+          placeholder=${maxPlaceholder(
+            this.orgDefaults?.behaviorTimeoutSeconds
           )}
-          ?disabled=${this.orgDefaults.behaviorTimeoutSeconds === undefined}
+          value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="1"
-          required
+          max=${ifDefined(this.orgDefaults?.behaviorTimeoutSeconds)}
+          ?disabled=${!this.orgDefaults}
+          @sl-input=${onInputWithMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1244,35 +1271,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             type="number"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
-            max=${this.orgDefaults.maxPagesPerCrawl}
-            placeholder=${this.orgDefaults.maxPagesPerCrawl === Infinity
-              ? msg("Unlimited")
-              : msg(
-                  str`Maximum Allowed (${this.orgDefaults.maxPagesPerCrawl.toLocaleString()})`
-                )}
-            @sl-input=${async (e: CustomEvent) => {
-              const inputEl = e.target as SlInput;
-              await inputEl.updateComplete;
-              let helpText = "";
-              if (inputEl.invalid) {
-                const value = +inputEl.value;
-                if (value < minPages) {
-                  helpText =
-                    minPages === 1
-                      ? msg(
-                          str`Minimum ${minPages.toLocaleString()} page per crawl`
-                        )
-                      : msg(
-                          str`Minimum ${minPages.toLocaleString()} pages per crawl`
-                        );
-                } else if (value > this.orgDefaults.maxPagesPerCrawl) {
-                  helpText = msg(
-                    str`Maximum ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages per crawl`
-                  );
-                }
-              }
-              inputEl.helpText = helpText;
-            }}
+            max=${this.orgDefaults?.maxPagesPerCrawl}
+            placeholder=${maxPlaceholder(this.orgDefaults?.maxPagesPerCrawl)}
+            @sl-input=${onInputWithMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
@@ -2000,9 +2001,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout:
-          this.formState.behaviorTimeoutSeconds ??
-          this.orgDefaults.behaviorTimeoutSeconds,
+        behaviorTimeout: this.formState.behaviorTimeoutSeconds ?? null,
         pageLoadTimeout: this.formState.behaviorTimeoutSeconds ?? null,
         pageExtraDelay: this.formState.pageExtraDelaySeconds ?? null,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
@@ -2097,7 +2096,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async fetchAPIDefaults() {
-    const orgDefaults = { ...this.orgDefaults };
     try {
       const resp = await fetch("/api/settings", {
         headers: { "Content-Type": "application/json" },
@@ -2105,6 +2103,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (!resp.ok) {
         throw new Error(resp.statusText);
       }
+      const orgDefaults = {
+        behaviorTimeoutSeconds: Infinity,
+        pageLoadTimeoutSeconds: Infinity,
+        maxPagesPerCrawl: Infinity,
+        ...this.orgDefaults,
+      };
       const data = await resp.json();
       if (data.defaultBehaviorTimeSeconds > 0) {
         orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
@@ -2115,10 +2119,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
+      this.orgDefaults = orgDefaults;
     } catch (e: any) {
       console.debug(e);
     }
-    this.orgDefaults = orgDefaults;
   }
 }
 
