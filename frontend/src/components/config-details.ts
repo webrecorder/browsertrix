@@ -85,9 +85,21 @@ export class ConfigDetails extends LiteElement {
             () => this.renderSetting(msg("Exclusions"), msg("None"))
           )}
           ${this.renderSetting(
-            msg("Page Time Limit"),
+            msg("Page Load Timeout"),
+            crawlConfig?.config.pageLoadTimeout
+              ? msg(str`${crawlConfig?.config.pageLoadTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+          ${this.renderSetting(
+            msg("Page Behavior Timeout"),
             crawlConfig?.config.behaviorTimeout
               ? msg(str`${crawlConfig?.config.behaviorTimeout / 60} minute(s)`)
+              : msg("None")
+          )}
+          ${this.renderSetting(
+            msg("Delay Before Next Page"),
+            crawlConfig?.config.pageExtraDelay
+              ? msg(str`${crawlConfig?.config.pageExtraDelay / 60} minute(s)`)
               : msg("None")
           )}
           ${this.renderSetting(
