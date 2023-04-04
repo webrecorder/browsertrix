@@ -1167,7 +1167,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
     return html`
-      ${this.renderSectionHeading(msg("Limits Per Page"))}
+      ${this.renderSectionHeading(msg("Limit Per Page"))}
       ${this.renderFormCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
@@ -1222,7 +1222,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
         )
       )}
-      ${this.renderSectionHeading(msg("Limits Per Crawl"))}
+      ${this.renderSectionHeading(msg("Limit Per Crawl"))}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
