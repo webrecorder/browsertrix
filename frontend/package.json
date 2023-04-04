@@ -129,6 +129,6 @@
     "node": ">=16 <20"
   },
   "resolutions": {
-    "**/playwright": "1.31.1"
+    "**/playwright": "1.32.1"
   }
 }

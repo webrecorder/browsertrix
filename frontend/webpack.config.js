@@ -112,6 +112,10 @@ const main = {
       "process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
     }),
 
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 12
+    }),
+
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
       templateParameters: {
