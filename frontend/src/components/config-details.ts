@@ -8,6 +8,7 @@ import ISO6391 from "iso-639-1";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
 import { humanizeSchedule } from "../utils/cron";
+import { RelativeDuration } from "./relative-duration";
 
 /**
  * Usage:
@@ -87,26 +88,37 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Page Load Timeout"),
             crawlConfig?.config.pageLoadTimeout
-              ? msg(str`${crawlConfig?.config.pageLoadTimeout / 60} minute(s)`)
-              : msg("None")
+              ? RelativeDuration.humanize(
+                  crawlConfig.config.pageLoadTimeout * 1000,
+                  { verbose: true }
+                )
+              : undefined
           )}
           ${this.renderSetting(
             msg("Page Behavior Timeout"),
             crawlConfig?.config.behaviorTimeout
-              ? msg(str`${crawlConfig?.config.behaviorTimeout / 60} minute(s)`)
-              : msg("None")
+              ? RelativeDuration.humanize(
+                  crawlConfig.config.behaviorTimeout * 1000,
+                  { verbose: true }
+                )
+              : undefined
           )}
           ${this.renderSetting(
             msg("Delay Before Next Page"),
             crawlConfig?.config.pageExtraDelay
-              ? msg(str`${crawlConfig?.config.pageExtraDelay / 60} minute(s)`)
-              : msg("None")
+              ? RelativeDuration.humanize(
+                  crawlConfig.config.pageExtraDelay * 1000,
+                  { verbose: true }
+                )
+              : undefined
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
             crawlConfig?.crawlTimeout
-              ? msg(str`${crawlConfig?.crawlTimeout / 60} minute(s)`)
-              : msg("None")
+              ? RelativeDuration.humanize(crawlConfig.crawlTimeout * 1000, {
+                  verbose: true,
+                })
+              : undefined
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
