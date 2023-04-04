@@ -398,8 +398,9 @@ export class CrawlConfigEditor extends LiteElement {
     return null;
   }
 
-  private getInitialFormState(): FormState | {} {
-    if (!this.initialWorkflow) return {};
+  private getInitialFormState(): FormState {
+    const defaultFormState = getDefaultFormState();
+    if (!this.initialWorkflow) return defaultFormState;
     const formState: Partial<FormState> = {};
     const seedsConfig = this.initialWorkflow.config;
     const { seeds } = seedsConfig;
@@ -460,36 +461,50 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialWorkflow.tags?.length) {
       formState.tags = this.initialWorkflow.tags;
     }
-    if (typeof this.initialWorkflow.crawlTimeout === "number") {
-      formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
-    }
-    if (typeof seedsConfig.behaviorTimeout === "number") {
-      formState.behaviorTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
-    }
+    const secondsToMinutes = (value: any, fallback: number | null) => {
+      if (typeof value === "number" && value > 0) return value / 60;
+      return fallback;
+    };
 
     return {
-      primarySeedUrl: "",
-      urlList: "",
-      customIncludeUrlList: "",
-      crawlTimeoutMinutes: null,
-      behaviorTimeoutMinutes: null,
+      primarySeedUrl: defaultFormState.primarySeedUrl,
+      urlList: defaultFormState.urlList,
+      customIncludeUrlList: defaultFormState.customIncludeUrlList,
+      crawlTimeoutMinutes: secondsToMinutes(
+        this.initialWorkflow.crawlTimeout,
+        defaultFormState.crawlTimeoutMinutes
+      ),
+      behaviorTimeoutMinutes: secondsToMinutes(
+        seedsConfig.behaviorTimeout,
+        defaultFormState.behaviorTimeoutMinutes
+      ),
+      pageLoadTimeoutMinutes: secondsToMinutes(
+        seedsConfig.pageLoadTimeout,
+        defaultFormState.pageLoadTimeoutMinutes
+      ),
+      pageExtraDelayMinutes: secondsToMinutes(
+        seedsConfig.pageExtraDelay,
+        defaultFormState.pageExtraDelayMinutes
+      ),
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
-      scheduleType: "none",
-      runNow: false,
+      scheduleType: defaultFormState.scheduleType,
+      scheduleFrequency: defaultFormState.scheduleFrequency,
+      runNow: defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
-      jobName: this.initialWorkflow.name || "",
+      jobName: this.initialWorkflow.name || defaultFormState.jobName,
       description: this.initialWorkflow.description,
       browserProfile: this.initialWorkflow.profileid
         ? ({ id: this.initialWorkflow.profileid } as Profile)
-        : null,
+        : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
       includeLinkedPages: Boolean(
         primarySeedConfig.extraHops || seedsConfig.extraHops
       ),
-      pageLimit: this.initialWorkflow.config.limit ?? undefined,
+      pageLimit:
+        this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
       ...formState,
     };
   }
