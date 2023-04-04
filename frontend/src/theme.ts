@@ -56,7 +56,7 @@ const theme = css`
     --sl-font-size-2x-large: 2rem; /* 32px */
 
     /* Font weights */
-    --sl-font-weight-medium: 500; // doesn't exist in shoelace
+    --sl-font-weight-medium: 500;
     --sl-font-weight-semibold: 600;
 
     /*
@@ -179,6 +179,44 @@ const theme = css`
   sl-radio-group sl-radio-button {
     width: 100%;
     min-width: min-content;
+  }
+
+  /* For single-input forms with submit button inline */
+  /* Requires form control and button to be direct children */
+  .inline-control-input,
+  .inline-control-input::part(form-control) {
+    display: contents;
+  }
+
+  .inline-control-form {
+    display: grid;
+    grid-template-areas:
+      "label ."
+      "input button"
+      "help-text .";
+    grid-template-columns: 1fr max-content;
+    column-gap: var(--sl-spacing-small);
+  }
+
+  .inline-control-input::part(form-control-label) {
+    grid-area: label;
+  }
+
+  .inline-control-input::part(form-control-input) {
+    grid-area: input;
+  }
+
+  .inline-control-input::part(form-control-help-text) {
+    grid-area: help-text;
+  }
+
+  .inline-control-button {
+    grid-area: button;
+  }
+
+  /* Inputs with "Max N characters" help text */
+  .with-max-help-text {
+    --help-text-align: right;
   }
 
   /* Aesthetically closer to monospaced font: */

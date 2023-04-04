@@ -10,6 +10,7 @@ import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
 import type { OrgData } from "../../utils/orgs";
 import type { CurrentUser } from "../../types/user";
 import type { APIPaginatedList } from "../../types/api";
+import { maxLengthValidator } from "../../utils/form";
 
 type Tab = "information" | "members";
 type User = {
@@ -90,6 +91,8 @@ export class OrgSettings extends LiteElement {
     };
   }
 
+  private validateOrgNameMax = maxLengthValidator(50);
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
@@ -162,29 +165,27 @@ export class OrgSettings extends LiteElement {
 
   private renderInformation() {
     return html`<div class="rounded border p-5">
-      <form @submit=${this.onOrgNameSubmit}>
-        <div class="flex items-end">
-          <div class="flex-1 mr-3">
-            <sl-input
-              name="orgName"
-              size="small"
-              label=${msg("Org Name")}
-              autocomplete="off"
-              value=${this.org.name}
-              required
-            ></sl-input>
-          </div>
-          <div class="flex-0">
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSavingOrgName}
-              ?loading=${this.isSavingOrgName}
-              >${msg("Save Changes")}</sl-button
-            >
-          </div>
-        </div>
+      <form class="inline-control-form" @submit=${this.onOrgNameSubmit}>
+        <sl-input
+          class="inline-control-input with-max-help-text"
+          name="orgName"
+          size="small"
+          label=${msg("Org Name")}
+          autocomplete="off"
+          value=${this.org.name}
+          required
+          help-text=${this.validateOrgNameMax.helpText}
+          @sl-input=${this.validateOrgNameMax.validate}
+        ></sl-input>
+        <sl-button
+          class="inline-control-button"
+          type="submit"
+          size="small"
+          variant="primary"
+          ?disabled=${this.isSavingOrgName}
+          ?loading=${this.isSavingOrgName}
+          >${msg("Save Changes")}</sl-button
+        >
       </form>
     </div>`;
   }

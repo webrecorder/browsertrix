@@ -70,8 +70,14 @@ spec:
             - name: CRAWL_CONFIG_ID
               value: "{{ cid }}"
 
+            - name: REV
+              value: "{{ rev }}"
+
             - name: TAGS
               value: "{{ tags }}"
+
+            - name: CRAWL_EXPIRE_TIME
+              value: "{{ crawl_expire_time }}"
 
             - name: STORE_PATH
               valueFrom:

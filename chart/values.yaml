@@ -18,6 +18,11 @@ jwt_token_lifetime_minutes: 1440
 # default time to run behaviors on each page (in seconds)
 default_behavior_time_seconds: 300
 
+# max pages per crawl
+# set to non-zero value to enforce global max pages per crawl limit
+# if set, each workflow can have a lower limit, but not higher
+max_pages_per_crawl: 0
+
 # if set to "1", allow inviting same user to same org multiple times
 allow_dupe_invites: "0"
 

@@ -33,7 +33,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * Usage example:
  * ```ts
  * <btrix-queue-exclusion-table
- *   .exclusions=${this.crawlTemplate.config.exclude}
+ *   .exclusions=${this.workflow.config.exclude}
  * >
  * </btrix-queue-exclusion-table>
  * ```

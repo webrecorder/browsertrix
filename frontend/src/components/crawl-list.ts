@@ -262,7 +262,7 @@ export class CrawlListItem extends LitElement {
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
-                date=${crawl.started}
+                date=${`${crawl.started}Z`}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -303,10 +303,12 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender(
-            (crawl) => html`<sl-format-bytes
-              value=${crawl.fileSize || 0}
-            ></sl-format-bytes>`
+          ${this.safeRender((crawl) =>
+            isActive
+              ? html`<span class="unknownValue">${msg("In Progress")}</span>`
+              : html`<sl-format-bytes
+                  value=${crawl.fileSize || 0}
+                ></sl-format-bytes>`
           )}
         </div>
         <div class="desc">
@@ -404,8 +406,7 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderName(crawl: Crawl) {
-    if (crawl.configName)
-      return html`<span class="truncate">${crawl.configName}</span>`;
+    if (crawl.name) return html`<span class="truncate">${crawl.name}</span>`;
     if (!crawl.firstSeed)
       return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;

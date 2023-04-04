@@ -57,10 +57,6 @@ export default {
                 import.meta.url
               )
             ),
-            // "@formatjs/intl-displaynames/should-polyfill": new URL(
-            //   "./src/__mocks__/@formatjs/intl-displaynames/should-polyfill.js",
-            //   import.meta.url
-            // ),
             color: fileURLToPath(
               new URL("./src/__mocks__/color.js", import.meta.url)
             ),

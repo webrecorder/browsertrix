@@ -148,13 +148,9 @@ export class AcceptInvite extends LiteElement {
     }
 
     try {
-      await this.apiFetch(
-        `/orgs/invite-accept/${this.token}`,
-        this.authState,
-        {
-          method: "POST",
-        }
-      );
+      await this.apiFetch(`/orgs/invite-accept/${this.token}`, this.authState, {
+        method: "POST",
+      });
 
       this.notify({
         message: msg(str`You've joined ${this.inviteInfo.orgName}.`),
@@ -174,9 +170,7 @@ export class AcceptInvite extends LiteElement {
 
   private onDecline() {
     this.notify({
-      message: msg(
-        str`You've declined to join ${this.inviteInfo.orgName}.`
-      ),
+      message: msg(str`You've declined to join ${this.inviteInfo.orgName}.`),
       variant: "info",
       icon: "info-circle",
     });

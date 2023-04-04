@@ -379,10 +379,13 @@ export class App extends LiteElement {
       return;
     }
 
+    // Limit org name display for orgs created before org name max length restriction
+    const orgNameLength = 50;
+
     return html`
       <sl-dropdown placement="bottom-end">
         <sl-button slot="trigger" variant="text" size="small" caret
-          >${selectedOption.name}</sl-button
+          >${selectedOption.name.slice(0, orgNameLength)}</sl-button
         >
         <sl-menu
           @sl-select=${(e: CustomEvent) => {
@@ -414,7 +417,7 @@ export class App extends LiteElement {
               <sl-menu-item
                 value=${org.id}
                 ?checked=${org.id === selectedOption.id}
-                >${org.name}</sl-menu-item
+                >${org.name.slice(0, orgNameLength)}</sl-menu-item
               >
             `
           )}

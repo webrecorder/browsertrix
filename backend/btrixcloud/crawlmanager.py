@@ -101,7 +101,7 @@ class BaseCrawlManager(ABC):
             STORE_PATH=storage_path,
             STORE_FILENAME=out_filename,
             STORAGE_NAME=storage_name,
-            USER_ID=str(crawlconfig.userid),
+            USER_ID=str(crawlconfig.modifiedBy),
             ORG_ID=str(crawlconfig.oid),
             CRAWL_CONFIG_ID=str(crawlconfig.id),
             PROFILE_FILENAME=profile_filename,
@@ -123,16 +123,20 @@ class BaseCrawlManager(ABC):
 
         return await self._create_manual_job(crawlconfig)
 
-    async def update_crawlconfig_schedule_or_scale(
-        self, crawlconfig, scale=None, schedule=None
-    ):
+    async def update_crawl_config(self, crawlconfig, update, profile_filename=None):
         """Update the schedule or scale for existing crawl config"""
 
-        if schedule is not None:
+        has_sched_update = update.schedule is not None
+        has_scale_update = update.scale is not None
+        has_config_update = update.config is not None
+
+        if has_sched_update:
             await self._update_scheduled_job(crawlconfig)
 
-        if scale is not None:
-            await self._update_config_initial_scale(crawlconfig, scale)
+        if has_scale_update or has_config_update or profile_filename:
+            await self._update_config_map(
+                crawlconfig, update.scale, profile_filename, has_config_update
+            )
 
         return True
 
@@ -148,10 +152,10 @@ class BaseCrawlManager(ABC):
 
         return await self._post_to_job(crawl_id, oid, f"/scale/{scale}")
 
-    async def change_crawl_config(self, crawl_id, oid, new_cid):
-        """Change crawl config and restart"""
+    async def rollover_restart_crawl(self, crawl_id, oid):
+        """Rolling restart of crawl"""
 
-        return await self._post_to_job(crawl_id, oid, f"/change_config/{new_cid}")
+        return await self._post_to_job(crawl_id, oid, "/rollover")
 
     async def delete_crawl_configs_for_org(self, org):
         """Delete all crawl configs for given org"""
@@ -174,11 +178,21 @@ class BaseCrawlManager(ABC):
         return crawl_id
 
     async def _load_job_template(self, crawlconfig, job_id, manual, schedule=None):
+        if crawlconfig.crawlTimeout:
+            crawl_expire_time = datetime.datetime.utcnow() + datetime.timedelta(
+                seconds=crawlconfig.crawlTimeout
+            )
+            crawl_expire_time = crawl_expire_time.isoformat()
+        else:
+            crawl_expire_time = ""
+
         params = {
             "id": job_id,
             "cid": str(crawlconfig.id),
-            "userid": str(crawlconfig.userid),
+            "rev": str(crawlconfig.rev),
+            "userid": str(crawlconfig.modifiedBy),
             "oid": str(crawlconfig.oid),
+            "crawl_expire_time": crawl_expire_time,
             "job_image": self.job_image,
             "job_pull_policy": self.job_pull_policy,
             "manual": "1" if manual else "0",
@@ -191,8 +205,10 @@ class BaseCrawlManager(ABC):
 
         return self.templates.env.get_template("btrix_job.yaml").render(params)
 
-    async def _update_config_initial_scale(self, crawlconfig, scale):
-        """update initial scale in config, if needed (k8s only)"""
+    async def _update_config_map(
+        self, crawlconfig, scale=None, profile_filename=None, update_config=False
+    ):
+        """update initial scale and crawler config in config, if needed (k8s only)"""
 
     @abstractmethod
     async def check_storage(self, storage_name, is_default=False):

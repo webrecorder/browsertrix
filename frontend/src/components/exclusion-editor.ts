@@ -24,7 +24,7 @@ type ResponseData = {
  * <btrix-exclusion-editor
  *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
- *   .config=${this.crawlTemplate.config}
+ *   .config=${this.workflow.config}
  *   .authState=${this.authState}
  *   ?isActiveCrawl=${isActive}
  * >
@@ -79,13 +79,17 @@ export class ExclusionEditor extends LiteElement {
 
   render() {
     return html`
-      ${this.renderTable()}
-      ${this.isActiveCrawl && this.regex
-        ? html` <section class="mt-5">${this.renderPending()}</section> `
-        : ""}
-      ${this.isActiveCrawl
-        ? html` <section class="mt-5">${this.renderQueue()}</section> `
-        : ""}
+      <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <div class="col-span-1">${this.renderTable()}</div>
+        <div class="col-span-1">
+          ${this.isActiveCrawl && this.regex
+            ? html` <section class="mt-5">${this.renderPending()}</section> `
+            : ""}
+          ${this.isActiveCrawl
+            ? html` <section class="mt-5">${this.renderQueue()}</section> `
+            : ""}
+        </div>
+      </div>
     `;
   }
 
@@ -157,18 +161,14 @@ export class ExclusionEditor extends LiteElement {
         }
       );
 
-      if (data.new_cid) {
+      if (data.success) {
         this.notify({
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
         });
 
-        this.dispatchEvent(
-          new CustomEvent("on-success", {
-            detail: { cid: data.new_cid },
-          })
-        );
+        this.dispatchEvent(new CustomEvent("on-success"));
       } else {
         throw data;
       }
@@ -229,7 +229,7 @@ export class ExclusionEditor extends LiteElement {
         }
       );
 
-      if (data.new_cid) {
+      if (data.success) {
         this.notify({
           message: msg("Exclusion added."),
           variant: "success",
@@ -241,11 +241,7 @@ export class ExclusionEditor extends LiteElement {
         await this.updateComplete;
 
         onSuccess();
-        this.dispatchEvent(
-          new CustomEvent("on-success", {
-            detail: { cid: data.new_cid },
-          })
-        );
+        this.dispatchEvent(new CustomEvent("on-success"));
       } else {
         throw data;
       }

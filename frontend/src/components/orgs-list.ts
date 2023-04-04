@@ -71,7 +71,7 @@ export class OrgsList extends LiteElement {
   }
 
   private makeOnOrgClick(org: OrgData): Function {
-    const navigate = () => this.navTo(`/orgs/${org.id}/crawls`);
+    const navigate = () => this.navTo(`/orgs/${org.id}/workflows`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {

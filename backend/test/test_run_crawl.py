@@ -29,9 +29,9 @@ def test_list_orgs(admin_auth_headers, default_org_id):
 
 def test_create_new_config(admin_auth_headers, default_org_id):
     crawl_data = {
-        "runNow": True,
+        "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": ["https://webrecorder.net/"]},
+        "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -43,7 +43,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
 
     data = r.json()
     assert data["added"]
-    assert data["run_now_job"]
+    assert data["run_now_job"] == None
 
 
 def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -74,6 +74,7 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     )
     data = r.json()
     assert data["fileSize"] == wacz_size
+    assert data["description"] == "Admin Test Crawl description"
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -97,7 +98,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         assert crawl["seedCount"] > 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/all/crawls",
+        f"{API_PREFIX}/orgs/all/crawls?runningOnly=0",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -127,8 +128,19 @@ def test_verify_wacz():
 
     assert "pages/pages.jsonl" in z.namelist()
 
+    # 1 seed page
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
     assert '"https://webrecorder.net/"' in pages
+
+    # 1 seed page + header line
+    assert len(pages.strip().split("\n")) == 2
+
+    # 1 other page
+    pages = z.open("pages/extraPages.jsonl").read().decode("utf-8")
+    assert '"https://webrecorder.net/blog"' in pages
+
+    # 1 other page + header line
+    assert len(pages.strip().split("\n")) == 2
 
 
 def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):

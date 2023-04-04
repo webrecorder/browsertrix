@@ -20,3 +20,9 @@ superuser:
 
 
 local_service_port: 30870
+
+# test max pages per crawl global limit
+max_pages_per_crawl: 2
+
+registration_enabled: "0"
+

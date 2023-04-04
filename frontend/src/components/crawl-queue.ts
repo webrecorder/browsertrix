@@ -1,5 +1,7 @@
 import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
+import throttle from "lodash/fp/throttle";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
@@ -51,10 +53,7 @@ export class CrawlQueue extends LiteElement {
   private isLoading = false;
 
   @state()
-  private page: number = 1;
-
-  @state()
-  private pageSize: number = 30;
+  private pageSize: number = 50;
 
   private timerId?: number;
 
@@ -68,7 +67,7 @@ export class CrawlQueue extends LiteElement {
       changedProperties.has("authState") ||
       changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
-      changedProperties.has("page") ||
+      changedProperties.has("pageSize") ||
       changedProperties.has("regex")
     ) {
       this.fetchOnUpdate();
@@ -77,23 +76,10 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-details open>
-        <span slot="title"> ${msg("Crawl Queue")} ${this.renderBadge()} </span>
-        <div slot="summary-description">
-          ${this.queue?.total && this.queue.total > this.pageSize
-            ? html`<btrix-pagination
-                size=${this.pageSize}
-                totalCount=${this.queue.total}
-                @page-change=${(e: CustomEvent) => {
-                  this.page = e.detail.page;
-                }}
-              >
-              </btrix-pagination>`
-            : ""}
-        </div>
-
-        ${this.renderContent()}
-      </btrix-details>
+      <btrix-section-heading style="--margin: var(--sl-spacing-small)"
+        >${msg("Queued URLs")} ${this.renderBadge()}</btrix-section-heading
+      >
+      ${this.renderContent()}
     `;
   }
 
@@ -112,6 +98,8 @@ export class CrawlQueue extends LiteElement {
       `;
     }
 
+    if (!this.queue) return;
+
     const excludedURLStyles = [
       "--marker-color: var(--sl-color-danger-500)",
       "--link-color: var(--sl-color-danger-500)",
@@ -121,9 +109,9 @@ export class CrawlQueue extends LiteElement {
     return html`
       <btrix-numbered-list
         class="text-xs break-all"
-        .items=${this.queue?.results.map((url, idx) => ({
-          order: idx + 1 + (this.page - 1) * this.pageSize,
-          style: this.queue?.matched.some((v) => v === url)
+        .items=${this.queue.results.map((url, idx) => ({
+          order: idx + 1,
+          style: this.queue!.matched.some((v) => v === url)
             ? excludedURLStyles
             : "",
           content: html`<a
@@ -137,17 +125,24 @@ export class CrawlQueue extends LiteElement {
       ></btrix-numbered-list>
 
       <footer class="text-center">
-        <span class="text-xs text-neutral-400" aria-live="polite">
-          ${msg(
-            str`${(
-              (this.page - 1) * this.pageSize +
-              1
-            ).toLocaleString()}⁠–⁠${Math.min(
-              this.page * this.pageSize,
-              this.queue.total
-            ).toLocaleString()} of ${this.queue.total.toLocaleString()} URLs`
-          )}
-        </span>
+        ${when(
+          this.queue.total === this.queue.results.length,
+          () =>
+            html`<div class="text-xs text-neutral-400 py-3">
+              ${msg("End of queue")}
+            </div>`,
+          () => html`
+            <btrix-observable @intersect=${this.onLoadMoreIntersect}>
+              <div class="py-3">
+                <sl-icon-button
+                  name="three-dots"
+                  @click=${this.loadMore}
+                  label=${msg("Load more")}
+                ></sl-icon-button>
+              </div>
+            </btrix-observable>
+          `
+        )}
       </footer>
     `;
   }
@@ -176,6 +171,15 @@ export class CrawlQueue extends LiteElement {
     `;
   }
 
+  private onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
+    if (!e.detail.entry.isIntersecting) return;
+    this.loadMore();
+  });
+
+  private loadMore() {
+    this.pageSize = this.pageSize + 50;
+  }
+
   private async fetchOnUpdate() {
     window.clearInterval(this.timerId);
     await this.performUpdate;
@@ -201,9 +205,7 @@ export class CrawlQueue extends LiteElement {
 
   private async getQueue(): Promise<ResponseData> {
     const data: ResponseData = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?offset=${
-        (this.page - 1) * this.pageSize
-      }&count=${this.pageSize}&regex=${this.regex}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?offset=0&count=${this.pageSize}&regex=${this.regex}`,
       this.authState!
     );
 

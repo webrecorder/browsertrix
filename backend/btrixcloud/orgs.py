@@ -11,7 +11,6 @@ from typing import Dict, Union, Literal, Optional, Any
 from pydantic import BaseModel, UUID4
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi_pagination import paginate
 
 from .db import BaseMongoModel
 
@@ -25,7 +24,7 @@ from .invites import (
     UserRole,
 )
 
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = 3
@@ -220,15 +219,34 @@ class OrgOps:
         print(f"Creating new org {org_name} with {storage_info}", flush=True)
         await self.add_org(org)
 
-    async def get_orgs_for_user(self, user: User, role: UserRole = UserRole.VIEWER):
+    async def get_orgs_for_user(
+        # pylint: disable=too-many-arguments
+        self,
+        user: User,
+        role: UserRole = UserRole.VIEWER,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        calculate_total=True,
+    ):
         """Get all orgs a user is a member of"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
         if user.is_superuser:
             query = {}
         else:
             query = {f"users.{user.id}": {"$gte": role.value}}
-        cursor = self.orgs.find(query)
-        results = await cursor.to_list(length=1000)
-        return [Organization.from_dict(res) for res in results]
+
+        total = 0
+        if calculate_total:
+            total = await self.orgs.count_documents(query)
+
+        cursor = self.orgs.find(query, skip=skip, limit=page_size)
+        results = await cursor.to_list(length=page_size)
+        orgs = [Organization.from_dict(res) for res in results]
+
+        return orgs, total
 
     async def get_org_for_user_by_id(
         self, oid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
@@ -340,7 +358,7 @@ class OrgOps:
 # pylint: disable=too-many-statements
 def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     """Init organizations api router for /orgs"""
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,invalid-name
 
     ops = OrgOps(mdb, invites)
 
@@ -390,17 +408,19 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     ops.org_crawl_dep = org_crawl_dep
     ops.org_owner_dep = org_owner_dep
 
-    @app.get(
-        "/orgs",
-        tags=["organizations"],
-        response_model=Page[OrgOut],
-    )
-    async def get_orgs(user: User = Depends(user_dep)):
-        results = await ops.get_orgs_for_user(user)
+    @app.get("/orgs", tags=["organizations"])
+    async def get_orgs(
+        user: User = Depends(user_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        results, total = await ops.get_orgs_for_user(
+            user, page_size=pageSize, page=page
+        )
         serialized_results = [
             await res.serialize_for_user(user, user_manager) for res in results
         ]
-        return paginate(serialized_results)
+        return paginated_format(serialized_results, total, page, pageSize)
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
@@ -488,10 +508,16 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         await user_manager.user_db.update(user)
         return {"added": True}
 
-    @router.get("/invites", tags=["invites"], response_model=Page[InvitePending])
-    async def get_pending_org_invites(org: Organization = Depends(org_owner_dep)):
-        pending_invites = await user_manager.invites.get_pending_invites(org)
-        return paginate(pending_invites)
+    @router.get("/invites", tags=["invites"])
+    async def get_pending_org_invites(
+        org: Organization = Depends(org_owner_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        pending_invites, total = await user_manager.invites.get_pending_invites(
+            org, page_size=pageSize, page=page
+        )
+        return paginated_format(pending_invites, total, page, pageSize)
 
     @router.post("/invites/delete", tags=["invites"])
     async def delete_invite(

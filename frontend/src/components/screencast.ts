@@ -53,35 +53,22 @@ export class Screencast extends LitElement {
 
     .container {
       display: grid;
-      gap: 0.5rem;
-    }
-
-    .screen-count {
-      color: var(--sl-color-neutral-400);
-      font-size: var(--sl-font-size-small);
-      margin-bottom: var(--sl-spacing-x-small);
-    }
-
-    .screen-count span,
-    .screen-count sl-icon {
-      display: inline-block;
-      vertical-align: middle;
+      gap: 1rem;
     }
 
     .screen {
-      border: 1px solid var(--sl-panel-border-color);
-      border-radius: var(--sl-border-radius-medium);
+      border: 1px solid var(--sl-color-neutral-300);
+      border-radius: var(--sl-border-radius-large);
       overflow: hidden;
     }
 
     .screen[role="button"] {
       cursor: pointer;
-      transition: opacity 0.1s border-color 0.1s;
+      transition: var(--sl-transition-fast) box-shadow;
     }
 
     .screen[role="button"]:hover {
-      opacity: 0.8;
-      border-color: var(--sl-color-neutral-300);
+      box-shadow: var(--sl-shadow-medium);
     }
 
     figure {
@@ -111,7 +98,10 @@ export class Screencast extends LitElement {
     }
 
     .frame {
-      background-color: var(--sl-color-neutral-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--sl-color-sky-50);
       overflow: hidden;
     }
 
@@ -122,6 +112,10 @@ export class Screencast extends LitElement {
       box-shadow: 0;
       outline: 0;
       border: 0;
+    }
+
+    sl-spinner {
+      font-size: 1.75rem;
     }
   `;
 
@@ -190,30 +184,8 @@ export class Screencast extends LitElement {
   }
 
   render() {
-    const browserWindows = this.browsersCount * this.scale;
-
     return html`
       <div class="wrapper">
-        ${!this.dataList.length
-          ? html`<div class="spinner">
-              <sl-spinner></sl-spinner>
-            </div> `
-          : html`
-              <div class="screen-count">
-                <span
-                  >${browserWindows > 1
-                    ? msg(str`Running in ${browserWindows} browser windows`)
-                    : msg(str`Running in 1 browser window`)}</span
-                >
-                <sl-tooltip
-                  content=${msg(
-                    str`${this.browsersCount} browser(s) × ${this.scale} crawler(s). Number of crawlers corresponds to scale.`
-                  )}
-                  ><sl-icon name="info-circle"></sl-icon
-                ></sl-tooltip>
-              </div>
-            `}
-
         <div
           class="container"
           style="grid-template-columns: repeat(${this
@@ -239,7 +211,7 @@ export class Screencast extends LitElement {
                 >
                   ${pageData
                     ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                    : ""}
+                    : html`<sl-spinner></sl-spinner>`}
                 </div>
               </figure>`
           )}

@@ -1,12 +1,10 @@
 {
   "name": "browsertrix-frontend",
-  "version": "1.4.0-beta.0",
+  "version": "1.4.0-beta.1",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
-    "@formatjs/intl-displaynames": "^5.2.5",
-    "@formatjs/intl-getcanonicallocales": "^1.8.0",
     "@lit/localize": "^0.11.4",
     "@novnc/novnc": "^1.4.0-beta",
     "@shoelace-style/shoelace": "2.0.0-beta.85",
@@ -33,6 +31,7 @@
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "start": "webpack serve --mode=development --config webpack.dev.js",
+    "serve": "node scripts/serve.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
     "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
     "localize:prepare": "yarn localize:extract && yarn localize:build",
@@ -43,6 +42,7 @@
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@lit/localize-tools": "^0.6.5",
     "@open-wc/testing": "^3.1.7",
+    "@playwright/test": "1.32.1",
     "@rollup/plugin-commonjs": "^18.0.0",
     "@types/color": "^3.0.2",
     "@types/lodash": "^4.14.178",
@@ -55,6 +55,7 @@
     "@web/test-runner": "^0.13.22",
     "@web/test-runner-playwright": "^0.8.8",
     "autoprefixer": "^10.4.2",
+    "chromium": "^3.0.3",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",
     "del-cli": "^4.0.1",
@@ -124,5 +125,8 @@
   },
   "engines": {
     "node": ">=16 <20"
+  },
+  "resolutions": {
+    "**/playwright": "1.32.1"
   }
 }

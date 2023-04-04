@@ -47,12 +47,18 @@ export class NumberedList extends LitElement {
     }
 
     .item-content {
+      --item-height: 1.5rem;
+      contain: paint;
+      contain-intrinsic-height: auto var(--item-height);
+      content-visibility: auto;
       border-left: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
       border-right: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
       padding: var(--sl-spacing-2x-small) var(--sl-spacing-x-small);
-      line-height: 1.25;
+      line-height: 1;
+      min-height: var(--item-height);
+      box-sizing: border-box;
     }
 
     li:first-child .item-content {

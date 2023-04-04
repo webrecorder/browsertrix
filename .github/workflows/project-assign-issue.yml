@@ -4,17 +4,21 @@ on:
   issues:
     types: [assigned]
 
+env:
+  todo: Todo
+  done: Done!
+  in_progress: Dev In Progress
+
 jobs:
   update-project-column:
     runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'assigned'
     steps:
-      - name: Update status
-        id: update_status
-        uses: github/update-project-action@v2
+      - name: Move issue to ${{ env.todo }}
+        uses: leonsteinhaeuser/project-beta-automations@v2.1.0
         with:
-          github_token: ${{ secrets.GHPROJECT_TOKEN }}
+          gh_token: ${{ secrets.GHPROJECT_TOKEN }}
           organization: webrecorder
-          project_number: 9
-          content_id: ${{ github.event.issue.node_id }}
-          field: Status
-          value: Todo
+          project_id: 9
+          resource_node_id: ${{ github.event.issue.node_id }}
+          status_value: ${{ env.todo }} # Target status

@@ -43,17 +43,15 @@ import type {
   TagsChangeEvent,
 } from "../../components/tag-input";
 import type {
-  CrawlConfigParams,
+  WorkflowParams,
   Profile,
-  InitialCrawlConfig,
   JobType,
   Seed,
   SeedConfig,
 } from "./types";
 
-type NewCrawlConfigParams = CrawlConfigParams & {
+type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
-  oldId?: string;
 };
 
 const STEPS = [
@@ -64,7 +62,7 @@ const STEPS = [
   "crawlMetadata",
   "confirmSettings",
 ] as const;
-type StepName = typeof STEPS[number];
+type StepName = (typeof STEPS)[number];
 type TabState = {
   completed: boolean;
   error: boolean;
@@ -81,25 +79,26 @@ type FormState = {
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   pageTimeoutMinutes: number | null;
-  scopeType: CrawlConfigParams["config"]["scopeType"];
-  exclusions: CrawlConfigParams["config"]["exclude"];
-  pageLimit: CrawlConfigParams["config"]["limit"];
-  scale: CrawlConfigParams["scale"];
-  blockAds: CrawlConfigParams["config"]["blockAds"];
-  lang: CrawlConfigParams["config"]["lang"];
+  scopeType: WorkflowParams["config"]["scopeType"];
+  exclusions: WorkflowParams["config"]["exclude"];
+  pageLimit: WorkflowParams["config"]["limit"];
+  scale: WorkflowParams["scale"];
+  blockAds: WorkflowParams["config"]["blockAds"];
+  lang: WorkflowParams["config"]["lang"];
   scheduleType: "now" | "date" | "cron" | "none";
-  scheduleFrequency: "daily" | "weekly" | "monthly";
-  scheduleDayOfMonth: number;
-  scheduleDayOfWeek: number;
-  scheduleTime: {
+  scheduleFrequency: "daily" | "weekly" | "monthly" | "";
+  scheduleDayOfMonth?: number;
+  scheduleDayOfWeek?: number;
+  scheduleTime?: {
     hour: number;
     minute: number;
     period: "AM" | "PM";
   };
   runNow: boolean;
-  jobName: CrawlConfigParams["name"];
+  jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
+  description: WorkflowParams["description"];
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -165,6 +164,7 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
   tags: [],
+  description: null,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -208,7 +208,7 @@ export class CrawlConfigEditor extends LiteElement {
   jobType?: JobType;
 
   @property({ type: Object })
-  initialCrawlConfig?: InitialCrawlConfig;
+  initialWorkflow?: WorkflowParams;
 
   @state()
   private tagOptions: string[] = [];
@@ -234,6 +234,9 @@ export class CrawlConfigEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private validateNameMax = maxLengthValidator(50);
+  private validateDescriptionMax = maxLengthValidator(350);
+
   private get formHasError() {
     return (
       !this.hasRequiredFields() ||
@@ -242,11 +245,14 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private get utcSchedule() {
+    if (!this.formState.scheduleFrequency) {
+      return "";
+    }
     return getUTCSchedule({
-      interval: this.formState.scheduleFrequency,
+      interval: this.formState.scheduleFrequency!,
       dayOfMonth: this.formState.scheduleDayOfMonth,
       dayOfWeek: this.formState.scheduleDayOfWeek,
-      ...this.formState.scheduleTime,
+      ...this.formState.scheduleTime!,
     });
   }
 
@@ -279,6 +285,7 @@ export class CrawlConfigEditor extends LiteElement {
     daily: msg("Daily"),
     weekly: msg("Weekly"),
     monthly: msg("Monthly"),
+    "": "",
   };
 
   @query('form[name="newJobConfig"]')
@@ -305,10 +312,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (changedProperties.has("authState") && this.authState) {
       this.fetchAPIDefaults();
     }
-    if (
-      changedProperties.get("initialCrawlConfig") &&
-      this.initialCrawlConfig
-    ) {
+    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
       this.initializeEditor();
     }
     if (changedProperties.get("progressState") && this.progressState) {
@@ -386,13 +390,13 @@ export class CrawlConfigEditor extends LiteElement {
     return null;
   }
 
-  private getInitialFormState(): Partial<FormState> {
-    if (!this.initialCrawlConfig) return {};
+  private getInitialFormState(): FormState | {} {
+    if (!this.initialWorkflow) return {};
     const formState: Partial<FormState> = {};
-    const seedsConfig = this.initialCrawlConfig.config;
+    const seedsConfig = this.initialWorkflow.config;
     const { seeds } = seedsConfig;
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    if (this.initialCrawlConfig.jobType === "seed-crawl") {
+    if (this.initialWorkflow.jobType === "seed-crawl") {
       if (typeof seeds[0] === "string") {
         formState.primarySeedUrl = seeds[0];
       } else {
@@ -418,17 +422,17 @@ export class CrawlConfigEditor extends LiteElement {
         .map((seed) => (typeof seed === "string" ? seed : seed.url))
         .join("\n");
 
-      if (this.initialCrawlConfig.jobType === "custom") {
+      if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
       }
     }
 
-    if (this.initialCrawlConfig.schedule) {
+    if (this.initialWorkflow.schedule) {
       formState.scheduleType = "cron";
       formState.scheduleFrequency = getScheduleInterval(
-        this.initialCrawlConfig.schedule
+        this.initialWorkflow.schedule
       );
-      const nextDate = getNextDate(this.initialCrawlConfig.schedule)!;
+      const nextDate = getNextDate(this.initialWorkflow.schedule)!;
       formState.scheduleDayOfMonth = nextDate.getDate();
       formState.scheduleDayOfWeek = nextDate.getDay();
       const hours = nextDate.getHours();
@@ -445,26 +449,39 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
 
-    if (this.initialCrawlConfig.tags?.length) {
-      formState.tags = this.initialCrawlConfig.tags;
+    if (this.initialWorkflow.tags?.length) {
+      formState.tags = this.initialWorkflow.tags;
     }
-    if (typeof this.initialCrawlConfig.crawlTimeout === "number") {
-      formState.crawlTimeoutMinutes = this.initialCrawlConfig.crawlTimeout / 60;
+    if (typeof this.initialWorkflow.crawlTimeout === "number") {
+      formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
     }
     if (typeof seedsConfig.behaviorTimeout === "number") {
       formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
     }
 
     return {
-      jobName: this.initialCrawlConfig.name || "",
-      browserProfile: this.initialCrawlConfig.profileid
-        ? ({ id: this.initialCrawlConfig.profileid } as Profile)
-        : undefined,
+      primarySeedUrl: "",
+      urlList: "",
+      customIncludeUrlList: "",
+      crawlTimeoutMinutes: null,
+      pageTimeoutMinutes: null,
+      scale: this.initialWorkflow.scale,
+      blockAds: this.initialWorkflow.config.blockAds,
+      lang: this.initialWorkflow.config.lang,
+      scheduleType: "none",
+      runNow: false,
+      tags: this.initialWorkflow.tags,
+      jobName: this.initialWorkflow.name || "",
+      description: this.initialWorkflow.description,
+      browserProfile: this.initialWorkflow.profileid
+        ? ({ id: this.initialWorkflow.profileid } as Profile)
+        : null,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
       includeLinkedPages: Boolean(
         primarySeedConfig.extraHops || seedsConfig.extraHops
       ),
+      pageLimit: this.initialWorkflow.config.limit ?? undefined,
       ...formState,
     };
   }
@@ -677,7 +694,7 @@ export class CrawlConfigEditor extends LiteElement {
                   this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : this.formState.scheduleType === "none"
-                    ? msg("Save Crawl Config")
+                    ? msg("Save Workflow")
                     : msg("Save & Schedule Crawl")}
                 </sl-button>`
               : html`
@@ -1153,7 +1170,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             name="pageLimit"
             label=${msg("Max Pages")}
             type="number"
-            value=${this.formState.pageLimit ?? ""}
+            value=${this.formState.pageLimit || ""}
             min=${minPages}
             placeholder=${msg("Unlimited")}
           >
@@ -1195,9 +1212,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
-          value=${ifDefined(this.formState.crawlTimeoutMinutes ?? undefined)}
+          value=${this.formState.crawlTimeoutMinutes || ""}
           placeholder=${msg("Unlimited")}
-          min="1"
+          min="0"
           type="number"
         >
           <span slot="suffix">${msg("minutes")}</span>
@@ -1386,9 +1403,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-time-input
-          hour=${ifDefined(this.formState.scheduleTime.hour)}
-          minute=${ifDefined(this.formState.scheduleTime.minute)}
-          period=${ifDefined(this.formState.scheduleTime.period)}
+          hour=${ifDefined(this.formState.scheduleTime?.hour)}
+          minute=${ifDefined(this.formState.scheduleTime?.minute)}
+          period=${ifDefined(this.formState.scheduleTime?.period)}
           @time-change=${(e: TimeInputChangeEvent) => {
             this.updateFormState({
               scheduleTime: e.detail,
@@ -1438,26 +1455,35 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const { helpText, validate } = maxLengthValidator(50);
     return html`
       ${this.renderFormCol(html`
         <sl-input
+          class="with-max-help-text"
           name="jobName"
           label=${msg("Name")}
           autocomplete="off"
-          placeholder=${msg("Example (example.com) Weekly Crawl", {
-            desc: "Example crawl config name",
-          })}
+          placeholder=${msg("Our Website (example.com)")}
           value=${this.formState.jobName}
-          help-text=${helpText}
-          style="--help-text-align: right"
-          @sl-input=${validate}
+          help-text=${this.validateNameMax.helpText}
+          @sl-input=${this.validateNameMax.validate}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this crawl config and crawl name. Crawls are named after
-        the starting URL(s) by default.`)
+        msg(`Customize this Workflow's name. Workflows are named after
+        the first Crawl URL by default.`)
       )}
+      ${this.renderFormCol(html`
+        <sl-textarea
+          class="with-max-help-text"
+          name="description"
+          label=${msg("Description")}
+          autocomplete="off"
+          value=${this.formState.description}
+          help-text=${this.validateDescriptionMax.helpText}
+          @sl-input=${this.validateDescriptionMax.validate}
+        ></sl-textarea>
+      `)}
+      ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
       ${this.renderFormCol(
         html`
           <btrix-tag-input
@@ -1494,9 +1520,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this crawl configuration. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this crawl configuration:<br /><br />Crawl
+        : msg(html`There is an issue with this Workflowuration:<br /><br />Crawl
             URL(s) required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
@@ -1775,22 +1801,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.isSubmitting = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(config),
-        }
-      );
+      const data = await (this.configId
+        ? this.apiFetch(
+            `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
+            this.authState!,
+            {
+              method: "PATCH",
+              body: JSON.stringify(config),
+            }
+          )
+        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
+            method: "POST",
+            body: JSON.stringify(config),
+          }));
 
       const crawlId = data.run_now_job;
-      let message = msg("Crawl config created.");
+      let message = msg("Workflow created.");
 
       if (crawlId) {
         message = msg("Crawl started with new template.");
       } else if (this.configId) {
-        message = msg("Crawl config updated.");
+        message = msg("Workflow updated.");
       }
 
       this.notify({
@@ -1803,7 +1834,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (crawlId) {
         this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
       } else {
-        this.navTo(`/orgs/${this.orgId}/crawl-configs/config/${data.added}`);
+        this.navTo(
+          `/orgs/${this.orgId}/workflows/config/${this.configId || data.added}`
+        );
       }
     } catch (e: any) {
       if (e?.isApiError) {
@@ -1846,7 +1879,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save crawl config. Please fix the following crawl configuration issues:"
+        "Couldn't save Workflow. Please fix the following Workflowuration issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}
@@ -1880,8 +1913,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const config: NewCrawlConfigParams = {
       jobType: this.jobType || "custom",
       name: this.formState.jobName || "",
+      description: this.formState.description,
       scale: this.formState.scale,
-      profileid: this.formState.browserProfile?.id || null,
+      profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
@@ -1896,23 +1930,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
           (this.formState.pageTimeoutMinutes ??
             this.defaultBehaviorTimeoutMinutes ??
             DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
-        limit: this.formState.pageLimit ? +this.formState.pageLimit : null,
-        lang: this.formState.lang || null,
+        limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
+        lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
       },
     };
-
-    if (this.configId) {
-      config.oldId = this.configId;
-    }
 
     return config;
   }
 
   private parseUrlListConfig(): NewCrawlConfigParams["config"] {
     const config = {
-      seeds: urlListToArray(this.formState.urlList),
+      seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
+        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        return newSeed;
+      }),
       scopeType: "page" as FormState["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
@@ -1921,16 +1954,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseSeededConfig(): NewCrawlConfigParams["config"] {
-    const primarySeedUrl = this.formState.primarySeedUrl.replace(/\/$/, "");
+    const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
-      ? urlListToArray(this.formState.customIncludeUrlList).map((str) =>
-          str.replace(/\/$/, "")
-        )
+      ? urlListToArray(this.formState.customIncludeUrlList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
-      ? urlListToArray(this.formState.urlList).map((str) =>
-          str.replace(/\/$/, "")
-        )
+      ? urlListToArray(this.formState.urlList).map((seedUrl) => {
+        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        return newSeed;
+      })
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
@@ -1999,4 +2031,4 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 }
 
-customElements.define("btrix-crawl-config-editor", CrawlConfigEditor);
+customElements.define("btrix-workflow-editor", CrawlConfigEditor);

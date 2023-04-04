@@ -45,6 +45,7 @@ export class ConfigDetails extends LiteElement {
   render() {
     const crawlConfig = this.crawlConfig;
     const exclusions = crawlConfig?.config.exclude || [];
+
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
@@ -153,6 +154,12 @@ export class ConfigDetails extends LiteElement {
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+          ${this.renderSetting(
+            msg("Description"),
+            html`
+              <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
+            `
+          )}
           ${this.hideTags
             ? ""
             : this.renderSetting(
@@ -177,10 +184,11 @@ export class ConfigDetails extends LiteElement {
         html`
           <ul>
             ${crawlConfig?.config.seeds.map(
-              (url: any) => html` <li>${url}</li> `
+              (seed: Seed) => html` <li>${seed.url}</li> `
             )}
           </ul>
-        `
+        `,
+        true
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page"),
@@ -194,14 +202,10 @@ export class ConfigDetails extends LiteElement {
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = seedsConfig.seeds.slice(1);
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    let primarySeedUrl = seedsConfig.seeds[0];
-    if (typeof seedsConfig.seeds[0] !== "string") {
-      primarySeedConfig = seedsConfig.seeds[0];
-      primarySeedUrl = primarySeedConfig.url;
-    }
+    let primarySeedUrl = seedsConfig.seeds[0].url;
     const includeUrlList = primarySeedConfig.include || seedsConfig.include;
     return html`
-      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl)}
+      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
@@ -221,7 +225,8 @@ export class ConfigDetails extends LiteElement {
                 )}
               </ul>
             `
-          : msg("None")
+          : msg("None"),
+        true
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
@@ -235,7 +240,8 @@ export class ConfigDetails extends LiteElement {
                 ${additionalUrlList.map((url) => html`<li>${url}</li>`)}
               </ul>
             `
-          : msg("None")
+          : msg("None"),
+        true
       )}
       ${this.renderSetting(
         msg("Max Pages"),
@@ -259,7 +265,7 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private renderSetting(label: string, value: any) {
+  private renderSetting(label: string, value: any, breakAll?: boolean) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -272,7 +278,7 @@ export class ConfigDetails extends LiteElement {
       >`;
     }
     return html`
-      <btrix-desc-list-item label=${label} class="break-all">
+      <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
         ${content}
       </btrix-desc-list-item>
     `;
