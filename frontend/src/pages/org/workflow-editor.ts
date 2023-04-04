@@ -78,9 +78,9 @@ type FormState = {
   includeLinkedPages: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
-  behaviorTimeoutSec: number | null;
-  pageLoadTimeoutSec: number | null;
-  pageExtraDelaySec: number | null;
+  behaviorTimeoutSeconds: number | null;
+  pageLoadTimeoutSeconds: number | null;
+  pageExtraDelaySeconds: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -146,9 +146,9 @@ const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
-  behaviorTimeoutSec: null,
-  pageLoadTimeoutSec: null,
-  pageExtraDelaySec: null,
+  behaviorTimeoutSeconds: null,
+  pageLoadTimeoutSeconds: null,
+  pageExtraDelaySeconds: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: undefined,
@@ -195,8 +195,6 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
-const DEFAULT_BEHAVIOR_TIMEOUT_SECONDS = 5 * 60;
-const DEFAULT_MAX_PAGES_PER_CRAWL = Infinity;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -226,8 +224,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private orgDefaults = {
-    behaviorTimeoutSec: DEFAULT_BEHAVIOR_TIMEOUT_SECONDS,
-    maxPagesPerCrawl: DEFAULT_MAX_PAGES_PER_CRAWL,
+    behaviorTimeoutSeconds: 5 * 60,
+    pageLoadTimeoutSeconds: Infinity,
+    maxPagesPerCrawl: Infinity,
   };
 
   @state()
@@ -474,12 +473,12 @@ export class CrawlConfigEditor extends LiteElement {
         this.initialWorkflow.crawlTimeout,
         defaultFormState.crawlTimeoutMinutes
       ),
-      behaviorTimeoutSec:
-        seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSec,
-      pageLoadTimeoutSec:
-        seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSec,
-      pageExtraDelaySec:
-        seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySec,
+      behaviorTimeoutSeconds:
+        seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
+      pageLoadTimeoutSeconds:
+        seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
+      pageExtraDelaySeconds:
+        seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1168,6 +1167,62 @@ https://archiveweb.page/images/${"logo.svg"}`}
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
     return html`
+      ${this.renderSectionHeading(msg("Limits Per Page"))}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageLoadTimeoutSec"
+          type="number"
+          label=${msg("Page Load Timeout")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Behaviors will run after this timeout if the page is partially or fully loaded. If page fails to load at all, the behavior will be skipped.`
+        )
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="behaviorTimeoutSec"
+          type="number"
+          label=${msg("Behavior Timeout")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(
+            this.formState.behaviorTimeoutSeconds ??
+              this.orgDefaults.behaviorTimeoutSeconds
+          )}
+          ?disabled=${this.orgDefaults.behaviorTimeoutSeconds === undefined}
+          min="1"
+          required
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Limits how long behaviors can run on each page.`)
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageExtraDelaySec"
+          type="number"
+          label=${msg("Delay Before Next Page")}
+          placeholder=${msg("Unlimited")}
+          value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
+        )
+      )}
+      ${this.renderSectionHeading(msg("Limits Per Crawl"))}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1226,62 +1281,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderHelpTextCol(
         msg(`Adds a hard limit on the number of pages
       that will be crawled.`)
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageLoadTimeoutSec"
-          type="number"
-          label=${msg("Page Load Timeout")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageLoadTimeoutSec ?? undefined)}
-          min="0"
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `The maximum amount of time the crawler will wait for the page to load before trying to crawl the page.`
-        )
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="behaviorTimeoutSec"
-          type="number"
-          label=${msg("Page Behavior Timeout")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(
-            this.formState.behaviorTimeoutSec ??
-              this.orgDefaults.behaviorTimeoutSec
-          )}
-          ?disabled=${this.orgDefaults.behaviorTimeoutSec === undefined}
-          min="1"
-          required
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Behaviors on each page will stop running after this amount of time.`
-        )
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageExtraDelaySec"
-          type="number"
-          label=${msg("Delay Before Next Page")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(this.formState.pageExtraDelaySec ?? undefined)}
-          min="0"
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Amount of extra time to wait on the page before moving onto the next page. Can be helpful for rate limiting.`
-        )
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -2002,10 +2001,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
         behaviorTimeout:
-          this.formState.behaviorTimeoutSec ??
-          this.orgDefaults.behaviorTimeoutSec,
-        pageLoadTimeout: this.formState.behaviorTimeoutSec ?? null,
-        pageExtraDelay: this.formState.pageExtraDelaySec ?? null,
+          this.formState.behaviorTimeoutSeconds ??
+          this.orgDefaults.behaviorTimeoutSeconds,
+        pageLoadTimeout: this.formState.behaviorTimeoutSeconds ?? null,
+        pageExtraDelay: this.formState.pageExtraDelaySeconds ?? null,
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
@@ -2108,7 +2107,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
       const data = await resp.json();
       if (data.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSec = data.defaultBehaviorTimeSeconds;
+        orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+      }
+      if (data.defaultPageLoadTimeSeconds > 0) {
+        orgDefaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
