@@ -224,9 +224,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private orgDefaults?: {
-    behaviorTimeoutSeconds: number | null;
-    pageLoadTimeoutSeconds: number | null;
-    maxPagesPerCrawl: number | null;
+    behaviorTimeoutSeconds?: number;
+    pageLoadTimeoutSeconds?: number;
+    maxPagesPerCrawl?: number;
   };
 
   @state()
@@ -1176,11 +1176,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const max = inputEl.max;
         if (min && value < +min) {
           helpText = msg(
-            str`Must be more than minimum of ${+min.toLocaleString()}`
+            str`Must be more than minimum of ${(+min).toLocaleString()}`
           );
         } else if (max && value > +max) {
           helpText = msg(
-            str`Must be less than maximum of ${+max.toLocaleString()}`
+            str`Must be less than maximum of ${(+max).toLocaleString()}`
           );
         }
       }
@@ -2113,9 +2113,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         throw new Error(resp.statusText);
       }
       const orgDefaults = {
-        behaviorTimeoutSeconds: null,
-        pageLoadTimeoutSeconds: null,
-        maxPagesPerCrawl: Infinity,
         ...this.orgDefaults,
       };
       const data = await resp.json();
