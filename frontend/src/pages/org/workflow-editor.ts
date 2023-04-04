@@ -1547,9 +1547,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this Workflowuration:<br /><br />Crawl
+        : msg(html`There is an issue with this Workflow:<br /><br />Crawl
             URL(s) required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
@@ -1906,7 +1906,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save Workflow. Please fix the following Workflowuration issues:"
+        "Couldn't save Workflow. Please fix the following Workflow issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}

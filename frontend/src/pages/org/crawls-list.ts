@@ -733,7 +733,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.notify({
-      message: msg(str`Copied Workflowuration to new template.`),
+      message: msg(str`Copied Workflow to new template.`),
       variant: "success",
       icon: "check2-circle",
     });
