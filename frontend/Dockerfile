@@ -11,7 +11,7 @@ COPY yarn.lock package.json ./
 RUN yarn --frozen-lockfile --network-timeout 1000000 && \
     yarn cache clean
 
-FROM docker.io/library/node:16 as build
+FROM build_deps as build
 
 COPY --link lit-localize.json \
     postcss.config.js \
