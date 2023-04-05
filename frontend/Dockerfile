@@ -13,7 +13,8 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 
 WORKDIR /app
 COPY yarn.lock package.json ./
-RUN yarn --frozen-lockfile --network-timeout 1000000
+RUN yarn --frozen-lockfile --network-timeout 1000000 && \
+    yarn cache clean
 
 FROM docker.io/library/node:16 as build
 
