@@ -79,6 +79,8 @@ class RawCrawlConfig(BaseModel):
     blockAds: Optional[bool] = False
 
     behaviorTimeout: Optional[int]
+    pageLoadTimeout: Optional[int]
+    pageExtraDelay: Optional[int] = 0
 
     workers: Optional[int]
 
