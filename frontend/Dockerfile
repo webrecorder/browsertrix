@@ -12,7 +12,7 @@ RUN yarn --frozen-lockfile --network-timeout 1000000 && \
 
 FROM docker.io/library/node:16 as build
 
-COPY lit-localize.json \
+COPY --link lit-localize.json \
     postcss.config.js \
     tailwind.config.js \
     tsconfig.json \
@@ -21,7 +21,7 @@ COPY lit-localize.json \
     index.d.ts \
     ./
 
-COPY src ./src/
+COPY --link src ./src/
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
@@ -41,11 +41,11 @@ FROM docker.io/library/nginx:1.23.2
 ARG RWP_BASE_URL
 ENV RWP_BASE_URL=${RWP_BASE_URL}
 
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --link --from=build /app/dist /usr/share/nginx/html
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY ./frontend.conf.template /etc/nginx/templates/
-COPY ./minio.conf /etc/nginx/includes/
+COPY --link ./frontend.conf.template /etc/nginx/templates/
+COPY --link ./minio.conf /etc/nginx/includes/
 
-ADD ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
+ADD --link ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
 
