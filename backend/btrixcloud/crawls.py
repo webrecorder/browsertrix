@@ -102,6 +102,8 @@ class Crawl(CrawlConfigCore):
 
     notes: Optional[str]
 
+    errors: Optional[List[str]] = []
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -114,6 +116,7 @@ class CrawlOut(Crawl):
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
+    errors: Optional[List[str]]
 
 
 # ============================================================================
@@ -149,6 +152,7 @@ class ListCrawlOut(BaseMongoModel):
 
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
+    errors: Optional[List[str]]
 
 
 # ============================================================================
@@ -725,6 +729,17 @@ class CrawlOps:
 
         return num_removed
 
+    async def get_errors_from_redis(self, crawl_id):
+        """Get crawl errors from Redis and optionally store in mongodb."""
+        try:
+            redis = await self.get_redis(crawl_id)
+            errors = await redis.lrange(f"{crawl_id}:e", 0, -1)
+        except exceptions.ConnectionError:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=500, detail="redis_connection_error")
+
+        return errors
+
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
         # pylint: disable=line-too-long
@@ -1075,6 +1090,20 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             return StreamingResponse(stream_json_lines(heap_iter, log_levels, contexts))
 
         raise HTTPException(status_code=400, detail="crawl_not_finished")
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/errors",
+        tags=["crawls"],
+    )
+    async def get_crawl_errors(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+
+        if crawl.finished:
+            return {"errors": crawl.errors}
+
+        errors = await ops.get_errors_from_redis(crawl_id)
+        return {"errors": errors}
 
     return ops
 

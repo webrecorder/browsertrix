@@ -235,8 +235,17 @@ class CrawlJob(ABC):
 
         await self.update_crawl(state=state, finished=self.finished)
 
+        await self.add_crawl_errors_to_mongo()
+
         if completed:
             await self.inc_crawl_complete_stats()
+
+    async def add_crawl_errors_to_mongo(self):
+        """Pull crawl errors from redis and write to mongo"""
+        errors = await self.redis.lrange(f"{self.job_id}:e", 0, -1)
+        await self.crawls.find_one_and_update(
+            {"_id": self.job_id}, {"$set": {"errors": errors}}
+        )
 
     async def inc_crawl_complete_stats(self):
         """Increment Crawl Stats"""
