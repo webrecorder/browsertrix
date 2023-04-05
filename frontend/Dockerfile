@@ -5,6 +5,8 @@ FROM docker.io/library/node:16 as build_deps
 
 WORKDIR /app
 COPY yarn.lock package.json ./
+# Uses `yarn cache clean` to let Docker cache layer instead
+# of including yarn cache in the build image
 RUN yarn --frozen-lockfile --network-timeout 1000000 && \
     yarn cache clean
 
