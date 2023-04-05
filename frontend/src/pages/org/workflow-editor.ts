@@ -2010,9 +2010,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout: this.formState.behaviorTimeoutSeconds ?? null,
-        pageLoadTimeout: this.formState.pageLoadTimeoutSeconds ?? null,
-        pageExtraDelay: this.formState.pageExtraDelaySeconds ?? null,
+        behaviorTimeout: +(this.formState.behaviorTimeoutSeconds || ""),
+        pageLoadTimeout: +(this.formState.pageLoadTimeoutSeconds || ""),
+        pageExtraDelay: +(this.formState.pageExtraDelaySeconds || ""),
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
