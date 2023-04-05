@@ -145,6 +145,7 @@ export class QueueExclusionTable extends LiteElement {
               page=${this.page}
               size=${this.pageSize}
               totalCount=${this.total}
+              compact
               @page-change=${(e: CustomEvent) => {
                 this.page = e.detail.page;
               }}
@@ -198,10 +199,12 @@ export class QueueExclusionTable extends LiteElement {
           ${this.renderValue({ exclusion, index })}
         </td>
         <td class="text-[1rem] text-center ${actionColClass}">
-          <btrix-icon-button
-            name="trash3"
+          <btrix-button
+            icon
             @click=${() => this.removeExclusion(exclusion, index)}
-          ></btrix-icon-button>
+          >
+            <sl-icon name="trash3"></sl-icon>
+          </btrix-button>
         </td>
       </tr>
     `;

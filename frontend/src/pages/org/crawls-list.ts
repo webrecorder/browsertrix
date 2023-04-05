@@ -1,5 +1,4 @@
-import type { TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -9,24 +8,32 @@ import type {
   SlSelect,
 } from "@shoelace-style/shoelace";
 import debounce from "lodash/fp/debounce";
-import flow from "lodash/fp/flow";
-import map from "lodash/fp/map";
-import orderBy from "lodash/fp/orderBy";
 import Fuse from "fuse.js";
+import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
+import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
-import type { APIPaginatedList } from "../../types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 
-type CrawlSearchResult = {
-  item: Crawl;
+type Crawls = APIPaginatedList & {
+  items: Crawl[];
 };
-type SortField = "started" | "finished" | "configName" | "fileSize";
+type SearchFields = "name" | "firstSeed" | "cid";
+type SearchResult = {
+  item: {
+    key: SearchFields;
+    value: string;
+  };
+};
+type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
+const ABORT_REASON_THROTTLE = "throttled";
+const INITIAL_PAGE_SIZE = 50;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -42,8 +49,8 @@ const sortableFields: Record<
     label: msg("Date Completed"),
     defaultDirection: "desc",
   },
-  configName: {
-    label: msg("Crawl Name"),
+  firstSeed: {
+    label: msg("Crawl Start URL"),
     defaultDirection: "desc",
   },
   fileSize: {
@@ -73,6 +80,11 @@ function isActive(crawl: Crawl) {
  */
 @localized()
 export class CrawlsList extends LiteElement {
+  static FieldLabels: Record<SearchFields, string> = {
+    name: msg("Name"),
+    firstSeed: msg("Crawl Start URL"),
+    cid: msg("Workflow ID"),
+  };
   @property({ type: Object })
   authState!: AuthState;
 
@@ -101,7 +113,7 @@ export class CrawlsList extends LiteElement {
   private lastFetched?: number;
 
   @state()
-  private crawls?: Crawl[];
+  private crawls?: Crawls;
 
   @state()
   private orderBy: {
@@ -116,10 +128,13 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = false;
 
   @state()
-  private filterByState: CrawlState[] = [];
+  private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private searchBy: string = "";
+  private searchByValue: string = "";
+
+  @state()
+  private searchResultsOpen = false;
 
   @state()
   private crawlToEdit: Crawl | null = null;
@@ -127,28 +142,30 @@ export class CrawlsList extends LiteElement {
   @state()
   private isEditingCrawl = false;
 
+  @query("#stateSelect")
+  stateSelect?: SlSelect;
+
   // For fuzzy search:
   private fuse = new Fuse([], {
-    keys: ["cid", "configName", "firstSeed"],
+    keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
   private timerId?: number;
 
-  private filterCrawls = (crawls: Crawl[]) =>
-    this.filterByState.length
-      ? crawls.filter((crawl) =>
-          this.filterByState.some((state) => crawl.state === state)
-        )
-      : crawls;
+  // Use to cancel requests
+  private getCrawlsController: AbortController | null = null;
 
-  private sortCrawls = (
-    crawlsResults: CrawlSearchResult[]
-  ): CrawlSearchResult[] =>
-    orderBy(({ item }) => item[this.orderBy.field])(this.orderBy.direction)(
-      crawlsResults
-    ) as CrawlSearchResult[];
+  private get hasSearchStr() {
+    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+  }
+
+  private get selectedSearchFilterKey() {
+    return Object.keys(CrawlsList.FieldLabels).find((key) =>
+      Boolean((this.filterBy as any)[key])
+    );
+  }
 
   constructor() {
     super();
@@ -162,16 +179,21 @@ export class CrawlsList extends LiteElement {
       changedProperties.has("shouldFetch") ||
       changedProperties.get("crawlsBaseUrl") ||
       changedProperties.get("crawlsAPIBaseUrl") ||
-      changedProperties.has("filterByCurrentUser")
+      changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("filterBy") ||
+      changedProperties.has("orderBy")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
           throw new Error("Crawls base URL not defined");
         }
 
-        this.fetchCrawls();
+        this.fetchCrawls({
+          page: 1,
+          pageSize: INITIAL_PAGE_SIZE,
+        });
       } else {
-        this.stopPollTimer();
+        this.cancelInProgressGetCrawls();
       }
 
       if (changedProperties.has("filterByCurrentUser")) {
@@ -181,10 +203,17 @@ export class CrawlsList extends LiteElement {
         );
       }
     }
+
+    if (
+      changedProperties.has("crawlsBaseUrl") ||
+      changedProperties.has("crawlsAPIBaseUrl")
+    ) {
+      this.fetchConfigSearchValues();
+    }
   }
 
   disconnectedCallback(): void {
-    this.stopPollTimer();
+    this.cancelInProgressGetCrawls();
     super.disconnectedCallback();
   }
 
@@ -196,6 +225,8 @@ export class CrawlsList extends LiteElement {
         <sl-spinner></sl-spinner>
       </div>`;
     }
+
+    const hasCrawlItems = this.crawls.items.length;
 
     return html`
       <main>
@@ -210,32 +241,30 @@ export class CrawlsList extends LiteElement {
           </div>
         </header>
         <section>
-          ${this.crawls.length
-            ? this.renderCrawlList()
-            : html`
-                <div class="border-t border-b py-5">
-                  <p class="text-center text-neutral-500">
-                    ${msg("No crawls yet.")}
-                  </p>
-                </div>
-              `}
+          ${hasCrawlItems ? this.renderCrawlList() : this.renderEmptyState()}
         </section>
-        <footer class="m-2">
-          <span class="text-0-400 text-xs">
-            ${this.lastFetched
-              ? msg(html`Last updated:
-                  <sl-format-date
-                    date="${new Date(this.lastFetched).toString()}"
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    second="numeric"
-                  ></sl-format-date>`)
-              : ""}
-          </span>
-        </footer>
+
+        ${when(
+          hasCrawlItems || this.crawls.page > 1,
+          () => html`
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                page=${this.crawls!.page}
+                totalCount=${this.crawls!.total}
+                size=${this.crawls!.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  await this.fetchCrawls({
+                    page: e.detail.page,
+                  });
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        )}
       </main>
     `;
   }
@@ -246,38 +275,25 @@ export class CrawlsList extends LiteElement {
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          <sl-input
-            class="w-full"
-            size="small"
-            slot="trigger"
-            placeholder=${msg(
-              "Search by name, Crawl Start URL, or Workflow ID"
-            )}
-            clearable
-            ?disabled=${!this.crawls?.length}
-            value=${this.searchBy}
-            @sl-clear=${() => {
-              this.onSearchInput.cancel();
-              this.searchBy = "";
-            }}
-            @sl-input=${this.onSearchInput}
-          >
-            <sl-icon name="search" slot="prefix"></sl-icon>
-          </sl-input>
+          ${this.renderSearch()}
         </div>
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
           <sl-select
+            id="stateSelect"
             class="flex-1 md:min-w-[14.5rem]"
             size="small"
             pill
-            .value=${this.filterByState}
             multiple
             max-tags-visible="1"
             placeholder=${msg("All Crawls")}
-            @sl-change=${(e: CustomEvent) => {
+            @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
-              this.filterByState = value;
+              await this.updateComplete;
+              this.filterBy = {
+                ...this.filterBy,
+                state: value,
+              };
             }}
           >
             ${activeCrawlStates.map(this.renderStatusMenuItem)}
@@ -343,48 +359,106 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderCrawlList() {
-    // Return search results if valid filter string is available,
-    // otherwise format crawls list like search results
-    const searchResults =
-      this.searchBy.length >= MIN_SEARCH_LENGTH
-        ? () => this.fuse.search(this.searchBy)
-        : map((crawl) => ({ item: crawl }));
-    const filteredCrawls = flow(
-      this.filterCrawls,
-      searchResults
-    )(this.crawls as Crawl[]);
+  private renderSearch() {
+    return html`
+      <btrix-combobox
+        ?open=${this.searchResultsOpen}
+        @request-close=${() => {
+          this.searchResultsOpen = false;
+          this.searchByValue = "";
+        }}
+        @sl-select=${async (e: CustomEvent) => {
+          this.searchResultsOpen = false;
+          const item = e.detail.item as SlMenuItem;
+          const key = item.dataset["key"] as SearchFields;
+          this.searchByValue = item.value;
+          await this.updateComplete;
+          this.filterBy = {
+            ...this.filterBy,
+            [key]: item.value,
+          };
+        }}
+      >
+        <sl-input
+          size="small"
+          placeholder=${msg("Filter by name, Crawl Start URL, or Workflow ID")}
+          clearable
+          value=${this.searchByValue}
+          @sl-clear=${() => {
+            this.searchResultsOpen = false;
+            this.onSearchInput.cancel();
+            const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
+            this.filterBy = otherFilters;
+          }}
+          @sl-input=${this.onSearchInput}
+          @focus=${() => {
+            if (this.hasSearchStr) {
+              this.searchResultsOpen = true;
+            }
+          }}
+        >
+          ${when(
+            this.selectedSearchFilterKey,
+            () =>
+              html`<sl-tag
+                slot="prefix"
+                size="small"
+                pill
+                style="margin-left: var(--sl-spacing-3x-small)"
+                >${CrawlsList.FieldLabels[
+                  this.selectedSearchFilterKey as SearchFields
+                ]}</sl-tag
+              >`,
+            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
+          )}
+        </sl-input>
+        ${this.renderSearchResults()}
+      </btrix-combobox>
+    `;
+  }
 
-    if (!filteredCrawls.length) {
+  private renderSearchResults() {
+    if (!this.hasSearchStr) {
       return html`
-        <div class="border rounded-lg bg-neutral-50 p-4">
-          <p class="text-center">
-            <span class="text-neutral-400"
-              >${msg("No matching crawls found.")}</span
-            >
-            <button
-              class="text-neutral-500 font-medium underline hover:no-underline"
-              @click=${() => {
-                this.filterByState = [];
-                this.onSearchInput.cancel();
-                this.searchBy = "";
-              }}
-            >
-              ${msg("Clear all filters")}
-            </button>
-          </p>
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+        >
+      `;
+    }
 
-          <div></div>
-        </div>
+    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
+    if (!searchResults.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("No matching crawls found.")}</sl-menu-item
+        >
       `;
     }
 
     return html`
+      ${searchResults.map(
+        ({ item }: SearchResult) => html`
+          <sl-menu-item
+            slot="menu-item"
+            data-key=${item.key}
+            value=${item.value}
+          >
+            <sl-tag slot="prefix" size="small" pill
+              >${CrawlsList.FieldLabels[item.key]}</sl-tag
+            >
+            ${item.value}
+          </sl-menu-item>
+        `
+      )}
+    `;
+  }
+
+  private renderCrawlList() {
+    if (!this.crawls) return;
+
+    return html`
       <btrix-crawl-list>
-        ${flow(
-          this.sortCrawls,
-          map(this.renderCrawlItem)
-        )(filteredCrawls as CrawlSearchResult[])}
+        ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 
       <btrix-crawl-metadata-editor
@@ -399,7 +473,7 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = ({ item: crawl }: CrawlSearchResult) =>
+  private renderCrawlItem = (crawl: Crawl) =>
     html`
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
@@ -467,7 +541,7 @@ export class CrawlsList extends LiteElement {
       </sl-menu-item>
       <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
         <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-        ${msg("Copy Config ID")}
+        ${msg("Copy Workflow ID")}
       </sl-menu-item>
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
@@ -497,29 +571,91 @@ export class CrawlsList extends LiteElement {
     return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
   };
 
-  private onSearchInput = debounce(200)((e: any) => {
-    this.searchBy = e.target.value;
+  private renderEmptyState() {
+    if (Object.keys(this.filterBy).length) {
+      return html`
+        <div class="border rounded-lg bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching crawls found.")}</span
+            >
+            <button
+              class="text-neutral-500 font-medium underline hover:no-underline"
+              @click=${() => {
+                this.filterBy = {};
+                this.onSearchInput.cancel();
+                this.searchByValue = "";
+                if (this.stateSelect) {
+                  // TODO pass in value to sl-select after upgrading
+                  // shoelace to >=2.0.0-beta.88. Passing an array value
+                  // using beta.85 is currently buggy.
+                  this.stateSelect.value = [];
+                }
+              }}
+            >
+              ${msg("Clear all filters")}
+            </button>
+          </p>
+        </div>
+      `;
+    }
+
+    if (this.crawls?.page && this.crawls?.page > 1) {
+      return html`
+        <div class="border-t border-b py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("Could not find page.")}
+          </p>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="border-t border-b py-5">
+        <p class="text-center text-neutral-500">${msg("No crawls yet.")}</p>
+      </div>
+    `;
+  }
+
+  private onSearchInput = debounce(150)((e: any) => {
+    this.searchByValue = e.target.value.trim();
+
+    if (this.searchResultsOpen === false && this.hasSearchStr) {
+      this.searchResultsOpen = true;
+    }
+
+    if (!this.searchByValue && this.selectedSearchFilterKey) {
+      const {
+        [this.selectedSearchFilterKey as SearchFields]: _,
+        ...otherFilters
+      } = this.filterBy;
+      this.filterBy = {
+        ...otherFilters,
+      };
+    }
   }) as any;
 
   /**
    * Fetch crawls and update internal state
    */
-  private async fetchCrawls(): Promise<void> {
+  private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
     if (!this.shouldFetch) return;
 
-    this.stopPollTimer();
+    this.cancelInProgressGetCrawls();
     try {
-      const crawls = await this.getCrawls();
+      const crawls = await this.getCrawls(params);
 
       this.crawls = crawls;
-      // Update search/filter collection
-      this.fuse.setCollection(this.crawls as any);
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawls at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e === ABORT_REASON_THROTTLE) {
+        console.debug("Fetch crawls aborted to throttle");
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve crawls at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     // Restart timer for next poll
@@ -528,22 +664,70 @@ export class CrawlsList extends LiteElement {
     }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
-  private stopPollTimer() {
+  private cancelInProgressGetCrawls() {
     window.clearTimeout(this.timerId);
+    if (this.getCrawlsController) {
+      this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
+      this.getCrawlsController = null;
+    }
   }
 
-  private async getCrawls(): Promise<Crawl[]> {
-    const params =
-      this.userId && this.filterByCurrentUser ? `?userid=${this.userId}` : "";
-
-    const data: APIPaginatedList = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}${params}`,
-      this.authState!
+  private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const query = queryString.stringify(
+      {
+        ...this.filterBy,
+        page: queryParams?.page || this.crawls?.page || 1,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
     );
 
+    this.getCrawlsController = new AbortController();
+    const data = await this.apiFetch(
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}?${query}`,
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
+    );
+
+    this.getCrawlsController = null;
     this.lastFetched = Date.now();
 
-    return data.items;
+    return data;
+  }
+
+  private async fetchConfigSearchValues() {
+    const oid = (this.crawlsAPIBaseUrl || this.crawlsBaseUrl)
+      .split("/orgs/")[1]
+      .split("/")[0];
+    try {
+      const { names, firstSeeds, workflowIds } = await this.apiFetch(
+        `/orgs/${oid}/crawlconfigs/search-values`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem =
+        (key: SearchFields) =>
+        (value: string): SearchResult["item"] => ({
+          key,
+          value,
+        });
+      this.fuse.setCollection([
+        ...names.map(toSearchItem("name")),
+        ...firstSeeds.map(toSearchItem("firstSeed")),
+        ...workflowIds.map(toSearchItem("cid")),
+      ] as any);
+    } catch (e) {
+      console.debug(e);
+    }
   }
 
   private async cancel(crawl: Crawl) {
@@ -689,7 +873,11 @@ export class CrawlsList extends LiteElement {
         }
       );
 
-      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      const { items, ...crawlsData } = this.crawls!;
+      this.crawls = {
+        ...crawlsData,
+        items: items.filter((c) => c.id !== crawl.id),
+      };
       this.notify({
         message: msg(`Successfully deleted crawl`),
         variant: "success",
