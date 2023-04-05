@@ -1,7 +1,7 @@
 # central place to configure the production replayweb.page loading prefix
 ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
-FROM docker.io/library/node:16 as build
+FROM docker.io/library/node:16 as build_deps
 
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
@@ -11,10 +11,11 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
     VERSION=${VERSION}
 
-
 WORKDIR /app
 COPY yarn.lock package.json ./
 RUN yarn --frozen-lockfile --network-timeout 1000000
+
+FROM docker.io/library/node:16 as build
 
 COPY lit-localize.json \
     postcss.config.js \
