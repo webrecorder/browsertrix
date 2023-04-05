@@ -9,18 +9,18 @@ COPY yarn.lock package.json ./
 # Uses `yarn cache clean` to let Docker cache layer instead
 # of including yarn cache in the build image
 RUN yarn --frozen-lockfile --network-timeout 1000000 && \
-  yarn cache clean
+    yarn cache clean
 
 FROM docker.io/library/node:16 as build
 
 COPY --link lit-localize.json \
-  postcss.config.js \
-  tailwind.config.js \
-  tsconfig.json \
-  webpack.config.js \
-  webpack.prod.js \
-  index.d.ts \
-  ./
+    postcss.config.js \
+    tailwind.config.js \
+    tsconfig.json \
+    webpack.config.js \
+    webpack.prod.js \
+    index.d.ts \
+    ./
 
 COPY --link src ./src/
 
@@ -32,8 +32,8 @@ ARG GIT_BRANCH_NAME
 ARG VERSION
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
-  GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
-  VERSION=${VERSION}
+    GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
+    VERSION=${VERSION}
 
 RUN yarn build
 
