@@ -252,10 +252,14 @@ export class CrawlsList extends LiteElement {
                 page=${this.crawls!.page}
                 totalCount=${this.crawls!.total}
                 size=${this.crawls!.pageSize}
-                @page-change=${(e: PageChangeEvent) => {
-                  this.fetchCrawls({
+                @page-change=${async (e: PageChangeEvent) => {
+                  await this.fetchCrawls({
                     page: e.detail.page,
                   });
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
                 }}
               ></btrix-pagination>
             </footer>
