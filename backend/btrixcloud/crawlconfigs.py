@@ -503,8 +503,6 @@ class CrawlConfigOps:
                     "as": "configCrawls",
                 },
             },
-            # Set crawl count
-            {"$set": {"crawlCount": {"$size": "$configCrawls"}}},
             # Filter workflow crawls on finished and active
             {
                 "$set": {
@@ -522,6 +520,8 @@ class CrawlConfigOps:
                     }
                 }
             },
+            # Set crawl count to number of finished crawls
+            {"$set": {"crawlCount": {"$size": "$finishedCrawls"}}},
             # Sort finished crawls by finished time descending to get latest
             {
                 "$set": {
