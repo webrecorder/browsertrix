@@ -10,7 +10,7 @@ The production deployments also allow using an external mongodb server, and/or e
 
 ## Single Machine Deployment with MicroK8S
 
-For a single-machine production deployment, we recommend using microk8s.
+For a single-machine production deployment, we recommend using [MicroK8s](https://microk8s.io/).
 
 1. Install MicroK8S, as suggested in [the local deployment guide](../deploy/local.md) and ensure the `ingress` and `cert-manager` addons are also enabled.
 
@@ -22,7 +22,7 @@ For a single-machine production deployment, we recommend using microk8s.
 
 4. Run with:
 
-   ```
+   ```shell
    helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
    ```
 
@@ -31,7 +31,7 @@ For a single-machine production deployment, we recommend using microk8s.
 
 If you would like to use existing external storage, such an existing S3-compatible storage, also set the default storage, for example:
 
-```
+```yaml
 minio_local: false
 
 storages:
@@ -49,11 +49,10 @@ Note that this setup is not limited to Amazon S3, but should work with any S3-co
 
 If you would like to use an externally hosted MongoDB, you can add the following config to point to a custom MongoDB instance.
 
-The `db_url` should follow the [MongoDB Connection String Format](https://www.mongodb.com/docs/manual/reference/connection-string/)
-which should include the username and password of the remote instance.
+The `db_url` should follow the [MongoDB Connection String Format](https://www.mongodb.com/docs/manual/reference/connection-string/) which should include the username and password of the remote instance.
 
 
-```
+```yaml
 mongo_local: false
 
 mongo_auth:
