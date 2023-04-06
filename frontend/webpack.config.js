@@ -81,8 +81,11 @@ const main = {
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
-        use: "ts-loader",
+        loader: "ts-loader",
         exclude: /node_modules/,
+        options: {
+          onlyCompileBundledFiles: true,
+        },
       },
       {
         test: /\.css$/,
@@ -113,7 +116,7 @@ const main = {
     }),
 
     new webpack.optimize.LimitChunkCountPlugin({
-      maxChunks: 12
+      maxChunks: 12,
     }),
 
     new HtmlWebpackPlugin({
