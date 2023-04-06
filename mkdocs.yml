@@ -24,8 +24,19 @@ theme:
 
   icon:
     admonition:
-      tip: fontawesome/solid/angles-right
-      example: fontawesome/solid/flask
+      note: bootstrap/pencil-fill
+      abstract: bootstrap/file-earmark-text-fill
+      info: bootstrap/info-circle-fill
+      tip: bootstrap/exclamation-circle-fill
+      success: bootstrap/check-circle-fill
+      question: bootstrap/question-circle-fill
+      warning: bootstrap/exclamation-triangle-fill
+      failure: bootstrap/x-octagon-fill
+      danger: bootstrap/exclamation-diamond-fill
+      bug: bootstrap/bug-fill
+      example: bootstrap/mortarboard-fill
+      quote: bootstrap/quote
+
     repo: bootstrap/github
     edit: bootstrap/pencil
     view: bootstrap/eye

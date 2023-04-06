@@ -12,7 +12,7 @@ The instructions below assume you have cloned the [https://github.com/webrecorde
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
-??? tip "Docker Desktop (recommended for Mac and Windows)"
+??? info "Docker Desktop (recommended for Mac and Windows)"
 
     For Mac and Windows, we recommend testing out Browsertrix Cloud using Kubernetes support in Docker Desktop as that will be one of the simplest options.
 
@@ -25,7 +25,7 @@ Here are some environment specific instructions for setting up a local cluster f
     4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
 
-??? tip "MicroK8S (recommended for Ubuntu)"
+??? info "MicroK8S (recommended for Ubuntu)"
 
     For Ubuntu and other linux distros, we recommend using MicroK8S for both local deployment and production.
 
@@ -37,7 +37,7 @@ Here are some environment specific instructions for setting up a local cluster f
 
     Note: microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
 
-??? tip "Minikube (Windows, Mac or Linux)"
+??? info "Minikube (Windows, Mac or Linux)"
 
     1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`
 
@@ -47,7 +47,7 @@ Here are some environment specific instructions for setting up a local cluster f
 
     4. Mac Only: To access Browsertrix Cloud running in minikube on a mac, run `minikube service browsertrix-cloud-frontend --url` and then access Browsertrix Cloud via the provided URL. This is needed as Browsertrix Cloud is running in a VM.
 
-??? tip "K3S (recommended for non-Ubuntu Linux)"
+??? info "K3S (recommended for non-Ubuntu Linux)"
 
     1. Install K3s [as per the instructions](https://docs.k3s.io/quick-start)
 
@@ -142,12 +142,12 @@ frontend_pull_policy: "Never"
 Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
 
 
-??? tip "Docker Desktop"
+??? info "Docker Desktop"
 
     Rebuild the local images by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts to build the images in the local Docker.
 
 
-??? tip "MicroK8S"
+??? info "MicroK8S"
 
     MicroK8s uses its own container registry, running on port 32000. 
 
@@ -160,7 +160,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
     ```
 
-??? tip "Minikube" 
+??? info "Minikube" 
 
     Minikube comes with its own image builder to update the images used in Minikube.
 
@@ -176,7 +176,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
     ```
 
-??? tip "K3S"
+??? info "K3S"
 
     K3S uses `containerd` by default. To use local images, they need to be imported after rebuilding.
 
