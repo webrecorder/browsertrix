@@ -1,21 +1,15 @@
-# Introduction to Deployment
+# Deploying Browsertrix Cloud
 
 Browsertrix Cloud is designed to be a cloud-native application running in Kubernetes.
 
-However, despite the name, it is perfectly reasonable (and easy!) to deploy Browsertrix Cloud locally using one of the many available local Kubernetes options. Here are a few recommendations for different scenarios.
+However, despite the name, it is perfectly reasonable (and easy!) to deploy Browsertrix Cloud locally using one of the many available local Kubernetes options.
 
 The main requirements for Browsertrix Cloud are:
 
 - A Kubernetes Cluster
 - [Helm 3](https://helm.sh/) (package manager for Kubernetes)
 
-We have prepared a [Local Deployment](./local) and [Production (Self-Hosted and Cloud) Deployment](./production) guides to help with
-setting up Browsertrix Cloud for different scenarios.
 
-### Non Kubernetes Deployments
-
-Previously, Browsertrix Cloud also supported Docker Compose and podman-based deployment. This is now deprecated due to the complexity
-of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
-
-Making deployment of Browsertrix Cloud as easy as possible remains a key goal, and we welcome suggestions for how we can further improve our Kubernetes deployment options.
-
+We have prepared a [Local Deployment Guide](./local) which covers several options for testing Browsertrix Cloud locally on a single machine,
+as well as a [Production (Self-Hosted and Cloud) Deployment](./production) guides to help with
+setting up Browsertrix Cloud for different production scenarios.
