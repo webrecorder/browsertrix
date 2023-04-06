@@ -534,7 +534,7 @@ export class CrawlConfigEditor extends LiteElement {
           progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
           <header slot="header" class="flex justify-between items-baseline">
-            <h3>${tabLabels[this.progressState.activeTab]}</h3>
+            <h3 class="font-semibold">${tabLabels[this.progressState.activeTab]}</h3>
             <p class="text-xs text-neutral-500 font-normal">
               ${msg(
                 html`Fields marked with
@@ -788,6 +788,7 @@ export class CrawlConfigEditor extends LiteElement {
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
+          inputmode="url"
           value=${this.formState.urlList}
           placeholder=${`https://example.com
 https://example.com/path`}
@@ -984,6 +985,7 @@ https://example.com/path`}
           name="primarySeedUrl"
           label=${msg("Crawl Start URL")}
           autocomplete="off"
+          inputmode="url"
           placeholder=${urlPlaceholder}
           value=${this.formState.primarySeedUrl}
           required
@@ -1049,6 +1051,7 @@ https://example.com/path`}
               label=${msg("Extra URLs in Scope")}
               rows="3"
               autocomplete="off"
+              inputmode="url"
               value=${this.formState.customIncludeUrlList}
               placeholder=${`https://example.org
 https://example.net`}
@@ -1128,6 +1131,7 @@ https://example.net`}
                 label=${msg("List of URLs")}
                 rows="3"
                 autocomplete="off"
+                inputmode="url"
                 value=${this.formState.urlList}
                 placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
@@ -1200,6 +1204,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-input
           name="pageLoadTimeoutSeconds"
           type="number"
+          inputmode="numeric"
           label=${msg("Page Load Timeout")}
           placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
             ? msg(
@@ -1222,6 +1227,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-input
           name="behaviorTimeoutSeconds"
           type="number"
+          inputmode="numeric"
           label=${msg("Behavior Timeout")}
           placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
             ? msg(
@@ -1254,6 +1260,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-input
           name="pageExtraDelaySeconds"
           type="number"
+          inputmode="numeric"
           label=${msg("Delay Before Next Page")}
           placeholder=${"Default: 0"}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
@@ -1287,6 +1294,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             name="pageLimit"
             label=${msg("Max Pages")}
             type="number"
+            inputmode="numeric"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
             max=${ifDefined(
@@ -1320,6 +1328,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           placeholder=${msg("Default: Unlimited")}
           min="0"
           type="number"
+          inputmode="numeric"
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1493,6 +1502,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               name="scheduleDayOfMonth"
               label=${msg("Date")}
               type="number"
+              inputmode="numeric"
               min="1"
               max="31"
               value=${this.formState.scheduleDayOfMonth}
