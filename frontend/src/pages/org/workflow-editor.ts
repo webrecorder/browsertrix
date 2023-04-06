@@ -16,8 +16,6 @@ import compact from "lodash/fp/compact";
 import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
-import RegexColorize from "regex-colorize";
-import ISO6391 from "iso-639-1";
 import Fuse from "fuse.js";
 
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -101,6 +99,7 @@ type FormState = {
   browserProfile: Profile | null;
   tags: Tags;
   description: WorkflowParams["description"];
+  disableAutoscrollBehavior: boolean;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -169,6 +168,7 @@ const getDefaultFormState = (): FormState => ({
   browserProfile: null,
   tags: [],
   description: null,
+  disableAutoscrollBehavior: false,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -195,6 +195,12 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
+const DEFAULT_BEHAVIORS = [
+  "autoscroll",
+  "autoplay",
+  "autofetch",
+  "siteSpecific",
+];
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -493,11 +499,13 @@ export class CrawlConfigEditor extends LiteElement {
         : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
-      includeLinkedPages: Boolean(
-        primarySeedConfig.extraHops || seedsConfig.extraHops
-      ),
+      includeLinkedPages:
+        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
+      disableAutoscrollBehavior: this.initialWorkflow.config.behaviors
+        ? !this.initialWorkflow.config.behaviors.includes("autoscroll")
+        : defaultFormState.disableAutoscrollBehavior,
       ...formState,
     };
   }
@@ -1229,6 +1237,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Limits how long behaviors can run on each page.`)
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="disableAutoscrollBehavior"
+        ?checked=${this.formState.disableAutoscrollBehavior}
+      >
+        ${msg("Disable Auto-Scroll Behavior")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Prevents browser from automatically scrolling until the end of the page.`
+        ),
+        false
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -2017,6 +2037,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
+        behaviors: (this.formState.disableAutoscrollBehavior
+          ? DEFAULT_BEHAVIORS.slice(1)
+          : DEFAULT_BEHAVIORS
+        ).join(","),
       },
     };
 
