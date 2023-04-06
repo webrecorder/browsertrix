@@ -383,7 +383,7 @@ export class WorkflowDetail extends LiteElement {
             ? msg("Last Completed Crawl")
             : msg("Latest Crawl")}
         </h3>
-        <div>
+        <btrix-crawl-list>
           <btrix-crawl-list-item .crawl=${this.lastCrawl}>
             <sl-menu slot="menu">
               <sl-menu-item
@@ -398,7 +398,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
             </sl-menu>
           </btrix-crawl-list-item>
-        </div>
+        </btrix-crawl-list>
       </section>
     `;
   }
