@@ -99,7 +99,7 @@ type FormState = {
   browserProfile: Profile | null;
   tags: Tags;
   description: WorkflowParams["description"];
-  disableAutoscrollBehavior: boolean;
+  autoscrollBehavior: boolean;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -168,7 +168,7 @@ const getDefaultFormState = (): FormState => ({
   browserProfile: null,
   tags: [],
   description: null,
-  disableAutoscrollBehavior: false,
+  autoscrollBehavior: true,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -503,9 +503,9 @@ export class CrawlConfigEditor extends LiteElement {
         Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
-      disableAutoscrollBehavior: this.initialWorkflow.config.behaviors
-        ? !this.initialWorkflow.config.behaviors.includes("autoscroll")
-        : defaultFormState.disableAutoscrollBehavior,
+      autoscrollBehavior: this.initialWorkflow.config.behaviors
+        ? this.initialWorkflow.config.behaviors.includes("autoscroll")
+        : defaultFormState.autoscrollBehavior,
       ...formState,
     };
   }
@@ -1239,14 +1239,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Limits how long behaviors can run on each page.`)
       )}
       ${this.renderFormCol(html`<sl-checkbox
-        name="disableAutoscrollBehavior"
-        ?checked=${this.formState.disableAutoscrollBehavior}
+        name="autoscrollBehavior"
+        ?checked=${this.formState.autoscrollBehavior}
       >
-        ${msg("Disable Auto-Scroll Behavior")}
+        ${msg("Auto-Scroll Behavior")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(
-          `Prevents browser from automatically scrolling until the end of the page.`
+          `When enabled the browser will automatically scroll to the end of the page.`
         ),
         false
       )}
@@ -2037,9 +2037,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
-        behaviors: (this.formState.disableAutoscrollBehavior
-          ? DEFAULT_BEHAVIORS.slice(1)
-          : DEFAULT_BEHAVIORS
+        behaviors: (this.formState.autoscrollBehavior
+          ? DEFAULT_BEHAVIORS
+          : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
     };
