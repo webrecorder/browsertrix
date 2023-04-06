@@ -10,8 +10,8 @@ type ScopeType =
 export type Seed = {
   url: string;
   scopeType: ScopeType;
-  include?: string[];
-  exclude?: string[];
+  include?: string[] | null;
+  exclude?: string[] | null;
   limit?: number | null;
   extraHops?: number | null;
 };
