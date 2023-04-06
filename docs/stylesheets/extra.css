@@ -6,6 +6,13 @@
 
 /* Import monospaced recursive from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Recursive:MONO@1&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Recursive'); */
+
+
+code, pre, kbd {
+    font-variation-settings: "MONO" 1;
+    font-variant-alternates: styleset(ss08)!important;
+}
 
 
 [data-md-color-scheme="webrecorder"] {
