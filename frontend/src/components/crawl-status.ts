@@ -40,11 +40,10 @@ export class CrawlStatus extends LitElement {
     label: string;
   } {
     let icon = html`<sl-icon
-      name="dot"
-      library="app"
+      name="circle"
       class="neutral"
       slot="prefix"
-      style="color: var(--sl-color-neutral-300)"
+      style="color: var(--sl-color-neutral-400)"
     ></sl-icon>`;
     let label = "";
 

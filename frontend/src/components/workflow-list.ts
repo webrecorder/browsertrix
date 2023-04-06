@@ -264,14 +264,13 @@ export class WorkflowListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender((workflow) =>
-            workflow.lastCrawlState
-              ? html`
-                  <btrix-crawl-status
-                    state=${workflow.lastCrawlState}
-                  ></btrix-crawl-status>
-                `
-              : html`${msg("No Crawls Yet")}`
+          ${this.safeRender(
+            (workflow) =>
+              html`
+                <btrix-crawl-status
+                  state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+                ></btrix-crawl-status>
+              `
           )}
         </div>
         <div class="desc finished">TODO runtime</div>
