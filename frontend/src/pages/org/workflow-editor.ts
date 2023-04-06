@@ -195,6 +195,8 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
+const mapSeedToUrl = (arr: Seed[]) =>
+  arr.map((seed) => (typeof seed === "string" ? seed : seed.url));
 const DEFAULT_BEHAVIORS = [
   "autoscroll",
   "autoplay",
@@ -428,13 +430,11 @@ export class CrawlConfigEditor extends LiteElement {
       }
       const additionalSeeds = seeds.slice(1);
       if (additionalSeeds.length) {
-        formState.urlList = additionalSeeds.join("\n");
+        formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
       }
     } else {
       // Treat "custom" like URL list
-      formState.urlList = seeds
-        .map((seed) => (typeof seed === "string" ? seed : seed.url))
-        .join("\n");
+      formState.urlList = mapSeedToUrl(seeds).join("\n");
 
       if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
