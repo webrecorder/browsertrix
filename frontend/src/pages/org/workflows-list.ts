@@ -329,6 +329,8 @@ export class WorkflowsList extends LiteElement {
   }
 
   private renderWorkflowList() {
+    if (!this.workflows) return;
+
     const flowFns = [
       orderBy(this.orderBy.field, this.orderBy.direction),
       map(this.renderWorkflowItem),

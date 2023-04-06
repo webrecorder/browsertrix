@@ -414,38 +414,41 @@ export class WorkflowList extends LitElement {
     columnCss,
     hostVars,
     css`
-       .listHeader,
-       .list {
-         margin-left: var(--row-offset);
-         margin-right: var(--row-offset);
-       }
- 
-       .listHeader {
-         line-height: 1;
-       }
- 
-       .row {
-         display none;
-         font-size: var(--sl-font-size-x-small);
-         color: var(--sl-color-neutral-600);
-       }
- 
-       .col {
-         padding-top: var(--sl-spacing-x-small);
-         padding-bottom: var(--sl-spacing-x-small);
-       }
- 
-       @media only screen and (min-width: ${largeBreakpointCss}) {
-         .row {
-           display: grid;
-         }
-       }
- 
-       ::slotted(btrix-workflow-list-item:not(:last-of-type)) {
-         display: block;
-         margin-bottom: var(--sl-spacing-x-small);
-       }
-     `,
+      .listHeader,
+      .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
+      }
+
+      .listHeader {
+        line-height: 1;
+      }
+
+      .row {
+        display none;
+        font-size: var(--sl-font-size-x-small);
+        color: var(--sl-color-neutral-600);
+      }
+
+      .col {
+        padding-top: var(--sl-spacing-x-small);
+        padding-bottom: var(--sl-spacing-x-small);
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .row {
+          display: grid;
+        }
+      }
+
+      ::slotted(btrix-workflow-list-item) {
+        display: block;
+      }
+
+      ::slotted(btrix-workflow-list-item:not(:last-of-type)) {
+        margin-bottom: var(--sl-spacing-x-small);
+      }
+    `,
   ];
 
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })

@@ -41,7 +41,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 17rem 10rem 8rem 3rem;
     }
   }
 
@@ -80,9 +80,10 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
-        contain: content;
+        /* contain: content;
         content-visibility: auto;
-        contain-intrinsic-height: auto 4rem;
+        contain-intrinsic-height: auto 2.5rem; */
+        height: 2.5rem;
         cursor: pointer;
         transition-property: background-color, box-shadow, margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -102,31 +103,11 @@ export class CrawlListItem extends LitElement {
       }
       .item:hover {
         background-color: var(--sl-color-neutral-50);
-        margin-left: calc(-1 * var(--row-offset));
-        margin-right: calc(-1 * var(--row-offset));
-      }
-
-      .item:hover .col:nth-child(n + 2) {
-        margin-left: calc(-1 * var(--row-offset));
-      }
-
-      .item:hover .col.action {
-        margin-left: calc(-2 * var(--row-offset));
-      }
-
-      .row {
-        border: 1px solid var(--sl-panel-border-color);
-        border-radius: var(--sl-border-radius-medium);
-        box-shadow: var(--sl-shadow-x-small);
-      }
-
-      .row:hover {
-        box-shadow: var(--sl-shadow-small);
       }
 
       .col {
-        padding-top: var(--sl-spacing-small);
-        padding-bottom: var(--sl-spacing-small);
+        display: flex;
+        align-items: center;
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
@@ -137,7 +118,8 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-700);
         font-size: var(--sl-font-size-medium);
         text-overflow: ellipsis;
-        height: 1.5rem;
+        margin-right: 1em;
+        white-space: nowrap;
       }
 
       .desc {
@@ -145,11 +127,14 @@ export class CrawlListItem extends LitElement {
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
-        height: 1rem;
       }
 
       .unknownValue {
         color: var(--sl-color-neutral-500);
+      }
+
+      .detail btrix-crawl-status {
+        display: flex;
       }
 
       .url {
@@ -173,10 +158,6 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-500);
       }
 
-      .finished {
-        margin-left: calc(1rem + var(--sl-spacing-x-small));
-      }
-
       .userName {
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
@@ -190,12 +171,6 @@ export class CrawlListItem extends LitElement {
 
       .action sl-icon-button {
         font-size: 1rem;
-      }
-
-      @media only screen and (min-width: ${largeBreakpointCss}) {
-        .action {
-          border-left: 1px solid var(--sl-panel-border-color);
-        }
       }
     `,
   ];
@@ -216,7 +191,9 @@ export class CrawlListItem extends LitElement {
   private dropdownIsOpen?: boolean;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+  });
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("dropdownIsOpen")) {
@@ -258,20 +235,6 @@ export class CrawlListItem extends LitElement {
         <div class="detail url truncate">
           ${this.safeRender(this.renderName)}
         </div>
-        <div class="desc">
-          ${this.safeRender(
-            (crawl) => html`
-              <sl-format-date
-                date=${`${crawl.started}Z`}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>
-            `
-          )}
-        </div>
       </div>
       <div class="col">
         <div class="detail">
@@ -281,16 +244,17 @@ export class CrawlListItem extends LitElement {
             `
           )}
         </div>
-        <div class="desc finished">
+        <div class="desc truncate">
           ${this.safeRender((crawl) =>
             crawl.finished
-              ? msg(
-                  str`Finished in ${RelativeDuration.humanize(
-                    new Date(`${crawl.finished}Z`).valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf(),
-                    { compact: true }
-                  )}`
-                )
+              ? html`<sl-format-date
+                  date=${`${crawl.finished}Z`}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></sl-format-date>`
               : msg(
                   str`Started ${RelativeDuration.humanize(
                     new Date().valueOf() -
@@ -308,10 +272,11 @@ export class CrawlListItem extends LitElement {
               ? html`<span class="unknownValue">${msg("In Progress")}</span>`
               : html`<sl-format-bytes
                   value=${crawl.fileSize || 0}
+                  display="narrow"
                 ></sl-format-bytes>`
           )}
         </div>
-        <div class="desc">
+        <div class="desc truncate">
           ${this.safeRender((crawl) => {
             const pagesComplete = +(crawl.stats?.done || 0);
             if (isActive) {
@@ -342,11 +307,6 @@ export class CrawlListItem extends LitElement {
         <div class="detail truncate">
           ${this.safeRender(
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
-          )}
-        </div>
-        <div class="desc">
-          ${this.safeRender((crawl) =>
-            crawl.manual ? msg("Manual Start") : msg("Scheduled")
           )}
         </div>
       </div>
@@ -452,38 +412,46 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-       .listHeader,
-       .list {
-         margin-left: var(--row-offset);
-         margin-right: var(--row-offset);
-       }
- 
-       .listHeader {
-         line-height: 1;
-       }
- 
-       .row {
-         display none;
-         font-size: var(--sl-font-size-x-small);
-         color: var(--sl-color-neutral-600);
-       }
- 
-       .col {
-         padding-top: var(--sl-spacing-x-small);
-         padding-bottom: var(--sl-spacing-x-small);
-       }
- 
-       @media only screen and (min-width: ${largeBreakpointCss}) {
-         .row {
-           display: grid;
-         }
-       }
- 
-       ::slotted(btrix-crawl-list-item:not(:last-of-type)) {
-         display: block;
-         margin-bottom: var(--sl-spacing-x-small);
-       }
-     `,
+      .listHeader,
+      .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
+      }
+
+      .listHeader {
+        line-height: 1;
+      }
+
+      .list {
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+      }
+
+      .row {
+        display none;
+        font-size: var(--sl-font-size-x-small);
+        color: var(--sl-color-neutral-600);
+      }
+
+      .col {
+        padding-top: var(--sl-spacing-x-small);
+        padding-bottom: var(--sl-spacing-x-small);
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .row {
+          display: grid;
+        }
+      }
+
+      ::slotted(btrix-crawl-list-item) {
+        display: block;
+      }
+
+      ::slotted(btrix-crawl-list-item:not(:first-of-type)) {
+        box-shadow: inset 0px 1px 0 var(--sl-panel-border-color);
+      }
+    `,
   ];
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
@@ -491,10 +459,10 @@ export class CrawlList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & Start Time")}</div>
+        <div class="col">${msg("Workflow Name")}</div>
         <div class="col">${msg("Status")}</div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Config Author")}</div>
+        <div class="col">${msg("Started By")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>
