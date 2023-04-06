@@ -215,6 +215,8 @@ class CrawlJob(ABC):
 
         await self.update_crawl(state="failed", finished=self.finished)
 
+        await self.add_crawl_errors_to_mongo()
+
     async def finish_crawl(self):
         """finish crawl"""
         if self.finished:
@@ -349,6 +351,8 @@ class CrawlJob(ABC):
 
         self.finished = dt_now()
         await self.update_crawl(state="canceled", finished=self.finished)
+
+        await self.add_crawl_errors_to_mongo()
 
         await self.delete_crawl()
 
