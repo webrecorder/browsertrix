@@ -363,8 +363,10 @@ class CrawlOps:
         stats = {
             "crawl_count": 0,
             "last_crawl_id": None,
+            "last_crawl_started": None,
             "last_crawl_finished": None,
             "last_crawl_state": None,
+            "last_started_by": None,
         }
 
         match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
@@ -375,8 +377,13 @@ class CrawlOps:
 
             last_crawl = Crawl.from_dict(results[0])
             stats["last_crawl_id"] = str(last_crawl.id)
+            stats["last_crawl_started"] = last_crawl.started
             stats["last_crawl_finished"] = last_crawl.finished
             stats["last_crawl_state"] = last_crawl.state
+
+            user = await self.user_manager.get(last_crawl.userid)
+            if user:
+                stats["last_started_by"] = user.name
 
         return stats
 

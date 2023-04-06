@@ -192,11 +192,13 @@ class CrawlConfigOut(CrawlConfig):
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
+    lastStartedByName: Optional[str]
 
     firstSeed: Optional[str]
 
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
+    lastCrawlStartTime: Optional[datetime]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
 
@@ -538,8 +540,29 @@ class CrawlConfigOps:
             {"$unset": ["finishedCrawls"]},
             {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
             {"$set": {"lastCrawlId": "$lastCrawl._id"}},
+            {"$set": {"lastCrawlStartTime": "$lastCrawl.started"}},
             {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
             {"$set": {"lastCrawlState": "$lastCrawl.state"}},
+            # Get userid of last started crawl
+            {"$set": {"lastStartedBy": "$lastCrawl.userid"}},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "lastStartedBy",
+                    "foreignField": "id",
+                    "as": "lastStartedByName",
+                },
+            },
+            {
+                "$set": {
+                    "lastStartedByName": {
+                        "$arrayElemAt": ["$lastStartedByName.name", 0]
+                    }
+                }
+            },
+            # total size
+            # {"$set": {"totalSize": {"$sum": "$$finishedCrawls.$$files.size"}}},
+            # unset
             {"$unset": ["lastCrawl"]},
             {"$unset": ["sortedCrawls"]},
         ]
@@ -655,7 +678,9 @@ class CrawlConfigOps:
         )
         crawlconfig.crawlCount = crawl_stats["crawl_count"]
         crawlconfig.lastCrawlId = crawl_stats["last_crawl_id"]
+        crawlconfig.lastCrawlStartTime = crawl_stats["last_crawl_started"]
         crawlconfig.lastCrawlTime = crawl_stats["last_crawl_finished"]
+        crawlconfig.lastStartedByName = crawl_stats["last_started_by"]
         crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
         return crawlconfig
 
