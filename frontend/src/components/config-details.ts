@@ -269,7 +269,8 @@ export class ConfigDetails extends LiteElement {
     const additionalUrlList = seedsConfig.seeds.slice(1);
     const primarySeedConfig: SeedConfig | Seed = seedsConfig.seeds[0];
     const primarySeedUrl = primarySeedConfig.url;
-    const includeUrlList = primarySeedConfig.include || seedsConfig.include;
+    const includeUrlList =
+      primarySeedConfig.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
