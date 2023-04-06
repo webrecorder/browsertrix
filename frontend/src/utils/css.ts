@@ -47,8 +47,8 @@ export const animatePulse = css`
 export const dropdown = css`
   .dropdown {
     contain: content;
-    position: absolute;
     transform-origin: top left;
+    box-shadow: var(--sl-shadow-medium);
   }
 
   .hidden {

@@ -20,6 +20,9 @@ const defaultValue = {
     seeds: [],
     scopeType: "prefix",
     exclude: [""],
+    behaviorTimeout: null,
+    pageLoadTimeout: null,
+    pageExtraDelay: null,
   },
   tags: [],
   crawlTimeout: null,
@@ -107,7 +110,7 @@ export class WorkflowsNew extends LiteElement {
     if (this.isCrawler && jobType) {
       return html`
         ${this.renderHeader()}
-        <h2 class="text-xl font-medium mb-6">
+        <h2 class="text-xl font-semibold mb-6">
           ${msg(html`New Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
@@ -125,7 +128,7 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       ${this.renderHeader()}
-      <h2 class="text-xl font-medium mb-6">${msg("New Workflow")}</h2>
+      <h2 class="text-xl font-semibold mb-6">${msg("New Workflow")}</h2>
       ${when(this.isCrawler, this.renderChooseJobType, this.renderNoAccess)}
     `;
   }
@@ -137,7 +140,7 @@ export class WorkflowsNew extends LiteElement {
           transform: scale(1.05);
         }
       </style>
-      <h3 class="text-lg font-medium mb-3">${msg("Choose Crawl Type")}</h3>
+      <h3 class="text-lg font-semibold mb-3">${msg("Choose Crawl Type")}</h3>
       <div
         class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-start justify-evenly"
       >

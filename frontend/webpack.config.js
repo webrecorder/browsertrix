@@ -81,8 +81,11 @@ const main = {
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
-        use: "ts-loader",
+        loader: "ts-loader",
         exclude: /node_modules/,
+        options: {
+          onlyCompileBundledFiles: true,
+        },
       },
       {
         test: /\.css$/,
@@ -110,6 +113,10 @@ const main = {
   plugins: [
     new webpack.DefinePlugin({
       "process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+    }),
+
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 12,
     }),
 
     new HtmlWebpackPlugin({

@@ -8,17 +8,19 @@ import uuid
 import asyncio
 import re
 from datetime import datetime
+import urllib.parse
 
 import pymongo
 from pydantic import BaseModel, UUID4, conint, HttpUrl
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import paginate
 
 from .users import User
 from .orgs import Organization, MAX_CRAWL_SCALE
-from .pagination import Page
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 from .db import BaseMongoModel
+
+# pylint: disable=too-many-lines
 
 
 # ============================================================================
@@ -62,7 +64,7 @@ class Seed(BaseModel):
 class RawCrawlConfig(BaseModel):
     """Base Crawl Config"""
 
-    seeds: List[Union[HttpUrl, Seed]]
+    seeds: List[Seed]
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
@@ -77,6 +79,8 @@ class RawCrawlConfig(BaseModel):
     blockAds: Optional[bool] = False
 
     behaviorTimeout: Optional[int]
+    pageLoadTimeout: Optional[int]
+    pageExtraDelay: Optional[int] = 0
 
     workers: Optional[int]
 
@@ -189,6 +193,8 @@ class CrawlConfigOut(CrawlConfig):
     createdByName: Optional[str]
     modifiedByName: Optional[str]
 
+    firstSeed: Optional[str]
+
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
     lastCrawlTime: Optional[datetime]
@@ -220,7 +226,7 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes,too-many-arguments
+# pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-public-methods
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
@@ -293,6 +299,7 @@ class CrawlConfigOps:
         user: User,
     ):
         """Add new crawl config"""
+
         data = config.dict()
         data["oid"] = org.id
         data["createdBy"] = user.id
@@ -449,22 +456,109 @@ class CrawlConfigOps:
     async def get_crawl_configs(
         self,
         org: Organization,
-        userid: Optional[UUID4] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        created_by: uuid.UUID = None,
+        modified_by: uuid.UUID = None,
+        first_seed: str = None,
+        name: str = None,
+        description: str = None,
         tags: Optional[List[str]] = None,
+        sort_by: str = None,
+        sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
+        # pylint: disable=too-many-locals
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
         match_query = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
             match_query["tags"] = {"$all": tags}
 
-        if userid:
-            match_query["createdBy"] = userid
+        if created_by:
+            match_query["createdBy"] = created_by
+
+        if modified_by:
+            match_query["modifiedBy"] = modified_by
+
+        if name:
+            match_query["name"] = name
+
+        if description:
+            match_query["description"] = description
 
         # pylint: disable=duplicate-code
-        cursor = self.crawl_configs.aggregate(
+        aggregate = [
+            {"$match": match_query},
+            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
+            # Set firstSeed
+            {"$set": {"firstSeed": "$firstSeedObject.url"}},
+            {"$unset": ["firstSeedObject"]},
+            {
+                "$lookup": {
+                    "from": "crawls",
+                    "localField": "_id",
+                    "foreignField": "cid",
+                    "as": "configCrawls",
+                },
+            },
+            # Filter workflow crawls on finished and active
+            {
+                "$set": {
+                    "finishedCrawls": {
+                        "$filter": {
+                            "input": "$configCrawls",
+                            "as": "filterCrawls",
+                            "cond": {
+                                "$and": [
+                                    {"$ne": ["$$filterCrawls.finished", None]},
+                                    {"$ne": ["$$filterCrawls.inactive", True]},
+                                ]
+                            },
+                        }
+                    }
+                }
+            },
+            # Set crawl count to number of finished crawls
+            {"$set": {"crawlCount": {"$size": "$finishedCrawls"}}},
+            # Sort finished crawls by finished time descending to get latest
+            {
+                "$set": {
+                    "sortedCrawls": {
+                        "$function": {
+                            # pylint: disable=line-too-long
+                            "body": "function(arr) {return arr.sort((a,b) => (a.finished > b.finished) ? -1 : ((b.finished > a.finished) ? 1 : 0));}",
+                            "args": ["$finishedCrawls"],
+                            "lang": "js",
+                        }
+                    }
+                }
+            },
+            {"$unset": ["finishedCrawls"]},
+            {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
+            {"$set": {"lastCrawlId": "$lastCrawl._id"}},
+            {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
+            {"$set": {"lastCrawlState": "$lastCrawl.state"}},
+            {"$unset": ["lastCrawl"]},
+            {"$unset": ["sortedCrawls"]},
+        ]
+
+        if first_seed:
+            aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if sort_by:
+            if sort_by not in ("created, modified, firstSeed, lastCrawlTime"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
             [
-                {"$match": match_query},
                 {
                     "$lookup": {
                         "from": "users",
@@ -489,27 +583,47 @@ class CrawlConfigOps:
                         }
                     }
                 },
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
             ]
         )
 
-        results = await cursor.to_list(length=1000)
+        cursor = self.crawl_configs.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
 
         # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
-        crawls = await self.crawl_ops.list_crawls(org=org, running_only=True)
-
+        crawls, _ = await self.crawl_ops.list_crawls(
+            org=org,
+            running_only=True,
+            # Set high so that when we lower default we still get all running crawls
+            page_size=1_000,
+        )
         running = {}
         for crawl in crawls:
             running[crawl.cid] = crawl.id
 
         configs = []
-        for res in results:
+        for res in items:
             config = CrawlConfigOut.from_dict(res)
-            config = await self._annotate_with_crawl_stats(config)
             # pylint: disable=invalid-name
             config.currCrawlId = running.get(config.id)
             configs.append(config)
 
-        return configs
+        return configs, total
 
     async def get_crawl_config_ids_for_profile(
         self, profileid: uuid.UUID, org: Optional[Organization] = None
@@ -527,7 +641,9 @@ class CrawlConfigOps:
     async def get_running_crawl(self, crawlconfig: CrawlConfig):
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        crawls = await self.crawl_ops.list_crawls(cid=crawlconfig.id, running_only=True)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            cid=crawlconfig.id, running_only=True
+        )
 
         if len(crawls) == 1:
             return crawls[0].id
@@ -596,14 +712,23 @@ class CrawlConfigOps:
         res = await self.crawl_configs.find_one(query)
         return config_cls.from_dict(res)
 
-    async def get_crawl_config_revs(self, cid: uuid.UUID):
+    async def get_crawl_config_revs(
+        self, cid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
         """return all config revisions for crawlconfig"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
 
-        # pylint: disable=fixme
-        # todo: pagination needed
-        cursor = self.config_revs.find({"cid": cid})
+        match_query = {"cid": cid}
+
+        total = await self.config_revs.count_documents(match_query)
+
+        cursor = self.config_revs.find({"cid": cid}, skip=skip, limit=page_size)
         results = await cursor.to_list(length=1000)
-        return [ConfigRevision.from_dict(res) for res in results]
+        revisions = [ConfigRevision.from_dict(res) for res in results]
+
+        return revisions, total
 
     async def make_inactive_or_delete(
         self,
@@ -688,6 +813,31 @@ class CrawlConfigOps:
         """get distinct tags from all crawl configs for this org"""
         return await self.crawl_configs.distinct("tags", {"oid": org.id})
 
+    async def get_crawl_config_search_values(self, org):
+        """List unique names, first seeds, and descriptions from all workflows in org"""
+        names = await self.crawl_configs.distinct("name", {"oid": org.id})
+        descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
+        workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
+        crawl_ids = await self.crawl_ops.crawls.distinct("_id", {"oid": org.id})
+
+        # Remove empty strings
+        names = [name for name in names if name]
+        descriptions = [description for description in descriptions if description]
+
+        first_seeds = set()
+        configs = [config async for config in self.crawl_configs.find({"oid": org.id})]
+        for config in configs:
+            first_seed = config["config"]["seeds"][0]["url"]
+            first_seeds.add(first_seed)
+
+        return {
+            "names": names,
+            "descriptions": descriptions,
+            "firstSeeds": list(first_seeds),
+            "workflowIds": workflow_ids,
+            "crawlIds": crawl_ids,
+        }
+
     async def run_now(self, cid: str, org: Organization, user: User):
         """run specified crawlconfig now"""
         crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org)
@@ -719,6 +869,8 @@ def init_crawl_config_api(
     dbclient, mdb, user_dep, user_manager, org_ops, crawl_manager, profiles
 ):
     """Init /crawlconfigs api routes"""
+    # pylint: disable=invalid-name
+
     ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
 
     router = ops.router
@@ -726,18 +878,55 @@ def init_crawl_config_api(
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.get("", response_model=Page[CrawlConfigOut])
+    @router.get("")
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        # createdBy, kept as userid for API compatibility
         userid: Optional[UUID4] = None,
+        modifiedBy: Optional[UUID4] = None,
+        firstSeed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
+        sortBy: str = None,
+        sortDirection: int = -1,
     ):
-        crawl_configs = await ops.get_crawl_configs(org, userid=userid, tags=tag)
-        return paginate(crawl_configs)
+        # pylint: disable=duplicate-code
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
+        if description:
+            description = urllib.parse.unquote(description)
+
+        crawl_configs, total = await ops.get_crawl_configs(
+            org,
+            created_by=userid,
+            modified_by=modifiedBy,
+            first_seed=firstSeed,
+            name=name,
+            description=description,
+            tags=tag,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(crawl_configs, total, page, pageSize)
 
     @router.get("/tags")
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_tags(org)
+
+    @router.get("/search-values")
+    async def get_crawl_config_search_values(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_crawl_config_search_values(org)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config(cid: str, org: Organization = Depends(org_viewer_dep)):
@@ -745,11 +934,15 @@ def init_crawl_config_api(
 
     @router.get(
         "/{cid}/revs",
-        response_model=List[ConfigRevision],
         dependencies=[Depends(org_viewer_dep)],
     )
-    async def get_crawl_config_revisions(cid: str):
-        return await ops.get_crawl_config_revs(uuid.UUID(cid))
+    async def get_crawl_config_revisions(
+        cid: str, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
+        revisions, total = await ops.get_crawl_config_revs(
+            uuid.UUID(cid), page_size=pageSize, page=page
+        )
+        return paginated_format(revisions, total, page, pageSize)
 
     @router.post("/")
     async def add_crawl_config(

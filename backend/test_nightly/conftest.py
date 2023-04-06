@@ -51,7 +51,7 @@ def crawl_id_wr(admin_auth_headers, default_org_id):
         "name": "Webrecorder admin test crawl",
         "tags": ["wr", "nightly testing"],
         "config": {
-            "seeds": ["https://webrecorder.net/"],
+            "seeds": [{"url": "https://webrecorder.net/"}],
             "limit": 1,
         },
     }
@@ -83,7 +83,7 @@ def crawl_id_wr_specs(admin_auth_headers, default_org_id):
         "name": "Webrecorder Specs admin test crawl",
         "tags": ["wr-specs", "nightly testing"],
         "config": {
-            "seeds": ["https://specs.webrecorder.net/"],
+            "seeds": [{"url": "https://specs.webrecorder.net/"}],
             "limit": 1,
         },
     }
@@ -113,7 +113,7 @@ def crawl_config_info(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Crawl config test",
-        "config": {"seeds": ["https://specs.webrecorder.net/"], "limit": 1},
+        "config": {"seeds": [{"url": "https://specs.webrecorder.net/"}], "limit": 1},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",

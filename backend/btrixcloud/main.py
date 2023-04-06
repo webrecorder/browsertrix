@@ -10,7 +10,6 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
-from fastapi_pagination import add_pagination
 
 from .db import init_db, update_and_prepare_db
 
@@ -55,6 +54,10 @@ def main():
         "defaultBehaviorTimeSeconds": int(
             os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
         ),
+        "defaultPageLoadTimeSeconds": int(
+            os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
+        ),
+        "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
     }
 
     invites = init_invites(mdb, email)
@@ -114,8 +117,6 @@ def main():
     )
 
     app.include_router(org_ops.router)
-
-    add_pagination(app)
 
     @app.get("/settings")
     async def get_settings():

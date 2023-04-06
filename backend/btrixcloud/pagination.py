@@ -1,26 +1,15 @@
-"""API pagination module
-
-These classes override fastapi-pagination's max page size of 50
-"""
-
-from typing import TypeVar, Generic
-
-from fastapi import Query
-
-from fastapi_pagination.default import Page as BasePage, Params as BaseParams
-
-T = TypeVar("T")
+"""API pagination"""
+from typing import Any, List, Optional
 
 
-# pylint: disable=too-few-public-methods
-class Params(BaseParams):
-    """Custom Params class to increase page size"""
-
-    size: int = Query(1_000, ge=1, le=2_000, description="Page size")
+DEFAULT_PAGE_SIZE = 1_000
 
 
-# pylint: disable=too-few-public-methods
-class Page(BasePage[T], Generic[T]):
-    """Custom Page class to implement Params"""
-
-    __params_type__ = Params
+def paginated_format(
+    items: Optional[List[Any]],
+    total: int,
+    page: int = 1,
+    page_size: int = DEFAULT_PAGE_SIZE,
+):
+    """Return items in paged format."""
+    return {"items": items, "total": total, "page": page, "pageSize": page_size}

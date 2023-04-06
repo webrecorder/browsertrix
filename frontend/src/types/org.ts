@@ -13,7 +13,7 @@ export type OrgData = {
   name: string;
   users?: {
     [id: string]: {
-      role: typeof AccessCode[UserRole];
+      role: (typeof AccessCode)[UserRole];
       name: string;
       email: string;
     };

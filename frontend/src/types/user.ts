@@ -2,7 +2,7 @@ import type { AccessCode, UserRole, OrgData } from "./org";
 
 export type UserOrg = OrgData & {
   default?: boolean;
-  role: typeof AccessCode[UserRole];
+  role: (typeof AccessCode)[UserRole];
 };
 
 export type CurrentUser = {

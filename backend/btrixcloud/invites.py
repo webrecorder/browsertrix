@@ -13,6 +13,7 @@ from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
 from .db import BaseMongoModel
+from .pagination import DEFAULT_PAGE_SIZE
 
 
 # ============================================================================
@@ -225,14 +226,25 @@ class InviteOps:
 
         return False
 
-    async def get_pending_invites(self, org=None):
+    async def get_pending_invites(
+        self, org=None, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
         """return list of pending invites."""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        match_query = {}
         if org:
-            cursor = self.invites.find({"oid": org.id})
-        else:
-            cursor = self.invites.find()
-        results = await cursor.to_list(length=1000)
-        return [InvitePending.from_dict(result) for result in results]
+            match_query["oid"] = org.id
+
+        total = await self.invites.count_documents(match_query)
+
+        cursor = self.invites.find(match_query, skip=skip, limit=page_size)
+        results = await cursor.to_list(length=page_size)
+        invites = [InvitePending.from_dict(res) for res in results]
+
+        return invites, total
 
 
 def init_invites(mdb, email):

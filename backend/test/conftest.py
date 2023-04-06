@@ -84,8 +84,9 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
         "description": "Admin Test Crawl description",
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
-            "seeds": ["https://webrecorder.net/"],
-            "limit": 1,
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            # limit now set via 'max_pages_per_crawl' global limit
+            # "limit": 1,
         },
     }
     r = requests.post(
@@ -149,6 +150,7 @@ def crawler_auth_headers(admin_auth_headers, default_org_id):
             "email": CRAWLER_USERNAME,
             "password": CRAWLER_PW,
             "name": "new-crawler",
+            "description": "crawler test crawl",
             "role": 20,
         },
         headers=admin_auth_headers,
@@ -178,7 +180,8 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Crawler User Test Crawl",
-        "config": {"seeds": ["https://webrecorder.net/"], "limit": 1},
+        "description": "crawler test crawl",
+        "config": {"seeds": [{"url": "https://webrecorder.net/"}], "limit": 1},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -209,7 +212,7 @@ def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Webrecorder Specs sample crawl",
-        "config": {"seeds": ["https://specs.webrecorder.net/"], "limit": 1},
+        "config": {"seeds": [{"url": "https://specs.webrecorder.net/"}], "limit": 1},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -241,6 +244,6 @@ def sample_crawl_data():
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": ["https://example.com/"]},
+        "config": {"seeds": [{"url": "https://example.com/"}]},
         "tags": ["tag1", "tag2"],
     }

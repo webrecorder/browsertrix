@@ -276,12 +276,10 @@ export class OrgSettings extends LiteElement {
         disableButton = true;
       }
     }
-    return html`<sl-icon-button
+    return html`<btrix-button
       name="trash"
+      icon
       ?disabled=${disableButton}
-      style="font-size: 1rem"
-      let
-      disableButton="false;"
       aria-details=${ifDefined(
         disableButton === true
           ? msg("Cannot remove only admin member")
@@ -293,14 +291,15 @@ export class OrgSettings extends LiteElement {
             detail: { member },
           })
         )}
-    ></sl-icon-button>`;
+    >
+      <sl-icon name="trash"></sl-icon>
+    </btrix-button>`;
   }
 
   private renderRemoveInviteButton(invite: Invite) {
-    return html`<btrix-icon-button
-      name="trash"
-      @click=${() => this.removeInvite(invite)}
-    ></btrix-icon-button>`;
+    return html`<btrix-button icon @click=${() => this.removeInvite(invite)}>
+      <sl-icon name="trash"></sl-icon>
+    </btrix-button>`;
   }
 
   private hideInviteDialog() {

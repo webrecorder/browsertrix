@@ -54,6 +54,10 @@ data:
 
   DEFAULT_BEHAVIOR_TIME_SECONDS: "{{ .Values.default_behavior_time_seconds }}"
 
+  DEFAULT_PAGE_LOAD_TIME_SECONDS: "{{ .Values.default_page_load_time_seconds }}"
+
+  MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
+
   WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
@@ -67,7 +71,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  CRAWL_ARGS: "{{ .Values.crawler_args }} --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --healthCheckPort {{ .Values.crawler_liveness_port }}"
+  CRAWL_ARGS: "{{ .Values.crawler_args }} --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }}"
 
 ---
 apiVersion: v1
