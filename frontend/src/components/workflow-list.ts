@@ -259,20 +259,7 @@ export class WorkflowListItem extends LitElement {
         <div class="detail url truncate">
           ${this.safeRender(this.renderName)}
         </div>
-        <div class="desc">
-          ${this.safeRender(
-            (workflow) => html`
-              <sl-format-date
-                date=${`${workflow.modified}Z`}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>
-            `
-          )}
-        </div>
+        <div class="desc">${this.safeRender(this.renderLastUpdated)}</div>
       </div>
       <div class="col">
         <div class="detail">
@@ -291,9 +278,10 @@ export class WorkflowListItem extends LitElement {
       <div class="col">
         <div class="detail">TODO total size</div>
         <div class="desc">
-          ${this.safeRender(
-            (workflow) =>
-              html`<span class="userName">${workflow.modifiedByName}</span>`
+          ${this.safeRender((workflow) =>
+            workflow.crawlCount === 1
+              ? msg(str`${workflow.crawlCount} crawl`)
+              : msg(str`${workflow.crawlCount} crawls`)
           )}
         </div>
       </div>
@@ -386,6 +374,24 @@ export class WorkflowListItem extends LitElement {
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
+    `;
+  }
+
+  private renderLastUpdated(workflow: Workflow) {
+    const maxDate =
+      workflow.lastCrawlTime ||
+      workflow.lastCrawlStartTime ||
+      workflow.modified ||
+      workflow.created;
+    return html`
+      <sl-format-date
+        date=${`${maxDate}Z`}
+        month="2-digit"
+        day="2-digit"
+        year="2-digit"
+        hour="2-digit"
+        minute="2-digit"
+      ></sl-format-date>
     `;
   }
 
