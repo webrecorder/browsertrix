@@ -282,7 +282,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) =>
             workflow.crawlCount === 1
               ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(str`${workflow.crawlCount} crawls`)
+              : msg(str`${(workflow.crawlCount ?? 0).toLocaleString()} crawls`)
           )}
         </div>
       </div>
