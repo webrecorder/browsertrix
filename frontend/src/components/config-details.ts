@@ -267,9 +267,10 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = seedsConfig.seeds.slice(1);
-    const primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    const primarySeedUrl = seedsConfig.seeds[0].url;
-    const includeUrlList = primarySeedConfig.include || seedsConfig.include;
+    const primarySeedConfig: SeedConfig | Seed = seedsConfig.seeds[0];
+    const primarySeedUrl = primarySeedConfig.url;
+    const includeUrlList =
+      primarySeedConfig.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
@@ -303,7 +304,10 @@ export class ConfigDetails extends LiteElement {
         additionalUrlList?.length
           ? html`
               <ul>
-                ${additionalUrlList.map((url) => html`<li>${url}</li>`)}
+                ${additionalUrlList.map(
+                  (seed) =>
+                    html`<li>${typeof seed === "string" ? seed : seed.url}</li>`
+                )}
               </ul>
             `
           : msg("None"),
