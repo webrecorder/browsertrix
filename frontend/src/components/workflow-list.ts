@@ -26,6 +26,7 @@ import { RelativeDuration } from "./relative-duration";
 import type { Crawl, Workflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
+import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
 
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
@@ -287,14 +288,21 @@ export class WorkflowListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail truncate">
-          ${this.safeRender(
-            (workflow) =>
-              html`<span class="userName">${workflow.modifiedByName}</span>`
+          ${this.safeRender((workflow) =>
+            workflow.lastStartedByName
+              ? html`<span class="userName"
+                  >${workflow.lastStartedByName}</span
+                >`
+              : html`<span>---</span>`
           )}
         </div>
         <div class="desc">
           ${this.safeRender((workflow) =>
-            workflow.schedule ? msg("Scheduled") : msg("Manual Start")
+            workflow.schedule
+              ? humanizeSchedule(workflow.schedule, {
+                  length: "short",
+                })
+              : msg("No Schedule")
           )}
         </div>
       </div>
