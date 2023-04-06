@@ -14,6 +14,7 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation-indexes
+    - navigation.footer
   font:
     text: Inter
     code: Recursive
@@ -50,3 +51,14 @@ markdown_extensions:
 
 extra:
   generator: false
+  social:
+    - icon: bootstrap/globe
+      link: https://webrecorder.net
+    - icon: bootstrap/chat-left-text-fill
+      link: https://forum.webrecorder.net/
+    - icon: bootstrap/mastodon
+      link: https://digipres.club/@webrecorder
+    - icon: bootstrap/youtube
+      link: https://www.youtube.com/@webrecorder
+copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
+    

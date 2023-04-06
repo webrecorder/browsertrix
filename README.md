@@ -42,4 +42,4 @@ Please see the GitHub issues and [this GitHub Project](https://github.com/orgs/w
 
 Browsertrix Cloud is made available under the AGPLv3 License.
 
-If you would like to use it under a different license or have a question, please reach out as that may be a possibility.
+Documentation is made available under the Creative Commons Attribution 4.0 International License
