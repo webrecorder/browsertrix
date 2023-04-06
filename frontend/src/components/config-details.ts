@@ -8,6 +8,7 @@ import ISO6391 from "iso-639-1";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
 import { humanizeSchedule } from "../utils/cron";
+import { RelativeDuration } from "./relative-duration";
 
 /**
  * Usage:
@@ -30,9 +31,10 @@ export class ConfigDetails extends LiteElement {
   hideTags = false;
 
   @state()
-  private orgDefaults = {
-    behaviorTimeoutMinutes: Infinity,
-    maxPagesPerCrawl: Infinity,
+  private orgDefaults?: {
+    pageLoadTimeoutSeconds?: number;
+    behaviorTimeoutSeconds?: number;
+    maxPagesPerCrawl?: number;
   };
 
   private readonly scopeTypeLabels: Record<
@@ -55,7 +57,25 @@ export class ConfigDetails extends LiteElement {
 
   render() {
     const crawlConfig = this.crawlConfig;
-    const exclusions = crawlConfig?.config.exclude || [];
+    const seedsConfig = crawlConfig?.config;
+    const exclusions = seedsConfig?.exclude || [];
+    const maxPages = seedsConfig?.seeds[0]?.limit ?? seedsConfig?.limit;
+    const renderTimeLimit = (
+      valueSeconds?: number | null,
+      fallbackValue?: number
+    ) =>
+      valueSeconds
+        ? RelativeDuration.humanize(valueSeconds * 1000, { verbose: true })
+        : typeof fallbackValue === "number"
+        ? html`<span class="text-neutral-400"
+            >${fallbackValue === Infinity
+              ? msg("Unlimited")
+              : RelativeDuration.humanize(fallbackValue * 1000, {
+                  verbose: true,
+                })}
+            ${msg("(default)")}</span
+          >`
+        : undefined;
 
     return html`
       <section id="crawler-settings" class="mb-8">
@@ -85,16 +105,51 @@ export class ConfigDetails extends LiteElement {
             () => this.renderSetting(msg("Exclusions"), msg("None"))
           )}
           ${this.renderSetting(
-            msg("Page Time Limit"),
-            crawlConfig?.config.behaviorTimeout
-              ? msg(str`${crawlConfig?.config.behaviorTimeout / 60} minute(s)`)
-              : msg("None")
+            msg("Max Pages"),
+            when(
+              maxPages,
+              () => msg(str`${maxPages!.toLocaleString()} pages`),
+              () =>
+                this.orgDefaults?.maxPagesPerCrawl
+                  ? html`<span class="text-neutral-400"
+                      >${msg(
+                        str`${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages`
+                      )}
+                      ${msg("(default)")}</span
+                    >`
+                  : undefined
+            )
+          )}
+          ${this.renderSetting(
+            msg("Page Load Timeout"),
+            renderTimeLimit(
+              crawlConfig?.config.pageLoadTimeout,
+              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity
+            )
+          )}
+          ${this.renderSetting(
+            msg("Page Behavior Timeout"),
+            renderTimeLimit(
+              crawlConfig?.config.behaviorTimeout,
+              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity
+            )
+          )}
+          ${this.renderSetting(
+            msg("Auto-Scroll Behavior"),
+            crawlConfig?.config.behaviors &&
+              !crawlConfig.config.behaviors.includes("autoscroll")
+              ? msg("Disabled")
+              : html`<span class="text-neutral-400"
+                  >${msg("Enabled (default)")}</span
+                >`
+          )}
+          ${this.renderSetting(
+            msg("Delay Before Next Page"),
+            renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0)
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
-            crawlConfig?.crawlTimeout
-              ? msg(str`${crawlConfig?.crawlTimeout / 60} minute(s)`)
-              : msg("None")
+            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
@@ -212,10 +267,9 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = seedsConfig.seeds.slice(1);
-    let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    let primarySeedUrl = seedsConfig.seeds[0].url;
+    const primarySeedConfig: SeedConfig | Seed = seedsConfig;
+    const primarySeedUrl = seedsConfig.seeds[0].url;
     const includeUrlList = primarySeedConfig.include || seedsConfig.include;
-    const maxPages = primarySeedConfig.limit ?? seedsConfig.limit;
     return html`
       ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
       ${this.renderSetting(
@@ -255,19 +309,6 @@ export class ConfigDetails extends LiteElement {
           : msg("None"),
         true
       )}
-      ${this.renderSetting(
-        msg("Max Pages"),
-        when(
-          maxPages,
-          () => msg(str`${maxPages} page(s)`),
-          () =>
-            this.orgDefaults.maxPagesPerCrawl < Infinity
-              ? msg(
-                  str`Maximum Allowed (${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages)`
-                )
-              : undefined
-        )
-      )}
     `;
   };
 
@@ -292,7 +333,7 @@ export class ConfigDetails extends LiteElement {
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
     } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-300"
+      content = html`<span class="text-neutral-400"
         >${msg("Not specified")}</span
       >`;
     }
@@ -304,7 +345,6 @@ export class ConfigDetails extends LiteElement {
   }
 
   private async fetchAPIDefaults() {
-    const orgDefaults = { ...this.orgDefaults };
     try {
       const resp = await fetch("/api/settings", {
         headers: { "Content-Type": "application/json" },
@@ -312,17 +352,22 @@ export class ConfigDetails extends LiteElement {
       if (!resp.ok) {
         throw new Error(resp.statusText);
       }
+      const orgDefaults = {
+        ...this.orgDefaults,
+      };
       const data = await resp.json();
-      if (data.defaultBehaviorTimeSeconds) {
-        orgDefaults.behaviorTimeoutMinutes =
-          data.defaultBehaviorTimeSeconds / 60;
+      if (data.defaultBehaviorTimeSeconds > 0) {
+        orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+      }
+      if (data.defaultPageLoadTimeSeconds > 0) {
+        orgDefaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
+      this.orgDefaults = orgDefaults;
     } catch (e: any) {
       console.debug(e);
     }
-    this.orgDefaults = orgDefaults;
   }
 }
