@@ -64,6 +64,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlState: CrawlState;
   currCrawlId: string;
   inactive: boolean;
+  firstSeed: string;
 };
 
 export type Profile = {

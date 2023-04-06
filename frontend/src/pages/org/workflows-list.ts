@@ -57,7 +57,7 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  crawlConfigs?: Workflow[];
+  workflows?: Workflow[];
 
   @state()
   runningCrawlsMap: RunningCrawlsMap = {};
@@ -108,10 +108,10 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      this.crawlConfigs = await this.fetchWorkflows();
+      this.workflows = await this.fetchWorkflows();
 
       // Update search/filter collection
-      this.fuse.setCollection(this.crawlConfigs as any);
+      this.fuse.setCollection(this.workflows as any);
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -175,9 +175,9 @@ export class WorkflowsList extends LiteElement {
           </div>
         `,
         () =>
-          this.crawlConfigs
-            ? this.crawlConfigs.length
-              ? this.renderTemplateList()
+          this.workflows
+            ? this.workflows.length
+              ? this.renderWorkflowList()
               : html`
                   <div class="border-t border-b py-5">
                     <p class="text-center text-0-500">
@@ -224,7 +224,7 @@ export class WorkflowsList extends LiteElement {
             size="small"
             placeholder=${msg("Search by name or Crawl URL")}
             clearable
-            ?disabled=${!this.crawlConfigs?.length}
+            ?disabled=${!this.workflows?.length}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -294,7 +294,7 @@ export class WorkflowsList extends LiteElement {
               size="small"
               pill
               caret
-              ?disabled=${!this.crawlConfigs?.length}
+              ?disabled=${!this.workflows?.length}
               >${(sortableFieldLabels as any)[this.orderBy.field] ||
               sortableFieldLabels[
                 `${this.orderBy.field}_${this.orderBy.direction}`
@@ -328,6 +328,36 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
+  private renderWorkflowList() {
+    const flowFns = [
+      orderBy(this.orderBy.field, this.orderBy.direction),
+      map(this.renderWorkflowItem),
+    ];
+
+    if (this.filterByScheduled === true) {
+      flowFns.unshift(filter(({ schedule }: any) => Boolean(schedule)));
+    } else if (this.filterByScheduled === false) {
+      flowFns.unshift(filter(({ schedule }: any) => !schedule));
+    }
+
+    if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
+      flowFns.unshift(this.filterResults);
+    }
+
+    return html`
+      <btrix-workflow-list>
+        ${flow(...flowFns)(this.workflows)}
+      </btrix-workflow-list>
+    `;
+  }
+
+  private renderWorkflowItem = (workflow: Workflow) =>
+    html`
+      <btrix-workflow-list-item .workflow=${workflow}>
+        <sl-menu slot="menu"> </sl-menu>
+      </btrix-workflow-list-item>
+    `;
+
   private renderTemplateList() {
     const flowFns = [
       orderBy(this.orderBy.field, this.orderBy.direction),
@@ -346,7 +376,7 @@ export class WorkflowsList extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${flow(...flowFns)(this.crawlConfigs)}
+        ${flow(...flowFns)(this.workflows)}
       </div>
     `;
   }
@@ -722,9 +752,7 @@ export class WorkflowsList extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== crawlConfig.id
-      );
+      this.workflows = this.workflows!.filter((t) => t.id !== crawlConfig.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate Workflow at this time."),
@@ -752,9 +780,7 @@ export class WorkflowsList extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== crawlConfig.id
-      );
+      this.workflows = this.workflows!.filter((t) => t.id !== crawlConfig.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete Workflow at this time."),
@@ -839,7 +865,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
-      this.crawlConfigs = this.crawlConfigs?.map((t) =>
+      this.workflows = this.workflows?.map((t) =>
         t.id === editedTemplateId
           ? {
               ...t,
