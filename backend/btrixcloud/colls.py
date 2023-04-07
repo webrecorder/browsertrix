@@ -187,15 +187,15 @@ class CollectionOps:
     async def get_collection_crawls(self, oid: uuid.UUID, name: str):
         """Find collection and get all crawls by collection name per org"""
 
-        coll = self.get_collection(oid, name)
+        coll = await self.get_collection(oid, name)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         collection_crawls = {}
 
         for crawl_id in coll.crawl_ids:
-            org = self.orgs.get_org_by_id(oid)
-            crawl = self.crawls.get_crawl(crawl_id, org)
+            org = await self.orgs.get_org_by_id(oid)
+            crawl = await self.crawls.get_crawl(crawl_id, org)
             collection_crawls[crawl_id] = crawl.resources
 
         return collection_crawls

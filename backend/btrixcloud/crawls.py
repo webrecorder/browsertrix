@@ -791,6 +791,18 @@ class CrawlOps:
 
         return resp
 
+    async def remove_crawl_from_collections(self, oid: uuid.UUID, crawl_id: str):
+        """Remove crawl with given crawl_id from all collections it belongs to"""
+        collections = [
+            coll["name"]
+            async for coll in self.collections.find({"crawl_ids": {"$in": [crawl_id]}})
+        ]
+        for collection_name in collections:
+            await self.collections.find_one_and_update(
+                {"name": collection_name, "oid": oid},
+                {"$pull": {"crawl_ids": crawl_id}},
+            )
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
@@ -941,6 +953,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
                     raise HTTPException(
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
+
+        await ops.remove_crawl_from_collections(crawl.oid, crawl.id)
 
         res = await ops.delete_crawls(org, delete_list)
 
