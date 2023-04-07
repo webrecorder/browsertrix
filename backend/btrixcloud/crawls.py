@@ -112,6 +112,7 @@ class CrawlOut(Crawl):
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
+    collections: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -140,7 +141,7 @@ class ListCrawlOut(BaseMongoModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    colls: Optional[List[str]] = []
+    collections: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
     notes: Optional[str]
@@ -179,6 +180,7 @@ class CrawlOps:
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
         self.crawls = mdb["crawls"]
+        self.collections = mdb["collections"]
         self.crawl_manager = crawl_manager
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -200,6 +202,7 @@ class CrawlOps:
         first_seed: str = None,
         name: str = None,
         description: str = None,
+        collection_name: str = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
@@ -257,6 +260,27 @@ class CrawlOps:
                     "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
                 }
             },
+            {
+                "$lookup": {
+                    "from": "collections",
+                    "let": {"crawl_id": {"$toString": "$_id"}},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$in": ["$$crawl_id", "$crawl_ids"]}}}
+                    ],
+                    "as": "colls",
+                },
+            },
+            {
+                "$set": {
+                    "collections": {
+                        "$map": {
+                            "input": "$colls",
+                            "as": "coll",
+                            "in": {"$getField": {"field": "name", "input": "$$coll"}},
+                        }
+                    }
+                }
+            },
         ]
 
         if name:
@@ -267,6 +291,9 @@ class CrawlOps:
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if collection_name:
+            aggregate.extend([{"$match": {"collections": {"$in": [collection_name]}}}])
 
         if sort_by:
             if sort_by not in ("started, finished, fileSize, firstSeed"):
@@ -401,6 +428,14 @@ class CrawlOps:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
                 crawl.profileid, org
             )
+
+        if not crawl.collections:
+            crawl.collections = [
+                coll["name"]
+                async for coll in self.collections.find(
+                    {"crawl_ids": {"$in": [crawl.id]}}
+                )
+            ]
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -779,6 +814,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        collection: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
         runningOnly: Optional[bool] = True,
@@ -798,6 +834,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
+        if collection:
+            collection = urllib.parse.unquote(collection)
+
         crawls, total = await ops.list_crawls(
             None,
             userid=userid,
@@ -807,6 +846,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
+            collection_name=collection,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -825,6 +865,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        collection: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
     ):
@@ -841,6 +882,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
+        if collection:
+            collection = urllib.parse.unquote(collection)
+
         crawls, total = await ops.list_crawls(
             org,
             userid=userid,
@@ -850,6 +894,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
+            collection_name=collection,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
