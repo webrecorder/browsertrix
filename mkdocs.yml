@@ -15,9 +15,6 @@ theme:
     - navigation.tracking
     - navigation-indexes
     - navigation.footer
-  font:
-    text: Inter
-    code: Recursive
   palette:
     scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
