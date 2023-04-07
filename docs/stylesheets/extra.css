@@ -36,7 +36,9 @@ code, pre, kbd {
     --md-primary-fg-color: #008873;
     --md-primary-fg-color--light: #008873;
     --md-primary-fg-color--dark: #003c32;
-    --md-primary-bg-color--light: #FFF;
+    --md-default-bg-color--light: #f4f0e7;
+    --md-default-bg-color: #f4f0e7;
+    --md-code-bg-color: #fff;
     --md-accent-fg-color: #01b297;
 
     /* Typography Color Scheme */
