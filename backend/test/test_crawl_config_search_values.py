@@ -39,9 +39,15 @@ def test_get_search_values_1(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["names"] == [NAME_1]
-    assert data["descriptions"] == [DESCRIPTION_1]
-    assert data["firstSeeds"] == [FIRST_SEED_1]
+    assert sorted(data["names"]) == sorted(
+        [NAME_1, "Admin Test Crawl", "Crawler User Test Crawl"]
+    )
+    assert sorted(data["descriptions"]) == sorted(
+        ["Admin Test Crawl description", "crawler test crawl", DESCRIPTION_1]
+    )
+    assert sorted(data["firstSeeds"]) == sorted(
+        ["https://webrecorder.net/", FIRST_SEED_1]
+    )
 
 
 def test_create_new_config_2(admin_auth_headers, default_org_id):
@@ -62,9 +68,20 @@ def test_get_search_values_2(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert sorted(data["names"]) == [NAME_1, NAME_2]
-    assert sorted(data["descriptions"]) == [DESCRIPTION_1, DESCRIPTION_2]
-    assert sorted(data["firstSeeds"]) == [FIRST_SEED_1, FIRST_SEED_2]
+    assert sorted(data["names"]) == sorted(
+        [NAME_1, NAME_2, "Admin Test Crawl", "Crawler User Test Crawl"]
+    )
+    assert sorted(data["descriptions"]) == sorted(
+        [
+            "Admin Test Crawl description",
+            "crawler test crawl",
+            DESCRIPTION_1,
+            DESCRIPTION_2,
+        ]
+    )
+    assert sorted(data["firstSeeds"]) == sorted(
+        ["https://webrecorder.net/", FIRST_SEED_1, FIRST_SEED_2]
+    )
 
 
 def test_create_new_config_3_duplicates(admin_auth_headers, default_org_id):
@@ -87,6 +104,17 @@ def test_get_search_values_3(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert sorted(data["names"]) == [NAME_1, NAME_2]
-    assert sorted(data["descriptions"]) == [DESCRIPTION_1, DESCRIPTION_2]
-    assert sorted(data["firstSeeds"]) == [FIRST_SEED_1, FIRST_SEED_2]
+    assert sorted(data["names"]) == sorted(
+        [NAME_1, NAME_2, "Admin Test Crawl", "Crawler User Test Crawl"]
+    )
+    assert sorted(data["descriptions"]) == sorted(
+        [
+            "Admin Test Crawl description",
+            "crawler test crawl",
+            DESCRIPTION_1,
+            DESCRIPTION_2,
+        ]
+    )
+    assert sorted(data["firstSeeds"]) == sorted(
+        ["https://webrecorder.net/", FIRST_SEED_1, FIRST_SEED_2]
+    )

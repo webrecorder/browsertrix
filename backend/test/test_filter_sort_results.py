@@ -10,8 +10,8 @@ def test_get_config_by_created_by(crawler_auth_headers, default_org_id, crawler_
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?userid={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 1
-    assert r.json()["total"] == 1
+    assert len(r.json()["items"]) == 2
+    assert r.json()["total"] == 2
 
 
 def test_get_config_by_modified_by(
@@ -22,8 +22,8 @@ def test_get_config_by_modified_by(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?modifiedBy={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 1
-    assert r.json()["total"] == 1
+    assert len(r.json()["items"]) == 2
+    assert r.json()["total"] == 2
 
 
 def test_get_configs_by_first_seed(

@@ -98,8 +98,6 @@ class Crawl(CrawlConfigCore):
 
     files: Optional[List[CrawlFile]] = []
 
-    colls: Optional[List[str]] = []
-
     notes: Optional[str]
 
 
@@ -191,15 +189,10 @@ class CrawlOps:
 
         self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
 
-    async def init_index(self):
-        """init index for crawls db"""
-        await self.crawls.create_index("colls")
-
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
         cid: uuid.UUID = None,
-        collid: uuid.UUID = None,
         userid: uuid.UUID = None,
         crawl_id: str = None,
         running_only=False,
@@ -226,9 +219,6 @@ class CrawlOps:
 
         if cid:
             query["cid"] = cid
-
-        if collid:
-            query["colls"] = collid
 
         if userid:
             query["userid"] = userid
