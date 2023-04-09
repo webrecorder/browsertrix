@@ -16,8 +16,6 @@ import compact from "lodash/fp/compact";
 import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
-import RegexColorize from "regex-colorize";
-import ISO6391 from "iso-639-1";
 import Fuse from "fuse.js";
 
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -78,7 +76,9 @@ type FormState = {
   includeLinkedPages: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
-  pageTimeoutMinutes: number | null;
+  behaviorTimeoutSeconds: number | null;
+  pageLoadTimeoutSeconds: number | null;
+  pageExtraDelaySeconds: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -99,6 +99,7 @@ type FormState = {
   browserProfile: Profile | null;
   tags: Tags;
   description: WorkflowParams["description"];
+  autoscrollBehavior: boolean;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -144,7 +145,9 @@ const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
-  pageTimeoutMinutes: null,
+  behaviorTimeoutSeconds: null,
+  pageLoadTimeoutSeconds: null,
+  pageExtraDelaySeconds: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: undefined,
@@ -165,6 +168,7 @@ const getDefaultFormState = (): FormState => ({
   browserProfile: null,
   tags: [],
   description: null,
+  autoscrollBehavior: true,
 });
 const defaultProgressState = getDefaultProgressState();
 const orderedTabNames = STEPS.filter(
@@ -191,7 +195,14 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray
 );
-const DEFAULT_BEHAVIOR_TIMEOUT_MINUTES = 5;
+const mapSeedToUrl = (arr: Seed[]) =>
+  arr.map((seed) => (typeof seed === "string" ? seed : seed.url));
+const DEFAULT_BEHAVIORS = [
+  "autoscroll",
+  "autoplay",
+  "autofetch",
+  "siteSpecific",
+];
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -220,7 +231,11 @@ export class CrawlConfigEditor extends LiteElement {
   private progressState!: ProgressState;
 
   @state()
-  private defaultBehaviorTimeoutMinutes?: number;
+  private orgDefaults?: {
+    behaviorTimeoutSeconds?: number;
+    pageLoadTimeoutSeconds?: number;
+    maxPagesPerCrawl?: number;
+  };
 
   @state()
   private formState!: FormState;
@@ -390,8 +405,9 @@ export class CrawlConfigEditor extends LiteElement {
     return null;
   }
 
-  private getInitialFormState(): FormState | {} {
-    if (!this.initialWorkflow) return {};
+  private getInitialFormState(): FormState {
+    const defaultFormState = getDefaultFormState();
+    if (!this.initialWorkflow) return defaultFormState;
     const formState: Partial<FormState> = {};
     const seedsConfig = this.initialWorkflow.config;
     const { seeds } = seedsConfig;
@@ -414,13 +430,11 @@ export class CrawlConfigEditor extends LiteElement {
       }
       const additionalSeeds = seeds.slice(1);
       if (additionalSeeds.length) {
-        formState.urlList = additionalSeeds.join("\n");
+        formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
       }
     } else {
       // Treat "custom" like URL list
-      formState.urlList = seeds
-        .map((seed) => (typeof seed === "string" ? seed : seed.url))
-        .join("\n");
+      formState.urlList = mapSeedToUrl(seeds).join("\n");
 
       if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
@@ -452,36 +466,46 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialWorkflow.tags?.length) {
       formState.tags = this.initialWorkflow.tags;
     }
-    if (typeof this.initialWorkflow.crawlTimeout === "number") {
-      formState.crawlTimeoutMinutes = this.initialWorkflow.crawlTimeout / 60;
-    }
-    if (typeof seedsConfig.behaviorTimeout === "number") {
-      formState.pageTimeoutMinutes = seedsConfig.behaviorTimeout / 60;
-    }
+    const secondsToMinutes = (value: any, fallback: number | null) => {
+      if (typeof value === "number" && value > 0) return value / 60;
+      return fallback;
+    };
 
     return {
-      primarySeedUrl: "",
-      urlList: "",
-      customIncludeUrlList: "",
-      crawlTimeoutMinutes: null,
-      pageTimeoutMinutes: null,
+      primarySeedUrl: defaultFormState.primarySeedUrl,
+      urlList: defaultFormState.urlList,
+      customIncludeUrlList: defaultFormState.customIncludeUrlList,
+      crawlTimeoutMinutes: secondsToMinutes(
+        this.initialWorkflow.crawlTimeout,
+        defaultFormState.crawlTimeoutMinutes
+      ),
+      behaviorTimeoutSeconds:
+        seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
+      pageLoadTimeoutSeconds:
+        seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
+      pageExtraDelaySeconds:
+        seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
-      scheduleType: "none",
-      runNow: false,
+      scheduleType: defaultFormState.scheduleType,
+      scheduleFrequency: defaultFormState.scheduleFrequency,
+      runNow: defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
-      jobName: this.initialWorkflow.name || "",
+      jobName: this.initialWorkflow.name || defaultFormState.jobName,
       description: this.initialWorkflow.description,
       browserProfile: this.initialWorkflow.profileid
         ? ({ id: this.initialWorkflow.profileid } as Profile)
-        : null,
+        : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
-      includeLinkedPages: Boolean(
-        primarySeedConfig.extraHops || seedsConfig.extraHops
-      ),
-      pageLimit: this.initialWorkflow.config.limit ?? undefined,
+      includeLinkedPages:
+        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
+      pageLimit:
+        this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
+      autoscrollBehavior: this.initialWorkflow.config.behaviors
+        ? this.initialWorkflow.config.behaviors.includes("autoscroll")
+        : defaultFormState.autoscrollBehavior,
       ...formState,
     };
   }
@@ -510,7 +534,7 @@ export class CrawlConfigEditor extends LiteElement {
           progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
           <header slot="header" class="flex justify-between items-baseline">
-            <h3>${tabLabels[this.progressState.activeTab]}</h3>
+            <h3 class="font-semibold">${tabLabels[this.progressState.activeTab]}</h3>
             <p class="text-xs text-neutral-500 font-normal">
               ${msg(
                 html`Fields marked with
@@ -764,6 +788,7 @@ export class CrawlConfigEditor extends LiteElement {
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
+          inputmode="url"
           value=${this.formState.urlList}
           placeholder=${`https://example.com
 https://example.com/path`}
@@ -960,6 +985,7 @@ https://example.com/path`}
           name="primarySeedUrl"
           label=${msg("Crawl Start URL")}
           autocomplete="off"
+          inputmode="url"
           placeholder=${urlPlaceholder}
           value=${this.formState.primarySeedUrl}
           required
@@ -1025,6 +1051,7 @@ https://example.com/path`}
               label=${msg("Extra URLs in Scope")}
               rows="3"
               autocomplete="off"
+              inputmode="url"
               value=${this.formState.customIncludeUrlList}
               placeholder=${`https://example.org
 https://example.net`}
@@ -1104,6 +1131,7 @@ https://example.net`}
                 label=${msg("List of URLs")}
                 rows="3"
                 autocomplete="off"
+                inputmode="url"
                 value=${this.formState.urlList}
                 placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
@@ -1150,7 +1178,103 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (this.jobType === "seed-crawl" ? 1 : 0)
     );
+    const onInputMinMax = async (e: CustomEvent) => {
+      const inputEl = e.target as SlInput;
+      await inputEl.updateComplete;
+      let helpText = "";
+      if (inputEl.invalid) {
+        const value = +inputEl.value;
+        const min = inputEl.min;
+        const max = inputEl.max;
+        if (min && value < +min) {
+          helpText = msg(
+            str`Must be more than minimum of ${(+min).toLocaleString()}`
+          );
+        } else if (max && value > +max) {
+          helpText = msg(
+            str`Must be less than maximum of ${(+max).toLocaleString()}`
+          );
+        }
+      }
+      inputEl.helpText = helpText;
+    };
     return html`
+      ${this.renderSectionHeading(msg("Limit Per Page"))}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageLoadTimeoutSeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Page Load Timeout")}
+          placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`
+              )
+            : "Default: Unlimited"}
+          value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
+          min="0"
+          @sl-input=${onInputMinMax}
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`
+        )
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="behaviorTimeoutSeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Behavior Timeout")}
+          placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`
+              )
+            : msg("Unlimited")}
+          value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
+          min="0"
+          @sl-input=${onInputMinMax}
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Limits how long behaviors can run on each page.`)
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="autoscrollBehavior"
+        ?checked=${this.formState.autoscrollBehavior}
+      >
+        ${msg("Auto-Scroll Behavior")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `When enabled the browser will automatically scroll to the end of the page.`
+        ),
+        false
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageExtraDelaySeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Delay Before Next Page")}
+          placeholder=${"Default: 0"}
+          value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
+        )
+      )}
+      ${this.renderSectionHeading(msg("Limit Per Crawl"))}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1170,16 +1294,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
             name="pageLimit"
             label=${msg("Max Pages")}
             type="number"
+            inputmode="numeric"
             value=${this.formState.pageLimit || ""}
             min=${minPages}
-            placeholder=${msg("Unlimited")}
+            max=${ifDefined(
+              this.orgDefaults?.maxPagesPerCrawl &&
+                this.orgDefaults.maxPagesPerCrawl < Infinity
+                ? this.orgDefaults.maxPagesPerCrawl
+                : undefined
+            )}
+            placeholder=${this.orgDefaults?.maxPagesPerCrawl
+              ? this.orgDefaults.maxPagesPerCrawl === Infinity
+                ? msg("Default: Unlimited")
+                : msg(
+                    str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`
+                  )
+              : ""}
+            @sl-input=${onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
-            <div slot="help-text">
-              ${minPages === 1
-                ? msg(str`Minimum ${minPages} page`)
-                : msg(str`Minimum ${minPages} pages`)}
-            </div>
           </sl-input>
         </sl-mutation-observer>
       `)}
@@ -1189,33 +1322,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="pageTimeoutMinutes"
-          type="number"
-          label=${msg("Page Time Limit")}
-          placeholder=${msg("Unlimited")}
-          value=${ifDefined(
-            this.formState.pageTimeoutMinutes ??
-              this.defaultBehaviorTimeoutMinutes
-          )}
-          ?disabled=${this.defaultBehaviorTimeoutMinutes === undefined}
-          min="1"
-          required
-        >
-          <span slot="suffix">${msg("minutes")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`Adds a hard time limit for how long the crawler can spend on a
-        single webpage.`)
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           value=${this.formState.crawlTimeoutMinutes || ""}
-          placeholder=${msg("Unlimited")}
+          placeholder=${msg("Default: Unlimited")}
           min="0"
           type="number"
+          inputmode="numeric"
         >
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
@@ -1389,6 +1502,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               name="scheduleDayOfMonth"
               label=${msg("Date")}
               type="number"
+              inputmode="numeric"
               min="1"
               max="31"
               value=${this.formState.scheduleDayOfMonth}
@@ -1520,10 +1634,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this Workflowuration. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this Workflowuration:<br /><br />Crawl
-            URL(s) required in
+        : msg(html`There is an issue with this Workflow:<br /><br />Crawl URL(s)
+            required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
             >. <br /><br />
@@ -1879,7 +1993,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save Workflow. Please fix the following Workflowuration issues:"
+        "Couldn't save Workflow. Please fix the following Workflow issues:"
       )}
       <ul class="list-disc w-fit pl-4">
         ${detailsWithoutDictError.map(renderDetail)}
@@ -1926,24 +2040,30 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout:
-          (this.formState.pageTimeoutMinutes ??
-            this.defaultBehaviorTimeoutMinutes ??
-            DEFAULT_BEHAVIOR_TIMEOUT_MINUTES) * 60,
+        behaviorTimeout: +(this.formState.behaviorTimeoutSeconds || ""),
+        pageLoadTimeout: +(this.formState.pageLoadTimeoutSeconds || ""),
+        pageExtraDelay: +(this.formState.pageExtraDelaySeconds || ""),
         limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
+        behaviors: (this.formState.autoscrollBehavior
+          ? DEFAULT_BEHAVIORS
+          : DEFAULT_BEHAVIORS.slice(1)
+        ).join(","),
       },
     };
 
     return config;
   }
 
-  private parseUrlListConfig(): NewCrawlConfigParams["config"] {
+  private parseUrlListConfig(): Pick<
+    NewCrawlConfigParams["config"],
+    "seeds" | "scopeType" | "extraHops"
+  > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
+        const newSeed: Seed = { url: seedUrl, scopeType: "page" };
         return newSeed;
       }),
       scopeType: "page" as FormState["scopeType"],
@@ -1953,16 +2073,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return config;
   }
 
-  private parseSeededConfig(): NewCrawlConfigParams["config"] {
+  private parseSeededConfig(): Pick<
+    NewCrawlConfigParams["config"],
+    "seeds" | "scopeType"
+  > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
       ? urlListToArray(this.formState.customIncludeUrlList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = {url: seedUrl, scopeType: "page"};
-        return newSeed;
-      })
+          const newSeed: Seed = { url: seedUrl, scopeType: "page" };
+          return newSeed;
+        })
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
@@ -1976,7 +2099,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
-    const config: SeedConfig = {
+    const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: additionalSeedUrlList.length
         ? "page"
@@ -2017,16 +2140,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async fetchAPIDefaults() {
     try {
-      const data = await this.apiFetch("/settings", this.authState!);
-      if (data.defaultBehaviorTimeSeconds) {
-        this.defaultBehaviorTimeoutMinutes =
-          data.defaultBehaviorTimeSeconds / 60;
-      } else {
-        this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
+      const resp = await fetch("/api/settings", {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!resp.ok) {
+        throw new Error(resp.statusText);
       }
+      const orgDefaults = {
+        ...this.orgDefaults,
+      };
+      const data = await resp.json();
+      if (data.defaultBehaviorTimeSeconds > 0) {
+        orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+      }
+      if (data.defaultPageLoadTimeSeconds > 0) {
+        orgDefaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
+      }
+      if (data.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      }
+      this.orgDefaults = orgDefaults;
     } catch (e: any) {
       console.debug(e);
-      this.defaultBehaviorTimeoutMinutes = DEFAULT_BEHAVIOR_TIMEOUT_MINUTES;
     }
   }
 }

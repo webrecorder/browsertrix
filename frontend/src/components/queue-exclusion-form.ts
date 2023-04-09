@@ -140,16 +140,18 @@ export class QueueExclusionForm extends LiteElement {
               </sl-input>
             </div>
             <div class="flex-0 w-10 pt-1 text-center">
-              <btrix-icon-button
+              <btrix-button
                 variant="primary"
-                name="plus-lg"
+                raised
+                icon
                 ?disabled=${!this.inputValue ||
                 this.isRegexInvalid ||
                 this.isSubmitting}
                 ?loading=${this.isSubmitting}
                 @click=${this.onButtonClick}
               >
-              </btrix-icon-button>
+                <sl-icon name="plus-lg"></sl-icon>
+              </btrix-button>
             </div>
           </div>
         </div>

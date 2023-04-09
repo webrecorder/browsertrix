@@ -1,28 +1,22 @@
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 /**
- * Button with single icon.
- * Icons names from https://shoelace.style/components/icon
+ * Custom styled button
  *
  * Usage example:
  * ```ts
- * <btrix-icon-button name="plus-lg"></btrix-icon-button>
+ * <btrix-button>Click me</btrix-button>
  * ```
  */
-export class IconButton extends LitElement {
-  @property({ type: String })
-  name: string = "square";
-
+export class Button extends LitElement {
   @property({ type: String })
   type: "submit" | "button" = "button";
 
   @property({ type: String })
   variant: "primary" | "danger" | "neutral" = "neutral";
-
-  @property({ type: Boolean })
-  custom? = false;
 
   @property({ type: Boolean })
   raised = false;
@@ -33,19 +27,27 @@ export class IconButton extends LitElement {
   @property({ type: Boolean })
   loading: boolean = false;
 
+  @property({ type: Boolean })
+  icon: boolean = false;
+
   static styles = css`
     :host {
       display: inline-block;
     }
 
+    ::slotted(sl-icon) {
+      display: block;
+      font-size: 1rem;
+    }
+
     button {
       all: unset;
-      display: block;
-      width: 1.5rem;
-      height: 1.5rem;
-      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border-radius: var(--sl-border-radius-small);
       box-sizing: border-box;
+      font-weight: 500;
       text-align: center;
       cursor: pointer;
       transform: translateY(0px);
@@ -59,18 +61,17 @@ export class IconButton extends LitElement {
       color: var(--sl-color-neutral-300) !important;
     }
 
-    sl-icon {
-      display: block;
-      font-size: 1rem;
+    button.icon {
+      min-width: 1.5rem;
+      min-height: 1.5rem;
+      padding: 0 var(--sl-spacing-2x-small);
     }
 
-    .primary,
-    .danger {
+    .raised {
       box-shadow: var(--sl-shadow-x-small);
     }
 
-    .primary:not([disabled]):hover,
-    .dangery:not([disabled]):hover {
+    :not([aria-disabled]) .raised:not([disabled]):hover {
       box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
       transform: translateY(1px);
     }
@@ -80,7 +81,7 @@ export class IconButton extends LitElement {
       color: var(--sl-color-blue-600);
     }
 
-    .primary:hover {
+    :not([aria-disabled]) .primary:hover {
       background-color: var(--sl-color-blue-100);
     }
 
@@ -89,7 +90,7 @@ export class IconButton extends LitElement {
       color: var(--sl-color-danger-600);
     }
 
-    .danger:hover {
+    :not([aria-disabled]) .danger:hover {
       background-color: var(--sl-color-danger-100);
     }
 
@@ -105,16 +106,15 @@ export class IconButton extends LitElement {
   render() {
     return html`<button
       type="submit"
-      class=${this.variant}
+      class=${classMap({
+        [this.variant]: true,
+        icon: this.icon,
+        raised: this.raised,
+      })}
       ?disabled=${this.disabled}
       @click=${this.handleClick}
     >
-      ${this.loading
-        ? html`<sl-spinner></sl-spinner>`
-        : html`<sl-icon
-            name=${this.name}
-            library=${ifDefined(this.custom ? "app" : undefined)}
-          ></sl-icon>`}
+      ${this.loading ? html`<sl-spinner></sl-spinner>` : html`<slot></slot>`}
     </button>`;
   }
 

@@ -54,6 +54,8 @@ data:
 
   DEFAULT_BEHAVIOR_TIME_SECONDS: "{{ .Values.default_behavior_time_seconds }}"
 
+  DEFAULT_PAGE_LOAD_TIME_SECONDS: "{{ .Values.default_page_load_time_seconds }}"
+
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
   WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"

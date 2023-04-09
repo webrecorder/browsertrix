@@ -10,8 +10,8 @@ type ScopeType =
 export type Seed = {
   url: string;
   scopeType: ScopeType;
-  include?: string[];
-  exclude?: string[];
+  include?: string[] | null;
+  exclude?: string[] | null;
   limit?: number | null;
   extraHops?: number | null;
 };
@@ -20,10 +20,12 @@ export type SeedConfig = Pick<
   Seed,
   "scopeType" | "include" | "exclude" | "limit" | "extraHops"
 > & {
-  seeds: (Seed)[];
+  seeds: Seed[];
   lang?: string | null;
   blockAds?: boolean;
-  behaviorTimeout?: number | null;
+  behaviorTimeout: number | null;
+  pageLoadTimeout: number | null;
+  pageExtraDelay: number | null;
   behaviors?: string | null;
   extraHops?: number | null;
 };
