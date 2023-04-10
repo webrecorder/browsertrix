@@ -16,4 +16,4 @@ spec:
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8000/operator/sync
+        url: http://browsertrix-cloud-backend.default:8756/operator/sync

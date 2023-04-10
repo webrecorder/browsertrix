@@ -105,6 +105,7 @@ def sync(parent, children):
     params = {
         "id": spec.get("id", ""),
         "cid": spec.get("configId", ""),
+        "rev": spec.get("rev", ""),
         "userid": spec.get("userId", ""),
         "oid": spec.get("orgId", ""),
         "job_image": spec.get("jobImage", ""),

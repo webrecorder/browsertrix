@@ -11,6 +11,7 @@ spec:
   userId: "{{ userid }}"
   orgId: "{{ oid }}"
   configId: "{{ cid }}"
+  rev: "{{ rev }}"
   nodeType: "{{ crawler_node_type }}"
   jobImage: "{{ job_image }}"
   jobPullPolicy: "{{ job_pull_policy }}"
