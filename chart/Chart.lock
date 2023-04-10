@@ -2,8 +2,8 @@ dependencies:
 - name: btrix-admin-logging
   repository: file://./admin/logging
   version: 0.1.0
-- name: btrix-operator
-  repository: file://./admin/operator
-  version: 0.1.0
-digest: sha256:2b5520763f578c96c2db6d37686eaa2748b71e1ff12b3e5508a7bdd59bcea071
-generated: "2023-04-03T15:39:31.597051233-07:00"
+- name: metacontroller-helm
+  repository: file://./metacontroller/deploy/helm/metacontroller
+  version: v4.10.1
+digest: sha256:6205c2e9680820470ddaca8a5116c6e91898f6efc45bfd99e6d646e9120c4921
+generated: "2023-04-10T15:31:03.620609044-07:00"
