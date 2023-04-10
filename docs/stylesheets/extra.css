@@ -1,0 +1,22 @@
+/* :root {
+    --color-wr-lightred: #E3353F;
+    --color-wr-darkred: #A2001D;
+} */
+
+
+/* Import monospaced recursive from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Recursive:MONO@1&display=swap');
+
+
+[data-md-color-scheme="webrecorder"] {
+    --md-primary-fg-color: #008873;
+    --md-primary-fg-color--light: #008873;
+    --md-primary-fg-color--dark: #003c32;
+    --md-primary-bg-color--light: #FFF;
+    --md-accent-fg-color: #01b297;
+
+    /* Typography Color Scheme */
+    --md-typeset-color: #003c32;
+    --md-typeset-a-color: #008873;
+    
+  }

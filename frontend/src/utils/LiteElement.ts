@@ -105,7 +105,12 @@ export default class LiteElement extends LitElement {
   async apiFetch(
     path: string,
     auth: Auth,
-    options?: { method?: string; headers?: any; body?: any }
+    options?: {
+      method?: string;
+      headers?: any;
+      body?: any;
+      signal?: AbortSignal;
+    }
   ) {
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {

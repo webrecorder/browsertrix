@@ -1,9 +1,18 @@
 import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
+import { classMap } from "lit/directives/class-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
 import chevronLeft from "../assets/icons/chevron-left.svg";
 import chevronRight from "../assets/icons/chevron-right.svg";
+import { srOnly } from "../utils/css";
+
+export type PageChangeEvent = CustomEvent<{
+  page: number;
+  pages: number;
+}>;
 
 /**
  * Pagination
@@ -18,73 +27,100 @@ import chevronRight from "../assets/icons/chevron-right.svg";
  */
 @localized()
 export class Pagination extends LitElement {
-  static styles = css`
-    :host {
-      --sl-input-height-small: var(--sl-font-size-x-large);
-      --sl-input-color: var(--sl-color-neutral-500);
-    }
+  static styles = [
+    srOnly,
+    css`
+      :host {
+        --sl-input-height-small: var(--sl-font-size-x-large);
+        --sl-input-color: var(--sl-color-neutral-500);
+      }
 
-    ul {
-      display: flex;
-      align-items: center;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      color: var(--sl-input-color);
-    }
+      ul {
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        color: var(--sl-input-color);
+      }
 
-    button {
-      all: unset;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
+      ul.compact {
+        display: flex;
+      }
 
-    sl-input::part(input) {
-      text-align: center;
-      padding: 0 0.5ch;
-    }
+      ul:not(.compact) {
+        display: grid;
+        grid-gap: var(--sl-spacing-x-small);
+        grid-auto-flow: column;
+        grid-auto-columns: min-content;
+      }
 
-    .currentPage {
-      display: flex;
-      align-items: center;
-      width: fit-content;
-      white-space: nowrap;
-    }
+      button {
+        all: unset;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
 
-    .pageInput {
-      position: relative;
-      margin-right: 0.5ch;
-    }
+      sl-input::part(input) {
+        text-align: center;
+        padding: 0 0.5ch;
+      }
 
-    /* Use width of text to determine input width */
-    .totalPages {
-      padding: 0 1ch;
-      height: var(--sl-input-height-small);
-      min-width: 1ch;
-      visibility: hidden;
-    }
+      .currentPage {
+        display: flex;
+        align-items: center;
+        width: fit-content;
+        white-space: nowrap;
+      }
 
-    .input {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-    }
+      .pageInput {
+        position: relative;
+        margin-right: 0.5ch;
+      }
 
-    .chevron {
-      padding: 0 var(--sl-font-size-2x-small);
-      transition: opacity 0.2s;
-    }
+      /* Use width of text to determine input width */
+      .totalPages {
+        padding: 0 1ch;
+        height: var(--sl-input-height-small);
+        min-width: 1ch;
+        visibility: hidden;
+      }
 
-    .chevron[disabled] {
-      opacity: 0.2;
-    }
+      .input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
 
-    .chevron:not([disabled]):hover {
-      opacity: 0.6;
-    }
-  `;
+      .navButton {
+        display: grid;
+        grid-template-columns: repeat(2, min-content);
+        grid-gap: var(--sl-spacing-x-small);
+        margin: 0 var(--sl-spacing-x-small);
+        align-items: center;
+        align-items: center;
+        font-weight: 500;
+        transition: opacity 0.2s;
+        min-height: 1.5rem;
+        min-width: 1.5rem;
+      }
+
+      .navButton[disabled] {
+        opacity: 0.4;
+      }
+
+      .navButton:not([disabled]):hover {
+        opacity: 0.8;
+      }
+
+      .chevron {
+        display: block;
+        width: var(--sl-spacing-medium);
+        height: var(--sl-spacing-medium);
+      }
+    `,
+  ];
 
   @property({ type: Number })
   page: number = 1;
@@ -94,6 +130,9 @@ export class Pagination extends LitElement {
 
   @property({ type: Number })
   size: number = 10;
+
+  @property({ type: Boolean })
+  compact = false;
 
   @state()
   private inputValue = "";
@@ -106,54 +145,59 @@ export class Pagination extends LitElement {
     super.connectedCallback();
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
-      await this.performUpdate;
       this.calculatePages();
     }
 
     if (changedProperties.get("page") && this.page) {
-      await this.performUpdate;
       this.inputValue = `${this.page}`;
-      this.onPageChange();
     }
   }
 
   render() {
-    if (!this.pages) {
+    if (this.pages < 2) {
       return;
     }
 
     return html`
       <div role="navigation">
-        <ul>
+        <ul class=${classMap({ compact: this.compact })}>
           <li>
             <button
-              class="chevron"
-              aria-label=${msg("Previous page")}
+              class="navButton"
               ?disabled=${this.page === 1}
               @click=${this.onPrev}
             >
-              <img src=${chevronLeft} />
+              <img class="chevron" src=${chevronLeft} />
+              <span class=${classMap({ srOnly: this.compact })}
+                >${msg("Previous")}</span
+              >
             </button>
           </li>
-          <li class="currentPage" role="presentation">
-            ${msg(html` ${this.renderInput()} of ${this.pages} `)}
-          </li>
+          ${when(this.compact, this.renderInputPage, this.renderPages)}
           <li>
             <button
-              class="chevron"
-              aria-label=${msg("Next page")}
+              class="navButton"
               ?disabled=${this.page === this.pages}
               @click=${this.onNext}
             >
-              <img src=${chevronRight} />
+              <span class=${classMap({ srOnly: this.compact })}
+                >${msg("Next")}</span
+              >
+              <img class="chevron" src=${chevronRight} />
             </button>
           </li>
         </ul>
       </div>
     `;
   }
+
+  private renderInputPage = () => html`
+    <li class="currentPage" role="presentation">
+      ${msg(html` ${this.renderInput()} of ${this.pages} `)}
+    </li>
+  `;
 
   private renderInput() {
     return html`
@@ -188,16 +232,17 @@ export class Pagination extends LitElement {
           }}
           @sl-change=${(e: any) => {
             const page = +e.target.value;
+            let nextPage = page;
 
             if (page < 1) {
-              this.page = 1;
+              nextPage = 1;
             } else if (page > this.pages) {
-              this.page = this.pages;
+              nextPage = this.pages;
             } else {
-              this.page = page;
+              nextPage = page;
             }
 
-            this.inputValue = `${this.page}`;
+            this.onPageChange(nextPage);
           }}
           @focus=${(e: any) => {
             // Select text on focus for easy typing
@@ -208,18 +253,67 @@ export class Pagination extends LitElement {
     `;
   }
 
+  private renderPages = () => {
+    const pages = Array.from({ length: this.pages }).map((_, i) => i + 1);
+    const middleVisible = 3;
+    const middlePad = Math.floor(middleVisible / 2);
+    const middleEnd = middleVisible * 2 - 1;
+    const endsVisible = 2;
+    if (this.pages > middleVisible + middleEnd) {
+      const currentPageIdx = pages.indexOf(this.page);
+      const firstPages = pages.slice(0, endsVisible);
+      const lastPages = pages.slice(-1 * endsVisible);
+      let middlePages = pages.slice(endsVisible, middleEnd);
+      if (currentPageIdx > middleVisible) {
+        middlePages = pages.slice(
+          Math.min(currentPageIdx - middlePad, this.pages - middleEnd),
+          Math.min(currentPageIdx + middlePad + 1, this.pages - endsVisible)
+        );
+      }
+
+      return html`
+        ${firstPages.map(this.renderPageButton)}
+        ${when(
+          middlePages[0] > firstPages[firstPages.length - 1] + 1,
+          () => html`...`
+        )}
+        ${middlePages.map(this.renderPageButton)}
+        ${when(
+          lastPages[0] > middlePages[middlePages.length - 1] + 1,
+          () => html`...`
+        )}
+        ${lastPages.map(this.renderPageButton)}
+      `;
+    }
+    return html`${pages.map(this.renderPageButton)}`;
+  };
+
+  private renderPageButton = (page: number) => {
+    const isCurrent = page === this.page;
+    return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
+      <btrix-button
+        icon
+        variant=${isCurrent ? "primary" : "neutral"}
+        ?raised=${isCurrent}
+        @click=${() => this.onPageChange(page)}
+        aria-disabled=${isCurrent}
+        >${page}</btrix-button
+      >
+    </li>`;
+  };
+
   private onPrev() {
-    this.page = this.page > 1 ? this.page - 1 : 1;
+    this.onPageChange(this.page > 1 ? this.page - 1 : 1);
   }
 
   private onNext() {
-    this.page = this.page < this.pages ? this.page + 1 : this.pages;
+    this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
   }
 
-  private onPageChange() {
+  private onPageChange(page: number) {
     this.dispatchEvent(
-      new CustomEvent("page-change", {
-        detail: { page: this.page, pages: this.pages },
+      <PageChangeEvent>new CustomEvent("page-change", {
+        detail: { page: page, pages: this.pages },
       })
     );
   }

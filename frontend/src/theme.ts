@@ -87,6 +87,8 @@ const theme = css`
 
     /* Help text */
     --sl-input-help-text-font-size-medium: var(--sl-font-size-x-small);
+
+    --sl-shadow-x-small: 0px 1px 2px rgba(0, 0, 0, 0.15);
   }
 
   body {

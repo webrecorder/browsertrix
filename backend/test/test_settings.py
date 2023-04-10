@@ -14,4 +14,5 @@ def test_settings():
         "jwtTokenLifetime": 86400,
         "defaultBehaviorTimeSeconds": 300,
         "maxPagesPerCrawl": 2,
+        "defaultPageLoadTimeSeconds": 120,
     }
