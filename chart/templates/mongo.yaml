@@ -103,8 +103,8 @@ spec:
 
           # should work with 6.0.x with longer timeout
           readinessProbe:
-            timeoutSeconds: 10
-            periodSeconds: 20
+            timeoutSeconds: 20
+            periodSeconds: 40
             initialDelaySeconds: 5
             successThreshold: 1
             failureThreshold: 5
