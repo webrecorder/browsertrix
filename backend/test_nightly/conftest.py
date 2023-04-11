@@ -203,3 +203,25 @@ def large_crawl_finished(admin_auth_headers, default_org_id, large_crawl_id):
             time.sleep(30)
             break
         time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def timeout_crawl(admin_auth_headers, default_org_id):
+    # Start crawl
+    crawl_data = {
+        "runNow": True,
+        "name": "Crawl with crawl timeout",
+        "crawlTimeout": 30,
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "scopeType": "domain",
+            "limit": 100,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+    return data["run_now_job"]
