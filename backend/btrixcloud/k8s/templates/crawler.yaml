@@ -30,7 +30,7 @@ spec:
         name: redis-data
         labels:
           crawl: {{ id }}
-          role: crawler
+          role: redis
 
       spec:
         accessModes:
@@ -56,7 +56,7 @@ spec:
       volumes:
         - name: shared-redis-conf
           configMap:
-            name: shared-job-config
+            name: shared-redis-conf
             items:
               - key: redis.conf
                 path: redis.conf
@@ -263,9 +263,9 @@ spec:
             - /tmp/crawl-config.json
             - --redisStoreUrl
             - {{ redis_url }}
-          {%- if env.PROFILE_FILENAME %}
+          {%- if profile_filename %}
             - --profile
-            - "@profiles/{{ env.PROFILE_FILENAME }}"
+            - "@profiles/{{ profile_filename }}"
           {%- endif %}
 
           volumeMounts:
@@ -292,13 +292,13 @@ spec:
               value: {{ redis_url }}/crawls-done
 
             - name: STORE_PATH
-              value: {{ env.STORE_PATH }}
+              value: {{ store_path }}
 
             - name: STORE_FILENAME
-              value: {{ env.STORAGE_FILENAME }}
+              value: {{ storage_filename }}
 
             - name: STORE_USER
-              value: {{ env.USER_ID }}
+              value: {{ userid }}
 
           resources:
             limits:

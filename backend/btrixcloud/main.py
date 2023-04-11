@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
 
-from .db import init_db, update_and_prepare_db
+from .db import init_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -27,6 +27,8 @@ from .crawls import init_crawls_api
 
 from .k8s.k8sman import K8SManager
 
+
+# pylint: disable=duplicate-code
 
 API_PREFIX = "/api"
 app_root = FastAPI(
@@ -110,11 +112,11 @@ def main():
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
-    asyncio.create_task(
-        update_and_prepare_db(
-            mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops, invites
-        )
-    )
+    # asyncio.create_task(
+    #    update_and_prepare_db(
+    #        mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops, invites
+    #    )
+    # )
 
     app.include_router(org_ops.router)
 

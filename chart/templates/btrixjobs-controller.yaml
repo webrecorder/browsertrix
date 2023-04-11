@@ -4,16 +4,28 @@ metadata:
   name: btrixjobs-controller
   namespace: btrix-operator
 spec:
-  generateSelector: true
+  generateSelector: false
+  resyncPeriodSeconds: 30
   parentResource:
     apiVersion: btrix.cloud/v1
     resource: btrixjobs
   childResources:
-  - apiVersion: batch/v1
-    resource: jobs
+  - apiVersion: apps/v1
+    resource: statefulsets
     updateStrategy:
-      method: OnDelete     
+      method: OnDelete
+ 
+  - apiVersion: v1
+    resource: services
+    updateStrategy:
+      method: OnDelete
+ 
   hooks:
     sync:
       webhook:
         url: http://browsertrix-cloud-backend.default:8756/operator/sync
+
+    customize:
+      webhook:
+        url: http://browsertrix-cloud-backend.default:8756/operator/customize
+
