@@ -55,6 +55,7 @@ class CrawlInfo(BaseModel):
     cid: str
     store_path: str
     storage_name: str
+    now: datetime
 
 
 # ============================================================================
@@ -94,6 +95,8 @@ class BtrixOperator:
             storage_name=configmap["STORAGE_NAME"],
             store_path=configmap["STORE_PATH"],
             scale=spec.get("scale", 1),
+            started=data.parent.get("metadata").get("createdTimestamp")
+            now=dt_now()
         )
 
         crawl_sts = f"crawl-{crawl_id}"

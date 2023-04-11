@@ -16,7 +16,13 @@ spec:
     - name: v1
       served: true
       storage: true
-      subresources: { status: { } }  # comment/uncomment for experiments
+      subresources:
+        status: {}
+        scale:
+          specReplicasPath: .spec.scale
+          statusReplicasPath: .status.scale
+          labelSelectorPath: .status.labelSelector
+
       schema:
         openAPIV3Schema:
           type: object
@@ -24,9 +30,19 @@ spec:
             spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
+              properties:
+                scale:
+                  type: integer
+
             status:
               type: object
               x-kubernetes-preserve-unknown-fields: true
+              properties:
+                scale:
+                  type: integer
+                labelSelector:
+                  type: string
+
       additionalPrinterColumns:
         - name: Message
           type: string
