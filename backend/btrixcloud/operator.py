@@ -11,13 +11,14 @@ import yaml
 # from fastapi import Request, HTTPException
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from redis import asyncio as aioredis#, exceptions
+from redis import asyncio as aioredis  # , exceptions
 
 from .k8s.utils import get_templates_dir
 
 from .db import init_db
 from .crawls import CrawlFile, CrawlCompleteIn, dt_now
-#from .crawlconfigs import CrawlConfig
+
+# from .crawlconfigs import CrawlConfig
 
 # pylint:disable=duplicate-code
 
@@ -59,7 +60,8 @@ class CrawlInfo(BaseModel):
 # ============================================================================
 class BtrixOperator:
     """BtrixOperator Handler"""
-    #pylint: disable=too-many-instance-attributes
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
         self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
@@ -91,6 +93,7 @@ class BtrixOperator:
             cid=cid,
             storage_name=configmap["STORAGE_NAME"],
             store_path=configmap["STORE_PATH"],
+            scale=spec.get("scale", 1),
         )
 
         crawl_sts = f"crawl-{crawl_id}"
@@ -328,8 +331,8 @@ class BtrixOperator:
 
         await self.update_crawl(crawl_id, state=state, finished=finished)
 
-        #if completed:
-         #   await self.inc_crawl_complete_stats()
+        # if completed:
+        #   await self.inc_crawl_complete_stats()
 
 
 # ============================================================================

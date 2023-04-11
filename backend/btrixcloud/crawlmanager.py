@@ -192,6 +192,7 @@ class BaseCrawlManager(ABC):
             "rev": str(crawlconfig.rev),
             "userid": str(crawlconfig.modifiedBy),
             "oid": str(crawlconfig.oid),
+            "scale": str(crawlconfig.scale),
             "crawl_expire_time": crawl_expire_time,
             "job_image": self.job_image,
             "job_pull_policy": self.job_pull_policy,
