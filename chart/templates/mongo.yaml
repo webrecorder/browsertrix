@@ -101,16 +101,19 @@ spec:
               cpu: {{ .Values.mongo_requests_cpu }}
               memory: {{ .Values.mongo_requests_memory }}
 
-          # reenable for now with mongo 5.0.x
+          # should work with 6.0.x with longer timeout
           readinessProbe:
-            timeoutSeconds: 10
+            timeoutSeconds: 20
+            periodSeconds: 40
+            initialDelaySeconds: 5
             successThreshold: 1
-            failureThreshold: 2
+            failureThreshold: 5
             exec:
               command:
-                - mongo
+                - mongosh
                 - --eval
                 - db.adminCommand('ping')
+                - --quiet
 
 ---
 apiVersion: v1
