@@ -2,7 +2,8 @@
 
 import os
 
-import pprint
+# import pprint
+from typing import Optional
 
 from datetime import datetime
 import json
@@ -23,6 +24,7 @@ from .crawls import CrawlFile, CrawlCompleteIn, dt_now
 # pylint:disable=duplicate-code
 
 STS = "StatefulSet.apps/v1"
+CMAP = "ConfigMap.v1"
 
 
 # ============================================================================
@@ -51,11 +53,27 @@ class MCSyncData(MCBaseRequest):
 class CrawlInfo(BaseModel):
     """Crawl Info"""
 
-    crawl_id: str
+    id: str
     cid: str
-    store_path: str
+    oid: str
+    scale: int
+    storage_path: str
     storage_name: str
-    now: datetime
+    started: str
+
+
+# ============================================================================
+class Status(BaseModel):
+    """Crawl Status"""
+
+    state: str = "waiting"
+    pagesFound: int = 0
+    pagesDone: int = 0
+    scale: int = 1
+    filesAdded: int = 0
+    # started: datetime = dt_now()
+    # finished: Optional[datetime] = None
+    finished: Optional[str] = None
 
 
 # ============================================================================
@@ -81,22 +99,25 @@ class BtrixOperator:
 
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
+        status = Status(**data.parent.get("status", {}))
+        if status.finished:
+            return {"status": status.dict(), "children": []}
+
         spec = data.parent.get("spec", {})
-        pprint.pprint(f"related: {len(data.related['ConfigMap.v1'])}")
 
-        cid = spec["configId"]
-        crawl_id = spec["configId"]
+        crawl_id = spec["id"]
+        cid = spec["cid"]
 
-        configmap = data.related["ConfigMap.v1"][f"crawl-config-{cid}"]["data"]
+        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
 
         crawl = CrawlInfo(
             id=crawl_id,
             cid=cid,
+            oid=spec["oid"],
             storage_name=configmap["STORAGE_NAME"],
-            store_path=configmap["STORE_PATH"],
+            storage_path=configmap["STORE_PATH"],
             scale=spec.get("scale", 1),
-            started=data.parent["metadata"]["createdTimestamp"],
-            now=dt_now()
+            started=data.parent["metadata"]["creationTimestamp"],
         )
 
         crawl_sts = f"crawl-{crawl_id}"
@@ -106,30 +127,25 @@ class BtrixOperator:
             f"redis://{redis_id}-0.{redis_id}.{self.namespace}.svc.cluster.local/0"
         )
 
-        status = {
-            # "jobs": len(jobs),
-            # "startTime": start_time,
-            "active": False,
-            # "ready": ready,
-            "message": "Test",
-        }
+        if STS in data.children and crawl_sts in data.children[STS]:
+            status = await self.sync_crawl_state(redis_url, crawl, status)
+        else:
+            status.state = "starting"
 
-        try:
-            if STS in data.children and crawl_sts in data.children[STS]:
-                await self.sync_crawl_state(redis_url, crawl)
-        except DeleteCrawlException:
-            return {"status": status, "children": []}
+        if status.finished:
+            return {"status": status.dict(), "children": []}
 
         params = {}
         params.update(self.shared_params)
         params["id"] = crawl_id
         params["cid"] = cid
-        params["userid"] = spec.get("userId", "")
+        params["userid"] = spec.get("userid", "")
 
         params["storage_name"] = configmap["STORAGE_NAME"]
         params["store_path"] = configmap["STORE_PATH"]
         params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
+        params["scale"] = spec.get("scale", 1)
 
         params["redis_url"] = redis_url
 
@@ -137,24 +153,24 @@ class BtrixOperator:
 
         children = list(yaml.safe_load_all(crawler_yaml))
 
-        return {"status": status, "children": children}
+        return {"status": status.dict(), "children": children}
 
     def get_related(self, data: MCBaseRequest):
         """return configmap related to crawl"""
         spec = data.parent.get("spec", {})
-        cid = spec.get("configId")
+        cid = spec.get("cid")
         return {
             "relatedResources": [
                 {
                     "apiVersion": "v1",
                     "resource": "configmaps",
-                    "namespace": self.namespace,
-                    "name": f"crawl-config-{cid}",
+                    # "namespace": self.namespace,
+                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
                 }
             ]
         }
 
-    async def sync_crawl_state(self, redis_url, crawl):
+    async def sync_crawl_state(self, redis_url, crawl, status):
         """sync crawl state for running crawl"""
         # init redis
         redis = None
@@ -162,42 +178,38 @@ class BtrixOperator:
             redis = await aioredis.from_url(
                 redis_url, encoding="utf-8", decode_responses=True
             )
-            # prev_start_time = await redis.get("start_time")
+            # test conn
+            await redis.ping()
 
-            print("Redis Connected!", flush=True)
         # pylint: disable=bare-except
         except:
-            print("Redis not available, trying again later")
-            return False
+            return status
 
         # if not prev_start_time:
         #    await redis.set("start_time", str(self.started))
 
-        result = await redis.lpop(self.crawls_done_key)
+        try:
+            file_done = await redis.lpop(self.crawls_done_key)
 
-        # run redis loop
-        while result:
-            try:
-                msg = json.loads(result[1])
+            while file_done:
+                msg = json.loads(file_done)
                 # add completed file
                 if msg.get("filename"):
                     await self.add_file_to_crawl(msg, crawl)
+                    status.filesAdded += 1
 
-                # update stats
-                await self.update_running_crawl_stats(redis, crawl.id)
+                # get next file done
+                file_done = await redis.lpop(self.crawls_done_key)
 
-                # check crawl status
-                await self.check_crawl_status(crawl.id, redis, crawl.scale)
+            # update stats and get status
+            return await self.update_crawl_state(redis, crawl, status)
 
-                # get next crawl done
-                result = await redis.lpop(self.crawls_done_key)
-
-                # pylint: disable=broad-except
-            except Exception as exc:
-                print(f"Crawl get failed: {exc}, trying next time")
-                return False
-
-        return True
+        # pylint: disable=broad-except
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            print(f"Crawl get failed: {exc}, will try again")
+            return status
 
     async def add_file_to_crawl(self, cc_data, crawl):
         """Handle finished CrawlFile to db"""
@@ -209,7 +221,6 @@ class BtrixOperator:
         if crawl.storage_path:
             inx = filecomplete.filename.index(crawl.storage_path)
             filename = filecomplete.filename[inx:] if inx > 0 else filecomplete.filename
-            # storage_name = job.metadata.annotations.get("btrix.storage_name")
 
         def_storage_name = crawl.storage_name if inx else None
 
@@ -230,46 +241,25 @@ class BtrixOperator:
 
         return True
 
-    async def inc_crawl_complete_stats(self, org_id):
-        """Increment Crawl Stats"""
+    async def update_crawl_state(self, redis, crawl, status):
+        """update crawl state and check if crawl is now done"""
+        pages_done = await redis.llen(f"{crawl.id}:d")
+        pages_found = await redis.scard(f"{crawl.id}:s")
+        results = await redis.hvals(f"{crawl.id}:status")
 
-        duration = 0  # int((self.finished - self.started).total_seconds())
+        # no change in pages found / done, no further checks / updates needed
+        # return current status
+        # if status.pagesDone == pages_done and status.pagesFound == pages_found:
+        #    return status
 
-        print(f"Duration: {duration}", flush=True)
+        stats = {"found": pages_found, "done": pages_done}
 
-        # init org crawl stats
-        yymm = datetime.utcnow().strftime("%Y-%m")
-        await self.orgs.find_one_and_update(
-            {"_id": org_id}, {"$inc": {f"usage.{yymm}": duration}}
-        )
+        await self.update_crawl(crawl.id, state="running", stats=stats)
 
-    async def update_running_crawl_stats(self, redis, crawl_id):
-        """update stats for running crawl"""
-        done = await redis.llen(f"{crawl_id}:d")
-        found = await redis.scard(f"{crawl_id}:s")
-
-        # if self.last_done == done and self.last_found == found:
-        #    return
-
-        stats = {"found": found, "done": done}
-        if found:
-            stats["state"] = "running"
-
-        # if not self.last_found and found:
-        #    await self.update_crawl(state="running", stats=stats)
-        # else:
-        await self.update_crawl(crawl_id, stats=stats)
-
-        # self.last_found = found
-        # self.last_done = done
-
-    async def update_crawl(self, crawl_id, **kwargs):
-        """update crawl state, and optionally mark as finished"""
-        await self.crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
-
-    async def check_crawl_status(self, crawl_id, redis, scale):
-        """check if crawl is done if all crawl workers have set their done state"""
-        results = await redis.hvals(f"{crawl_id}:status")
+        # update status
+        status.state = "running"
+        status.pagesDone = pages_done
+        status.pagesFound = pages_found
 
         # check if done / failed
         done = 0
@@ -281,19 +271,21 @@ class BtrixOperator:
                 failed += 1
 
         # check if all crawlers are done
-        if done >= scale:
-            print("crawl done!", flush=True)
-            await self.finish_crawl(crawl_id)
+        if done >= crawl.scale:
+            # check if one-page crawls actually succeeded
+            # if only one page found, and no files, assume failed
+            if status.pagesFound == 1 and not status.filesAdded:
+                return await self.mark_finished(crawl, status, state="failed")
 
-            raise DeleteCrawlException()
+            completed = status.pagesDone and status.pagesDone >= status.pagesFound
+
+            state = "complete" if completed else "partial_complete"
+
+            status = await self.mark_finished(crawl, status, state, inc_stats=True)
 
         # check if all crawlers failed
-        if failed >= scale:
-            print("crawl failed!", flush=True)
-
-            await self.fail_crawl(crawl_id)
-
-            raise DeleteCrawlException()
+        if failed >= crawl.scale:
+            status = await self.mark_finished(crawl, status, state="failed")
 
         # check crawl expiry
         # if self.crawl_expire_time and datetime.utcnow() > self.crawl_expire_time:
@@ -304,38 +296,41 @@ class BtrixOperator:
         #            + "gracefully stopping crawl"
         #        )
 
-    async def fail_crawl(self, crawl_id):
-        """mark crawl as failed"""
-        # if self.finished:
-        #    return
+        return status
 
+    async def mark_finished(self, crawl, status, state, inc_stats=False):
+        """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
-        await self.update_crawl(crawl_id, state="failed", finished=finished)
+        await self.update_crawl(crawl.id, state=state, finished=finished)
 
-    async def finish_crawl(self, crawl_id):
-        """finish crawl"""
-        # if finished:
-        #    return
+        status.state = state
+        status.finished = finished.isoformat() + "Z"
 
-        # check if one-page crawls actually succeeded
-        # if only one page found, and no files, assume failed
-        # if self.last_found == 1 and not self._files_added:
-        #    await self.fail_crawl()
-        #    return
+        if inc_stats:
+            await self.inc_crawl_complete_stats(crawl, finished)
 
-        finished = dt_now()
+        return status
 
-        # completed = self.last_done and self.last_done >= self.last_found
-        completed = True
+    async def update_crawl(self, crawl_id, **kwargs):
+        """update crawl state in db"""
+        await self.crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
 
-        state = "complete" if completed else "partial_complete"
-        print("marking crawl as: " + state, flush=True)
+    async def inc_crawl_complete_stats(self, crawl, finished):
+        """Increment Crawl Stats"""
 
-        await self.update_crawl(crawl_id, state=state, finished=finished)
+        # strip of 'Z' at end
+        started = datetime.fromisoformat(crawl.started[:-1])
 
-        # if completed:
-        #   await self.inc_crawl_complete_stats()
+        duration = int((finished - started).total_seconds())
+
+        print(f"Duration: {duration}", flush=True)
+
+        # init org crawl stats
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        await self.orgs.find_one_and_update(
+            {"_id": crawl.oid}, {"$inc": {f"usage.{yymm}": duration}}
+        )
 
 
 # ============================================================================

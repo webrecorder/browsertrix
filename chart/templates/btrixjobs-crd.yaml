@@ -44,28 +44,32 @@ spec:
                   type: string
 
       additionalPrinterColumns:
-        - name: Message
+        - name: State
           type: string
-          priority: 0
-          jsonPath: .status.message
-          description: As returned from the handler (sometimes).
-        - name: Active
+          jsonPath: .status.state
+          description: Crawl State
+
+        - name: Pages Done
           type: integer
-          priority: 0
-          jsonPath: .status.active
-          description: As returned from the handler (sometimes).
-        - name: Ready
+          jsonPath: .status.pagesDone
+          description: Pages Done
+
+        - name: Pages Found
           type: integer
-          priority: 0
-          jsonPath: .status.ready
-          description: As returned from the handler (sometimes).
-        - name: Jobs
+          jsonPath: .status.pagesFound
+          description: Pages Found
+
+        - name: Time Started
+          type: date
+          jsonPath: .metadata.creationTimestamp
+          description: "time crawl started"
+
+        - name: Time Finished
+          type: date
+          jsonPath: .status.finished
+          description: "if set, time crawl has finished"
+
+        - name: Scale
           type: integer
-          priority: 0
-          jsonPath: .status.jobs
-          description: As returned from the handler (sometimes).
-        - name: StartAt
-          type: string
-          priority: 0
-          jsonPath: .status.startTime
-          description: As returned from the handler (sometimes).
+          jsonPath: .status.scale
+          description: Crawl Scale

@@ -4,7 +4,7 @@ metadata:
   name: job-{{ id }}
   labels:
     crawl: "{{ id }}"
-    role: "btrix-job"
+    role: "job"
 
 spec:
   selector:
@@ -13,15 +13,9 @@ spec:
 
   manual: {{ manual }}
   id: "{{ id }}"
-  jobId: "job-{{ id }}"
-  userId: "{{ userid }}"
-  orgId: "{{ oid }}"
-  configId: "{{ cid }}"
-  rev: "{{ rev }}"
-  scale: "{{ scale }}"
-
-  nodeType: "{{ crawler_node_type }}"
-  jobImage: "{{ job_image }}"
-  jobPullPolicy: "{{ job_pull_policy }}"
-  tags: "{{ tags }}"
+  userid: "{{ userid }}"
+  oid: "{{ oid }}"
+  cid: "{{ cid }}"
+  rev: {{ rev }}
+  scale: {{ scale }}
 
