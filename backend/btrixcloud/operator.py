@@ -95,7 +95,7 @@ class BtrixOperator:
             storage_name=configmap["STORAGE_NAME"],
             store_path=configmap["STORE_PATH"],
             scale=spec.get("scale", 1),
-            started=data.parent.get("metadata").get("createdTimestamp")
+            started=data.parent["metadata"]["createdTimestamp"],
             now=dt_now()
         )
 
