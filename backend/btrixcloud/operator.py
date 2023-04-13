@@ -110,6 +110,9 @@ class BtrixOperator(K8sAPI):
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
 
+        scale = spec.get("scale", 1)
+        status.scale = scale
+
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
 
@@ -123,7 +126,7 @@ class BtrixOperator(K8sAPI):
             oid=spec["oid"],
             storage_name=configmap["STORAGE_NAME"],
             storage_path=configmap["STORE_PATH"],
-            scale=spec.get("scale", 1),
+            scale=scale,
             started=data.parent["metadata"]["creationTimestamp"],
         )
 
@@ -248,7 +251,7 @@ class BtrixOperator(K8sAPI):
                 file_done = await redis.lpop(self.crawls_done_key)
 
             # ensure filesAdded always set
-            status.filesAdded = await redis.get("filesAdded")
+            status.filesAdded = int(await redis.get("filesAdded") or 0)
 
             # update stats and get status
             return await self.update_crawl_state(redis, crawl, status)
