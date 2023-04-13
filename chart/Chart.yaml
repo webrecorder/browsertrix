@@ -19,3 +19,6 @@ dependencies:
     version: 0.1.0
     condition: addons.admin.logging
     repository: file://./admin/logging
+  - name: metacontroller-helm
+    version: 4.10.1
+    repository: "file://./metacontroller/deploy/helm/metacontroller"

@@ -269,3 +269,5 @@ signer_limits_memory: "96Mi"
 addons:
   admin:
     logging: false
+
+# metacontroller:

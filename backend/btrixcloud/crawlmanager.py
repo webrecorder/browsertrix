@@ -203,7 +203,7 @@ class BaseCrawlManager(ABC):
             "tags": ",".join(crawlconfig.tags),
         }
 
-        return self.templates.env.get_template("crawl_job.yaml").render(params)
+        return self.templates.env.get_template("btrix_job.yaml").render(params)
 
     async def _update_config_map(
         self, crawlconfig, scale=None, profile_filename=None, update_config=False

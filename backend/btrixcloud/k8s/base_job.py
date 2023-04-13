@@ -87,6 +87,17 @@ class K8SJobMixin(K8sAPI):
             propagation_policy="Foreground",
         )
 
+        # delete btrixjob object
+        await self.custom_api.delete_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            plural="btrixjobs",
+            name=self.orig_job_id,
+            grace_period_seconds=30,
+            propagation_policy="Foreground",
+        )
+
         asyncio.create_task(self.exit_soon(5))
 
     async def exit_soon(self, timeout):

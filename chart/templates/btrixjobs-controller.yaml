@@ -1,0 +1,19 @@
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: btrixjobs-controller
+  namespace: btrix-operator
+spec:
+  generateSelector: true
+  parentResource:
+    apiVersion: btrix.cloud/v1
+    resource: btrixjobs
+  childResources:
+  - apiVersion: batch/v1
+    resource: jobs
+    updateStrategy:
+      method: OnDelete     
+  hooks:
+    sync:
+      webhook:
+        url: http://browsertrix-cloud-backend.default:8756/operator/sync

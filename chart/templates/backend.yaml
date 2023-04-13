@@ -107,3 +107,7 @@ spec:
     - protocol: TCP
       port: 8000
       name: api
+
+    - protocol: TCP
+      port: 8756
+      name: operator
