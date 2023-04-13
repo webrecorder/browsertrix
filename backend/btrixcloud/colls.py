@@ -174,7 +174,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query = {"org": oid}
+        match_query = {"oid": oid}
 
         total = await self.collections.count_documents(match_query)
 
