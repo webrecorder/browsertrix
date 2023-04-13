@@ -266,7 +266,7 @@ class CrawlOps:
                     "from": "collections",
                     "let": {"crawl_id": {"$toString": "$_id"}},
                     "pipeline": [
-                        {"$match": {"$expr": {"$in": ["$$crawl_id", "$crawl_ids"]}}}
+                        {"$match": {"$expr": {"$in": ["$$crawl_id", "$crawlIds"]}}}
                     ],
                     "as": "colls",
                 },
@@ -434,7 +434,7 @@ class CrawlOps:
             crawl.collections = [
                 coll["name"]
                 async for coll in self.collections.find(
-                    {"crawl_ids": {"$in": [crawl.id]}}
+                    {"crawlIds": {"$in": [crawl.id]}}
                 )
             ]
 
@@ -799,12 +799,12 @@ class CrawlOps:
         """Remove crawl with given crawl_id from all collections it belongs to"""
         collections = [
             coll["name"]
-            async for coll in self.collections.find({"crawl_ids": {"$in": [crawl_id]}})
+            async for coll in self.collections.find({"crawlIds": {"$in": [crawl_id]}})
         ]
         for collection_name in collections:
             await self.collections.find_one_and_update(
                 {"name": collection_name, "oid": oid},
-                {"$pull": {"crawl_ids": crawl_id}},
+                {"$pull": {"crawlIds": crawl_id}},
             )
 
 

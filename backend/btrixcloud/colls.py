@@ -22,7 +22,7 @@ class Collection(BaseMongoModel):
 
     oid: UUID4
 
-    crawl_ids: Optional[List[str]] = []
+    crawlIds: Optional[List[str]] = []
 
     description: Optional[str]
 
@@ -33,14 +33,14 @@ class CollIn(BaseModel):
 
     name: str
     description: Optional[str]
-    crawl_ids: Optional[List[str]] = []
+    crawlIds: Optional[List[str]] = []
 
 
 # ============================================================================
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    crawl_ids: Optional[List[str]] = []
+    crawlIds: Optional[List[str]] = []
     description: Optional[str]
 
 
@@ -81,7 +81,7 @@ class CollectionOps:
             id=uuid.uuid4(),
             oid=oid,
             name=name,
-            crawl_ids=crawl_ids,
+            crawlIds=crawl_ids,
             description=description,
         )
         try:
@@ -123,7 +123,7 @@ class CollectionOps:
         """Add crawl to collection"""
         result = await self.collections.find_one_and_update(
             {"name": name, "oid": oid},
-            {"$push": {"crawl_ids": crawl_id}},
+            {"$push": {"crawlIds": crawl_id}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
         if not result:
@@ -136,7 +136,7 @@ class CollectionOps:
         """Remove crawl from collection"""
         result = await self.collections.find_one_and_update(
             {"name": name, "oid": oid},
-            {"$pull": {"crawl_ids": crawl_id}},
+            {"$pull": {"crawlIds": crawl_id}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
         if not result:
@@ -193,7 +193,7 @@ class CollectionOps:
 
         all_files = []
 
-        for crawl_id in coll.crawl_ids:
+        for crawl_id in coll.crawlIds:
             org = await self.orgs.get_org_by_id(oid)
             crawl = await self.crawls.get_crawl(crawl_id, org)
             if not crawl.resources:
@@ -221,7 +221,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.add_collection(
-            org.id, new_coll.name, new_coll.crawl_ids, new_coll.description
+            org.id, new_coll.name, new_coll.crawlIds, new_coll.description
         )
 
     @app.get("/orgs/{oid}/collections", tags=["collections"])

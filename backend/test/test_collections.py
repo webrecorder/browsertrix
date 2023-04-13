@@ -15,7 +15,7 @@ def test_create_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
         json={
-            "crawl_ids": [crawler_crawl_id],
+            "crawlIds": [crawler_crawl_id],
             "name": COLLECTION_NAME,
         },
     )
@@ -31,7 +31,7 @@ def test_update_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{COLLECTION_NAME}/update",
         headers=crawler_auth_headers,
         json={
-            "crawl_ids": [crawler_crawl_id, admin_crawl_id],
+            "crawlIds": [crawler_crawl_id, admin_crawl_id],
             "description": DESCRIPTION,
         },
     )
@@ -39,7 +39,7 @@ def test_update_collection(
     data = r.json()
     assert data["name"] == COLLECTION_NAME
     assert data["description"] == DESCRIPTION
-    assert sorted(data["crawl_ids"]) == sorted([admin_crawl_id, crawler_crawl_id])
+    assert sorted(data["crawlIds"]) == sorted([admin_crawl_id, crawler_crawl_id])
 
 
 def test_rename_collection(
@@ -64,7 +64,7 @@ def test_remove_crawl_from_collection(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["crawl_ids"] == [crawler_crawl_id]
+    assert data["crawlIds"] == [crawler_crawl_id]
 
 
 def test_add_crawl_to_collection(
@@ -76,7 +76,7 @@ def test_add_crawl_to_collection(
     )
     assert r.status_code == 200
     data = r.json()
-    assert sorted(data["crawl_ids"]) == sorted([admin_crawl_id, crawler_crawl_id])
+    assert sorted(data["crawlIds"]) == sorted([admin_crawl_id, crawler_crawl_id])
 
 
 def test_get_collection(
@@ -105,7 +105,7 @@ def test_list_collections(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
         json={
-            "crawl_ids": [crawler_crawl_id],
+            "crawlIds": [crawler_crawl_id],
             "name": SECOND_COLLECTION_NAME,
         },
     )
@@ -129,11 +129,11 @@ def test_list_collections(
     assert first_coll["name"] == UPDATED_NAME
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
-    assert sorted(first_coll["crawl_ids"]) == sorted([crawler_crawl_id, admin_crawl_id])
+    assert sorted(first_coll["crawlIds"]) == sorted([crawler_crawl_id, admin_crawl_id])
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
     assert second_coll["name"] == SECOND_COLLECTION_NAME
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
-    assert second_coll["crawl_ids"] == [crawler_crawl_id]
+    assert second_coll["crawlIds"] == [crawler_crawl_id]
