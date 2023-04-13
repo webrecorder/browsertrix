@@ -10,4 +10,5 @@ def test_get_crawl_errors(admin_auth_headers, default_org_id, error_crawl_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["errors"]
+    assert data["total"] > 0
+    assert data["items"]

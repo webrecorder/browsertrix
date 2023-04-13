@@ -242,12 +242,23 @@ class CrawlJob(ABC):
         if completed:
             await self.inc_crawl_complete_stats()
 
-    async def add_crawl_errors_to_mongo(self):
+    async def add_crawl_errors_to_mongo(self, inc=100):
         """Pull crawl errors from redis and write to mongo"""
-        errors = await self.redis.lrange(f"{self.job_id}:e", 0, -1)
-        await self.crawls.find_one_and_update(
-            {"_id": self.job_id}, {"$set": {"errors": errors}}
-        )
+        index = 0
+        while True:
+            skip = index * inc
+            upper_bound = skip + inc - 1
+            errors = await self.redis.lrange(f"{self.job_id}:e", skip, upper_bound)
+            if not errors:
+                break
+            await self.crawls.find_one_and_update(
+                {"_id": self.job_id}, {"$push": {"errors": {"$each": errors}}}
+            )
+            if len(errors) < inc:
+                # If we have fewer than inc errors, we can assume this is the
+                # last page of data to add.
+                break
+            index += 1
 
     async def inc_crawl_complete_stats(self):
         """Increment Crawl Stats"""
