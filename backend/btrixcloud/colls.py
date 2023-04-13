@@ -191,14 +191,25 @@ class CollectionOps:
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        collection_crawls = {}
+        all_files = []
 
         for crawl_id in coll.crawl_ids:
             org = await self.orgs.get_org_by_id(oid)
             crawl = await self.crawls.get_crawl(crawl_id, org)
-            collection_crawls[crawl_id] = crawl.resources
+            if not crawl.files:
+                continue
 
-        return collection_crawls
+            for file_ in crawl.files:
+                if file_.def_storage_name:
+                    storage_prefix = (
+                        await self.crawl_manager.get_default_storage_access_endpoint(
+                            file_.def_storage_name
+                        )
+                    )
+                    file_.filename = storage_prefix + file_.filename
+                all_files.append(file_.dict(exclude={"def_storage_name"}))
+
+        return {"resources": all_files}
 
 
 # ============================================================================
