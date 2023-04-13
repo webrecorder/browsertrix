@@ -203,13 +203,15 @@ def test_delete_crawls_crawler(
 ):
     # Test that crawl is in collection before deleting
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{COLLECTION_NAME}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data[admin_crawl_id]
-    assert data[crawler_crawl_id]
+    collection = [coll for coll in data["items"] if coll["name"] == COLLECTION_NAME][0]
+    crawl_ids = collection["crawlIds"]
+    assert admin_crawl_id in crawl_ids
+    assert crawler_crawl_id in crawl_ids
 
     # Test that crawler user can't delete another user's crawls
     r = requests.post(
@@ -233,13 +235,15 @@ def test_delete_crawls_crawler(
 
     # Test that crawl is no longer in collection
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{COLLECTION_NAME}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data[admin_crawl_id]
-    assert data.get("crawler_crawl_id") is None
+    collection = [coll for coll in data["items"] if coll["name"] == COLLECTION_NAME][0]
+    crawl_ids = collection["crawlIds"]
+    assert admin_crawl_id in crawl_ids
+    assert crawler_crawl_id not in crawl_ids
 
     # Test that crawl is not found after deleting
     r = requests.get(
