@@ -73,6 +73,7 @@ class CrawlFileOut(BaseModel):
     path: str
     hash: str
     size: int
+    crawlId: Optional[str]
 
 
 # ============================================================================
@@ -369,7 +370,7 @@ class CrawlOps:
 
             del res["files"]
 
-            res["resources"] = await self._resolve_signed_urls(files, org)
+            res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
 
         crawl = CrawlOut.from_dict(res)
 
@@ -443,7 +444,9 @@ class CrawlOps:
 
         return crawl
 
-    async def _resolve_signed_urls(self, files, org: Organization):
+    async def _resolve_signed_urls(
+        self, files, org: Organization, crawl_id: Optional[str] = None
+    ):
         if not files:
             print("no files")
             return
@@ -480,6 +483,7 @@ class CrawlOps:
                     path=presigned_url,
                     hash=file_.hash,
                     size=file_.size,
+                    crawlId=crawl_id,
                 )
             )
 

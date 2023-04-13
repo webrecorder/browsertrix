@@ -196,18 +196,11 @@ class CollectionOps:
         for crawl_id in coll.crawl_ids:
             org = await self.orgs.get_org_by_id(oid)
             crawl = await self.crawls.get_crawl(crawl_id, org)
-            if not crawl.files:
+            if not crawl.resources:
                 continue
 
-            for file_ in crawl.files:
-                if file_.def_storage_name:
-                    storage_prefix = (
-                        await self.crawl_manager.get_default_storage_access_endpoint(
-                            file_.def_storage_name
-                        )
-                    )
-                    file_.filename = storage_prefix + file_.filename
-                all_files.append(file_.dict(exclude={"def_storage_name"}))
+            for resource in crawl.resources:
+                all_files.append(resource)
 
         return {"resources": all_files}
 
