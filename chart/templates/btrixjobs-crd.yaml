@@ -69,6 +69,11 @@ spec:
           jsonPath: .status.finished
           description: "if set, time crawl has finished"
 
+        - name: Files Added
+          type: integer
+          jsonPath: .status.filesAdded
+          description: "number of WACZ files uploaded so far from this crawl"
+
         - name: Scale
           type: integer
           jsonPath: .status.scale

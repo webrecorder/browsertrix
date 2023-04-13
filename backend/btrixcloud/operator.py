@@ -3,6 +3,7 @@
 import os
 
 # import pprint
+import traceback
 from typing import Optional
 
 from datetime import datetime
@@ -15,6 +16,7 @@ from pydantic import BaseModel
 from redis import asyncio as aioredis  # , exceptions
 
 from .k8s.utils import get_templates_dir
+from .k8s.k8sapi import K8sAPI
 
 from .db import init_db
 from .crawls import CrawlFile, CrawlCompleteIn, dt_now
@@ -25,6 +27,8 @@ from .crawls import CrawlFile, CrawlCompleteIn, dt_now
 
 STS = "StatefulSet.apps/v1"
 CMAP = "ConfigMap.v1"
+
+DEFAULT_TTL = 30
 
 
 # ============================================================================
@@ -77,12 +81,13 @@ class Status(BaseModel):
 
 
 # ============================================================================
-class BtrixOperator:
+class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
+        super().__init__()
         self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self.config_file = "/config/config.yaml"
 
@@ -99,13 +104,15 @@ class BtrixOperator:
 
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
+
         status = Status(**data.parent.get("status", {}))
-        if status.finished:
-            return {"status": status.dict(), "children": []}
 
         spec = data.parent.get("spec", {})
-
         crawl_id = spec["id"]
+
+        if status.finished:
+            return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
+
         cid = spec["cid"]
 
         configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
@@ -133,7 +140,7 @@ class BtrixOperator:
             status.state = "starting"
 
         if status.finished:
-            return {"status": status.dict(), "children": []}
+            return await self.handle_finished_delete_if_needed(crawl.id, status, spec)
 
         params = {}
         params.update(self.shared_params)
@@ -170,6 +177,45 @@ class BtrixOperator:
             ]
         }
 
+    async def handle_finished_delete_if_needed(self, crawl_id, status, spec):
+        """return status for finished job (no children)
+        also check if deletion is necessary
+        """
+        ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
+        finished = datetime.fromisoformat(status.finished[:-1])
+        if (dt_now() - finished).total_seconds() > ttl:
+            print("Job expired, deleting: " + crawl_id)
+            try:
+                await self.delete_job(crawl_id)
+            # pylint: disable=bare-except, broad-except
+            except:
+                pass
+
+            # until delete policy is supported in StatefulSet
+            # now, delete pvcs explicitly
+            # (don't want to make them children as already owned by sts)
+            try:
+                await self.core_api.delete_collection_namespaced_persistent_volume_claim(
+                    namespace=self.namespace, label_selector=f"crawl={crawl_id}"
+                )
+            # pylint: disable=bare-except, broad-except
+            except Exception as exc:
+                print("PVC Delete failed", exc, flush=True)
+
+        return {"status": status.dict(), "children": []}
+
+    async def delete_job(self, crawl_id):
+        """delete btrix job object"""
+        await self.custom_api.delete_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            plural="btrixjobs",
+            name=f"job-{crawl_id}",
+            grace_period_seconds=0,
+            propagation_policy="Foreground",
+        )
+
     async def sync_crawl_state(self, redis_url, crawl, status):
         """sync crawl state for running crawl"""
         # init redis
@@ -196,17 +242,19 @@ class BtrixOperator:
                 # add completed file
                 if msg.get("filename"):
                     await self.add_file_to_crawl(msg, crawl)
-                    status.filesAdded += 1
+                    await redis.incr("filesAdded")
 
                 # get next file done
                 file_done = await redis.lpop(self.crawls_done_key)
+
+            # ensure filesAdded always set
+            status.filesAdded = await redis.get("filesAdded")
 
             # update stats and get status
             return await self.update_crawl_state(redis, crawl, status)
 
         # pylint: disable=broad-except
         except Exception as exc:
-            import traceback
             traceback.print_exc()
             print(f"Crawl get failed: {exc}, will try again")
             return status

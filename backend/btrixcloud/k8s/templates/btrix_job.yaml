@@ -7,6 +7,7 @@ metadata:
     role: "job"
 
 spec:
+  ttlSecondsAfterFinished: 30
   selector:
     matchLabels:
       crawl: "{{ id }}"
