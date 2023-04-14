@@ -106,13 +106,13 @@ def main():
         current_active_user,
     )
 
-    coll_ops = init_collections_api(mdb, crawls, org_ops, crawl_manager)
+    coll_ops = init_collections_api(app, mdb, crawls, org_ops, crawl_manager)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
     asyncio.create_task(
         update_and_prepare_db(
-            mdb, user_manager, org_ops, crawl_config_ops, crawls, coll_ops, invites
+            mdb, user_manager, org_ops, crawl_config_ops, coll_ops, invites
         )
     )
 
