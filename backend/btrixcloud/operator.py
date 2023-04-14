@@ -397,3 +397,7 @@ def init_operator_webhook(app):
     @app.post("/operator/customize")
     async def mc_related(data: MCBaseRequest):
         return oper.get_related(data)
+
+    @app.get("/healthz", include_in_schema=False)
+    async def healthz():
+        return {}

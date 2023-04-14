@@ -49,10 +49,6 @@ spec:
             - secretRef:
                 name: mongo-auth
 
-          volumeMounts:
-            - name: config-volume
-              mountPath: /config
-
           resources:
             limits:
               cpu: {{ .Values.backend_limits_cpu }}
@@ -88,6 +84,70 @@ spec:
             periodSeconds: 30
             failureThreshold: 5
             successThreshold: 1
+
+        - name: operator
+          image: {{ .Values.backend_image }}
+          imagePullPolicy: {{ .Values.backend_pull_policy }}
+          command:
+              - uvicorn
+              - btrixcloud.main_op:app_root
+              - --host
+              - 0.0.0.0
+              - --port
+              - "8756"
+              - --access-log
+              - --log-level
+              - info
+
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.name }}-env-config
+            - secretRef:
+                name: auth-secrets
+            - secretRef:
+                name: mongo-auth
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+
+          resources:
+            limits:
+              cpu: {{ .Values.backend_limits_cpu }}
+              memory: {{ .Values.backend_limits_memory }}
+
+            requests:
+              cpu: {{ .Values.backend_requests_cpu }}
+              memory: {{ .Values.backend_requests_memory }}
+
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8756
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8756
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 5
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8756
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 5
+            successThreshold: 1
+
+
 
 ---
 
