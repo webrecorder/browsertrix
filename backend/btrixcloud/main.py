@@ -27,6 +27,7 @@ from .crawls import init_crawls_api
 
 from .k8s.k8sman import K8SManager
 
+# pylint: disable=duplicate-code
 
 API_PREFIX = "/api"
 app_root = FastAPI(
