@@ -1,5 +1,5 @@
 apiVersion: btrix.cloud/v1
-kind: BtrixJob
+kind: CrawlJob
 metadata:
   name: job-{{ id }}
   labels:
@@ -7,16 +7,14 @@ metadata:
     role: "job"
 
 spec:
-  ttlSecondsAfterFinished: 30
   selector:
     matchLabels:
       crawl: "{{ id }}"
 
-  manual: {{ manual }}
   id: "{{ id }}"
   userid: "{{ userid }}"
   oid: "{{ oid }}"
   cid: "{{ cid }}"
   rev: {{ rev }}
   scale: {{ scale }}
-
+  ttlSecondsAfterFinished: 30

@@ -1,6 +1,5 @@
 """ K8s support"""
 
-import os
 import json
 import base64
 
@@ -29,7 +28,6 @@ class K8SManager(BaseCrawlManager, K8sAPI):
     def __init__(self):
         super().__init__(get_templates_dir())
 
-        self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self._default_storages = {}
 
     # pylint: disable=unused-argument
@@ -232,16 +230,8 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             patch = {"stopping": True}
             return await self._patch_job(crawl_id, patch)
 
-        # delete btrixjob object
-        await self.custom_api.delete_namespaced_custom_object(
-            group="btrix.cloud",
-            version="v1",
-            namespace=self.namespace,
-            plural="btrixjobs",
-            name=f"job-{crawl_id}",
-            grace_period_seconds=10,
-            propagation_policy="Foreground",
-        )
+        self.delete_crawl_job(crawl_id)
+
         return {"success": True}
 
     async def scale_crawl(self, crawl_id, oid, scale=1):
@@ -266,7 +256,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
-                plural="btrixjobs",
+                plural="crawljobs",
                 name=f"job-{crawl_id}",
                 body={"spec": body},
             )

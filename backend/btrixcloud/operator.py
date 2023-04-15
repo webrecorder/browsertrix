@@ -1,7 +1,5 @@
 """ btrixjob operator (working for metacontroller) """
 
-import os
-
 # import pprint
 import traceback
 from typing import Optional
@@ -87,7 +85,6 @@ class BtrixOperator(K8sAPI):
 
     def __init__(self):
         super().__init__()
-        self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self.config_file = "/config/config.yaml"
 
         _, mdb = init_db()
@@ -195,7 +192,7 @@ class BtrixOperator(K8sAPI):
         if (dt_now() - finished).total_seconds() > ttl:
             print("Job expired, deleting: " + crawl_id)
             try:
-                await self.delete_job(crawl_id)
+                await self.delete_crawl_job(crawl_id)
             # pylint: disable=bare-except, broad-except
             except:
                 pass
@@ -212,18 +209,6 @@ class BtrixOperator(K8sAPI):
                 print("PVC Delete failed", exc, flush=True)
 
         return {"status": status.dict(), "children": [], "finalized": True}
-
-    async def delete_job(self, crawl_id):
-        """delete btrix job object"""
-        await self.custom_api.delete_namespaced_custom_object(
-            group="btrix.cloud",
-            version="v1",
-            namespace=self.namespace,
-            plural="btrixjobs",
-            name=f"job-{crawl_id}",
-            grace_period_seconds=0,
-            propagation_policy="Foreground",
-        )
 
     async def cancel_crawl(self, crawl, status):
         """immediately cancel crawl"""
