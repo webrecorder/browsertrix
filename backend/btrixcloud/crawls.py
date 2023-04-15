@@ -24,6 +24,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
 from .users import User
+from .utils import dt_now, ts_now
 
 
 CRAWL_STATES = (
@@ -1077,13 +1078,3 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 
     return ops
-
-
-def dt_now():
-    """get current ts"""
-    return datetime.utcnow().replace(microsecond=0, tzinfo=None)
-
-
-def ts_now():
-    """get current ts"""
-    return str(dt_now())

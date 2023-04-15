@@ -14,8 +14,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from redis import asyncio as aioredis  # , exceptions
 
-from .k8s.utils import get_templates_dir, from_k8s_date, to_k8s_date, dt_now
-from .k8s.k8sapi import K8sAPI
+from .utils import get_templates_dir, from_k8s_date, to_k8s_date, dt_now
+from .k8sapi import K8sAPI
 
 from .db import init_db
 from .crawls import CrawlFile, CrawlCompleteIn

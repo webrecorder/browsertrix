@@ -25,7 +25,7 @@ from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
 
-from .k8s.k8sman import K8SManager
+from .crawlmanager import CrawlManager
 
 # pylint: disable=duplicate-code
 
@@ -81,7 +81,7 @@ def main():
         )
         sys.exit(1)
 
-    crawl_manager = K8SManager()
+    crawl_manager = CrawlManager()
 
     init_storages_api(org_ops, crawl_manager, current_active_user)
 

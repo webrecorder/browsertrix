@@ -125,9 +125,7 @@ class K8sAPI:
         )
 
     async def _patch_job(self, crawl_id, body, pluraltype="crawljobs"):
-        content_type = (
-            self.api_client.default_headers.get("Content-Type")
-        )
+        content_type = self.api_client.default_headers.get("Content-Type")
 
         try:
             self.api_client.set_default_header(

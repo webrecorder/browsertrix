@@ -6,7 +6,7 @@ import os
 from pymongo.errors import OperationFailure
 
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.k8s.k8sapi import K8sAPI
+from btrixcloud.k8sapi import K8sAPI
 
 
 MIGRATION_VERSION = "0001"
