@@ -1,9 +1,7 @@
 """ k8s utils """
 
 import os
-import yaml
-
-from kubernetes_asyncio.utils import create_from_dict
+from datetime import datetime
 
 
 def get_templates_dir():
@@ -11,34 +9,14 @@ def get_templates_dir():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-async def create_from_yaml(k8s_client, doc, namespace):
-    """init k8s objects from yaml"""
-    yml_document_all = yaml.safe_load_all(doc)
-    k8s_objects = []
-    for yml_document in yml_document_all:
-        custom = k8s_client.get_custom_api(yml_document["kind"])
-        if custom is not None:
-            created = await create_custom_from_dict(custom, yml_document, namespace)
-        else:
-            created = await create_from_dict(
-                k8s_client, yml_document, verbose=False, namespace=namespace
-            )
-        k8s_objects.append(created)
-
-    return k8s_objects
+def from_k8s_date(string):
+    """convert k8s date string to datetime"""
+    return datetime.fromisoformat(string[:-1]) if string else None
 
 
-async def create_custom_from_dict(custom, doc, namespace):
-    """create custom from dict"""
-    apiver = doc["apiVersion"].split("/")
-    created = await custom["api"].create_namespaced_custom_object(
-        group=apiver[0],
-        version=apiver[1],
-        plural=custom["plural"],
-        body=doc,
-        namespace=namespace,
-    )
-    return created
+def to_k8s_date(dt_val):
+    """convert datetime to string for k8s"""
+    return dt_val.isoformat("T") + "Z"
 
 
 async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
@@ -70,3 +48,13 @@ async def send_signal_to_pods(core_api_ws, namespace, pods, signame, func=None):
         print(f"Send Signal Error: {exc}", flush=True)
 
     return signaled
+
+
+def dt_now():
+    """get current ts"""
+    return datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+
+def ts_now():
+    """get current ts"""
+    return str(dt_now())

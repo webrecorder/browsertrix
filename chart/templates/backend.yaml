@@ -85,7 +85,7 @@ spec:
             failureThreshold: 5
             successThreshold: 1
 
-        - name: operator
+        - name: op
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
           command:

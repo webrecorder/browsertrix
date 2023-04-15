@@ -24,11 +24,11 @@ spec:
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/sync
+        url: http://browsertrix-cloud-backend.default:8756/operator/syncCrawls
 
     finalize:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/sync
+        url: http://browsertrix-cloud-backend.default:8756/operator/syncCrawls
 
     customize:
       webhook:
@@ -38,14 +38,14 @@ spec:
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: CompositeController
 metadata:
-  name: profilebrowsers-controller
+  name: profilejobs-controller
   namespace: btrix-operator
 spec:
   generateSelector: false
   resyncPeriodSeconds: 30
   parentResource:
     apiVersion: btrix.cloud/v1
-    resource: profilebrowsers
+    resource: profilejobs
   childResources:
   - apiVersion: apps/v1
     resource: statefulsets
@@ -60,13 +60,4 @@ spec:
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/sync
-
-    finalize:
-      webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/sync
-
-    customize:
-      webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/customize
-
+        url: http://browsertrix-cloud-backend.default:8756/operator/syncProfileBrowsers

@@ -2,8 +2,9 @@
 
 import json
 import base64
+import secrets
 
-from datetime import datetime
+from datetime import timedelta
 import yaml
 
 # import aiohttp
@@ -13,7 +14,7 @@ from ..orgs import S3Storage
 
 from .k8sapi import K8sAPI
 
-from .utils import create_from_yaml, send_signal_to_pods, get_templates_dir
+from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
 # pylint: disable=duplicate-code
@@ -113,43 +114,27 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
     async def ping_profile_browser(self, browserid):
         """return ping profile browser"""
-        pods = await self.core_api.list_namespaced_pod(
-            namespace=self.namespace,
-            label_selector=f"job-name=job-{browserid},btrix.profile=1",
+        expire_at = dt_now() + timedelta(seconds=30)
+        await self._patch_job(
+            browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
         )
-        if len(pods.items) == 0:
-            return False
-
-        await send_signal_to_pods(
-            self.core_api_ws, self.namespace, pods.items, "SIGUSR1"
-        )
-        return True
 
     async def get_profile_browser_metadata(self, browserid):
         """get browser profile labels"""
         try:
-            job = await self.batch_api.read_namespaced_job(
-                name=f"job-{browserid}", namespace=self.namespace
-            )
-            if not job.metadata.labels.get("btrix.profile"):
-                return {}
+            browser = await self.get_profile_browser(browserid)
 
         # pylint: disable=bare-except
         except:
             return {}
 
-        return job.metadata.labels
-
-    async def delete_profile_browser(self, browserid):
-        """delete browser job, if it is a profile browser job"""
-        return await self._delete_job(f"job-{browserid}")
+        return browser["metadata"]["labels"]
 
     # ========================================================================
     # Internal Methods
-
-    async def _create_from_yaml(self, _, yaml_data):
-        """create from yaml"""
-        await create_from_yaml(self.api_client, yaml_data, namespace=self.namespace)
+    async def _create_from_yaml(self, yaml_data):
+        """passthrough"""
+        return await self.create_from_yaml(yaml_data)
 
     def _secret_data(self, secret, name):
         """decode secret data"""
@@ -230,7 +215,7 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             patch = {"stopping": True}
             return await self._patch_job(crawl_id, patch)
 
-        self.delete_crawl_job(crawl_id)
+        await self.delete_crawl_job(crawl_id)
 
         return {"success": True}
 
@@ -240,33 +225,8 @@ class K8SManager(BaseCrawlManager, K8sAPI):
 
     async def rollover_restart_crawl(self, crawl_id, oid):
         """Rolling restart of crawl by updating forceRestart field"""
-        return await self._patch_job(
-            crawl_id, {"forceRestart": datetime.utcnow().isoformat("T") + "Z"}
-        )
-
-    async def _patch_job(self, crawl_id, body):
-        content_type = self.custom_api.api_client.default_headers["Content-Type"]
-
-        try:
-            self.custom_api.api_client.set_default_header(
-                "Content-Type", "application/merge-patch+json"
-            )
-
-            await self.custom_api.patch_namespaced_custom_object(
-                group="btrix.cloud",
-                version="v1",
-                namespace=self.namespace,
-                plural="crawljobs",
-                name=f"job-{crawl_id}",
-                body={"spec": body},
-            )
-            return {"success": True}
-        # pylint: disable=broad-except
-        except Exception as exc:
-            return {"error": str(exc)}
-
-        finally:
-            self.custom_api.api_client.set_default_header("Content-Type", content_type)
+        update = to_k8s_date(dt_now())
+        return await self._patch_job(crawl_id, {"forceRestart": update})
 
     async def _update_scheduled_job(self, crawlconfig):
         """create or remove cron job based on crawlconfig schedule"""
@@ -344,6 +304,8 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             config_map.data["crawl-config.json"] = json.dumps(
                 crawlconfig.get_raw_config()
             )
+
+        #"Content-Type": "application/strategic-merge-patch+json"
 
         await self.core_api.patch_namespaced_config_map(
             name=config_map.metadata.name, namespace=self.namespace, body=config_map

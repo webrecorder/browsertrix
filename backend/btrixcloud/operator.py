@@ -1,11 +1,12 @@
 """ btrixjob operator (working for metacontroller) """
 
-# import pprint
+import asyncio
 import traceback
 from typing import Optional
 
 from datetime import datetime
 import json
+
 import yaml
 
 # from fastapi import Request, HTTPException
@@ -13,11 +14,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from redis import asyncio as aioredis  # , exceptions
 
-from .k8s.utils import get_templates_dir
+from .k8s.utils import get_templates_dir, from_k8s_date, to_k8s_date, dt_now
 from .k8s.k8sapi import K8sAPI
 
 from .db import init_db
-from .crawls import CrawlFile, CrawlCompleteIn, dt_now
+from .crawls import CrawlFile, CrawlCompleteIn
 
 # from .crawlconfigs import CrawlConfig
 
@@ -63,10 +64,11 @@ class CrawlInfo(BaseModel):
     storage_name: str
     started: str
     stopping: bool = False
+    expire_time: Optional[datetime] = None
 
 
 # ============================================================================
-class Status(BaseModel):
+class CrawlStatus(BaseModel):
     """Crawl Status"""
 
     state: str = "waiting"
@@ -89,7 +91,6 @@ class BtrixOperator(K8sAPI):
 
         _, mdb = init_db()
         self.crawls = mdb["crawls"]
-        self.crawl_configs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]
 
         self.crawls_done_key = "crawls-done"
@@ -98,10 +99,40 @@ class BtrixOperator(K8sAPI):
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
+    async def sync_profile_browsers(self, data: MCSyncData):
+        """sync profile browsers"""
+        spec = data.parent.get("spec", {})
+
+        expire_time = from_k8s_date(spec.get("expireTime"))
+        browserid = spec.get("id")
+
+        if dt_now() >= expire_time:
+            asyncio.create_task(self.delete_profile_browser(browserid))
+            return {"status": {}, "children": []}
+
+        params = {}
+        params.update(self.shared_params)
+        params["id"] = browserid
+        params["userid"] = spec.get("userid", "")
+
+        params["storage_name"] = spec.get("storageName", "")
+        params["storage_path"] = spec.get("storagePath", "")
+        params["profile_filename"] = spec.get("profileFilename", "")
+        params["url"] = spec.get("startUrl", "about:blank")
+        params["vnc_password"] = spec.get("vncPassword")
+
+        browser_yaml = self.templates.env.get_template("profilebrowser.yaml").render(
+            params
+        )
+
+        children = list(yaml.safe_load_all(browser_yaml))
+
+        return {"status": {}, "children": children}
+
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
-        status = Status(**data.parent.get("status", {}))
+        status = CrawlStatus(**data.parent.get("status", {}))
 
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
@@ -114,17 +145,22 @@ class BtrixOperator(K8sAPI):
 
         cid = spec["cid"]
 
-        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
+        try:
+            configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
+        # pylint: disable=bare-except, broad-except
+        except:
+            configmap = {}
 
         crawl = CrawlInfo(
             id=crawl_id,
             cid=cid,
             oid=spec["oid"],
-            storage_name=configmap["STORAGE_NAME"],
-            storage_path=configmap["STORE_PATH"],
+            storage_name=configmap.get("STORAGE_NAME", ""),
+            storage_path=configmap.get("STORE_PATH", ""),
             scale=scale,
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
+            expire_time=from_k8s_date(spec.get("expireTime")),
         )
 
         # if finalizing and not finished, job is being deleted, so assume crawl has been canceled
@@ -176,7 +212,6 @@ class BtrixOperator(K8sAPI):
                 {
                     "apiVersion": "v1",
                     "resource": "configmaps",
-                    # "namespace": self.namespace,
                     "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
                 }
             ]
@@ -188,27 +223,28 @@ class BtrixOperator(K8sAPI):
         """
 
         ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
-        finished = datetime.fromisoformat(status.finished[:-1])
+        finished = from_k8s_date(status.finished)
         if (dt_now() - finished).total_seconds() > ttl:
             print("Job expired, deleting: " + crawl_id)
-            try:
-                await self.delete_crawl_job(crawl_id)
-            # pylint: disable=bare-except, broad-except
-            except:
-                pass
 
-            # until delete policy is supported in StatefulSet
-            # now, delete pvcs explicitly
-            # (don't want to make them children as already owned by sts)
-            try:
-                await self.core_api.delete_collection_namespaced_persistent_volume_claim(
-                    namespace=self.namespace, label_selector=f"crawl={crawl_id}"
-                )
-            # pylint: disable=bare-except, broad-except
-            except Exception as exc:
-                print("PVC Delete failed", exc, flush=True)
+            asyncio.create_task(self.delete_crawl_job(crawl_id))
 
         return {"status": status.dict(), "children": [], "finalized": True}
+
+    async def delete_crawl_job(self, crawl_id):
+        # delete the crawljob itself
+        await super().delete_crawl_job(crawl_id)
+
+        # until delete policy is supported in StatefulSet
+        # now, delete pvcs explicitly
+        # (don't want to make them children as already owned by sts)
+        try:
+            await self.core_api.delete_collection_namespaced_persistent_volume_claim(
+                namespace=self.namespace, label_selector=f"crawl={crawl_id}"
+            )
+        # pylint: disable=bare-except, broad-except
+        except Exception as exc:
+            print("PVC Delete failed", exc, flush=True)
 
     async def cancel_crawl(self, crawl, status):
         """immediately cancel crawl"""
@@ -294,6 +330,14 @@ class BtrixOperator(K8sAPI):
         pages_found = await redis.scard(f"{crawl.id}:s")
         results = await redis.hvals(f"{crawl.id}:status")
 
+        # check crawl expiry
+        if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
+            crawl.stopping = True
+            print(
+                "Job duration expired at {crawl.expire_time}, "
+                + "gracefully stopping crawl"
+            )
+
         if crawl.stopping:
             await redis.set(f"{crawl.id}:stopping", "1")
 
@@ -337,15 +381,6 @@ class BtrixOperator(K8sAPI):
         if failed >= crawl.scale:
             status = await self.mark_finished(crawl, status, state="failed")
 
-        # check crawl expiry
-        # if self.crawl_expire_time and datetime.utcnow() > self.crawl_expire_time:
-        #    res = await self.graceful_shutdown()
-        #    if res.get("success"):
-        #        print(
-        #            "Job duration expired at {self.crawl_expire_time}, "
-        #            + "gracefully stopping crawl"
-        #        )
-
         return status
 
     async def mark_finished(self, crawl, status, state, inc_stats=False):
@@ -355,7 +390,7 @@ class BtrixOperator(K8sAPI):
         await self.update_crawl(crawl.id, state=state, finished=finished)
 
         status.state = state
-        status.finished = finished.isoformat("T") + "Z"
+        status.finished = to_k8s_date(finished)
 
         if inc_stats:
             await self.inc_crawl_complete_stats(crawl, finished)
@@ -369,8 +404,7 @@ class BtrixOperator(K8sAPI):
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
 
-        # strip of 'Z' at end
-        started = datetime.fromisoformat(crawl.started[:-1])
+        started = from_k8s_date(crawl.started)
 
         duration = int((finished - started).total_seconds())
 
@@ -389,9 +423,13 @@ def init_operator_webhook(app):
 
     oper = BtrixOperator()
 
-    @app.post("/operator/sync")
-    async def mc_sync(data: MCSyncData):
+    @app.post("/operator/syncCrawls")
+    async def mc_sync_crawls(data: MCSyncData):
         return await oper.sync_crawls(data)
+
+    @app.post("/operator/syncProfileBrowsers")
+    async def mc_sync_profile_browsers(data: MCSyncData):
+        return await oper.sync_profile_browsers(data)
 
     @app.post("/operator/customize")
     async def mc_related(data: MCBaseRequest):

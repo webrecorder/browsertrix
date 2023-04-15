@@ -18,3 +18,7 @@ spec:
   rev: {{ rev }}
   scale: {{ scale }}
   ttlSecondsAfterFinished: 30
+
+  {% if expire_time %}
+  expireTime: "{{ expire_time }}"
+  {% endif %}

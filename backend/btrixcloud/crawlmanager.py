@@ -2,14 +2,17 @@
 
 import os
 import asyncio
-import datetime
 import secrets
+
+from datetime import timedelta
 
 from abc import ABC, abstractmethod
 
 from fastapi.templating import Jinja2Templates
 
-from .db import resolve_db_url
+from .k8s.utils import dt_now, to_k8s_date
+
+# from .db import resolve_db_url
 
 
 # ============================================================================
@@ -59,20 +62,19 @@ class BaseCrawlManager(ABC):
             "id": browserid,
             "userid": str(userid),
             "oid": str(oid),
-            "job_image": self.job_image,
-            "job_pull_policy": self.job_pull_policy,
             "storage_name": storage_name,
             "storage_path": storage_path or "",
-            "baseprofile": baseprofile or "",
-            "profile_path": profile_path,
+            "base_profile": baseprofile or "",
+            "profile_filename": profile_path,
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
-            "env": os.environ,
+            "vnc_password": secrets.token_hex(16),
+            "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
 
-        await self._create_from_yaml(f"job-{browserid}", data)
+        await self._create_from_yaml(data)
 
         return browserid
 
@@ -150,22 +152,21 @@ class BaseCrawlManager(ABC):
 
     async def _create_manual_job(self, crawlconfig):
         cid = str(crawlconfig.id)
-        ts_now = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
         crawl_id = f"manual-{ts_now}-{cid[:12]}"
 
         data = await self._load_job_template(crawlconfig, crawl_id, manual=True)
 
         # create job directly
-        await self._create_from_yaml(f"job-{crawl_id}", data)
+        await self._create_from_yaml(data)
 
         return crawl_id
 
     async def _load_job_template(self, crawlconfig, job_id, manual, schedule=None):
         if crawlconfig.crawlTimeout:
-            crawl_expire_time = datetime.datetime.utcnow() + datetime.timedelta(
-                seconds=crawlconfig.crawlTimeout
+            crawl_expire_time = to_k8s_date(
+                dt_now() + timedelta(seconds=crawlconfig.crawlTimeout)
             )
-            crawl_expire_time = crawl_expire_time.isoformat()
         else:
             crawl_expire_time = ""
 
@@ -176,15 +177,8 @@ class BaseCrawlManager(ABC):
             "userid": str(crawlconfig.modifiedBy),
             "oid": str(crawlconfig.oid),
             "scale": str(crawlconfig.scale),
-            "crawl_expire_time": crawl_expire_time,
-            "job_image": self.job_image,
-            "job_pull_policy": self.job_pull_policy,
+            "expire_time": crawl_expire_time,
             "manual": "1" if manual else "0",
-            "crawler_node_type": self.crawler_node_type,
-            "schedule": schedule,
-            "env": os.environ,
-            "mongo_db_url": resolve_db_url(),
-            "tags": ",".join(crawlconfig.tags),
         }
 
         return self.templates.env.get_template("btrix_job.yaml").render(params)
@@ -199,7 +193,7 @@ class BaseCrawlManager(ABC):
         """check if given storage is valid"""
 
     @abstractmethod
-    async def _create_from_yaml(self, id_, yaml_data):
+    async def _create_from_yaml(self, yaml_data):
         """check if given storage is valid"""
 
     @abstractmethod

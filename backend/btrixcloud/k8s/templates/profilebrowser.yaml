@@ -42,7 +42,7 @@ spec:
                 topologyKey: "failure-domain.beta.kubernetes.io/zone"
                 labelSelector:
                   matchLabels:
-                    job-name: job-{{ id }}
+                    job: job-{{ id }}
                     crawl: {{ id }}
 
       tolerations:

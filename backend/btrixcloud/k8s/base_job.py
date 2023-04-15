@@ -9,7 +9,7 @@ import yaml
 
 from fastapi.templating import Jinja2Templates
 
-from .utils import create_from_yaml, get_templates_dir
+from .utils import get_templates_dir
 from .k8sapi import K8sAPI
 
 
@@ -43,7 +43,8 @@ class K8SJobMixin(K8sAPI):
         data = self.templates.env.get_template(template).render(params)
 
         try:
-            await create_from_yaml(self.api_client, data, namespace=self.namespace)
+            pass
+        #    await create_from_yaml(self.api_client, data, namespace=self.namespace)
         except Exception:
             traceback.print_exc()
             return
