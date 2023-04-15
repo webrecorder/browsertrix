@@ -4,8 +4,10 @@ import os
 import json
 import base64
 
+from datetime import datetime
 import yaml
-import aiohttp
+
+# import aiohttp
 
 from ..crawlmanager import BaseCrawlManager
 from ..orgs import S3Storage
@@ -13,6 +15,9 @@ from ..orgs import S3Storage
 from .k8sapi import K8sAPI
 
 from .utils import create_from_yaml, send_signal_to_pods, get_templates_dir
+
+
+# pylint: disable=duplicate-code
 
 
 # ============================================================================
@@ -220,34 +225,58 @@ class K8SManager(BaseCrawlManager, K8sAPI):
             propagation_policy="Foreground",
         )
 
-    async def _post_to_job(self, crawl_id, oid, path, data=None):
-        """post to default container in a pod for job
-        try all pods in case of many
-        """
-        job_name = f"job-{crawl_id}"
+    async def shutdown_crawl(self, crawl_id, oid, graceful=True):
+        """Request a crawl cancelation or stop by calling an API
+        on the job pod/container, returning the result"""
+        if graceful:
+            patch = {"stopping": True}
+            return await self._patch_job(crawl_id, patch)
 
-        pods = await self.core_api.list_namespaced_pod(
+        # delete btrixjob object
+        await self.custom_api.delete_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
             namespace=self.namespace,
-            label_selector=f"job-name={job_name},btrix.org={oid}",
+            plural="btrixjobs",
+            name=f"job-{crawl_id}",
+            grace_period_seconds=10,
+            propagation_policy="Foreground",
+        )
+        return {"success": True}
+
+    async def scale_crawl(self, crawl_id, oid, scale=1):
+        """Set the crawl scale (job parallelism) on the specified job"""
+        return await self._patch_job(crawl_id, {"scale": scale})
+
+    async def rollover_restart_crawl(self, crawl_id, oid):
+        """Rolling restart of crawl by updating forceRestart field"""
+        return await self._patch_job(
+            crawl_id, {"forceRestart": datetime.utcnow().isoformat("T") + "Z"}
         )
 
-        if not pods.items:
-            return {"error": "job_not_running"}
+    async def _patch_job(self, crawl_id, body):
+        content_type = self.custom_api.api_client.default_headers["Content-Type"]
 
-        for pod in pods.items:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    "POST", f"http://{pod.status.pod_ip}:8000{path}", json=data
-                ) as resp:
-                    # try all in case of multiple pods, return value of first running pod
-                    try:
-                        return await resp.json()
-                    # pylint: disable=bare-except
-                    except:
-                        # try next pod
-                        pass
+        try:
+            self.custom_api.api_client.set_default_header(
+                "Content-Type", "application/merge-patch+json"
+            )
 
-        return {"error": "post_failed"}
+            await self.custom_api.patch_namespaced_custom_object(
+                group="btrix.cloud",
+                version="v1",
+                namespace=self.namespace,
+                plural="btrixjobs",
+                name=f"job-{crawl_id}",
+                body={"spec": body},
+            )
+            return {"success": True}
+        # pylint: disable=broad-except
+        except Exception as exc:
+            return {"error": str(exc)}
+
+        finally:
+            self.custom_api.api_client.set_default_header("Content-Type", content_type)
 
     async def _update_scheduled_job(self, crawlconfig):
         """create or remove cron job based on crawlconfig schedule"""

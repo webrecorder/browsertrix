@@ -461,7 +461,7 @@ class CrawlOps:
         if updates:
             asyncio.create_task(self._update_presigned(updates))
 
-        print("presigned", out_files)
+        # print("presigned", out_files)
 
         return out_files
 

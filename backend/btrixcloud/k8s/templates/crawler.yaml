@@ -218,6 +218,11 @@ spec:
         crawl: {{ id }}
         role: crawler
 
+      {% if force_restart %}
+      annotations:
+        btrix.crawlForceRestart: "{{ force_restart }}"
+      {% endif %}
+
     spec:
       terminationGracePeriodSeconds: {{ termination_grace_secs }}
       #nodeSelector: {{ crawl_node_selector }}

@@ -64,6 +64,7 @@ class CrawlInfo(BaseModel):
     storage_path: str
     storage_name: str
     started: str
+    stopping: bool = False
 
 
 # ============================================================================
@@ -75,8 +76,6 @@ class Status(BaseModel):
     pagesDone: int = 0
     scale: int = 1
     filesAdded: int = 0
-    # started: datetime = dt_now()
-    # finished: Optional[datetime] = None
     finished: Optional[str] = None
 
 
@@ -128,7 +127,12 @@ class BtrixOperator(K8sAPI):
             storage_path=configmap["STORE_PATH"],
             scale=scale,
             started=data.parent["metadata"]["creationTimestamp"],
+            stopping=spec.get("stopping", False),
         )
+
+        # if finalizing and not finished, job is being deleted, so assume crawl has been canceled
+        if data.finalizing:
+            return await self.cancel_crawl(crawl, status)
 
         crawl_sts = f"crawl-{crawl_id}"
         redis_id = f"redis-{crawl_id}"
@@ -156,6 +160,7 @@ class BtrixOperator(K8sAPI):
         params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
         params["scale"] = spec.get("scale", 1)
+        params["force_restart"] = spec.get("forceRestart")
 
         params["redis_url"] = redis_url
 
@@ -184,6 +189,7 @@ class BtrixOperator(K8sAPI):
         """return status for finished job (no children)
         also check if deletion is necessary
         """
+
         ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
         finished = datetime.fromisoformat(status.finished[:-1])
         if (dt_now() - finished).total_seconds() > ttl:
@@ -205,7 +211,7 @@ class BtrixOperator(K8sAPI):
             except Exception as exc:
                 print("PVC Delete failed", exc, flush=True)
 
-        return {"status": status.dict(), "children": []}
+        return {"status": status.dict(), "children": [], "finalized": True}
 
     async def delete_job(self, crawl_id):
         """delete btrix job object"""
@@ -218,6 +224,11 @@ class BtrixOperator(K8sAPI):
             grace_period_seconds=0,
             propagation_policy="Foreground",
         )
+
+    async def cancel_crawl(self, crawl, status):
+        """immediately cancel crawl"""
+        await self.mark_finished(crawl, status, state="canceled")
+        return {"status": status.dict(), "children": [], "finalized": True}
 
     async def sync_crawl_state(self, redis_url, crawl, status):
         """sync crawl state for running crawl"""
@@ -298,6 +309,9 @@ class BtrixOperator(K8sAPI):
         pages_found = await redis.scard(f"{crawl.id}:s")
         results = await redis.hvals(f"{crawl.id}:status")
 
+        if crawl.stopping:
+            await redis.set(f"{crawl.id}:stopping", "1")
+
         # no change in pages found / done, no further checks / updates needed
         # return current status
         # if status.pagesDone == pages_done and status.pagesFound == pages_found:
@@ -356,7 +370,7 @@ class BtrixOperator(K8sAPI):
         await self.update_crawl(crawl.id, state=state, finished=finished)
 
         status.state = state
-        status.finished = finished.isoformat() + "Z"
+        status.finished = finished.isoformat("T") + "Z"
 
         if inc_stats:
             await self.inc_crawl_complete_stats(crawl, finished)

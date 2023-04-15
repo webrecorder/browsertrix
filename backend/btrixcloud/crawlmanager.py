@@ -140,23 +140,6 @@ class BaseCrawlManager(ABC):
 
         return True
 
-    async def shutdown_crawl(self, crawl_id, oid, graceful=True):
-        """Request a crawl cancelation or stop by calling an API
-        on the job pod/container, returning the result"""
-        return await self._post_to_job(
-            crawl_id, oid, "/stop" if graceful else "/cancel"
-        )
-
-    async def scale_crawl(self, crawl_id, oid, scale=1):
-        """Set the crawl scale (job parallelism) on the specified job"""
-
-        return await self._post_to_job(crawl_id, oid, f"/scale/{scale}")
-
-    async def rollover_restart_crawl(self, crawl_id, oid):
-        """Rolling restart of crawl"""
-
-        return await self._post_to_job(crawl_id, oid, "/rollover")
-
     async def delete_crawl_configs_for_org(self, org):
         """Delete all crawl configs for given org"""
         return await self._delete_crawl_configs(f"btrix.org={org}")
@@ -226,10 +209,6 @@ class BaseCrawlManager(ABC):
     @abstractmethod
     async def _update_scheduled_job(self, crawlconfig):
         """update schedule on crawl job"""
-
-    @abstractmethod
-    async def _post_to_job(self, crawl_id, oid, path, data=None):
-        """make a POST request to the container for specified crawl job"""
 
     @abstractmethod
     async def _delete_crawl_configs(self, label):
