@@ -149,7 +149,7 @@ class BtrixOperator(K8sAPI):
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
         # pylint: disable=bare-except, broad-except
         except:
-            configmap = {}
+            return await self.cancel_crawl(crawl_id, status, "failed")
 
         crawl = CrawlInfo(
             id=crawl_id,
@@ -165,7 +165,7 @@ class BtrixOperator(K8sAPI):
 
         # if finalizing and not finished, job is being deleted, so assume crawl has been canceled
         if data.finalizing:
-            return await self.cancel_crawl(crawl, status)
+            return await self.cancel_crawl(crawl_id, status, "canceled")
 
         crawl_sts = f"crawl-{crawl_id}"
         redis_id = f"redis-{crawl_id}"
@@ -229,7 +229,7 @@ class BtrixOperator(K8sAPI):
 
             asyncio.create_task(self.delete_crawl_job(crawl_id))
 
-        return {"status": status.dict(), "children": [], "finalized": True}
+        return self._done_response(status)
 
     async def delete_crawl_job(self, crawl_id):
         # delete the crawljob itself
@@ -246,9 +246,13 @@ class BtrixOperator(K8sAPI):
         except Exception as exc:
             print("PVC Delete failed", exc, flush=True)
 
-    async def cancel_crawl(self, crawl, status):
-        """immediately cancel crawl"""
-        await self.mark_finished(crawl, status, state="canceled")
+    async def cancel_crawl(self, crawl_id, status, state):
+        """immediately cancel crawl with specified state"""
+        await self.mark_finished(crawl_id, status, state)
+        return self._done_response(status)
+
+    def _done_response(self, status):
+        """response for when crawl job is done/to be deleted"""
         return {"status": status.dict(), "children": [], "finalized": True}
 
     async def sync_crawl_state(self, redis_url, crawl, status):
@@ -369,30 +373,30 @@ class BtrixOperator(K8sAPI):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                return await self.mark_finished(crawl, status, state="failed")
+                return await self.mark_finished(crawl.id, status, state="failed")
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             state = "complete" if completed else "partial_complete"
 
-            status = await self.mark_finished(crawl, status, state, inc_stats=True)
+            status = await self.mark_finished(crawl.id, status, state, crawl)
 
         # check if all crawlers failed
         if failed >= crawl.scale:
-            status = await self.mark_finished(crawl, status, state="failed")
+            status = await self.mark_finished(crawl.id, status, state="failed")
 
         return status
 
-    async def mark_finished(self, crawl, status, state, inc_stats=False):
+    async def mark_finished(self, crawl_id, status, state, crawl=None):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
-        await self.update_crawl(crawl.id, state=state, finished=finished)
+        await self.update_crawl(crawl_id, state=state, finished=finished)
 
         status.state = state
         status.finished = to_k8s_date(finished)
 
-        if inc_stats:
+        if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
 
         return status

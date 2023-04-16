@@ -850,7 +850,7 @@ class CrawlConfigOps:
 
         crawl_id = None
         try:
-            crawl_id = await self.crawl_manager.run_crawl_config(
+            crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user)
