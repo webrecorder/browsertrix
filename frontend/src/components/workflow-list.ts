@@ -204,6 +204,10 @@ export class WorkflowListItem extends LitElement {
   @property({ type: Object })
   workflow?: Workflow;
 
+  @query(".row")
+  row!: HTMLElement;
+
+  // TODO consolidate with btrix-combobox
   @query(".dropdown")
   dropdown!: HTMLElement;
 
@@ -234,7 +238,7 @@ export class WorkflowListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive = false;
+    const isActive = false; // TODO
     // const isActive =
     //   this.workflow &&
     //   ["starting", "running", "stopping"].includes(this.workflow.state);
@@ -308,7 +312,6 @@ export class WorkflowListItem extends LitElement {
       <div class="col action">
         <sl-icon-button
           class="dropdownTrigger"
-          slot="trigger"
           name="three-dots-vertical"
           label=${msg("More")}
           @click=${(e: MouseEvent) => {
@@ -316,13 +319,19 @@ export class WorkflowListItem extends LitElement {
             e.preventDefault();
             // Stop prop to anchor link
             e.stopPropagation();
-            this.dropdownIsOpen = true;
+            this.dropdownIsOpen = !this.dropdownIsOpen;
           }}
           @focusout=${(e: FocusEvent) => {
             const relatedTarget = e.relatedTarget as HTMLElement;
-            if (this.menuArr[0]?.contains(relatedTarget)) {
-              // Keep dropdown open if moving to menu selection
-              return;
+            if (relatedTarget) {
+              if (this.menuArr[0]?.contains(relatedTarget)) {
+                // Keep dropdown open if moving to menu selection
+                return;
+              }
+              if (this.row?.isEqualNode(relatedTarget)) {
+                // Handle with click event
+                return;
+              }
             }
             this.dropdownIsOpen = false;
           }}

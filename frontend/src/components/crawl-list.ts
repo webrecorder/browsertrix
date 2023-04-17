@@ -167,6 +167,10 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
+  @query(".row")
+  row!: HTMLElement;
+
+  // TODO consolidate with btrix-combobox
   @query(".dropdown")
   dropdown!: HTMLElement;
 
@@ -302,7 +306,6 @@ export class CrawlListItem extends LitElement {
       <div class="col action">
         <sl-icon-button
           class="dropdownTrigger"
-          slot="trigger"
           name="three-dots-vertical"
           label=${msg("More")}
           @click=${(e: MouseEvent) => {
@@ -310,13 +313,19 @@ export class CrawlListItem extends LitElement {
             e.preventDefault();
             // Stop prop to anchor link
             e.stopPropagation();
-            this.dropdownIsOpen = true;
+            this.dropdownIsOpen = !this.dropdownIsOpen;
           }}
           @focusout=${(e: FocusEvent) => {
             const relatedTarget = e.relatedTarget as HTMLElement;
-            if (this.menuArr[0]?.contains(relatedTarget)) {
-              // Keep dropdown open if moving to menu selection
-              return;
+            if (relatedTarget) {
+              if (this.menuArr[0]?.contains(relatedTarget)) {
+                // Keep dropdown open if moving to menu selection
+                return;
+              }
+              if (this.row?.isEqualNode(relatedTarget)) {
+                // Handle with click event
+                return;
+              }
             }
             this.dropdownIsOpen = false;
           }}
