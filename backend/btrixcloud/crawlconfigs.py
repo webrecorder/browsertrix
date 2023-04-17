@@ -684,9 +684,10 @@ class CrawlConfigOps:
 
         if not crawlconfig.inactive:
             curr_crawl = await self.get_running_crawl(crawlconfig)
-            crawlconfig.currCrawlId = curr_crawl.id
-            crawlconfig.currCrawlStartTime = curr_crawl.started
-            crawlconfig.currCrawlState = curr_crawl.state
+            if curr_crawl:
+                crawlconfig.currCrawlId = curr_crawl.id
+                crawlconfig.currCrawlStartTime = curr_crawl.started
+                crawlconfig.currCrawlState = curr_crawl.state
 
         user = await self.user_manager.get(crawlconfig.createdBy)
         # pylint: disable=invalid-name
