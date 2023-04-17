@@ -175,7 +175,6 @@ def large_crawl_id(admin_auth_headers, default_org_id):
 
     crawl_id = data["run_now_job"]
 
-    # Wait for crawl to start running
     while True:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
@@ -225,3 +224,33 @@ def timeout_crawl(admin_auth_headers, default_org_id):
     )
     data = r.json()
     return data["run_now_job"]
+
+
+@pytest.fixture(scope="session")
+def error_crawl_id(admin_auth_headers, default_org_id):
+    crawl_data = {
+        "runNow": True,
+        "name": "Youtube crawl with errors",
+        "config": {
+            "seeds": [{"url": "https://www.youtube.com/watch?v=Sh-x3QmbRZc"}],
+            "limit": 10,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return crawl_id
+        time.sleep(5)

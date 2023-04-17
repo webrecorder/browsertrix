@@ -101,6 +101,8 @@ class Crawl(CrawlConfigCore):
 
     notes: Optional[str]
 
+    errors: Optional[List[str]] = []
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -113,6 +115,7 @@ class CrawlOut(Crawl):
     resources: Optional[List[CrawlFileOut]] = []
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
+    errors: Optional[List[str]]
     collections: Optional[List[str]] = []
 
 
@@ -149,6 +152,7 @@ class ListCrawlOut(BaseMongoModel):
 
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
+    errors: Optional[List[str]]
 
 
 # ============================================================================
@@ -761,6 +765,24 @@ class CrawlOps:
 
         return num_removed
 
+    async def get_errors_from_redis(
+        self, crawl_id: str, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+    ):
+        """Get crawl errors from Redis and optionally store in mongodb."""
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
+        try:
+            redis = await self.get_redis(crawl_id)
+            errors = await redis.lrange(f"{crawl_id}:e", skip, page_size)
+            total = len(errors)
+        except exceptions.ConnectionError:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=503, detail="redis_connection_error")
+
+        return errors, total
+
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
         # pylint: disable=line-too-long
@@ -1135,6 +1157,29 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             return StreamingResponse(stream_json_lines(heap_iter, log_levels, contexts))
 
         raise HTTPException(status_code=400, detail="crawl_not_finished")
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/errors",
+        tags=["crawls"],
+    )
+    async def get_crawl_errors(
+        crawl_id: str,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+
+        if crawl.finished:
+            skip = (page - 1) * pageSize
+            upper_bound = skip + pageSize - 1
+            errors = crawl.errors[skip:upper_bound]
+            total = len(errors)
+            return paginated_format(errors, total, page, pageSize)
+
+        errors, total = await ops.get_errors_from_redis(crawl_id, pageSize, page)
+        return paginated_format(errors, total, page, pageSize)
 
     return ops
 
