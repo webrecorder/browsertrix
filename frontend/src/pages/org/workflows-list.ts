@@ -132,9 +132,6 @@ export class WorkflowsList extends LiteElement {
         this.filterByCurrentUser.toString()
       );
     }
-    if (changedProperties.has("workflows") && this.workflows?.length) {
-      this.fetchCrawls();
-    }
   }
 
   disconnectedCallback(): void {
@@ -145,10 +142,10 @@ export class WorkflowsList extends LiteElement {
   /**
    * Fetch running crawls and update internal state
    */
-  private async fetchCrawls(): Promise<void> {
+  private async fetchCrawls(workflows: Workflow[]): Promise<void> {
     this.cancelInProgressGetCrawls();
     try {
-      const crawls = await this.getCrawls();
+      const crawls = await this.getCrawls(workflows);
       const runningCrawlsMap: RunningCrawlsMap = {};
 
       crawls.forEach((crawl) => {
@@ -168,7 +165,7 @@ export class WorkflowsList extends LiteElement {
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
-      this.fetchCrawls();
+      this.fetchCrawls(this.workflows || []);
     }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
@@ -176,14 +173,14 @@ export class WorkflowsList extends LiteElement {
     window.clearTimeout(this.timerId);
   }
 
-  private async getCrawls(): Promise<Crawl[]> {
-    if (!this.workflows?.length) {
+  private async getCrawls(workflows: Workflow[]): Promise<Crawl[]> {
+    if (!workflows?.length) {
       return [];
     }
     const query = queryString.stringify(
       {
         // TODO handle paginated workflows
-        cid: this.workflows.map(({ id }) => id),
+        cid: workflows.map(({ id }) => id),
         state: activeCrawlStates,
         pageSize: INITIAL_PAGE_SIZE,
       },
@@ -202,10 +199,14 @@ export class WorkflowsList extends LiteElement {
   private async fetchWorkflows() {
     this.fetchErrorStatusCode = undefined;
     try {
-      this.workflows = await this.getWorkflows();
-
+      const workflows = await this.getWorkflows();
       // Update search/filter collection
-      this.fuse.setCollection(this.workflows as any);
+      this.fuse.setCollection(workflows as any);
+
+      await this.fetchCrawls(
+        workflows.filter(({ currCrawlId }) => currCrawlId)
+      );
+      this.workflows = workflows;
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;

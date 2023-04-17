@@ -249,7 +249,8 @@ export class WorkflowListItem extends LitElement {
 
   renderRow() {
     const isActive =
-      this.runningCrawl && isActiveState(this.runningCrawl.state);
+      (this.runningCrawl && isActiveState(this.runningCrawl.state)) ||
+      this.workflow?.currCrawlId;
 
     return html`<a
       class="item row"
@@ -289,15 +290,18 @@ export class WorkflowListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender(
-            (workflow) =>
-              html`
-                <btrix-crawl-status
-                  state=${this.runningCrawl?.state ||
-                  workflow.lastCrawlState ||
-                  msg("No Crawls Yet")}
-                ></btrix-crawl-status>
-              `
+          ${this.safeRender((workflow) =>
+            isActive
+              ? html`
+                  <btrix-crawl-status
+                    state=${this.runningCrawl?.state}
+                  ></btrix-crawl-status>
+                `
+              : html`
+                  <btrix-crawl-status
+                    state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+                  ></btrix-crawl-status>
+                `
           )}
         </div>
         <div class="desc finished">TODO runtime</div>
