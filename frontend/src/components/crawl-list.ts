@@ -80,29 +80,18 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
-        /* contain: content;
+        contain: content;
         content-visibility: auto;
-        contain-intrinsic-height: auto 2.5rem; */
+        contain-intrinsic-height: auto 2.5rem;
         height: 2.5rem;
         cursor: pointer;
-        transition-property: background-color, box-shadow, margin;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
         overflow: hidden;
       }
 
-      .item:hover,
-      .item:focus,
-      .item:focus-within {
-        background-color: var(--sl-color-neutral-50);
-      }
       .dropdown {
         contain: content;
         position: absolute;
         z-index: 99;
-      }
-      .item:hover {
-        background-color: var(--sl-color-neutral-50);
       }
 
       .col {
@@ -425,6 +414,7 @@ export class CrawlList extends LitElement {
       .list {
         border: 1px solid var(--sl-panel-border-color);
         border-radius: var(--sl-border-radius-medium);
+        overflow: hidden;
       }
 
       .row {
@@ -446,10 +436,19 @@ export class CrawlList extends LitElement {
 
       ::slotted(btrix-crawl-list-item) {
         display: block;
+        transition-property: background-color, box-shadow;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
       }
 
       ::slotted(btrix-crawl-list-item:not(:first-of-type)) {
         box-shadow: inset 0px 1px 0 var(--sl-panel-border-color);
+      }
+
+      ::slotted(btrix-crawl-list-item:hover),
+      ::slotted(btrix-crawl-list-item:focus),
+      ::slotted(btrix-crawl-list-item:focus-within) {
+        background-color: var(--sl-color-neutral-50);
       }
     `,
   ];
