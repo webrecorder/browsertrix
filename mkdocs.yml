@@ -6,6 +6,7 @@ extra_css:
     - stylesheets/extra.css
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.sections
     - navigation.tabs
@@ -13,17 +14,31 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation-indexes
-  font:
-    text: Inter
-    code: Recursive
+    - navigation.footer
   palette:
     scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
 
   icon:
     admonition:
-      tip: fontawesome/solid/angles-right
-      example: fontawesome/solid/flask
+      note: bootstrap/pencil-fill
+      abstract: bootstrap/file-earmark-text-fill
+      info: bootstrap/info-circle-fill
+      tip: bootstrap/exclamation-circle-fill
+      success: bootstrap/check-circle-fill
+      question: bootstrap/question-circle-fill
+      warning: bootstrap/exclamation-triangle-fill
+      failure: bootstrap/x-octagon-fill
+      danger: bootstrap/exclamation-diamond-fill
+      bug: bootstrap/bug-fill
+      example: bootstrap/mortarboard-fill
+      quote: bootstrap/quote
+
+    repo: bootstrap/github
+    edit: bootstrap/pencil
+    view: bootstrap/eye
+
+
 
 markdown_extensions:
   - toc:
@@ -31,6 +46,12 @@ markdown_extensions:
       permalink: true
   - pymdownx.highlight:
       anchor_linenums: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      options:
+        custom_icons:
+          - docs/overrides/.icons
   - admonition
   - pymdownx.inlinehilite
   - pymdownx.details
@@ -38,3 +59,13 @@ markdown_extensions:
 
 extra:
   generator: false
+  social:
+    - icon: bootstrap/globe
+      link: https://webrecorder.net
+    - icon: bootstrap/chat-left-text-fill
+      link: https://forum.webrecorder.net/
+    - icon: bootstrap/mastodon
+      link: https://digipres.club/@webrecorder
+    - icon: bootstrap/youtube
+      link: https://www.youtube.com/@webrecorder
+copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"

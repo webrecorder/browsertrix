@@ -5,6 +5,7 @@ import io
 import zipfile
 
 from .conftest import API_PREFIX, HOST_PREFIX
+from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
 wacz_path = None
 wacz_size = None
@@ -200,6 +201,18 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
 def test_delete_crawls_crawler(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
+    # Test that crawl is in collection before deleting
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    collection = [coll for coll in data["items"] if coll["name"] == COLLECTION_NAME][0]
+    crawl_ids = collection["crawlIds"]
+    assert admin_crawl_id in crawl_ids
+    assert crawler_crawl_id in crawl_ids
+
     # Test that crawler user can't delete another user's crawls
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
@@ -220,6 +233,19 @@ def test_delete_crawls_crawler(
     data = r.json()
     assert data["deleted"] == 1
 
+    # Test that crawl is no longer in collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    collection = [coll for coll in data["items"] if coll["name"] == COLLECTION_NAME][0]
+    crawl_ids = collection["crawlIds"]
+    assert admin_crawl_id in crawl_ids
+    assert crawler_crawl_id not in crawl_ids
+
+    # Test that crawl is not found after deleting
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,

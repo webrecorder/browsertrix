@@ -2,6 +2,7 @@ import requests
 import urllib.parse
 
 from .conftest import API_PREFIX
+from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
 
 def test_get_config_by_created_by(crawler_auth_headers, default_org_id, crawler_userid):
@@ -10,8 +11,8 @@ def test_get_config_by_created_by(crawler_auth_headers, default_org_id, crawler_
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?userid={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 1
-    assert r.json()["total"] == 1
+    assert len(r.json()["items"]) == 2
+    assert r.json()["total"] == 2
 
 
 def test_get_config_by_modified_by(
@@ -22,8 +23,8 @@ def test_get_config_by_modified_by(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?modifiedBy={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 1
-    assert r.json()["total"] == 1
+    assert len(r.json()["items"]) == 2
+    assert r.json()["total"] == 2
 
 
 def test_get_configs_by_first_seed(
@@ -146,6 +147,19 @@ def test_get_crawls_by_description(
     assert r.json()["total"] >= 1
     for crawl in r.json()["items"]:
         assert crawl["description"] == description
+
+
+def test_get_crawls_by_collection_name(
+    crawler_auth_headers, default_org_id, crawler_crawl_id
+):
+    encoded_collection = urllib.parse.quote(COLLECTION_NAME)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?collection={encoded_collection}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["total"] >= 1
+    for crawl in r.json()["items"]:
+        assert COLLECTION_NAME in crawl["collections"]
 
 
 def test_sort_crawls(

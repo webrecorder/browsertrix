@@ -45,7 +45,8 @@ def test_get_config_by_tag_1(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tags",
         headers=admin_auth_headers,
     )
-    assert r.json() == ["tag-1", "tag-2"]
+    data = r.json()
+    assert sorted(data) == ["tag-1", "tag-2", "wr-test-1", "wr-test-2"]
 
 
 def test_create_new_config_2(admin_auth_headers, default_org_id):
@@ -70,7 +71,15 @@ def test_get_config_by_tag_2(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tags",
         headers=admin_auth_headers,
     )
-    assert r.json() == ["tag-0", "tag-1", "tag-2", "tag-3"]
+    data = r.json()
+    assert sorted(data) == [
+        "tag-0",
+        "tag-1",
+        "tag-2",
+        "tag-3",
+        "wr-test-1",
+        "wr-test-2",
+    ]
 
 
 def test_get_config_2(admin_auth_headers, default_org_id):

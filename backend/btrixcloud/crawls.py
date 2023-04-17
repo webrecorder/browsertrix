@@ -73,6 +73,7 @@ class CrawlFileOut(BaseModel):
     path: str
     hash: str
     size: int
+    crawlId: Optional[str]
 
 
 # ============================================================================
@@ -98,8 +99,6 @@ class Crawl(CrawlConfigCore):
 
     files: Optional[List[CrawlFile]] = []
 
-    colls: Optional[List[str]] = []
-
     notes: Optional[str]
 
     errors: Optional[List[str]] = []
@@ -117,6 +116,7 @@ class CrawlOut(Crawl):
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
     errors: Optional[List[str]]
+    collections: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -145,7 +145,7 @@ class ListCrawlOut(BaseMongoModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    colls: Optional[List[str]] = []
+    collections: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
     notes: Optional[str]
@@ -185,6 +185,7 @@ class CrawlOps:
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
         self.crawls = mdb["crawls"]
+        self.collections = mdb["collections"]
         self.crawl_manager = crawl_manager
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -195,15 +196,10 @@ class CrawlOps:
 
         self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
 
-    async def init_index(self):
-        """init index for crawls db"""
-        await self.crawls.create_index("colls")
-
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
         cid: uuid.UUID = None,
-        collid: uuid.UUID = None,
         userid: uuid.UUID = None,
         crawl_id: str = None,
         running_only=False,
@@ -211,6 +207,7 @@ class CrawlOps:
         first_seed: str = None,
         name: str = None,
         description: str = None,
+        collection_name: str = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
@@ -230,9 +227,6 @@ class CrawlOps:
 
         if cid:
             query["cid"] = cid
-
-        if collid:
-            query["colls"] = collid
 
         if userid:
             query["userid"] = userid
@@ -271,6 +265,27 @@ class CrawlOps:
                     "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
                 }
             },
+            {
+                "$lookup": {
+                    "from": "collections",
+                    "let": {"crawl_id": {"$toString": "$_id"}},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$in": ["$$crawl_id", "$crawlIds"]}}}
+                    ],
+                    "as": "colls",
+                },
+            },
+            {
+                "$set": {
+                    "collections": {
+                        "$map": {
+                            "input": "$colls",
+                            "as": "coll",
+                            "in": {"$getField": {"field": "name", "input": "$$coll"}},
+                        }
+                    }
+                }
+            },
         ]
 
         if name:
@@ -281,6 +296,9 @@ class CrawlOps:
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if collection_name:
+            aggregate.extend([{"$match": {"collections": {"$in": [collection_name]}}}])
 
         if sort_by:
             if sort_by not in ("started, finished, fileSize, firstSeed"):
@@ -356,7 +374,7 @@ class CrawlOps:
 
             del res["files"]
 
-            res["resources"] = await self._resolve_signed_urls(files, org)
+            res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
 
         crawl = CrawlOut.from_dict(res)
 
@@ -367,8 +385,10 @@ class CrawlOps:
         stats = {
             "crawl_count": 0,
             "last_crawl_id": None,
+            "last_crawl_started": None,
             "last_crawl_finished": None,
             "last_crawl_state": None,
+            "last_started_by": None,
         }
 
         match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
@@ -379,8 +399,13 @@ class CrawlOps:
 
             last_crawl = Crawl.from_dict(results[0])
             stats["last_crawl_id"] = str(last_crawl.id)
+            stats["last_crawl_started"] = last_crawl.started
             stats["last_crawl_finished"] = last_crawl.finished
             stats["last_crawl_state"] = last_crawl.state
+
+            user = await self.user_manager.get(last_crawl.userid)
+            if user:
+                stats["last_started_by"] = user.name
 
         return stats
 
@@ -416,13 +441,23 @@ class CrawlOps:
                 crawl.profileid, org
             )
 
+        if not crawl.collections:
+            crawl.collections = [
+                coll["name"]
+                async for coll in self.collections.find(
+                    {"crawlIds": {"$in": [crawl.id]}}
+                )
+            ]
+
         user = await self.user_manager.get(crawl.userid)
         if user:
             crawl.userName = user.name
 
         return crawl
 
-    async def _resolve_signed_urls(self, files, org: Organization):
+    async def _resolve_signed_urls(
+        self, files, org: Organization, crawl_id: Optional[str] = None
+    ):
         if not files:
             print("no files")
             return
@@ -459,6 +494,7 @@ class CrawlOps:
                     path=presigned_url,
                     hash=file_.hash,
                     size=file_.size,
+                    crawlId=crawl_id,
                 )
             )
 
@@ -788,6 +824,18 @@ class CrawlOps:
 
         return resp
 
+    async def remove_crawl_from_collections(self, oid: uuid.UUID, crawl_id: str):
+        """Remove crawl with given crawl_id from all collections it belongs to"""
+        collections = [
+            coll["name"]
+            async for coll in self.collections.find({"crawlIds": {"$in": [crawl_id]}})
+        ]
+        for collection_name in collections:
+            await self.collections.find_one_and_update(
+                {"name": collection_name, "oid": oid},
+                {"$pull": {"crawlIds": crawl_id}},
+            )
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
@@ -811,6 +859,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        collection: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
         runningOnly: Optional[bool] = True,
@@ -830,6 +879,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
+        if collection:
+            collection = urllib.parse.unquote(collection)
+
         crawls, total = await ops.list_crawls(
             None,
             userid=userid,
@@ -839,6 +891,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
+            collection_name=collection,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -857,6 +910,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        collection: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
     ):
@@ -873,6 +927,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
+        if collection:
+            collection = urllib.parse.unquote(collection)
+
         crawls, total = await ops.list_crawls(
             org,
             userid=userid,
@@ -882,6 +939,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
+            collection_name=collection,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -928,6 +986,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
                     raise HTTPException(
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
+
+        await ops.remove_crawl_from_collections(crawl.oid, crawl.id)
 
         res = await ops.delete_crawls(org, delete_list)
 
