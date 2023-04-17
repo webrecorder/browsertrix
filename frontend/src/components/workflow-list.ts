@@ -211,6 +211,9 @@ export class WorkflowListItem extends LitElement {
     state: Crawl["state"];
   };
 
+  @property({ type: Date })
+  lastUpdated?: Date;
+
   @query(".row")
   row!: HTMLElement;
 
@@ -269,7 +272,20 @@ export class WorkflowListItem extends LitElement {
         <div class="detail url truncate">
           ${this.safeRender(this.renderName)}
         </div>
-        <div class="desc">${this.safeRender(this.renderLastUpdated)}</div>
+        <div class="desc">
+          ${this.safeRender(
+            () => html`
+              <sl-format-date
+                date=${this.lastUpdated!.toString()}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></sl-format-date>
+            `
+          )}
+        </div>
       </div>
       <div class="col">
         <div class="detail">
@@ -397,31 +413,6 @@ export class WorkflowListItem extends LitElement {
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
-    `;
-  }
-
-  private renderLastUpdated(workflow: Workflow) {
-    const maxDate = new Date(
-      Math.max(
-        ...[
-          workflow.lastCrawlTime,
-          workflow.lastCrawlStartTime,
-          workflow.modified,
-          workflow.created,
-        ]
-          .filter((date) => date)
-          .map((date) => new Date(`${date}Z`).getTime())
-      )
-    );
-    return html`
-      <sl-format-date
-        date=${maxDate.toString()}
-        month="2-digit"
-        day="2-digit"
-        year="2-digit"
-        hour="2-digit"
-        minute="2-digit"
-      ></sl-format-date>
     `;
   }
 

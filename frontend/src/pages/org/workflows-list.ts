@@ -28,17 +28,26 @@ type RunningCrawlsMap = {
     state: Crawl["state"];
   };
 };
+type SortField = "_lastUpdated" | "_name";
+type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
 const INITIAL_PAGE_SIZE = 50;
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
-const sortableFieldLabels = {
-  created_desc: msg("Newest"),
-  created_asc: msg("Oldest"),
-  lastCrawlTime_desc: msg("Newest Crawl"),
-  lastCrawlTime_asc: msg("Oldest Crawl"),
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  _lastUpdated: {
+    label: msg("Last Updated"),
+    defaultDirection: "desc",
+  },
+  _name: {
+    label: msg("Name"),
+    defaultDirection: "desc",
+  },
 };
 
 /**
@@ -78,10 +87,10 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private orderBy: {
-    field: "created";
-    direction: "asc" | "desc";
+    field: SortField;
+    direction: SortDirection;
   } = {
-    field: "created",
+    field: "_lastUpdated",
     direction: "desc",
   };
 
@@ -210,11 +219,6 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private isActive(workflow: Workflow): boolean {
-    const crawl = this.runningCrawlsMap[workflow.id];
-    return Boolean(crawl && isActiveState(crawl.state));
-  }
-
   render() {
     return html`
       <header class="contents">
@@ -335,41 +339,27 @@ export class WorkflowsList extends LiteElement {
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
             ${msg("Sort By")}
           </div>
-          <sl-dropdown
-            placement="bottom-end"
-            distance="4"
+          <sl-select
+            class="flex-1 md:min-w-[9.2rem]"
+            size="small"
+            pill
+            value=${this.orderBy.field}
             @sl-select=${(e: any) => {
-              const [field, direction] = e.detail.item.value.split("_");
+              const field = e.detail.item.value as SortField;
               this.orderBy = {
                 field: field,
-                direction: direction,
+                direction:
+                  sortableFields[field].defaultDirection ||
+                  this.orderBy.direction,
               };
             }}
           >
-            <sl-button
-              slot="trigger"
-              size="small"
-              pill
-              caret
-              ?disabled=${!this.workflows?.length}
-              >${(sortableFieldLabels as any)[this.orderBy.field] ||
-              sortableFieldLabels[
-                `${this.orderBy.field}_${this.orderBy.direction}`
-              ]}</sl-button
-            >
-            <sl-menu>
-              ${Object.entries(sortableFieldLabels).map(
-                ([value, label]) => html`
-                  <sl-menu-item
-                    value=${value}
-                    ?checked=${value ===
-                    `${this.orderBy.field}_${this.orderBy.direction}`}
-                    >${label}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-menu>
-          </sl-dropdown>
+            ${Object.entries(sortableFields).map(
+              ([value, { label }]) => html`
+                <sl-menu-item value=${value}>${label}</sl-menu-item>
+              `
+            )}
+          </sl-select>
           <sl-icon-button
             name="arrow-down-up"
             label=${msg("Reverse sort")}
@@ -389,6 +379,11 @@ export class WorkflowsList extends LiteElement {
     if (!this.workflows) return;
 
     const flowFns = [
+      map((workflow: Workflow) => ({
+        ...workflow,
+        _lastUpdated: this.workflowLastUpdated(workflow),
+        // _name: TODO
+      })),
       orderBy(this.orderBy.field, this.orderBy.direction),
       map(this.renderWorkflowItem),
     ];
@@ -415,13 +410,14 @@ export class WorkflowsList extends LiteElement {
       <btrix-workflow-list-item
         .workflow=${workflow}
         .runningCrawl=${this.runningCrawlsMap[workflow.id]}
+        lastUpdated=${this.workflowLastUpdated(workflow)}
       >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
 
   private renderMenuItems(workflow: Workflow) {
-    const isActive = this.isActive(workflow);
+    const isActive = this.workflowIsActive(workflow);
     return html`
       ${when(
         isActive,
@@ -510,6 +506,26 @@ export class WorkflowsList extends LiteElement {
     return msg(
       html`${firstSeedURL}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
+    );
+  }
+
+  private workflowIsActive(workflow: Workflow): boolean {
+    const crawl = this.runningCrawlsMap[workflow.id];
+    return Boolean(crawl && isActiveState(crawl.state));
+  }
+
+  private workflowLastUpdated(workflow: Workflow): Date {
+    return new Date(
+      Math.max(
+        ...[
+          workflow.lastCrawlTime,
+          workflow.lastCrawlStartTime,
+          workflow.modified,
+          workflow.created,
+        ]
+          .filter((date) => date)
+          .map((date) => new Date(`${date}Z`).getTime())
+      )
     );
   }
 
