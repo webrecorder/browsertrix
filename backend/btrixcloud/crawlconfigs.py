@@ -188,6 +188,9 @@ class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
     currCrawlId: Optional[str]
+    currCrawlStartTime: Optional[datetime]
+    currCrawlState: Optional[str]
+
     profileName: Optional[str]
 
     createdByName: Optional[str]
@@ -468,7 +471,7 @@ class CrawlConfigOps:
         sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-many-branches
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -612,13 +615,21 @@ class CrawlConfigOps:
         )
         running = {}
         for crawl in crawls:
-            running[crawl.cid] = crawl.id
+            running[crawl.cid] = {
+                "id": crawl.id,
+                "started": crawl.started,
+                "state": crawl.state,
+            }
 
         configs = []
         for res in items:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
-            config.currCrawlId = running.get(config.id)
+            data = running.get(config.id)
+            if data:
+                config.currCrawlId = data["id"]
+                config.currCrawlStartTime = data["started"]
+                config.currCrawlState = data["state"]
             configs.append(config)
 
         return configs, total
@@ -644,7 +655,7 @@ class CrawlConfigOps:
         )
 
         if len(crawls) == 1:
-            return crawls[0].id
+            return crawls[0]
 
         return None
 
@@ -672,7 +683,10 @@ class CrawlConfigOps:
             )
 
         if not crawlconfig.inactive:
-            crawlconfig.currCrawlId = await self.get_running_crawl(crawlconfig)
+            curr_crawl = await self.get_running_crawl(crawlconfig)
+            crawlconfig.currCrawlId = curr_crawl.id
+            crawlconfig.currCrawlStartTime = curr_crawl.started
+            crawlconfig.currCrawlState = curr_crawl.state
 
         user = await self.user_manager.get(crawlconfig.createdBy)
         # pylint: disable=invalid-name
