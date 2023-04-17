@@ -1,5 +1,5 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -43,7 +43,7 @@ const sortableFields: Record<
 > = {
   _lastUpdated: {
     label: msg("Last Updated"),
-    defaultDirection: "asc",
+    defaultDirection: "desc",
   },
   _name: {
     label: msg("Name"),
@@ -92,7 +92,7 @@ export class WorkflowsList extends LiteElement {
     direction: SortDirection;
   } = {
     field: "_lastUpdated",
-    direction: sortableFields["_lastUpdated"].defaultDirection as SortDirection,
+    direction: sortableFields["_lastUpdated"].defaultDirection!,
   };
 
   @state()
@@ -103,6 +103,9 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private filterByScheduled: boolean | null = null;
+
+  @query("btrix-workflow-list")
+  private workflowList?: HTMLElement;
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -150,6 +153,9 @@ export class WorkflowsList extends LiteElement {
       const runningCrawlsMap: RunningCrawlsMap = {};
 
       crawls.forEach((crawl) => {
+        if (inactiveCrawlStates.includes(crawl.state)) {
+          return;
+        }
         runningCrawlsMap[crawl.cid] = {
           id: crawl.id,
           state: crawl.state,
@@ -420,20 +426,21 @@ export class WorkflowsList extends LiteElement {
     `;
 
   private renderMenuItems(workflow: Workflow) {
-    const isActive = this.workflowIsActive(workflow);
+    const activeCrawl = this.runningCrawlsMap[workflow.id];
+
     return html`
       ${when(
-        isActive,
+        activeCrawl,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
-          <sl-menu-item @click=${() => this.stop(workflow)}>
+          <sl-menu-item @click=${() => this.stop(activeCrawl)}>
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(workflow)}
+            @click=${() => this.cancel(activeCrawl)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
             ${msg("Cancel Immediately")}
@@ -444,7 +451,7 @@ export class WorkflowsList extends LiteElement {
             style="--sl-color-neutral-700: var(--success)"
             @click=${() => this.runNow(workflow)}
           >
-            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+            <sl-icon name="play" slot="prefix"></sl-icon>
             ${msg("Run Workflow")}
           </sl-menu-item>
         `
@@ -470,7 +477,7 @@ export class WorkflowsList extends LiteElement {
         <sl-icon name="files" slot="prefix"></sl-icon>
         ${msg("Duplicate Workflow")}
       </sl-menu-item>
-      ${when(!isActive, () => {
+      ${when(!activeCrawl, () => {
         const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
         return html`
           <sl-divider></sl-divider>
@@ -512,15 +519,12 @@ export class WorkflowsList extends LiteElement {
     );
   }
 
-  private workflowIsActive(workflow: Workflow): boolean {
-    const crawl = this.runningCrawlsMap[workflow.id];
-    return Boolean(crawl && isActiveState(crawl.state));
-  }
-
   private workflowLastUpdated(workflow: Workflow): Date {
+    const runningCrawl = this.runningCrawlsMap[workflow.id];
     return new Date(
       Math.max(
         ...[
+          runningCrawl?.started,
           workflow.lastCrawlTime,
           workflow.lastCrawlStartTime,
           workflow.modified,
@@ -635,48 +639,46 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async cancel(workflow: Workflow) {
-    // TODO
-    // if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-    //   const data = await this.apiFetch(
-    //     `/orgs/${workflow.oid}/crawls/${workflow.id}/cancel`,
-    //     this.authState!,
-    //     {
-    //       method: "POST",
-    //     }
-    //   );
-    //   if (data.success === true) {
-    //     this.fetchCrawls();
-    //   } else {
-    //     this.notify({
-    //       message: msg("Something went wrong, couldn't cancel crawl."),
-    //       variant: "danger",
-    //       icon: "exclamation-octagon",
-    //     });
-    //   }
-    // }
+  private async cancel(crawl: RunningCrawlsMap[keyof RunningCrawlsMap]) {
+    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${crawl.id}/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't cancel crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
   }
 
-  private async stop(workflow: Workflow) {
-    // TODO
-    // if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-    //   const data = await this.apiFetch(
-    //     `/orgs/${workflow.oid}/crawls/${workflow.id}/stop`,
-    //     this.authState!,
-    //     {
-    //       method: "POST",
-    //     }
-    //   );
-    //   if (data.success === true) {
-    //     this.fetchCrawls();
-    //   } else {
-    //     this.notify({
-    //       message: msg("Something went wrong, couldn't stop crawl."),
-    //       variant: "danger",
-    //       icon: "exclamation-octagon",
-    //     });
-    //   }
-    // }
+  private async stop(crawl: RunningCrawlsMap[keyof RunningCrawlsMap]) {
+    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${crawl.id}/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't stop crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
   }
 
   private async runNow(crawlConfig: Workflow): Promise<void> {
@@ -701,6 +703,9 @@ export class WorkflowsList extends LiteElement {
           started: startDate.toISOString().replace(/Z$/, ""),
         },
       };
+
+      // Scroll to top of list
+      this.scrollIntoView({ behavior: "smooth" });
 
       this.notify({
         message: msg(

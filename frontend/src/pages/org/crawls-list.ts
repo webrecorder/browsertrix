@@ -112,8 +112,8 @@ export class CrawlsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "started",
-    direction: "desc",
+    field: "finished",
+    direction: sortableFields["finished"].defaultDirection!,
   };
 
   @state()
@@ -484,43 +484,25 @@ export class CrawlsList extends LiteElement {
     `;
 
   private crawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+    // HACK shoelace doesn't current have a way to override non-hover
+    // color without resetting the --sl-color-neutral-700 variable
     html`
-      ${when(
-        isActive(crawl.state),
-        // HACK shoelace doesn't current have a way to override non-hover
-        // color without resetting the --sl-color-neutral-700 variable
-        () => html`
-          <sl-menu-item @click=${() => this.stop(crawl)}>
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
-            ${msg("Stop Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(crawl)}
-          >
-            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel Immediately")}
-          </sl-menu-item>
-        `,
-        () => html`
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${() => this.runNow(crawl)}
-          >
-            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-            ${msg("Re-Run Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() => {
-              this.crawlToEdit = crawl;
-              this.isEditingCrawl = true;
-            }}
-          >
-            <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
-          </sl-menu-item>
-        `
-      )}
+      <sl-menu-item
+        style="--sl-color-neutral-700: var(--success)"
+        @click=${() => this.runNow(crawl)}
+      >
+        <sl-icon name="play" slot="prefix"></sl-icon>
+        ${msg("Run Workflow")}
+      </sl-menu-item>
+      <sl-menu-item
+        @click=${() => {
+          this.crawlToEdit = crawl;
+          this.isEditingCrawl = true;
+        }}
+      >
+        <sl-icon name="pencil" slot="prefix"></sl-icon>
+        ${msg("Edit Metadata")}
+      </sl-menu-item>
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>

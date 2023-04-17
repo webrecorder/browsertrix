@@ -250,8 +250,7 @@ export class WorkflowListItem extends LitElement {
 
   renderRow() {
     const isActive =
-      (this.runningCrawl && isActiveState(this.runningCrawl.state)) ||
-      this.workflow?.currCrawlId;
+      this.runningCrawl && isActiveState(this.runningCrawl.state);
 
     return html`<a
       class="item row"
@@ -308,12 +307,16 @@ export class WorkflowListItem extends LitElement {
         <div class="desc duration">
           ${this.safeRender((workflow) => {
             if (this.runningCrawl) {
+              const diff =
+                new Date().valueOf() -
+                new Date(`${this.runningCrawl.started}Z`).valueOf();
+              if (diff < 1000) {
+                return "";
+              }
               return msg(
-                str`Running for ${RelativeDuration.humanize(
-                  new Date().valueOf() -
-                    new Date(`${this.runningCrawl.started}Z`).valueOf(),
-                  { compact: true }
-                )}`
+                str`Running for ${RelativeDuration.humanize(diff, {
+                  compact: true,
+                })}`
               );
             }
             if (workflow.lastCrawlTime) {
