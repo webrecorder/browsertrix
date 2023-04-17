@@ -46,7 +46,7 @@ const sortableFields: Record<
   },
   _name: {
     label: msg("Name"),
-    defaultDirection: "desc",
+    defaultDirection: "asc",
   },
 };
 
@@ -382,7 +382,7 @@ export class WorkflowsList extends LiteElement {
       map((workflow: Workflow) => ({
         ...workflow,
         _lastUpdated: this.workflowLastUpdated(workflow),
-        // _name: TODO
+        _name: workflow.name || workflow.firstSeed,
       })),
       orderBy(this.orderBy.field, this.orderBy.direction),
       map(this.renderWorkflowItem),
