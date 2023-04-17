@@ -175,7 +175,7 @@ export class WorkflowListItem extends LitElement {
         color: var(--sl-color-neutral-500);
       }
 
-      .finished {
+      .duration {
         margin-left: calc(1rem + var(--sl-spacing-x-small));
       }
 
@@ -209,6 +209,7 @@ export class WorkflowListItem extends LitElement {
   runningCrawl?: {
     id: Crawl["id"];
     state: Crawl["state"];
+    started: Crawl["started"];
   };
 
   @property({ type: Date })
@@ -304,10 +305,32 @@ export class WorkflowListItem extends LitElement {
                 `
           )}
         </div>
-        <div class="desc finished">TODO runtime</div>
+        <div class="desc duration">
+          ${this.safeRender((workflow) => {
+            if (this.runningCrawl) {
+              return msg(
+                str`Running for ${RelativeDuration.humanize(
+                  new Date().valueOf() -
+                    new Date(`${this.runningCrawl.started}Z`).valueOf(),
+                  { compact: true }
+                )}`
+              );
+            }
+            if (workflow.lastCrawlTime) {
+              return msg(
+                str`Finished in ${RelativeDuration.humanize(
+                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
+                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                  { compact: true }
+                )}`
+              );
+            }
+            return html`<span>---</span>`;
+          })}
+        </div>
       </div>
       <div class="col">
-        <div class="detail">TODO total size</div>
+        <div class="detail"><span>---</span></div>
         <div class="desc">
           ${this.safeRender((workflow) =>
             workflow.crawlCount === 1

@@ -26,6 +26,7 @@ type RunningCrawlsMap = {
   [configId: string]: {
     id: Crawl["id"];
     state: Crawl["state"];
+    started: Crawl["started"];
   };
 };
 type SortField = "_lastUpdated" | "_name";
@@ -152,6 +153,7 @@ export class WorkflowsList extends LiteElement {
         runningCrawlsMap[crawl.cid] = {
           id: crawl.id,
           state: crawl.state,
+          started: crawl.started,
         };
       });
       this.runningCrawlsMap = runningCrawlsMap;
@@ -181,7 +183,7 @@ export class WorkflowsList extends LiteElement {
       {
         // TODO handle paginated workflows
         cid: workflows.map(({ id }) => id),
-        state: activeCrawlStates,
+        state: activeCrawlStates.join(","),
         pageSize: INITIAL_PAGE_SIZE,
       },
       {
@@ -679,6 +681,7 @@ export class WorkflowsList extends LiteElement {
 
   private async runNow(crawlConfig: Workflow): Promise<void> {
     try {
+      const startDate = new Date();
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
         this.authState!,
@@ -694,6 +697,8 @@ export class WorkflowsList extends LiteElement {
         [crawlConfig.id]: {
           id: crawlId,
           state: "starting",
+          // Backend returns ISO string without Z
+          started: startDate.toISOString().replace(/Z$/, ""),
         },
       };
 
