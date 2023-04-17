@@ -77,12 +77,12 @@ resetMicrok8s(){
 
 runTests() {
     echo "Running backend tests..."
-    python -m pytest backend/test/*.py
+    python3 -m pytest backend/test/*.py
 }
 
 runNightlyTests() {
     echo "Running nightly backend tests..."
-    python -m pytest backend/test_nightly/*.py
+    python3 -m pytest backend/test_nightly/*.py
 }
 
 microk8s=false
