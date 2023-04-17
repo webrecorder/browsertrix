@@ -13,9 +13,7 @@ spec:
 
   id: "{{ id }}"
   userid: "{{ userid }}"
-  oid: "{{ oid }}"
   cid: "{{ cid }}"
-  rev: {{ rev }}
   scale: {{ scale }}
   ttlSecondsAfterFinished: 30
 

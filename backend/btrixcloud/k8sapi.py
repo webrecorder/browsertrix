@@ -2,6 +2,8 @@
 import os
 import traceback
 
+from datetime import timedelta
+
 import yaml
 
 from kubernetes_asyncio import client, config
@@ -9,6 +11,10 @@ from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.api import custom_objects_api
 from kubernetes_asyncio.utils import create_from_dict
+
+
+from fastapi.templating import Jinja2Templates
+from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
 # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -19,6 +25,8 @@ class K8sAPI:
         super().__init__()
         self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self.custom_resources = {}
+
+        self.templates = Jinja2Templates(directory=get_templates_dir())
 
         config.load_incluster_config()
         self.client = client
@@ -44,6 +52,34 @@ class K8sAPI:
     def get_custom_api(self, kind):
         """return custom API"""
         return self.custom_resources[kind] if kind in self.custom_resources else None
+
+    # pylint: disable=too-many-arguments
+    async def new_crawl_job(self, cid, userid, scale=1, crawl_timeout=0, manual=True):
+        """load job template from yaml"""
+        if crawl_timeout:
+            crawl_expire_time = to_k8s_date(dt_now() + timedelta(seconds=crawl_timeout))
+        else:
+            crawl_expire_time = ""
+
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+        prefix = "manual" if manual else "sched"
+        crawl_id = f"{prefix}-{ts_now}-{cid[:12]}"
+
+        params = {
+            "id": crawl_id,
+            "cid": cid,
+            "userid": userid,
+            "scale": scale,
+            "expire_time": crawl_expire_time,
+            "manual": "1" if manual else "0",
+        }
+
+        data = self.templates.env.get_template("crawl_job.yaml").render(params)
+
+        # create job directly
+        await self.create_from_yaml(data)
+
+        return crawl_id
 
     async def create_from_yaml(self, doc):
         """init k8s objects from yaml"""

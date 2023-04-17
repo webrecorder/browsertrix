@@ -24,15 +24,27 @@ spec:
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/syncCrawls
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/syncCrawls
 
     finalize:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/syncCrawls
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/syncCrawls
 
     customize:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/customize
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/customize
 
 ---
 apiVersion: metacontroller.k8s.io/v1alpha1
@@ -60,4 +72,8 @@ spec:
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/syncProfileBrowsers
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/syncProfileBrowsers

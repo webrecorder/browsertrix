@@ -502,30 +502,7 @@ class CrawlOps:
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
-        crawl = Crawl(
-            id=crawl_id,
-            state="starting",
-            userid=user.id,
-            oid=crawlconfig.oid,
-            cid=crawlconfig.id,
-            cid_rev=crawlconfig.rev,
-            scale=crawlconfig.scale,
-            jobType=crawlconfig.jobType,
-            config=crawlconfig.config,
-            profileid=crawlconfig.profileid,
-            schedule=crawlconfig.schedule,
-            crawlTimeout=crawlconfig.crawlTimeout,
-            manual=True,
-            started=ts_now(),
-            tags=crawlconfig.tags,
-        )
-
-        try:
-            await self.crawls.insert_one(crawl.to_dict())
-            return True
-        except pymongo.errors.DuplicateKeyError:
-            # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
-            return False
+        return await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
         """Update existing crawl (tags and notes only for now)"""
@@ -769,6 +746,54 @@ class CrawlOps:
 
 
 # ============================================================================
+async def add_new_crawl(
+    crawls, crawl_id: str, crawlconfig: CrawlConfig, userid: UUID4, manual=True
+):
+    """initialize new crawl"""
+    crawl = Crawl(
+        id=crawl_id,
+        state="starting",
+        userid=userid,
+        oid=crawlconfig.oid,
+        cid=crawlconfig.id,
+        cid_rev=crawlconfig.rev,
+        scale=crawlconfig.scale,
+        jobType=crawlconfig.jobType,
+        config=crawlconfig.config,
+        profileid=crawlconfig.profileid,
+        schedule=crawlconfig.schedule,
+        crawlTimeout=crawlconfig.crawlTimeout,
+        manual=manual,
+        started=ts_now(),
+        tags=crawlconfig.tags,
+    )
+
+    try:
+        await crawls.insert_one(crawl.to_dict())
+        return True
+    except pymongo.errors.DuplicateKeyError:
+        # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
+        return False
+
+
+# ============================================================================
+async def update_crawl(crawls, crawl_id, **kwargs):
+    """update crawl state in db"""
+    await crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
+
+
+# ============================================================================
+async def add_crawl_file(crawls, crawl_id, crawl_file):
+    """add new crawl file to crawl"""
+    await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {
+            "$push": {"files": crawl_file.dict()},
+        },
+    )
+
+
+# ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user_dep):
     """API for crawl management, including crawl done callback"""
@@ -959,7 +984,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         return crawls[0]
 
     @app.patch("/orgs/{oid}/crawls/{crawl_id}", tags=["crawls"])
-    async def update_crawl(
+    async def update_crawl_api(
         update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         return await ops.update_crawl(crawl_id, org, update)

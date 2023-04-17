@@ -6,19 +6,19 @@ from typing import Optional
 
 from datetime import datetime
 import json
+import uuid
 
 import yaml
 
-# from fastapi import Request, HTTPException
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from redis import asyncio as aioredis  # , exceptions
 
-from .utils import get_templates_dir, from_k8s_date, to_k8s_date, dt_now
+from .utils import from_k8s_date, to_k8s_date, dt_now
 from .k8sapi import K8sAPI
 
 from .db import init_db
-from .crawls import CrawlFile, CrawlCompleteIn
+from .orgs import inc_org_stats
+from .crawls import CrawlFile, CrawlCompleteIn, add_crawl_file, update_crawl
 
 # from .crawlconfigs import CrawlConfig
 
@@ -57,8 +57,8 @@ class CrawlInfo(BaseModel):
     """Crawl Info"""
 
     id: str
-    cid: str
-    oid: str
+    cid: uuid.UUID
+    oid: uuid.UUID
     scale: int
     storage_path: str
     storage_name: str
@@ -93,9 +93,8 @@ class BtrixOperator(K8sAPI):
         self.crawls = mdb["crawls"]
         self.orgs = mdb["organizations"]
 
-        self.crawls_done_key = "crawls-done"
+        self.done_key = "crawls-done"
 
-        self.templates = Jinja2Templates(directory=get_templates_dir())
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
@@ -154,9 +153,9 @@ class BtrixOperator(K8sAPI):
         crawl = CrawlInfo(
             id=crawl_id,
             cid=cid,
-            oid=spec["oid"],
-            storage_name=configmap.get("STORAGE_NAME", ""),
-            storage_path=configmap.get("STORE_PATH", ""),
+            oid=configmap["ORG_ID"],
+            storage_name=configmap["STORAGE_NAME"],
+            storage_path=configmap["STORE_PATH"],
             scale=scale,
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -274,7 +273,7 @@ class BtrixOperator(K8sAPI):
         #    await redis.set("start_time", str(self.started))
 
         try:
-            file_done = await redis.lpop(self.crawls_done_key)
+            file_done = await redis.lpop(self.done_key)
 
             while file_done:
                 msg = json.loads(file_done)
@@ -284,7 +283,7 @@ class BtrixOperator(K8sAPI):
                     await redis.incr("filesAdded")
 
                 # get next file done
-                file_done = await redis.lpop(self.crawls_done_key)
+                file_done = await redis.lpop(self.done_key)
 
             # ensure filesAdded always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
@@ -318,13 +317,7 @@ class BtrixOperator(K8sAPI):
             hash=filecomplete.hash,
         )
 
-        await self.crawls.find_one_and_update(
-            {"_id": crawl.id},
-            {
-                "$push": {"files": crawl_file.dict()},
-            },
-        )
-        # self._files_added = True
+        await add_crawl_file(self.crawls, crawl.id, crawl_file)
 
         return True
 
@@ -352,7 +345,7 @@ class BtrixOperator(K8sAPI):
 
         stats = {"found": pages_found, "done": pages_done}
 
-        await self.update_crawl(crawl.id, state="running", stats=stats)
+        await update_crawl(self.crawls, crawl.id, state="running", stats=stats)
 
         # update status
         status.state = "running"
@@ -391,7 +384,7 @@ class BtrixOperator(K8sAPI):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
-        await self.update_crawl(crawl_id, state=state, finished=finished)
+        await update_crawl(self.crawls, crawl_id, state=state, finished=finished)
 
         status.state = state
         status.finished = to_k8s_date(finished)
@@ -400,10 +393,6 @@ class BtrixOperator(K8sAPI):
             await self.inc_crawl_complete_stats(crawl, finished)
 
         return status
-
-    async def update_crawl(self, crawl_id, **kwargs):
-        """update crawl state in db"""
-        await self.crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
@@ -414,11 +403,7 @@ class BtrixOperator(K8sAPI):
 
         print(f"Duration: {duration}", flush=True)
 
-        # init org crawl stats
-        yymm = datetime.utcnow().strftime("%Y-%m")
-        await self.orgs.find_one_and_update(
-            {"_id": crawl.oid}, {"$inc": {f"usage.{yymm}": duration}}
-        )
+        await inc_org_stats(self.orgs, crawl.oid, duration)
 
 
 # ============================================================================
@@ -427,15 +412,15 @@ def init_operator_webhook(app):
 
     oper = BtrixOperator()
 
-    @app.post("/operator/syncCrawls")
+    @app.post("/op/syncCrawls")
     async def mc_sync_crawls(data: MCSyncData):
         return await oper.sync_crawls(data)
 
-    @app.post("/operator/syncProfileBrowsers")
+    @app.post("/op/syncProfileBrowsers")
     async def mc_sync_profile_browsers(data: MCSyncData):
         return await oper.sync_profile_browsers(data)
 
-    @app.post("/operator/customize")
+    @app.post("/op/customize")
     async def mc_related(data: MCBaseRequest):
         return oper.get_related(data)
 

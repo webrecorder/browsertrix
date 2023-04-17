@@ -94,7 +94,7 @@ spec:
               - --host
               - 0.0.0.0
               - --port
-              - "8756"
+              - "{{ .Values.opPort }}"
               - --access-log
               - --log-level
               - info
@@ -123,7 +123,7 @@ spec:
           startupProbe:
             httpGet:
               path: /healthz
-              port: 8756
+              port: {{ .Values.opPort }}
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 30
@@ -132,7 +132,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8756
+              port: {{ .Values.opPort }}
             initialDelaySeconds: 5
             periodSeconds: 30
             failureThreshold: 5
@@ -141,7 +141,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8756
+              port: {{ .Values.opPort }}
             initialDelaySeconds: 5
             periodSeconds: 30
             failureThreshold: 5
@@ -181,5 +181,5 @@ spec:
       name: api
 
     - protocol: TCP
-      port: 8756
+      port: {{ .Values.opPort }}
       name: operator
