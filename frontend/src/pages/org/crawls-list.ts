@@ -18,6 +18,11 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
+import {
+  activeCrawlStates,
+  inactiveCrawlStates,
+  isActive,
+} from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -58,19 +63,6 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
-
-const activeCrawlStates: CrawlState[] = ["starting", "running", "stopping"];
-const inactiveCrawlStates: CrawlState[] = [
-  "complete",
-  "canceled",
-  "partial_complete",
-  "timed_out",
-  "failed",
-];
-
-function isActive(crawl: Crawl) {
-  return activeCrawlStates.includes(crawl.state);
-}
 
 /**
  * Usage:
@@ -496,7 +488,7 @@ export class CrawlsList extends LiteElement {
   private crawlerMenuItemsRenderer = (crawl: Crawl) => () =>
     html`
       ${when(
-        isActive(crawl),
+        isActive(crawl.state),
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -551,7 +543,7 @@ export class CrawlsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        !isActive(crawl),
+        !isActive(crawl.state),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
