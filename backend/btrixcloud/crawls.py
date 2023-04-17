@@ -523,6 +523,21 @@ class CrawlOps:
 
         return {"success": True}
 
+    async def update_crawl_scale(
+        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale
+    ):
+        """Update crawl scale in the db"""
+        result = await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id},
+            {"$set": {"scale": crawl_scale.scale}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
+
+        return True
+
     async def update_crawl_state(self, crawl_id: str, state: str):
         """called only when job container is being stopped/canceled"""
 
@@ -996,6 +1011,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     async def scale_crawl(
         scale: CrawlScale, crawl_id, org: Organization = Depends(org_crawl_dep)
     ):
+        await ops.update_crawl_scale(crawl_id, org, scale)
+
         result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
