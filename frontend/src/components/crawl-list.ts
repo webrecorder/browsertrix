@@ -259,16 +259,16 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col">
-        <div class="detail">
-          ${this.safeRender((crawl) =>
-            isActive
-              ? html`<span class="unknownValue">${msg("In Progress")}</span>`
-              : html`<sl-format-bytes
+        ${this.safeRender((crawl) =>
+          isActive
+            ? ""
+            : html`<div class="detail">
+                <sl-format-bytes
                   value=${crawl.fileSize || 0}
                   display="narrow"
-                ></sl-format-bytes>`
-          )}
-        </div>
+                ></sl-format-bytes>
+              </div>`
+        )}
         <div class="desc truncate">
           ${this.safeRender((crawl) => {
             const pagesComplete = +(crawl.stats?.done || 0);

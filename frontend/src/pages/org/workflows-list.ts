@@ -42,7 +42,7 @@ const sortableFields: Record<
 > = {
   _lastUpdated: {
     label: msg("Last Updated"),
-    defaultDirection: "desc",
+    defaultDirection: "asc",
   },
   _name: {
     label: msg("Name"),
@@ -91,7 +91,7 @@ export class WorkflowsList extends LiteElement {
     direction: SortDirection;
   } = {
     field: "_lastUpdated",
-    direction: "desc",
+    direction: sortableFields["_lastUpdated"].defaultDirection as SortDirection,
   };
 
   @state()
@@ -337,7 +337,7 @@ export class WorkflowsList extends LiteElement {
           </label>
 
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort By")}
+            ${msg("Sort by:")}
           </div>
           <sl-select
             class="flex-1 md:min-w-[9.2rem]"

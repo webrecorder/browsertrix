@@ -288,8 +288,6 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${activeCrawlStates.map(this.renderStatusMenuItem)}
-            <sl-divider></sl-divider>
             ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
@@ -665,9 +663,11 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const state = this.filterBy.state || inactiveCrawlStates;
     const query = queryString.stringify(
       {
         ...this.filterBy,
+        state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
