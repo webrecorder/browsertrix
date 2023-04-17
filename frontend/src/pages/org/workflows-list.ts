@@ -17,7 +17,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "../../utils/cron";
-import "../../components/crawl-scheduler";
+import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
 
@@ -191,26 +191,6 @@ export class WorkflowsList extends LiteElement {
                 <sl-spinner></sl-spinner>
               </div>`
       )}
-
-      <sl-dialog
-        label=${msg(str`Edit Crawl Schedule`)}
-        ?open=${this.showEditDialog}
-        @sl-request-close=${() => (this.showEditDialog = false)}
-        @sl-after-hide=${() => (this.selectedTemplateForEdit = undefined)}
-      >
-        <h2 class="text-lg font-medium mb-4">
-          ${this.selectedTemplateForEdit?.name}
-        </h2>
-
-        ${this.selectedTemplateForEdit
-          ? html`
-              <btrix-crawl-scheduler
-                .schedule=${this.selectedTemplateForEdit.schedule}
-                @submit=${this.onSubmitSchedule}
-              ></btrix-crawl-scheduler>
-            `
-          : ""}
-      </sl-dialog>
     `;
   }
 
@@ -356,304 +336,79 @@ export class WorkflowsList extends LiteElement {
   private renderWorkflowItem = (workflow: Workflow) =>
     html`
       <btrix-workflow-list-item .workflow=${workflow}>
-        <sl-menu slot="menu"> </sl-menu>
+        <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
 
-  private renderTemplateList() {
-    const flowFns = [
-      orderBy(this.orderBy.field, this.orderBy.direction),
-      map(this.renderTemplateItem.bind(this)),
-    ];
-
-    if (this.filterByScheduled === true) {
-      flowFns.unshift(filter(({ schedule }: any) => Boolean(schedule)));
-    } else if (this.filterByScheduled === false) {
-      flowFns.unshift(filter(({ schedule }: any) => !schedule));
-    }
-
-    if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
-      flowFns.unshift(this.filterResults);
-    }
-
+  private renderMenuItems(workflow: Workflow) {
+    const isActive = false; // TODO isActive
     return html`
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${flow(...flowFns)(this.workflows)}
-      </div>
-    `;
-  }
-
-  private renderTemplateItem(crawlConfig: Workflow) {
-    const name = this.renderName(crawlConfig);
-    return html`<a
-      class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-      aria-label=${name}
-      href=${`/orgs/${this.orgId}/workflows/config/${crawlConfig.id}`}
-      @click=${this.navLink}
-    >
-      <header class="flex">
-        <div
-          class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-          title=${name}
-        >
-          ${name}
-        </div>
-
-        ${when(this.isCrawler, () => this.renderCardMenu(crawlConfig))}
-      </header>
-
-      <div class="px-3 pb-3 flex justify-between items-end text-0-800">
-        <div class="grid gap-2 text-xs leading-none">
-          <div class="overflow-hidden">
-            <sl-tooltip
-              content=${crawlConfig.config.seeds
-                .map((seed) => (typeof seed === "string" ? seed : seed.url))
-                .join(", ")}
-            >
-              <div class="font-mono whitespace-nowrap truncate text-0-500">
-                <span class="underline decoration-dashed"
-                  >${crawlConfig.config.seeds
-                    .map((seed) => (typeof seed === "string" ? seed : seed.url))
-                    .join(", ")}</span
-                >
-              </div>
-            </sl-tooltip>
-          </div>
-          <div class="font-mono text-purple-500">
-            ${crawlConfig.crawlCount === 1
-              ? msg(str`${crawlConfig.crawlCount} crawl`)
-              : msg(
-                  str`${(crawlConfig.crawlCount || 0).toLocaleString()} crawls`
-                )}
-          </div>
-          <div>
-            ${crawlConfig.crawlCount
-              ? html`<sl-tooltip>
-                  <span slot="content" class="capitalize">
-                    ${msg(
-                      str`Last Crawl: ${
-                        crawlConfig.lastCrawlState &&
-                        crawlConfig.lastCrawlState.replace(/_/g, " ")
-                      }`
-                    )}
-                  </span>
-                  <a
-                    class="font-medium hover:underline"
-                    href=${`/orgs/${this.orgId}/crawls/crawl/${crawlConfig.lastCrawlId}`}
-                    @click=${(e: any) => {
-                      e.stopPropagation();
-                      this.navLink(e);
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1 ${crawlConfig.lastCrawlState ===
-                      "failed"
-                        ? "text-neutral-400"
-                        : "text-purple-400"}"
-                      name=${crawlConfig.lastCrawlState === "complete"
-                        ? "check-circle-fill"
-                        : crawlConfig.lastCrawlState === "failed"
-                        ? "x-circle-fill"
-                        : "exclamation-circle-fill"}
-                    ></sl-icon
-                    ><sl-format-date
-                      class="inline-block align-middle text-neutral-600"
-                      date=${`${crawlConfig.lastCrawlTime}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                    ></sl-format-date>
-                  </a>
-                </sl-tooltip>`
-              : html`
-                  <sl-icon
-                    class="inline-block align-middle mr-1 text-0-400"
-                    name="slash-circle"
-                  ></sl-icon
-                  ><span class="inline-block align-middle text-0-400"
-                    >${msg("No finished crawls")}</span
-                  >
-                `}
-          </div>
-          <div>
-            ${crawlConfig.schedule
-              ? html`
-                  <sl-tooltip
-                    content=${msg(
-                      str`Next scheduled crawl: ${humanizeNextDate(
-                        crawlConfig.schedule
-                      )}`
-                    )}
-                  >
-                    <span>
-                      <sl-icon
-                        class="inline-block align-middle mr-1"
-                        name="clock-history"
-                      ></sl-icon
-                      ><span class="inline-block align-middle text-0-600"
-                        >${humanizeSchedule(crawlConfig.schedule, {
-                          length: "short",
-                        })}</span
-                      >
-                    </span>
-                  </sl-tooltip>
-                `
-              : html`<sl-icon
-                    class="inline-block align-middle mr-1 text-0-400"
-                    name="slash-circle"
-                  ></sl-icon
-                  ><span class="inline-block align-middle text-0-400"
-                    >${msg("No schedule")}</span
-                  >`}
-          </div>
-        </div>
-        ${this.renderCardFooter(crawlConfig)}
-      </div>
-    </a>`;
-  }
-
-  private renderCardMenu(t: Workflow) {
-    const menuItems: HTMLTemplateResult[] = [
-      html`
-        <li
-          class="p-2 hover:bg-zinc-100 cursor-pointer"
-          role="menuitem"
-          @click=${() => this.duplicateConfig(t)}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="files"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate Workflow")}</span
+      ${when(
+        isActive,
+        // HACK shoelace doesn't current have a way to override non-hover
+        // color without resetting the --sl-color-neutral-700 variable
+        () => html`
+          <sl-menu-item @click=${() => this.stop(workflow)}>
+            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            ${msg("Stop Crawl")}
+          </sl-menu-item>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => this.cancel(workflow)}
           >
-        </li>
-      `,
-    ];
-
-    if (!t.inactive && !this.runningCrawlsMap[t.id]) {
-      menuItems.unshift(html`
-        <li
-          class="p-2 hover:bg-zinc-100 cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            e.target.closest("sl-dropdown").hide();
-            this.navTo(`/orgs/${this.orgId}/workflows/config/${t.id}?edit`);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="pencil-square"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Edit Workflow")}</span
+            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
+            ${msg("Cancel Immediately")}
+          </sl-menu-item>
+        `,
+        () => html`
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--success)"
+            @click=${() => this.runNow(workflow)}
           >
-        </li>
-      `);
-    }
-
-    if (t.crawlCount && !t.inactive) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
-            this.deactivateTemplate(t);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-minus"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Deactivate")}</span
+            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
+            ${msg("Run Workflow")}
+          </sl-menu-item>
+        `
+      )}
+      <sl-divider></sl-divider>
+      <sl-menu-item
+        @click=${() =>
+          this.navTo(
+            `/orgs/${workflow.oid}/workflows/config/${workflow.id}?edit`
+          )}
+      >
+        <sl-icon name="gear" slot="prefix"></sl-icon>
+        ${msg("Edit Workflow Settings")}
+      </sl-menu-item>
+      <sl-menu-item
+        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(","))}
+        ?disabled=${!workflow.tags.length}
+      >
+        <sl-icon name="tags" slot="prefix"></sl-icon>
+        ${msg("Copy Tags")}
+      </sl-menu-item>
+      <sl-menu-item @click=${() => this.duplicateConfig(workflow)}>
+        <sl-icon name="files" slot="prefix"></sl-icon>
+        ${msg("Duplicate Workflow")}
+      </sl-menu-item>
+      ${when(!isActive, () => {
+        const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
+        return html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() =>
+              shouldDeactivate
+                ? this.deactivateTemplate(workflow)
+                : this.deleteTemplate(workflow)}
           >
-        </li>
-      `);
-    }
-
-    if (!t.crawlCount) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
-            this.deleteTemplate(t);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-x"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
-        </li>
-      `);
-    }
-
-    return html`
-      <sl-dropdown @click=${(e: any) => e.preventDefault()}>
-        <sl-icon-button
-          slot="trigger"
-          name="three-dots-vertical"
-          label=${msg("More")}
-          style="font-size: 1rem"
-        ></sl-icon-button>
-
-        <ul
-          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
-          ${menuItems.map((item: HTMLTemplateResult) => item)}
-        </ul>
-      </sl-dropdown>
-    `;
-  }
-
-  private renderCardFooter(t: Workflow) {
-    if (t.inactive) {
-      return "";
-    }
-
-    const crawlId = this.runningCrawlsMap[t.id];
-
-    if (crawlId) {
-      return html`
-        <button
-          class="text-xs border rounded px-2 h-7 bg-purple-50border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-          @click=${(e: any) => {
-            e.preventDefault();
-            this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}#watch`);
-          }}
-        >
-          <span class="whitespace-nowrap"> ${msg("Watch Crawl")} </span>
-        </button>
-      `;
-    }
-
-    if (!this.isCrawler) {
-      return "";
-    }
-
-    return html`
-      <div>
-        <button
-          class="text-xs border rounded px-2 h-7 bg-whiteborder-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-          @click=${(e: any) => {
-            e.preventDefault();
-            this.runNow(t);
-          }}
-        >
-          <span class="whitespace-nowrap"> ${msg("Run Now")} </span>
-        </button>
-      </div>
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${shouldDeactivate
+              ? msg("Deactivate Workflow")
+              : msg("Delete Workflow")}
+          </sl-menu-item>
+        `;
+      })}
     `;
   }
 
@@ -792,6 +547,50 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
+  private async cancel(workflow: Workflow) {
+    // TODO
+    // if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+    //   const data = await this.apiFetch(
+    //     `/orgs/${workflow.oid}/crawls/${workflow.id}/cancel`,
+    //     this.authState!,
+    //     {
+    //       method: "POST",
+    //     }
+    //   );
+    //   if (data.success === true) {
+    //     this.fetchCrawls();
+    //   } else {
+    //     this.notify({
+    //       message: msg("Something went wrong, couldn't cancel crawl."),
+    //       variant: "danger",
+    //       icon: "exclamation-octagon",
+    //     });
+    //   }
+    // }
+  }
+
+  private async stop(workflow: Workflow) {
+    // TODO
+    // if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+    //   const data = await this.apiFetch(
+    //     `/orgs/${workflow.oid}/crawls/${workflow.id}/stop`,
+    //     this.authState!,
+    //     {
+    //       method: "POST",
+    //     }
+    //   );
+    //   if (data.success === true) {
+    //     this.fetchCrawls();
+    //   } else {
+    //     this.notify({
+    //       message: msg("Something went wrong, couldn't stop crawl."),
+    //       variant: "danger",
+    //       icon: "exclamation-octagon",
+    //     });
+    //   }
+    // }
+  }
+
   private async runNow(crawlConfig: Workflow): Promise<void> {
     try {
       const data = await this.apiFetch(
@@ -832,61 +631,6 @@ export class WorkflowsList extends LiteElement {
             e.statusCode === 403 &&
             msg("You do not have permission to run crawls.")) ||
           msg("Sorry, couldn't run crawl at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async onSubmitSchedule(event: {
-    detail: { formData: FormData };
-  }): Promise<void> {
-    if (!this.selectedTemplateForEdit) return;
-
-    const { formData } = event.detail;
-    const interval = formData.get("scheduleInterval");
-    let schedule = "";
-
-    if (interval) {
-      schedule = getUTCSchedule({
-        interval: formData.get("scheduleInterval") as any,
-        hour: formData.get("scheduleHour") as any,
-        minute: formData.get("scheduleMinute") as any,
-        period: formData.get("schedulePeriod") as any,
-      });
-    }
-    const editedTemplateId = this.selectedTemplateForEdit.id;
-
-    try {
-      await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${editedTemplateId}`,
-        this.authState!,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ schedule }),
-        }
-      );
-
-      this.workflows = this.workflows?.map((t) =>
-        t.id === editedTemplateId
-          ? {
-              ...t,
-              schedule,
-            }
-          : t
-      );
-      this.showEditDialog = false;
-
-      this.notify({
-        message: msg("Successfully saved new schedule."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (e: any) {
-      console.error(e);
-
-      this.notify({
-        message: msg("Something went wrong, couldn't update schedule."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

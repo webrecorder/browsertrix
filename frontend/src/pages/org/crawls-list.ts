@@ -479,7 +479,7 @@ export class CrawlsList extends LiteElement {
         <sl-menu slot="menu">
           ${when(
             this.isCrawler,
-            this.renderCrawlerMenuItemsRenderer(crawl),
+            this.crawlerMenuItemsRenderer(crawl),
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -493,7 +493,7 @@ export class CrawlsList extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderCrawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+  private crawlerMenuItemsRenderer = (crawl: Crawl) => () =>
     html`
       ${when(
         isActive(crawl),
