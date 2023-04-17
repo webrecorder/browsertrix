@@ -27,6 +27,7 @@ import type { Crawl, Workflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
+import { isActive as isActiveState } from "../utils/crawler";
 
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
@@ -204,6 +205,12 @@ export class WorkflowListItem extends LitElement {
   @property({ type: Object })
   workflow?: Workflow;
 
+  @property({ type: Object })
+  runningCrawl?: {
+    id: Crawl["id"];
+    state: Crawl["state"];
+  };
+
   @query(".row")
   row!: HTMLElement;
 
@@ -238,10 +245,8 @@ export class WorkflowListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive = false; // TODO
-    // const isActive =
-    //   this.workflow &&
-    //   ["starting", "running", "stopping"].includes(this.workflow.state);
+    const isActive =
+      this.runningCrawl && isActiveState(this.runningCrawl.state);
 
     return html`<a
       class="item row"
@@ -272,7 +277,9 @@ export class WorkflowListItem extends LitElement {
             (workflow) =>
               html`
                 <btrix-crawl-status
-                  state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+                  state=${this.runningCrawl?.state ||
+                  workflow.lastCrawlState ||
+                  msg("No Crawls Yet")}
                 ></btrix-crawl-status>
               `
           )}
@@ -394,14 +401,21 @@ export class WorkflowListItem extends LitElement {
   }
 
   private renderLastUpdated(workflow: Workflow) {
-    const maxDate =
-      workflow.lastCrawlTime ||
-      workflow.lastCrawlStartTime ||
-      workflow.modified ||
-      workflow.created;
+    const maxDate = new Date(
+      Math.max(
+        ...[
+          workflow.lastCrawlTime,
+          workflow.lastCrawlStartTime,
+          workflow.modified,
+          workflow.created,
+        ]
+          .filter((date) => date)
+          .map((date) => new Date(`${date}Z`).getTime())
+      )
+    );
     return html`
       <sl-format-date
-        date=${`${maxDate}Z`}
+        date=${maxDate.toString()}
         month="2-digit"
         day="2-digit"
         year="2-digit"

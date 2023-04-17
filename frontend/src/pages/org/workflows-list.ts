@@ -8,22 +8,31 @@ import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import filter from "lodash/fp/filter";
 import Fuse from "fuse.js";
+import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Workflow, WorkflowParams } from "./types";
-import { isActive } from "../../utils/crawler";
+import type { Crawl, Workflow, WorkflowParams } from "./types";
+import {
+  activeCrawlStates,
+  inactiveCrawlStates,
+  isActive as isActiveState,
+} from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
 
 type RunningCrawlsMap = {
-  /** Map of configId: crawlId */
-  [configId: string]: string;
+  [configId: string]: {
+    id: Crawl["id"];
+    state: Crawl["state"];
+  };
 };
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
+const INITIAL_PAGE_SIZE = 50;
+const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFieldLabels = {
   created_desc: msg("Newest"),
@@ -92,6 +101,8 @@ export class WorkflowsList extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private timerId?: number;
+
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -104,10 +115,7 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      this.workflows = await this.fetchWorkflows();
-
-      // Update search/filter collection
-      this.fuse.setCollection(this.workflows as any);
+      this.fetchWorkflows();
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -115,12 +123,80 @@ export class WorkflowsList extends LiteElement {
         this.filterByCurrentUser.toString()
       );
     }
+    if (changedProperties.has("workflows") && this.workflows?.length) {
+      this.fetchCrawls();
+    }
+  }
+
+  disconnectedCallback(): void {
+    this.cancelInProgressGetCrawls();
+    super.disconnectedCallback();
+  }
+
+  /**
+   * Fetch running crawls and update internal state
+   */
+  private async fetchCrawls(): Promise<void> {
+    this.cancelInProgressGetCrawls();
+    try {
+      const crawls = await this.getCrawls();
+      const runningCrawlsMap: RunningCrawlsMap = {};
+
+      crawls.forEach((crawl) => {
+        runningCrawlsMap[crawl.cid] = {
+          id: crawl.id,
+          state: crawl.state,
+        };
+      });
+      this.runningCrawlsMap = runningCrawlsMap;
+    } catch (e: any) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve running crawls at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchCrawls();
+    }, 1000 * POLL_INTERVAL_SECONDS);
+  }
+
+  private cancelInProgressGetCrawls() {
+    window.clearTimeout(this.timerId);
+  }
+
+  private async getCrawls(): Promise<Crawl[]> {
+    if (!this.workflows?.length) {
+      return [];
+    }
+    const query = queryString.stringify(
+      {
+        // TODO handle paginated workflows
+        cid: this.workflows.map(({ id }) => id),
+        state: activeCrawlStates,
+        pageSize: INITIAL_PAGE_SIZE,
+      },
+      {
+        arrayFormat: "bracket",
+      }
+    );
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls?${query}`,
+      this.authState!
+    );
+
+    return data.items;
   }
 
   private async fetchWorkflows() {
     this.fetchErrorStatusCode = undefined;
     try {
-      return await this.getWorkflows();
+      this.workflows = await this.getWorkflows();
+
+      // Update search/filter collection
+      this.fuse.setCollection(this.workflows as any);
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;
@@ -132,6 +208,11 @@ export class WorkflowsList extends LiteElement {
         });
       }
     }
+  }
+
+  private isActive(workflow: Workflow): boolean {
+    const crawl = this.runningCrawlsMap[workflow.id];
+    return Boolean(crawl && isActiveState(crawl.state));
   }
 
   render() {
@@ -331,13 +412,16 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowItem = (workflow: Workflow) =>
     html`
-      <btrix-workflow-list-item .workflow=${workflow}>
+      <btrix-workflow-list-item
+        .workflow=${workflow}
+        .runningCrawl=${this.runningCrawlsMap[workflow.id]}
+      >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
 
   private renderMenuItems(workflow: Workflow) {
-    const isActive = false; // TODO isActive
+    const isActive = this.isActive(workflow);
     return html`
       ${when(
         isActive,
@@ -440,8 +524,7 @@ export class WorkflowsList extends LiteElement {
   };
 
   /**
-   * Fetch Workflows and record running crawls
-   * associated with the Workflows
+   * Fetch Workflows and update state
    **/
   private async getWorkflows(): Promise<Workflow[]> {
     const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
@@ -450,16 +533,6 @@ export class WorkflowsList extends LiteElement {
       `/orgs/${this.orgId}/crawlconfigs${params}`,
       this.authState!
     );
-
-    const runningCrawlsMap: RunningCrawlsMap = {};
-
-    data.items.forEach(({ id, currCrawlId }) => {
-      if (currCrawlId) {
-        runningCrawlsMap[id] = currCrawlId;
-      }
-    });
-
-    this.runningCrawlsMap = runningCrawlsMap;
 
     return data.items;
   }
@@ -601,7 +674,10 @@ export class WorkflowsList extends LiteElement {
 
       this.runningCrawlsMap = {
         ...this.runningCrawlsMap,
-        [crawlConfig.id]: crawlId,
+        [crawlConfig.id]: {
+          id: crawlId,
+          state: "starting",
+        },
       };
 
       this.notify({
