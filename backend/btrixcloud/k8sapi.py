@@ -81,26 +81,28 @@ class K8sAPI:
 
         return crawl_id
 
-    async def create_from_yaml(self, doc):
+    async def create_from_yaml(self, doc, namespace=None):
         """init k8s objects from yaml"""
         yml_document_all = yaml.safe_load_all(doc)
         k8s_objects = []
         for yml_document in yml_document_all:
             custom = self.custom_resources.get(yml_document["kind"])
             if custom is not None:
-                created = await self.create_custom_from_dict(custom, yml_document)
+                created = await self.create_custom_from_dict(
+                    custom, yml_document, namespace
+                )
             else:
                 created = await create_from_dict(
                     self.api_client,
                     yml_document,
                     verbose=False,
-                    namespace=self.namespace,
+                    namespace=namespace or self.namespace,
                 )
             k8s_objects.append(created)
 
         return k8s_objects
 
-    async def create_custom_from_dict(self, custom, doc):
+    async def create_custom_from_dict(self, custom, doc, namespace):
         """create custom from dict"""
         apiver = doc["apiVersion"].split("/")
         created = await self.custom_api.create_namespaced_custom_object(
@@ -108,7 +110,7 @@ class K8sAPI:
             version=apiver[1],
             plural=custom,
             body=doc,
-            namespace=self.namespace,
+            namespace=namespace or self.namespace,
         )
         return created
 

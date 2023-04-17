@@ -28,6 +28,8 @@ class CrawlManager(K8sAPI):
 
         self.crawler_node_type = os.environ.get("CRAWLER_NODE_TYPE", "")
 
+        self.cron_namespace = os.environ.get("CRON_NAMESPACE", "default")
+
         self._default_storages = {}
 
         self.loop = asyncio.get_running_loop()
@@ -353,7 +355,7 @@ class CrawlManager(K8sAPI):
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
 
         await self.batch_api.delete_collection_namespaced_cron_job(
-            namespace=self.namespace,
+            namespace=self.cron_namespace,
             label_selector=label,
             propagation_policy="Foreground",
         )
@@ -373,7 +375,7 @@ class CrawlManager(K8sAPI):
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=cron_job_id,
-                namespace=self.namespace,
+                namespace=self.cron_namespace,
             )
         # pylint: disable=bare-except
         except:
@@ -383,7 +385,7 @@ class CrawlManager(K8sAPI):
         if not crawlconfig.schedule:
             if cron_job:
                 await self.batch_api.delete_namespaced_cron_job(
-                    name=cron_job.metadata.name, namespace=self.namespace
+                    name=cron_job.metadata.name, namespace=self.cron_namespace
                 )
             return
 
@@ -393,7 +395,9 @@ class CrawlManager(K8sAPI):
                 cron_job.spec.schedule = crawlconfig.schedule
 
                 await self.batch_api.patch_namespaced_cron_job(
-                    name=cron_job.metadata.name, namespace=self.namespace, body=cron_job
+                    name=cron_job.metadata.name,
+                    namespace=self.cron_namespace,
+                    body=cron_job,
                 )
             return
 
@@ -407,7 +411,7 @@ class CrawlManager(K8sAPI):
 
         data = self.templates.env.get_template("crawl_cron_job.yaml").render(params)
 
-        await self.create_from_yaml(data)
+        await self.create_from_yaml(data, self.cron_namespace)
 
         return cron_job_id
 
