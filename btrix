@@ -8,6 +8,9 @@
 # The utility will check if microk8s is installed and if so
 # will preface all helm and kubectl commands with microk8s.
 #
+# Test commands require installing pytest first, e.g.:
+# python3 -m pip install pytest
+#
 # Usage:
 #
 # $ ./btrix bootstrap
