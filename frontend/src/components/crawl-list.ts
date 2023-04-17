@@ -27,6 +27,7 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
+const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
   .row {
@@ -34,14 +35,14 @@ const rowCss = css`
     grid-template-columns: 1fr;
   }
 
-  @media only screen and (min-width: 30rem) {
+  @media only screen and (min-width: ${mediumBreakpointCss}) {
     .row {
       grid-template-columns: repeat(2, 1fr);
     }
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 17rem 10rem 8rem 3rem;
+      grid-template-columns: 1fr 18rem 12rem 8rem 3rem;
     }
   }
 
@@ -82,10 +83,17 @@ export class CrawlListItem extends LitElement {
       .item {
         contain: content;
         content-visibility: auto;
-        contain-intrinsic-height: auto 2.5rem;
-        height: 2.5rem;
+        /* contain-intrinsic-height: auto 2.5rem;
+        height: 2.5rem; */
         cursor: pointer;
         overflow: hidden;
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .item {
+          contain-intrinsic-height: auto 2.5rem;
+          height: 2.5rem;
+        }
       }
 
       .dropdown {
@@ -145,6 +153,14 @@ export class CrawlListItem extends LitElement {
 
       .additionalUrls {
         color: var(--sl-color-neutral-500);
+      }
+
+      .status {
+        min-width: 6rem;
+      }
+
+      .fileSize {
+        min-width: 3rem;
       }
 
       .userName {
@@ -230,7 +246,7 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col">
-        <div class="detail">
+        <div class="detail status">
           ${this.safeRender(
             (crawl) => html`
               <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
@@ -259,15 +275,14 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col">
-        ${this.safeRender((crawl) =>
-          isActive
-            ? ""
-            : html`<div class="detail">
-                <sl-format-bytes
-                  value=${crawl.fileSize || 0}
-                  display="narrow"
-                ></sl-format-bytes>
-              </div>`
+        ${this.safeRender(
+          (crawl) =>
+            html`<div class="detail fileSize">
+              <sl-format-bytes
+                value=${crawl.fileSize || 0}
+                display="narrow"
+              ></sl-format-bytes>
+            </div>`
         )}
         <div class="desc truncate">
           ${this.safeRender((crawl) => {
@@ -468,7 +483,7 @@ export class CrawlList extends LitElement {
   render() {
     return html` <div class="listHeader row">
         <div class="col">${msg("Workflow Name")}</div>
-        <div class="col">${msg("Status")}</div>
+        <div class="col">${msg("Status & Date Completed")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Started By")}</div>
         <div class="col action">

@@ -29,6 +29,7 @@ import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
 import { isActive as isActiveState } from "../utils/crawler";
 
+const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
   .row {
@@ -36,7 +37,7 @@ const rowCss = css`
     grid-template-columns: 1fr;
   }
 
-  @media only screen and (min-width: 30rem) {
+  @media only screen and (min-width: ${mediumBreakpointCss}) {
     .row {
       grid-template-columns: repeat(2, 1fr);
     }
