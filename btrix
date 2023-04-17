@@ -2,6 +2,12 @@
 
 # ./btrix: Browsertrix Cloud dev environment utility
 #
+# Note: btrix helper expects a local.yaml file to exist in
+# the chart directory alongside values.yaml.
+#
+# The utility will check if microk8s is installed and if so
+# will preface all helm and kubectl commands with microk8s.
+#
 # Usage:
 #
 # $ ./btrix bootstrap
@@ -32,9 +38,25 @@ bootstrap(){
     helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
+bootstrapMicrok8s(){
+    echo "Building backend..."
+    ./scripts/build-backend.sh
+
+    echo "Building frontend..."
+    ./scripts/build-frontend.sh
+
+    echo "Installing..."
+    microk8s helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+}
+
 waitUntilReady(){
     echo "Waiting until ready..."
     kubectl wait --for=condition=ready pod --all --timeout=300s
+}
+
+waitUntilReadyMicrok8s(){
+    echo "Waiting until ready..."
+    microk8s kubectl wait --for=condition=ready pod --all --timeout=300s
 }
 
 reset(){
@@ -45,44 +67,74 @@ reset(){
     kubectl delete pvc --all
 }
 
-run_tests() {
+resetMicrok8s(){
+    echo "Uninstalling..."
+    microk8s helm uninstall btrix
+
+    echo "Deleting data..."
+    microk8s kubectl delete pvc --all
+}
+
+runTests() {
     echo "Running backend tests..."
     python -m pytest backend/test/*.py
 }
 
-run_nightly_tests() {
+runNightlyTests() {
     echo "Running nightly backend tests..."
     python -m pytest backend/test_nightly/*.py
 }
 
+microk8s=false
+
+if [[ $(microk8s) ]]; then
+    microk8s=true
+fi
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
 if [[ $1 = "bootstrap" ]]; then
-    bootstrap
+    if [ "$microk8s" = true ] ; then
+        bootstrapMicrok8s
+    else
+        bootstrap
+    fi
 
     if [[ $2 = "-wait" ]]; then
-        waitUntilReady
+        if [ "$microk8s" = true ] ; then
+            waitUntilReadyMicrok8s
+        else
+            waitUntilReady
+        fi
     fi
 fi
 
 # reset: uninstall, delete data, then bootstrap
 if [[ $1 = "reset" ]]; then
-    reset
-    bootstrap
+    if [ "$microk8s" = true ] ; then
+        resetMicrok8s
+        bootstrapMicrok8s
+    else
+        reset
+        bootstrap
+    fi
 
     if [[ $2 = "-wait" ]]; then
-        waitUntilReady
+        if [ "$microk8s" = true ] ; then
+            waitUntilReadyMicrok8s
+        else
+            waitUntilReady
+        fi
     fi
 fi
 
 # test: run backend tests
 if [[ $1 = "test" ]]; then
-    run_tests
+    runTests
 fi
 
 # nightly: run nightly backend tests
 if [[ $1 = "nightly" ]]; then
-    run_nightly_tests
+    runNightlyTests
 fi
 
 echo "Done"
