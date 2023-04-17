@@ -34,7 +34,7 @@ type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
-const INITIAL_PAGE_SIZE = 50;
+const INITIAL_PAGE_SIZE = 30;
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
 const sortableFields: Record<
