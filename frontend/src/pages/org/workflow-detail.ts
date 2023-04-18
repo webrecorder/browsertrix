@@ -144,8 +144,6 @@ export class WorkflowDetail extends LiteElement {
           </div>
         </header>
 
-        ${this.renderCurrentlyRunningNotice()}
-
         <section class="col-span-1 border rounded-lg py-2">
           ${this.renderDetails()}
         </section>
@@ -158,16 +156,13 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderTab("settings")}
 
           <btrix-tab-panel name="artifacts"
-            >${this.renderLastCrawl()}</btrix-tab-panel
+            >${this.renderArtifacts()}</btrix-tab-panel
           >
-          <btrix-tab-panel name="watch">Tab two content</btrix-tab-panel>
+          <btrix-tab-panel name="watch"
+            >${this.renderWatchCrawl()}</btrix-tab-panel
+          >
           <btrix-tab-panel name="settings">
-            <main class="border rounded-lg py-3 px-5">
-              <btrix-config-details
-                .crawlConfig=${this.workflow}
-                anchorLinks
-              ></btrix-config-details>
-            </main>
+            ${this.renderSettings()}
           </btrix-tab-panel>
         </btrix-tab-list>
       </div>
@@ -319,23 +314,6 @@ export class WorkflowDetail extends LiteElement {
     `;
   };
 
-  private renderCurrentlyRunningNotice() {
-    if (this.workflow?.currCrawlId) {
-      return html`
-        <a
-          class="col-span-1 flex items-center justify-between px-3 py-2 border rounded-lg bg-purple-50 border-purple-200 hover:border-purple-500 shadow shadow-purple-200 text-purple-800 transition-colors"
-          href=${`/orgs/${this.orgId}/crawls/crawl/${this.workflow.currCrawlId}`}
-          @click=${this.navLink}
-        >
-          <span>${msg("View currently running crawl")}</span>
-          <sl-icon name="arrow-right"></sl-icon>
-        </a>
-      `;
-    }
-
-    return "";
-  }
-
   private renderDetails() {
     if (!this.workflow) return;
 
@@ -380,35 +358,6 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderLastCrawl() {
-    if (!this.workflow?.lastCrawlId) return;
-    return html`
-      <section class="col-span-1">
-        <h3 class="text-lg font-semibold mb-2">
-          ${this.workflow.currCrawlId
-            ? msg("Last Completed Crawl")
-            : msg("Latest Crawl")}
-        </h3>
-        <btrix-crawl-list>
-          <btrix-crawl-list-item .crawl=${this.lastCrawl}>
-            <sl-menu slot="menu">
-              <sl-menu-item
-                @click=${() =>
-                  this.lastCrawl
-                    ? this.navTo(
-                        `/orgs/${this.orgId}/crawls/crawl/${this.lastCrawl.id}`
-                      )
-                    : false}
-              >
-                ${msg("View Crawl Details")}
-              </sl-menu-item>
-            </sl-menu>
-          </btrix-crawl-list-item>
-        </btrix-crawl-list>
-      </section>
-    `;
-  }
-
   private renderDetailItem(
     label: string | TemplateResult,
     renderContent: () => any,
@@ -428,6 +377,7 @@ export class WorkflowDetail extends LiteElement {
       )}
     `;
   }
+
   private renderName() {
     if (!this.workflow) return "";
     if (this.workflow.name) return this.workflow.name;
@@ -448,6 +398,42 @@ export class WorkflowDetail extends LiteElement {
       html`${firstSeedURL}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
+  }
+
+  private renderArtifacts() {
+    return html`
+      <section>
+        <btrix-crawl-list>
+          <btrix-crawl-list-item .crawl=${this.lastCrawl}>
+            <sl-menu slot="menu">
+              <sl-menu-item
+                @click=${() =>
+                  this.lastCrawl
+                    ? this.navTo(
+                        `/orgs/${this.orgId}/crawls/crawl/${this.lastCrawl.id}`
+                      )
+                    : false}
+              >
+                ${msg("View Crawl Details")}
+              </sl-menu-item>
+            </sl-menu>
+          </btrix-crawl-list-item>
+        </btrix-crawl-list>
+      </section>
+    `;
+  }
+
+  private renderWatchCrawl() {
+    return html`TODO`;
+  }
+
+  private renderSettings() {
+    return html`<section class="border rounded-lg py-3 px-5">
+      <btrix-config-details
+        .crawlConfig=${this.workflow}
+        anchorLinks
+      ></btrix-config-details>
+    </section>`;
   }
 
   private async getWorkflow(configId: string): Promise<Workflow> {
