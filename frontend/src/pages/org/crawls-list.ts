@@ -491,13 +491,6 @@ export class CrawlsList extends LiteElement {
     // color without resetting the --sl-color-neutral-700 variable
     html`
       <sl-menu-item
-        style="--sl-color-neutral-700: var(--success)"
-        @click=${() => this.runNow(crawl)}
-      >
-        <sl-icon name="play" slot="prefix"></sl-icon>
-        ${msg("Run Workflow")}
-      </sl-menu-item>
-      <sl-menu-item
         @click=${() => {
           this.crawlToEdit = crawl;
           this.isEditingCrawl = true;
