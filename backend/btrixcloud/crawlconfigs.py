@@ -841,6 +841,17 @@ class CrawlConfigOps:
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
         crawl_id = None
+
+        # ensure crawlconfig exists
+        try:
+            await self.crawl_manager.get_configmap(crawlconfig.id)
+        except:
+            # pylint: disable=broad-exception-raised,raise-missing-from
+            raise HTTPException(
+                status_code=404,
+                detail=f"crawl-config-{cid} missing, can not start crawl",
+            )
+
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)

@@ -128,14 +128,6 @@ class CrawlManager(K8sAPI):
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
 
-        try:
-            await self.core_api.read_namespaced_config_map(
-                name=f"crawl-config-{cid}", namespace=self.namespace
-            )
-        except:
-            # pylint: disable=broad-exception-raised,raise-missing-from
-            raise Exception(f"crawl-config-{cid} missing, can not start crawl")
-
         return await self.new_crawl_job(
             cid, userid, crawlconfig.scale, crawlconfig.crawlTimeout, manual=True
         )
@@ -258,6 +250,12 @@ class CrawlManager(K8sAPI):
             return {}
 
         return browser["metadata"]["labels"]
+
+    async def get_configmap(self, cid):
+        """get configmap by id"""
+        return await self.core_api.read_namespaced_config_map(
+            name=f"crawl-config-{cid}", namespace=self.namespace
+        )
 
     async def ping_profile_browser(self, browserid):
         """return ping profile browser"""
@@ -423,9 +421,7 @@ class CrawlManager(K8sAPI):
         crawl_timeout=None,
         update_config=False,
     ):
-        config_map = await self.core_api.read_namespaced_config_map(
-            name=f"crawl-config-{crawlconfig.id}", namespace=self.namespace
-        )
+        config_map = await self.get_configmap(crawlconfig.id)
 
         if scale is not None:
             config_map.data["INITIAL_SCALE"] = str(scale)
