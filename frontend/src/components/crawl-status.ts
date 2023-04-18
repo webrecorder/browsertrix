@@ -12,6 +12,9 @@ export class CrawlStatus extends LitElement {
   @property({ type: String })
   state?: CrawlState;
 
+  @property({ type: Boolean })
+  hideLabel = false;
+
   static styles = [
     animatePulse,
     css`
@@ -142,6 +145,9 @@ export class CrawlStatus extends LitElement {
 
   render() {
     const { icon, label } = CrawlStatus.getContent(this.state);
+    if (this.hideLabel) {
+      return icon;
+    }
     if (label) {
       return html`${icon}<span>${label}</span>`;
     }
