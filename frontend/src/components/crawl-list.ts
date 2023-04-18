@@ -426,12 +426,6 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-      .listHeader,
-      .list {
-        margin-left: var(--row-offset);
-        margin-right: var(--row-offset);
-      }
-
       .listHeader {
         line-height: 1;
       }
