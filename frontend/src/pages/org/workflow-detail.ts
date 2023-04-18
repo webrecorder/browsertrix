@@ -172,7 +172,7 @@ export class WorkflowDetail extends LiteElement {
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${`/orgs/${this.orgId}/workflows${
-            configId ? `/config/${configId}` : ""
+            configId ? `/config/${configId}` : "/crawls"
           }`}
           @click=${this.navLink}
         >

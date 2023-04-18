@@ -25,7 +25,12 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 
-export type OrgTab = "crawls" | "workflows" | "browser-profiles" | "settings";
+export type OrgTab =
+  | "crawls"
+  | "workflows"
+  | "artifacts"
+  | "browser-profiles"
+  | "settings";
 
 type Params = {
   crawlId?: string;
@@ -114,6 +119,7 @@ export class Org extends LiteElement {
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
+      case "artifacts":
       case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
@@ -156,10 +162,12 @@ export class Org extends LiteElement {
           ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Crawling"),
+            path: "workflows/crawls",
           })}
           ${this.renderNavTab({
-            tabName: "crawls",
+            tabName: "artifacts",
             label: msg("Finished Crawls"),
+            path: "artifacts/crawls",
           })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
@@ -180,14 +188,22 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
+  private renderNavTab({
+    tabName,
+    label,
+    path,
+  }: {
+    tabName: OrgTab;
+    label: string;
+    path?: string;
+  }) {
     const isActive = this.orgTab === tabName;
 
     return html`
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.orgId}/${tabName}`}
+        href=${`/orgs/${this.orgId}/${path || tabName}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -203,12 +219,14 @@ export class Org extends LiteElement {
   }
 
   private renderCrawls() {
-    const crawlsBaseUrl = `/orgs/${this.orgId}/crawls`;
+    const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+    const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
     if (this.params.crawlId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
         crawlId=${this.params.crawlId}
+        crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
@@ -218,8 +236,9 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
+      crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
-      ?shouldFetch=${this.orgTab === "crawls"}
+      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
     ></btrix-crawls-list>`;
   }
 

@@ -70,7 +70,7 @@ export class WorkflowsNew extends LiteElement {
   }
 
   private renderHeader() {
-    let href = `/orgs/${this.orgId}/workflows`;
+    let href = `/orgs/${this.orgId}/workflows/crawls`;
     let label = msg("Back to Crawl Workflows");
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
