@@ -644,8 +644,8 @@ export class CrawlsList extends LiteElement {
     const state = this.filterBy.state || finishedCrawlStates;
     const query = queryString.stringify(
       {
-        ...this.filterBy,
-        state,
+        // ...this.filterBy,
+        // state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,

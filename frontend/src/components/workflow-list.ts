@@ -27,7 +27,6 @@ import type { Crawl, Workflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
-import { isActive as isActiveState } from "../utils/crawler";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -206,13 +205,6 @@ export class WorkflowListItem extends LitElement {
   @property({ type: Object })
   workflow?: Workflow;
 
-  @property({ type: Object })
-  runningCrawl?: {
-    id: Crawl["id"];
-    state: Crawl["state"];
-    started: Crawl["started"];
-  };
-
   @property({ type: Date })
   lastUpdated?: Date;
 
@@ -250,9 +242,6 @@ export class WorkflowListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive =
-      this.runningCrawl && isActiveState(this.runningCrawl.state);
-
     return html`<a
       class="item row"
       role="button"
@@ -291,26 +280,23 @@ export class WorkflowListItem extends LitElement {
       </div>
       <div class="col">
         <div class="detail">
-          ${this.safeRender((workflow) =>
-            isActive
-              ? html`
-                  <btrix-crawl-status
-                    state=${this.runningCrawl?.state}
-                  ></btrix-crawl-status>
-                `
-              : html`
-                  <btrix-crawl-status
-                    state=${workflow.lastCrawlState || msg("No Crawls Yet")}
-                  ></btrix-crawl-status>
-                `
+          ${this.safeRender(
+            (workflow) =>
+              html`
+                <btrix-crawl-status
+                  state=${workflow.currCrawlState ||
+                  workflow.lastCrawlState ||
+                  msg("No Crawls Yet")}
+                ></btrix-crawl-status>
+              `
           )}
         </div>
         <div class="desc duration">
           ${this.safeRender((workflow) => {
-            if (this.runningCrawl) {
+            if (workflow.currCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
-                new Date(`${this.runningCrawl.started}Z`).valueOf();
+                new Date(`${workflow.currCrawlStartTime}Z`).valueOf();
               if (diff < 1000) {
                 return "";
               }

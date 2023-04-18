@@ -64,7 +64,9 @@ export type Workflow = CrawlConfig & {
   lastCrawlTime: string; // when last crawl finished
   lastCrawlState: CrawlState;
   lastStartedByName: string | null;
-  currCrawlId: string;
+  currCrawlId: string | null;
+  currCrawlState: CrawlState | null;
+  currCrawlStartTime: string | null;
   inactive: boolean;
   firstSeed: string;
 };

@@ -13,22 +13,10 @@ import queryString from "query-string";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams } from "./types";
-import {
-  activeCrawlStates,
-  inactiveCrawlStates,
-  isActive as isActiveState,
-} from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
 
-type RunningCrawlsMap = {
-  [configId: string]: {
-    id: Crawl["id"];
-    state: Crawl["state"];
-    started: Crawl["started"];
-  };
-};
 type SortField = "_lastUpdated" | "_name";
 type SortDirection = "asc" | "desc";
 
@@ -73,9 +61,6 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   workflows?: Workflow[];
-
-  @state()
-  runningCrawlsMap: RunningCrawlsMap = {};
 
   @state()
   showEditDialog?: boolean = false;
@@ -139,82 +124,21 @@ export class WorkflowsList extends LiteElement {
   }
 
   disconnectedCallback(): void {
-    this.cancelInProgressGetCrawls();
+    this.cancelInProgressGetWorkflows();
     super.disconnectedCallback();
-  }
-
-  /**
-   * Fetch running crawls and update internal state
-   */
-  private async fetchCrawls(workflows: Workflow[]): Promise<void> {
-    this.cancelInProgressGetCrawls();
-    try {
-      const crawls = await this.getCrawls(workflows);
-      const runningCrawlsMap: RunningCrawlsMap = {};
-
-      crawls.forEach((crawl) => {
-        if (inactiveCrawlStates.includes(crawl.state)) {
-          return;
-        }
-        runningCrawlsMap[crawl.cid] = {
-          id: crawl.id,
-          state: crawl.state,
-          started: crawl.started,
-        };
-      });
-      this.runningCrawlsMap = runningCrawlsMap;
-    } catch (e: any) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve running crawls at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      this.fetchCrawls(this.workflows || []);
-    }, 1000 * POLL_INTERVAL_SECONDS);
-  }
-
-  private cancelInProgressGetCrawls() {
-    window.clearTimeout(this.timerId);
-  }
-
-  private async getCrawls(workflows: Workflow[]): Promise<Crawl[]> {
-    if (!workflows?.length) {
-      return [];
-    }
-    const query = queryString.stringify(
-      {
-        // TODO handle paginated workflows
-        cid: workflows.map(({ id }) => id),
-        state: activeCrawlStates.join(","),
-        pageSize: INITIAL_PAGE_SIZE,
-      },
-      {
-        arrayFormat: "bracket",
-      }
-    );
-    const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!
-    );
-
-    return data.items;
   }
 
   private async fetchWorkflows() {
     this.fetchErrorStatusCode = undefined;
+
+    this.cancelInProgressGetWorkflows();
+
     try {
       const workflows = await this.getWorkflows();
-      // Update search/filter collection
-      this.fuse.setCollection(workflows as any);
-
-      await this.fetchCrawls(
-        workflows.filter(({ currCrawlId }) => currCrawlId)
-      );
       this.workflows = workflows;
+
+      // Update search/filter collection
+      this.fuse.setCollection(this.workflows as any);
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;
@@ -226,6 +150,15 @@ export class WorkflowsList extends LiteElement {
         });
       }
     }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchWorkflows();
+    }, 1000 * POLL_INTERVAL_SECONDS);
+  }
+
+  private cancelInProgressGetWorkflows() {
+    window.clearTimeout(this.timerId);
   }
 
   render() {
@@ -418,7 +351,6 @@ export class WorkflowsList extends LiteElement {
     html`
       <btrix-workflow-list-item
         .workflow=${workflow}
-        .runningCrawl=${this.runningCrawlsMap[workflow.id]}
         lastUpdated=${this.workflowLastUpdated(workflow)}
       >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
@@ -426,21 +358,19 @@ export class WorkflowsList extends LiteElement {
     `;
 
   private renderMenuItems(workflow: Workflow) {
-    const activeCrawl = this.runningCrawlsMap[workflow.id];
-
     return html`
       ${when(
-        activeCrawl,
+        workflow.currCrawlId,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
-          <sl-menu-item @click=${() => this.stop(activeCrawl)}>
+          <sl-menu-item @click=${() => this.stop(workflow.currCrawlId)}>
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(activeCrawl)}
+            @click=${() => this.cancel(workflow.currCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
             ${msg("Cancel Immediately")}
@@ -477,7 +407,7 @@ export class WorkflowsList extends LiteElement {
         <sl-icon name="files" slot="prefix"></sl-icon>
         ${msg("Duplicate Workflow")}
       </sl-menu-item>
-      ${when(!activeCrawl, () => {
+      ${when(!workflow.currCrawlId, () => {
         const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
         return html`
           <sl-divider></sl-divider>
@@ -520,11 +450,10 @@ export class WorkflowsList extends LiteElement {
   }
 
   private workflowLastUpdated(workflow: Workflow): Date {
-    const runningCrawl = this.runningCrawlsMap[workflow.id];
     return new Date(
       Math.max(
         ...[
-          runningCrawl?.started,
+          workflow.currCrawlStartTime,
           workflow.lastCrawlTime,
           workflow.lastCrawlStartTime,
           workflow.modified,
@@ -639,10 +568,11 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async cancel(crawl: RunningCrawlsMap[keyof RunningCrawlsMap]) {
+  private async cancel(crawlId: Workflow["currCrawlId"]) {
+    if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${crawl.id}/cancel`,
+        `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -660,10 +590,11 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async stop(crawl: RunningCrawlsMap[keyof RunningCrawlsMap]) {
+  private async stop(crawlId: Workflow["currCrawlId"]) {
+    if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${crawl.id}/stop`,
+        `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -683,7 +614,6 @@ export class WorkflowsList extends LiteElement {
 
   private async runNow(crawlConfig: Workflow): Promise<void> {
     try {
-      const startDate = new Date();
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
         this.authState!,
@@ -691,21 +621,6 @@ export class WorkflowsList extends LiteElement {
           method: "POST",
         }
       );
-
-      const crawlId = data.started;
-
-      this.runningCrawlsMap = {
-        ...this.runningCrawlsMap,
-        [crawlConfig.id]: {
-          id: crawlId,
-          state: "starting",
-          // Backend returns ISO string without Z
-          started: startDate.toISOString().replace(/Z$/, ""),
-        },
-      };
-
-      // Scroll to top of list
-      this.scrollIntoView({ behavior: "smooth" });
 
       this.notify({
         message: msg(
@@ -723,6 +638,10 @@ export class WorkflowsList extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
+
+      await this.fetchWorkflows();
+      // Scroll to top of list
+      this.scrollIntoView({ behavior: "smooth" });
     } catch (e: any) {
       this.notify({
         message:
