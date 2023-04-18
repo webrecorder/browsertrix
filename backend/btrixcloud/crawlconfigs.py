@@ -615,21 +615,13 @@ class CrawlConfigOps:
         )
         running = {}
         for crawl in crawls:
-            running[crawl.cid] = {
-                "id": crawl.id,
-                "started": crawl.started,
-                "state": crawl.state,
-            }
+            running[crawl.cid] = crawl
 
         configs = []
         for res in items:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
-            data = running.get(config.id)
-            if data:
-                config.currCrawlId = data["id"]
-                config.currCrawlStartTime = data["started"]
-                config.currCrawlState = data["state"]
+            self._add_curr_crawl_stats(config, running.get(config.id))
             configs.append(config)
 
         return configs, total
@@ -670,6 +662,15 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
         return crawlconfig
 
+    async def _add_curr_crawl_stats(self, crawlconfig, crawl):
+        """Add stats from current running crawl, if any"""
+        if not crawl:
+            return
+
+        crawlconfig.currCrawlId = crawl.id
+        crawlconfig.currCrawlStartTime = crawl.started
+        crawlconfig.currCrawlState = crawl.state
+
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
         also include inactive crawl configs"""
@@ -683,11 +684,9 @@ class CrawlConfigOps:
             )
 
         if not crawlconfig.inactive:
-            curr_crawl = await self.get_running_crawl(crawlconfig)
-            if curr_crawl:
-                crawlconfig.currCrawlId = curr_crawl.id
-                crawlconfig.currCrawlStartTime = curr_crawl.started
-                crawlconfig.currCrawlState = curr_crawl.state
+            self._add_curr_crawl_stats(
+                crawlconfig, await self.get_running_crawl(crawlconfig)
+            )
 
         user = await self.user_manager.get(crawlconfig.createdBy)
         # pylint: disable=invalid-name
