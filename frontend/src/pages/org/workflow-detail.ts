@@ -8,6 +8,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
+import { APIPaginatedList } from "../../types/api";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -39,7 +40,7 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private lastCrawl?: Crawl;
+  private crawls: Crawl[] = [];
 
   @state()
   private activePanel: Tab = "artifacts";
@@ -54,7 +55,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("Finished Crawls"),
+    artifacts: msg("Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -92,10 +93,12 @@ export class WorkflowDetail extends LiteElement {
 
   private async initWorkflow() {
     try {
-      const crawlConfig = await this.getWorkflow(this.workflowId);
-      this.workflow = crawlConfig;
-      if (this.workflow.lastCrawlId)
-        this.lastCrawl = await this.getCrawl(this.workflow.lastCrawlId);
+      const [workflow, crawls] = await Promise.all([
+        this.getWorkflow(),
+        this.getCrawls(),
+      ]);
+      this.workflow = workflow;
+      this.crawls = crawls;
     } catch (e: any) {
       this.notify({
         message:
@@ -293,9 +296,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() =>
-              shouldDeactivate
-                ? this.deactivateTemplate()
-                : this.deleteTemplate()}
+              shouldDeactivate ? this.deactivate() : this.delete()}
           >
             <sl-icon name="trash" slot="prefix"></sl-icon>
             ${
@@ -404,20 +405,22 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <section>
         <btrix-crawl-list>
-          <btrix-crawl-list-item .crawl=${this.lastCrawl}>
-            <sl-menu slot="menu">
-              <sl-menu-item
-                @click=${() =>
-                  this.lastCrawl
-                    ? this.navTo(
-                        `/orgs/${this.orgId}/crawls/crawl/${this.lastCrawl.id}`
-                      )
-                    : false}
-              >
-                ${msg("View Crawl Details")}
-              </sl-menu-item>
-            </sl-menu>
-          </btrix-crawl-list-item>
+          ${this.crawls.map(
+            (crawl) => html`
+              <btrix-crawl-list-item .crawl=${crawl}>
+                <sl-menu slot="menu">
+                  <sl-menu-item
+                    @click=${() =>
+                      this.navTo(
+                        `/orgs/${this.orgId}/crawls/crawl/${crawl.id}`
+                      )}
+                  >
+                    ${msg("View Crawl Details")}
+                  </sl-menu-item>
+                </sl-menu>
+              </btrix-crawl-list-item>
+            `
+          )}
         </btrix-crawl-list>
       </section>
     `;
@@ -436,22 +439,22 @@ export class WorkflowDetail extends LiteElement {
     </section>`;
   }
 
-  private async getWorkflow(configId: string): Promise<Workflow> {
+  private async getWorkflow(): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
-      `/orgs/${this.orgId}/crawlconfigs/${configId}`,
+      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
       this.authState!
     );
 
     return data;
   }
 
-  private async getCrawl(crawlId: string): Promise<Crawl> {
-    const data: Crawl = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${crawlId}`,
+  private async getCrawls(): Promise<Crawl[]> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls?cid=${this.workflowId}`,
       this.authState!
     );
 
-    return data;
+    return data.items;
   }
 
   /**
@@ -479,7 +482,7 @@ export class WorkflowDetail extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(): Promise<void> {
+  private async deactivate(): Promise<void> {
     if (!this.workflow) return;
 
     try {
@@ -510,7 +513,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async deleteTemplate(): Promise<void> {
+  private async delete(): Promise<void> {
     if (!this.workflow) return;
 
     const isDeactivating = this.workflow.crawlCount > 0;
@@ -555,7 +558,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        // this.fetchWorkflows();
+        this.initWorkflow();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -577,7 +580,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        // this.fetchWorkflows();
+        this.initWorkflow();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -597,13 +600,7 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
-
-      const crawlId = data.started;
-
-      this.workflow = {
-        ...this.workflow,
-        currCrawlId: crawlId,
-      } as Workflow;
+      this.initWorkflow();
 
       this.notify({
         message: msg(
