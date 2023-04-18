@@ -121,7 +121,7 @@ export class CrawlListItem extends LitElement {
         text-overflow: ellipsis;
       }
 
-      .desc:last-child {
+      .desc:nth-child(2) {
         margin-left: 1rem;
         color: var(--sl-color-neutral-400);
       }
@@ -215,10 +215,6 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive =
-      this.crawl &&
-      ["starting", "running", "stopping"].includes(this.crawl.state);
-
     return html`<a
       class="item row"
       role="button"
@@ -244,73 +240,87 @@ export class CrawlListItem extends LitElement {
                 state=${workflow.state}
                 hideLabel
               ></btrix-crawl-status>
-              ${this.renderName(workflow)}
+              <slot name="id">${this.renderName(workflow)}</slot>
             `
           )}
         </div>
       </div>
       <div class="col">
         <div class="desc">
-          ${this.safeRender(
-            (crawl) => html`
-              <sl-format-date
-                date=${`${crawl.finished}Z`}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>
-            `
-          )}
-        </div>
-        <div class="desc truncate">
           ${this.safeRender((crawl) =>
-            msg(
-              str`in ${RelativeDuration.humanize(
-                new Date(`${crawl.finished}Z`).valueOf() -
-                  new Date(`${crawl.started}Z`).valueOf()
-              )}`
-            )
+            crawl.finished
+              ? html`
+                  <sl-format-date
+                    date=${`${crawl.finished}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                `
+              : msg(
+                  str`Running for ${RelativeDuration.humanize(
+                    new Date().valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf()
+                  )}`
+                )
           )}
         </div>
+        ${this.safeRender((crawl) =>
+          crawl.finished
+            ? html`<div class="desc truncate">
+                ${msg(
+                  str`in ${RelativeDuration.humanize(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf()
+                  )}`
+                )}
+              </div>`
+            : ""
+        )}
       </div>
       <div class="col">
-        ${this.safeRender(
-          (crawl) =>
-            html`<div class="desc fileSize">
+        ${this.safeRender((crawl) => {
+          if (crawl.finished) {
+            return html`<div class="desc fileSize">
               <sl-format-bytes
                 value=${crawl.fileSize || 0}
                 display="narrow"
               ></sl-format-bytes>
-            </div>`
-        )}
-        <div class="desc pages truncate">
-          ${this.safeRender((crawl) => {
+            </div>`;
+          }
+          const pagesComplete = +(crawl.stats?.done || 0);
+          const pagesFound = +(crawl.stats?.found || 0);
+          return html` <div class="desc">
+            ${pagesFound === 1
+              ? msg(
+                  str`${this.numberFormatter.format(
+                    pagesComplete
+                  )} / ${this.numberFormatter.format(pagesFound)} page`
+                )
+              : msg(
+                  str`${this.numberFormatter.format(
+                    pagesComplete
+                  )} / ${this.numberFormatter.format(pagesFound)} pages`
+                )}
+          </div>`;
+        })}
+        ${this.safeRender((crawl) => {
+          if (crawl.finished) {
             const pagesComplete = +(crawl.stats?.done || 0);
-            if (isActive) {
-              const pagesFound = +(crawl.stats?.found || 0);
-              return html`
-                ${pagesFound === 1
-                  ? msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} page`
-                    )
-                  : msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} pages`
-                    )}
-              `;
-            }
             return html`
-              ${pagesComplete === 1
-                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
-                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`)}
+              <div class="desc pages truncate">
+                ${pagesComplete === 1
+                  ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
+                  : msg(
+                      str`${this.numberFormatter.format(pagesComplete)} pages`
+                    )}
+              </div>
             `;
-          })}
-        </div>
+          }
+          return "";
+        })}
       </div>
       <div class="col">
         <div class="detail truncate">
@@ -477,7 +487,9 @@ export class CrawlList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Workflow")}</div>
+        <div class="col">
+          <slot name="idCol">${msg("Workflow")}</slot>
+        </div>
         <div class="col">${msg("Finished")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Started By")}</div>

@@ -405,9 +405,19 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <section>
         <btrix-crawl-list>
+          <span slot="idCol">${msg("Start Time")}</span>
           ${this.crawls.map(
             (crawl) => html`
               <btrix-crawl-list-item .crawl=${crawl}>
+                <sl-format-date
+                  slot="id"
+                  date=${`${crawl.started}Z`}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></sl-format-date>
                 <sl-menu slot="menu">
                   <sl-menu-item
                     @click=${() =>
@@ -450,7 +460,7 @@ export class WorkflowDetail extends LiteElement {
 
   private async getCrawls(): Promise<Crawl[]> {
     const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls?cid=${this.workflowId}`,
+      `/orgs/${this.orgId}/crawls?cid=${this.workflowId}&sortBy=started`,
       this.authState!
     );
 
