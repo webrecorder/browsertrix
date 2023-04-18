@@ -3,6 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
+import { CopyButton } from "../../components/copy-button";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
@@ -117,30 +118,7 @@ export class WorkflowDetail extends LiteElement {
           <div class="flex-0 flex justify-end">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
-              () => html`
-                <sl-tooltip
-                  content=${msg(
-                    "Workflow cannot be edited while crawl is running."
-                  )}
-                  ?disabled=${!this.workflow!.currCrawlId}
-                >
-                  <sl-button
-                    href=${`/orgs/${this.orgId}/workflows/config/${
-                      this.workflow!.id
-                    }?edit`}
-                    variant="primary"
-                    size="small"
-                    class="mr-2"
-                    @click=${this.navLink}
-                    ?disabled=${this.workflow!.currCrawlId}
-                  >
-                    <sl-icon slot="prefix" name="gear"></sl-icon>
-                    ${msg("Edit Workflow")}
-                  </sl-button>
-                </sl-tooltip>
-
-                ${this.renderMenu()}
-              `
+              this.renderMenu
             )}
           </div>
         </header>
@@ -208,110 +186,91 @@ export class WorkflowDetail extends LiteElement {
     ></btrix-workflow-editor>
   `;
 
-  private renderMenu() {
+  private renderMenu = () => {
     if (!this.workflow) return;
-
-    const closeDropdown = (e: any) => {
-      e.target.closest("sl-dropdown").hide();
-    };
-
-    const menuItems: HTMLTemplateResult[] = [
-      html`
-        <li
-          class="p-2 hover:bg-zinc-100 cursor-pointer"
-          role="menuitem"
-          @click=${() => this.duplicateConfig()}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="files"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate Workflow")}</span
-          >
-        </li>
-      `,
-    ];
-
-    if (!this.workflow.inactive && !this.workflow.currCrawlId) {
-      menuItems.unshift(html`
-        <li
-          class="p-2 hover:bg-purple-50 cursor-pointer text-purple-600"
-          role="menuitem"
-          @click=${(e: any) => {
-            closeDropdown(e);
-            this.runNow();
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="arrow-right-circle"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2">${msg("Run now")}</span>
-        </li>
-        <hr />
-      `);
-    }
-
-    if (
-      this.workflow.crawlCount &&
-      !this.workflow.inactive &&
-      !this.workflow.currCrawlId
-    ) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            closeDropdown(e);
-
-            this.deactivateTemplate();
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-minus"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Deactivate")}</span
-          >
-        </li>
-      `);
-    }
-
-    if (!this.workflow.crawlCount && !this.workflow.currCrawlId) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            this.deleteTemplate();
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-x"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
-        </li>
-      `);
-    }
+    const workflow = this.workflow;
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
+        <sl-menu>
+          ${when(
+            workflow.currCrawlId,
+            // HACK shoelace doesn't current have a way to override non-hover
+            // color without resetting the --sl-color-neutral-700 variable
+            () => html`
+              <sl-menu-item @click=${() => this.stop()}>
+                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+                ${msg("Stop Crawl")}
+              </sl-menu-item>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.cancel()}
+              >
+                <sl-icon name="x-octagon" slot="prefix"></sl-icon>
+                ${msg("Cancel Immediately")}
+              </sl-menu-item>
+            `,
+            () => html`
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--success)"
+                @click=${() => this.runNow()}
+              >
+                <sl-icon name="play" slot="prefix"></sl-icon>
+                ${msg("Run Workflow")}
+              </sl-menu-item>
+            `
+          )}
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${workflow.oid}/workflows/config/${workflow.id}?edit`
+              )}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Workflow Settings")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard(workflow.tags.join(","))}
+            ?disabled=${!workflow.tags.length}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => this.duplicateConfig()}>
+            <sl-icon name="files" slot="prefix"></sl-icon>
+            ${msg("Duplicate Workflow")}
+          </sl-menu-item>
+          ${when(!workflow.currCrawlId, () => {
+            const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
+            return html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() =>
+              shouldDeactivate
+                ? this.deactivateTemplate()
+                : this.deleteTemplate()}
+          >
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${
+              shouldDeactivate
+                ? msg("Deactivate Workflow")
+                : msg("Delete Workflow")
+            }
+          </sl-menu-item>
+            </sl-menu>
 
-        <ul
-          class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
-          ${menuItems.map((item: HTMLTemplateResult) => item)}
-        </ul>
       </sl-dropdown>
+        `;
+          })}
+        </sl-menu></sl-dropdown
+      >
     `;
-  }
+  };
 
   private renderCurrentlyRunningNotice() {
     if (this.workflow?.currCrawlId) {
@@ -549,6 +508,50 @@ export class WorkflowDetail extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private async cancel() {
+    if (!this.workflow?.currCrawlId) return;
+    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        // this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't cancel crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private async stop() {
+    if (!this.workflow?.currCrawlId) return;
+    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        // this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't stop crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
