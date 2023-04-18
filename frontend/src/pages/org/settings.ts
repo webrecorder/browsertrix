@@ -110,7 +110,7 @@ export class OrgSettings extends LiteElement {
         <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
       </header>
 
-      <btrix-tab-list activePanel=${this.activePanel} ?hideIndicator=${true}>
+      <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
         <header slot="header" class="flex items-end justify-between h-5">
           ${when(
             this.activePanel === "members",

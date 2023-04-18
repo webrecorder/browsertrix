@@ -306,7 +306,6 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
-    // const activePanel = this.
     const activePanel = this.orgPath.includes("/members")
       ? "members"
       : "information";

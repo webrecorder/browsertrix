@@ -9,6 +9,9 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 
+const SECTIONS = ["artifacts", "watch", "settings"] as const;
+type Tab = (typeof SECTIONS)[number];
+
 /**
  * Usage:
  * ```ts
@@ -39,6 +42,9 @@ export class WorkflowDetail extends LiteElement {
   private lastCrawl?: Crawl;
 
   @state()
+  private activePanel: Tab = "artifacts";
+
+  @state()
   private isSubmittingUpdate: boolean = false;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
@@ -46,6 +52,21 @@ export class WorkflowDetail extends LiteElement {
     "seed-crawl": msg("Seeded Crawl"),
     custom: msg("Custom"),
   };
+
+  private readonly tabLabels: Record<Tab, string> = {
+    artifacts: msg("Finished Crawls"),
+    watch: msg("Watch Crawl"),
+    settings: msg("Workflow Settings"),
+  };
+
+  connectedCallback(): void {
+    // Set initial active section based on URL #hash value
+    const hash = window.location.hash.slice(1);
+    if (SECTIONS.includes(hash as any)) {
+      this.activePanel = hash as Tab;
+    }
+    super.connectedCallback();
+  }
 
   willUpdate(changedProperties: Map<string, any>) {
     if (
@@ -129,17 +150,26 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderDetails()}
         </section>
 
-        ${this.renderLastCrawl()}
+        <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
+          <header slot="header" class="flex items-end justify-between h-5">
+            <h3>${this.tabLabels[this.activePanel]}</h3>
+          </header>
+          ${this.renderTab("artifacts")} ${this.renderTab("watch")}
+          ${this.renderTab("settings")}
 
-        <div class="col-span-1">
-          <h3 class="text-lg font-semibold mb-2">${msg("Crawl Settings")}</h3>
-          <main class="border rounded-lg py-3 px-5">
-            <btrix-config-details
-              .crawlConfig=${this.workflow}
-              anchorLinks
-            ></btrix-config-details>
-          </main>
-        </div>
+          <btrix-tab-panel name="artifacts"
+            >${this.renderLastCrawl()}</btrix-tab-panel
+          >
+          <btrix-tab-panel name="watch">Tab two content</btrix-tab-panel>
+          <btrix-tab-panel name="settings">
+            <main class="border rounded-lg py-3 px-5">
+              <btrix-config-details
+                .crawlConfig=${this.workflow}
+                anchorLinks
+              ></btrix-config-details>
+            </main>
+          </btrix-tab-panel>
+        </btrix-tab-list>
       </div>
     `;
   }
@@ -165,6 +195,23 @@ export class WorkflowDetail extends LiteElement {
           >
         </a>
       </nav>
+    `;
+  }
+
+  private renderTab(tabName: Tab) {
+    const isActive = tabName === this.activePanel;
+    return html`
+      <a
+        slot="nav"
+        href=${`/orgs/${this.orgId}/workflows/config/${this.workflow?.id}#${tabName}`}
+        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+          ? "text-blue-600 bg-blue-50 shadow-sm"
+          : "text-neutral-600 hover:bg-neutral-50"}"
+        @click=${() => (this.activePanel = tabName)}
+        aria-selected=${isActive}
+      >
+        ${this.tabLabels[tabName]}
+      </a>
     `;
   }
 
