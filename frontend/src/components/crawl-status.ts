@@ -70,7 +70,7 @@ export class CrawlStatus extends LitElement {
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--success)"
+          style="color: var(--sl-color-purple-600)"
         ></sl-icon>`;
         label = msg("Starting");
         break;
@@ -94,7 +94,7 @@ export class CrawlStatus extends LitElement {
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--danger)"
+          style="color: var(--sl-color-purple-600)"
         ></sl-icon>`;
         label = msg("Stopping");
         break;
@@ -130,6 +130,7 @@ export class CrawlStatus extends LitElement {
         icon = html`<sl-icon
           name="exclamation-circle"
           slot="prefix"
+          style="color: var(--warning)"
         ></sl-icon>`;
         label = msg("Timed Out");
         break;
