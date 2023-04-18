@@ -323,9 +323,13 @@ export class WorkflowListItem extends LitElement {
         <div class="detail"><span>---</span></div>
         <div class="desc">
           ${this.safeRender((workflow) =>
-            workflow.crawlCount === 1
-              ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(str`${(workflow.crawlCount ?? 0).toLocaleString()} crawls`)
+            workflow.crawlAttemptCount === 1
+              ? msg(str`${workflow.crawlAttemptCount} crawl`)
+              : msg(
+                  str`${(
+                    workflow.crawlAttemptCount ?? 0
+                  ).toLocaleString()} crawls`
+                )
           )}
         </div>
       </div>

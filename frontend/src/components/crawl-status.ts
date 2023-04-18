@@ -23,18 +23,19 @@ export class CrawlStatus extends LitElement {
         color: var(--sl-color-neutral-700);
       }
 
-      .wrapper {
+      .wrapper,
+      .icon-only {
         display: flex;
         align-items: center;
       }
 
       sl-icon {
         font-size: 1rem;
-        margin-right: var(--sl-spacing-x-small);
       }
 
+      .with-label sl-icon,
       .icon-only {
-        display: inline-block;
+        margin-right: var(--sl-spacing-x-small);
       }
 
       .label {
@@ -158,15 +159,19 @@ export class CrawlStatus extends LitElement {
   render() {
     const { icon, label } = CrawlStatus.getContent(this.state);
     if (this.hideLabel) {
-      return html`<sl-tooltip content=${label}
-        ><div class="wrapper">${icon}</div></sl-tooltip
-      >`;
+      return html`<div class="icon-only">
+        <sl-tooltip content=${label}
+          ><div class="wrapper">${icon}</div></sl-tooltip
+        >
+      </div>`;
     }
     if (label) {
-      return html`<div class="wrapper">
+      return html`<div class="wrapper with-label">
         ${icon}<span class="label">${label}</span>
       </div>`;
     }
-    return html`<div class="wrapper">${icon}<sl-skeleton></sl-skeleton></div>`;
+    return html`<div class="wrapper with-label">
+      ${icon}<sl-skeleton></sl-skeleton>
+    </div>`;
   }
 }
