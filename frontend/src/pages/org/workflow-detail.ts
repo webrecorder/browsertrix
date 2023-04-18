@@ -48,6 +48,14 @@ export class WorkflowDetail extends LiteElement {
   @state()
   private isSubmittingUpdate: boolean = false;
 
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat();
+  private dateFormatter = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
+
   private readonly jobTypeLabels: Record<JobType, string> = {
     "url-list": msg("URL List"),
     "seed-crawl": msg("Seeded Crawl"),
@@ -330,7 +338,17 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(
-          msg("Crawl Count"),
+          msg("Status"),
+          () => html`
+            <btrix-crawl-status
+              state=${this.workflow!.currCrawlState ||
+              this.workflow!.lastCrawlState ||
+              msg("No Crawls Yet")}
+            ></btrix-crawl-status>
+          `
+        )}
+        ${this.renderDetailItem(
+          msg("Finished Crawls"),
           () => this.workflow!.crawlCount
         )}
         ${this.renderDetailItem(msg("Next Run"), () =>
@@ -348,20 +366,14 @@ export class WorkflowDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Created By"),
-          () => this.workflow!.createdByName
-        )}
-        ${this.renderDetailItem(
-          msg("Created At"),
-          () => html`
-            <sl-format-date
-              date=${this.workflow!.created}
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-              hour="2-digit"
-              minute="2-digit"
-            ></sl-format-date>
-          `,
+          () =>
+            msg(
+              str`${
+                this.workflow!.createdByName
+              } on ${this.dateFormatter.format(
+                new Date(`${this.workflow!.created}Z`)
+              )}`
+            ),
           true
         )}
       </dl>

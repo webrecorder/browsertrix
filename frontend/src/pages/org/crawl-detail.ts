@@ -70,6 +70,11 @@ export class CrawlDetail extends LiteElement {
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
+  private dateFormatter = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
