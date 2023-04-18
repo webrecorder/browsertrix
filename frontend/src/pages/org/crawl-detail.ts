@@ -231,7 +231,7 @@ export class CrawlDetail extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
+            >${msg("Back to Finished Crawls")}</span
           >
         </a>
       </div>

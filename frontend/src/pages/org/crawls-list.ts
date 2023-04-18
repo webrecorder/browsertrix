@@ -224,7 +224,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">${msg("Crawls")}</h1>
+            <h1 class="text-xl font-semibold">${msg("Finished Crawls")}</h1>
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
@@ -278,7 +278,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-tags-visible="1"
-            placeholder=${msg("All Crawls")}
+            placeholder=${msg("All Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -371,7 +371,9 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Filter by name, Crawl Start URL, or Workflow ID")}
+          placeholder=${msg(
+            "Filter by Workflow Name, Crawl Start URL, or Workflow ID"
+          )}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {

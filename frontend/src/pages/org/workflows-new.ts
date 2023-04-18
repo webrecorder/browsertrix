@@ -71,7 +71,7 @@ export class WorkflowsNew extends LiteElement {
 
   private renderHeader() {
     let href = `/orgs/${this.orgId}/workflows`;
-    let label = msg("Back to Workflows");
+    let label = msg("Back to Crawl Workflows");
 
     // Allow user to go back to choose crawl type if new (not duplicated) config
     if (this.jobType && !this.initialWorkflow.jobType) {
@@ -111,7 +111,7 @@ export class WorkflowsNew extends LiteElement {
       return html`
         ${this.renderHeader()}
         <h2 class="text-xl font-semibold mb-6">
-          ${msg(html`New Workflow &mdash; ${jobTypeLabels[jobType]}`)}
+          ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
           .initialWorkflow=${this.initialWorkflow}
@@ -128,7 +128,7 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       ${this.renderHeader()}
-      <h2 class="text-xl font-semibold mb-6">${msg("New Workflow")}</h2>
+      <h2 class="text-xl font-semibold mb-6">${msg("New Crawl Workflow")}</h2>
       ${when(this.isCrawler, this.renderChooseJobType, this.renderNoAccess)}
     `;
   }

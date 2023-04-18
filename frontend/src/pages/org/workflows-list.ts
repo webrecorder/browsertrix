@@ -232,7 +232,7 @@ export class WorkflowsList extends LiteElement {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
+          <h1 class="text-xl font-semibold">${msg("Crawling")}</h1>
           ${when(
             this.isCrawler,
             () => html`
@@ -243,7 +243,7 @@ export class WorkflowsList extends LiteElement {
                 @click=${this.navLink}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Workflow")}
+                ${msg("New Crawl Workflow")}
               </sl-button>
             `
           )}
@@ -292,7 +292,7 @@ export class WorkflowsList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by name or Crawl URL")}
+            placeholder=${msg("Search by Crawl Workflow name or Crawl URL")}
             clearable
             ?disabled=${!this.workflows?.length}
             @sl-input=${this.onSearchInput}

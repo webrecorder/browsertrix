@@ -482,7 +482,7 @@ export class CrawlList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Workflow Name")}</div>
+        <div class="col">${msg("Crawl Workflow")}</div>
         <div class="col">${msg("Status & Date Completed")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Started By")}</div>

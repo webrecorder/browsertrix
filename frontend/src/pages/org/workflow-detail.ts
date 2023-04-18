@@ -183,7 +183,7 @@ export class WorkflowDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${configId
               ? msg(str`Back to ${this.renderName()}`)
-              : msg("Back to Workflows")}</span
+              : msg("Back to Crawl Workflows")}</span
           >
         </a>
       </nav>
