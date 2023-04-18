@@ -687,7 +687,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
         return crawlconfig
 
-    async def _add_curr_crawl_stats(self, crawlconfig, crawl):
+    def _add_curr_crawl_stats(self, crawlconfig, crawl):
         """Add stats from current running crawl, if any"""
         if not crawl:
             return
