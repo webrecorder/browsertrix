@@ -42,7 +42,8 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 18rem 12rem 8rem 3rem;
+      grid-template-columns: 1fr 15rem 10rem 7rem 3rem;
+      grid-gap: var(--sl-spacing-x-large);
     }
   }
 
@@ -81,17 +82,13 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
-        contain: content;
-        content-visibility: auto;
-        /* contain-intrinsic-height: auto 2.5rem;
-        height: 2.5rem; */
+        color: var(--sl-color-neutral-700);
         cursor: pointer;
         overflow: hidden;
       }
 
       @media only screen and (min-width: ${largeBreakpointCss}) {
         .item {
-          contain-intrinsic-height: auto 2.5rem;
           height: 2.5rem;
         }
       }
@@ -109,25 +106,28 @@ export class CrawlListItem extends LitElement {
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
         overflow: hidden;
-      }
-
-      .detail {
-        color: var(--sl-color-neutral-700);
-        font-size: var(--sl-font-size-medium);
-        text-overflow: ellipsis;
-        margin-right: 1em;
         white-space: nowrap;
       }
 
+      .detail {
+        font-size: var(--sl-font-size-medium);
+        text-overflow: ellipsis;
+      }
+
       .desc {
-        color: var(--sl-color-neutral-500);
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
+        text-overflow: ellipsis;
+      }
+
+      .desc:last-child {
+        margin-left: 1rem;
+        color: var(--sl-color-neutral-400);
       }
 
       .unknownValue {
-        color: var(--sl-color-neutral-500);
+        color: var(--sl-color-neutral-400);
       }
 
       .detail btrix-crawl-status {
@@ -155,12 +155,8 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-500);
       }
 
-      .status {
-        min-width: 6rem;
-      }
-
       .fileSize {
-        min-width: 3rem;
+        min-width: 4em;
       }
 
       .userName {
@@ -242,49 +238,54 @@ export class CrawlListItem extends LitElement {
     >
       <div class="col">
         <div class="detail url truncate">
-          ${this.safeRender(this.renderName)}
+          ${this.safeRender(
+            (workflow) => html`
+              <btrix-crawl-status
+                state=${workflow.state}
+                hideLabel
+              ></btrix-crawl-status>
+              ${this.renderName(workflow)}
+            `
+          )}
         </div>
       </div>
       <div class="col">
-        <div class="detail status">
+        <div class="desc">
           ${this.safeRender(
             (crawl) => html`
-              <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
+              <sl-format-date
+                date=${`${crawl.finished}Z`}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></sl-format-date>
             `
           )}
         </div>
         <div class="desc truncate">
           ${this.safeRender((crawl) =>
-            crawl.finished
-              ? html`<sl-format-date
-                  date=${`${crawl.finished}Z`}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="2-digit"
-                  minute="2-digit"
-                ></sl-format-date>`
-              : msg(
-                  str`Started ${RelativeDuration.humanize(
-                    new Date().valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf(),
-                    { compact: true }
-                  )} ago`
-                )
+            msg(
+              str`in ${RelativeDuration.humanize(
+                new Date(`${crawl.finished}Z`).valueOf() -
+                  new Date(`${crawl.started}Z`).valueOf()
+              )}`
+            )
           )}
         </div>
       </div>
       <div class="col">
         ${this.safeRender(
           (crawl) =>
-            html`<div class="detail fileSize">
+            html`<div class="desc fileSize">
               <sl-format-bytes
                 value=${crawl.fileSize || 0}
                 display="narrow"
               ></sl-format-bytes>
             </div>`
         )}
-        <div class="desc truncate">
+        <div class="desc pages truncate">
           ${this.safeRender((crawl) => {
             const pagesComplete = +(crawl.stats?.done || 0);
             if (isActive) {
@@ -482,8 +483,8 @@ export class CrawlList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Crawl Workflow")}</div>
-        <div class="col">${msg("Status & Date Completed")}</div>
+        <div class="col">${msg("Workflow")}</div>
+        <div class="col">${msg("Finished")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Started By")}</div>
         <div class="col action">

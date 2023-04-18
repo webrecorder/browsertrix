@@ -19,15 +19,27 @@ export class CrawlStatus extends LitElement {
     animatePulse,
     css`
       :host {
-        contain: content;
-        display: inline-flex;
-        align-items: center;
+        display: inline-block;
         color: var(--sl-color-neutral-700);
+      }
+
+      .wrapper {
+        display: flex;
+        align-items: center;
       }
 
       sl-icon {
         font-size: 1rem;
         margin-right: var(--sl-spacing-x-small);
+      }
+
+      .icon-only {
+        display: inline-block;
+      }
+
+      .label {
+        height: 1rem;
+        line-height: 1rem;
       }
 
       sl-skeleton {
@@ -109,7 +121,7 @@ export class CrawlStatus extends LitElement {
 
       case "partial_complete": {
         icon = html`<sl-icon name="dash-circle" slot="prefix"></sl-icon>`;
-        label = msg("Stopped");
+        label = msg("Partial Complete");
         break;
       }
 
@@ -146,11 +158,15 @@ export class CrawlStatus extends LitElement {
   render() {
     const { icon, label } = CrawlStatus.getContent(this.state);
     if (this.hideLabel) {
-      return icon;
+      return html`<sl-tooltip content=${label}
+        ><div class="wrapper">${icon}</div></sl-tooltip
+      >`;
     }
     if (label) {
-      return html`${icon}<span>${label}</span>`;
+      return html`<div class="wrapper">
+        ${icon}<span class="label">${label}</span>
+      </div>`;
     }
-    return html`${icon}<sl-skeleton></sl-skeleton>`;
+    return html`<div class="wrapper">${icon}<sl-skeleton></sl-skeleton></div>`;
   }
 }

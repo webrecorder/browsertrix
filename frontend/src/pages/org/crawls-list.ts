@@ -43,11 +43,11 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   started: {
-    label: msg("Date Created"),
+    label: msg("Date Started"),
     defaultDirection: "desc",
   },
   finished: {
-    label: msg("Date Completed"),
+    label: msg("Date Finished"),
     defaultDirection: "desc",
   },
   firstSeed: {
