@@ -18,11 +18,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import {
-  activeCrawlStates,
-  inactiveCrawlStates,
-  isActive,
-} from "../../utils/crawler";
+import { isActive } from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -63,6 +59,11 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
+const finishedCrawlStates: CrawlState[] = [
+  "complete",
+  "partial_complete",
+  "timed_out",
+];
 
 /**
  * Usage:
@@ -288,7 +289,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
+            ${finishedCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -647,7 +648,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
-    const state = this.filterBy.state || inactiveCrawlStates;
+    const state = this.filterBy.state || finishedCrawlStates;
     const query = queryString.stringify(
       {
         ...this.filterBy,
