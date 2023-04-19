@@ -390,7 +390,7 @@ export class WorkflowsList extends LiteElement {
       <sl-menu-item
         @click=${() =>
           this.navTo(
-            `/orgs/${workflow.oid}/workflows/config/${workflow.id}?edit`
+            `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
           )}
       >
         <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -629,7 +629,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/artifacts/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`

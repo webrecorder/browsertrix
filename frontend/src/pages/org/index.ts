@@ -33,8 +33,7 @@ export type OrgTab =
   | "settings";
 
 type Params = {
-  crawlId?: string;
-  workflowId?: string;
+  crawlOrWorkflowId?: string;
   browserProfileId?: string;
   browserId?: string;
 };
@@ -120,7 +119,6 @@ export class Org extends LiteElement {
 
     switch (this.orgTab) {
       case "artifacts":
-      case "crawls":
         tabPanelContent = this.renderCrawls();
         break;
       case "workflows":
@@ -222,10 +220,10 @@ export class Org extends LiteElement {
     const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
     const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
-    if (this.params.crawlId) {
+    if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
-        crawlId=${this.params.crawlId}
+        crawlId=${this.params.crawlOrWorkflowId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
         ?isCrawler=${this.isCrawler}
@@ -246,13 +244,13 @@ export class Org extends LiteElement {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
-    if (this.params.workflowId) {
+    if (this.params.crawlOrWorkflowId) {
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId!}
-          workflowId=${this.params.workflowId}
+          workflowId=${this.params.crawlOrWorkflowId}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
         ></btrix-workflow-detail>

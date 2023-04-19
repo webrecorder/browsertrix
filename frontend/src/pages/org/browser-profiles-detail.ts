@@ -154,7 +154,7 @@ export class BrowserProfilesDetail extends LiteElement {
                           class="text-neutral-600 hover:underline"
                           href=${`/orgs/${
                             this.profile!.oid
-                          }/workflows/config/${id}`}
+                          }/workflows/crawl/${id}`}
                         >
                           ${name}
                         </a>

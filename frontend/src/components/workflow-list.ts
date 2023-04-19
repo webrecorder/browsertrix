@@ -245,7 +245,7 @@ export class WorkflowListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.workflow?.oid}/workflows/config/${this.workflow?.id}`}
+      href=${`/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;

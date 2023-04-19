@@ -446,7 +446,7 @@ export class CrawlDetail extends LiteElement {
                 role="menuitem"
                 @click=${() => {
                   this.navTo(
-                    `/orgs/${this.crawl?.oid}/workflows/config/${this.crawl?.cid}?edit`
+                    `/orgs/${this.crawl?.oid}/workflows/crawl/${this.crawl?.cid}?edit`
                   );
                 }}
               >
@@ -893,7 +893,7 @@ ${this.crawl?.notes}
       );
 
       if (data.started) {
-        this.navTo(`/orgs/${this.crawl.oid}/crawls/crawl/${data.started}`);
+        this.navTo(`/orgs/${this.crawl.oid}/artifacts/crawl/${data.started}`);
       }
 
       this.notify({

@@ -281,7 +281,7 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <a
         slot="nav"
-        href=${`/orgs/${this.orgId}/workflows/config/${this.workflow?.id}#${tabName}`}
+        href=${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#${tabName}`}
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm"
           : "text-neutral-600 hover:bg-neutral-50"}"
@@ -307,7 +307,7 @@ export class WorkflowDetail extends LiteElement {
       orgId=${this.orgId}
       .authState=${this.authState}
       @reset=${(e: Event) =>
-        this.navTo(`/orgs/${this.orgId}/workflows/config/${this.workflow!.id}`)}
+        this.navTo(`/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`)}
     ></btrix-workflow-editor>
   `;
 
@@ -352,7 +352,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/config/${workflow.id}?edit`
+                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -915,7 +915,7 @@ export class WorkflowDetail extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/artifacts/crawl/${data.started}#watch"
               @click="${this.navLink.bind(this)}"
               >Watch crawl</a
             >`

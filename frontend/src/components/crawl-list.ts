@@ -218,7 +218,7 @@ export class CrawlListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.crawl?.oid}/crawls/crawl/${this.crawl?.id}`}
+      href=${`/orgs/${this.crawl?.oid}/artifacts/crawl/${this.crawl?.id}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;

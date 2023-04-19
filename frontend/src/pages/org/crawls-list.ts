@@ -476,7 +476,7 @@ export class CrawlsList extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/crawls/crawl/${crawl.id}`)}
+                  this.navTo(`/orgs/${crawl.oid}/artifacts/crawl/${crawl.id}`)}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>
@@ -502,7 +502,7 @@ export class CrawlsList extends LiteElement {
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>
-          this.navTo(`/orgs/${crawl.oid}/workflows/config/${crawl.cid}`)}
+          this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
       >
         <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
         ${msg("Go to Workflow")}
@@ -755,7 +755,7 @@ export class CrawlsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${crawl.oid}/crawls/crawl/${workflow.currCrawlId}"
+              href="/orgs/${crawl.oid}/artifacts/crawl/${workflow.currCrawlId}"
               @click=${this.navLink.bind(this)}
               >View crawl</a
             >`
@@ -786,7 +786,7 @@ export class CrawlsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${crawl.oid}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${crawl.oid}/artifacts/crawl/${data.started}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
