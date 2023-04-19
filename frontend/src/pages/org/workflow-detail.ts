@@ -20,6 +20,7 @@ import { humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
+import { DASHBOARD_ROUTE } from "../../routes";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -881,7 +882,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/workflows`);
+      this.navTo(`/orgs/${this.orgId}/${DASHBOARD_ROUTE}`);
 
       this.notify({
         message: isDeactivating

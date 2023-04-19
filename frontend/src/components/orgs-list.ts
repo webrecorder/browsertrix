@@ -6,6 +6,7 @@ import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
 import { isAdmin } from "../utils/orgs";
+import { DASHBOARD_ROUTE } from "../routes";
 
 @localized()
 export class OrgsList extends LiteElement {
@@ -71,7 +72,7 @@ export class OrgsList extends LiteElement {
   }
 
   private makeOnOrgClick(org: OrgData): Function {
-    const navigate = () => this.navTo(`/orgs/${org.id}/workflows`);
+    const navigate = () => this.navTo(`/orgs/${org.id}/${DASHBOARD_ROUTE}`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {
