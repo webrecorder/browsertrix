@@ -67,8 +67,6 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  private timerId?: number;
-
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
   private dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -107,7 +105,6 @@ export class CrawlDetail extends LiteElement {
 
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
-      this.stopPollTimer();
       this.fetchCrawl();
     } else {
       const prevCrawl = changedProperties.get("crawl");
@@ -130,11 +127,6 @@ export class CrawlDetail extends LiteElement {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
-  }
-
-  disconnectedCallback(): void {
-    this.stopPollTimer();
-    super.disconnectedCallback();
   }
 
   render() {
@@ -759,16 +751,6 @@ ${this.crawl?.notes}
   private async fetchCrawl(): Promise<void> {
     try {
       this.crawl = await this.getCrawl();
-
-      if (this.isActive) {
-        // Restart timer for next poll
-        this.stopPollTimer();
-        this.timerId = window.setTimeout(() => {
-          this.fetchCrawl();
-        }, 1000 * POLL_INTERVAL_SECONDS);
-      } else {
-        this.stopPollTimer();
-      }
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
@@ -922,10 +904,6 @@ ${this.crawl?.notes}
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  private stopPollTimer() {
-    window.clearTimeout(this.timerId);
   }
 
   /** Callback when crawl is no longer running */
