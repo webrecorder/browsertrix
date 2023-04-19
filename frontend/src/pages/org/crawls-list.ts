@@ -145,8 +145,6 @@ export class CrawlsList extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private timerId?: number;
-
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
@@ -631,15 +629,9 @@ export class CrawlsList extends LiteElement {
         });
       }
     }
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      this.fetchCrawls();
-    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   private cancelInProgressGetCrawls() {
-    window.clearTimeout(this.timerId);
     if (this.getCrawlsController) {
       this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
       this.getCrawlsController = null;
