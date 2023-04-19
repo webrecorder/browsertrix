@@ -172,7 +172,7 @@ export class WorkflowDetail extends LiteElement {
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${`/orgs/${this.orgId}/workflows${
-            configId ? `/config/${configId}` : ""
+            configId ? `/config/${configId}` : "/crawls"
           }`}
           @click=${this.navLink}
         >
@@ -183,7 +183,7 @@ export class WorkflowDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${configId
               ? msg(str`Back to ${this.renderName()}`)
-              : msg("Back to Workflows")}</span
+              : msg("Back to Crawl Workflows")}</span
           >
         </a>
       </nav>
@@ -383,7 +383,7 @@ export class WorkflowDetail extends LiteElement {
             ? msg("Last Completed Crawl")
             : msg("Latest Crawl")}
         </h3>
-        <div>
+        <btrix-crawl-list>
           <btrix-crawl-list-item .crawl=${this.lastCrawl}>
             <sl-menu slot="menu">
               <sl-menu-item
@@ -398,7 +398,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
             </sl-menu>
           </btrix-crawl-list-item>
-        </div>
+        </btrix-crawl-list>
       </section>
     `;
   }

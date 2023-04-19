@@ -1,14 +1,14 @@
 /**
- * Display list of crawls
+ * Display list of workflows
  *
  * Usage example:
  * ```ts
- * <btrix-crawl-list>
- *   <btrix-crawl-list-item .crawl=${crawl1}>
- *   </btrix-crawl-list-item>
- *   <btrix-crawl-list-item .crawl=${crawl2}>
- *   </btrix-crawl-list-item>
- * </btrix-crawl-list>
+ * <btrix-workflow-list>
+ *   <btrix-workflow-list-item .workflow=${workflow1}>
+ *   </btrix-workflow-list-item>
+ *   <btrix-workflow-list-item .workflow=${workflow2}>
+ *   </btrix-workflow-list-item>
+ * </btrix-workflow-list>
  * ```
  */
 import { LitElement, html, css } from "lit";
@@ -23,9 +23,10 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
 import { RelativeDuration } from "./relative-duration";
-import type { Crawl } from "../types/crawler";
+import type { Crawl, Workflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
+import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -42,8 +43,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 10rem 7rem 3rem;
-      grid-gap: var(--sl-spacing-x-large);
+      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
     }
   }
 
@@ -69,7 +69,7 @@ const hostVars = css`
 `;
 
 @localized()
-export class CrawlListItem extends LitElement {
+export class WorkflowListItem extends LitElement {
   static styles = [
     truncate,
     dropdown,
@@ -82,56 +82,76 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
-        color: var(--sl-color-neutral-700);
+        contain: content;
+        content-visibility: auto;
+        contain-intrinsic-height: auto 4rem;
         cursor: pointer;
+        transition-property: background-color, box-shadow, margin;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
         overflow: hidden;
       }
 
-      @media only screen and (min-width: ${largeBreakpointCss}) {
-        .item {
-          height: 2.5rem;
-        }
+      .item:hover,
+      .item:focus,
+      .item:focus-within {
+        background-color: var(--sl-color-neutral-50);
       }
-
       .dropdown {
         contain: content;
         position: absolute;
         z-index: 99;
       }
+      .item:hover {
+        background-color: var(--sl-color-neutral-50);
+        margin-left: calc(-1 * var(--row-offset));
+        margin-right: calc(-1 * var(--row-offset));
+      }
+
+      .item:hover .col:nth-child(n + 2) {
+        margin-left: calc(-1 * var(--row-offset));
+      }
+
+      .item:hover .col.action {
+        margin-left: calc(-2 * var(--row-offset));
+      }
+
+      .row {
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+        box-shadow: var(--sl-shadow-x-small);
+      }
+
+      .row:hover {
+        box-shadow: var(--sl-shadow-small);
+      }
 
       .col {
-        display: flex;
-        align-items: center;
+        padding-top: var(--sl-spacing-small);
+        padding-bottom: var(--sl-spacing-small);
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
         overflow: hidden;
-        white-space: nowrap;
       }
 
       .detail {
+        color: var(--sl-color-neutral-700);
         font-size: var(--sl-font-size-medium);
         text-overflow: ellipsis;
+        height: 1.5rem;
       }
 
       .desc {
+        color: var(--sl-color-neutral-500);
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
-        text-overflow: ellipsis;
-      }
-
-      .desc:last-child {
-        margin-left: 1rem;
-        color: var(--sl-color-neutral-400);
+        height: 1rem;
       }
 
       .unknownValue {
-        color: var(--sl-color-neutral-400);
-      }
-
-      .detail btrix-crawl-status {
-        display: flex;
+        color: var(--sl-color-neutral-500);
       }
 
       .url {
@@ -155,8 +175,8 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-500);
       }
 
-      .fileSize {
-        min-width: 4em;
+      .duration {
+        margin-left: calc(1rem + var(--sl-spacing-x-small));
       }
 
       .userName {
@@ -173,11 +193,20 @@ export class CrawlListItem extends LitElement {
       .action sl-icon-button {
         font-size: 1rem;
       }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .action {
+          border-left: 1px solid var(--sl-panel-border-color);
+        }
+      }
     `,
   ];
 
   @property({ type: Object })
-  crawl?: Crawl;
+  workflow?: Workflow;
+
+  @property({ type: Date })
+  lastUpdated?: Date;
 
   @query(".row")
   row!: HTMLElement;
@@ -196,9 +225,7 @@ export class CrawlListItem extends LitElement {
   private dropdownIsOpen?: boolean;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
-    notation: "compact",
-  });
+  private numberFormatter = new Intl.NumberFormat();
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("dropdownIsOpen")) {
@@ -215,14 +242,10 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive =
-      this.crawl &&
-      ["starting", "running", "stopping"].includes(this.crawl.state);
-
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.crawl?.oid}/crawls/crawl/${this.crawl?.id}`}
+      href=${`/orgs/${this.workflow?.oid}/workflows/config/${this.workflow?.id}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -238,23 +261,13 @@ export class CrawlListItem extends LitElement {
     >
       <div class="col">
         <div class="detail url truncate">
-          ${this.safeRender(
-            (workflow) => html`
-              <btrix-crawl-status
-                state=${workflow.state}
-                hideLabel
-              ></btrix-crawl-status>
-              ${this.renderName(workflow)}
-            `
-          )}
+          ${this.safeRender(this.renderName)}
         </div>
-      </div>
-      <div class="col">
         <div class="desc">
           ${this.safeRender(
-            (crawl) => html`
+            () => html`
               <sl-format-date
-                date=${`${crawl.finished}Z`}
+                date=${this.lastUpdated!.toString()}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -264,58 +277,75 @@ export class CrawlListItem extends LitElement {
             `
           )}
         </div>
-        <div class="desc truncate">
-          ${this.safeRender((crawl) =>
-            msg(
-              str`in ${RelativeDuration.humanize(
-                new Date(`${crawl.finished}Z`).valueOf() -
-                  new Date(`${crawl.started}Z`).valueOf()
-              )}`
-            )
-          )}
-        </div>
       </div>
       <div class="col">
-        ${this.safeRender(
-          (crawl) =>
-            html`<div class="desc fileSize">
-              <sl-format-bytes
-                value=${crawl.fileSize || 0}
-                display="narrow"
-              ></sl-format-bytes>
-            </div>`
-        )}
-        <div class="desc pages truncate">
-          ${this.safeRender((crawl) => {
-            const pagesComplete = +(crawl.stats?.done || 0);
-            if (isActive) {
-              const pagesFound = +(crawl.stats?.found || 0);
-              return html`
-                ${pagesFound === 1
-                  ? msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} page`
-                    )
-                  : msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} pages`
-                    )}
-              `;
+        <div class="detail">
+          ${this.safeRender(
+            (workflow) =>
+              html`
+                <btrix-crawl-status
+                  state=${workflow.currCrawlState ||
+                  workflow.lastCrawlState ||
+                  msg("No Crawls Yet")}
+                ></btrix-crawl-status>
+              `
+          )}
+        </div>
+        <div class="desc duration">
+          ${this.safeRender((workflow) => {
+            if (workflow.currCrawlStartTime) {
+              const diff =
+                new Date().valueOf() -
+                new Date(`${workflow.currCrawlStartTime}Z`).valueOf();
+              if (diff < 1000) {
+                return "";
+              }
+              return msg(
+                str`Running for ${RelativeDuration.humanize(diff, {
+                  compact: true,
+                })}`
+              );
             }
-            return html`
-              ${pagesComplete === 1
-                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
-                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`)}
-            `;
+            if (workflow.lastCrawlTime) {
+              return msg(
+                str`Finished in ${RelativeDuration.humanize(
+                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
+                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                  { compact: true }
+                )}`
+              );
+            }
+            return html`<span>---</span>`;
           })}
         </div>
       </div>
       <div class="col">
+        <div class="detail"><span>---</span></div>
+        <div class="desc">
+          ${this.safeRender((workflow) =>
+            workflow.crawlCount === 1
+              ? msg(str`${workflow.crawlCount} crawl`)
+              : msg(str`${(workflow.crawlCount ?? 0).toLocaleString()} crawls`)
+          )}
+        </div>
+      </div>
+      <div class="col">
         <div class="detail truncate">
-          ${this.safeRender(
-            (crawl) => html`<span class="userName">${crawl.userName}</span>`
+          ${this.safeRender((workflow) =>
+            workflow.lastStartedByName
+              ? html`<span class="userName"
+                  >${workflow.lastStartedByName}</span
+                >`
+              : html`<span>---</span>`
+          )}
+        </div>
+        <div class="desc">
+          ${this.safeRender((workflow) =>
+            workflow.schedule
+              ? humanizeSchedule(workflow.schedule, {
+                  length: "short",
+                })
+              : msg("No Schedule")
           )}
         </div>
       </div>
@@ -372,18 +402,19 @@ export class CrawlListItem extends LitElement {
     </div> `;
   }
 
-  private safeRender(render: (crawl: Crawl) => any) {
-    if (!this.crawl) {
+  private safeRender(render: (workflow: Workflow) => any) {
+    if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
-    return render(this.crawl);
+    return render(this.workflow);
   }
 
-  private renderName(crawl: Crawl) {
-    if (crawl.name) return html`<span class="truncate">${crawl.name}</span>`;
-    if (!crawl.firstSeed)
-      return html`<span class="truncate">${crawl.id}</span>`;
-    const remainder = crawl.seedCount - 1;
+  private renderName(workflow: Workflow) {
+    if (workflow.name)
+      return html`<span class="truncate">${workflow.name}</span>`;
+    if (!workflow.firstSeed)
+      return html`<span class="truncate">${workflow.id}</span>`;
+    const remainder = workflow.config.seeds.length - 1;
     let nameSuffix: any = "";
     if (remainder) {
       if (remainder === 1) {
@@ -397,7 +428,8 @@ export class CrawlListItem extends LitElement {
       }
     }
     return html`
-      <span class="primaryUrl truncate">${crawl.firstSeed}</span>${nameSuffix}
+      <span class="primaryUrl truncate">${workflow.firstSeed}</span
+      >${nameSuffix}
     `;
   }
 
@@ -419,21 +451,21 @@ export class CrawlListItem extends LitElement {
 }
 
 @localized()
-export class CrawlList extends LitElement {
+export class WorkflowList extends LitElement {
   static styles = [
     srOnly,
     rowCss,
     columnCss,
     hostVars,
     css`
-      .listHeader {
-        line-height: 1;
+      .listHeader,
+      .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
       }
 
-      .list {
-        border: 1px solid var(--sl-panel-border-color);
-        border-radius: var(--sl-border-radius-medium);
-        overflow: hidden;
+      .listHeader {
+        line-height: 1;
       }
 
       .row {
@@ -453,34 +485,25 @@ export class CrawlList extends LitElement {
         }
       }
 
-      ::slotted(btrix-crawl-list-item) {
+      ::slotted(btrix-workflow-list-item) {
         display: block;
-        transition-property: background-color, box-shadow;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
       }
 
-      ::slotted(btrix-crawl-list-item:not(:first-of-type)) {
-        box-shadow: inset 0px 1px 0 var(--sl-panel-border-color);
-      }
-
-      ::slotted(btrix-crawl-list-item:hover),
-      ::slotted(btrix-crawl-list-item:focus),
-      ::slotted(btrix-crawl-list-item:focus-within) {
-        background-color: var(--sl-color-neutral-50);
+      ::slotted(btrix-workflow-list-item:not(:last-of-type)) {
+        margin-bottom: var(--sl-spacing-x-small);
       }
     `,
   ];
 
-  @queryAssignedElements({ selector: "btrix-crawl-list-item" })
+  @queryAssignedElements({ selector: "btrix-workflow-list-item" })
   listItems!: Array<HTMLElement>;
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Workflow")}</div>
-        <div class="col">${msg("Finished")}</div>
+        <div class="col">${msg("Workflow Name & Last Updated")}</div>
+        <div class="col">${msg("Workflow Status")}</div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Started By")}</div>
+        <div class="col">${msg("Started By & Schedule")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>

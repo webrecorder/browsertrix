@@ -86,6 +86,10 @@ import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
   customElements.define("btrix-crawl-list-item", CrawlListItem);
   customElements.define("btrix-crawl-list", CrawlList);
 });
+import("./workflow-list").then(({ WorkflowListItem, WorkflowList }) => {
+  customElements.define("btrix-workflow-list-item", WorkflowListItem);
+  customElements.define("btrix-workflow-list", WorkflowList);
+});
 import("./section-heading").then(({ SectionHeading }) => {
   customElements.define("btrix-section-heading", SectionHeading);
 });

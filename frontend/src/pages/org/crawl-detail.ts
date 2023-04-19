@@ -830,7 +830,7 @@ export class CrawlDetail extends LiteElement {
                   ? html`
                       <a
                         class="font-medium text-neutral-700 hover:text-neutral-900"
-                        href=${`/orgs/${this.crawl.oid}/crawls`}
+                        href=${`/orgs/${this.crawl.oid}/artifacts/crawls`}
                         @click=${this.navLink}
                       >
                         <sl-icon

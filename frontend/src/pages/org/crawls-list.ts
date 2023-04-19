@@ -18,6 +18,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
+import { isActive } from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -33,7 +34,7 @@ type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const INITIAL_PAGE_SIZE = 50;
+const INITIAL_PAGE_SIZE = 30;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -42,11 +43,11 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   started: {
-    label: msg("Date Created"),
+    label: msg("Date Started"),
     defaultDirection: "desc",
   },
   finished: {
-    label: msg("Date Completed"),
+    label: msg("Date Finished"),
     defaultDirection: "desc",
   },
   firstSeed: {
@@ -58,19 +59,11 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
-
-const activeCrawlStates: CrawlState[] = ["starting", "running", "stopping"];
-const inactiveCrawlStates: CrawlState[] = [
+const finishedCrawlStates: CrawlState[] = [
   "complete",
-  "canceled",
   "partial_complete",
   "timed_out",
-  "failed",
 ];
-
-function isActive(crawl: Crawl) {
-  return activeCrawlStates.includes(crawl.state);
-}
 
 /**
  * Usage:
@@ -120,8 +113,8 @@ export class CrawlsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "started",
-    direction: "desc",
+    field: "finished",
+    direction: sortableFields["finished"].defaultDirection!,
   };
 
   @state()
@@ -232,7 +225,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">${msg("Crawls")}</h1>
+            <h1 class="text-xl font-semibold">${msg("Finished Crawls")}</h1>
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
@@ -286,7 +279,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-tags-visible="1"
-            placeholder=${msg("All Crawls")}
+            placeholder=${msg("All Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -296,9 +289,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${activeCrawlStates.map(this.renderStatusMenuItem)}
-            <sl-divider></sl-divider>
-            ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
+            ${finishedCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -381,7 +372,9 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Filter by name, Crawl Start URL, or Workflow ID")}
+          placeholder=${msg(
+            "Filter by Workflow Name, Crawl Start URL, or Workflow ID"
+          )}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
@@ -479,7 +472,7 @@ export class CrawlsList extends LiteElement {
         <sl-menu slot="menu">
           ${when(
             this.isCrawler,
-            this.renderCrawlerMenuItemsRenderer(crawl),
+            this.crawlerMenuItemsRenderer(crawl),
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -493,44 +486,19 @@ export class CrawlsList extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderCrawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+  private crawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+    // HACK shoelace doesn't current have a way to override non-hover
+    // color without resetting the --sl-color-neutral-700 variable
     html`
-      ${when(
-        isActive(crawl),
-        // HACK shoelace doesn't current have a way to override non-hover
-        // color without resetting the --sl-color-neutral-700 variable
-        () => html`
-          <sl-menu-item @click=${() => this.stop(crawl)}>
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
-            ${msg("Stop Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(crawl)}
-          >
-            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel Immediately")}
-          </sl-menu-item>
-        `,
-        () => html`
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${() => this.runNow(crawl)}
-          >
-            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-            ${msg("Re-Run Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() => {
-              this.crawlToEdit = crawl;
-              this.isEditingCrawl = true;
-            }}
-          >
-            <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
-          </sl-menu-item>
-        `
-      )}
+      <sl-menu-item
+        @click=${() => {
+          this.crawlToEdit = crawl;
+          this.isEditingCrawl = true;
+        }}
+      >
+        <sl-icon name="pencil" slot="prefix"></sl-icon>
+        ${msg("Edit Metadata")}
+      </sl-menu-item>
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>
@@ -551,7 +519,7 @@ export class CrawlsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        !isActive(crawl),
+        !isActive(crawl.state),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -673,9 +641,11 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const state = this.filterBy.state || finishedCrawlStates;
     const query = queryString.stringify(
       {
-        ...this.filterBy,
+        // ...this.filterBy,
+        // state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
