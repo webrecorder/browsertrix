@@ -1,6 +1,7 @@
 import type { HTMLTemplateResult, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { CopyButton } from "../../components/copy-button";
@@ -9,6 +10,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
+import { isActive } from "../../utils/crawler";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -47,6 +49,12 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private isSubmittingUpdate: boolean = false;
+
+  @state()
+  private openDialogName?: "scale" | "metadata" | "exclusions";
+
+  @state()
+  private isDialogVisible: boolean = false;
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
@@ -127,6 +135,18 @@ export class WorkflowDetail extends LiteElement {
         </div>
       `;
     }
+
+    // <sl-button
+    //             size="small"
+    //             ?disabled=${!isRunning}
+    //             @click=${() => {
+    //               this.openDialogName = "scale";
+    //               this.isDialogVisible = true;
+    //             }}
+    //           >
+    //             <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+    //             <span> ${msg("Crawler Instances")} </span>
+    //           </sl-button>
 
     return html`
       <div class="grid grid-cols-1 gap-7">
@@ -450,7 +470,179 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderWatchCrawl() {
-    return html`TODO`;
+    if (!this.authState || !this.workflow?.currCrawlState) return "";
+
+    const isStarting = this.workflow.currCrawlState === "starting";
+    const isRunning = this.workflow.currCrawlState === "running";
+    const isStopping = this.workflow.currCrawlState === "stopping";
+    const authToken = this.authState.headers.Authorization.split(" ")[1];
+
+    return html`
+      ${isStarting
+        ? html`<div class="rounded border p-3">
+            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
+              ${msg("Crawl starting...")}
+            </p>
+          </div>`
+        : isActive(this.workflow.currCrawlState)
+        ? html`
+            ${isStopping
+              ? html`
+                  <div class="mb-4">
+                    <btrix-alert variant="warning" class="text-sm">
+                      ${msg("Crawl stopping...")}
+                    </btrix-alert>
+                  </div>
+                `
+              : ""}
+          `
+        : this.renderInactiveCrawlMessage()}
+      ${when(
+        isRunning,
+        () => html`
+          <div
+            id="screencast-crawl"
+            class="${isStopping ? "opacity-40" : ""} transition-opacity"
+          >
+            <btrix-screencast
+              authToken=${authToken}
+              orgId=${this.orgId}
+              crawlId=${this.workflow!.currCrawlId}
+              scale=${this.workflow!.scale}
+            ></btrix-screencast>
+          </div>
+
+          <section class="mt-8">${this.renderExclusions()}</section>
+
+          <btrix-dialog
+            label=${msg("Edit Crawler Instances")}
+            ?open=${this.openDialogName === "scale"}
+            @sl-request-close=${() => (this.openDialogName = undefined)}
+            @sl-show=${() => (this.isDialogVisible = true)}
+            @sl-after-hide=${() => (this.isDialogVisible = false)}
+          >
+            ${this.isDialogVisible ? this.renderEditScale() : ""}
+          </btrix-dialog>
+        `
+      )}
+    `;
+  }
+
+  private renderInactiveCrawlMessage() {
+    return html`
+      <div class="rounded border bg-neutral-50 p-3">
+        <p class="text-sm text-neutral-600">${msg("Crawl is not running.")}</p>
+      </div>
+    `;
+  }
+
+  private renderExclusions() {
+    return html`
+      <header class="flex items-center justify-between">
+        <h3 class="leading-none text-lg font-semibold mb-2">
+          ${msg("Crawl URLs")}
+        </h3>
+        <sl-button
+          size="small"
+          variant="primary"
+          @click=${() => {
+            this.openDialogName = "exclusions";
+            this.isDialogVisible = true;
+          }}
+        >
+          <sl-icon slot="prefix" name="table"></sl-icon>
+          ${msg("Edit Exclusions")}
+        </sl-button>
+      </header>
+
+      ${when(
+        this.workflow?.currCrawlId,
+        () => html`
+          <btrix-crawl-queue
+            orgId=${this.orgId}
+            crawlId=${this.workflow!.currCrawlId}
+            .authState=${this.authState}
+          ></btrix-crawl-queue>
+        `
+      )}
+
+      <btrix-dialog
+        label=${msg("Crawl Queue Editor")}
+        ?open=${this.openDialogName === "exclusions"}
+        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.workflow && this.isDialogVisible
+          ? html`<btrix-exclusion-editor
+              orgId=${this.orgId}
+              crawlId=${ifDefined(this.workflow.currCrawlId)}
+              .config=${this.workflow.config}
+              .authState=${this.authState}
+              ?isActiveCrawl=${isActive(this.workflow.currCrawlState!)}
+              @on-success=${this.handleExclusionChange}
+            ></btrix-exclusion-editor>`
+          : ""}
+        <div slot="footer">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Done Editing")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
+  }
+
+  private renderEditScale() {
+    if (!this.workflow) return;
+
+    const scaleOptions = [
+      {
+        value: 1,
+        label: "1",
+      },
+      {
+        value: 2,
+        label: "2",
+      },
+      {
+        value: 3,
+        label: "3",
+      },
+    ];
+
+    return html`
+      <div>
+        <sl-radio-group
+          value=${this.workflow.scale}
+          help-text=${msg(
+            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
+          )}
+        >
+          ${scaleOptions.map(
+            ({ value, label }) => html`
+              <sl-radio-button
+                value=${value}
+                size="small"
+                @click=${() => this.scale(value)}
+                ?disabled=${this.isSubmittingUpdate}
+                >${label}</sl-radio-button
+              >
+            `
+          )}
+        </sl-radio-group>
+      </div>
+      <div slot="footer" class="flex justify-between">
+        <sl-button
+          size="small"
+          type="reset"
+          @click=${() => (this.openDialogName = undefined)}
+          >${msg("Cancel")}</sl-button
+        >
+      </div>
+    `;
   }
 
   private renderSettings() {
@@ -460,6 +652,48 @@ export class WorkflowDetail extends LiteElement {
         anchorLinks
       ></btrix-config-details>
     </section>`;
+  }
+
+  private handleExclusionChange(e: CustomEvent) {
+    console.debug("TODO exclusion c hange");
+    // this.initWorkflow();
+  }
+
+  private async scale(value: Crawl["scale"]) {
+    if (!this.workflow?.currCrawlId) return;
+    this.isSubmittingUpdate = true;
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/scale`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ scale: +value }),
+        }
+      );
+
+      if (data.scaled) {
+        this.notify({
+          message: msg("Updated crawl scale."),
+          variant: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw new Error("unhandled API response");
+      }
+
+      this.openDialogName = undefined;
+      this.isDialogVisible = false;
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't change crawl scale at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmittingUpdate = false;
   }
 
   private async getWorkflow(): Promise<Workflow> {

@@ -140,32 +140,6 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
-      case "exclusions":
-      case "watch": {
-        if (this.crawl) {
-          const isRunning = this.crawl.state === "running";
-          sectionContent = this.renderPanel(
-            html`<span>${msg("Watch Crawl")}</span>
-              <sl-button
-                size="small"
-                ?disabled=${!isRunning}
-                @click=${() => {
-                  this.openDialogName = "scale";
-                  this.isDialogVisible = true;
-                }}
-              >
-                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                <span> ${msg("Crawler Instances")} </span>
-              </sl-button> `,
-            this.renderWatch()
-          );
-        } else {
-          // TODO loading indicator?
-          return "";
-        }
-
-        break;
-      }
       case "replay":
         sectionContent = this.renderPanel(
           msg("Replay Crawl"),
@@ -342,22 +316,12 @@ export class CrawlDetail extends LiteElement {
             icon: "info-circle-fill",
             label: msg("Overview"),
           })}
-          ${this.isActive
-            ? renderNavItem({
-                section: "watch",
-                iconLibrary: "default",
-                icon: "eye-fill",
-                label: msg("Watch Crawl"),
-              })
-            : ""}
-          ${!this.isActive
-            ? renderNavItem({
-                section: "replay",
-                iconLibrary: "app",
-                icon: "link-replay",
-                label: msg("Replay Crawl"),
-              })
-            : ""}
+          ${renderNavItem({
+            section: "replay",
+            iconLibrary: "app",
+            icon: "link-replay",
+            label: msg("Replay Crawl"),
+          })}
           ${!this.isActive
             ? renderNavItem({
                 section: "files",
@@ -614,124 +578,6 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderWatch() {
-    if (!this.authState || !this.crawl) return "";
-
-    const isStarting = this.crawl.state === "starting";
-    const isRunning = this.crawl.state === "running";
-    const isStopping = this.crawl.state === "stopping";
-    const authToken = this.authState.headers.Authorization.split(" ")[1];
-
-    return html`
-      ${isStarting
-        ? html`<div class="rounded border p-3">
-            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${msg("Crawl starting...")}
-            </p>
-          </div>`
-        : this.isActive
-        ? html`
-            ${isStopping
-              ? html`
-                  <div class="mb-4">
-                    <btrix-alert variant="warning" class="text-sm">
-                      ${msg("Crawl stopping...")}
-                    </btrix-alert>
-                  </div>
-                `
-              : ""}
-          `
-        : this.renderInactiveCrawlMessage()}
-      ${when(
-        isRunning,
-        () => html`
-          <div
-            id="screencast-crawl"
-            class="${isStopping ? "opacity-40" : ""} transition-opacity"
-          >
-            <btrix-screencast
-              authToken=${authToken}
-              orgId=${this.crawl!.oid}
-              crawlId=${this.crawlId}
-              scale=${this.crawl!.scale}
-            ></btrix-screencast>
-          </div>
-
-          <section class="mt-8">${this.renderExclusions()}</section>
-
-          <btrix-dialog
-            label=${msg("Edit Crawler Instances")}
-            ?open=${this.openDialogName === "scale"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
-            @sl-show=${() => (this.isDialogVisible = true)}
-            @sl-after-hide=${() => (this.isDialogVisible = false)}
-          >
-            ${this.isDialogVisible ? this.renderEditScale() : ""}
-          </btrix-dialog>
-        `
-      )}
-    `;
-  }
-
-  private renderExclusions() {
-    return html`
-      <header class="flex items-center justify-between">
-        <h3 class="leading-none text-lg font-semibold mb-2">
-          ${msg("Crawl URLs")}
-        </h3>
-        <sl-button
-          size="small"
-          variant="primary"
-          @click=${() => {
-            this.openDialogName = "exclusions";
-            this.isDialogVisible = true;
-          }}
-        >
-          <sl-icon slot="prefix" name="table"></sl-icon>
-          ${msg("Edit Exclusions")}
-        </sl-button>
-      </header>
-
-      ${when(
-        this.crawl,
-        () => html`
-          <btrix-crawl-queue
-            orgId=${this.crawl!.oid}
-            crawlId=${this.crawlId}
-            .authState=${this.authState}
-          ></btrix-crawl-queue>
-        `
-      )}
-
-      <btrix-dialog
-        label=${msg("Crawl Queue Editor")}
-        ?open=${this.openDialogName === "exclusions"}
-        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible
-          ? html`<btrix-exclusion-editor
-              orgId=${ifDefined(this.crawl?.oid)}
-              crawlId=${ifDefined(this.crawl?.id)}
-              .config=${this.crawl?.config}
-              .authState=${this.authState}
-              ?isActiveCrawl=${this.crawl && this.isActive}
-              @on-success=${this.handleExclusionChange}
-            ></btrix-exclusion-editor>`
-          : ""}
-        <div slot="footer">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Done Editing")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
-    `;
-  }
-
   private renderReplay() {
     const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
 
@@ -945,74 +791,6 @@ ${this.crawl?.notes}
     `;
   }
 
-  private renderEditScale() {
-    if (!this.crawl) return;
-
-    const scaleOptions = [
-      {
-        value: 1,
-        label: "1",
-      },
-      {
-        value: 2,
-        label: "2",
-      },
-      {
-        value: 3,
-        label: "3",
-      },
-    ];
-
-    return html`
-      <div>
-        <sl-radio-group
-          value=${this.crawl.scale}
-          help-text=${msg(
-            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
-          )}
-        >
-          ${scaleOptions.map(
-            ({ value, label }) => html`
-              <sl-radio-button
-                value=${value}
-                size="small"
-                @click=${() => this.scale(value)}
-                ?disabled=${this.isSubmittingUpdate}
-                >${label}</sl-radio-button
-              >
-            `
-          )}
-        </sl-radio-group>
-      </div>
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          type="reset"
-          @click=${() => (this.openDialogName = undefined)}
-          >${msg("Cancel")}</sl-button
-        >
-      </div>
-    `;
-  }
-
-  private renderInactiveCrawlMessage() {
-    return html`
-      <div class="rounded border bg-neutral-50 p-3">
-        <p class="text-sm text-neutral-600">
-          ${msg("Crawl is not running.")}
-          ${this.hasFiles
-            ? html`<a
-                href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
-                class="text-primary hover:underline"
-                @click=${() => (this.sectionName = "replay")}
-                >View replay</a
-              >`
-            : ""}
-        </p>
-      </div>
-    `;
-  }
-
   /**
    * Fetch crawl and update internal state
    */
@@ -1102,44 +880,6 @@ ${this.crawl?.notes}
     return !formEl.querySelector("[data-invalid]");
   }
 
-  private async scale(value: Crawl["scale"]) {
-    this.isSubmittingUpdate = true;
-
-    try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/scale`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({ scale: +value }),
-        }
-      );
-
-      if (data.scaled) {
-        this.crawl!.scale = data.scaled;
-
-        this.notify({
-          message: msg("Updated crawl scale."),
-          variant: "success",
-          icon: "check2-circle",
-        });
-      } else {
-        throw new Error("unhandled API response");
-      }
-
-      this.openDialogName = undefined;
-      this.isDialogVisible = false;
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't change crawl scale at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSubmittingUpdate = false;
-  }
-
   private async runNow() {
     if (!this.crawl) return;
 
@@ -1220,10 +960,6 @@ ${this.crawl?.notes}
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  private handleExclusionChange(e: CustomEvent) {
-    this.fetchCrawl();
   }
 
   private stopPollTimer() {
