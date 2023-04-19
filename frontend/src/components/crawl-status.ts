@@ -121,7 +121,11 @@ export class CrawlStatus extends LitElement {
       }
 
       case "partial_complete": {
-        icon = html`<sl-icon name="dash-circle" slot="prefix"></sl-icon>`;
+        icon = html`<sl-icon 
+          name="dash-circle" 
+          slot="prefix"
+          style="color: var(--warning)"
+          ></sl-icon>`;
         label = msg("Partial Complete");
         break;
       }
