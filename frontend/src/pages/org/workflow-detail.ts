@@ -486,12 +486,12 @@ export class WorkflowDetail extends LiteElement {
   private renderArtifacts() {
     return html`
       <section>
-        <div class="mb-3 p-4 bg-neutral-50 border rounded-lg">
+        <div class="mb-3 p-4 bg-neutral-50 border rounded-lg flex justify-end">
           <div class="flex items-center">
             <div class="text-neutral-500 mx-2">${msg("View:")}</div>
             <sl-select
               id="stateSelect"
-              class="flex-1 md:min-w-[14.5rem]"
+              class="flex-1 md:min-w-[16rem]"
               size="small"
               pill
               multiple
@@ -536,11 +536,13 @@ export class WorkflowDetail extends LiteElement {
         </btrix-crawl-list>
 
         ${when(
-          this.workflow?.crawlCount && !this.crawls.length,
+          !this.crawls.length,
           () => html`
             <div class="p-4">
               <p class="text-center text-neutral-400">
-                ${msg("No matching crawls found.")}
+                ${this.workflow?.crawlCount
+                  ? msg("No matching crawls found.")
+                  : msg("No crawls yet.")}
               </p>
             </div>
           `
