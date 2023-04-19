@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, css, CSSResultGroup } from "lit";
 import { query } from "lit/decorators.js";
 
 export type IntersectEvent = CustomEvent<{
@@ -18,6 +18,13 @@ export type IntersectEvent = CustomEvent<{
  * @event intersect { entry: IntersectionObserverEntry }
  */
 export class Observable extends LitElement {
+  static styles = css`
+    :host,
+    .target {
+      display: contents;
+    }
+  `;
+
   @query(".target")
   private target?: HTMLElement;
 
