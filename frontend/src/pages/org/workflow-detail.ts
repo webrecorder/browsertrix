@@ -7,6 +7,7 @@ import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
+import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type {
@@ -52,7 +53,10 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private crawls: Crawl[] = [];
+  private crawls: Crawl[] = []; // Only inactive crawls
+
+  @state()
+  private currentCrawl?: Crawl;
 
   @state()
   private activePanel?: Tab;
@@ -70,7 +74,9 @@ export class WorkflowDetail extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    // notation: "compact",
+  });
   private dateFormatter = new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "numeric",
@@ -107,11 +113,17 @@ export class WorkflowDetail extends LiteElement {
     ) {
       this.initWorkflow();
     }
-    if (changedProperties.get("activePanel") && !this.isPanelHeaderVisible) {
-      // Scroll panel header into view
-      this.querySelector("btrix-tab-list")?.scrollIntoView({
-        behavior: "smooth",
-      });
+    if (changedProperties.has("activePanel")) {
+      if (!this.isPanelHeaderVisible) {
+        // Scroll panel header into view
+        this.querySelector("btrix-tab-list")?.scrollIntoView({
+          behavior: "smooth",
+        });
+      }
+
+      if (this.activePanel === "watch") {
+        this.fetchCurrentCrawl();
+      }
     }
   }
 
@@ -132,6 +144,9 @@ export class WorkflowDetail extends LiteElement {
       ]);
       this.workflow = workflow;
       this.crawls = crawls;
+      if (this.activePanel === "watch") {
+        this.fetchCurrentCrawl();
+      }
     } catch (e: any) {
       this.notify({
         message:
@@ -180,7 +195,7 @@ export class WorkflowDetail extends LiteElement {
           </div>
         </header>
 
-        <section class="col-span-1 border rounded-lg py-2">
+        <section class="col-span-1 border rounded-lg py-2 h-14">
           ${this.renderDetails()}
         </section>
 
@@ -223,14 +238,16 @@ export class WorkflowDetail extends LiteElement {
 
   private renderTabList = () => html`
     <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-      <header slot="header" class="flex items-center justify-between h-5">
-        <btrix-observable
-          @intersect=${({ detail }: CustomEvent) =>
-            (this.isPanelHeaderVisible = detail.entry.isIntersecting)}
-        >
+      <btrix-observable
+        slot="header"
+        @intersect=${({ detail }: CustomEvent) =>
+          (this.isPanelHeaderVisible = detail.entry.isIntersecting)}
+      >
+        <header class="flex items-center justify-between h-5">
           ${this.renderPanelHeader()}
-        </btrix-observable>
-      </header>
+        </header>
+      </btrix-observable>
+
       ${when(this.workflow?.currCrawlId, () => this.renderTab("watch"))}
       ${this.renderTab("artifacts")} ${this.renderTab("settings")}
 
@@ -240,7 +257,10 @@ export class WorkflowDetail extends LiteElement {
       <btrix-tab-panel name="watch"
         >${when(
           this.activePanel === "watch",
-          this.renderWatchCrawl
+          () => html` <div class="border rounded-lg py-2 mb-5 h-14">
+              ${this.renderCurrentCrawl()}
+            </div>
+            ${this.renderWatchCrawl()}`
         )}</btrix-tab-panel
       >
       <btrix-tab-panel name="settings">
@@ -398,7 +418,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderDetails() {
     return html`
-      <dl class="px-3 md:px-0 md:flex justify-evenly">
+      <dl class="h-14 px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(
           msg("Status"),
           () => html`
@@ -443,17 +463,14 @@ export class WorkflowDetail extends LiteElement {
     isLast = false
   ) {
     return html`
-      <btrix-desc-list-item class="py-1" label=${label}>
+      <btrix-desc-list-item label=${label}>
         ${when(
           this.workflow,
           renderContent,
           () => html`<sl-skeleton class="w-full"></sl-skeleton>`
         )}
       </btrix-desc-list-item>
-      ${when(
-        !isLast,
-        () => html`<hr class="flex-0 border-l w-0" style="height: inherit" />`
-      )}
+      ${when(!isLast, () => html`<hr class="flex-0 border-l w-0 h-10" />`)}
     `;
   }
 
@@ -553,6 +570,40 @@ export class WorkflowDetail extends LiteElement {
     return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
   };
 
+  private renderCurrentCrawl = () => {
+    if (!this.currentCrawl) return;
+    const crawl = this.currentCrawl;
+
+    return html`
+      <dl class="px-3 md:px-0 md:flex justify-evenly">
+        ${this.renderDetailItem(msg("Pages Crawled"), () =>
+          msg(
+            str`${this.numberFormatter.format(
+              +(crawl.stats?.done || 0)
+            )} / ${this.numberFormatter.format(+(crawl.stats?.found || 0))}`
+          )
+        )}
+        ${this.renderDetailItem(msg("Run Duration"), () =>
+          RelativeDuration.humanize(
+            new Date().valueOf() - new Date(`${crawl.started}Z`).valueOf()
+          )
+        )}
+        ${this.renderDetailItem(
+          msg("Crawl Size"),
+          () => html`<sl-format-bytes
+            value=${crawl.fileSize || 0}
+            display="narrow"
+          ></sl-format-bytes>`
+        )}
+        ${this.renderDetailItem(
+          msg("Crawler Instances"),
+          () => this.workflow!.scale,
+          true
+        )}
+      </dl>
+    `;
+  };
+
   private renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.currCrawlState) return "";
 
@@ -602,7 +653,12 @@ export class WorkflowDetail extends LiteElement {
             label=${msg("Edit Crawler Instances")}
             ?open=${this.openDialogName === "scale"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
-            @sl-show=${() => (this.isDialogVisible = true)}
+            @sl-show=${async () => {
+              await this.fetchCurrentCrawl();
+              await this.updateComplete;
+              console.log(this.currentCrawl);
+              this.isDialogVisible = true;
+            }}
             @sl-after-hide=${() => (this.isDialogVisible = false)}
           >
             ${this.isDialogVisible ? this.renderEditScale() : ""}
@@ -680,7 +736,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderEditScale() {
-    if (!this.workflow) return;
+    if (!this.currentCrawl) return;
 
     const scaleOptions = [
       {
@@ -700,7 +756,7 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <div>
         <sl-radio-group
-          value=${this.workflow.scale}
+          value=${this.workflow!.scale}
           help-text=${msg(
             "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
           )}
@@ -805,6 +861,25 @@ export class WorkflowDetail extends LiteElement {
     );
 
     return data.items;
+  }
+
+  private async fetchCurrentCrawl() {
+    if (!this.workflow?.currCrawlId) return;
+    try {
+      this.currentCrawl = await this.getCrawl(this.workflow.currCrawlId);
+    } catch (e) {
+      // TODO handle error
+      console.debug(e);
+    }
+  }
+
+  private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls/${crawlId}`,
+      this.authState!
+    );
+
+    return data;
   }
 
   /**
