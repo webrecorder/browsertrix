@@ -1,0 +1,23 @@
+---
+all:
+  children:
+    "deploy microk8s":
+      vars:
+        host_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+        domain_name: "{{ inventory_hostname }}"        
+        signing_subdomain: "{{ signing_subdomain }}"
+        signing_authtoken: "{{ 99999999 }}"
+        enable_signing: true
+        your_user: sysadmin
+        ansible_user: sysadmin
+        cert_email: infra@starlinglab.org
+
+
+        browsertrix_superuser_email: "someuser@example.com"
+        browsertrix_superuser_password: "this-should-be-changed"
+        browsertrix_default_org: "My Organization"
+        browsertrix_mongo_password: "this-should-be-changed"
+
+      hosts:
+        browsertrix.example.org:
+          signing_domain: "auth.browsertrix.example.org"
