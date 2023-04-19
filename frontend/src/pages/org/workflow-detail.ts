@@ -26,6 +26,8 @@ import { DASHBOARD_ROUTE } from "../../routes";
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
 
+const POLL_INTERVAL_SECONDS = 10;
+
 /**
  * Usage:
  * ```ts
@@ -83,6 +85,8 @@ export class WorkflowDetail extends LiteElement {
     day: "numeric",
   });
 
+  private timerId?: number;
+
   private isPanelHeaderVisible?: boolean;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
@@ -106,6 +110,11 @@ export class WorkflowDetail extends LiteElement {
     super.connectedCallback();
   }
 
+  disconnectedCallback(): void {
+    this.stopPollCurrentCrawl();
+    super.disconnectedCallback();
+  }
+
   willUpdate(changedProperties: Map<string, any>) {
     if (
       (changedProperties.has("workflowId") && this.workflowId) ||
@@ -123,11 +132,14 @@ export class WorkflowDetail extends LiteElement {
 
       if (this.activePanel === "watch") {
         this.fetchCurrentCrawl();
+      } else {
+        this.stopPollCurrentCrawl();
       }
     }
   }
 
   private async initWorkflow() {
+    this.stopPollCurrentCrawl();
     try {
       const [workflow, crawls] = await Promise.all([
         this.getWorkflow().then((workflow) => {
@@ -865,12 +877,24 @@ export class WorkflowDetail extends LiteElement {
 
   private async fetchCurrentCrawl() {
     if (!this.workflow?.currCrawlId) return;
+
+    this.stopPollCurrentCrawl();
+
     try {
       this.currentCrawl = await this.getCrawl(this.workflow.currCrawlId);
     } catch (e) {
       // TODO handle error
       console.debug(e);
     }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchCurrentCrawl();
+    }, 1000 * POLL_INTERVAL_SECONDS);
+  }
+
+  private stopPollCurrentCrawl() {
+    window.clearTimeout(this.timerId);
   }
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
