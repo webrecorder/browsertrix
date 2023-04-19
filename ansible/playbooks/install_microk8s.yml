@@ -392,7 +392,7 @@
   - name: micork8s deploy | helm | configure chart values yaml
     ansible.builtin.template:
       src: ../../chart/values.yaml.j2
-      dest: "{{ browsertrix_cloud_home }}/chart/values.yaml-test"
+      dest: "{{ browsertrix_cloud_home }}/chart/values.yaml"
       mode: u+rw
     tags:
       - helm_upgrade
