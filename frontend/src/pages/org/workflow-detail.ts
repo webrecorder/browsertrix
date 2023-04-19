@@ -3,15 +3,27 @@ import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, Workflow, WorkflowParams, JobType } from "./types";
+import type {
+  Crawl,
+  CrawlState,
+  Workflow,
+  WorkflowParams,
+  JobType,
+} from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { isActive } from "../../utils/crawler";
 
+const finishedCrawlStates: CrawlState[] = [
+  "complete",
+  "partial_complete",
+  "timed_out",
+];
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
 
@@ -45,7 +57,7 @@ export class WorkflowDetail extends LiteElement {
   private crawls: Crawl[] = [];
 
   @state()
-  private activePanel: Tab = "artifacts";
+  private activePanel?: Tab;
 
   @state()
   private isSubmittingUpdate: boolean = false;
@@ -71,7 +83,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("Crawls"),
+    artifacts: msg("Finished Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -110,7 +122,16 @@ export class WorkflowDetail extends LiteElement {
   private async initWorkflow() {
     try {
       const [workflow, crawls] = await Promise.all([
-        this.getWorkflow(),
+        this.getWorkflow().then((workflow) => {
+          if (!this.activePanel) {
+            if (workflow.currCrawlId) {
+              this.activePanel = "watch";
+            } else {
+              this.activePanel = "artifacts";
+            }
+          }
+          return workflow;
+        }),
         this.getCrawls(),
       ]);
       this.workflow = workflow;
@@ -135,18 +156,6 @@ export class WorkflowDetail extends LiteElement {
         </div>
       `;
     }
-
-    // <sl-button
-    //             size="small"
-    //             ?disabled=${!isRunning}
-    //             @click=${() => {
-    //               this.openDialogName = "scale";
-    //               this.isDialogVisible = true;
-    //             }}
-    //           >
-    //             <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-    //             <span> ${msg("Crawler Instances")} </span>
-    //           </sl-button>
 
     return html`
       <div class="grid grid-cols-1 gap-7">
@@ -179,32 +188,7 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderDetails()}
         </section>
 
-        <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-          <header slot="header" class="flex items-center justify-between h-5">
-            ${when(
-              this.activePanel === "artifacts",
-              () =>
-                html`<h3>
-                  ${this.workflow?.crawlAttemptCount === 1
-                    ? msg(str`${this.workflow?.crawlAttemptCount} Crawl`)
-                    : msg(str`${this.workflow?.crawlAttemptCount} Crawls`)}
-                </h3>`,
-              () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`
-            )}
-          </header>
-          ${this.renderTab("artifacts")} ${this.renderTab("watch")}
-          ${this.renderTab("settings")}
-
-          <btrix-tab-panel name="artifacts"
-            >${this.renderArtifacts()}</btrix-tab-panel
-          >
-          <btrix-tab-panel name="watch"
-            >${this.renderWatchCrawl()}</btrix-tab-panel
-          >
-          <btrix-tab-panel name="settings">
-            ${this.renderSettings()}
-          </btrix-tab-panel>
-        </btrix-tab-list>
+        ${when(this.workflow, this.renderTabList, () => html``)}
       </div>
     `;
   }
@@ -231,6 +215,51 @@ export class WorkflowDetail extends LiteElement {
         </a>
       </nav>
     `;
+  }
+
+  private renderTabList = () => html`
+    <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
+      <header slot="header" class="flex items-center justify-between h-5">
+        ${this.renderPanelHeader()}
+      </header>
+      ${when(this.workflow?.currCrawlId, () => this.renderTab("watch"))}
+      ${this.renderTab("artifacts")} ${this.renderTab("settings")}
+
+      <btrix-tab-panel name="artifacts"
+        >${this.renderArtifacts()}</btrix-tab-panel
+      >
+      <btrix-tab-panel name="watch">${this.renderWatchCrawl()}</btrix-tab-panel>
+      <btrix-tab-panel name="settings">
+        ${this.renderSettings()}
+      </btrix-tab-panel>
+    </btrix-tab-list>
+  `;
+
+  private renderPanelHeader() {
+    if (!this.activePanel) return;
+    if (this.activePanel === "artifacts") {
+      return html`<h3>
+        ${this.workflow?.crawlAttemptCount === 1
+          ? msg(str`${this.workflow?.crawlAttemptCount} Crawl`)
+          : msg(str`${this.workflow?.crawlAttemptCount} Crawls`)}
+      </h3>`;
+    }
+
+    if (this.activePanel === "watch") {
+      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+        <sl-button
+          size="small"
+          @click=${() => {
+            this.openDialogName = "scale";
+            this.isDialogVisible = true;
+          }}
+        >
+          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+          <span> ${msg("Crawler Instances")} </span>
+        </sl-button>`;
+    }
+
+    return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
   }
 
   private renderTab(tabName: Tab) {
@@ -655,7 +684,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private handleExclusionChange(e: CustomEvent) {
-    console.debug("TODO exclusion c hange");
+    console.debug("TODO exclusion change");
     // this.initWorkflow();
   }
 
@@ -706,8 +735,18 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async getCrawls(): Promise<Crawl[]> {
+    const query = queryString.stringify(
+      {
+        state: finishedCrawlStates,
+        cid: this.workflowId,
+        sortBy: "started",
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
     const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls?cid=${this.workflowId}&sortBy=started`,
+      `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
 
