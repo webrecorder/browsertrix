@@ -76,6 +76,8 @@ export class WorkflowDetail extends LiteElement {
     day: "numeric",
   });
 
+  private isPanelHeaderVisible?: boolean;
+
   private readonly jobTypeLabels: Record<JobType, string> = {
     "url-list": msg("URL List"),
     "seed-crawl": msg("Seeded Crawl"),
@@ -104,18 +106,11 @@ export class WorkflowDetail extends LiteElement {
     ) {
       this.initWorkflow();
     }
-  }
-
-  protected updated(changedProperties: Map<string, any>) {
-    if (
-      (changedProperties.has("crawlConfig") &&
-        !changedProperties.get("crawlConfig") &&
-        this.workflow &&
-        window.location.hash) ||
-      (changedProperties.get("isEditing") === true && this.isEditing === false)
-    ) {
-      // Show section once Workflow is done rendering
-      document.querySelector(window.location.hash)?.scrollIntoView();
+    if (changedProperties.get("activePanel") && !this.isPanelHeaderVisible) {
+      // Scroll panel header into view
+      this.querySelector("btrix-tab-list")?.scrollIntoView({
+        behavior: "smooth",
+      });
     }
   }
 
@@ -188,7 +183,15 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderDetails()}
         </section>
 
-        ${when(this.workflow, this.renderTabList, () => html``)}
+        ${when(
+          this.workflow,
+          this.renderTabList,
+          () => html`<div
+            class="w-full flex items-center justify-center my-24 text-3xl"
+          >
+            <sl-spinner></sl-spinner>
+          </div>`
+        )}
       </div>
     `;
   }
@@ -220,7 +223,12 @@ export class WorkflowDetail extends LiteElement {
   private renderTabList = () => html`
     <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
       <header slot="header" class="flex items-center justify-between h-5">
-        ${this.renderPanelHeader()}
+        <btrix-observable
+          @intersect=${({ detail }: CustomEvent) =>
+            (this.isPanelHeaderVisible = detail.entry.isIntersecting)}
+        >
+          ${this.renderPanelHeader()}
+        </btrix-observable>
       </header>
       ${when(this.workflow?.currCrawlId, () => this.renderTab("watch"))}
       ${this.renderTab("artifacts")} ${this.renderTab("settings")}
@@ -228,7 +236,12 @@ export class WorkflowDetail extends LiteElement {
       <btrix-tab-panel name="artifacts"
         >${this.renderArtifacts()}</btrix-tab-panel
       >
-      <btrix-tab-panel name="watch">${this.renderWatchCrawl()}</btrix-tab-panel>
+      <btrix-tab-panel name="watch"
+        >${when(
+          this.activePanel === "watch",
+          this.renderWatchCrawl
+        )}</btrix-tab-panel
+      >
       <btrix-tab-panel name="settings">
         ${this.renderSettings()}
       </btrix-tab-panel>
@@ -249,6 +262,7 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
+          ?disabled=${this.workflow?.currCrawlState !== "running"}
           @click=${() => {
             this.openDialogName = "scale";
             this.isDialogVisible = true;
@@ -382,8 +396,6 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private renderDetails() {
-    if (!this.workflow) return;
-
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(
@@ -498,7 +510,7 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderWatchCrawl() {
+  private renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.currCrawlState) return "";
 
     const isStarting = this.workflow.currCrawlState === "starting";
@@ -555,7 +567,7 @@ export class WorkflowDetail extends LiteElement {
         `
       )}
     `;
-  }
+  };
 
   private renderInactiveCrawlMessage() {
     return html`
@@ -684,8 +696,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private handleExclusionChange(e: CustomEvent) {
-    console.debug("TODO exclusion change");
-    // this.initWorkflow();
+    this.initWorkflow();
   }
 
   private async scale(value: Crawl["scale"]) {
