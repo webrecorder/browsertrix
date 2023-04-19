@@ -25,4 +25,4 @@ export const ROUTES = {
   crawl: "/crawls/crawl/:crawlId",
 } as const;
 
-export const DASHBOARD_ROUTE = "/workflows";
+export const DASHBOARD_ROUTE = "/workflows/crawls";
