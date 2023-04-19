@@ -668,7 +668,6 @@ export class WorkflowDetail extends LiteElement {
             @sl-show=${async () => {
               await this.fetchCurrentCrawl();
               await this.updateComplete;
-              console.log(this.currentCrawl);
               this.isDialogVisible = true;
             }}
             @sl-after-hide=${() => (this.isDialogVisible = false)}
