@@ -612,10 +612,10 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async runNow(crawlConfig: Workflow): Promise<void> {
+  private async runNow(workflow: Workflow): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
         this.authState!,
         {
           method: "POST",
@@ -624,12 +624,11 @@ export class WorkflowsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Started crawl from
-            <strong>${this.renderName(crawlConfig)}</strong>.
+          html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/artifacts/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/workflows/crawl/${workflow.id}"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`

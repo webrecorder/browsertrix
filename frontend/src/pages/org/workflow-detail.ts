@@ -963,7 +963,7 @@ export class WorkflowDetail extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/artifacts/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/workflows/crawl/${this.workflowId}"
               @click="${this.navLink.bind(this)}"
               >Watch crawl</a
             >`
