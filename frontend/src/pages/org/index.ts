@@ -36,6 +36,7 @@ type Params = {
   crawlOrWorkflowId?: string;
   browserProfileId?: string;
   browserId?: string;
+  artifactId?: string;
 };
 
 const defaultTab = "crawls";
@@ -243,14 +244,28 @@ export class Org extends LiteElement {
   private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
+    const workflowId = this.params.crawlOrWorkflowId;
 
-    if (this.params.crawlOrWorkflowId) {
+    if (workflowId) {
+      if (this.params.artifactId) {
+        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+        // TODO abstract into breadcrumbs
+        const crawlsBaseUrl = `/orgs/${this.orgId}/workflows/crawl/${workflowId}`;
+
+        return html` <btrix-crawl-detail
+          .authState=${this.authState!}
+          crawlId=${this.params.artifactId}
+          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+          crawlsBaseUrl=${crawlsBaseUrl}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-crawl-detail>`;
+      }
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId!}
-          workflowId=${this.params.crawlOrWorkflowId}
+          workflowId=${workflowId}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
         ></btrix-workflow-detail>

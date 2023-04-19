@@ -198,6 +198,9 @@ export class CrawlDetail extends LiteElement {
         break;
     }
 
+    // TODO abstract into breadcrumbs
+    const isWorkflowArtifact = this.crawlsBaseUrl.includes("/workflows/");
+
     return html`
       <div class="mb-7">
         <a
@@ -210,7 +213,9 @@ export class CrawlDetail extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
+            >${isWorkflowArtifact
+              ? msg("Back to Crawl Workflow")
+              : msg("Back to Crawls")}</span
           >
         </a>
       </div>
@@ -280,6 +285,7 @@ export class CrawlDetail extends LiteElement {
       icon: string;
     }) => {
       const isActive = section === this.sectionName;
+      const baseUrl = window.location.pathname.split("#")[0];
       return html`
         <li
           class="relative grow"
@@ -290,7 +296,7 @@ export class CrawlDetail extends LiteElement {
             class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
               ? "text-blue-600 bg-blue-100 shadow-sm"
               : "text-neutral-600 hover:bg-blue-50"}"
-            href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
+            href=${`${baseUrl}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
             <sl-icon

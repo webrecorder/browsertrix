@@ -179,6 +179,9 @@ export class CrawlListItem extends LitElement {
   @property({ type: Object })
   crawl?: Crawl;
 
+  @property({ type: String })
+  baseUrl?: string;
+
   @query(".row")
   row!: HTMLElement;
 
@@ -218,7 +221,9 @@ export class CrawlListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.crawl?.oid}/artifacts/crawl/${this.crawl?.id}`}
+      href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
+        this.crawl?.id
+      }`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -484,6 +489,9 @@ export class CrawlList extends LitElement {
     `,
   ];
 
+  @property({ type: String, noAccessor: true })
+  baseUrl?: string;
+
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
@@ -505,10 +513,19 @@ export class CrawlList extends LitElement {
   }
 
   private handleSlotchange() {
-    this.listItems.map((el) => {
+    const assignRole = (el: HTMLElement) => {
       if (!el.attributes.getNamedItem("role")) {
         el.setAttribute("role", "listitem");
       }
-    });
+    };
+    let mapFn = assignRole;
+    if (this.baseUrl) {
+      mapFn = (el) => {
+        assignRole(el);
+        el.setAttribute("baseUrl", this.baseUrl!);
+      };
+    }
+
+    this.listItems.forEach(mapFn);
   }
 }

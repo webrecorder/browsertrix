@@ -15,6 +15,7 @@ export const ROUTES = {
     // Optional segments:
     "(/crawls)",
     "(/crawl/:crawlOrWorkflowId)",
+    "(/artifact/:artifactId)",
     "(/profile(/:browserProfileId)(/browser/:browserId))",
     "(/members)",
   ].join(""),

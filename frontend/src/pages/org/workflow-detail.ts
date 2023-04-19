@@ -486,7 +486,9 @@ export class WorkflowDetail extends LiteElement {
   private renderArtifacts() {
     return html`
       <section>
-        <btrix-crawl-list>
+        <btrix-crawl-list
+          baseUrl=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact`}
+        >
           <span slot="idCol">${msg("Start Time")}</span>
           ${this.crawls.map(
             (crawl) => html`
