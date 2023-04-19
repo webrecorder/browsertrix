@@ -4,7 +4,7 @@
 #
 - name: deploy microk8s 
   gather_facts: true
-  hosts: "{{ host_ip | default('inventory_hostname') }}"
+  hosts: all
   remote_user: "{{ your_user }}"
   become: true
   vars_files:
