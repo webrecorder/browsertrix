@@ -27,3 +27,11 @@ def dt_now():
 def ts_now():
     """get current ts"""
     return str(dt_now())
+
+
+async def get_page_stats(redis, crawl_id):
+    """get page stats"""
+    pages_done = await redis.llen(f"{crawl_id}:d")
+    pages_found = await redis.scard(f"{crawl_id}:s")
+    stats = {"found": pages_found, "done": pages_done}
+    return stats

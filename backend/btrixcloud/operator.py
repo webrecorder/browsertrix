@@ -13,16 +13,13 @@ import yaml
 from pydantic import BaseModel
 from redis import asyncio as aioredis  # , exceptions
 
-from .utils import from_k8s_date, to_k8s_date, dt_now
+from .utils import from_k8s_date, to_k8s_date, dt_now, get_page_stats
 from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
 from .crawls import CrawlFile, CrawlCompleteIn, add_crawl_file, update_crawl
 
-# from .crawlconfigs import CrawlConfig
-
-# pylint:disable=duplicate-code
 
 STS = "StatefulSet.apps/v1"
 CMAP = "ConfigMap.v1"
@@ -165,9 +162,7 @@ class BtrixOperator(K8sAPI):
         crawl_sts = f"crawl-{crawl_id}"
         redis_id = f"redis-{crawl_id}"
 
-        redis_url = (
-            f"redis://{redis_id}-0.{redis_id}.{self.namespace}.svc.cluster.local/0"
-        )
+        redis_url = self.get_redis_url(crawl_id)
 
         has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
         if has_crawl_children:
@@ -210,11 +205,9 @@ class BtrixOperator(K8sAPI):
 
     def load_from_yaml(self, filename, params):
         """load and parse k8s template from yaml file"""
-        crawler_yaml = self.templates.env.get_template(filename).render(params)
-
-        children = list(yaml.safe_load_all(crawler_yaml))
-
-        return children
+        return list(
+            yaml.safe_load_all(self.templates.env.get_template(filename).render(params))
+        )
 
     def get_related(self, data: MCBaseRequest):
         """return configmap related to crawl"""
@@ -341,9 +334,8 @@ class BtrixOperator(K8sAPI):
 
     async def update_crawl_state(self, redis, crawl, status):
         """update crawl state and check if crawl is now done"""
-        pages_done = await redis.llen(f"{crawl.id}:d")
-        pages_found = await redis.scard(f"{crawl.id}:s")
         results = await redis.hvals(f"{crawl.id}:status")
+        stats = await get_page_stats(redis, crawl.id)
 
         # check crawl expiry
         if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
@@ -356,19 +348,16 @@ class BtrixOperator(K8sAPI):
         if crawl.stopping:
             await redis.set(f"{crawl.id}:stopping", "1")
 
-        # no change in pages found / done, no further checks / updates needed
-        # return current status
-        # if status.pagesDone == pages_done and status.pagesFound == pages_found:
-        #    return status
-
-        stats = {"found": pages_found, "done": pages_done}
-
-        await update_crawl(self.crawls, crawl.id, state="running", stats=stats)
+        # optimization: don't update db once crawl is already running
+        # will set stats at when crawl is finished, otherwise can read
+        # directly from redis
+        if status.state != "running":
+            await update_crawl(self.crawls, crawl.id, state="running")
 
         # update status
         status.state = "running"
-        status.pagesDone = pages_done
-        status.pagesFound = pages_found
+        status.pagesDone = stats["done"]
+        status.pagesFound = stats["found"]
 
         # check if done / failed
         done = 0
@@ -390,7 +379,7 @@ class BtrixOperator(K8sAPI):
 
             state = "complete" if completed else "partial_complete"
 
-            status = await self.mark_finished(crawl.id, status, state, crawl)
+            status = await self.mark_finished(crawl.id, status, state, crawl, stats)
 
         # check if all crawlers failed
         if failed >= crawl.scale:
@@ -398,11 +387,16 @@ class BtrixOperator(K8sAPI):
 
         return status
 
-    async def mark_finished(self, crawl_id, status, state, crawl=None):
+    # pylint: disable=too-many-arguments
+    async def mark_finished(self, crawl_id, status, state, crawl=None, stats=None):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
-        await update_crawl(self.crawls, crawl_id, state=state, finished=finished)
+        kwargs = {"state": state, "finished": finished}
+        if stats:
+            kwargs["stats"] = stats
+
+        await update_crawl(self.crawls, crawl_id, **kwargs)
 
         status.state = state
         status.finished = to_k8s_date(finished)

@@ -17,7 +17,8 @@ from fastapi.templating import Jinja2Templates
 from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
-# pylint: disable=too-few-public-methods,too-many-instance-attributes
+# ============================================================================
+# pylint: disable=too-many-instance-attributes
 class K8sAPI:
     """K8S API accessors"""
 
@@ -52,6 +53,14 @@ class K8sAPI:
     def get_custom_api(self, kind):
         """return custom API"""
         return self.custom_resources[kind] if kind in self.custom_resources else None
+
+    def get_redis_url(self, crawl_id):
+        """get redis url for crawl id"""
+        redis_id = f"redis-{crawl_id}"
+        redis_url = (
+            f"redis://{redis_id}-0.{redis_id}.{self.namespace}.svc.cluster.local/0"
+        )
+        return redis_url
 
     # pylint: disable=too-many-arguments
     async def new_crawl_job(self, cid, userid, scale=1, crawl_timeout=0, manual=True):

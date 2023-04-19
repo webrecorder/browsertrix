@@ -24,7 +24,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
 from .users import User
-from .utils import dt_now, ts_now
+from .utils import dt_now, ts_now, get_page_stats
 
 
 CRAWL_STATES = (
@@ -186,7 +186,6 @@ class CrawlOps:
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
-        self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
 
         self.crawl_configs.set_crawl_ops(self)
 
@@ -416,6 +415,12 @@ class CrawlOps:
         user = await self.user_manager.get(crawl.userid)
         if user:
             crawl.userName = user.name
+
+        # if running, get stats directly from redis
+        # more responsive, saves db update in operator
+        if crawl.state == "running":
+            redis = await self.get_redis(crawl.id)
+            crawl.stats = await get_page_stats(redis, crawl.id)
 
         return crawl
 
@@ -720,8 +725,7 @@ class CrawlOps:
 
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
-        # pylint: disable=line-too-long
-        redis_url = f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+        redis_url = self.crawl_manager.get_redis_url(crawl_id)
 
         return await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
