@@ -330,32 +330,34 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col action">
-        <sl-icon-button
-          class="dropdownTrigger"
-          name="three-dots-vertical"
-          label=${msg("More")}
-          @click=${(e: MouseEvent) => {
-            // Prevent anchor link default behavior
-            e.preventDefault();
-            // Stop prop to anchor link
-            e.stopPropagation();
-            this.dropdownIsOpen = !this.dropdownIsOpen;
-          }}
-          @focusout=${(e: FocusEvent) => {
-            const relatedTarget = e.relatedTarget as HTMLElement;
-            if (relatedTarget) {
-              if (this.menuArr[0]?.contains(relatedTarget)) {
-                // Keep dropdown open if moving to menu selection
-                return;
+        <slot name="menuTrigger">
+          <sl-icon-button
+            class="dropdownTrigger"
+            name="three-dots-vertical"
+            label=${msg("More")}
+            @click=${(e: MouseEvent) => {
+              // Prevent anchor link default behavior
+              e.preventDefault();
+              // Stop prop to anchor link
+              e.stopPropagation();
+              this.dropdownIsOpen = !this.dropdownIsOpen;
+            }}
+            @focusout=${(e: FocusEvent) => {
+              const relatedTarget = e.relatedTarget as HTMLElement;
+              if (relatedTarget) {
+                if (this.menuArr[0]?.contains(relatedTarget)) {
+                  // Keep dropdown open if moving to menu selection
+                  return;
+                }
+                if (this.row?.isEqualNode(relatedTarget)) {
+                  // Handle with click event
+                  return;
+                }
               }
-              if (this.row?.isEqualNode(relatedTarget)) {
-                // Handle with click event
-                return;
-              }
-            }
-            this.dropdownIsOpen = false;
-          }}
-        ></sl-icon-button>
+              this.dropdownIsOpen = false;
+            }}
+          ></sl-icon-button>
+        </slot>
       </div>
     </a>`;
   }

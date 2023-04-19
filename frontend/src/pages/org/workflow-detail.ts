@@ -157,21 +157,10 @@ export class WorkflowDetail extends LiteElement {
               this.activePanel === "artifacts",
               () =>
                 html`<h3>
-                    ${this.workflow?.crawlAttemptCount === 1
-                      ? msg(str`${this.workflow?.crawlAttemptCount} Crawl`)
-                      : msg(str`${this.workflow?.crawlAttemptCount} Crawls`)}
-                  </h3>
-                  <sl-tooltip
-                    content=${msg("Workflow is already running")}
-                    ?disabled=${!this.workflow?.currCrawlId}
-                  >
-                    <sl-button
-                      size="small"
-                      ?disabled=${this.workflow?.currCrawlId}
-                      @click=${this.runNow}
-                      >${msg("Run Workflow")}</sl-button
-                    >
-                  </sl-tooltip> `,
+                  ${this.workflow?.crawlAttemptCount === 1
+                    ? msg(str`${this.workflow?.crawlAttemptCount} Crawl`)
+                    : msg(str`${this.workflow?.crawlAttemptCount} Crawls`)}
+                </h3>`,
               () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`
             )}
           </header>
@@ -438,16 +427,8 @@ export class WorkflowDetail extends LiteElement {
                   hour="2-digit"
                   minute="2-digit"
                 ></sl-format-date>
-                <sl-menu slot="menu">
-                  <sl-menu-item
-                    @click=${() =>
-                      this.navTo(
-                        `/orgs/${this.orgId}/crawls/crawl/${crawl.id}`
-                      )}
-                  >
-                    ${msg("View Crawl Details")}
-                  </sl-menu-item>
-                </sl-menu>
+                <!-- Hide menu trigger: -->
+                <div slot="menuTrigger" role="none"></div>
               </btrix-crawl-list-item>
             `
           )}
