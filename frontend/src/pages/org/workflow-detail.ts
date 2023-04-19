@@ -16,7 +16,7 @@ import type {
   WorkflowParams,
   JobType,
 } from "./types";
-import { humanizeNextDate } from "../../utils/cron";
+import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
@@ -409,22 +409,17 @@ export class WorkflowDetail extends LiteElement {
             ></btrix-crawl-status>
           `
         )}
-        ${this.renderDetailItem(
-          msg("Crawl Count"),
-          () => this.workflow!.crawlCount
-        )}
-        ${this.renderDetailItem(msg("Next Run"), () =>
+        ${this.renderDetailItem(msg("Total Size"), () => "TODO")}
+        ${this.renderDetailItem(msg("Schedule"), () =>
           this.workflow!.schedule
             ? html`
                 <div>
-                  ${humanizeNextDate(this.workflow!.schedule, {
+                  ${humanizeSchedule(this.workflow!.schedule, {
                     length: "short",
                   })}
                 </div>
               `
-            : html`<span class="text-neutral-400"
-                >${msg("Not Scheduled")}</span
-              >`
+            : html`<span class="text-neutral-400">${msg("No Schedule")}</span>`
         )}
         ${this.renderDetailItem(
           msg("Created By"),
