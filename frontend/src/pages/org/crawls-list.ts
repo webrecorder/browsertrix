@@ -490,16 +490,22 @@ export class CrawlsList extends LiteElement {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
     html`
-      <sl-menu-item
-        @click=${() => {
-          this.crawlToEdit = crawl;
-          this.isEditingCrawl = true;
-        }}
-      >
-        <sl-icon name="pencil" slot="prefix"></sl-icon>
-        ${msg("Edit Metadata")}
-      </sl-menu-item>
-      <sl-divider></sl-divider>
+      ${when(
+        this.isCrawler,
+        () => html`
+          <sl-menu-item
+            @click=${() => {
+              this.crawlToEdit = crawl;
+              this.isEditingCrawl = true;
+            }}
+          >
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+        `
+      )}
+
       <sl-menu-item
         @click=${() =>
           this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
@@ -519,7 +525,7 @@ export class CrawlsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        !isActive(crawl.state),
+        this.isCrawler && !isActive(crawl.state),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item

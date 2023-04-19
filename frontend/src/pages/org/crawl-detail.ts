@@ -7,6 +7,7 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, Workflow } from "./types";
 
@@ -215,7 +216,7 @@ export class CrawlDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${isWorkflowArtifact
               ? msg("Back to Crawl Workflow")
-              : msg("Back to Crawls")}</span
+              : msg("Back to Finished Crawls")}</span
           >
         </a>
       </div>
@@ -401,103 +402,58 @@ export class CrawlDetail extends LiteElement {
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button
         >
-
-        <ul
-          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
+        <sl-menu>
           ${when(
-            !this.isActive,
+            this.isCrawler,
             () => html`
-              <li
-                class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.runNow();
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                <sl-icon
-                  class="inline-block align-middle mr-1"
-                  name="arrow-clockwise"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Re-run crawl")}
-                </span>
-              </li>
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.openMetadataEditor();
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                <sl-icon
-                  class="inline-block align-middle mr-1"
-                  name="pencil"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Edit Metadata")}
-                </span>
-              </li>
-            `
-          )}
-          ${when(
-            !this.isActive,
-            () => html`
-              <hr />
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
+              <sl-menu-item
                 @click=${() => {
-                  this.navTo(
-                    `/orgs/${this.crawl?.oid}/workflows/crawl/${this.crawl?.cid}?edit`
-                  );
+                  this.openMetadataEditor();
                 }}
               >
-                <span class="inline-block align-middle">
-                  ${msg("Edit Workflow")}
-                </span>
-              </li>
+                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                ${msg("Edit Metadata")}
+              </sl-menu-item>
+              <sl-divider></sl-divider>
             `
           )}
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${(e: any) => {
-              CopyButton.copyToClipboard(crawlId);
-              closeDropdown(e);
-            }}
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${this.crawl!.oid}/workflows/crawl/${this.crawl!.cid}`
+              )}
           >
-            ${msg("Copy Crawl ID")}
-          </li>
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${(e: any) => {
-              CopyButton.copyToClipboard(this.crawl?.cid || "");
-              closeDropdown(e);
-            }}
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+            ${msg("Go to Workflow")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard(this.crawl!.cid)}
           >
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
             ${msg("Copy Workflow ID")}
-          </li>
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              CopyButton.copyToClipboard(this.crawl!.tags.join(","))}
+            ?disabled=${this.crawl.tags.length}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
+          </sl-menu-item>
           ${when(
-            this.crawl && !this.isActive,
+            this.isCrawler && !isActive(this.crawl.state),
             () => html`
-              <li
-                class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  e.target.closest("sl-dropdown").hide();
-                  this.deleteCrawl();
-                }}
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.deleteCrawl()}
               >
+                <sl-icon name="trash" slot="prefix"></sl-icon>
                 ${msg("Delete Crawl")}
-              </li>
+              </sl-menu-item>
             `
           )}
-        </ul>
+        </sl-menu>
       </sl-dropdown>
     `;
   }
