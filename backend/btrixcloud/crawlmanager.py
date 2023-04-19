@@ -298,20 +298,6 @@ class CrawlManager(K8sAPI):
         """decode secret data"""
         return base64.standard_b64decode(secret.data[name]).decode()
 
-    async def _delete_job(self, name):
-        """delete job"""
-        try:
-            await self.batch_api.delete_namespaced_job(
-                name=name,
-                namespace=self.namespace,
-                grace_period_seconds=60,
-                propagation_policy="Foreground",
-            )
-            return True
-        # pylint: disable=bare-except
-        except:
-            return False
-
     async def _create_config_map(self, crawlconfig, **data):
         """Create Config Map based on CrawlConfig"""
         data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())

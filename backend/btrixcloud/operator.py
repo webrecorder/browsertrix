@@ -120,11 +120,7 @@ class BtrixOperator(K8sAPI):
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")
 
-        browser_yaml = self.templates.env.get_template("profilebrowser.yaml").render(
-            params
-        )
-
-        children = list(yaml.safe_load_all(browser_yaml))
+        children = self.load_from_yaml("profilebrowser.yaml", params)
 
         return {"status": {}, "children": children}
 
@@ -173,7 +169,8 @@ class BtrixOperator(K8sAPI):
             f"redis://{redis_id}-0.{redis_id}.{self.namespace}.svc.cluster.local/0"
         )
 
-        if STS in data.children and crawl_sts in data.children[STS]:
+        has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
+        if has_crawl_children:
             status = await self.sync_crawl_state(redis_url, crawl, status)
         else:
             status.state = "starting"
@@ -196,11 +193,28 @@ class BtrixOperator(K8sAPI):
 
         params["redis_url"] = redis_url
 
-        crawler_yaml = self.templates.env.get_template("crawler.yaml").render(params)
+        children = self.load_from_yaml("crawler.yaml", params)
+        children.extend(self.load_from_yaml("redis.yaml", params))
+
+        # to minimize merging, just patch in volumeClaimTemplates from actual children
+        # as they may get additional settings that cause more frequent updates
+        if has_crawl_children:
+            children[0]["spec"]["volumeClaimTemplates"] = data.children[STS][crawl_sts][
+                "spec"
+            ]["volumeClaimTemplates"]
+            children[2]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_id][
+                "spec"
+            ]["volumeClaimTemplates"]
+
+        return {"status": status.dict(exclude_none=True), "children": children}
+
+    def load_from_yaml(self, filename, params):
+        """load and parse k8s template from yaml file"""
+        crawler_yaml = self.templates.env.get_template(filename).render(params)
 
         children = list(yaml.safe_load_all(crawler_yaml))
 
-        return {"status": status.dict(), "children": children}
+        return children
 
     def get_related(self, data: MCBaseRequest):
         """return configmap related to crawl"""
@@ -252,7 +266,11 @@ class BtrixOperator(K8sAPI):
 
     def _done_response(self, status):
         """response for when crawl job is done/to be deleted"""
-        return {"status": status.dict(), "children": [], "finalized": True}
+        return {
+            "status": status.dict(exclude_none=True),
+            "children": [],
+            "finalized": True,
+        }
 
     async def sync_crawl_state(self, redis_url, crawl, status):
         """sync crawl state for running crawl"""
@@ -412,17 +430,22 @@ def init_operator_webhook(app):
 
     oper = BtrixOperator()
 
-    @app.post("/op/syncCrawls")
+    @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):
         return await oper.sync_crawls(data)
 
-    @app.post("/op/syncProfileBrowsers")
-    async def mc_sync_profile_browsers(data: MCSyncData):
-        return await oper.sync_profile_browsers(data)
+    # reuse sync path, but distinct endpoint for better logging
+    @app.post("/op/crawls/finalize")
+    async def mc_sync_finalize(data: MCSyncData):
+        return await oper.sync_crawls(data)
 
-    @app.post("/op/customize")
+    @app.post("/op/crawls/customize")
     async def mc_related(data: MCBaseRequest):
         return oper.get_related(data)
+
+    @app.post("/op/profilebrowsers/sync")
+    async def mc_sync_profile_browsers(data: MCSyncData):
+        return await oper.sync_profile_browsers(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

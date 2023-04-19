@@ -12,6 +12,7 @@ spec:
     singular: crawlob
     shortNames:
       - cjs
+
   versions:
     - name: v1
       served: true
@@ -21,7 +22,6 @@ spec:
         scale:
           specReplicasPath: .spec.scale
           statusReplicasPath: .status.scale
-          labelSelectorPath: .status.labelSelector
 
       schema:
         openAPIV3Schema:
@@ -30,42 +30,10 @@ spec:
             spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
-              properties:
-                id:
-                  type: string
-                userid:
-                  type: string
-                oid:
-                  type: string
-                cid:
-                  type: string
-                rev:
-                  type: integer
-                scale:
-                  type: integer
-                ttlSecondsAfterFinished:
-                  type: integer
-                forceRestart:
-                  type: string
- 
+
             status:
               type: object
               x-kubernetes-preserve-unknown-fields: true
-              properties:
-                state:
-                  type: string
-                pagesDone:
-                  type: integer
-                pagesFound:
-                  type: integer
-                finished:
-                  type: string
-                filesAdded:
-                  type: integer
-                scale:
-                  type: integer
-                labelSelector:
-                  type: string
 
       additionalPrinterColumns:
         - name: State
