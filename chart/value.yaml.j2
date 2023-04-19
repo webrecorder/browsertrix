@@ -1,0 +1,271 @@
+# Settings template used by ansible
+# =========================================
+name: browsertrix-cloud
+
+# when running in the cloud, set this value to cloud-specific block storage
+# keep empty to use hostPath (eg. on minikube)
+volume_storage_class:
+
+# if set, set the node selector 'nodeType' for deployment pods
+# main_node_type:
+
+# if set, set the node selector 'nodeType' to this crawling pods
+# crawler_node_type:
+
+registration_enabled: "0"
+jwt_token_lifetime_minutes: 1440
+
+# default time to run behaviors on each page (in seconds)
+default_behavior_time_seconds: 300
+
+# default time to wait for page to fully load before running behaviors (in seconds)
+default_page_load_time_seconds: 120
+
+# disk utilization threshold percentage - when used disk space passes
+# this percentage of total, crawls will gracefully stop to prevent the
+# disk from being filled
+disk_utilization_threshold: 90
+
+# max pages per crawl
+# set to non-zero value to enforce global max pages per crawl limit
+# if set, each workflow can have a lower limit, but not higher
+max_pages_per_crawl: 0
+
+# if set to "1", allow inviting same user to same org multiple times
+allow_dupe_invites: "0"
+
+# number of workers for backend api
+backend_workers: 4
+
+# number of seconds before pending invites expire - default is 7 days
+invite_expire_seconds: 604800
+
+# base url for replayweb.page
+rwp_base_url: "https://replayweb.page/"
+
+superuser:
+  # set this to enable a superuser admin
+  email: "{{ browsertrix_superuser_email| default('admin@example.com') }}"
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  password: "{{ browsertrix_superuser_password | default('PASSW0RD!') }}"
+
+# Set name for default organization created with superuser
+default_org: "{{ browsertrix_default_org | default('My Organization') }}"
+
+
+# API Image
+# =========================================
+backend_image: "docker.io/webrecorder/browsertrix-backend:latest"
+backend_pull_policy: "Always"
+
+backend_password_secret: "c9085f33ecce4347aa1d69339e16c499"
+
+backend_num_replicas: 1
+
+backend_requests_cpu: "10m"
+backend_limits_cpu: "768m"
+
+backend_requests_memory: "100Mi"
+backend_limits_memory: "512Mi"
+
+job_cpu: "3m"
+job_memory: "70Mi"
+
+profile_browser_idle_seconds: 60
+
+
+# Nginx Image
+# =========================================
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:latest"
+frontend_pull_policy: "Always"
+
+frontend_requests_cpu: "3m"
+frontend_limits_cpu: "10m"
+
+frontend_requests_memory: "12Mi"
+frontend_limits_memory: "20Mi"
+
+# if set, maps nginx to a fixed port on host machine
+# must be between 30000 - 32767
+# use for deployments on localhost when not using ingress
+# local_service_port: 30870
+
+
+# MongoDB Image
+# =========================================
+mongo_local: true
+
+mongo_host: "local-mongo.default"
+
+mongo_image: "docker.io/library/mongo:6.0.5"
+mongo_pull_policy: "IfNotPresent"
+
+mongo_requests_cpu: "12m"
+mongo_limits_cpu: "128m"
+
+mongo_requests_memory: "96Mi"
+mongo_limits_memory: "512Mi"
+
+
+mongo_auth:
+  # specify either username + password (for local mongo)
+  username: root
+  password: "{{ browsertrix_mongo_password | default('PASSWORD!') }}"
+
+  # or full URL (for remote mongo server)
+  # db_url: mongodb+srv://...
+
+
+# Redis Image
+# =========================================
+redis_local: true
+
+redis_image: "redis"
+redis_pull_policy: "IfNotPresent"
+
+redis_url: "redis://local-redis.default:6379/1"
+
+redis_requests_cpu: "3m"
+redis_limits_cpu: "48m"
+
+redis_requests_memory: "10Mi"
+redis_limits_memory: "64Mi"
+
+
+
+# Crawler Image
+# =========================================
+
+crawler_image: "webrecorder/browsertrix-crawler:latest"
+crawler_pull_policy: "IfNotPresent"
+
+crawler_namespace: "crawlers"
+
+# optional: enable to use a persist volume claim for all crawls
+# can be enabled to use a multi-write shared filesystem
+# crawler_pv_claim: "nfs-shared-crawls"
+
+# num retries
+crawl_retries: 1000
+
+# browsertrix-crawler args:
+crawler_args: "--logging stats,behaviors,debug --generateWACZ --text --collection thecrawl --screencastPort 9037 --logErrorsToRedis --diskUtilization {% raw %}{{ .Values.disk_utilization_threshold | default 90 }}{% endraw %} --waitOnDone"
+
+crawler_browser_instances: 2
+
+crawler_requests_cpu: "800m"
+crawler_limits_cpu: "1200m"
+
+crawler_requests_memory: "512Mi"
+crawler_limits_memory: "1024Mi"
+
+# minimum size allocated to each crawler
+# should be at least double crawl session size to ensure space for WACZ
+crawler_requests_storage: "22Gi"
+
+# max size at which crawler will commit current crawl session
+crawler_session_size_limit_bytes: "10000000000"
+
+# max time in seconds after which crawler will restart, if set
+crawler_session_time_limit_seconds: 18000
+
+crawler_liveness_port: 6065
+
+# time to wait for graceful stop
+grace_period: 1000
+
+
+
+# debug
+no_delete_jobs: 0
+
+
+# Local Minio Pod (optional)
+# =========================================
+# set to true to use a local minio image
+minio_local: true
+
+minio_scheme: "http"
+minio_host: "local-minio.default:9000"
+
+minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
+minio_mc_image: minio/mc
+minio_pull_policy: "IfNotPresent"
+
+minio_local_bucket_name: &local_bucket_name "btrix-data"
+
+
+# Storage
+# =========================================
+# should include the local minio bucket, if enabled, and any other available buckets for default storage
+
+storages:
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
+
+# optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
+# may be useful if, for example, the wacz files are public, while profiles should not be
+# shared_storage_profile:
+
+
+# Email Options
+# =========================================
+email:
+  # email sending is enabled when 'smtp_host' is set to non-empty value
+  #ex: smtp_host: smtp.gmail.com
+  smtp_host: ""
+  smtp_port: 587
+  sender_email: example@example.com
+  password: password
+  reply_to_email: example@example.com
+
+
+# Deployment options
+# =========================================
+
+# Ingress (Optional)
+# Optional: if 'host' is set, a publicly accessible Ingress controller is created with an SSL cert (using letsencrypt)
+ingress:
+  #host: ""
+  cert_email: "test@example.com"
+  scheme: "http"
+  tls: false
+
+ingress_class: nginx
+
+
+# Signing Options
+# =========================================
+# optionally enable signer
+signer:
+  enabled: false
+  image: webrecorder/authsign:0.5.0
+  # host: <set to signer domain>
+  # cert_email: "test@example.com
+  # image_pull_policy: "IfNotPresent"
+  # auth_token: <set to custom value>
+
+signer_requests_cpu: "3m"
+signer_limits_cpu: "32m"
+
+signer_requests_memory: "36Mi"
+signer_limits_memory: "96Mi"
+
+
+# Optional: configure load balancing annotations
+# service:
+#   annotations:
+#     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+#     helm.sh/resource-policy: keep
+
+# Admin services (see Chart.yaml's dependencies)
+# note: see `chart/examples/local-logging.yaml`
+addons:
+  admin:
+    logging: false
