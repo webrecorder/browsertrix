@@ -17,13 +17,8 @@ import type {
 } from "./types";
 import { humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
-import { isActive } from "../../utils/crawler";
+import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 
-const finishedCrawlStates: CrawlState[] = [
-  "complete",
-  "partial_complete",
-  "timed_out",
-];
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
 
@@ -85,7 +80,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("Finished Crawls"),
+    artifacts: msg("Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -252,9 +247,9 @@ export class WorkflowDetail extends LiteElement {
     if (!this.activePanel) return;
     if (this.activePanel === "artifacts") {
       return html`<h3>
-        ${this.workflow?.crawlAttemptCount === 1
-          ? msg(str`${this.workflow?.crawlAttemptCount} Crawl`)
-          : msg(str`${this.workflow?.crawlAttemptCount} Crawls`)}
+        ${this.workflow?.crawlCount === 1
+          ? msg(str`${this.workflow?.crawlCount} Crawl`)
+          : msg(str`${this.workflow?.crawlCount} Crawls`)}
       </h3>`;
     }
 
@@ -409,7 +404,7 @@ export class WorkflowDetail extends LiteElement {
           `
         )}
         ${this.renderDetailItem(
-          msg("Finished Crawls"),
+          msg("Crawl Count"),
           () => this.workflow!.crawlCount
         )}
         ${this.renderDetailItem(msg("Next Run"), () =>
@@ -750,7 +745,7 @@ export class WorkflowDetail extends LiteElement {
   private async getCrawls(): Promise<Crawl[]> {
     const query = queryString.stringify(
       {
-        state: finishedCrawlStates,
+        state: inactiveCrawlStates,
         cid: this.workflowId,
         sortBy: "started",
       },
