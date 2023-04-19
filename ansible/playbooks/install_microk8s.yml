@@ -389,6 +389,14 @@
     tags:
       - helm_upgrade
 
+  - name: micork8s deploy | helm | configure chart values yaml
+    ansible.builtin.template:
+      src: ../../chart/values.yaml.j2
+      dest: "{{ browsertrix_cloud_home }}/chart/values.yaml-test"
+      mode: u+rw
+    tags:
+      - helm_upgrade
+
   - name: microk8s deploy | helm | deploy btrix (Debian)
     ansible.builtin.command: helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
     args:
