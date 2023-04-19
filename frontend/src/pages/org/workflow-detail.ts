@@ -6,6 +6,7 @@ import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
+import { CrawlStatus } from "../../components/crawl-status";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type {
@@ -18,6 +19,7 @@ import type {
 import { humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
+import { SlSelect } from "@shoelace-style/shoelace";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -62,6 +64,9 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private isDialogVisible: boolean = false;
+
+  @state()
+  private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
@@ -481,6 +486,32 @@ export class WorkflowDetail extends LiteElement {
   private renderArtifacts() {
     return html`
       <section>
+        <div class="mb-3 p-4 bg-neutral-50 border rounded-lg">
+          <div class="flex items-center">
+            <div class="text-neutral-500 mx-2">${msg("View:")}</div>
+            <sl-select
+              id="stateSelect"
+              class="flex-1 md:min-w-[14.5rem]"
+              size="small"
+              pill
+              multiple
+              max-tags-visible="1"
+              placeholder=${msg("All Crawls")}
+              @sl-change=${async (e: CustomEvent) => {
+                const value = (e.target as SlSelect).value as CrawlState[];
+                await this.updateComplete;
+                this.filterBy = {
+                  ...this.filterBy,
+                  state: value,
+                };
+                this.crawls = await this.getCrawls();
+              }}
+            >
+              ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
+            </sl-select>
+          </div>
+        </div>
+
         <btrix-crawl-list
           baseUrl=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact`}
         >
@@ -503,9 +534,26 @@ export class WorkflowDetail extends LiteElement {
             `
           )}
         </btrix-crawl-list>
+
+        ${when(
+          this.workflow?.crawlCount && !this.crawls.length,
+          () => html`
+            <div class="p-4">
+              <p class="text-center text-neutral-400">
+                ${msg("No matching crawls found.")}
+              </p>
+            </div>
+          `
+        )}
       </section>
     `;
   }
+
+  private renderStatusMenuItem = (state: CrawlState) => {
+    const { icon, label } = CrawlStatus.getContent(state);
+
+    return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
+  };
 
   private renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.currCrawlState) return "";
@@ -692,8 +740,8 @@ export class WorkflowDetail extends LiteElement {
     </section>`;
   }
 
-  private handleExclusionChange(e: CustomEvent) {
-    this.initWorkflow();
+  private async handleExclusionChange(e: CustomEvent) {
+    this.workflow = await this.getWorkflow();
   }
 
   private async scale(value: Crawl["scale"]) {
@@ -745,7 +793,7 @@ export class WorkflowDetail extends LiteElement {
   private async getCrawls(): Promise<Crawl[]> {
     const query = queryString.stringify(
       {
-        state: inactiveCrawlStates,
+        state: this.filterBy.state || inactiveCrawlStates,
         cid: this.workflowId,
         sortBy: "started",
       },
