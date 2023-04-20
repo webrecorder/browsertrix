@@ -55,7 +55,7 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private crawls: Crawl[] = []; // Only inactive crawls
+  private crawls?: Crawl[]; // Only inactive crawls
 
   @state()
   private currentCrawl?: Crawl;
@@ -111,7 +111,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   disconnectedCallback(): void {
-    this.stopPollCurrentCrawl();
+    this.stopPoll();
     super.disconnectedCallback();
   }
 
@@ -120,9 +120,9 @@ export class WorkflowDetail extends LiteElement {
       (changedProperties.has("workflowId") && this.workflowId) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
-      this.initWorkflow();
+      this.fetchWorkflow();
     }
-    if (changedProperties.has("activePanel")) {
+    if (changedProperties.has("activePanel") && this.activePanel) {
       if (!this.isPanelHeaderVisible) {
         // Scroll panel header into view
         this.querySelector("btrix-tab-list")?.scrollIntoView({
@@ -130,32 +130,39 @@ export class WorkflowDetail extends LiteElement {
         });
       }
 
-      if (this.activePanel === "watch") {
-        this.fetchCurrentCrawl();
-      } else {
-        this.stopPollCurrentCrawl();
+      if (this.activePanel !== window.location.hash.slice(1)) {
+        window.location.hash = `#${this.activePanel}`;
+      }
+
+      if (this.activePanel === "artifacts") {
+        this.fetchCrawls();
       }
     }
   }
 
-  private async initWorkflow() {
-    this.stopPollCurrentCrawl();
+  private async fetchWorkflow() {
+    this.stopPoll();
     try {
       this.workflow = await this.getWorkflow();
+      let activePanel = this.activePanel;
 
       if (!this.activePanel) {
         if (this.workflow.currCrawlId) {
-          this.activePanel = "watch";
+          activePanel = "watch";
         } else {
-          this.activePanel = "artifacts";
+          activePanel = "artifacts";
         }
       }
 
       if (this.activePanel === "watch") {
-        this.fetchCurrentCrawl();
-      } else if (this.activePanel === "artifacts") {
-        this.crawls = await this.getCrawls();
+        if (this.workflow.currCrawlId) {
+          this.fetchCurrentCrawl();
+        } else {
+          activePanel = "artifacts";
+        }
       }
+
+      this.activePanel = activePanel;
     } catch (e: any) {
       this.notify({
         message:
@@ -166,6 +173,11 @@ export class WorkflowDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchWorkflow();
+    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   render() {
@@ -526,7 +538,7 @@ export class WorkflowDetail extends LiteElement {
                   ...this.filterBy,
                   state: value,
                 };
-                this.crawls = await this.getCrawls();
+                this.fetchCrawls();
               }}
             >
               ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
@@ -538,27 +550,36 @@ export class WorkflowDetail extends LiteElement {
           baseUrl=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact`}
         >
           <span slot="idCol">${msg("Start Time")}</span>
-          ${this.crawls.map(
-            (crawl) => html`
-              <btrix-crawl-list-item .crawl=${crawl}>
-                <sl-format-date
-                  slot="id"
-                  date=${`${crawl.started}Z`}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="2-digit"
-                  minute="2-digit"
-                ></sl-format-date>
-                <!-- Hide menu trigger: -->
-                <div slot="menuTrigger" role="none"></div>
-              </btrix-crawl-list-item>
-            `
+          ${when(
+            this.crawls,
+            () =>
+              this.crawls!.map(
+                (crawl) => html`
+                  <btrix-crawl-list-item .crawl=${crawl}>
+                    <sl-format-date
+                      slot="id"
+                      date=${`${crawl.started}Z`}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="2-digit"
+                      minute="2-digit"
+                    ></sl-format-date>
+                    <!-- Hide menu trigger: -->
+                    <div slot="menuTrigger" role="none"></div>
+                  </btrix-crawl-list-item>
+                `
+              ),
+            () => html`<div
+              class="w-full flex items-center justify-center my-24 text-3xl"
+            >
+              <sl-spinner></sl-spinner>
+            </div>`
           )}
         </btrix-crawl-list>
 
         ${when(
-          !this.crawls.length,
+          this.crawls && !this.crawls.length,
           () => html`
             <div class="p-4">
               <p class="text-center text-neutral-400">
@@ -852,6 +873,18 @@ export class WorkflowDetail extends LiteElement {
     return data;
   }
 
+  private async fetchCrawls() {
+    try {
+      this.crawls = await this.getCrawls();
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't get crawls at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async getCrawls(): Promise<Crawl[]> {
     const query = queryString.stringify(
       {
@@ -874,22 +907,15 @@ export class WorkflowDetail extends LiteElement {
   private async fetchCurrentCrawl() {
     if (!this.workflow?.currCrawlId) return;
 
-    this.stopPollCurrentCrawl();
-
     try {
       this.currentCrawl = await this.getCrawl(this.workflow.currCrawlId);
     } catch (e) {
       // TODO handle error
       console.debug(e);
     }
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      this.fetchCurrentCrawl();
-    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
-  private stopPollCurrentCrawl() {
+  private stopPoll() {
     window.clearTimeout(this.timerId);
   }
 
@@ -1003,7 +1029,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.initWorkflow();
+        this.fetchWorkflow();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -1025,7 +1051,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.initWorkflow();
+        this.fetchWorkflow();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -1046,7 +1072,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       this.activePanel = "watch";
-      this.initWorkflow();
+      this.fetchWorkflow();
 
       this.notify({
         message: msg(
