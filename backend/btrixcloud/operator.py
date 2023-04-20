@@ -9,11 +9,12 @@ import json
 import uuid
 
 import yaml
+import humanize
 
 from pydantic import BaseModel
-from redis import asyncio as aioredis  # , exceptions
+from redis import asyncio as aioredis
 
-from .utils import from_k8s_date, to_k8s_date, dt_now, get_page_stats
+from .utils import from_k8s_date, to_k8s_date, dt_now, get_redis_crawl_stats
 from .k8sapi import K8sAPI
 
 from .db import init_db
@@ -50,8 +51,8 @@ class MCSyncData(MCBaseRequest):
 
 
 # ============================================================================
-class CrawlInfo(BaseModel):
-    """Crawl Info"""
+class CrawlSpec(BaseModel):
+    """spec from k8s CrawlJob object"""
 
     id: str
     cid: uuid.UUID
@@ -66,11 +67,12 @@ class CrawlInfo(BaseModel):
 
 # ============================================================================
 class CrawlStatus(BaseModel):
-    """Crawl Status"""
+    """status from k8s CrawlJob object"""
 
     state: str = "waiting"
     pagesFound: int = 0
     pagesDone: int = 0
+    size: str = ""
     scale: int = 1
     filesAdded: int = 0
     finished: Optional[str] = None
@@ -143,7 +145,7 @@ class BtrixOperator(K8sAPI):
         except:
             return await self.cancel_crawl(crawl_id, status, "failed")
 
-        crawl = CrawlInfo(
+        crawl = CrawlSpec(
             id=crawl_id,
             cid=cid,
             oid=configmap["ORG_ID"],
@@ -335,7 +337,7 @@ class BtrixOperator(K8sAPI):
     async def update_crawl_state(self, redis, crawl, status):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
-        stats = await get_page_stats(redis, crawl.id)
+        stats = await get_redis_crawl_stats(redis, crawl.id)
 
         # check crawl expiry
         if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
@@ -358,6 +360,8 @@ class BtrixOperator(K8sAPI):
         status.state = "running"
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
+        if stats["size"] is not None:
+            status.size = humanize.naturalsize(stats["size"])
 
         # check if done / failed
         done = 0

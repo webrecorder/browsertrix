@@ -3,6 +3,8 @@
 import os
 from datetime import datetime
 
+from redis import asyncio as exceptions
+
 
 def get_templates_dir():
     """return directory containing templates for loading"""
@@ -29,9 +31,18 @@ def ts_now():
     return str(dt_now())
 
 
-async def get_page_stats(redis, crawl_id):
+async def get_redis_crawl_stats(redis, crawl_id):
     """get page stats"""
-    pages_done = await redis.llen(f"{crawl_id}:d")
+    try:
+        # crawler >0.9.0, done key is a value
+        pages_done = int(await redis.get(f"{crawl_id}:d") or 0)
+    except exceptions.ResponseError:
+        # crawler <=0.9.0, done key is a list
+        pages_done = await redis.llen(f"{crawl_id}:d")
+
     pages_found = await redis.scard(f"{crawl_id}:s")
-    stats = {"found": pages_found, "done": pages_done}
+    archive_size = await redis.hvals("crawl-size")
+    archive_size = sum(int(x) for x in archive_size)
+
+    stats = {"found": pages_found, "done": pages_done, "size": archive_size}
     return stats

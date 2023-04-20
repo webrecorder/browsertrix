@@ -51,6 +51,11 @@ spec:
           jsonPath: .status.pagesFound
           description: Pages Found
 
+        - name: Size
+          type: string
+          jsonPath: .status.size
+          description: Crawl Size
+
         - name: Time Started
           type: date
           jsonPath: .metadata.creationTimestamp

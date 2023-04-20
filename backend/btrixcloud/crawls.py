@@ -24,7 +24,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
 from .users import User
-from .utils import dt_now, ts_now, get_page_stats
+from .utils import dt_now, ts_now, get_redis_crawl_stats
 
 
 CRAWL_STATES = (
@@ -420,7 +420,7 @@ class CrawlOps:
         # more responsive, saves db update in operator
         if crawl.state == "running":
             redis = await self.get_redis(crawl.id)
-            crawl.stats = await get_page_stats(redis, crawl.id)
+            crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
 
         return crawl
 
