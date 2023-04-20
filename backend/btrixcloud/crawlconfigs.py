@@ -339,11 +339,7 @@ class CrawlConfigOps:
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """increments crawl count for this config and adds new crawl"""
-        inc = self.crawl_configs.find_one_and_update(
-            {"_id": crawlconfig.id, "inactive": {"$ne": True}},
-            {"$inc": {"crawlAttemptCount": 1}},
-        )
-
+        inc = inc_crawl_count(self.crawl_configs, crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
         await asyncio.gather(inc, add)
 
@@ -700,15 +696,11 @@ class CrawlConfigOps:
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
-        """Get an organization for user by unique id"""
-        query = {"_id": cid}
-        if org:
-            query["oid"] = org.id
-        if active_only:
-            query["inactive"] = {"$ne": True}
-
-        res = await self.crawl_configs.find_one(query)
-        return config_cls.from_dict(res)
+        """Get crawl config by id"""
+        oid = org.id if org else None
+        return await get_crawl_config(
+            self.crawl_configs, cid, oid, active_only, config_cls
+        )
 
     async def get_crawl_config_revs(
         self, cid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
@@ -849,8 +841,19 @@ class CrawlConfigOps:
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
         crawl_id = None
+
+        # ensure crawlconfig exists
         try:
-            crawl_id = await self.crawl_manager.run_crawl_config(
+            await self.crawl_manager.get_configmap(crawlconfig.id)
+        except:
+            # pylint: disable=broad-exception-raised,raise-missing-from
+            raise HTTPException(
+                status_code=404,
+                detail=f"crawl-config-{cid} missing, can not start crawl",
+            )
+
+        try:
+            crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user)
@@ -859,6 +862,34 @@ class CrawlConfigOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+
+# ============================================================================
+async def get_crawl_config(
+    crawl_configs,
+    cid: uuid.UUID,
+    oid: Optional[uuid.UUID] = None,
+    active_only: bool = True,
+    config_cls=CrawlConfig,
+):
+    """Get crawl config by id"""
+    query = {"_id": cid}
+    if oid:
+        query["oid"] = oid
+    if active_only:
+        query["inactive"] = {"$ne": True}
+
+    res = await crawl_configs.find_one(query)
+    return config_cls.from_dict(res)
+
+
+# ============================================================================
+async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
+    """inc crawl count for config"""
+    await crawl_configs.find_one_and_update(
+        {"_id": cid, "inactive": {"$ne": True}},
+        {"$inc": {"crawlAttemptCount": 1}},
+    )
 
 
 # ============================================================================
@@ -927,7 +958,9 @@ def init_crawl_config_api(
         return await ops.get_crawl_config_search_values(org)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
-    async def get_crawl_config(cid: str, org: Organization = Depends(org_viewer_dep)):
+    async def get_crawl_config_out(
+        cid: str, org: Organization = Depends(org_viewer_dep)
+    ):
         return await ops.get_crawl_config_out(uuid.UUID(cid), org)
 
     @router.get(

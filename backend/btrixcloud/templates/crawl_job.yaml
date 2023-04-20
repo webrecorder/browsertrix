@@ -1,0 +1,22 @@
+apiVersion: btrix.cloud/v1
+kind: CrawlJob
+metadata:
+  name: job-{{ id }}
+  labels:
+    crawl: "{{ id }}"
+    role: "job"
+
+spec:
+  selector:
+    matchLabels:
+      crawl: "{{ id }}"
+
+  id: "{{ id }}"
+  userid: "{{ userid }}"
+  cid: "{{ cid }}"
+  scale: {{ scale }}
+  ttlSecondsAfterFinished: 30
+
+  {% if expire_time %}
+  expireTime: "{{ expire_time }}"
+  {% endif %}

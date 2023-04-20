@@ -1,22 +1,28 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: btrixjobs.btrix.cloud
+  name: crawljobs.btrix.cloud
 spec:
   scope: Namespaced
   group: btrix.cloud
   names:
-    kind: BtrixJob
-    plural: btrixjobs
-    singular: btrixjob
+    kind: CrawlJob
+    plural: crawljobs
+    singular: crawlob
     shortNames:
-      - btrixjobs
-      - btjobs
+      - cjs
+
   versions:
     - name: v1
       served: true
       storage: true
-      subresources: { status: { } }  # comment/uncomment for experiments
+      subresources:
+        status: {}
+        scale:
+          specReplicasPath: .spec.scale
+          statusReplicasPath: .status.scale
+
       schema:
         openAPIV3Schema:
           type: object
@@ -24,32 +30,88 @@ spec:
             spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
+
             status:
               type: object
               x-kubernetes-preserve-unknown-fields: true
+
       additionalPrinterColumns:
-        - name: Message
+        - name: State
           type: string
-          priority: 0
-          jsonPath: .status.message
-          description: As returned from the handler (sometimes).
-        - name: Active
+          jsonPath: .status.state
+          description: Crawl State
+
+        - name: Pages Done
           type: integer
-          priority: 0
-          jsonPath: .status.active
-          description: As returned from the handler (sometimes).
-        - name: Ready
+          jsonPath: .status.pagesDone
+          description: Pages Done
+
+        - name: Pages Found
           type: integer
-          priority: 0
-          jsonPath: .status.ready
-          description: As returned from the handler (sometimes).
-        - name: Jobs
+          jsonPath: .status.pagesFound
+          description: Pages Found
+
+        - name: Time Started
+          type: date
+          jsonPath: .metadata.creationTimestamp
+          description: "time crawl started"
+
+        - name: Time Finished
+          type: date
+          jsonPath: .status.finished
+          description: "if set, time crawl has finished"
+
+        - name: Files Added
           type: integer
-          priority: 0
-          jsonPath: .status.jobs
-          description: As returned from the handler (sometimes).
-        - name: StartAt
+          jsonPath: .status.filesAdded
+          description: "number of WACZ files uploaded so far from this crawl"
+
+        - name: Scale
+          type: integer
+          jsonPath: .status.scale
+          description: Crawl Scale
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: profilejobs.btrix.cloud
+spec:
+  scope: Namespaced
+  group: btrix.cloud
+  names:
+    kind: ProfileJob
+    plural: profilejobs
+    singular: profilejob
+    shortNames:
+      - pjs
+
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+
+      additionalPrinterColumns:
+        - name: Expire At
           type: string
-          priority: 0
-          jsonPath: .status.startTime
-          description: As returned from the handler (sometimes).
+          jsonPath: .spec.expireTime
+          description: Time Browser will Expire
+
+        - name: Start Url
+          type: string
+          jsonPath: .spec.startUrl
+          description: Starting Url

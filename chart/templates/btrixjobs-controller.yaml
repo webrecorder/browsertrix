@@ -1,19 +1,79 @@
+---
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: CompositeController
 metadata:
-  name: btrixjobs-controller
+  name: crawljobs-controller
   namespace: btrix-operator
 spec:
-  generateSelector: true
+  generateSelector: false
+  resyncPeriodSeconds: 30
   parentResource:
     apiVersion: btrix.cloud/v1
-    resource: btrixjobs
+    resource: crawljobs
   childResources:
-  - apiVersion: batch/v1
-    resource: jobs
+  - apiVersion: apps/v1
+    resource: statefulsets
     updateStrategy:
-      method: OnDelete     
+      method: InPlace
+ 
+  - apiVersion: v1
+    resource: services
+    updateStrategy:
+      method: OnDelete
+ 
   hooks:
     sync:
       webhook:
-        url: http://browsertrix-cloud-backend.default:8756/operator/sync
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/crawls/sync
+
+    finalize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/crawls/finalize
+
+    customize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/crawls/customize
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: profilejobs-controller
+  namespace: btrix-operator
+spec:
+  generateSelector: false
+  resyncPeriodSeconds: 30
+  parentResource:
+    apiVersion: btrix.cloud/v1
+    resource: profilejobs
+  childResources:
+  - apiVersion: apps/v1
+    resource: statefulsets
+    updateStrategy:
+      method: InPlace
+ 
+  - apiVersion: v1
+    resource: services
+    updateStrategy:
+      method: OnDelete
+ 
+  hooks:
+    sync:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/profilebrowsers/sync
