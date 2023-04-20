@@ -233,5 +233,4 @@ def test_workflow_total_size(crawler_auth_headers, default_org_id, admin_crawl_i
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 1
-    assert data["items"][0]["totalSize"] > 0
+    assert data["totalSize"] > 0
