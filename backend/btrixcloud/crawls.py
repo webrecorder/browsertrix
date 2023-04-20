@@ -412,7 +412,7 @@ class CrawlOps:
             for res in results:
                 files = [CrawlFile(**data) for data in res["files"]]
                 crawl_files.extend(files)
-            stats["total_size"] = sum([crawl_file.size for crawl_file in crawl_files])
+            stats["total_size"] = sum(crawl_file.size for crawl_file in crawl_files)
 
         return stats
 
