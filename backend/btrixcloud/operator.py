@@ -419,7 +419,8 @@ class BtrixOperator(K8sAPI):
 
         await update_crawl(self.crawls, crawl_id, **kwargs)
 
-        await self.add_crawl_errors_to_db(redis, crawl_id)
+        if redis:
+            await self.add_crawl_errors_to_db(redis, crawl_id)
 
         status.state = state
         status.finished = to_k8s_date(finished)
