@@ -207,7 +207,9 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 
 
-def test_workflow_total_size(crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id):
+def test_workflow_total_size(
+    crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
+):
     admin_crawl_cid = ""
 
     r = requests.get(

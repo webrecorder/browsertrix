@@ -19,7 +19,13 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
-from .crawls import CrawlFile, CrawlCompleteIn, add_crawl_file, update_crawl
+from .crawls import (
+    CrawlFile,
+    CrawlCompleteIn,
+    add_crawl_file,
+    update_crawl,
+    add_crawl_errors,
+)
 
 
 STS = "StatefulSet.apps/v1"
@@ -443,6 +449,8 @@ class BtrixOperator(K8sAPI):
             errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
             if not errors:
                 break
+
+            add_crawl_errors(self.crawls, crawl_id, errors)
 
             if len(errors) < inc:
                 # If we have fewer than inc errors, we can assume this is the
