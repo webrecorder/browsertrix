@@ -384,6 +384,7 @@ class CrawlOps:
         """Get crawl statistics for a crawl_config with id cid."""
         stats = {
             "crawl_count": 0,
+            "total_size": 0,
             "last_crawl_id": None,
             "last_crawl_started": None,
             "last_crawl_finished": None,
@@ -406,6 +407,13 @@ class CrawlOps:
             user = await self.user_manager.get(last_crawl.userid)
             if user:
                 stats["last_started_by"] = user.name
+
+            total_size = 0
+            for res in results:
+                files = res["files"]
+                for file in files:
+                    total_size += file["size"]
+            stats["total_size"] = total_size
 
         return stats
 
