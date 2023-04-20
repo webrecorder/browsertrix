@@ -9,3 +9,5 @@ private.yml
 # microk8s playbook hosts
 hosts
 chart/local.yaml
+backend.tar
+frontend.tar
