@@ -216,7 +216,7 @@ def test_workflow_total_size(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["total"] > 0
     items = data["items"]
-    for workflow in items
+    for workflow in items:
         assert workflow["totalSize"] > 0
 
     r = requests.get(
