@@ -188,15 +188,22 @@ class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
     currCrawlId: Optional[str]
+    currCrawlStartTime: Optional[datetime]
+    currCrawlState: Optional[str]
+
     profileName: Optional[str]
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
+    lastStartedByName: Optional[str]
 
     firstSeed: Optional[str]
 
+    totalSize: Optional[int] = 0
+
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
+    lastCrawlStartTime: Optional[datetime]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
 
@@ -464,7 +471,7 @@ class CrawlConfigOps:
         sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-many-branches
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -534,8 +541,40 @@ class CrawlConfigOps:
             {"$unset": ["finishedCrawls"]},
             {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
             {"$set": {"lastCrawlId": "$lastCrawl._id"}},
+            {"$set": {"lastCrawlStartTime": "$lastCrawl.started"}},
             {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
             {"$set": {"lastCrawlState": "$lastCrawl.state"}},
+            # Get userid of last started crawl
+            {"$set": {"lastStartedBy": "$lastCrawl.userid"}},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "lastStartedBy",
+                    "foreignField": "id",
+                    "as": "lastStartedByName",
+                },
+            },
+            {
+                "$set": {
+                    "lastStartedByName": {
+                        "$arrayElemAt": ["$lastStartedByName.name", 0]
+                    }
+                }
+            },
+            {
+                "$set": {
+                    "totalSize": {
+                        "$sum": {
+                            "$map": {
+                                "input": "$sortedCrawls.files",
+                                "as": "crawlFile",
+                                "in": {"$arrayElemAt": ["$$crawlFile.size", 0]},
+                            }
+                        }
+                    }
+                }
+            },
+            # unset
             {"$unset": ["lastCrawl"]},
             {"$unset": ["sortedCrawls"]},
         ]
@@ -608,13 +647,13 @@ class CrawlConfigOps:
         )
         running = {}
         for crawl in crawls:
-            running[crawl.cid] = crawl.id
+            running[crawl.cid] = crawl
 
         configs = []
         for res in items:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
-            config.currCrawlId = running.get(config.id)
+            self._add_curr_crawl_stats(config, running.get(config.id))
             configs.append(config)
 
         return configs, total
@@ -640,7 +679,7 @@ class CrawlConfigOps:
         )
 
         if len(crawls) == 1:
-            return crawls[0].id
+            return crawls[0]
 
         return None
 
@@ -650,10 +689,22 @@ class CrawlConfigOps:
             cid=crawlconfig.id
         )
         crawlconfig.crawlCount = crawl_stats["crawl_count"]
+        crawlconfig.totalSize = crawl_stats["total_size"]
         crawlconfig.lastCrawlId = crawl_stats["last_crawl_id"]
+        crawlconfig.lastCrawlStartTime = crawl_stats["last_crawl_started"]
         crawlconfig.lastCrawlTime = crawl_stats["last_crawl_finished"]
+        crawlconfig.lastStartedByName = crawl_stats["last_started_by"]
         crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
         return crawlconfig
+
+    def _add_curr_crawl_stats(self, crawlconfig, crawl):
+        """Add stats from current running crawl, if any"""
+        if not crawl:
+            return
+
+        crawlconfig.currCrawlId = crawl.id
+        crawlconfig.currCrawlStartTime = crawl.started
+        crawlconfig.currCrawlState = crawl.state
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
@@ -668,7 +719,9 @@ class CrawlConfigOps:
             )
 
         if not crawlconfig.inactive:
-            crawlconfig.currCrawlId = await self.get_running_crawl(crawlconfig)
+            self._add_curr_crawl_stats(
+                crawlconfig, await self.get_running_crawl(crawlconfig)
+            )
 
         user = await self.user_manager.get(crawlconfig.createdBy)
         # pylint: disable=invalid-name

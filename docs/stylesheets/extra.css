@@ -3,20 +3,66 @@
     --color-wr-darkred: #A2001D;
 } */
 
+@font-face {
+    font-family: 'Recursive';
+    font-style: oblique 0deg 15deg;
+    font-weight: 300 1000;
+    src: url('../assets/fonts/Recursive_VF_1.084.woff2') format('woff2');
+    font-feature-settings: "ss12";
+}
+  
+:root {
+    --md-code-font: "Recursive", monospace;
+    --md-text-font: "Recursive", "Helvetica", "Arial", sans-serif;
+}
 
-/* Import monospaced recursive from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Recursive:MONO@1&display=swap');
 
+code, pre, kbd {
+    font-variation-settings: "MONO" 1;
+    font-feature-settings: "ss01", "ss02", "ss08";
+}
+
+.md-typeset h1, h2, h3, h4, h5 {
+    color: var(--md-primary-fg-color--dark);
+    font-family: var(--md-code-font);
+    font-variation-settings: "MONO" 0.51;
+}
+
+.md-typeset h1, h2, h3 {
+    font-weight: 650 !important;
+}
 
 [data-md-color-scheme="webrecorder"] {
     --md-primary-fg-color: #008873;
     --md-primary-fg-color--light: #008873;
     --md-primary-fg-color--dark: #003c32;
-    --md-primary-bg-color--light: #FFF;
+    --md-default-bg-color--light: #f9f5eb;
+    --md-default-bg-color: #f9f5eb;
+    --md-code-bg-color: #fff;
     --md-accent-fg-color: #01b297;
-
-    /* Typography Color Scheme */
-    --md-typeset-color: #003c32;
-    --md-typeset-a-color: #008873;
+    --md-typeset-a-color: #005447;
     
   }
+
+/* Custom menu item hover */
+
+.md-tabs__link {
+    font-weight: 400;
+    opacity: .9;
+    transition: .4s cubic-bezier(.1,.7,.1,1),opacity .25s
+}
+
+.md-tabs__link:hover {
+    font-weight: 650;
+    
+}
+
+/* Custom Typography Rules */
+
+.md-typeset a {
+    text-decoration: underline;
+}
+
+.headerlink {
+    text-decoration: none!important;
+}
