@@ -42,11 +42,17 @@ bootstrap(){
 }
 
 bootstrapMicrok8s(){
+    export REGISTRY=localhost:32000/
+
     echo "Building backend..."
     ./scripts/build-backend.sh
+    docker save localhost:32000/webrecorder/browsertrix-backend:latest > backend.tar
+    microk8s ctr image import backend.tar
 
     echo "Building frontend..."
     ./scripts/build-frontend.sh
+    docker save localhost:32000/webrecorder/browsertrix-frontend:latest > frontend.tar
+    microk8s ctr image import frontend.tar
 
     echo "Installing..."
     microk8s helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
