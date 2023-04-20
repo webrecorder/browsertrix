@@ -154,7 +154,7 @@ export class WorkflowDetail extends LiteElement {
         }
       }
 
-      if (this.activePanel === "watch") {
+      if (activePanel === "watch") {
         if (this.workflow.currCrawlId) {
           this.fetchCurrentCrawl();
         } else {
@@ -378,6 +378,24 @@ export class WorkflowDetail extends LiteElement {
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel Immediately")}
+              </sl-menu-item>
+              <sl-menu-item
+                @click=${() => {
+                  this.openDialogName = "scale";
+                  this.isDialogVisible = true;
+                }}
+              >
+                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+                ${msg("Edit Crawler Instances")}
+              </sl-menu-item>
+              <sl-menu-item
+                @click=${() => {
+                  this.openDialogName = "exclusions";
+                  this.isDialogVisible = true;
+                }}
+              >
+                <sl-icon name="table" slot="prefix"></sl-icon>
+                ${msg("Edit Exclusions")}
               </sl-menu-item>
             `,
             () => html`
@@ -627,7 +645,7 @@ export class WorkflowDetail extends LiteElement {
         )}
         ${this.renderDetailItem(
           msg("Crawler Instances"),
-          () => this.workflow!.scale,
+          () => crawl.scale,
           true
         )}
       </dl>
@@ -663,17 +681,14 @@ export class WorkflowDetail extends LiteElement {
           `
         : this.renderInactiveCrawlMessage()}
       ${when(
-        isRunning,
+        this.currentCrawl && isRunning,
         () => html`
-          <div
-            id="screencast-crawl"
-            class="${isStopping ? "opacity-40" : ""} transition-opacity"
-          >
+          <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
               orgId=${this.orgId}
               crawlId=${this.workflow!.currCrawlId}
-              scale=${this.workflow!.scale}
+              scale=${this.currentCrawl!.scale}
             ></btrix-screencast>
           </div>
 
@@ -785,9 +800,9 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <div>
         <sl-radio-group
-          value=${this.workflow!.scale}
+          value=${this.currentCrawl!.scale}
           help-text=${msg(
-            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
+            "This change will only apply to the currently running crawl."
           )}
         >
           ${scaleOptions.map(
@@ -823,8 +838,8 @@ export class WorkflowDetail extends LiteElement {
     </section>`;
   }
 
-  private async handleExclusionChange(e: CustomEvent) {
-    this.workflow = await this.getWorkflow();
+  private handleExclusionChange(e: CustomEvent) {
+    this.fetchWorkflow();
   }
 
   private async scale(value: Crawl["scale"]) {
@@ -842,6 +857,7 @@ export class WorkflowDetail extends LiteElement {
       );
 
       if (data.scaled) {
+        this.fetchWorkflow();
         this.notify({
           message: msg("Updated crawl scale."),
           variant: "success",
@@ -921,7 +937,7 @@ export class WorkflowDetail extends LiteElement {
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
     const data = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${crawlId}`,
+      `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
       this.authState!
     );
 

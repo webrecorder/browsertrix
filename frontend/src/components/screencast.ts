@@ -165,7 +165,8 @@ export class Screencast extends LitElement {
       // Reconnect
       this.disconnectAll();
       this.connectAll();
-    } else {
+    }
+    if (changedProperties.has("scale")) {
       const prevScale = changedProperties.get("scale");
       if (prevScale) {
         if (this.scale > prevScale) {
