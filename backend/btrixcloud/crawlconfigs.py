@@ -199,6 +199,8 @@ class CrawlConfigOut(CrawlConfig):
 
     firstSeed: Optional[str]
 
+    totalSize: Optional[int] = 0
+
     crawlCount: Optional[int] = 0
     lastCrawlId: Optional[str]
     lastCrawlStartTime: Optional[datetime]
@@ -563,8 +565,19 @@ class CrawlConfigOps:
                     }
                 }
             },
-            # total size
-            # {"$set": {"totalSize": {"$sum": "$$finishedCrawls.$$files.size"}}},
+            {
+                "$set": {
+                    "totalSize": {
+                        "$sum": {
+                            "$map": {
+                              "input": "$sortedCrawls.files",
+                              "as": "crawlFile",
+                              "in": {"$arrayElemAt": ["$$crawlFile.size", 0]}
+                            }
+                        }
+                    }
+                }
+            },
             # unset
             {"$unset": ["lastCrawl"]},
             {"$unset": ["sortedCrawls"]},
