@@ -880,6 +880,14 @@ async def update_crawl(crawls, crawl_id, **kwargs):
 
 
 # ============================================================================
+async def add_crawl_errors(crawls, crawl_id, errors):
+    """add crawl errors from redis to mmongodb errors field"""
+    await crawls.find_one_and_update(
+        {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
+    )
+
+
+# ============================================================================
 async def add_crawl_file(crawls, crawl_id, crawl_file):
     """add new crawl file to crawl"""
     await crawls.find_one_and_update(
