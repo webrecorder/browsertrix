@@ -205,3 +205,25 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert len(items) == 2
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
+
+
+def test_workflow_total_size(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    items = data["items"]
+    for workflow in items
+        assert workflow["totalSize"] > 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["totalSize"] > 0
