@@ -408,11 +408,12 @@ class CrawlOps:
             if user:
                 stats["last_started_by"] = user.name
 
-            crawl_files = []
+            total_size = 0
             for res in results:
-                files = [CrawlFile(**data) for data in res["files"]]
-                crawl_files.extend(files)
-            stats["total_size"] = sum(crawl_file.size for crawl_file in crawl_files)
+                files = res["files"]
+                for file in files:
+                    total_size += file["size"]
+            stats["total_size"] = total_size
 
         return stats
 
