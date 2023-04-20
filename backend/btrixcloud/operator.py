@@ -450,7 +450,7 @@ class BtrixOperator(K8sAPI):
             if not errors:
                 break
 
-            add_crawl_errors(self.crawls, crawl_id, errors)
+            await add_crawl_errors(self.crawls, crawl_id, errors)
 
             if len(errors) < inc:
                 # If we have fewer than inc errors, we can assume this is the
