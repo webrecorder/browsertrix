@@ -233,13 +233,13 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderHeader(configId?: string) {
+  private renderHeader(workflowId?: string) {
     return html`
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${`/orgs/${this.orgId}/workflows${
-            configId ? `/config/${configId}` : "/crawls"
+            workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
         >
@@ -248,7 +248,7 @@ export class WorkflowDetail extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${configId
+            >${workflowId
               ? msg(str`Back to ${this.renderName()}`)
               : msg("Back to Crawl Workflows")}</span
           >
