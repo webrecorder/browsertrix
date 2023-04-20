@@ -141,23 +141,20 @@ export class WorkflowDetail extends LiteElement {
   private async initWorkflow() {
     this.stopPollCurrentCrawl();
     try {
-      const [workflow, crawls] = await Promise.all([
-        this.getWorkflow().then((workflow) => {
-          if (!this.activePanel) {
-            if (workflow.currCrawlId) {
-              this.activePanel = "watch";
-            } else {
-              this.activePanel = "artifacts";
-            }
-          }
-          return workflow;
-        }),
-        this.getCrawls(),
-      ]);
-      this.workflow = workflow;
-      this.crawls = crawls;
+      this.workflow = await this.getWorkflow();
+
+      if (!this.activePanel) {
+        if (this.workflow.currCrawlId) {
+          this.activePanel = "watch";
+        } else {
+          this.activePanel = "artifacts";
+        }
+      }
+
       if (this.activePanel === "watch") {
         this.fetchCurrentCrawl();
+      } else if (this.activePanel === "artifacts") {
+        this.crawls = await this.getCrawls();
       }
     } catch (e: any) {
       this.notify({
@@ -1048,6 +1045,7 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
+      this.activePanel = "watch";
       this.initWorkflow();
 
       this.notify({
