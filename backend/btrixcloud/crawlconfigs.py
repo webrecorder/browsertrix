@@ -570,9 +570,9 @@ class CrawlConfigOps:
                     "totalSize": {
                         "$sum": {
                             "$map": {
-                              "input": "$sortedCrawls.files",
-                              "as": "crawlFile",
-                              "in": {"$arrayElemAt": ["$$crawlFile.size", 0]}
+                                "input": "$sortedCrawls.files",
+                                "as": "crawlFile",
+                                "in": {"$arrayElemAt": ["$$crawlFile.size", 0]},
                             }
                         }
                     }
