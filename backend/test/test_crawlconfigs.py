@@ -228,7 +228,7 @@ def test_workflow_total_size(crawler_auth_headers, default_org_id, admin_crawl_i
             assert workflow["totalSize"] == 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_cid}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
