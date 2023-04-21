@@ -19,7 +19,13 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
-from .crawls import CrawlFile, CrawlCompleteIn, add_crawl_file, update_crawl
+from .crawls import (
+    CrawlFile,
+    CrawlCompleteIn,
+    add_crawl_file,
+    update_crawl,
+    add_crawl_errors,
+)
 
 
 STS = "StatefulSet.apps/v1"
@@ -139,11 +145,13 @@ class BtrixOperator(K8sAPI):
 
         cid = spec["cid"]
 
+        redis_url = self.get_redis_url(crawl_id)
+
         try:
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
         # pylint: disable=bare-except, broad-except
         except:
-            return await self.cancel_crawl(crawl_id, status, "failed")
+            return await self.cancel_crawl(redis_url, crawl_id, status, "failed")
 
         crawl = CrawlSpec(
             id=crawl_id,
@@ -159,12 +167,10 @@ class BtrixOperator(K8sAPI):
 
         # if finalizing and not finished, job is being deleted, so assume crawl has been canceled
         if data.finalizing:
-            return await self.cancel_crawl(crawl_id, status, "canceled")
+            return await self.cancel_crawl(redis_url, crawl_id, status, "canceled")
 
         crawl_sts = f"crawl-{crawl_id}"
         redis_id = f"redis-{crawl_id}"
-
-        redis_url = self.get_redis_url(crawl_id)
 
         has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
         if has_crawl_children:
@@ -254,9 +260,10 @@ class BtrixOperator(K8sAPI):
         except Exception as exc:
             print("PVC Delete failed", exc, flush=True)
 
-    async def cancel_crawl(self, crawl_id, status, state):
+    async def cancel_crawl(self, redis_url, crawl_id, status, state):
         """immediately cancel crawl with specified state"""
-        await self.mark_finished(crawl_id, status, state)
+        redis = await self._get_redis(redis_url)
+        await self.mark_finished(redis, crawl_id, status, state)
         return self._done_response(status)
 
     def _done_response(self, status):
@@ -267,19 +274,25 @@ class BtrixOperator(K8sAPI):
             "finalized": True,
         }
 
-    async def sync_crawl_state(self, redis_url, crawl, status):
-        """sync crawl state for running crawl"""
-        # init redis
+    async def _get_redis(self, redis_url):
+        """init redis, ensure connectivity"""
         redis = None
         try:
             redis = await aioredis.from_url(
                 redis_url, encoding="utf-8", decode_responses=True
             )
-            # test conn
+            # test connection
             await redis.ping()
+            return redis
 
         # pylint: disable=bare-except
         except:
+            return None
+
+    async def sync_crawl_state(self, redis_url, crawl, status):
+        """sync crawl state for running crawl"""
+        redis = await self._get_redis(redis_url)
+        if not redis:
             return status
 
         # if not prev_start_time:
@@ -377,22 +390,26 @@ class BtrixOperator(K8sAPI):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                return await self.mark_finished(crawl.id, status, state="failed")
+                return await self.mark_finished(redis, crawl.id, status, state="failed")
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             state = "complete" if completed else "partial_complete"
 
-            status = await self.mark_finished(crawl.id, status, state, crawl, stats)
+            status = await self.mark_finished(
+                redis, crawl.id, status, state, crawl, stats
+            )
 
         # check if all crawlers failed
         if failed >= crawl.scale:
-            status = await self.mark_finished(crawl.id, status, state="failed")
+            status = await self.mark_finished(redis, crawl.id, status, state="failed")
 
         return status
 
     # pylint: disable=too-many-arguments
-    async def mark_finished(self, crawl_id, status, state, crawl=None, stats=None):
+    async def mark_finished(
+        self, redis, crawl_id, status, state, crawl=None, stats=None
+    ):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
@@ -401,6 +418,9 @@ class BtrixOperator(K8sAPI):
             kwargs["stats"] = stats
 
         await update_crawl(self.crawls, crawl_id, **kwargs)
+
+        if redis:
+            await self.add_crawl_errors_to_db(redis, crawl_id)
 
         status.state = state
         status.finished = to_k8s_date(finished)
@@ -420,6 +440,24 @@ class BtrixOperator(K8sAPI):
         print(f"Duration: {duration}", flush=True)
 
         await inc_org_stats(self.orgs, crawl.oid, duration)
+
+    async def add_crawl_errors_to_db(self, redis, crawl_id, inc=100):
+        """Pull crawl errors from redis and write to mongo db"""
+        index = 0
+        while True:
+            skip = index * inc
+            upper_bound = skip + inc - 1
+            errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
+            if not errors:
+                break
+
+            await add_crawl_errors(self.crawls, crawl_id, errors)
+
+            if len(errors) < inc:
+                # If we have fewer than inc errors, we can assume this is the
+                # last page of data to add.
+                break
+            index += 1
 
 
 # ============================================================================
