@@ -1,5 +1,5 @@
 """
-Migration 0002 - Ensuring all config.seeds are Seeds not HttpUrls
+Migration 0004 - Ensuring all config.seeds are Seeds not HttpUrls
 """
 from pydantic import HttpUrl
 
