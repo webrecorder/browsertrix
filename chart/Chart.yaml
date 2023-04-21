@@ -21,4 +21,4 @@ dependencies:
     repository: file://./admin/logging
   - name: metacontroller-helm
     version: 4.10.1
-    repository: "file://./metacontroller/deploy/helm/metacontroller"
+    repository: "oci://ghcr.io/metacontroller/metacontroller-helm"
