@@ -6,7 +6,7 @@ metadata:
   namespace: btrix-operator
 spec:
   generateSelector: false
-  resyncPeriodSeconds: 30
+  resyncPeriodSeconds: {{ .Values.operator_resync_seconds | default 10 }}
   parentResource:
     apiVersion: btrix.cloud/v1
     resource: crawljobs

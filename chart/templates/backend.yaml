@@ -49,6 +49,10 @@ spec:
             - secretRef:
                 name: mongo-auth
 
+          env:
+            - name: WEB_CONCURRENCY
+              value: "{{ .Values.backend_workers | default 4 }}"
+
           resources:
             limits:
               cpu: {{ .Values.backend_limits_cpu }}
@@ -106,6 +110,10 @@ spec:
                 name: auth-secrets
             - secretRef:
                 name: mongo-auth
+
+          env:
+            - name: WEB_CONCURRENCY
+              value: "{{ .Values.operator_workers | default 1 }}"
 
           volumeMounts:
             - name: config-volume
