@@ -88,7 +88,7 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes,too-many-locals
 
     def __init__(self):
         super().__init__()
@@ -170,7 +170,7 @@ class BtrixOperator(K8sAPI):
             return await self.cancel_crawl(redis_url, crawl_id, status, "canceled")
 
         crawl_sts = f"crawl-{crawl_id}"
-        redis_id = f"redis-{crawl_id}"
+        redis_sts = f"redis-{crawl_id}"
 
         has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
         if has_crawl_children:
@@ -205,7 +205,10 @@ class BtrixOperator(K8sAPI):
             children[0]["spec"]["volumeClaimTemplates"] = data.children[STS][crawl_sts][
                 "spec"
             ]["volumeClaimTemplates"]
-            children[2]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_id][
+
+        has_redis_children = STS in data.children and redis_sts in data.children[STS]
+        if has_redis_children:
+            children[2]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_sts][
                 "spec"
             ]["volumeClaimTemplates"]
 

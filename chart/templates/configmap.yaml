@@ -64,6 +64,8 @@ data:
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
 
+  RERUN_LAST_MIGRATION: "{{ .Values.rerun_last_migration }}"
+
 
 ---
 apiVersion: v1
