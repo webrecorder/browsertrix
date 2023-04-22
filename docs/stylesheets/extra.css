@@ -50,7 +50,7 @@
 
 .md-header__title--active {
     font-family: var(--md-text-font);
-    font-weight: 650;
+    font-weight: 600;
 }
 
 /* Custom menu item hover */
