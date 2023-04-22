@@ -2,8 +2,7 @@
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: CompositeController
 metadata:
-  name: crawljobs-controller
-  namespace: btrix-operator
+  name: crawljobs-operator
 spec:
   generateSelector: false
   resyncPeriodSeconds: {{ .Values.operator_resync_seconds | default 10 }}
@@ -50,8 +49,7 @@ spec:
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: CompositeController
 metadata:
-  name: profilejobs-controller
-  namespace: btrix-operator
+  name: profilejobs-operator
 spec:
   generateSelector: false
   resyncPeriodSeconds: 30
