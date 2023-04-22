@@ -10,7 +10,10 @@ import motor.motor_asyncio
 from pydantic import BaseModel, UUID4
 from pymongo.errors import InvalidName
 
-from .worker import by_one_worker
+from .migrations import BaseMigration
+
+
+CURR_DB_VERSION = "0005"
 
 
 # ============================================================================
@@ -47,7 +50,6 @@ def init_db():
 
 
 # ============================================================================
-@by_one_worker("/app/btrixcloud/worker-pid.file")
 async def update_and_prepare_db(
     # pylint: disable=R0913
     mdb,
@@ -64,9 +66,9 @@ async def update_and_prepare_db(
     - Create/update superuser
     - Create/update default org
 
-    Run all tasks in order in a single worker.
     """
-    if await run_db_migrations(mdb):
+    print("Database setup started", flush=True)
+    if await run_db_migrations(mdb, user_manager):
         await drop_indexes(mdb)
     await create_indexes(org_ops, crawl_config_ops, coll_ops, invite_ops)
     await user_manager.create_super_user()
@@ -75,8 +77,19 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-async def run_db_migrations(mdb):
+async def run_db_migrations(mdb, user_manager):
     """Run database migrations."""
+
+    # if first run, just set version and exit
+    if not await user_manager.get_superuser():
+        base_migration = BaseMigration(mdb, CURR_DB_VERSION)
+        await base_migration.set_db_version()
+        print(
+            "New DB, no migration needed, set version to: " + CURR_DB_VERSION,
+            flush=True,
+        )
+        return False
+
     migrations_run = False
     migrations_path = "/app/btrixcloud/migrations"
     module_files = [
