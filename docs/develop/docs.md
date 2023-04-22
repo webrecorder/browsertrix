@@ -2,7 +2,7 @@
 
 Our documentation is built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) and configured via `mkdocs.yml` in the project root.
 
-The docs can be found in the `./docs` subdirectory.
+The docs can be found in the `./docs` subdirectory. 3/4
 
 To build the docs locally, install Material for MkDocs with pip:
 

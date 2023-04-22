@@ -1,7 +1,4 @@
-/* :root {
-    --color-wr-lightred: #E3353F;
-    --color-wr-darkred: #A2001D;
-} */
+/* Font style definitions */
 
 @font-face {
     font-family: 'Recursive';
@@ -10,39 +7,51 @@
     src: url('../assets/fonts/Recursive_VF_1.084.woff2') format('woff2');
     font-feature-settings: "ss12";
 }
+
+@font-face {
+    font-family: 'Inter';
+    font-weight: 100 900;
+    font-display: swap;
+    font-style: normal;
+    src: url('../assets/fonts/Inter.var.woff2') format('woff2');
+    font-feature-settings: "ss03";
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-weight: 100 900;
+    font-display: swap;
+    font-style: italic;
+    src: url('../assets/fonts/Inter-Italic.var.woff2') format('woff2');
+    font-feature-settings: "ss03";
+}
   
 :root {
     --md-code-font: "Recursive", monospace;
-    --md-text-font: "Recursive", "Helvetica", "Arial", sans-serif;
-}
-
-
-code, pre, kbd {
-    font-variation-settings: "MONO" 1;
-    font-feature-settings: "ss01", "ss02", "ss08";
-}
-
-.md-typeset h1, h2, h3, h4, h5 {
-    color: var(--md-primary-fg-color--dark);
-    font-family: var(--md-code-font);
-    font-variation-settings: "MONO" 0.51;
-}
-
-.md-typeset h1, h2, h3 {
-    font-weight: 650 !important;
+    --md-text-font: "Inter", "Helvetica", "Arial", sans-serif;
 }
 
 [data-md-color-scheme="webrecorder"] {
     --md-primary-fg-color: #008873;
     --md-primary-fg-color--light: #008873;
     --md-primary-fg-color--dark: #003c32;
-    --md-default-bg-color--light: #f9f5eb;
-    --md-default-bg-color: #f9f5eb;
-    --md-code-bg-color: #fff;
+    --md-typeset-color: black;
     --md-accent-fg-color: #01b297;
     --md-typeset-a-color: #005447;
-    
+    --md-code-bg-color: #F9FAFB;
   }
+
+/* Nav changes */
+
+.md-header__title {
+    font-family: var(--md-code-font);
+    font-variation-settings: "MONO" 0.51;
+}
+
+.md-header__title--active {
+    font-family: var(--md-text-font);
+    font-weight: 650;
+}
 
 /* Custom menu item hover */
 
@@ -53,11 +62,10 @@ code, pre, kbd {
 }
 
 .md-tabs__link:hover {
-    font-weight: 650;
-    
+    font-weight: 500;
 }
 
-/* Custom Typography Rules */
+/* Custom body typography rules */
 
 .md-typeset a {
     text-decoration: underline;
@@ -65,4 +73,24 @@ code, pre, kbd {
 
 .headerlink {
     text-decoration: none!important;
+}
+
+code, pre, kbd {
+    font-variation-settings: "MONO" 1;
+    font-feature-settings: "ss01", "ss02", "ss08";
+}
+
+code {
+    border-width: 1px;
+    border-color: #D1D5DB;
+    border-style: solid;
+}
+
+.md-typeset h1, h2, h3, h4, h5 {
+    color: black;
+}
+
+.md-typeset h1, h2, h3 {
+    font-weight: 650 !important;
+    font-variation-settings: "OPSZ" 35;
 }
