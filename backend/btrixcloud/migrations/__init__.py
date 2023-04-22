@@ -15,7 +15,7 @@ class BaseMigration:
     def __init__(self, mdb, migration_version="0001"):
         self.mdb = mdb
         self.migration_version = migration_version
-        self.rerun_migration = os.environ("RERUN_LAST_MIGRATION") == "1"
+        self.rerun_migration = os.environ.get("RERUN_LAST_MIGRATION") == "1"
 
     async def get_db_version(self):
         """Get current db version from database."""
