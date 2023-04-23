@@ -190,6 +190,7 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlId: Optional[str]
     currCrawlStartTime: Optional[datetime]
     currCrawlState: Optional[str]
+    currCrawlSize: Optional[int] = 0
 
     profileName: Optional[str]
 
@@ -206,6 +207,7 @@ class CrawlConfigOut(CrawlConfig):
     lastCrawlStartTime: Optional[datetime]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
+    lastCrawlSize: Optional[int]
 
 
 # ============================================================================
@@ -546,6 +548,7 @@ class CrawlConfigOps:
             {"$set": {"lastCrawlState": "$lastCrawl.state"}},
             # Get userid of last started crawl
             {"$set": {"lastStartedBy": "$lastCrawl.userid"}},
+            {"$set": {"lastCrawlSize": {"$sum": "$lastCrawl.files.size"}}},
             {
                 "$lookup": {
                     "from": "users",
@@ -695,6 +698,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlTime = crawl_stats["last_crawl_finished"]
         crawlconfig.lastStartedByName = crawl_stats["last_started_by"]
         crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
+        crawlconfig.lastCrawlSize = crawl_stats["last_crawl_size"]
         return crawlconfig
 
     def _add_curr_crawl_stats(self, crawlconfig, crawl):
@@ -705,6 +709,7 @@ class CrawlConfigOps:
         crawlconfig.currCrawlId = crawl.id
         crawlconfig.currCrawlStartTime = crawl.started
         crawlconfig.currCrawlState = crawl.state
+        crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active

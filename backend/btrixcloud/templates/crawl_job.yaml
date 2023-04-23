@@ -1,7 +1,7 @@
 apiVersion: btrix.cloud/v1
 kind: CrawlJob
 metadata:
-  name: job-{{ id }}
+  name: crawljob-{{ id }}
   labels:
     crawl: "{{ id }}"
     role: "job"

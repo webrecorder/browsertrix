@@ -390,6 +390,7 @@ class CrawlOps:
             "last_crawl_finished": None,
             "last_crawl_state": None,
             "last_started_by": None,
+            "last_crawl_size": 0,
         }
 
         match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
@@ -403,6 +404,7 @@ class CrawlOps:
             stats["last_crawl_started"] = last_crawl.started
             stats["last_crawl_finished"] = last_crawl.finished
             stats["last_crawl_state"] = last_crawl.state
+            stats["last_crawl_size"] = sum(file_.size for file_ in last_crawl.files)
 
             user = await self.user_manager.get(last_crawl.userid)
             if user:

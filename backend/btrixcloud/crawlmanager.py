@@ -320,7 +320,6 @@ class CrawlManager(K8sAPI):
             namespace=self.namespace, body=config_map
         )
 
-    # pylint: disable=unused-argument
     async def _get_storage_secret(self, storage_name):
         """Check if storage_name is valid by checking existing secret"""
         try:
@@ -426,12 +425,3 @@ class CrawlManager(K8sAPI):
         await self.core_api.patch_namespaced_config_map(
             name=config_map.metadata.name, namespace=self.namespace, body=config_map
         )
-
-
-# ============================================================================
-# pylint: disable=too-few-public-methods
-class FakeKubeResponse:
-    """wrap k8s response for decoding"""
-
-    def __init__(self, obj):
-        self.data = json.dumps(obj)

@@ -131,7 +131,7 @@ class K8sAPI:
                 version="v1",
                 namespace=self.namespace,
                 plural="crawljobs",
-                name=f"job-{crawl_id}",
+                name=f"crawljob-{crawl_id}",
                 grace_period_seconds=0,
                 propagation_policy="Foreground",
             )
@@ -150,7 +150,7 @@ class K8sAPI:
                 version="v1",
                 namespace=self.namespace,
                 plural="profilejobs",
-                name=f"job-{browserid}",
+                name=f"profilejob-{browserid}",
                 grace_period_seconds=0,
                 propagation_policy="Foreground",
             )
@@ -168,7 +168,7 @@ class K8sAPI:
             version="v1",
             namespace=self.namespace,
             plural="profilejobs",
-            name=f"job-{browserid}",
+            name=f"profilejob-{browserid}",
         )
 
     async def _patch_job(self, crawl_id, body, pluraltype="crawljobs"):
@@ -184,7 +184,7 @@ class K8sAPI:
                 version="v1",
                 namespace=self.namespace,
                 plural=pluraltype,
-                name=f"job-{crawl_id}",
+                name=f"{pluraltype[:-1]}-{crawl_id}",
                 body={"spec": body},
             )
             return {"success": True}
