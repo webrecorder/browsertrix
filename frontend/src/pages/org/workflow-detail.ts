@@ -67,6 +67,9 @@ export class WorkflowDetail extends LiteElement {
   private activePanel?: Tab;
 
   @state()
+  private isLoading: boolean = false;
+
+  @state()
   private isSubmittingUpdate: boolean = false;
 
   @state()
@@ -129,6 +132,9 @@ export class WorkflowDetail extends LiteElement {
     ) {
       this.fetchWorkflow();
     }
+    if (changedProperties.has("isEditing") && this.isEditing) {
+      this.stopPoll();
+    }
     if (changedProperties.has("activePanel") && this.activePanel) {
       if (!this.isPanelHeaderVisible) {
         // Scroll panel header into view
@@ -149,6 +155,8 @@ export class WorkflowDetail extends LiteElement {
 
   private async fetchWorkflow() {
     this.stopPoll();
+    this.isLoading = true;
+
     try {
       this.workflow = await this.getWorkflow();
       let activePanel = this.activePanel;
@@ -180,6 +188,8 @@ export class WorkflowDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+
+    this.isLoading = false;
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
@@ -349,15 +359,22 @@ export class WorkflowDetail extends LiteElement {
       <h2 class="text-xl font-semibold leading-10">${this.renderName()}</h2>
     </header>
 
-    <btrix-workflow-editor
-      .initialWorkflow=${this.workflow}
-      jobType=${this.workflow!.jobType}
-      configId=${this.workflow!.id}
-      orgId=${this.orgId}
-      .authState=${this.authState}
-      @reset=${(e: Event) =>
-        this.navTo(`/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`)}
-    ></btrix-workflow-editor>
+    ${when(
+      !this.isLoading,
+      () => html`
+        <btrix-workflow-editor
+          .initialWorkflow=${this.workflow}
+          jobType=${this.workflow!.jobType}
+          configId=${this.workflow!.id}
+          orgId=${this.orgId}
+          .authState=${this.authState}
+          @reset=${(e: Event) =>
+            this.navTo(
+              `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
+            )}
+        ></btrix-workflow-editor>
+      `
+    )}
   `;
 
   private renderMenu = () => {
