@@ -150,8 +150,8 @@ export class WorkflowListItem extends LitElement {
         height: 1rem;
       }
 
-      .unknownValue {
-        color: var(--sl-color-neutral-500);
+      .notSpecified {
+        color: var(--sl-color-neutral-400);
       }
 
       .url {
@@ -173,6 +173,10 @@ export class WorkflowListItem extends LitElement {
 
       .additionalUrls {
         color: var(--sl-color-neutral-500);
+      }
+
+      .currCrawlSize {
+        color: var(--success);
       }
 
       .duration {
@@ -242,6 +246,10 @@ export class WorkflowListItem extends LitElement {
   }
 
   renderRow() {
+    const notSpecified = html`<span class="notSpecified" role="presentation"
+      >---</span
+    >`;
+
     return html`<a
       class="item row"
       role="button"
@@ -315,12 +323,43 @@ export class WorkflowListItem extends LitElement {
                 )}`
               );
             }
-            return html`<span>---</span>`;
+            return notSpecified;
           })}
         </div>
       </div>
       <div class="col">
-        <div class="detail"><span>---</span></div>
+        <div class="detail">
+          ${this.safeRender((workflow) => {
+            if (workflow.totalSize && workflow.currCrawlSize) {
+              return html`<sl-format-bytes
+                  value=${workflow.totalSize}
+                  display="narrow"
+                ></sl-format-bytes>
+                <span class="currCrawlSize">
+                  +
+                  <sl-format-bytes
+                    value=${workflow.currCrawlSize}
+                    display="narrow"
+                  ></sl-format-bytes>
+                </span>`;
+            }
+            if (workflow.currCrawlSize) {
+              return html`<span class="currCrawlSize">
+                <sl-format-bytes
+                  value=${workflow.currCrawlSize}
+                  display="narrow"
+                ></sl-format-bytes>
+              </span>`;
+            }
+            if (workflow.totalSize) {
+              return html`<sl-format-bytes
+                value=${workflow.totalSize}
+                display="narrow"
+              ></sl-format-bytes>`;
+            }
+            return notSpecified;
+          })}
+        </div>
         <div class="desc">
           ${this.safeRender((workflow) =>
             workflow.crawlCount === 1
@@ -336,7 +375,7 @@ export class WorkflowListItem extends LitElement {
               ? html`<span class="userName"
                   >${workflow.lastStartedByName}</span
                 >`
-              : html`<span>---</span>`
+              : notSpecified
           )}
         </div>
         <div class="desc">
@@ -502,7 +541,7 @@ export class WorkflowList extends LitElement {
     return html` <div class="listHeader row">
         <div class="col">${msg("Workflow Name & Last Updated")}</div>
         <div class="col">${msg("Workflow Status")}</div>
-        <div class="col">${msg("Size")}</div>
+        <div class="col">${msg("Total Size")}</div>
         <div class="col">${msg("Started By & Schedule")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
