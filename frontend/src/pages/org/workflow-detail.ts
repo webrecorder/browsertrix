@@ -525,7 +525,7 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       await this.apiFetch(
-        `/orgs${this.orgId}/crawlconfigs/${this.workflow.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
