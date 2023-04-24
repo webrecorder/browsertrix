@@ -468,7 +468,13 @@ export class WorkflowDetail extends LiteElement {
             ></btrix-crawl-status>
           `
         )}
-        ${this.renderDetailItem(msg("Total Size"), () => "TODO")}
+        ${this.renderDetailItem(
+          msg("Total Size"),
+          () => html` <sl-format-bytes
+            value=${this.workflow!.totalSize}
+            display="narrow"
+          ></sl-format-bytes>`
+        )}
         ${this.renderDetailItem(msg("Schedule"), () =>
           this.workflow!.schedule
             ? html`
@@ -619,33 +625,37 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private renderCurrentCrawl = () => {
-    if (!this.currentCrawl) return;
     const crawl = this.currentCrawl;
+    const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
-          msg(
-            str`${this.numberFormatter.format(
-              +(crawl.stats?.done || 0)
-            )} / ${this.numberFormatter.format(+(crawl.stats?.found || 0))}`
-          )
+          crawl
+            ? msg(
+                str`${this.numberFormatter.format(
+                  +(crawl.stats?.done || 0)
+                )} / ${this.numberFormatter.format(+(crawl.stats?.found || 0))}`
+              )
+            : skeleton
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
-          RelativeDuration.humanize(
-            new Date().valueOf() - new Date(`${crawl.started}Z`).valueOf()
-          )
+          crawl
+            ? RelativeDuration.humanize(
+                new Date().valueOf() - new Date(`${crawl.started}Z`).valueOf()
+              )
+            : skeleton
         )}
         ${this.renderDetailItem(
           msg("Crawl Size"),
           () => html`<sl-format-bytes
-            value=${crawl.fileSize || 0}
+            value=${this.workflow?.currCrawlSize || 0}
             display="narrow"
           ></sl-format-bytes>`
         )}
         ${this.renderDetailItem(
           msg("Crawler Instances"),
-          () => crawl.scale,
+          () => (crawl ? crawl.scale : skeleton),
           true
         )}
       </dl>
