@@ -150,7 +150,7 @@ const getDefaultFormState = (): FormState => ({
   pageExtraDelaySeconds: null,
   scopeType: "host",
   exclusions: [],
-  pageLimit: undefined,
+  pageLimit: null,
   scale: 1,
   blockAds: true,
   lang: undefined,
@@ -2034,16 +2034,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
         ? this.formState.crawlTimeoutMinutes * 60
-        : 0,
+        : null,
       tags: this.formState.tags,
       config: {
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()
           : this.parseUrlListConfig()),
-        behaviorTimeout: +(this.formState.behaviorTimeoutSeconds || ""),
-        pageLoadTimeout: +(this.formState.pageLoadTimeoutSeconds || ""),
-        pageExtraDelay: +(this.formState.pageExtraDelaySeconds || ""),
-        limit: this.formState.pageLimit ? +this.formState.pageLimit : undefined,
+        behaviorTimeout: this.formState.behaviorTimeoutSeconds,
+        pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
+        pageExtraDelay: this.formState.pageExtraDelaySeconds,
+        limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
