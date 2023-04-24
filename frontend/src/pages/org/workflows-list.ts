@@ -367,7 +367,7 @@ export class WorkflowsList extends LiteElement {
             @click=${() => this.cancel(workflow.currCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel Immediately")}
+            ${msg("Cancel & Discard Crawl")}
           </sl-menu-item>
         `,
         () => html`

@@ -387,7 +387,7 @@ export class WorkflowDetail extends LiteElement {
                 @click=${() => this.cancel()}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-                ${msg("Cancel Immediately")}
+                ${msg("Cancel & Discard Crawl")}
               </sl-menu-item>
             `,
             () => html`
