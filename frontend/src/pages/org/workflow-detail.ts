@@ -368,7 +368,10 @@ export class WorkflowDetail extends LiteElement {
             // HACK shoelace doesn't current have a way to override non-hover
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
-              <sl-menu-item @click=${() => this.stop()}>
+              <sl-menu-item
+                @click=${() => this.stop()}
+                ?disabled=${workflow.currCrawlState === "stopping"}
+              >
                 <sl-icon name="dash-circle" slot="prefix"></sl-icon>
                 ${msg("Stop Crawl")}
               </sl-menu-item>
@@ -379,6 +382,20 @@ export class WorkflowDetail extends LiteElement {
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel Immediately")}
               </sl-menu-item>
+            `,
+            () => html`
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--success)"
+                @click=${() => this.runNow()}
+              >
+                <sl-icon name="play" slot="prefix"></sl-icon>
+                ${msg("Run Crawl")}
+              </sl-menu-item>
+            `
+          )}
+          ${when(
+            workflow.currCrawlState === "running",
+            () => html`
               <sl-menu-item
                 @click=${() => {
                   this.openDialogName = "scale";
@@ -397,15 +414,7 @@ export class WorkflowDetail extends LiteElement {
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
               </sl-menu-item>
-            `,
-            () => html`
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--success)"
-                @click=${() => this.runNow()}
-              >
-                <sl-icon name="play" slot="prefix"></sl-icon>
-                ${msg("Run Crawl")}
-              </sl-menu-item>
+              <sl-divider></sl-divider>
             `
           )}
           <sl-divider></sl-divider>
