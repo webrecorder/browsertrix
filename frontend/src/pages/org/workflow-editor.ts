@@ -1810,8 +1810,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
         value = elem.value;
         break;
       case "sl-input": {
-        if ((elem as SlInput).type === "number" && elem.value !== "") {
-          value = +elem.value;
+        if ((elem as SlInput).type === "number") {
+          if (elem.value === "") {
+            value = undefined;
+          } else {
+            value = +elem.value;
+          }
         } else {
           value = elem.value;
         }
