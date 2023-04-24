@@ -60,16 +60,10 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  workflows?: Workflow[];
+  private workflows?: Workflow[];
 
   @state()
-  showEditDialog?: boolean = false;
-
-  @state()
-  selectedTemplateForEdit?: Workflow;
-
-  @state()
-  fetchErrorStatusCode?: number;
+  private fetchErrorStatusCode?: number;
 
   @state()
   private orderBy: {
@@ -88,9 +82,6 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private filterByScheduled: boolean | null = null;
-
-  @query("btrix-workflow-list")
-  private workflowList?: HTMLElement;
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -364,7 +355,10 @@ export class WorkflowsList extends LiteElement {
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
-          <sl-menu-item @click=${() => this.stop(workflow.currCrawlId)}>
+          <sl-menu-item
+            @click=${() => this.stop(workflow.currCrawlId)}
+            ?disabled=${workflow.currCrawlState === "stopping"}
+          >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
@@ -384,6 +378,37 @@ export class WorkflowsList extends LiteElement {
             <sl-icon name="play" slot="prefix"></sl-icon>
             ${msg("Run Crawl")}
           </sl-menu-item>
+        `
+      )}
+      ${when(
+        workflow.currCrawlState === "running",
+        () => html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                {
+                  dialog: "scale",
+                }
+              )}
+          >
+            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+            ${msg("Edit Crawler Instances")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                {
+                  dialog: "exclusions",
+                }
+              )}
+          >
+            <sl-icon name="table" slot="prefix"></sl-icon>
+            ${msg("Edit Exclusions")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
         `
       )}
       <sl-divider></sl-divider>
@@ -415,8 +440,8 @@ export class WorkflowsList extends LiteElement {
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() =>
               shouldDeactivate
-                ? this.deactivateTemplate(workflow)
-                : this.deleteTemplate(workflow)}
+                ? this.deactivate(workflow)
+                : this.delete(workflow)}
           >
             <sl-icon name="trash" slot="prefix"></sl-icon>
             ${shouldDeactivate
@@ -512,10 +537,10 @@ export class WorkflowsList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(crawlConfig: Workflow): Promise<void> {
+  private async deactivate(workflow: Workflow): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -524,13 +549,13 @@ export class WorkflowsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deactivated <strong>${this.renderName(crawlConfig)}</strong>.`
+          html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.workflows = this.workflows!.filter((t) => t.id !== crawlConfig.id);
+      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate Workflow at this time."),
@@ -540,10 +565,10 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(crawlConfig: Workflow): Promise<void> {
+  private async delete(workflow: Workflow): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -552,13 +577,13 @@ export class WorkflowsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.renderName(crawlConfig)}</strong>.`
+          html`Deleted <strong>${this.renderName(workflow)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.workflows = this.workflows!.filter((t) => t.id !== crawlConfig.id);
+      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete Workflow at this time."),

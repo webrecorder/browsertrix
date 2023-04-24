@@ -266,6 +266,7 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId!}
           workflowId=${workflowId}
+          openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
         ></btrix-workflow-detail>

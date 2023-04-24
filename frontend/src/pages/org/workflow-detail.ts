@@ -51,6 +51,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: Boolean })
   isCrawler!: boolean;
 
+  @property({ type: String })
+  openDialogName?: "scale" | "exclusions";
+
   @state()
   private workflow?: Workflow;
 
@@ -65,9 +68,6 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private isSubmittingUpdate: boolean = false;
-
-  @state()
-  private openDialogName?: "scale" | "metadata" | "exclusions";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -102,10 +102,17 @@ export class WorkflowDetail extends LiteElement {
   };
 
   connectedCallback(): void {
-    // Set initial active section based on URL #hash value
+    // Set initial active section and dialog based on URL #hash value
     const hash = window.location.hash.slice(1);
     if (SECTIONS.includes(hash as any)) {
       this.activePanel = hash as Tab;
+    }
+
+    if (
+      this.openDialogName &&
+      (this.openDialogName === "scale" || this.openDialogName === "exclusions")
+    ) {
+      this.isDialogVisible = true;
     }
     super.connectedCallback();
   }
@@ -396,6 +403,7 @@ export class WorkflowDetail extends LiteElement {
           ${when(
             workflow.currCrawlState === "running",
             () => html`
+              <sl-divider></sl-divider>
               <sl-menu-item
                 @click=${() => {
                   this.openDialogName = "scale";
@@ -414,7 +422,6 @@ export class WorkflowDetail extends LiteElement {
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
               </sl-menu-item>
-              <sl-divider></sl-divider>
             `
           )}
           <sl-divider></sl-divider>
