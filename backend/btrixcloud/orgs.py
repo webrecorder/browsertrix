@@ -5,6 +5,7 @@ import os
 import time
 import urllib.parse
 import uuid
+from datetime import datetime
 
 from typing import Dict, Union, Literal, Optional, Any
 
@@ -352,6 +353,14 @@ class OrgOps:
             if value == UserRole.OWNER:
                 org_owners.append(key)
         return org_owners
+
+
+# ============================================================================
+async def inc_org_stats(orgs, oid, duration):
+    """inc crawl duration stats for org oid"""
+    # init org crawl stats
+    yymm = datetime.utcnow().strftime("%Y-%m")
+    await orgs.find_one_and_update({"_id": oid}, {"$inc": {f"usage.{yymm}": duration}})
 
 
 # ============================================================================

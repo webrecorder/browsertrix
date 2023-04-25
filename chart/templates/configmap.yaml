@@ -8,6 +8,8 @@ metadata:
 data:
   APP_ORIGIN: {{.Values.ingress.scheme }}://{{ .Values.ingress.host | default "localhost:9870" }}
 
+  CRON_NAMESPACE: {{ .Release.Namespace }}
+
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
   CRAWLER_IMAGE: {{ .Values.crawler_image }}
   CRAWLER_PULL_POLICY: {{ .Values.crawler_pull_policy }}
@@ -58,9 +60,9 @@ data:
 
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
-  WEB_CONCURRENCY: "{{ .Values.backend_workers | default 4 }}"
-
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
+
+  RERUN_LAST_MIGRATION: "{{ .Values.rerun_last_migration }}"
 
 
 ---
@@ -78,7 +80,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: shared-job-config
-  namespace: {{ .Values.crawler_namespace }}
+  #namespace: {{ .Values.crawler_namespace }}
+  namespace: {{ .Release.Namespace }}
 
 
 data:
@@ -116,6 +119,15 @@ data:
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-redis-conf
+  namespace: {{ .Values.crawler_namespace }}
+
+data:
   redis.conf: |
     appendonly yes
     dir /data

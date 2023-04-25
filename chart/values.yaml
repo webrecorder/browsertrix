@@ -70,6 +70,9 @@ backend_limits_cpu: "768m"
 backend_requests_memory: "100Mi"
 backend_limits_memory: "512Mi"
 
+# port for operator service
+opPort: 8756
+
 job_cpu: "3m"
 job_memory: "70Mi"
 
@@ -269,3 +272,5 @@ signer_limits_memory: "96Mi"
 addons:
   admin:
     logging: false
+
+# metacontroller:

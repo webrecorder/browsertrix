@@ -2,5 +2,11 @@ dependencies:
 - name: btrix-admin-logging
   repository: file://./admin/logging
   version: 0.1.0
-digest: sha256:a62579385835818c52ddc8c59d6ec5a17800e60b71a2e75b3a85a02c262bb385
-generated: "2023-01-03T00:22:20.096291-08:00"
+- name: btrix-crds
+  repository: file://./btrix-crds
+  version: 0.1.0
+- name: metacontroller-helm
+  repository: oci://ghcr.io/metacontroller
+  version: v4.10.1
+digest: sha256:e40073e42a13c1765a9ddaf91c5cd93ccc4804bedf6954e3ba1ade8fb26cca7c
+generated: "2023-04-22T01:08:16.572747-07:00"

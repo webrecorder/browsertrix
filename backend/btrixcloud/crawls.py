@@ -24,6 +24,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
 from .users import User
+from .utils import dt_now, ts_now, get_redis_crawl_stats
 
 
 CRAWL_STATES = (
@@ -190,7 +191,6 @@ class CrawlOps:
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
-        self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
 
         self.crawl_configs.set_crawl_ops(self)
 
@@ -390,6 +390,7 @@ class CrawlOps:
             "last_crawl_finished": None,
             "last_crawl_state": None,
             "last_started_by": None,
+            "last_crawl_size": 0,
         }
 
         match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
@@ -403,6 +404,7 @@ class CrawlOps:
             stats["last_crawl_started"] = last_crawl.started
             stats["last_crawl_finished"] = last_crawl.finished
             stats["last_crawl_state"] = last_crawl.state
+            stats["last_crawl_size"] = sum(file_.size for file_ in last_crawl.files)
 
             user = await self.user_manager.get(last_crawl.userid)
             if user:
@@ -461,6 +463,12 @@ class CrawlOps:
         if user:
             crawl.userName = user.name
 
+        # if running, get stats directly from redis
+        # more responsive, saves db update in operator
+        if crawl.state == "running":
+            redis = await self.get_redis(crawl.id)
+            crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+
         return crawl
 
     async def _resolve_signed_urls(
@@ -509,7 +517,7 @@ class CrawlOps:
         if updates:
             asyncio.create_task(self._update_presigned(updates))
 
-        print("presigned", out_files)
+        # print("presigned", out_files)
 
         return out_files
 
@@ -549,30 +557,7 @@ class CrawlOps:
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
-        crawl = Crawl(
-            id=crawl_id,
-            state="starting",
-            userid=user.id,
-            oid=crawlconfig.oid,
-            cid=crawlconfig.id,
-            cid_rev=crawlconfig.rev,
-            scale=crawlconfig.scale,
-            jobType=crawlconfig.jobType,
-            config=crawlconfig.config,
-            profileid=crawlconfig.profileid,
-            schedule=crawlconfig.schedule,
-            crawlTimeout=crawlconfig.crawlTimeout,
-            manual=True,
-            started=ts_now(),
-            tags=crawlconfig.tags,
-        )
-
-        try:
-            await self.crawls.insert_one(crawl.to_dict())
-            return True
-        except pymongo.errors.DuplicateKeyError:
-            # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
-            return False
+        return await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
         """Update existing crawl (tags and notes only for now)"""
@@ -592,6 +577,21 @@ class CrawlOps:
             raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
 
         return {"success": True}
+
+    async def update_crawl_scale(
+        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale
+    ):
+        """Update crawl scale in the db"""
+        result = await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id},
+            {"$set": {"scale": crawl_scale.scale}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
+
+        return True
 
     async def update_crawl_state(self, crawl_id: str, state: str):
         """called only when job container is being stopped/canceled"""
@@ -793,8 +793,7 @@ class CrawlOps:
 
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
-        # pylint: disable=line-too-long
-        redis_url = f"redis://redis-{crawl_id}-0.redis-{crawl_id}.{self.namespace}.svc.cluster.local/0"
+        redis_url = self.crawl_manager.get_redis_url(crawl_id)
 
         return await aioredis.from_url(
             redis_url, encoding="utf-8", decode_responses=True
@@ -843,6 +842,62 @@ class CrawlOps:
                 {"name": collection_name, "oid": oid},
                 {"$pull": {"crawlIds": crawl_id}},
             )
+
+
+# ============================================================================
+async def add_new_crawl(
+    crawls, crawl_id: str, crawlconfig: CrawlConfig, userid: UUID4, manual=True
+):
+    """initialize new crawl"""
+    crawl = Crawl(
+        id=crawl_id,
+        state="starting",
+        userid=userid,
+        oid=crawlconfig.oid,
+        cid=crawlconfig.id,
+        cid_rev=crawlconfig.rev,
+        scale=crawlconfig.scale,
+        jobType=crawlconfig.jobType,
+        config=crawlconfig.config,
+        profileid=crawlconfig.profileid,
+        schedule=crawlconfig.schedule,
+        crawlTimeout=crawlconfig.crawlTimeout,
+        manual=manual,
+        started=ts_now(),
+        tags=crawlconfig.tags,
+    )
+
+    try:
+        await crawls.insert_one(crawl.to_dict())
+        return True
+    except pymongo.errors.DuplicateKeyError:
+        # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
+        return False
+
+
+# ============================================================================
+async def update_crawl(crawls, crawl_id, **kwargs):
+    """update crawl state in db"""
+    await crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
+
+
+# ============================================================================
+async def add_crawl_errors(crawls, crawl_id, errors):
+    """add crawl errors from redis to mmongodb errors field"""
+    await crawls.find_one_and_update(
+        {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
+    )
+
+
+# ============================================================================
+async def add_crawl_file(crawls, crawl_id, crawl_file):
+    """add new crawl file to crawl"""
+    await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {
+            "$push": {"files": crawl_file.dict()},
+        },
+    )
 
 
 # ============================================================================
@@ -1048,7 +1103,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         return crawls[0]
 
     @app.patch("/orgs/{oid}/crawls/{crawl_id}", tags=["crawls"])
-    async def update_crawl(
+    async def update_crawl_api(
         update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         return await ops.update_crawl(crawl_id, org, update)
@@ -1060,6 +1115,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     async def scale_crawl(
         scale: CrawlScale, crawl_id, org: Organization = Depends(org_crawl_dep)
     ):
+        await ops.update_crawl_scale(crawl_id, org, scale)
+
         result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
@@ -1190,13 +1247,3 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         return paginated_format(errors, total, page, pageSize)
 
     return ops
-
-
-def dt_now():
-    """get current ts"""
-    return datetime.utcnow().replace(microsecond=0, tzinfo=None)
-
-
-def ts_now():
-    """get current ts"""
-    return str(dt_now())

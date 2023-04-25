@@ -1,0 +1,32 @@
+apiVersion: btrix.cloud/v1
+kind: ProfileJob
+metadata:
+  name: profilejob-{{ id }}
+  labels:
+    browser: "{{ id }}"
+    role: "job"
+    btrix.profile: "1"
+    btrix.org: {{ oid }}
+    btrix.user: {{ userid }}
+    {%- if base_profile %}
+    btrix.baseprofile: "{{ base_profile }}"
+    {%- endif %}
+
+spec:
+  selector:
+    matchLabels:
+      browser: "{{ id }}"
+
+  id: "{{ id }}"
+  userid: "{{ userid }}"
+  oid: "{{ oid }}"
+
+  storageName: "{{ storage_name }}"
+  storagePath: "{{ storage_path }}"
+  startUrl: "{{ url }}"
+  profileFilename: "{{ profile_filename }}"
+  vncPassword: "{{ vnc_password }}"
+
+  {% if expire_time %}
+  expireTime: "{{ expire_time }}"
+  {% endif %}

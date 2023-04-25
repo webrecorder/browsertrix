@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ id }}"
+  labels:
+    btrix.crawlconfig: "{{ cid }}"
+    role: "cron-job"
+
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 3
+
+  schedule: "{{ schedule }}"
+
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: scheduled
+              image: "{{ image }}"
+              imagePullPolicy: "{{ image_pull_policy }}"
+              command:
+                - python
+                - -m
+                - btrixcloud.main_scheduled_job
+
+              env:
+                - name: CID
+                  value: "{{ cid }}"
+
+              envFrom:
+                - secretRef:
+                    name: mongo-auth

@@ -1,6 +1,7 @@
 """
 BaseMigration class to subclass in each migration module
 """
+import os
 from pymongo.errors import OperationFailure
 
 
@@ -14,6 +15,7 @@ class BaseMigration:
     def __init__(self, mdb, migration_version="0001"):
         self.mdb = mdb
         self.migration_version = migration_version
+        self.rerun_migration = os.environ.get("RERUN_LAST_MIGRATION") == "1"
 
     async def get_db_version(self):
         """Get current db version from database."""
@@ -44,6 +46,10 @@ class BaseMigration:
         if not db_version:
             return True
         if db_version < self.migration_version:
+            return True
+
+        if self.rerun_migration and db_version == self.migration_version:
+            print("Rerunning last migration")
             return True
         return False
 
