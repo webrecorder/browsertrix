@@ -8,6 +8,7 @@ from .k8sapi import K8sAPI
 from .db import init_db
 from .crawlconfigs import get_crawl_config, inc_crawl_count
 from .crawls import add_new_crawl
+from .utils import register_exit_handler
 
 
 # ============================================================================
@@ -58,4 +59,5 @@ def main():
 
 
 if __name__ == "__main__":
+    register_exit_handler()
     main()

@@ -156,6 +156,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         )
         return await cursor.to_list(length=1000)
 
+    async def get_superuser(self):
+        """return current superuser, if any"""
+        return await self.user_db.collection.find_one({"is_superuser": True})
+
     async def create_super_user(self):
         """Initialize a super user from env vars"""
         email = os.environ.get("SUPERUSER_EMAIL")
@@ -167,9 +171,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         if not password:
             password = passlib.pwd.genword()
 
-        curr_superuser_res = await self.user_db.collection.find_one(
-            {"is_superuser": True}
-        )
+        curr_superuser_res = await self.get_superuser()
         if curr_superuser_res:
             user = UserDB(**curr_superuser_res)
             update = {"password": password}

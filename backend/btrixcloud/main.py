@@ -3,9 +3,8 @@ main file for browsertrix-api system
 supports docker and kubernetes based deployments of multiple browsertrix-crawlers
 """
 import os
-import signal
-import sys
 import asyncio
+import sys
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
@@ -26,8 +25,8 @@ from .colls import init_collections_api
 from .crawls import init_crawls_api
 
 from .crawlmanager import CrawlManager
+from .utils import run_once_lock, register_exit_handler
 
-# pylint: disable=duplicate-code
 
 API_PREFIX = "/api"
 app_root = FastAPI(
@@ -111,11 +110,13 @@ def main():
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
-    asyncio.create_task(
-        update_and_prepare_db(
-            mdb, user_manager, org_ops, crawl_config_ops, coll_ops, invites
+    # run only in first worker
+    if run_once_lock("btrix-init-db"):
+        asyncio.create_task(
+            update_and_prepare_db(
+                mdb, user_manager, org_ops, crawl_config_ops, coll_ops, invites
+            )
         )
-    )
 
     app.include_router(org_ops.router)
 
@@ -140,13 +141,5 @@ def main():
 @app_root.on_event("startup")
 async def startup():
     """init on startup"""
-    loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, exit_handler)
-
+    register_exit_handler()
     main()
-
-
-def exit_handler():
-    """sigterm handler"""
-    print("SIGTERM received, exiting")
-    sys.exit(1)

@@ -1,6 +1,11 @@
 """ k8s utils """
 
 import os
+import asyncio
+import sys
+import signal
+import atexit
+
 from datetime import datetime
 
 from redis import asyncio as exceptions
@@ -46,3 +51,35 @@ async def get_redis_crawl_stats(redis, crawl_id):
 
     stats = {"found": pages_found, "done": pages_done, "size": archive_size}
     return stats
+
+
+def run_once_lock(name):
+    """run once lock via temp directory
+    - if dir doesn't exist, return true
+    - if exists, return false"""
+    lock_dir = "/tmp/." + name
+    try:
+        os.mkdir(lock_dir)
+    # pylint: disable=bare-except
+    except:
+        return False
+
+    # just in case, delete dir on exit
+    def del_dir():
+        print("release lock: " + lock_dir, flush=True)
+        os.rmdir(lock_dir)
+
+    atexit.register(del_dir)
+    return True
+
+
+def register_exit_handler():
+    """register exit handler to exit on SIGTERM"""
+    loop = asyncio.get_running_loop()
+
+    def exit_handler():
+        """sigterm handler"""
+        print("SIGTERM received, exiting")
+        sys.exit(1)
+
+    loop.add_signal_handler(signal.SIGTERM, exit_handler)
