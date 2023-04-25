@@ -1947,13 +1947,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         duration: 8000,
       });
 
-      if (crawlId) {
-        this.navTo(`/orgs/${this.orgId}/artifacts/crawl/${crawlId}`);
-      } else {
-        this.navTo(
-          `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.added}`
-        );
-      }
+      this.navTo(
+        `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.added}${
+          crawlId ? "#watch" : ""
+        }`
+      );
     } catch (e: any) {
       if (e?.isApiError) {
         const isConfigError = ({ loc }: any) =>
