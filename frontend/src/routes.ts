@@ -13,8 +13,9 @@ export const ROUTES = {
   org: [
     "/orgs/:orgId/:orgTab",
     // Optional segments:
-    "(/crawl/:crawlId)",
-    "(/config/:workflowId)",
+    "(/crawls)",
+    "(/crawl/:crawlOrWorkflowId)",
+    "(/artifact/:artifactId)",
     "(/profile(/:browserProfileId)(/browser/:browserId))",
     "(/members)",
   ].join(""),
@@ -24,4 +25,4 @@ export const ROUTES = {
   crawl: "/crawls/crawl/:crawlId",
 } as const;
 
-export const DASHBOARD_ROUTE = ROUTES.home;
+export const DASHBOARD_ROUTE = "/";

@@ -36,7 +36,7 @@ type CloseMessage = Message & {
  */
 @localized()
 export class Screencast extends LitElement {
-  static baseURL = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
+  static baseUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
     process.env.WEBSOCKET_HOST || window.location.host
   }/watch`;
   static maxRetries = 10;
@@ -165,7 +165,8 @@ export class Screencast extends LitElement {
       // Reconnect
       this.disconnectAll();
       this.connectAll();
-    } else {
+    }
+    if (changedProperties.has("scale")) {
       const prevScale = changedProperties.get("scale");
       if (prevScale) {
         if (this.scale > prevScale) {
@@ -364,7 +365,7 @@ export class Screencast extends LitElement {
    */
   private connectWs(index: number): WebSocket {
     const ws = new WebSocket(
-      `${Screencast.baseURL}/${this.orgId}/${
+      `${Screencast.baseUrl}/${this.orgId}/${
         this.crawlId
       }/${index}/ws?auth_bearer=${this.authToken || ""}`
     );

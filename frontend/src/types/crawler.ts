@@ -59,11 +59,19 @@ export type Workflow = CrawlConfig & {
   modified: string; // Date string
   crawlCount: number;
   crawlAttemptCount: number;
-  lastCrawlId: string;
-  lastCrawlTime: string;
+  lastCrawlId: string; // last finished crawl
+  lastCrawlStartTime: string;
+  lastCrawlTime: string; // when last crawl finished
   lastCrawlState: CrawlState;
-  currCrawlId: string;
+  lastCrawlSize: number | null;
+  lastStartedByName: string | null;
+  currCrawlId: string | null;
+  currCrawlState: CrawlState | null;
+  currCrawlStartTime: string | null;
+  currCrawlSize: number | null;
+  totalSize: string | null;
   inactive: boolean;
+  firstSeed: string;
 };
 
 export type Profile = {

@@ -18,6 +18,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
+import { isActive } from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -33,7 +34,7 @@ type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const INITIAL_PAGE_SIZE = 50;
+const INITIAL_PAGE_SIZE = 30;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -42,11 +43,11 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   started: {
-    label: msg("Date Created"),
+    label: msg("Date Started"),
     defaultDirection: "desc",
   },
   finished: {
-    label: msg("Date Completed"),
+    label: msg("Date Finished"),
     defaultDirection: "desc",
   },
   firstSeed: {
@@ -58,19 +59,11 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
-
-const activeCrawlStates: CrawlState[] = ["starting", "running", "stopping"];
-const inactiveCrawlStates: CrawlState[] = [
+const finishedCrawlStates: CrawlState[] = [
   "complete",
-  "canceled",
   "partial_complete",
   "timed_out",
-  "failed",
 ];
-
-function isActive(crawl: Crawl) {
-  return activeCrawlStates.includes(crawl.state);
-}
 
 /**
  * Usage:
@@ -120,8 +113,8 @@ export class CrawlsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "started",
-    direction: "desc",
+    field: "finished",
+    direction: sortableFields["finished"].defaultDirection!,
   };
 
   @state()
@@ -151,8 +144,6 @@ export class CrawlsList extends LiteElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
-
-  private timerId?: number;
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
@@ -232,7 +223,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">${msg("Crawls")}</h1>
+            <h1 class="text-xl font-semibold">${msg("Finished Crawls")}</h1>
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
@@ -286,7 +277,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-tags-visible="1"
-            placeholder=${msg("All Crawls")}
+            placeholder=${msg("All Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -296,9 +287,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${activeCrawlStates.map(this.renderStatusMenuItem)}
-            <sl-divider></sl-divider>
-            ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
+            ${finishedCrawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -381,7 +370,9 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Filter by name, Crawl Start URL, or Workflow ID")}
+          placeholder=${msg(
+            "Filter by Workflow Name, Crawl Start URL, or Workflow ID"
+          )}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
@@ -479,11 +470,11 @@ export class CrawlsList extends LiteElement {
         <sl-menu slot="menu">
           ${when(
             this.isCrawler,
-            this.renderCrawlerMenuItemsRenderer(crawl),
+            this.crawlerMenuItemsRenderer(crawl),
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/crawls/crawl/${crawl.id}`)}
+                  this.navTo(`/orgs/${crawl.oid}/artifacts/crawl/${crawl.id}`)}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>
@@ -493,33 +484,13 @@ export class CrawlsList extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderCrawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+  private crawlerMenuItemsRenderer = (crawl: Crawl) => () =>
+    // HACK shoelace doesn't current have a way to override non-hover
+    // color without resetting the --sl-color-neutral-700 variable
     html`
       ${when(
-        isActive(crawl),
-        // HACK shoelace doesn't current have a way to override non-hover
-        // color without resetting the --sl-color-neutral-700 variable
+        this.isCrawler,
         () => html`
-          <sl-menu-item @click=${() => this.stop(crawl)}>
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
-            ${msg("Stop Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(crawl)}
-          >
-            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel Immediately")}
-          </sl-menu-item>
-        `,
-        () => html`
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${() => this.runNow(crawl)}
-          >
-            <sl-icon name="arrow-clockwise" slot="prefix"></sl-icon>
-            ${msg("Re-Run Crawl")}
-          </sl-menu-item>
           <sl-menu-item
             @click=${() => {
               this.crawlToEdit = crawl;
@@ -529,12 +500,13 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
         `
       )}
-      <sl-divider></sl-divider>
+
       <sl-menu-item
         @click=${() =>
-          this.navTo(`/orgs/${crawl.oid}/workflows/config/${crawl.cid}`)}
+          this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
       >
         <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
         ${msg("Go to Workflow")}
@@ -551,7 +523,7 @@ export class CrawlsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        !isActive(crawl),
+        this.isCrawler && !isActive(crawl.state),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -657,15 +629,9 @@ export class CrawlsList extends LiteElement {
         });
       }
     }
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      this.fetchCrawls();
-    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   private cancelInProgressGetCrawls() {
-    window.clearTimeout(this.timerId);
     if (this.getCrawlsController) {
       this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
       this.getCrawlsController = null;
@@ -673,9 +639,11 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const state = this.filterBy.state || finishedCrawlStates;
     const query = queryString.stringify(
       {
         ...this.filterBy,
+        state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
@@ -727,128 +695,6 @@ export class CrawlsList extends LiteElement {
       ] as any);
     } catch (e) {
       console.debug(e);
-    }
-  }
-
-  private async cancel(crawl: Crawl) {
-    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawls/${crawl.id}/cancel`,
-        this.authState!,
-        {
-          method: "POST",
-        }
-      );
-
-      if (data.success === true) {
-        this.fetchCrawls();
-      } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't cancel crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
-    }
-  }
-
-  private async stop(crawl: Crawl) {
-    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawls/${crawl.id}/stop`,
-        this.authState!,
-        {
-          method: "POST",
-        }
-      );
-
-      if (data.success === true) {
-        this.fetchCrawls();
-      } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't stop crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
-    }
-  }
-
-  private async runNow(crawl: Crawl) {
-    // Get Workflow to check if crawl is already running
-    const workflow = await this.getWorkflow(crawl);
-
-    if (workflow?.currCrawlId) {
-      this.notify({
-        message: msg(
-          html`Crawl of <strong>${crawl.name}</strong> is already running.
-            <br />
-            <a
-              class="underline hover:no-underline"
-              href="/orgs/${crawl.oid}/crawls/crawl/${workflow.currCrawlId}"
-              @click=${this.navLink.bind(this)}
-              >View crawl</a
-            >`
-        ),
-        variant: "warning",
-        icon: "exclamation-triangle",
-      });
-
-      return;
-    }
-
-    try {
-      const data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}/run`,
-        this.authState!,
-        {
-          method: "POST",
-        }
-      );
-
-      if (data.started) {
-        this.fetchCrawls();
-      }
-
-      this.notify({
-        message: msg(
-          html`Started crawl from <strong>${crawl.name}</strong>.
-            <br />
-            <a
-              class="underline hover:no-underline"
-              href="/orgs/${crawl.oid}/crawls/crawl/${data.started}#watch"
-              @click=${this.navLink.bind(this)}
-              >Watch crawl</a
-            >`
-        ),
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-    } catch (e: any) {
-      if (e.isApiError && e.statusCode === 404) {
-        this.notify({
-          message: msg(
-            html`Sorry, cannot rerun crawl from a deactivated Workflow.
-              <br />
-              <button
-                class="underline hover:no-underline"
-                @click="${() => this.duplicateConfig(crawl, workflow)}"
-              >
-                Duplicate Workflow
-              </button>`
-          ),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          duration: 8000,
-        });
-      } else {
-        this.notify({
-          message: msg("Sorry, couldn't run crawl at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
     }
   }
 

@@ -1,5 +1,5 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -8,32 +8,35 @@ import map from "lodash/fp/map";
 import orderBy from "lodash/fp/orderBy";
 import filter from "lodash/fp/filter";
 import Fuse from "fuse.js";
+import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Workflow, WorkflowParams } from "./types";
-import {
-  getUTCSchedule,
-  humanizeNextDate,
-  humanizeSchedule,
-} from "../../utils/cron";
-import "../../components/crawl-scheduler";
+import type { Crawl, Workflow, WorkflowParams } from "./types";
+import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
 
-type RunningCrawlsMap = {
-  /** Map of configId: crawlId */
-  [configId: string]: string;
-};
+type SortField = "_lastUpdated" | "_name";
+type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
+const INITIAL_PAGE_SIZE = 30;
+const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
-const sortableFieldLabels = {
-  created_desc: msg("Newest"),
-  created_asc: msg("Oldest"),
-  lastCrawlTime_desc: msg("Newest Crawl"),
-  lastCrawlTime_asc: msg("Oldest Crawl"),
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  _lastUpdated: {
+    label: msg("Last Updated"),
+    defaultDirection: "desc",
+  },
+  _name: {
+    label: msg("Name"),
+    defaultDirection: "asc",
+  },
 };
 
 /**
@@ -57,27 +60,18 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  crawlConfigs?: Workflow[];
+  private workflows?: Workflow[];
 
   @state()
-  runningCrawlsMap: RunningCrawlsMap = {};
-
-  @state()
-  showEditDialog?: boolean = false;
-
-  @state()
-  selectedTemplateForEdit?: Workflow;
-
-  @state()
-  fetchErrorStatusCode?: number;
+  private fetchErrorStatusCode?: number;
 
   @state()
   private orderBy: {
-    field: "created";
-    direction: "asc" | "desc";
+    field: SortField;
+    direction: SortDirection;
   } = {
-    field: "created",
-    direction: "desc",
+    field: "_lastUpdated",
+    direction: sortableFields["_lastUpdated"].defaultDirection!,
   };
 
   @state()
@@ -96,6 +90,8 @@ export class WorkflowsList extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private timerId?: number;
+
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -108,10 +104,7 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
-      this.crawlConfigs = await this.fetchWorkflows();
-
-      // Update search/filter collection
-      this.fuse.setCollection(this.crawlConfigs as any);
+      this.fetchWorkflows();
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -121,10 +114,22 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
+  disconnectedCallback(): void {
+    this.cancelInProgressGetWorkflows();
+    super.disconnectedCallback();
+  }
+
   private async fetchWorkflows() {
     this.fetchErrorStatusCode = undefined;
+
+    this.cancelInProgressGetWorkflows();
+
     try {
-      return await this.getWorkflows();
+      const workflows = await this.getWorkflows();
+      this.workflows = workflows;
+
+      // Update search/filter collection
+      this.fuse.setCollection(this.workflows as any);
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;
@@ -136,13 +141,22 @@ export class WorkflowsList extends LiteElement {
         });
       }
     }
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.fetchWorkflows();
+    }, 1000 * POLL_INTERVAL_SECONDS);
+  }
+
+  private cancelInProgressGetWorkflows() {
+    window.clearTimeout(this.timerId);
   }
 
   render() {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Workflows")}</h1>
+          <h1 class="text-xl font-semibold">${msg("Crawling")}</h1>
           ${when(
             this.isCrawler,
             () => html`
@@ -153,7 +167,7 @@ export class WorkflowsList extends LiteElement {
                 @click=${this.navLink}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Workflow")}
+                ${msg("New Crawl Workflow")}
               </sl-button>
             `
           )}
@@ -175,9 +189,9 @@ export class WorkflowsList extends LiteElement {
           </div>
         `,
         () =>
-          this.crawlConfigs
-            ? this.crawlConfigs.length
-              ? this.renderTemplateList()
+          this.workflows
+            ? this.workflows.length
+              ? this.renderWorkflowList()
               : html`
                   <div class="border-t border-b py-5">
                     <p class="text-center text-0-500">
@@ -191,26 +205,6 @@ export class WorkflowsList extends LiteElement {
                 <sl-spinner></sl-spinner>
               </div>`
       )}
-
-      <sl-dialog
-        label=${msg(str`Edit Crawl Schedule`)}
-        ?open=${this.showEditDialog}
-        @sl-request-close=${() => (this.showEditDialog = false)}
-        @sl-after-hide=${() => (this.selectedTemplateForEdit = undefined)}
-      >
-        <h2 class="text-lg font-medium mb-4">
-          ${this.selectedTemplateForEdit?.name}
-        </h2>
-
-        ${this.selectedTemplateForEdit
-          ? html`
-              <btrix-crawl-scheduler
-                .schedule=${this.selectedTemplateForEdit.schedule}
-                @submit=${this.onSubmitSchedule}
-              ></btrix-crawl-scheduler>
-            `
-          : ""}
-      </sl-dialog>
     `;
   }
 
@@ -222,9 +216,9 @@ export class WorkflowsList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by name or Crawl URL")}
+            placeholder=${msg("Search by Crawl Workflow name or Crawl URL")}
             clearable
-            ?disabled=${!this.crawlConfigs?.length}
+            ?disabled=${!this.workflows?.length}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -276,43 +270,29 @@ export class WorkflowsList extends LiteElement {
           </label>
 
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort By")}
+            ${msg("Sort by:")}
           </div>
-          <sl-dropdown
-            placement="bottom-end"
-            distance="4"
+          <sl-select
+            class="flex-1 md:min-w-[9.2rem]"
+            size="small"
+            pill
+            value=${this.orderBy.field}
             @sl-select=${(e: any) => {
-              const [field, direction] = e.detail.item.value.split("_");
+              const field = e.detail.item.value as SortField;
               this.orderBy = {
                 field: field,
-                direction: direction,
+                direction:
+                  sortableFields[field].defaultDirection ||
+                  this.orderBy.direction,
               };
             }}
           >
-            <sl-button
-              slot="trigger"
-              size="small"
-              pill
-              caret
-              ?disabled=${!this.crawlConfigs?.length}
-              >${(sortableFieldLabels as any)[this.orderBy.field] ||
-              sortableFieldLabels[
-                `${this.orderBy.field}_${this.orderBy.direction}`
-              ]}</sl-button
-            >
-            <sl-menu>
-              ${Object.entries(sortableFieldLabels).map(
-                ([value, label]) => html`
-                  <sl-menu-item
-                    value=${value}
-                    ?checked=${value ===
-                    `${this.orderBy.field}_${this.orderBy.direction}`}
-                    >${label}</sl-menu-item
-                  >
-                `
-              )}
-            </sl-menu>
-          </sl-dropdown>
+            ${Object.entries(sortableFields).map(
+              ([value, { label }]) => html`
+                <sl-menu-item value=${value}>${label}</sl-menu-item>
+              `
+            )}
+          </sl-select>
           <sl-icon-button
             name="arrow-down-up"
             label=${msg("Reverse sort")}
@@ -328,10 +308,17 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
-  private renderTemplateList() {
+  private renderWorkflowList() {
+    if (!this.workflows) return;
+
     const flowFns = [
+      map((workflow: Workflow) => ({
+        ...workflow,
+        _lastUpdated: this.workflowLastUpdated(workflow),
+        _name: workflow.name || workflow.firstSeed,
+      })),
       orderBy(this.orderBy.field, this.orderBy.direction),
-      map(this.renderTemplateItem.bind(this)),
+      map(this.renderWorkflowItem),
     ];
 
     if (this.filterByScheduled === true) {
@@ -345,283 +332,124 @@ export class WorkflowsList extends LiteElement {
     }
 
     return html`
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${flow(...flowFns)(this.crawlConfigs)}
-      </div>
+      <btrix-workflow-list>
+        ${flow(...flowFns)(this.workflows)}
+      </btrix-workflow-list>
     `;
   }
 
-  private renderTemplateItem(crawlConfig: Workflow) {
-    const name = this.renderName(crawlConfig);
-    return html`<a
-      class="block col-span-1 p-1 border shadow hover:shadow-sm hover:bg-zinc-50/50 hover:text-primary rounded text-sm transition-colors"
-      aria-label=${name}
-      href=${`/orgs/${this.orgId}/workflows/config/${crawlConfig.id}`}
-      @click=${this.navLink}
-    >
-      <header class="flex">
-        <div
-          class="flex-1 px-3 pt-3 font-medium whitespace-nowrap truncate mb-1"
-          title=${name}
-        >
-          ${name}
-        </div>
-
-        ${when(this.isCrawler, () => this.renderCardMenu(crawlConfig))}
-      </header>
-
-      <div class="px-3 pb-3 flex justify-between items-end text-0-800">
-        <div class="grid gap-2 text-xs leading-none">
-          <div class="overflow-hidden">
-            <sl-tooltip
-              content=${crawlConfig.config.seeds
-                .map((seed) => (typeof seed === "string" ? seed : seed.url))
-                .join(", ")}
-            >
-              <div class="font-mono whitespace-nowrap truncate text-0-500">
-                <span class="underline decoration-dashed"
-                  >${crawlConfig.config.seeds
-                    .map((seed) => (typeof seed === "string" ? seed : seed.url))
-                    .join(", ")}</span
-                >
-              </div>
-            </sl-tooltip>
-          </div>
-          <div class="font-mono text-purple-500">
-            ${crawlConfig.crawlCount === 1
-              ? msg(str`${crawlConfig.crawlCount} crawl`)
-              : msg(
-                  str`${(crawlConfig.crawlCount || 0).toLocaleString()} crawls`
-                )}
-          </div>
-          <div>
-            ${crawlConfig.crawlCount
-              ? html`<sl-tooltip>
-                  <span slot="content" class="capitalize">
-                    ${msg(
-                      str`Last Crawl: ${
-                        crawlConfig.lastCrawlState &&
-                        crawlConfig.lastCrawlState.replace(/_/g, " ")
-                      }`
-                    )}
-                  </span>
-                  <a
-                    class="font-medium hover:underline"
-                    href=${`/orgs/${this.orgId}/crawls/crawl/${crawlConfig.lastCrawlId}`}
-                    @click=${(e: any) => {
-                      e.stopPropagation();
-                      this.navLink(e);
-                    }}
-                  >
-                    <sl-icon
-                      class="inline-block align-middle mr-1 ${crawlConfig.lastCrawlState ===
-                      "failed"
-                        ? "text-neutral-400"
-                        : "text-purple-400"}"
-                      name=${crawlConfig.lastCrawlState === "complete"
-                        ? "check-circle-fill"
-                        : crawlConfig.lastCrawlState === "failed"
-                        ? "x-circle-fill"
-                        : "exclamation-circle-fill"}
-                    ></sl-icon
-                    ><sl-format-date
-                      class="inline-block align-middle text-neutral-600"
-                      date=${`${crawlConfig.lastCrawlTime}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                    ></sl-format-date>
-                  </a>
-                </sl-tooltip>`
-              : html`
-                  <sl-icon
-                    class="inline-block align-middle mr-1 text-0-400"
-                    name="slash-circle"
-                  ></sl-icon
-                  ><span class="inline-block align-middle text-0-400"
-                    >${msg("No finished crawls")}</span
-                  >
-                `}
-          </div>
-          <div>
-            ${crawlConfig.schedule
-              ? html`
-                  <sl-tooltip
-                    content=${msg(
-                      str`Next scheduled crawl: ${humanizeNextDate(
-                        crawlConfig.schedule
-                      )}`
-                    )}
-                  >
-                    <span>
-                      <sl-icon
-                        class="inline-block align-middle mr-1"
-                        name="clock-history"
-                      ></sl-icon
-                      ><span class="inline-block align-middle text-0-600"
-                        >${humanizeSchedule(crawlConfig.schedule, {
-                          length: "short",
-                        })}</span
-                      >
-                    </span>
-                  </sl-tooltip>
-                `
-              : html`<sl-icon
-                    class="inline-block align-middle mr-1 text-0-400"
-                    name="slash-circle"
-                  ></sl-icon
-                  ><span class="inline-block align-middle text-0-400"
-                    >${msg("No schedule")}</span
-                  >`}
-          </div>
-        </div>
-        ${this.renderCardFooter(crawlConfig)}
-      </div>
-    </a>`;
-  }
-
-  private renderCardMenu(t: Workflow) {
-    const menuItems: HTMLTemplateResult[] = [
-      html`
-        <li
-          class="p-2 hover:bg-zinc-100 cursor-pointer"
-          role="menuitem"
-          @click=${() => this.duplicateConfig(t)}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="files"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Duplicate Workflow")}</span
-          >
-        </li>
-      `,
-    ];
-
-    if (!t.inactive && !this.runningCrawlsMap[t.id]) {
-      menuItems.unshift(html`
-        <li
-          class="p-2 hover:bg-zinc-100 cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            e.target.closest("sl-dropdown").hide();
-            this.navTo(`/orgs/${this.orgId}/workflows/config/${t.id}?edit`);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="pencil-square"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Edit Workflow")}</span
-          >
-        </li>
-      `);
-    }
-
-    if (t.crawlCount && !t.inactive) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
-            this.deactivateTemplate(t);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-minus"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2"
-            >${msg("Deactivate")}</span
-          >
-        </li>
-      `);
-    }
-
-    if (!t.crawlCount) {
-      menuItems.push(html`
-        <li
-          class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-          role="menuitem"
-          @click=${(e: any) => {
-            // Close dropdown before deleting template
-            e.target.closest("sl-dropdown").hide();
-
-            this.deleteTemplate(t);
-          }}
-        >
-          <sl-icon
-            class="inline-block align-middle px-1"
-            name="file-earmark-x"
-          ></sl-icon>
-          <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
-        </li>
-      `);
-    }
-
-    return html`
-      <sl-dropdown @click=${(e: any) => e.preventDefault()}>
-        <sl-icon-button
-          slot="trigger"
-          name="three-dots-vertical"
-          label=${msg("More")}
-          style="font-size: 1rem"
-        ></sl-icon-button>
-
-        <ul
-          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
-          ${menuItems.map((item: HTMLTemplateResult) => item)}
-        </ul>
-      </sl-dropdown>
+  private renderWorkflowItem = (workflow: Workflow) =>
+    html`
+      <btrix-workflow-list-item
+        .workflow=${workflow}
+        lastUpdated=${this.workflowLastUpdated(workflow)}
+      >
+        <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
+      </btrix-workflow-list-item>
     `;
-  }
 
-  private renderCardFooter(t: Workflow) {
-    if (t.inactive) {
-      return "";
-    }
-
-    const crawlId = this.runningCrawlsMap[t.id];
-
-    if (crawlId) {
-      return html`
-        <button
-          class="text-xs border rounded px-2 h-7 bg-purple-50border-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-          @click=${(e: any) => {
-            e.preventDefault();
-            this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}#watch`);
-          }}
-        >
-          <span class="whitespace-nowrap"> ${msg("Watch Crawl")} </span>
-        </button>
-      `;
-    }
-
-    if (!this.isCrawler) {
-      return "";
-    }
-
+  private renderMenuItems(workflow: Workflow) {
     return html`
-      <div>
-        <button
-          class="text-xs border rounded px-2 h-7 bg-whiteborder-purple-200 hover:border-purple-500 text-purple-600 transition-colors"
-          @click=${(e: any) => {
-            e.preventDefault();
-            this.runNow(t);
-          }}
-        >
-          <span class="whitespace-nowrap"> ${msg("Run Now")} </span>
-        </button>
-      </div>
+      ${when(
+        workflow.currCrawlId,
+        // HACK shoelace doesn't current have a way to override non-hover
+        // color without resetting the --sl-color-neutral-700 variable
+        () => html`
+          <sl-menu-item
+            @click=${() => this.stop(workflow.currCrawlId)}
+            ?disabled=${workflow.currCrawlState === "stopping"}
+          >
+            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            ${msg("Stop Crawl")}
+          </sl-menu-item>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => this.cancel(workflow.currCrawlId)}
+          >
+            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
+            ${msg("Cancel & Discard Crawl")}
+          </sl-menu-item>
+        `,
+        () => html`
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--success)"
+            @click=${() => this.runNow(workflow)}
+          >
+            <sl-icon name="play" slot="prefix"></sl-icon>
+            ${msg("Run Crawl")}
+          </sl-menu-item>
+        `
+      )}
+      ${when(
+        workflow.currCrawlState === "running",
+        () => html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                {
+                  dialog: "scale",
+                }
+              )}
+          >
+            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+            ${msg("Edit Crawler Instances")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                {
+                  dialog: "exclusions",
+                }
+              )}
+          >
+            <sl-icon name="table" slot="prefix"></sl-icon>
+            ${msg("Edit Exclusions")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+        `
+      )}
+      <sl-divider></sl-divider>
+      <sl-menu-item
+        @click=${() =>
+          this.navTo(
+            `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
+          )}
+      >
+        <sl-icon name="gear" slot="prefix"></sl-icon>
+        ${msg("Edit Workflow Settings")}
+      </sl-menu-item>
+      <sl-menu-item
+        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(","))}
+        ?disabled=${!workflow.tags.length}
+      >
+        <sl-icon name="tags" slot="prefix"></sl-icon>
+        ${msg("Copy Tags")}
+      </sl-menu-item>
+      <sl-menu-item @click=${() => this.duplicateConfig(workflow)}>
+        <sl-icon name="files" slot="prefix"></sl-icon>
+        ${msg("Duplicate Workflow")}
+      </sl-menu-item>
+      ${when(!workflow.currCrawlId, () => {
+        const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
+        return html`
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() =>
+              shouldDeactivate
+                ? this.deactivate(workflow)
+                : this.delete(workflow)}
+          >
+            <sl-icon name="trash" slot="prefix"></sl-icon>
+            ${shouldDeactivate
+              ? msg("Deactivate Workflow")
+              : msg("Delete Workflow")}
+          </sl-menu-item>
+        `;
+      })}
     `;
   }
 
@@ -646,6 +474,22 @@ export class WorkflowsList extends LiteElement {
     );
   }
 
+  private workflowLastUpdated(workflow: Workflow): Date {
+    return new Date(
+      Math.max(
+        ...[
+          workflow.currCrawlStartTime,
+          workflow.lastCrawlTime,
+          workflow.lastCrawlStartTime,
+          workflow.modified,
+          workflow.created,
+        ]
+          .filter((date) => date)
+          .map((date) => new Date(`${date}Z`).getTime())
+      )
+    );
+  }
+
   private onSearchInput = debounce(200)((e: any) => {
     this.searchBy = e.target.value;
   }) as any;
@@ -657,8 +501,7 @@ export class WorkflowsList extends LiteElement {
   };
 
   /**
-   * Fetch Workflows and record running crawls
-   * associated with the Workflows
+   * Fetch Workflows and update state
    **/
   private async getWorkflows(): Promise<Workflow[]> {
     const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
@@ -667,16 +510,6 @@ export class WorkflowsList extends LiteElement {
       `/orgs/${this.orgId}/crawlconfigs${params}`,
       this.authState!
     );
-
-    const runningCrawlsMap: RunningCrawlsMap = {};
-
-    data.items.forEach(({ id, currCrawlId }) => {
-      if (currCrawlId) {
-        runningCrawlsMap[id] = currCrawlId;
-      }
-    });
-
-    this.runningCrawlsMap = runningCrawlsMap;
 
     return data.items;
   }
@@ -704,10 +537,10 @@ export class WorkflowsList extends LiteElement {
     });
   }
 
-  private async deactivateTemplate(crawlConfig: Workflow): Promise<void> {
+  private async deactivate(workflow: Workflow): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -716,15 +549,13 @@ export class WorkflowsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deactivated <strong>${this.renderName(crawlConfig)}</strong>.`
+          html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== crawlConfig.id
-      );
+      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate Workflow at this time."),
@@ -734,10 +565,10 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async deleteTemplate(crawlConfig: Workflow): Promise<void> {
+  private async delete(workflow: Workflow): Promise<void> {
     try {
       await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
         this.authState!,
         {
           method: "DELETE",
@@ -746,15 +577,13 @@ export class WorkflowsList extends LiteElement {
 
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.renderName(crawlConfig)}</strong>.`
+          html`Deleted <strong>${this.renderName(workflow)}</strong>.`
         ),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.crawlConfigs = this.crawlConfigs!.filter(
-        (t) => t.id !== crawlConfig.id
-      );
+      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete Workflow at this time."),
@@ -764,31 +593,67 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async runNow(crawlConfig: Workflow): Promise<void> {
+  private async cancel(crawlId: Workflow["currCrawlId"]) {
+    if (!crawlId) return;
+    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't cancel crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private async stop(crawlId: Workflow["currCrawlId"]) {
+    if (!crawlId) return;
+    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        }
+      );
+      if (data.success === true) {
+        this.fetchWorkflows();
+      } else {
+        this.notify({
+          message: msg("Something went wrong, couldn't stop crawl."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private async runNow(workflow: Workflow): Promise<void> {
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${crawlConfig.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
         this.authState!,
         {
           method: "POST",
         }
       );
 
-      const crawlId = data.started;
-
-      this.runningCrawlsMap = {
-        ...this.runningCrawlsMap,
-        [crawlConfig.id]: crawlId,
-      };
-
       this.notify({
         message: msg(
-          html`Started crawl from
-            <strong>${this.renderName(crawlConfig)}</strong>.
+          html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/crawls/crawl/${data.started}#watch"
+              href="/orgs/${this.orgId}/workflows/crawl/${workflow.id}"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
@@ -797,6 +662,10 @@ export class WorkflowsList extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
+
+      await this.fetchWorkflows();
+      // Scroll to top of list
+      this.scrollIntoView({ behavior: "smooth" });
     } catch (e: any) {
       this.notify({
         message:
@@ -804,61 +673,6 @@ export class WorkflowsList extends LiteElement {
             e.statusCode === 403 &&
             msg("You do not have permission to run crawls.")) ||
           msg("Sorry, couldn't run crawl at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async onSubmitSchedule(event: {
-    detail: { formData: FormData };
-  }): Promise<void> {
-    if (!this.selectedTemplateForEdit) return;
-
-    const { formData } = event.detail;
-    const interval = formData.get("scheduleInterval");
-    let schedule = "";
-
-    if (interval) {
-      schedule = getUTCSchedule({
-        interval: formData.get("scheduleInterval") as any,
-        hour: formData.get("scheduleHour") as any,
-        minute: formData.get("scheduleMinute") as any,
-        period: formData.get("schedulePeriod") as any,
-      });
-    }
-    const editedTemplateId = this.selectedTemplateForEdit.id;
-
-    try {
-      await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${editedTemplateId}`,
-        this.authState!,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ schedule }),
-        }
-      );
-
-      this.crawlConfigs = this.crawlConfigs?.map((t) =>
-        t.id === editedTemplateId
-          ? {
-              ...t,
-              schedule,
-            }
-          : t
-      );
-      this.showEditDialog = false;
-
-      this.notify({
-        message: msg("Successfully saved new schedule."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (e: any) {
-      console.error(e);
-
-      this.notify({
-        message: msg("Something went wrong, couldn't update schedule."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

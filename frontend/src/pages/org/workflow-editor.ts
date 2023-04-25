@@ -534,7 +534,9 @@ export class CrawlConfigEditor extends LiteElement {
           progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
           <header slot="header" class="flex justify-between items-baseline">
-            <h3 class="font-semibold">${tabLabels[this.progressState.activeTab]}</h3>
+            <h3 class="font-semibold">
+              ${tabLabels[this.progressState.activeTab]}
+            </h3>
             <p class="text-xs text-neutral-500 font-normal">
               ${msg(
                 html`Fields marked with
@@ -1946,10 +1948,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
 
       if (crawlId) {
-        this.navTo(`/orgs/${this.orgId}/crawls/crawl/${crawlId}`);
+        this.navTo(`/orgs/${this.orgId}/artifacts/crawl/${crawlId}`);
       } else {
         this.navTo(
-          `/orgs/${this.orgId}/workflows/config/${this.configId || data.added}`
+          `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.added}`
         );
       }
     } catch (e: any) {

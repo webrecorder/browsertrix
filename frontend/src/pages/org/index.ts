@@ -25,13 +25,18 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 
-export type OrgTab = "crawls" | "workflows" | "browser-profiles" | "settings";
+export type OrgTab =
+  | "crawls"
+  | "workflows"
+  | "artifacts"
+  | "browser-profiles"
+  | "settings";
 
 type Params = {
-  crawlId?: string;
-  workflowId?: string;
+  crawlOrWorkflowId?: string;
   browserProfileId?: string;
   browserId?: string;
+  artifactId?: string;
 };
 
 const defaultTab = "crawls";
@@ -114,7 +119,7 @@ export class Org extends LiteElement {
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
-      case "crawls":
+      case "artifacts":
         tabPanelContent = this.renderCrawls();
         break;
       case "workflows":
@@ -153,10 +158,15 @@ export class Org extends LiteElement {
     return html`
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
-          ${this.renderNavTab({ tabName: "crawls", label: msg("Crawls") })}
           ${this.renderNavTab({
             tabName: "workflows",
-            label: msg("Workflows"),
+            label: msg("Crawling"),
+            path: "workflows/crawls",
+          })}
+          ${this.renderNavTab({
+            tabName: "artifacts",
+            label: msg("Finished Crawls"),
+            path: "artifacts/crawls",
           })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
@@ -177,14 +187,22 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
+  private renderNavTab({
+    tabName,
+    label,
+    path,
+  }: {
+    tabName: OrgTab;
+    label: string;
+    path?: string;
+  }) {
     const isActive = this.orgTab === tabName;
 
     return html`
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.orgId}/${tabName}`}
+        href=${`/orgs/${this.orgId}/${path || tabName}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -200,12 +218,14 @@ export class Org extends LiteElement {
   }
 
   private renderCrawls() {
-    const crawlsBaseUrl = `/orgs/${this.orgId}/crawls`;
+    const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+    const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
-    if (this.params.crawlId) {
+    if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
-        crawlId=${this.params.crawlId}
+        crawlId=${this.params.crawlOrWorkflowId}
+        crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
@@ -215,22 +235,38 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
+      crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
-      ?shouldFetch=${this.orgTab === "crawls"}
+      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
     ></btrix-crawls-list>`;
   }
 
   private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
+    const workflowId = this.params.crawlOrWorkflowId;
 
-    if (this.params.workflowId) {
+    if (workflowId) {
+      if (this.params.artifactId) {
+        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+        // TODO abstract into breadcrumbs
+        const crawlsBaseUrl = `/orgs/${this.orgId}/workflows/crawl/${workflowId}`;
+
+        return html` <btrix-crawl-detail
+          .authState=${this.authState!}
+          crawlId=${this.params.artifactId}
+          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+          crawlsBaseUrl=${crawlsBaseUrl}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-crawl-detail>`;
+      }
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId!}
-          workflowId=${this.params.workflowId}
+          workflowId=${workflowId}
+          openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
         ></btrix-workflow-detail>
@@ -284,7 +320,6 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
-    // const activePanel = this.
     const activePanel = this.orgPath.includes("/members")
       ? "members"
       : "information";

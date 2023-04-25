@@ -27,6 +27,7 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 
+const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
 const rowCss = css`
   .row {
@@ -34,14 +35,15 @@ const rowCss = css`
     grid-template-columns: 1fr;
   }
 
-  @media only screen and (min-width: 30rem) {
+  @media only screen and (min-width: ${mediumBreakpointCss}) {
     .row {
       grid-template-columns: repeat(2, 1fr);
     }
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 15rem 10rem 7rem 3rem;
+      grid-gap: var(--sl-spacing-x-large);
     }
   }
 
@@ -80,76 +82,56 @@ export class CrawlListItem extends LitElement {
       }
 
       .item {
-        contain: content;
-        content-visibility: auto;
-        contain-intrinsic-height: auto 4rem;
+        color: var(--sl-color-neutral-700);
         cursor: pointer;
-        transition-property: background-color, box-shadow, margin;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
         overflow: hidden;
       }
 
-      .item:hover,
-      .item:focus,
-      .item:focus-within {
-        background-color: var(--sl-color-neutral-50);
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .item {
+          height: 2.5rem;
+        }
       }
+
       .dropdown {
         contain: content;
         position: absolute;
         z-index: 99;
       }
-      .item:hover {
-        background-color: var(--sl-color-neutral-50);
-        margin-left: calc(-1 * var(--row-offset));
-        margin-right: calc(-1 * var(--row-offset));
-      }
-
-      .item:hover .col:nth-child(n + 2) {
-        margin-left: calc(-1 * var(--row-offset));
-      }
-
-      .item:hover .col.action {
-        margin-left: calc(-2 * var(--row-offset));
-      }
-
-      .row {
-        border: 1px solid var(--sl-panel-border-color);
-        border-radius: var(--sl-border-radius-medium);
-        box-shadow: var(--sl-shadow-x-small);
-      }
-
-      .row:hover {
-        box-shadow: var(--sl-shadow-small);
-      }
 
       .col {
-        padding-top: var(--sl-spacing-small);
-        padding-bottom: var(--sl-spacing-small);
+        display: flex;
+        align-items: center;
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
         overflow: hidden;
+        white-space: nowrap;
       }
 
       .detail {
-        color: var(--sl-color-neutral-700);
         font-size: var(--sl-font-size-medium);
         text-overflow: ellipsis;
-        height: 1.5rem;
       }
 
       .desc {
-        color: var(--sl-color-neutral-500);
         font-size: var(--sl-font-size-x-small);
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
-        height: 1rem;
+        text-overflow: ellipsis;
+      }
+
+      .desc:nth-child(2) {
+        margin-left: 1rem;
+        color: var(--sl-color-neutral-400);
       }
 
       .unknownValue {
-        color: var(--sl-color-neutral-500);
+        color: var(--sl-color-neutral-400);
+      }
+
+      .detail btrix-crawl-status {
+        display: flex;
       }
 
       .url {
@@ -173,8 +155,8 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-500);
       }
 
-      .finished {
-        margin-left: calc(1rem + var(--sl-spacing-x-small));
+      .fileSize {
+        min-width: 4em;
       }
 
       .userName {
@@ -191,18 +173,19 @@ export class CrawlListItem extends LitElement {
       .action sl-icon-button {
         font-size: 1rem;
       }
-
-      @media only screen and (min-width: ${largeBreakpointCss}) {
-        .action {
-          border-left: 1px solid var(--sl-panel-border-color);
-        }
-      }
     `,
   ];
 
   @property({ type: Object })
   crawl?: Crawl;
 
+  @property({ type: String })
+  baseUrl?: string;
+
+  @query(".row")
+  row!: HTMLElement;
+
+  // TODO consolidate with btrix-combobox
   @query(".dropdown")
   dropdown!: HTMLElement;
 
@@ -216,7 +199,9 @@ export class CrawlListItem extends LitElement {
   private dropdownIsOpen?: boolean;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+  });
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("dropdownIsOpen")) {
@@ -233,14 +218,12 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const isActive =
-      this.crawl &&
-      ["starting", "running", "stopping"].includes(this.crawl.state);
-
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.crawl?.oid}/crawls/crawl/${this.crawl?.id}`}
+      href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
+        this.crawl?.id
+      }`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -256,87 +239,93 @@ export class CrawlListItem extends LitElement {
     >
       <div class="col">
         <div class="detail url truncate">
-          ${this.safeRender(this.renderName)}
-        </div>
-        <div class="desc">
           ${this.safeRender(
-            (crawl) => html`
-              <sl-format-date
-                date=${`${crawl.started}Z`}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="2-digit"
-                minute="2-digit"
-              ></sl-format-date>
+            (workflow) => html`
+              <btrix-crawl-status
+                state=${workflow.state}
+                hideLabel
+              ></btrix-crawl-status>
+              <slot name="id">${this.renderName(workflow)}</slot>
             `
           )}
         </div>
       </div>
       <div class="col">
-        <div class="detail">
-          ${this.safeRender(
-            (crawl) => html`
-              <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
-            `
-          )}
-        </div>
-        <div class="desc finished">
+        <div class="desc">
           ${this.safeRender((crawl) =>
             crawl.finished
-              ? msg(
-                  str`Finished in ${RelativeDuration.humanize(
-                    new Date(`${crawl.finished}Z`).valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf(),
-                    { compact: true }
+              ? html`
+                  <sl-format-date
+                    date=${`${crawl.finished}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                `
+              : msg(
+                  str`Running for ${RelativeDuration.humanize(
+                    new Date().valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf()
                   )}`
                 )
-              : msg(
-                  str`Started ${RelativeDuration.humanize(
-                    new Date().valueOf() -
-                      new Date(`${crawl.started}Z`).valueOf(),
-                    { compact: true }
-                  )} ago`
-                )
           )}
         </div>
+        ${this.safeRender((crawl) =>
+          crawl.finished
+            ? html`<div class="desc truncate">
+                ${msg(
+                  str`in ${RelativeDuration.humanize(
+                    new Date(`${crawl.finished}Z`).valueOf() -
+                      new Date(`${crawl.started}Z`).valueOf()
+                  )}`
+                )}
+              </div>`
+            : ""
+        )}
       </div>
       <div class="col">
-        <div class="detail">
-          ${this.safeRender((crawl) =>
-            isActive
-              ? html`<span class="unknownValue">${msg("In Progress")}</span>`
-              : html`<sl-format-bytes
-                  value=${crawl.fileSize || 0}
-                ></sl-format-bytes>`
-          )}
-        </div>
-        <div class="desc">
-          ${this.safeRender((crawl) => {
+        ${this.safeRender((crawl) => {
+          if (crawl.finished) {
+            return html`<div class="desc fileSize">
+              <sl-format-bytes
+                value=${crawl.fileSize || 0}
+                display="narrow"
+              ></sl-format-bytes>
+            </div>`;
+          }
+          const pagesComplete = +(crawl.stats?.done || 0);
+          const pagesFound = +(crawl.stats?.found || 0);
+          return html` <div class="desc">
+            ${pagesFound === 1
+              ? msg(
+                  str`${this.numberFormatter.format(
+                    pagesComplete
+                  )} / ${this.numberFormatter.format(pagesFound)} page`
+                )
+              : msg(
+                  str`${this.numberFormatter.format(
+                    pagesComplete
+                  )} / ${this.numberFormatter.format(pagesFound)} pages`
+                )}
+          </div>`;
+        })}
+        ${this.safeRender((crawl) => {
+          if (crawl.finished) {
             const pagesComplete = +(crawl.stats?.done || 0);
-            if (isActive) {
-              const pagesFound = +(crawl.stats?.found || 0);
-              return html`
-                ${pagesFound === 1
-                  ? msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} page`
-                    )
-                  : msg(
-                      str`${this.numberFormatter.format(
-                        pagesComplete
-                      )} / ${this.numberFormatter.format(pagesFound)} pages`
-                    )}
-              `;
-            }
             return html`
-              ${pagesComplete === 1
-                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
-                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`)}
+              <div class="desc pages truncate">
+                ${pagesComplete === 1
+                  ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
+                  : msg(
+                      str`${this.numberFormatter.format(pagesComplete)} pages`
+                    )}
+              </div>
             `;
-          })}
-        </div>
+          }
+          return "";
+        })}
       </div>
       <div class="col">
         <div class="detail truncate">
@@ -344,34 +333,36 @@ export class CrawlListItem extends LitElement {
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
           )}
         </div>
-        <div class="desc">
-          ${this.safeRender((crawl) =>
-            crawl.manual ? msg("Manual Start") : msg("Scheduled")
-          )}
-        </div>
       </div>
       <div class="col action">
-        <sl-icon-button
-          class="dropdownTrigger"
-          slot="trigger"
-          name="three-dots-vertical"
-          label=${msg("More")}
-          @click=${(e: MouseEvent) => {
-            // Prevent anchor link default behavior
-            e.preventDefault();
-            // Stop prop to anchor link
-            e.stopPropagation();
-            this.dropdownIsOpen = true;
-          }}
-          @focusout=${(e: FocusEvent) => {
-            const relatedTarget = e.relatedTarget as HTMLElement;
-            if (this.menuArr[0]?.contains(relatedTarget)) {
-              // Keep dropdown open if moving to menu selection
-              return;
-            }
-            this.dropdownIsOpen = false;
-          }}
-        ></sl-icon-button>
+        <slot name="menuTrigger">
+          <sl-icon-button
+            class="dropdownTrigger"
+            name="three-dots-vertical"
+            label=${msg("More")}
+            @click=${(e: MouseEvent) => {
+              // Prevent anchor link default behavior
+              e.preventDefault();
+              // Stop prop to anchor link
+              e.stopPropagation();
+              this.dropdownIsOpen = !this.dropdownIsOpen;
+            }}
+            @focusout=${(e: FocusEvent) => {
+              const relatedTarget = e.relatedTarget as HTMLElement;
+              if (relatedTarget) {
+                if (this.menuArr[0]?.contains(relatedTarget)) {
+                  // Keep dropdown open if moving to menu selection
+                  return;
+                }
+                if (this.row?.isEqualNode(relatedTarget)) {
+                  // Handle with click event
+                  return;
+                }
+              }
+              this.dropdownIsOpen = false;
+            }}
+          ></sl-icon-button>
+        </slot>
       </div>
     </a>`;
   }
@@ -452,49 +443,66 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-       .listHeader,
-       .list {
-         margin-left: var(--row-offset);
-         margin-right: var(--row-offset);
-       }
- 
-       .listHeader {
-         line-height: 1;
-       }
- 
-       .row {
-         display none;
-         font-size: var(--sl-font-size-x-small);
-         color: var(--sl-color-neutral-600);
-       }
- 
-       .col {
-         padding-top: var(--sl-spacing-x-small);
-         padding-bottom: var(--sl-spacing-x-small);
-       }
- 
-       @media only screen and (min-width: ${largeBreakpointCss}) {
-         .row {
-           display: grid;
-         }
-       }
- 
-       ::slotted(btrix-crawl-list-item:not(:last-of-type)) {
-         display: block;
-         margin-bottom: var(--sl-spacing-x-small);
-       }
-     `,
+      .listHeader {
+        line-height: 1;
+      }
+
+      .list {
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+        overflow: hidden;
+      }
+
+      .row {
+        display none;
+        font-size: var(--sl-font-size-x-small);
+        color: var(--sl-color-neutral-600);
+      }
+
+      .col {
+        padding-top: var(--sl-spacing-x-small);
+        padding-bottom: var(--sl-spacing-x-small);
+      }
+
+      @media only screen and (min-width: ${largeBreakpointCss}) {
+        .row {
+          display: grid;
+        }
+      }
+
+      ::slotted(btrix-crawl-list-item) {
+        display: block;
+        transition-property: background-color, box-shadow;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+      }
+
+      ::slotted(btrix-crawl-list-item:not(:first-of-type)) {
+        box-shadow: inset 0px 1px 0 var(--sl-panel-border-color);
+      }
+
+      ::slotted(btrix-crawl-list-item:hover),
+      ::slotted(btrix-crawl-list-item:focus),
+      ::slotted(btrix-crawl-list-item:focus-within) {
+        background-color: var(--sl-color-neutral-50);
+      }
+    `,
   ];
+
+  @property({ type: String, noAccessor: true })
+  baseUrl?: string;
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & Start Time")}</div>
-        <div class="col">${msg("Status")}</div>
+        <div class="col">
+          <slot name="idCol">${msg("Workflow")}</slot>
+        </div>
+        <div class="col">${msg("Finished")}</div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Config Author")}</div>
+        <div class="col">${msg("Started By")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>
@@ -505,10 +513,19 @@ export class CrawlList extends LitElement {
   }
 
   private handleSlotchange() {
-    this.listItems.map((el) => {
+    const assignRole = (el: HTMLElement) => {
       if (!el.attributes.getNamedItem("role")) {
         el.setAttribute("role", "listitem");
       }
-    });
+    };
+    let mapFn = assignRole;
+    if (this.baseUrl) {
+      mapFn = (el) => {
+        assignRole(el);
+        el.setAttribute("baseUrl", this.baseUrl!);
+      };
+    }
+
+    this.listItems.forEach(mapFn);
   }
 }

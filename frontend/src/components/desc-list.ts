@@ -23,6 +23,7 @@ export class DescListItem extends LitElement {
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
       line-height: 1rem;
+      margin: var(--sl-spacing-3x-small) 0;
     }
 
     dd {
@@ -32,7 +33,7 @@ export class DescListItem extends LitElement {
       font-size: var(--sl-font-size-medium);
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);
-      line-height: 1.5rem;
+      line-height: 1rem;
     }
   `;
 

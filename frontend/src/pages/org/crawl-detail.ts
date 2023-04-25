@@ -7,6 +7,7 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, Workflow } from "./types";
 
@@ -66,10 +67,13 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  private timerId?: number;
-
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
+  private dateFormatter = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -101,7 +105,6 @@ export class CrawlDetail extends LiteElement {
 
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
-      this.stopPollTimer();
       this.fetchCrawl();
     } else {
       const prevCrawl = changedProperties.get("crawl");
@@ -126,41 +129,10 @@ export class CrawlDetail extends LiteElement {
     super.connectedCallback();
   }
 
-  disconnectedCallback(): void {
-    this.stopPollTimer();
-    super.disconnectedCallback();
-  }
-
   render() {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
-      case "exclusions":
-      case "watch": {
-        if (this.crawl) {
-          const isRunning = this.crawl.state === "running";
-          sectionContent = this.renderPanel(
-            html`<span>${msg("Watch Crawl")}</span>
-              <sl-button
-                size="small"
-                ?disabled=${!isRunning}
-                @click=${() => {
-                  this.openDialogName = "scale";
-                  this.isDialogVisible = true;
-                }}
-              >
-                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                <span> ${msg("Crawler Instances")} </span>
-              </sl-button> `,
-            this.renderWatch()
-          );
-        } else {
-          // TODO loading indicator?
-          return "";
-        }
-
-        break;
-      }
       case "replay":
         sectionContent = this.renderPanel(
           msg("Replay Crawl"),
@@ -219,6 +191,9 @@ export class CrawlDetail extends LiteElement {
         break;
     }
 
+    // TODO abstract into breadcrumbs
+    const isWorkflowArtifact = this.crawlsBaseUrl.includes("/workflows/");
+
     return html`
       <div class="mb-7">
         <a
@@ -231,7 +206,9 @@ export class CrawlDetail extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${msg("Back to Crawls")}</span
+            >${isWorkflowArtifact
+              ? msg("Back to Crawl Workflow")
+              : msg("Back to Finished Crawls")}</span
           >
         </a>
       </div>
@@ -301,6 +278,7 @@ export class CrawlDetail extends LiteElement {
       icon: string;
     }) => {
       const isActive = section === this.sectionName;
+      const baseUrl = window.location.pathname.split("#")[0];
       return html`
         <li
           class="relative grow"
@@ -311,7 +289,7 @@ export class CrawlDetail extends LiteElement {
             class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
               ? "text-blue-600 bg-blue-100 shadow-sm"
               : "text-neutral-600 hover:bg-blue-50"}"
-            href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#${section}`}
+            href=${`${baseUrl}#${section}`}
             @click=${() => (this.sectionName = section)}
           >
             <sl-icon
@@ -337,22 +315,12 @@ export class CrawlDetail extends LiteElement {
             icon: "info-circle-fill",
             label: msg("Overview"),
           })}
-          ${this.isActive
-            ? renderNavItem({
-                section: "watch",
-                iconLibrary: "default",
-                icon: "eye-fill",
-                label: msg("Watch Crawl"),
-              })
-            : ""}
-          ${!this.isActive
-            ? renderNavItem({
-                section: "replay",
-                iconLibrary: "app",
-                icon: "link-replay",
-                label: msg("Replay Crawl"),
-              })
-            : ""}
+          ${renderNavItem({
+            section: "replay",
+            iconLibrary: "app",
+            icon: "link-replay",
+            label: msg("Replay Crawl"),
+          })}
           ${!this.isActive
             ? renderNavItem({
                 section: "files",
@@ -426,103 +394,58 @@ export class CrawlDetail extends LiteElement {
             ? html`<sl-icon name="three-dots"></sl-icon>`
             : msg("Actions")}</sl-button
         >
-
-        <ul
-          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
+        <sl-menu>
           ${when(
-            !this.isActive,
+            this.isCrawler,
             () => html`
-              <li
-                class="p-2 text-purple-500 hover:bg-purple-500 hover:text-white cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.runNow();
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                <sl-icon
-                  class="inline-block align-middle mr-1"
-                  name="arrow-clockwise"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Re-run crawl")}
-                </span>
-              </li>
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  this.openMetadataEditor();
-                  e.target.closest("sl-dropdown").hide();
-                }}
-              >
-                <sl-icon
-                  class="inline-block align-middle mr-1"
-                  name="pencil"
-                ></sl-icon>
-                <span class="inline-block align-middle">
-                  ${msg("Edit Metadata")}
-                </span>
-              </li>
-            `
-          )}
-          ${when(
-            !this.isActive,
-            () => html`
-              <hr />
-              <li
-                class="p-2 hover:bg-zinc-100 cursor-pointer"
-                role="menuitem"
+              <sl-menu-item
                 @click=${() => {
-                  this.navTo(
-                    `/orgs/${this.crawl?.oid}/workflows/config/${this.crawl?.cid}?edit`
-                  );
+                  this.openMetadataEditor();
                 }}
               >
-                <span class="inline-block align-middle">
-                  ${msg("Edit Workflow")}
-                </span>
-              </li>
+                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                ${msg("Edit Metadata")}
+              </sl-menu-item>
+              <sl-divider></sl-divider>
             `
           )}
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${(e: any) => {
-              CopyButton.copyToClipboard(crawlId);
-              closeDropdown(e);
-            }}
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${this.crawl!.oid}/workflows/crawl/${this.crawl!.cid}`
+              )}
           >
-            ${msg("Copy Crawl ID")}
-          </li>
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
-            @click=${(e: any) => {
-              CopyButton.copyToClipboard(this.crawl?.cid || "");
-              closeDropdown(e);
-            }}
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+            ${msg("Go to Workflow")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard(this.crawl!.cid)}
           >
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
             ${msg("Copy Workflow ID")}
-          </li>
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              CopyButton.copyToClipboard(this.crawl!.tags.join(","))}
+            ?disabled=${this.crawl.tags.length}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
+          </sl-menu-item>
           ${when(
-            this.crawl && !this.isActive,
+            this.isCrawler && !isActive(this.crawl.state),
             () => html`
-              <li
-                class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-                role="menuitem"
-                @click=${(e: any) => {
-                  e.target.closest("sl-dropdown").hide();
-                  this.deleteCrawl();
-                }}
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => this.deleteCrawl()}
               >
+                <sl-icon name="trash" slot="prefix"></sl-icon>
                 ${msg("Delete Crawl")}
-              </li>
+              </sl-menu-item>
             `
           )}
-        </ul>
+        </sl-menu>
       </sl-dropdown>
     `;
   }
@@ -606,124 +529,6 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
       </dl>
-    `;
-  }
-
-  private renderWatch() {
-    if (!this.authState || !this.crawl) return "";
-
-    const isStarting = this.crawl.state === "starting";
-    const isRunning = this.crawl.state === "running";
-    const isStopping = this.crawl.state === "stopping";
-    const authToken = this.authState.headers.Authorization.split(" ")[1];
-
-    return html`
-      ${isStarting
-        ? html`<div class="rounded border p-3">
-            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${msg("Crawl starting...")}
-            </p>
-          </div>`
-        : this.isActive
-        ? html`
-            ${isStopping
-              ? html`
-                  <div class="mb-4">
-                    <btrix-alert variant="warning" class="text-sm">
-                      ${msg("Crawl stopping...")}
-                    </btrix-alert>
-                  </div>
-                `
-              : ""}
-          `
-        : this.renderInactiveCrawlMessage()}
-      ${when(
-        isRunning,
-        () => html`
-          <div
-            id="screencast-crawl"
-            class="${isStopping ? "opacity-40" : ""} transition-opacity"
-          >
-            <btrix-screencast
-              authToken=${authToken}
-              orgId=${this.crawl!.oid}
-              crawlId=${this.crawlId}
-              scale=${this.crawl!.scale}
-            ></btrix-screencast>
-          </div>
-
-          <section class="mt-8">${this.renderExclusions()}</section>
-
-          <btrix-dialog
-            label=${msg("Edit Crawler Instances")}
-            ?open=${this.openDialogName === "scale"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
-            @sl-show=${() => (this.isDialogVisible = true)}
-            @sl-after-hide=${() => (this.isDialogVisible = false)}
-          >
-            ${this.isDialogVisible ? this.renderEditScale() : ""}
-          </btrix-dialog>
-        `
-      )}
-    `;
-  }
-
-  private renderExclusions() {
-    return html`
-      <header class="flex items-center justify-between">
-        <h3 class="leading-none text-lg font-semibold mb-2">
-          ${msg("Crawl URLs")}
-        </h3>
-        <sl-button
-          size="small"
-          variant="primary"
-          @click=${() => {
-            this.openDialogName = "exclusions";
-            this.isDialogVisible = true;
-          }}
-        >
-          <sl-icon slot="prefix" name="table"></sl-icon>
-          ${msg("Edit Exclusions")}
-        </sl-button>
-      </header>
-
-      ${when(
-        this.crawl,
-        () => html`
-          <btrix-crawl-queue
-            orgId=${this.crawl!.oid}
-            crawlId=${this.crawlId}
-            .authState=${this.authState}
-          ></btrix-crawl-queue>
-        `
-      )}
-
-      <btrix-dialog
-        label=${msg("Crawl Queue Editor")}
-        ?open=${this.openDialogName === "exclusions"}
-        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${this.isDialogVisible
-          ? html`<btrix-exclusion-editor
-              orgId=${ifDefined(this.crawl?.oid)}
-              crawlId=${ifDefined(this.crawl?.id)}
-              .config=${this.crawl?.config}
-              .authState=${this.authState}
-              ?isActiveCrawl=${this.crawl && this.isActive}
-              @on-success=${this.handleExclusionChange}
-            ></btrix-exclusion-editor>`
-          : ""}
-        <div slot="footer">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Done Editing")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
     `;
   }
 
@@ -830,7 +635,7 @@ export class CrawlDetail extends LiteElement {
                   ? html`
                       <a
                         class="font-medium text-neutral-700 hover:text-neutral-900"
-                        href=${`/orgs/${this.crawl.oid}/crawls`}
+                        href=${`/orgs/${this.crawl.oid}/artifacts/crawls`}
                         @click=${this.navLink}
                       >
                         <sl-icon
@@ -940,90 +745,12 @@ ${this.crawl?.notes}
     `;
   }
 
-  private renderEditScale() {
-    if (!this.crawl) return;
-
-    const scaleOptions = [
-      {
-        value: 1,
-        label: "1",
-      },
-      {
-        value: 2,
-        label: "2",
-      },
-      {
-        value: 3,
-        label: "3",
-      },
-    ];
-
-    return html`
-      <div>
-        <sl-radio-group
-          value=${this.crawl.scale}
-          help-text=${msg(
-            "Increasing parallel crawler instances can speed up crawls, but may increase the chances of getting rate limited."
-          )}
-        >
-          ${scaleOptions.map(
-            ({ value, label }) => html`
-              <sl-radio-button
-                value=${value}
-                size="small"
-                @click=${() => this.scale(value)}
-                ?disabled=${this.isSubmittingUpdate}
-                >${label}</sl-radio-button
-              >
-            `
-          )}
-        </sl-radio-group>
-      </div>
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          type="reset"
-          @click=${() => (this.openDialogName = undefined)}
-          >${msg("Cancel")}</sl-button
-        >
-      </div>
-    `;
-  }
-
-  private renderInactiveCrawlMessage() {
-    return html`
-      <div class="rounded border bg-neutral-50 p-3">
-        <p class="text-sm text-neutral-600">
-          ${msg("Crawl is not running.")}
-          ${this.hasFiles
-            ? html`<a
-                href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
-                class="text-primary hover:underline"
-                @click=${() => (this.sectionName = "replay")}
-                >View replay</a
-              >`
-            : ""}
-        </p>
-      </div>
-    `;
-  }
-
   /**
    * Fetch crawl and update internal state
    */
   private async fetchCrawl(): Promise<void> {
     try {
       this.crawl = await this.getCrawl();
-
-      if (this.isActive) {
-        // Restart timer for next poll
-        this.stopPollTimer();
-        this.timerId = window.setTimeout(() => {
-          this.fetchCrawl();
-        }, 1000 * POLL_INTERVAL_SECONDS);
-      } else {
-        this.stopPollTimer();
-      }
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
@@ -1097,44 +824,6 @@ ${this.crawl?.notes}
     return !formEl.querySelector("[data-invalid]");
   }
 
-  private async scale(value: Crawl["scale"]) {
-    this.isSubmittingUpdate = true;
-
-    try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/scale`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({ scale: +value }),
-        }
-      );
-
-      if (data.scaled) {
-        this.crawl!.scale = data.scaled;
-
-        this.notify({
-          message: msg("Updated crawl scale."),
-          variant: "success",
-          icon: "check2-circle",
-        });
-      } else {
-        throw new Error("unhandled API response");
-      }
-
-      this.openDialogName = undefined;
-      this.isDialogVisible = false;
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't change crawl scale at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSubmittingUpdate = false;
-  }
-
   private async runNow() {
     if (!this.crawl) return;
 
@@ -1148,7 +837,7 @@ ${this.crawl?.notes}
       );
 
       if (data.started) {
-        this.navTo(`/orgs/${this.crawl.oid}/crawls/crawl/${data.started}`);
+        this.navTo(`/orgs/${this.crawl.oid}/artifacts/crawl/${data.started}`);
       }
 
       this.notify({
@@ -1215,14 +904,6 @@ ${this.crawl?.notes}
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  private handleExclusionChange(e: CustomEvent) {
-    this.fetchCrawl();
-  }
-
-  private stopPollTimer() {
-    window.clearTimeout(this.timerId);
   }
 
   /** Callback when crawl is no longer running */
