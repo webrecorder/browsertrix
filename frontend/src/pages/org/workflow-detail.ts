@@ -191,10 +191,12 @@ export class WorkflowDetail extends LiteElement {
 
     this.isLoading = false;
 
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      this.fetchWorkflow();
-    }, 1000 * POLL_INTERVAL_SECONDS);
+    if (!this.isEditing) {
+      // Restart timer for next poll
+      this.timerId = window.setTimeout(() => {
+        this.fetchWorkflow();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+    }
   }
 
   render() {
