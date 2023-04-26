@@ -24,7 +24,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
 from .users import User
-from .utils import dt_now, ts_now, get_redis_crawl_stats
+from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_messages
 
 
 CRAWL_STATES = (
@@ -784,12 +784,14 @@ class CrawlOps:
         try:
             redis = await self.get_redis(crawl_id)
             errors = await redis.lrange(f"{crawl_id}:e", skip, page_size)
-            total = len(errors)
         except exceptions.ConnectionError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=503, detail="redis_connection_error")
 
-        return errors, total
+        parsed_errors = parse_jsonl_error_messages(errors)
+        total = len(parsed_errors)
+
+        return parsed_errors, total
 
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
@@ -1240,8 +1242,9 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             skip = (page - 1) * pageSize
             upper_bound = skip + pageSize - 1
             errors = crawl.errors[skip:upper_bound]
-            total = len(errors)
-            return paginated_format(errors, total, page, pageSize)
+            parsed_errors = parse_jsonl_error_messages(errors)
+            total = len(parsed_errors)
+            return paginated_format(parsed_errors, total, page, pageSize)
 
         errors, total = await ops.get_errors_from_redis(crawl_id, pageSize, page)
         return paginated_format(errors, total, page, pageSize)
