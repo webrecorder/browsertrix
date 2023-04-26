@@ -2,6 +2,7 @@
 
 import os
 import asyncio
+import json
 import sys
 import signal
 import atexit
@@ -83,3 +84,20 @@ def register_exit_handler():
         sys.exit(1)
 
     loop.add_signal_handler(signal.SIGTERM, exit_handler)
+
+
+def parse_jsonl_error_messages(errors):
+    """parse json-l error strings from redis/db into json"""
+    parsed_errors = []
+    for error_line in errors:
+        if not error_line:
+            continue
+        try:
+            result = json.loads(error_line)
+            parsed_errors.append(result)
+        except json.JSONDecodeError as err:
+            print(
+                f"Error decoding json-l error line: {error_line}. Error: {err}",
+                flush=True,
+            )
+    return parsed_errors
