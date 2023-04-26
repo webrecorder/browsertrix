@@ -56,6 +56,9 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
+  private logs?: Crawl;
+
+  @state()
   private sectionName: SectionName = "overview";
 
   @state()
@@ -321,23 +324,24 @@ export class CrawlDetail extends LiteElement {
             icon: "link-replay",
             label: msg("Replay Crawl"),
           })}
-          ${!this.isActive
-            ? renderNavItem({
-                section: "files",
-                iconLibrary: "default",
-                icon: "folder-fill",
-                label: msg("Files"),
-              })
-            : ""}
+          ${renderNavItem({
+            section: "files",
+            iconLibrary: "default",
+            icon: "folder-fill",
+            label: msg("Files"),
+          })}
+          ${renderNavItem({
+            section: "logs",
+            iconLibrary: "default",
+            icon: "terminal-fill",
+            label: msg("Logs"),
+          })}
           ${renderNavItem({
             section: "config",
             iconLibrary: "default",
             icon: "file-code-fill",
             label: msg("Config"),
           })}
-          ${
-            /* renderNavItem({ section: "logs", iconLibrary:"default", icon: "terminal-fill", label: msg("Logs") }) */ ""
-          }
         </ul>
       </nav>
     `;
@@ -773,6 +777,11 @@ ${this.crawl?.notes}
         icon: "exclamation-octagon",
       });
     }
+    try {
+      this.logs = await this.getCrawlLogs();
+    } catch {
+      // Fail silently
+    }
   }
 
   private async getCrawl(): Promise<Crawl> {
@@ -780,6 +789,15 @@ ${this.crawl?.notes}
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
         this.crawlId
       }/replay.json`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async getCrawlLogs(): Promise<any> {
+    const data: any = await this.apiFetch(
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/logs`,
       this.authState!
     );
 
