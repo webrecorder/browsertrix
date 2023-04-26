@@ -38,6 +38,6 @@ body:
   - type: textarea
     attributes:
       label: Additional details
-      description: Add any other relevant information here
+      description: Add any other relevant information here, such as your local environment if you are running Browsertrix Cloud locally.
     validations:
       required: false
