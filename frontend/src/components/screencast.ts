@@ -185,9 +185,9 @@ export class Screencast extends LitElement {
       <div class="wrapper">
         <div
           class="container"
-          style="grid-template-columns: repeat(${this
-            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
-            .scale}, minmax(2rem, auto))"
+          style="grid-template-columns: repeat(${Math.ceil(
+            (this.scale * this.browsersCount) / 2
+          )}, 1fr);"
         >
           ${this.dataList.map(
             (pageData) =>
@@ -253,6 +253,7 @@ export class Screencast extends LitElement {
   }
 
   private scaleDown() {
+    console.log("scale down");
     for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
       const ws = this.wsMap.get(idx);
 
