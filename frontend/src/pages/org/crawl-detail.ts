@@ -10,6 +10,9 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, Workflow } from "./types";
+import { APIPaginatedList } from "../../types/api";
+
+type CrawlLog = any;
 
 const SECTIONS = [
   "overview",
@@ -56,7 +59,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private logs?: Crawl;
+  private logs?: CrawlLog[];
 
   @state()
   private sectionName: SectionName = "overview";
@@ -795,13 +798,13 @@ ${this.crawl?.notes}
     return data;
   }
 
-  private async getCrawlLogs(): Promise<any> {
-    const data: any = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/logs`,
+  private async getCrawlLogs(): Promise<CrawlLog[]> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/errors`,
       this.authState!
     );
 
-    return data;
+    return data.items;
   }
 
   private async cancel() {
