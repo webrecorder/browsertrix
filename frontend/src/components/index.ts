@@ -46,8 +46,9 @@ import("./queue-exclusion-form").then(({ QueueExclusionForm }) => {
 import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
   customElements.define("btrix-queue-exclusion-table", QueueExclusionTable);
 });
-import("./numbered-list").then(({ NumberedList }) => {
+import("./numbered-list").then(({ NumberedList, NumberedListItem }) => {
   customElements.define("btrix-numbered-list", NumberedList);
+  customElements.define("btrix-numbered-list-item", NumberedListItem);
 });
 import("./pagination").then(({ Pagination }) => {
   customElements.define("btrix-pagination", Pagination);
