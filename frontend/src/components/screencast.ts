@@ -3,7 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 import { property, state } from "lit/decorators.js";
 
 type Message = {
-  id: string; // page ID
+  id: number; // page ID
 };
 
 type InitMessage = Message & {
@@ -142,8 +142,6 @@ export class Screencast extends LitElement {
   private wsMap: Map<number, WebSocket> = new Map();
   // Map data order to screen data
   private dataMap: { [index: number]: ScreencastMessage | null } = {};
-  // Map page ID to data order
-  private pageOrderMap: Map<string, number> = new Map();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
   private browsersCount = 1;
@@ -166,14 +164,12 @@ export class Screencast extends LitElement {
       this.disconnectAll();
       this.connectAll();
     }
-    if (changedProperties.has("scale")) {
-      const prevScale = changedProperties.get("scale");
-      if (prevScale) {
-        if (this.scale > prevScale) {
-          this.scaleUp();
-        } else {
-          this.scaleDown();
-        }
+    const prevScale = changedProperties.get("scale");
+    if (prevScale !== undefined) {
+      if (this.scale > prevScale) {
+        this.scaleUp();
+      } else {
+        this.scaleDown();
       }
     }
   }
@@ -280,6 +276,7 @@ export class Screencast extends LitElement {
         const ws = this.connectWs(idx);
 
         ws.addEventListener("close", (e) => {
+          console.log("close event:", e.code);
           if (e.code !== 1000) {
             // Not normal closure, try connecting again after 10 sec
             this.timerIds.push(
@@ -329,34 +326,16 @@ export class Screencast extends LitElement {
           return;
         }
 
-        let idx = this.pageOrderMap.get(id);
-
-        if (idx === undefined) {
-          // Find and fill first empty slot
-          idx = this.dataList.indexOf(null);
-
-          if (idx === -1) {
-            console.debug("no empty slots");
-          }
-
-          this.pageOrderMap.set(id, idx);
-        }
-
         if (this.focusedScreenData?.id === id) {
           this.focusedScreenData = message;
         }
 
-        this.dataMap[idx] = message;
-        this.updateDataList();
+        this.dataMap[id] = message;
       } else if (message.msg === "close") {
-        const idx = this.pageOrderMap.get(id);
-
-        if (idx !== undefined && idx !== null) {
-          this.dataMap[idx] = null;
-          this.updateDataList();
-          this.pageOrderMap.set(id, -1);
-        }
+        this.dataMap[id] = null;
       }
+
+      this.updateDataList();
     }
   }
 
