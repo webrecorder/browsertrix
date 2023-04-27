@@ -266,7 +266,7 @@ class CrawlConfigOps:
         self.crawl_ops = ops
 
     async def init_index(self):
-        """init index for crawls db"""
+        """init index for crawlconfigs db collection"""
         await self.crawl_configs.create_index(
             [("oid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )

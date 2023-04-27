@@ -196,6 +196,10 @@ class CrawlOps:
 
         self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
 
+    async def init_index(self):
+        """init index for crawls db collection"""
+        await self.crawls.create_index([("finished", pymongo.DESCENDING)])
+
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
