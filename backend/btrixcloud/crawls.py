@@ -380,45 +380,6 @@ class CrawlOps:
 
         return await self._resolve_crawl_refs(crawl, org)
 
-    async def get_latest_crawl_and_count_by_config(self, cid: str):
-        """Get crawl statistics for a crawl_config with id cid."""
-        stats = {
-            "crawl_count": 0,
-            "total_size": 0,
-            "last_crawl_id": None,
-            "last_crawl_started": None,
-            "last_crawl_finished": None,
-            "last_crawl_state": None,
-            "last_started_by": None,
-            "last_crawl_size": 0,
-        }
-
-        match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
-        cursor = self.crawls.find(match_query).sort("finished", pymongo.DESCENDING)
-        results = await cursor.to_list(length=1000)
-        if results:
-            stats["crawl_count"] = len(results)
-
-            last_crawl = Crawl.from_dict(results[0])
-            stats["last_crawl_id"] = str(last_crawl.id)
-            stats["last_crawl_started"] = last_crawl.started
-            stats["last_crawl_finished"] = last_crawl.finished
-            stats["last_crawl_state"] = last_crawl.state
-            stats["last_crawl_size"] = sum(file_.size for file_ in last_crawl.files)
-
-            user = await self.user_manager.get(last_crawl.userid)
-            if user:
-                stats["last_started_by"] = user.name
-
-            total_size = 0
-            for res in results:
-                files = res["files"]
-                for file in files:
-                    total_size += file["size"]
-            stats["total_size"] = total_size
-
-        return stats
-
     async def _resolve_crawl_refs(
         self,
         crawl: Union[CrawlOut, ListCrawlOut],
@@ -527,12 +488,21 @@ class CrawlOps:
 
     async def delete_crawls(self, org: Organization, delete_list: DeleteCrawlList):
         """Delete a list of crawls by id for given org"""
+        cids_to_update = set()
+
         for crawl_id in delete_list.crawl_ids:
             await self._delete_crawl_files(org, crawl_id)
+            await self.remove_crawl_from_collections(org, crawl_id)
+
+            crawl = await self.get_crawl_raw(crawl_id, org)
+            cids_to_update.add(crawl["cid"])
 
         res = await self.crawls.delete_many(
             {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         )
+
+        for cid in cids_to_update:
+            await self.crawl_configs.update_crawl_stats(cid)
 
         return res.deleted_count
 
@@ -833,7 +803,7 @@ class CrawlOps:
 
         return resp
 
-    async def remove_crawl_from_collections(self, oid: uuid.UUID, crawl_id: str):
+    async def remove_crawl_from_collections(self, org: Organization, crawl_id: str):
         """Remove crawl with given crawl_id from all collections it belongs to"""
         collections = [
             coll["name"]
@@ -841,7 +811,7 @@ class CrawlOps:
         ]
         for collection_name in collections:
             await self.collections.find_one_and_update(
-                {"name": collection_name, "oid": oid},
+                {"name": collection_name, "oid": org.id},
                 {"$pull": {"crawlIds": crawl_id}},
             )
 
@@ -880,7 +850,11 @@ async def add_new_crawl(
 # ============================================================================
 async def update_crawl(crawls, crawl_id, **kwargs):
     """update crawl state in db"""
-    await crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
+    return await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {"$set": kwargs},
+        return_document=pymongo.ReturnDocument.AFTER,
+    )
 
 
 # ============================================================================
@@ -1051,8 +1025,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
                     raise HTTPException(
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
-
-        await ops.remove_crawl_from_collections(crawl.oid, crawl.id)
 
         res = await ops.delete_crawls(org, delete_list)
 

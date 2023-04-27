@@ -226,6 +226,7 @@ def test_workflow_total_size(
             assert workflow["totalSize"] > 0
             if last_crawl_id == admin_crawl_id:
                 admin_crawl_cid = workflow["id"]
+                assert admin_crawl_cid
         else:
             assert workflow["totalSize"] == 0
 

@@ -19,6 +19,7 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
+from .crawlconfigs import update_config_crawl_stats
 from .crawls import (
     CrawlFile,
     CrawlCompleteIn,
@@ -96,6 +97,7 @@ class BtrixOperator(K8sAPI):
 
         _, mdb = init_db()
         self.crawls = mdb["crawls"]
+        self.crawl_configs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]
 
         self.done_key = "crawls-done"
@@ -420,7 +422,10 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        await update_crawl(self.crawls, crawl_id, **kwargs)
+        crawl = await update_crawl(self.crawls, crawl_id, **kwargs)
+        crawl_cid = crawl.get("cid")
+
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, crawl_cid)
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
