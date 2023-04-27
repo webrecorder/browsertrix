@@ -451,6 +451,18 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderPanel(title: any, content: any) {
+    let panelContainer;
+    switch (this.sectionName) {
+      case "replay":
+        panelContainer = html`
+          <div class="flex-1 rounded-lg border overflow-hidden">${content}</div>
+        `;
+      break;
+      default:
+        panelContainer = html`
+          <div class="flex-1 rounded-lg border p-5">${content}</div>
+        `;
+    }
     return html`
       <h2
         id="exclusions"
@@ -458,7 +470,7 @@ export class CrawlDetail extends LiteElement {
       >
         ${title}
       </h2>
-      <div class="flex-1 rounded-lg border p-5">${content}</div>
+      ${panelContainer}
     `;
   }
 
@@ -547,7 +559,7 @@ export class CrawlDetail extends LiteElement {
         canReplay
           ? html`<div
               id="replay-crawl"
-              class="aspect-4/3 rounded border overflow-hidden"
+              class="aspect-4/3 overflow-hidden"
             >
               <replay-web-page
                 source="${replaySource}"
