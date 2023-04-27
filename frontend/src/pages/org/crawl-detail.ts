@@ -716,7 +716,11 @@ ${this.crawl?.notes}
                   <li
                     class="flex justify-between p-3 border-t first:border-t-0"
                   >
-                    <div class="whitespace-nowrap truncate">
+                    <div class="whitespace-nowrap truncate flex items-center">
+                      <sl-icon
+                      name="file-earmark-zip-fill"
+                      class="h-4 pr-2 shrink-0 text-neutral-600"
+                      ></sl-icon>
                       <a
                         class="text-primary hover:underline"
                         href=${file.path}
@@ -725,7 +729,7 @@ ${this.crawl?.notes}
                         >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                       </a>
                     </div>
-                    <div class="whitespace-nowrap">
+                    <div class="whitespace-nowrap text-sm font-mono text-neutral-400">
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>
