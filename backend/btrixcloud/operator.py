@@ -495,7 +495,10 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        await update_crawl(self.crawls, crawl_id, **kwargs)
+        crawl = await update_crawl(self.crawls, crawl_id, **kwargs)
+        crawl_cid = crawl.get("cid")
+
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, crawl_cid)
 
         await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
 
