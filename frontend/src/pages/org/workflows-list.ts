@@ -297,8 +297,8 @@ export class WorkflowsList extends LiteElement {
           </button>
         </div>
         <div class="flex items-center justify-end">
-          <label class="mr-3">
-            <span class="text-neutral-500 mr-1">${msg("Show Only Mine")}</span>
+          <label>
+            <span class="text-neutral-500 mr-1 text-xs">${msg("Show Only Mine")}</span>
             <sl-switch
               @sl-change=${(e: CustomEvent) =>
                 (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
