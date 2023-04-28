@@ -40,12 +40,15 @@ export class CopyButton extends LitElement {
 
   render() {
     return html`
-      <sl-button
-        size="small"
-        @click=${this.onClick}
-        ?disabled=${!this.value && !this.getValue}
-        >${this.isCopied ? msg("Copied") : msg("Copy")}</sl-button
-      >
+      <sl-tooltip content=${this.isCopied ? msg("Copied to clipboard!") : msg("Copy")}>
+        <sl-icon-button
+          size="small"
+          name=${this.isCopied ? "check-lg" : "files"}
+          label=${msg("Copy to clipboard")}
+          @click=${this.onClick}
+          ?disabled=${!this.value && !this.getValue}
+          ></sl-icon-button>
+      </sl-tooltip>
     `;
   }
 
