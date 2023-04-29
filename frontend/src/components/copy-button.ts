@@ -62,6 +62,8 @@ export class CopyButton extends LitElement {
 
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;
+      const button = this.shadowRoot?.querySelector('sl-icon-button');
+      button?.blur(); // Remove focus from the button to set it back to its default state
     }, 3000);
   }
 }
