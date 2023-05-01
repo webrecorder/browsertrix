@@ -143,7 +143,7 @@ export class BrowserProfilesList extends LiteElement {
         <sl-icon-button
           slot="trigger"
           name="three-dots"
-          label=${msg("More")}
+          label=${msg("Actions")}
           style="font-size: 1rem"
         ></sl-icon-button>
         <ul

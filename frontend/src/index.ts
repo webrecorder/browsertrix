@@ -319,6 +319,7 @@ export class App extends LiteElement {
                     <sl-icon-button
                       slot="trigger"
                       name="person-circle"
+                      label=${msg("Open user menu")}
                       style="font-size: 1.5rem;"
                     ></sl-icon-button>
 

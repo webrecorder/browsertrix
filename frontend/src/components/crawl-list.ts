@@ -339,7 +339,7 @@ export class CrawlListItem extends LitElement {
           <sl-icon-button
             class="dropdownTrigger"
             name="three-dots-vertical"
-            label=${msg("More")}
+            label=${msg("Actions")}
             @click=${(e: MouseEvent) => {
               // Prevent anchor link default behavior
               e.preventDefault();
