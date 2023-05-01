@@ -207,7 +207,7 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 
 
-def test_workflow_total_size(
+def test_workflow_total_size_and_last_crawl_stats(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
     admin_crawl_cid = ""
@@ -224,6 +224,15 @@ def test_workflow_total_size(
         last_crawl_id = workflow.get("lastCrawlId")
         if last_crawl_id and last_crawl_id in (admin_crawl_id, crawler_crawl_id):
             assert workflow["totalSize"] > 0
+            assert workflow["crawlCount"] > 0
+
+            assert workflow["lastCrawlId"]
+            assert workflow["lastCrawlStartTime"]
+            assert workflow["lastStartedByName"]
+            assert workflow["lastCrawlTime"]
+            assert workflow["lastCrawlState"]
+            assert workflow["lastCrawlSize"] > 0
+
             if last_crawl_id == admin_crawl_id:
                 admin_crawl_cid = workflow["id"]
                 assert admin_crawl_cid
@@ -237,3 +246,11 @@ def test_workflow_total_size(
     assert r.status_code == 200
     data = r.json()
     assert data["totalSize"] > 0
+    assert data["crawlCount"] > 0
+
+    assert data["lastCrawlId"]
+    assert data["lastCrawlStartTime"]
+    assert data["lastStartedByName"]
+    assert data["lastCrawlTime"]
+    assert data["lastCrawlState"]
+    assert data["lastCrawlSize"] > 0
