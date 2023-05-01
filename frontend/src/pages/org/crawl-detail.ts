@@ -451,6 +451,18 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderPanel(title: any, content: any) {
+    let panelContainer;
+    switch (this.sectionName) {
+      case "replay":
+        panelContainer = html`
+          <div class="flex-1 rounded-lg border overflow-hidden">${content}</div>
+        `;
+        break;
+      default:
+        panelContainer = html`
+          <div class="flex-1 rounded-lg border p-5">${content}</div>
+        `;
+    }
     return html`
       <h2
         id="exclusions"
@@ -458,7 +470,7 @@ export class CrawlDetail extends LiteElement {
       >
         ${title}
       </h2>
-      <div class="flex-1 rounded-lg border p-5">${content}</div>
+      ${panelContainer}
     `;
   }
 
@@ -545,10 +557,7 @@ export class CrawlDetail extends LiteElement {
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
       ${
         canReplay
-          ? html`<div
-              id="replay-crawl"
-              class="aspect-4/3 rounded border overflow-hidden"
-            >
+          ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
                 coll="${ifDefined(this.crawl?.id)}"
@@ -704,7 +713,11 @@ ${this.crawl?.notes}
                   <li
                     class="flex justify-between p-3 border-t first:border-t-0"
                   >
-                    <div class="whitespace-nowrap truncate">
+                    <div class="whitespace-nowrap truncate flex items-center">
+                      <sl-icon
+                        name="file-earmark-zip-fill"
+                        class="h-4 pr-2 shrink-0 text-neutral-600"
+                      ></sl-icon>
                       <a
                         class="text-primary hover:underline"
                         href=${file.path}
@@ -713,7 +726,9 @@ ${this.crawl?.notes}
                         >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                       </a>
                     </div>
-                    <div class="whitespace-nowrap">
+                    <div
+                      class="whitespace-nowrap text-sm font-mono text-neutral-400"
+                    >
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>
