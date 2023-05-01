@@ -124,19 +124,19 @@ spec:
 
           env:
             - name: CRAWL_ID
-              value: {{ id }}
+              value: "{{ id }}"
 
             - name: WEBHOOK_URL
-              value: {{ redis_url }}/crawls-done
+              value: "{{ redis_url }}/crawls-done"
 
             - name: STORE_PATH
-              value: {{ store_path }}
+              value: "{{ store_path }}"
 
             - name: STORE_FILENAME
-              value: {{ store_filename }}
+              value: "{{ store_filename }}"
 
             - name: STORE_USER
-              value: {{ userid }}
+              value: "{{ userid }}"
 
           resources:
             limits:
