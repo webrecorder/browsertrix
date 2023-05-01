@@ -2,6 +2,7 @@ import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "../../components/relative-duration";
@@ -25,6 +26,9 @@ const SECTIONS = [
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
+const LOG_LEVEL_VARIANTS = {
+  error: "danger",
+} as const;
 const POLL_INTERVAL_SECONDS = 10;
 
 /**
@@ -754,7 +758,45 @@ ${this.crawl?.notes}
   }
 
   private renderLogs() {
-    return html`TODO`;
+    if (!this.logs) {
+      return html`TODO`;
+    }
+    const gridClassName = "grid grid-cols-[9rem_4rem_5rem_1fr]";
+    return html`<btrix-numbered-list class="text-xs">
+      <btrix-numbered-list-header slot="header">
+        <div class=${gridClassName}>
+          <div class="px-2">${msg("Date")}</div>
+          <div class="px-2">${msg("Level")}</div>
+          <div class="px-2">${msg("Context")}</div>
+          <div class="px-2">${msg("Error Message")}</div>
+        </div>
+      </btrix-numbered-list-header>
+      ${this.logs.map(
+        (log, idx) => html`
+          <btrix-numbered-list-item>
+            <span slot="marker">${idx + 1}.</span>
+            <div class=${gridClassName}>
+              <div>
+                <sl-format-date
+                  date=${log.timestamp}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                  second="2-digit"
+                  hour-format="24"
+                >
+                </sl-format-date>
+              </div>
+              <div class="uppercase">${log.logLevel}</div>
+              <div>${log.context}</div>
+              <div class="truncate">${log.message}</div>
+            </div>
+          </btrix-numbered-list-item>
+        `
+      )}
+    </btrix-numbered-list>`;
   }
 
   private renderConfig() {

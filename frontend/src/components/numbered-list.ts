@@ -1,12 +1,18 @@
+/**
+ * Styled numbered list
+ *
+ * Usage example:
+ * ```ts
+ * <btrix-numbered-list>
+ *   <btrix-numbered-list-item>
+ *     <span slot="marker">1.</span> Content
+ *   </btrix-numbered-list-item>
+ * </btrix-numbered-list>
+ * ```
+ */
 import { LitElement, html, css } from "lit";
 import { property, queryAssignedElements } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-
-type ListItem = {
-  order?: number;
-  style?: string; // inline styles
-  content: any; // any lit template content
-};
 
 export class NumberedListItem extends LitElement {
   @property({ type: Boolean })
@@ -25,10 +31,6 @@ export class NumberedListItem extends LitElement {
     }
 
     .content {
-      --item-height: 1.5rem;
-      contain: paint;
-      contain-intrinsic-height: auto var(--item-height);
-      content-visibility: auto;
       border-left: var(--sl-panel-border-width) solid
         var(--sl-panel-border-color);
       border-right: var(--sl-panel-border-width) solid
@@ -84,18 +86,31 @@ export class NumberedListItem extends LitElement {
   }
 }
 
-/**
- * Styled numbered list
- *
- * Usage example:
- * ```ts
- * <btrix-numbered-list></btrix-numbered-list>
- * ```
- */
-export class NumberedList extends LitElement {
-  @property({ type: Array })
-  items: ListItem[] = [];
+export class NumberedListHeader extends LitElement {
+  static styles = css`
+    :host,
+    header {
+      display: contents;
+    }
 
+    .content {
+      grid-column: 2 / -1;
+      padding-top: var(--sl-spacing-x-small);
+      padding-bottom: var(--sl-spacing-x-small);
+      color: var(--sl-color-neutral-600);
+      font-size: var(--sl-font-size-x-small);
+      line-height: 1rem;
+    }
+  `;
+
+  render() {
+    return html`<header>
+      <div class="content"><slot></slot></div>
+    </header>`;
+  }
+}
+
+export class NumberedList extends LitElement {
   static styles = css`
     :host {
       display: block;
@@ -106,6 +121,10 @@ export class NumberedList extends LitElement {
       grid-template-columns: minmax(3ch, max-content) 1fr;
       grid-column-gap: var(--sl-spacing-x-small);
       align-items: center;
+    }
+
+    ol {
+      display: contents;
       font-family: var(--sl-font-mono);
       list-style-type: none;
       margin: 0;
@@ -118,9 +137,12 @@ export class NumberedList extends LitElement {
 
   render() {
     return html`
-      <ol class="list">
-        <slot @slotchange=${this.handleSlotchange}></slot>
-      </ol>
+      <div class="list">
+        <slot name="header"></slot>
+        <ol>
+          <slot @slotchange=${this.handleSlotchange}></slot>
+        </ol>
+      </div>
     `;
   }
 
