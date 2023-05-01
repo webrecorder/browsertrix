@@ -457,7 +457,7 @@ export class CrawlDetail extends LiteElement {
         panelContainer = html`
           <div class="flex-1 rounded-lg border overflow-hidden">${content}</div>
         `;
-      break;
+        break;
       default:
         panelContainer = html`
           <div class="flex-1 rounded-lg border p-5">${content}</div>
@@ -557,10 +557,7 @@ export class CrawlDetail extends LiteElement {
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
       ${
         canReplay
-          ? html`<div
-              id="replay-crawl"
-              class="aspect-4/3 overflow-hidden"
-            >
+          ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
                 coll="${ifDefined(this.crawl?.id)}"
@@ -718,8 +715,8 @@ ${this.crawl?.notes}
                   >
                     <div class="whitespace-nowrap truncate flex items-center">
                       <sl-icon
-                      name="file-earmark-zip-fill"
-                      class="h-4 pr-2 shrink-0 text-neutral-600"
+                        name="file-earmark-zip-fill"
+                        class="h-4 pr-2 shrink-0 text-neutral-600"
                       ></sl-icon>
                       <a
                         class="text-primary hover:underline"
@@ -729,7 +726,9 @@ ${this.crawl?.notes}
                         >${file.name.slice(file.name.lastIndexOf("/") + 1)}
                       </a>
                     </div>
-                    <div class="whitespace-nowrap text-sm font-mono text-neutral-400">
+                    <div
+                      class="whitespace-nowrap text-sm font-mono text-neutral-400"
+                    >
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>
