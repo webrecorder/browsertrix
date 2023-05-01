@@ -94,6 +94,9 @@ import("./workflow-list").then(({ WorkflowListItem, WorkflowList }) => {
   customElements.define("btrix-workflow-list-item", WorkflowListItem);
   customElements.define("btrix-workflow-list", WorkflowList);
 });
+import("./crawl-logs").then(({ CrawlLogs }) => {
+  customElements.define("btrix-crawl-logs", CrawlLogs);
+});
 import("./section-heading").then(({ SectionHeading }) => {
   customElements.define("btrix-section-heading", SectionHeading);
 });
