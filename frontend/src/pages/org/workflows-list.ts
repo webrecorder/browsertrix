@@ -443,7 +443,7 @@ export class WorkflowsList extends LiteElement {
                 ? this.deactivate(workflow)
                 : this.delete(workflow)}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${shouldDeactivate
               ? msg("Deactivate Workflow")
               : msg("Delete Workflow")}

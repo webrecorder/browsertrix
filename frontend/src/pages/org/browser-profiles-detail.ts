@@ -269,7 +269,7 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderMenu() {
     return html`
       <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button slot="trigger" caret>${msg("Actions")}</sl-button>
+        <sl-button size="small" slot="trigger" caret>${msg("Actions")}</sl-button>
 
         <ul
           class="text-left text-sm text-neutral-800 bg-white whitespace-nowrap"
@@ -285,7 +285,7 @@ export class BrowserProfilesDetail extends LiteElement {
           >
             <sl-icon
               class="inline-block align-middle px-1"
-              name="pencil-square"
+              name="pencil"
             ></sl-icon>
             <span class="inline-block align-middle pr-2"
               >${msg("Edit name & description")}</span
@@ -314,7 +314,7 @@ export class BrowserProfilesDetail extends LiteElement {
           >
             <sl-icon
               class="inline-block align-middle px-1"
-              name="file-earmark-x"
+              name="trash3"
             ></sl-icon>
             <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
           </li>
