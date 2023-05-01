@@ -139,7 +139,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private renderMenu(data: Profile) {
     return html`
-      <sl-dropdown @click=${(e: Event) => e.preventDefault()}>
+      <sl-dropdown hoist="true" @click=${(e: Event) => e.preventDefault()}>
         <sl-icon-button
           slot="trigger"
           name="three-dots"
