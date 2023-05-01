@@ -95,7 +95,6 @@ export class NumberedListHeader extends LitElement {
 
     .content {
       grid-column: 2 / -1;
-      padding-top: var(--sl-spacing-x-small);
       padding-bottom: var(--sl-spacing-x-small);
       color: var(--sl-color-neutral-600);
       font-size: var(--sl-font-size-x-small);

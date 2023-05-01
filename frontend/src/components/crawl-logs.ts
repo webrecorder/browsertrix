@@ -3,6 +3,15 @@ import { property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { truncate } from "../utils/css";
+import type { APIPaginatedList } from "../types/api";
+import type { PageChangeEvent } from "./pagination";
+
+type CrawlLog = {
+  timestamp: string;
+  logLevel: "error";
+  context: string;
+  message: string;
+};
 
 @localized()
 export class CrawlLogs extends LitElement {
@@ -35,10 +44,11 @@ export class CrawlLogs extends LitElement {
     `,
   ];
 
-  @property({ type: Array })
-  logs: any[] = [];
+  @property({ type: Object })
+  logs?: APIPaginatedList;
 
   render() {
+    if (!this.logs) return;
     return html`<btrix-numbered-list>
       <btrix-numbered-list-header slot="header">
         <div class="row">
@@ -48,8 +58,8 @@ export class CrawlLogs extends LitElement {
           <div class="cell">${msg("Error Message")}</div>
         </div>
       </btrix-numbered-list-header>
-      ${this.logs.map(
-        (log, idx) => html`
+      ${this.logs.items.map(
+        (log: CrawlLog, idx) => html`
           <btrix-numbered-list-item>
             <span slot="marker">${idx + 1}.</span>
             <div class="row">

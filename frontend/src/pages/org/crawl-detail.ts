@@ -13,8 +13,6 @@ import { CopyButton } from "../../components/copy-button";
 import type { Crawl, Workflow } from "./types";
 import { APIPaginatedList } from "../../types/api";
 
-type CrawlLog = any;
-
 const SECTIONS = [
   "overview",
   "watch",
@@ -63,7 +61,7 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private logs?: CrawlLog[];
+  private logs?: APIPaginatedList;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -777,10 +775,19 @@ ${this.crawl?.notes}
 
   private renderLogs() {
     if (!this.logs) {
-      return html`TODO`;
+      return html`<div
+        class="w-full flex items-center justify-center my-24 text-3xl"
+      >
+        <sl-spinner></sl-spinner>
+      </div>`;
     }
 
-    return html` <btrix-crawl-logs .logs=${this.logs}></btrix-crawl-logs> `;
+    return html`
+      <btrix-crawl-logs
+        .logs=${this.logs}
+        @page-change=${console.log}
+      ></btrix-crawl-logs>
+    `;
   }
 
   private renderConfig() {
@@ -824,13 +831,13 @@ ${this.crawl?.notes}
     return data;
   }
 
-  private async getCrawlLogs(): Promise<CrawlLog[]> {
+  private async getCrawlLogs({ page = 1 } = {}): Promise<APIPaginatedList> {
     const data: APIPaginatedList = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/errors`,
       this.authState!
     );
 
-    return data.items;
+    return data;
   }
 
   private async cancel() {
