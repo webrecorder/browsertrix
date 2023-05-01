@@ -215,10 +215,9 @@ export class CrawlDetail extends LiteElement {
 
       <div class="mb-4">${this.renderHeader()}</div>
 
+      <hr class="mb-4"/>
+
       <main>
-        <section class="rounded-lg border mb-7">
-          ${this.renderSummary()}
-        </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
@@ -572,7 +571,16 @@ export class CrawlDetail extends LiteElement {
   private renderOverview() {
     return html`
       <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Started")}>
+        <btrix-desc-list-item label=${msg("Status")}>
+        ${this.crawl
+          ? html`
+              <btrix-crawl-status
+                state=${this.crawl.state}
+              ></btrix-crawl-status>
+            `
+          : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Start Time")}>
           ${this.crawl
             ? html`
                 <sl-format-date
@@ -587,7 +595,7 @@ export class CrawlDetail extends LiteElement {
               `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Finished")}>
+        <btrix-desc-list-item label=${msg("Finish Time")}>
           ${this.crawl
             ? html`
                 ${this.crawl.finished
@@ -604,7 +612,45 @@ export class CrawlDetail extends LiteElement {
               `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Reason")}>
+        <btrix-desc-list-item label=${msg("Duration")}>
+        ${this.crawl
+              ? html`
+                  ${this.crawl.finished
+                    ? html`${RelativeDuration.humanize(
+                        new Date(`${this.crawl.finished}Z`).valueOf() -
+                          new Date(`${this.crawl.started}Z`).valueOf()
+                      )}`
+                    : html`
+                        <span class="text-purple-600">
+                          <btrix-relative-duration
+                            value=${`${this.crawl.started}Z`}
+                            unitCount="3"
+                            tickSeconds="1"
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
+                `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Size")}>
+          ${this.crawl?.stats
+              ? html`
+                  <span
+                    class="font-mono tracking-tighter${this.isActive
+                      ? " text-purple-600"
+                      : ""}"
+                  >
+                    ${this.numberFormatter.format(+this.crawl.stats.done)}
+                    <span class="text-0-400">/</span>
+                    ${this.numberFormatter.format(+this.crawl.stats.found)}
+                  </span>
+                  <span> pages</span>
+                `
+              : this.crawl
+              ? html` <span class="text-0-400">${msg("Unknown")}</span> `
+              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Initiator")}>
           ${this.crawl
             ? html`
                 ${this.crawl.manual
@@ -614,7 +660,7 @@ export class CrawlDetail extends LiteElement {
                           >${this.crawl?.userName || this.crawl?.userid}</span
                         >`
                     )
-                  : msg(html`Scheduled run`)}
+                  : msg(html`Scheduled start`)}
               `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
@@ -623,7 +669,7 @@ export class CrawlDetail extends LiteElement {
             ? html`<btrix-copy-button
                   value=${this.crawl.id}
                 ></btrix-copy-button>
-                <code class="text-xs" title=${this.crawl.id}
+                <code title=${this.crawl.id}
                   >${this.crawl.id}</code
                 > `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
