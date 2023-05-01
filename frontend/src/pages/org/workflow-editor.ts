@@ -1812,7 +1812,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       case "sl-input": {
         if ((elem as SlInput).type === "number") {
           if (elem.value === "") {
-            value = undefined;
+            value = null;
           } else {
             value = +elem.value;
           }
