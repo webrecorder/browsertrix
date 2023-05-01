@@ -461,6 +461,7 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
+  // renders the info bar, currently disabled
   private renderSummary() {
     return html`
       <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
