@@ -146,26 +146,44 @@ export class CrawlDetail extends LiteElement {
       case "replay":
         sectionContent = this.renderPanel(
           msg("Replay Crawl"),
-          this.renderReplay()
+          this.renderReplay(),
+          {
+            "overflow-hidden": true,
+            "rounded-lg": true,
+            border: true,
+          }
         );
         break;
       case "files":
         sectionContent = this.renderPanel(
           msg("Download Files"),
-          this.renderFiles()
+          this.renderFiles(),
+          {
+            "p-4": true,
+            "rounded-lg": true,
+            border: true,
+          }
         );
         break;
       case "logs":
         sectionContent = this.renderPanel(msg("Logs"), this.renderLogs());
         break;
       case "config":
-        sectionContent = this.renderPanel(msg("Config"), this.renderConfig());
+        sectionContent = this.renderPanel(msg("Config"), this.renderConfig(), {
+          "p-4": true,
+          "rounded-lg": true,
+          border: true,
+        });
         break;
       default:
         sectionContent = html`
           <div class="grid gap-5 grid-cols-1 lg:grid-cols-2">
             <div class="col-span-1 flex flex-col">
-              ${this.renderPanel(msg("Overview"), this.renderOverview())}
+              ${this.renderPanel(msg("Overview"), this.renderOverview(), {
+                "p-4": true,
+                "rounded-lg": true,
+                border: true,
+              })}
             </div>
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
@@ -193,7 +211,12 @@ export class CrawlDetail extends LiteElement {
                     `
                   )}
                 `,
-                this.renderMetadata()
+                this.renderMetadata(),
+                {
+                  "p-4": true,
+                  "rounded-lg": true,
+                  border: true,
+                }
               )}
             </div>
           </div>
@@ -461,19 +484,7 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderPanel(title: any, content: any) {
-    let panelContainer;
-    switch (this.sectionName) {
-      case "replay":
-        panelContainer = html`
-          <div class="flex-1 rounded-lg border overflow-hidden">${content}</div>
-        `;
-        break;
-      default:
-        panelContainer = html`
-          <div class="flex-1 rounded-lg border p-5">${content}</div>
-        `;
-    }
+  private renderPanel(title: any, content: any, classes: any = {}) {
     return html`
       <h2
         id="exclusions"
@@ -481,7 +492,14 @@ export class CrawlDetail extends LiteElement {
       >
         ${title}
       </h2>
-      ${panelContainer}
+      <div
+        class=${classMap({
+          "flex-1": true,
+          ...classes,
+        })}
+      >
+        ${content}
+      </div>
     `;
   }
 
@@ -578,7 +596,7 @@ export class CrawlDetail extends LiteElement {
               ></replay-web-page>
             </div>`
           : html`
-              <p class="text-sm text-neutral-400">
+              <p class="text-sm text-neutral-400 p-4">
                 ${this.isActive
                   ? msg("No files yet.")
                   : msg("No files to replay.")}
