@@ -451,6 +451,8 @@ export class CrawlList extends LitElement {
         border: 1px solid var(--sl-panel-border-color);
         border-radius: var(--sl-border-radius-medium);
         overflow: hidden;
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
       }
 
       .row {
