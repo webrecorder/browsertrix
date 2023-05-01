@@ -133,15 +133,13 @@ export class Screencast extends LitElement {
 
   // List of browser screens
   @state()
-  private dataList: Array<ScreencastMessage | null> = [];
+  private dataMap: { [index: string]: ScreencastMessage | null } = {};
 
   @state()
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
   private wsMap: Map<number, WebSocket> = new Map();
-  // Map data order to screen data
-  private dataMap: { [index: number]: ScreencastMessage | null } = {};
   // Number of available browsers.
   // Multiply by scale to get available browser window count
   private browsersCount = 1;
@@ -181,36 +179,17 @@ export class Screencast extends LitElement {
   }
 
   render() {
+    const screenCount = this.scale * this.browsersCount;
     return html`
       <div class="wrapper">
         <div
           class="container"
-          style="grid-template-columns: repeat(${Math.ceil(
-            (this.scale * this.browsersCount) / 2
-          )}, 1fr);"
+          style="grid-template-columns: repeat(${screenCount > 2
+            ? Math.ceil(screenCount / 2)
+            : screenCount}, 1fr);"
         >
-          ${this.dataList.map(
-            (pageData) =>
-              html` <figure
-                class="screen"
-                title=${pageData?.url || ""}
-                role=${pageData ? "button" : "presentation"}
-                @click=${pageData
-                  ? () => (this.focusedScreenData = pageData)
-                  : () => {}}
-              >
-                <figcaption class="caption">
-                  ${pageData?.url || html`&nbsp;`}
-                </figcaption>
-                <div
-                  class="frame"
-                  style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
-                >
-                  ${pageData
-                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                    : html`<sl-spinner></sl-spinner>`}
-                </div>
-              </figure>`
+          ${Array.from({ length: screenCount }).map((_, i) =>
+            this.renderScreen(`${i}`)
           )}
         </div>
       </div>
@@ -243,6 +222,26 @@ export class Screencast extends LitElement {
     `;
   }
 
+  private renderScreen = (id: string) => {
+    const pageData = this.dataMap[id];
+    return html` <figure
+      class="screen"
+      title=${pageData?.url || ""}
+      role=${pageData ? "button" : "presentation"}
+      @click=${pageData ? () => (this.focusedScreenData = pageData) : () => {}}
+    >
+      <figcaption class="caption">${pageData?.url || html`&nbsp;`}</figcaption>
+      <div
+        class="frame"
+        style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+      >
+        ${pageData
+          ? html`<img src="data:image/png;base64,${pageData.data}" />`
+          : html`<sl-spinner></sl-spinner>`}
+      </div>
+    </figure>`;
+  };
+
   private scaleUp() {
     // Reconnect after 20 second delay
     this.timerIds.push(
@@ -253,7 +252,6 @@ export class Screencast extends LitElement {
   }
 
   private scaleDown() {
-    console.log("scale down");
     for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
       const ws = this.wsMap.get(idx);
 
@@ -277,7 +275,6 @@ export class Screencast extends LitElement {
         const ws = this.connectWs(idx);
 
         ws.addEventListener("close", (e) => {
-          console.log("close event:", e.code);
           if (e.code !== 1000) {
             // Not normal closure, try connecting again after 10 sec
             this.timerIds.push(
@@ -304,22 +301,17 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      this.dataList = Array.from(
-        { length: message.browsers * this.scale },
-        () => null
-      );
-      this.dataMap = this.dataList.reduce(
-        (acc, val, i) => ({
-          ...acc,
-          [i]: val,
-        }),
-        {}
-      );
+      const dataMap: any = {};
+      for (let i = 0; i < message.browsers * this.scale; i++) {
+        dataMap[i] = null;
+      }
+      this.dataMap = dataMap;
       this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
       const { id } = message;
+      const dataMap = { ...this.dataMap };
 
       if (message.msg === "screencast") {
         if (message.url === "about:blank") {
@@ -331,12 +323,12 @@ export class Screencast extends LitElement {
           this.focusedScreenData = message;
         }
 
-        this.dataMap[id] = message;
+        dataMap[id] = message;
       } else if (message.msg === "close") {
-        this.dataMap[id] = null;
+        dataMap[id] = null;
       }
 
-      this.updateDataList();
+      this.dataMap = dataMap;
     }
   }
 
@@ -395,12 +387,7 @@ export class Screencast extends LitElement {
     });
   }
 
-  updateDataList() {
-    this.dataList = Object.values(this.dataMap);
-  }
-
   unfocusScreen() {
-    this.updateDataList();
     this.focusedScreenData = undefined;
   }
 }
