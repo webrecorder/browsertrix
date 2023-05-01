@@ -176,7 +176,7 @@ export class CrawlDetail extends LiteElement {
                           }`}
                           name="pencil"
                           @click=${this.openMetadataEditor}
-                          aria-label=${msg("Edit Metadata")}
+                          label=${msg("Edit Metadata")}
                           ?disabled=${this.isActive}
                         ></sl-icon-button>
                       </sl-tooltip>
