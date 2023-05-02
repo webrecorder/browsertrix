@@ -833,7 +833,9 @@ ${this.crawl?.notes}
 
   private async getCrawlLogs({ page = 1 } = {}): Promise<APIPaginatedList> {
     const data: APIPaginatedList = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}/errors`,
+      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
+        this.crawlId
+      }/errors?pageSize=${100}&page=${page}`,
       this.authState!
     );
 

@@ -50,41 +50,47 @@ export class CrawlLogs extends LitElement {
   render() {
     if (!this.logs) return;
     return html`<btrix-numbered-list>
-      <btrix-numbered-list-header slot="header">
-        <div class="row">
-          <div class="cell">${msg("Date")}</div>
-          <div class="cell">${msg("Level")}</div>
-          <div class="cell">${msg("Context")}</div>
-          <div class="cell">${msg("Error Message")}</div>
-        </div>
-      </btrix-numbered-list-header>
-      ${this.logs.items.map(
-        (log: CrawlLog, idx) => html`
-          <btrix-numbered-list-item>
-            <span slot="marker">${idx + 1}.</span>
-            <div class="row">
-              <div>
-                <sl-format-date
-                  date=${log.timestamp}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="2-digit"
-                  minute="2-digit"
-                  second="2-digit"
-                  hour-format="24"
-                >
-                </sl-format-date>
+        <btrix-numbered-list-header slot="header">
+          <div class="row">
+            <div class="cell">${msg("Date")}</div>
+            <div class="cell">${msg("Level")}</div>
+            <div class="cell">${msg("Context")}</div>
+            <div class="cell">${msg("Error Message")}</div>
+          </div>
+        </btrix-numbered-list-header>
+        ${this.logs.items.map(
+          (log: CrawlLog, idx) => html`
+            <btrix-numbered-list-item>
+              <span slot="marker">${idx + 1}.</span>
+              <div class="row">
+                <div>
+                  <sl-format-date
+                    date=${log.timestamp}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                    second="2-digit"
+                    hour-format="24"
+                  >
+                  </sl-format-date>
+                </div>
+                <div>
+                  <span class="tag">${log.logLevel}</span>
+                </div>
+                <div>${log.context}</div>
+                <div class="truncate">${log.message}</div>
               </div>
-              <div>
-                <span class="tag">${log.logLevel}</span>
-              </div>
-              <div>${log.context}</div>
-              <div class="truncate">${log.message}</div>
-            </div>
-          </btrix-numbered-list-item>
-        `
-      )}
-    </btrix-numbered-list>`;
+            </btrix-numbered-list-item>
+          `
+        )}
+      </btrix-numbered-list>
+      <btrix-pagination
+        page=${this.logs.page}
+        totalCount=${this.logs.total}
+        size=${this.logs.pageSize}
+      >
+      </btrix-pagination> `;
   }
 }
