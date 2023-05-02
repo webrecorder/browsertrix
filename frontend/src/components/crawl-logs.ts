@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { truncate } from "../utils/css";
@@ -24,6 +25,7 @@ export class CrawlLogs extends LitElement {
       .row {
         display: grid;
         grid-template-columns: 9rem 4rem 5rem 1fr;
+        align-items: center;
       }
 
       .cell {

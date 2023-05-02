@@ -158,12 +158,7 @@ export class CrawlDetail extends LiteElement {
       case "files":
         sectionContent = this.renderPanel(
           msg("Download Files"),
-          this.renderFiles(),
-          {
-            "p-4": true,
-            "rounded-lg": true,
-            border: true,
-          }
+          this.renderFiles()
         );
         break;
       case "logs":
@@ -737,7 +732,7 @@ ${this.crawl?.notes}
     return html`
       ${this.hasFiles
         ? html`
-            <ul class="border rounded text-sm">
+            <ul class="border rounded-lg text-sm">
               ${this.crawl!.resources!.map(
                 (file) => html`
                   <li
@@ -782,6 +777,12 @@ ${this.crawl?.notes}
         class="w-full flex items-center justify-center my-24 text-3xl"
       >
         <sl-spinner></sl-spinner>
+      </div>`;
+    }
+
+    if (!this.logs.total) {
+      return html`<div class="border rounded-lg p-4">
+        <p class="text-sm text-neutral-400">${msg("No logs to display.")}</p>
       </div>`;
     }
 
