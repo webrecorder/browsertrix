@@ -613,6 +613,10 @@ class CrawlOps:
         """stop or cancel specified crawl"""
         result = None
         try:
+            if graceful:
+                redis = await self.get_redis(crawl_id)
+                redis.set(f"{crawl_id}:crawl-stop", "1")
+
             result = await self.crawl_manager.shutdown_crawl(
                 crawl_id, org.id_str, graceful=graceful
             )
