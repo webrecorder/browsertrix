@@ -5,6 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
 
+import type { PageChangeEvent } from "../../components/pagination";
 import { RelativeDuration } from "../../components/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -106,6 +107,7 @@ export class CrawlDetail extends LiteElement {
     }
 
     this.fetchCrawl();
+    this.fetchCrawlLogs();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -114,6 +116,7 @@ export class CrawlDetail extends LiteElement {
     if (prevId && prevId !== this.crawlId) {
       // Handle update on URL change, e.g. from re-run
       this.fetchCrawl();
+      this.fetchCrawlLogs();
     } else {
       const prevCrawl = changedProperties.get("crawl");
 
@@ -785,7 +788,13 @@ ${this.crawl?.notes}
     return html`
       <btrix-crawl-logs
         .logs=${this.logs}
-        @page-change=${console.log}
+        @page-change=${async (e: PageChangeEvent) => {
+          await this.fetchCrawlLogs({
+            page: e.detail.page,
+          });
+          // Scroll to top of list
+          this.scrollIntoView();
+        }}
       ></btrix-crawl-logs>
     `;
   }
@@ -813,11 +822,6 @@ ${this.crawl?.notes}
         icon: "exclamation-octagon",
       });
     }
-    try {
-      this.logs = await this.getCrawlLogs();
-    } catch {
-      // Fail silently
-    }
   }
 
   private async getCrawl(): Promise<Crawl> {
@@ -831,11 +835,30 @@ ${this.crawl?.notes}
     return data;
   }
 
-  private async getCrawlLogs({ page = 1 } = {}): Promise<APIPaginatedList> {
+  private async fetchCrawlLogs(
+    params: Partial<APIPaginatedList> = {}
+  ): Promise<void> {
+    try {
+      this.logs = await this.getCrawlLogs(params);
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve crawl logs at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getCrawlLogs(
+    params: Partial<APIPaginatedList>
+  ): Promise<APIPaginatedList> {
+    const page = params.page || this.logs?.page || 1;
+    const pageSize = params.pageSize || this.logs?.pageSize || 50;
+
     const data: APIPaginatedList = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
         this.crawlId
-      }/errors?pageSize=${100}&page=${page}`,
+      }/errors?page=${page}&pageSize=${pageSize}`,
       this.authState!
     );
 
@@ -980,6 +1003,8 @@ ${this.crawl?.notes}
   /** Callback when crawl is no longer running */
   private crawlDone() {
     if (!this.crawl) return;
+
+    this.fetchCrawlLogs();
 
     this.notify({
       message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),

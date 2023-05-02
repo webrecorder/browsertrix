@@ -4,7 +4,6 @@ import { msg, localized, str } from "@lit/localize";
 
 import { truncate } from "../utils/css";
 import type { APIPaginatedList } from "../types/api";
-import type { PageChangeEvent } from "./pagination";
 
 type CrawlLog = {
   timestamp: string;
@@ -41,6 +40,13 @@ export class CrawlLogs extends LitElement {
         background-color: var(--danger);
         color: var(--sl-color-neutral-0);
       }
+
+      footer {
+        display: flex;
+        justify-content: center;
+        margin-top: var(--sl-spacing-large);
+        margin-bottom: var(--sl-spacing-x-large);
+      }
     `,
   ];
 
@@ -61,7 +67,9 @@ export class CrawlLogs extends LitElement {
         ${this.logs.items.map(
           (log: CrawlLog, idx) => html`
             <btrix-numbered-list-item>
-              <span slot="marker">${idx + 1}.</span>
+              <span slot="marker"
+                >${idx + 1 + (this.logs!.page - 1) * this.logs!.pageSize}.</span
+              >
               <div class="row">
                 <div>
                   <sl-format-date
@@ -86,11 +94,13 @@ export class CrawlLogs extends LitElement {
           `
         )}
       </btrix-numbered-list>
-      <btrix-pagination
-        page=${this.logs.page}
-        totalCount=${this.logs.total}
-        size=${this.logs.pageSize}
-      >
-      </btrix-pagination> `;
+      <footer>
+        <btrix-pagination
+          page=${this.logs.page}
+          totalCount=${this.logs.total}
+          size=${this.logs.pageSize}
+        >
+        </btrix-pagination>
+      </footer> `;
   }
 }
