@@ -25,7 +25,7 @@ export class CrawlLogs extends LitElement {
       .row {
         display: grid;
         grid-template-columns: 9rem 4rem 5rem 1fr;
-        align-items: center;
+        line-height: 1.3;
       }
 
       .cell {
@@ -49,6 +49,10 @@ export class CrawlLogs extends LitElement {
         margin-top: var(--sl-spacing-large);
         margin-bottom: var(--sl-spacing-x-large);
       }
+
+      .message {
+        white-space: pre-wrap;
+      }
     `,
   ];
 
@@ -69,9 +73,6 @@ export class CrawlLogs extends LitElement {
         ${this.logs.items.map(
           (log: CrawlLog, idx) => html`
             <btrix-numbered-list-item>
-              <span slot="marker"
-                >${idx + 1 + (this.logs!.page - 1) * this.logs!.pageSize}.</span
-              >
               <div class="row">
                 <div>
                   <sl-format-date
@@ -90,7 +91,7 @@ export class CrawlLogs extends LitElement {
                   <span class="tag">${log.logLevel}</span>
                 </div>
                 <div>${log.context}</div>
-                <div class="truncate">${log.message}</div>
+                <div class="message">${log.message}</div>
               </div>
             </btrix-numbered-list-item>
           `

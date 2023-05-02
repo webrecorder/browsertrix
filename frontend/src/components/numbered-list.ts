@@ -117,7 +117,7 @@ export class NumberedList extends LitElement {
 
     .list {
       display: grid;
-      grid-template-columns: minmax(3ch, max-content) 1fr;
+      grid-template-columns: max-content 1fr;
       grid-column-gap: var(--sl-spacing-x-small);
       align-items: center;
     }
