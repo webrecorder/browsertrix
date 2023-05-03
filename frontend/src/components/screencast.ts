@@ -3,7 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 import { property, state } from "lit/decorators.js";
 
 type Message = {
-  id: string; // page ID
+  id: number; // page ID
 };
 
 type InitMessage = Message & {
@@ -133,17 +133,13 @@ export class Screencast extends LitElement {
 
   // List of browser screens
   @state()
-  private dataList: Array<ScreencastMessage | null> = [];
+  private dataMap: { [index: string]: ScreencastMessage | null } = {};
 
   @state()
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
   private wsMap: Map<number, WebSocket> = new Map();
-  // Map data order to screen data
-  private dataMap: { [index: number]: ScreencastMessage | null } = {};
-  // Map page ID to data order
-  private pageOrderMap: Map<string, number> = new Map();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
   private browsersCount = 1;
@@ -166,14 +162,12 @@ export class Screencast extends LitElement {
       this.disconnectAll();
       this.connectAll();
     }
-    if (changedProperties.has("scale")) {
-      const prevScale = changedProperties.get("scale");
-      if (prevScale) {
-        if (this.scale > prevScale) {
-          this.scaleUp();
-        } else {
-          this.scaleDown();
-        }
+    const prevScale = changedProperties.get("scale");
+    if (prevScale !== undefined) {
+      if (this.scale > prevScale) {
+        this.scaleUp();
+      } else {
+        this.scaleDown();
       }
     }
   }
@@ -185,36 +179,17 @@ export class Screencast extends LitElement {
   }
 
   render() {
+    const screenCount = this.scale * this.browsersCount;
     return html`
       <div class="wrapper">
         <div
           class="container"
-          style="grid-template-columns: repeat(${this
-            .browsersCount}, minmax(0, 1fr)); grid-template-rows: repeat(${this
-            .scale}, minmax(2rem, auto))"
+          style="grid-template-columns: repeat(${screenCount > 2
+            ? Math.ceil(screenCount / 2)
+            : screenCount}, 1fr);"
         >
-          ${this.dataList.map(
-            (pageData) =>
-              html` <figure
-                class="screen"
-                title=${pageData?.url || ""}
-                role=${pageData ? "button" : "presentation"}
-                @click=${pageData
-                  ? () => (this.focusedScreenData = pageData)
-                  : () => {}}
-              >
-                <figcaption class="caption">
-                  ${pageData?.url || html`&nbsp;`}
-                </figcaption>
-                <div
-                  class="frame"
-                  style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
-                >
-                  ${pageData
-                    ? html`<img src="data:image/png;base64,${pageData.data}" />`
-                    : html`<sl-spinner></sl-spinner>`}
-                </div>
-              </figure>`
+          ${Array.from({ length: screenCount }).map((_, i) =>
+            this.renderScreen(`${i}`)
           )}
         </div>
       </div>
@@ -246,6 +221,26 @@ export class Screencast extends LitElement {
       </sl-dialog>
     `;
   }
+
+  private renderScreen = (id: string) => {
+    const pageData = this.dataMap[id];
+    return html` <figure
+      class="screen"
+      title=${pageData?.url || ""}
+      role=${pageData ? "button" : "presentation"}
+      @click=${pageData ? () => (this.focusedScreenData = pageData) : () => {}}
+    >
+      <figcaption class="caption">${pageData?.url || html`&nbsp;`}</figcaption>
+      <div
+        class="frame"
+        style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+      >
+        ${pageData
+          ? html`<img src="data:image/png;base64,${pageData.data}" />`
+          : html`<sl-spinner></sl-spinner>`}
+      </div>
+    </figure>`;
+  };
 
   private scaleUp() {
     // Reconnect after 20 second delay
@@ -306,22 +301,17 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      this.dataList = Array.from(
-        { length: message.browsers * this.scale },
-        () => null
-      );
-      this.dataMap = this.dataList.reduce(
-        (acc, val, i) => ({
-          ...acc,
-          [i]: val,
-        }),
-        {}
-      );
+      const dataMap: any = {};
+      for (let i = 0; i < message.browsers * this.scale; i++) {
+        dataMap[i] = null;
+      }
+      this.dataMap = dataMap;
       this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
       const { id } = message;
+      const dataMap = { ...this.dataMap };
 
       if (message.msg === "screencast") {
         if (message.url === "about:blank") {
@@ -329,34 +319,16 @@ export class Screencast extends LitElement {
           return;
         }
 
-        let idx = this.pageOrderMap.get(id);
-
-        if (idx === undefined) {
-          // Find and fill first empty slot
-          idx = this.dataList.indexOf(null);
-
-          if (idx === -1) {
-            console.debug("no empty slots");
-          }
-
-          this.pageOrderMap.set(id, idx);
-        }
-
         if (this.focusedScreenData?.id === id) {
           this.focusedScreenData = message;
         }
 
-        this.dataMap[idx] = message;
-        this.updateDataList();
+        dataMap[id] = message;
       } else if (message.msg === "close") {
-        const idx = this.pageOrderMap.get(id);
-
-        if (idx !== undefined && idx !== null) {
-          this.dataMap[idx] = null;
-          this.updateDataList();
-          this.pageOrderMap.set(id, -1);
-        }
+        dataMap[id] = null;
       }
+
+      this.dataMap = dataMap;
     }
   }
 
@@ -415,12 +387,7 @@ export class Screencast extends LitElement {
     });
   }
 
-  updateDataList() {
-    this.dataList = Object.values(this.dataMap);
-  }
-
   unfocusScreen() {
-    this.updateDataList();
     this.focusedScreenData = undefined;
   }
 }
