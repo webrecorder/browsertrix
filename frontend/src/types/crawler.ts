@@ -108,7 +108,7 @@ export type Crawl = CrawlConfig & {
   finished?: string; // UTC ISO date
   state: CrawlState;
   scale: number;
-  stats: { done: string; found: string; size: number } | null;
+  stats: { done: string; found: string; size: string } | null;
   resources?: { name: string; path: string; hash: string; size: number }[];
   fileCount?: number;
   fileSize?: number;
