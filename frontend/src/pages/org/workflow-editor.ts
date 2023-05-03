@@ -1280,23 +1280,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
         )
       )}
       ${this.renderSectionHeading(msg("Limit Per Crawl"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="maxCrawlDepth"
-          label=${msg("Max Depth")}
-          value=${this.formState.maxCrawlDepth || ""}
-          placeholder=${msg("Default: Unlimited")}
-          min="0"
-          type="number"
-          inputmode="numeric"
-        >
-          <span slot="suffix">${msg("minutes")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Adds a hard limit on the number of path levels the crawler will visit.`
-        )
+      ${when(
+        this.jobType === "seed-crawl",
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-input
+              name="maxCrawlDepth"
+              label=${msg("Max Depth")}
+              value=${this.formState.maxCrawlDepth || ""}
+              placeholder=${msg("Default: Unlimited")}
+              min="0"
+              type="number"
+              inputmode="numeric"
+            >
+              <span slot="suffix">${msg("levels")}</span>
+            </sl-input>
+          `)}
+          ${this.renderHelpTextCol(
+            msg(`Limits on the level of paths the crawler will visit.`)
+          )}
+        `
       )}
       ${this.renderFormCol(html`
         <sl-mutation-observer
