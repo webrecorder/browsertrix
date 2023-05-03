@@ -313,10 +313,18 @@ export class WorkflowDetail extends LiteElement {
     if (!this.activePanel) return;
     if (this.activePanel === "artifacts") {
       return html`<h3>
-        ${this.workflow?.crawlCount === 1
-          ? msg(str`${this.workflow?.crawlCount} Crawl`)
-          : msg(str`${this.workflow?.crawlCount} Crawls`)}
-      </h3>`;
+          ${this.workflow?.crawlCount === 1
+            ? msg(str`${this.workflow?.crawlCount} Crawl`)
+            : msg(str`${this.workflow?.crawlCount} Crawls`)}
+        </h3>
+        <sl-button
+          size="small"
+          @click=${() => this.runNow()}
+          ?disabled=${this.workflow?.currCrawlId}
+        >
+          <sl-icon name="play" slot="prefix"></sl-icon>
+          <span>${msg("Run")}</span>
+        </sl-button>`;
     }
     if (this.activePanel === "settings") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
