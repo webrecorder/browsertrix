@@ -342,7 +342,7 @@ export class App extends LiteElement {
                         : ""}
                       <sl-divider></sl-divider>
                       <sl-menu-item @click="${this.onLogOut}">
-                        <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                        <sl-icon slot="prefix" name="door-open"></sl-icon>
                         ${msg("Log Out")}
                       </sl-menu-item>
                     </sl-menu>
