@@ -18,7 +18,7 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
+from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig, UpdateCrawlConfig
 from .db import BaseMongoModel
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -579,9 +579,13 @@ class CrawlOps:
         return {"success": True}
 
     async def update_crawl_scale(
-        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale
+        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
     ):
         """Update crawl scale in the db"""
+        crawl = await self.get_crawl_raw(crawl_id, org)
+        update = UpdateCrawlConfig(scale=crawl_scale.scale)
+        await self.crawl_configs.update_crawl_config(crawl["cid"], org, user, update)
+
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": org.id},
             {"$set": {"scale": crawl_scale.scale}},
@@ -1115,9 +1119,12 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         tags=["crawls"],
     )
     async def scale_crawl(
-        scale: CrawlScale, crawl_id, org: Organization = Depends(org_crawl_dep)
+        scale: CrawlScale,
+        crawl_id,
+        user: User = Depends(user_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        await ops.update_crawl_scale(crawl_id, org, scale)
+        await ops.update_crawl_scale(crawl_id, org, scale, user)
 
         result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
         if not result or not result.get("success"):
