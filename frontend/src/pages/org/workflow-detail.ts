@@ -318,7 +318,19 @@ export class WorkflowDetail extends LiteElement {
           : msg(str`${this.workflow?.crawlCount} Crawls`)}
       </h3>`;
     }
-
+    if (this.activePanel === "settings") {
+      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+        <sl-button
+          size="small"
+          @click=${() =>
+            this.navTo(
+              `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
+            )}
+        >
+          <sl-icon name="gear" slot="prefix"></sl-icon>
+          <span>${msg("Edit")}</span>
+        </sl-button>`;
+    }
     if (this.activePanel === "watch") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
@@ -384,7 +396,7 @@ export class WorkflowDetail extends LiteElement {
     const workflow = this.workflow;
 
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
+      <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
