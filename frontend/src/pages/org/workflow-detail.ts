@@ -341,17 +341,35 @@ export class WorkflowDetail extends LiteElement {
     }
     if (this.activePanel === "watch") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button
-          size="small"
-          ?disabled=${this.workflow?.currCrawlState !== "running"}
-          @click=${() => {
-            this.openDialogName = "scale";
-            this.isDialogVisible = true;
-          }}
-        >
-          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-          <span> ${msg("Crawler Instances")} </span>
-        </sl-button>`;
+        <sl-button-group>
+          <sl-button
+            size="small"
+            ?disabled=${this.workflow?.currCrawlState !== "running"}
+            @click=${() => {
+              this.openDialogName = "scale";
+              this.isDialogVisible = true;
+            }}
+          >
+            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+            <span> ${msg("Edit Instances")} </span>
+          </sl-button>
+          <sl-button
+            size="small"
+            @click=${() => this.stop()}
+            ?disabled=${this.workflow?.currCrawlState === "stopping"}
+          >
+            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            <span>${msg("Stop")}</span>
+          </sl-button>
+          <sl-button size="small" @click=${() => this.cancel()}>
+            <sl-icon
+              name="x-octagon"
+              slot="prefix"
+              class="text-danger"
+            ></sl-icon>
+            <span class="text-danger">${msg("Cancel")}</span>
+          </sl-button>
+        </sl-button-group>`;
     }
 
     return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
@@ -1101,7 +1119,13 @@ export class WorkflowDetail extends LiteElement {
 
   private async cancel() {
     if (!this.workflow?.currCrawlId) return;
-    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+    if (
+      window.confirm(
+        msg(
+          "Are you sure you want to cancel the crawl? Canceling will discard all crawl artifact data, including pages crawled so far."
+        )
+      )
+    ) {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/cancel`,
         this.authState!,
@@ -1123,7 +1147,13 @@ export class WorkflowDetail extends LiteElement {
 
   private async stop() {
     if (!this.workflow?.currCrawlId) return;
-    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+    if (
+      window.confirm(
+        msg(
+          "Are you sure you want to stop the crawl? The pages crawled so far will be preserved and the crawl will be marked as incomplete."
+        )
+      )
+    ) {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/stop`,
         this.authState!,
