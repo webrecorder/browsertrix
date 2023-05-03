@@ -79,6 +79,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
+  maxCrawlDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -148,6 +149,7 @@ const getDefaultFormState = (): FormState => ({
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
+  maxCrawlDepth: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: null,
@@ -485,6 +487,7 @@ export class CrawlConfigEditor extends LiteElement {
         seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
       pageExtraDelaySeconds:
         seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
+      maxCrawlDepth: seedsConfig.depth ?? defaultFormState.maxCrawlDepth,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1278,6 +1281,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderSectionHeading(msg("Limit Per Crawl"))}
       ${this.renderFormCol(html`
+        <sl-input
+          name="maxCrawlDepth"
+          label=${msg("Max Depth")}
+          value=${this.formState.maxCrawlDepth || ""}
+          placeholder=${msg("Default: Unlimited")}
+          min="0"
+          type="number"
+          inputmode="numeric"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Adds a hard limit on the number of path levels the crawler will visit.`
+        )
+      )}
+      ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
           @sl-mutation=${async (e: CustomEvent) => {
@@ -2047,6 +2068,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
+        depth: this.formState.maxCrawlDepth,
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
