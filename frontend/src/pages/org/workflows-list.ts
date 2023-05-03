@@ -210,8 +210,8 @@ export class WorkflowsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center">
-        <div class="grow mr-4 mb-4">
+      <div class="flex flex-wrap mb-2 items-center md:gap-4 gap-2">
+        <div class="grow">
           <sl-input
             class="w-full"
             slot="trigger"
@@ -224,6 +224,43 @@ export class WorkflowsList extends LiteElement {
             <sl-icon name="search" slot="prefix"></sl-icon>
           </sl-input>
         </div>
+
+        <div class="flex items-center w-full md:w-fit">
+          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
+              ${msg("Sort by:")}
+            </div>
+            <sl-select
+              class="flex-1 md:min-w-[9.2rem]"
+              size="small"
+              pill
+              value=${this.orderBy.field}
+              @sl-select=${(e: any) => {
+                const field = e.detail.item.value as SortField;
+                this.orderBy = {
+                  field: field,
+                  direction:
+                    sortableFields[field].defaultDirection ||
+                    this.orderBy.direction,
+                };
+              }}
+            >
+              ${Object.entries(sortableFields).map(
+                ([value, { label }]) => html`
+                  <sl-menu-item value=${value}>${label}</sl-menu-item>
+                `
+              )}
+            </sl-select>
+            <sl-icon-button
+              name="arrow-down-up"
+              label=${msg("Reverse sort")}
+              @click=${() => {
+                this.orderBy = {
+                  ...this.orderBy,
+                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                };
+              }}
+            ></sl-icon-button>
+          </div>
       </div>
 
       <div class="flex flex-wrap items-center justify-between">
@@ -260,49 +297,14 @@ export class WorkflowsList extends LiteElement {
           </button>
         </div>
         <div class="flex items-center justify-end">
-          <label class="mr-3">
-            <span class="text-neutral-500 mr-1">${msg("Show Only Mine")}</span>
+          <label>
+            <span class="text-neutral-500 mr-1 text-xs">${msg("Show Only Mine")}</span>
             <sl-switch
               @sl-change=${(e: CustomEvent) =>
                 (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
               ?checked=${this.filterByCurrentUser}
             ></sl-switch>
           </label>
-
-          <div class="whitespace-nowrap text-sm text-0-500 mr-2">
-            ${msg("Sort by:")}
-          </div>
-          <sl-select
-            class="flex-1 md:min-w-[9.2rem]"
-            size="small"
-            pill
-            value=${this.orderBy.field}
-            @sl-select=${(e: any) => {
-              const field = e.detail.item.value as SortField;
-              this.orderBy = {
-                field: field,
-                direction:
-                  sortableFields[field].defaultDirection ||
-                  this.orderBy.direction,
-              };
-            }}
-          >
-            ${Object.entries(sortableFields).map(
-              ([value, { label }]) => html`
-                <sl-menu-item value=${value}>${label}</sl-menu-item>
-              `
-            )}
-          </sl-select>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
         </div>
       </div>
     `;
@@ -443,7 +445,7 @@ export class WorkflowsList extends LiteElement {
                 ? this.deactivate(workflow)
                 : this.delete(workflow)}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${shouldDeactivate
               ? msg("Deactivate Workflow")
               : msg("Delete Workflow")}

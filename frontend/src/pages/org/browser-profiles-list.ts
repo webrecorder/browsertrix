@@ -139,11 +139,11 @@ export class BrowserProfilesList extends LiteElement {
 
   private renderMenu(data: Profile) {
     return html`
-      <sl-dropdown @click=${(e: Event) => e.preventDefault()}>
+      <sl-dropdown hoist="true" @click=${(e: Event) => e.preventDefault()}>
         <sl-icon-button
           slot="trigger"
           name="three-dots"
-          label=${msg("More")}
+          label=${msg("Actions")}
           style="font-size: 1rem"
         ></sl-icon-button>
         <ul
@@ -178,7 +178,7 @@ export class BrowserProfilesList extends LiteElement {
           >
             <sl-icon
               class="inline-block align-middle px-1"
-              name="file-earmark-x"
+              name="trash3"
             ></sl-icon>
             <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
           </li>
