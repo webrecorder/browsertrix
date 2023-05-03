@@ -63,19 +63,28 @@ export class ConfigDetails extends LiteElement {
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number
-    ) =>
-      valueSeconds
-        ? RelativeDuration.humanize(valueSeconds * 1000, { verbose: true })
-        : typeof fallbackValue === "number"
-        ? html`<span class="text-neutral-400"
-            >${fallbackValue === Infinity
-              ? msg("Unlimited")
-              : RelativeDuration.humanize(fallbackValue * 1000, {
-                  verbose: true,
-                })}
-            ${msg("(default)")}</span
-          >`
-        : undefined;
+    ) => {
+      if (valueSeconds) {
+        return RelativeDuration.humanize(valueSeconds * 1000, {
+          verbose: true,
+        });
+      }
+      if (typeof fallbackValue === "number") {
+        let value = "";
+        if (fallbackValue === Infinity) {
+          value = msg("Unlimited");
+        } else if (fallbackValue === 0) {
+          value = msg("0 seconds");
+        } else {
+          value = RelativeDuration.humanize(fallbackValue * 1000, {
+            verbose: true,
+          });
+        }
+        return html`<span class="text-neutral-400"
+          >${value} ${msg("(default)")}</span
+        >`;
+      }
+    };
 
     return html`
       <section id="crawler-settings" class="mb-8">
