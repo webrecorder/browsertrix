@@ -79,7 +79,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
-  maxCrawlDepth: number | null;
+  maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -149,7 +149,7 @@ const getDefaultFormState = (): FormState => ({
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
-  maxCrawlDepth: null,
+  maxScopeDepth: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: null,
@@ -487,7 +487,7 @@ export class CrawlConfigEditor extends LiteElement {
         seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
       pageExtraDelaySeconds:
         seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
-      maxCrawlDepth: primarySeedConfig.depth ?? defaultFormState.maxCrawlDepth,
+      maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1052,9 +1052,9 @@ https://example.com/path`}
         () => html`
           ${this.renderFormCol(html`
             <sl-input
-              name="maxCrawlDepth"
+              name="maxScopeDepth"
               label=${msg("Max Depth")}
-              value=${this.formState.maxCrawlDepth || ""}
+              value=${this.formState.maxScopeDepth}
               placeholder=${msg("Default: Unlimited")}
               min="0"
               type="number"
@@ -2134,7 +2134,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (
       ["host", "domain", "custom", "any"].includes(this.formState.scopeType)
     ) {
-      primarySeed.depth = this.formState.maxCrawlDepth;
+      primarySeed.depth = this.formState.maxScopeDepth;
     }
 
     const config = {
