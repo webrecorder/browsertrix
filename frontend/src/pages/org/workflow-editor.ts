@@ -487,7 +487,7 @@ export class CrawlConfigEditor extends LiteElement {
         seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
       pageExtraDelaySeconds:
         seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
-      maxCrawlDepth: seedsConfig.depth ?? defaultFormState.maxCrawlDepth,
+      maxCrawlDepth: primarySeedConfig.depth ?? defaultFormState.maxCrawlDepth,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -2073,7 +2073,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
-        depth: this.formState.maxCrawlDepth,
+
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
@@ -2130,6 +2130,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
+
+    if (
+      ["host", "domain", "custom", "any"].includes(this.formState.scopeType)
+    ) {
+      primarySeed.depth = this.formState.maxCrawlDepth;
+    }
+
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: additionalSeedUrlList.length

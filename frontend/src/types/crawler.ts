@@ -14,6 +14,7 @@ export type Seed = {
   exclude?: string[] | null;
   limit?: number | null;
   extraHops?: number | null;
+  depth?: number | null;
 };
 
 export type SeedConfig = Pick<
