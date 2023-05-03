@@ -1,8 +1,10 @@
+/* See https://github.com/arrowtype/recursive/tree/main#opentype-features for font-feature-settings examples & more configuration info */
 @font-face {
   font-family: 'Recursive var';
-  font-weight: 400;
+  font-weight: 300 1000;
   font-display: swap;
-  font-style: normal;
+  font-style: oblique 0deg 15deg;
   font-variation-settings: 'MONO' 1, 'CASL' 0, 'slnt' 0, 'CRSV' 0;
   src: url("./Recursive_VF.woff2?v=1.085") format("woff2");
+  font-feature-settings: "ss02", "ss08", "ss12";
 }
