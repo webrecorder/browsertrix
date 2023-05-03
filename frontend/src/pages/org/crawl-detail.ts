@@ -644,6 +644,10 @@ export class CrawlDetail extends LiteElement {
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.crawl?.stats
             ? html`
+                <sl-format-bytes
+                  value=${this.crawl.stats.size}
+                  display="narrow"
+                ></sl-format-bytes><span>,</span>
                 <span
                   class="font-mono tracking-tighter${this.isActive
                     ? " text-purple-600"
