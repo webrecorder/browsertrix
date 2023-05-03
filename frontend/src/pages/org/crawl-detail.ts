@@ -162,7 +162,7 @@ export class CrawlDetail extends LiteElement {
         );
         break;
       case "logs":
-        sectionContent = this.renderPanel(msg("Logs"), this.renderLogs());
+        sectionContent = this.renderPanel(msg("Error Logs"), this.renderLogs());
         break;
       case "config":
         sectionContent = this.renderPanel(msg("Config"), this.renderConfig(), {
@@ -360,7 +360,7 @@ export class CrawlDetail extends LiteElement {
             section: "logs",
             iconLibrary: "default",
             icon: "terminal-fill",
-            label: msg("Logs"),
+            label: msg("Error Logs"),
           })}
           ${renderNavItem({
             section: "config",
@@ -782,7 +782,7 @@ ${this.crawl?.notes}
 
     if (!this.logs.total) {
       return html`<div class="border rounded-lg p-4">
-        <p class="text-sm text-neutral-400">${msg("No logs to display.")}</p>
+        <p class="text-sm text-neutral-400">${msg("No error logs to display.")}</p>
       </div>`;
     }
 
