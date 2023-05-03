@@ -1,6 +1,7 @@
 import { html } from "lit";
 import { property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { msg } from "@lit/localize";
 
 import LiteElement from "../../utils/LiteElement";
 import "./input.css";
@@ -71,6 +72,7 @@ export class Input extends LiteElement {
           ? html`
               <sl-icon-button
                 class="sl-input-icon-button"
+                label=${this.isPasswordVisible ? msg("Hide password") : msg("Show password")}
                 name=${this.isPasswordVisible ? "eye-slash" : "eye"}
                 @click=${this.onTogglePassword}
               ></sl-icon-button>

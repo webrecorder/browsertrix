@@ -473,7 +473,7 @@ export class WorkflowDetail extends LiteElement {
             @click=${() =>
               shouldDeactivate ? this.deactivate() : this.delete()}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${
               shouldDeactivate
                 ? msg("Deactivate Workflow")

@@ -319,6 +319,7 @@ export class App extends LiteElement {
                     <sl-icon-button
                       slot="trigger"
                       name="person-circle"
+                      label=${msg("Open user menu")}
                       style="font-size: 1.5rem;"
                     ></sl-icon-button>
 
@@ -341,7 +342,7 @@ export class App extends LiteElement {
                         : ""}
                       <sl-divider></sl-divider>
                       <sl-menu-item @click="${this.onLogOut}">
-                        <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+                        <sl-icon slot="prefix" name="door-open"></sl-icon>
                         ${msg("Log Out")}
                       </sl-menu-item>
                     </sl-menu>

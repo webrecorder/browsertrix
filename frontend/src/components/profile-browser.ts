@@ -148,6 +148,7 @@ export class ProfileBrowser extends LiteElement {
           ${this.renderSidebarButton()}
           <sl-icon-button
             name="fullscreen-exit"
+            label=${msg("Exit fullscreen")}
             @click=${() => document.exitFullscreen()}
           ></sl-icon-button>
         </div>
@@ -159,6 +160,7 @@ export class ProfileBrowser extends LiteElement {
         ${this.renderSidebarButton()}
         <sl-icon-button
           name="arrows-fullscreen"
+          label=${msg("Enter fullscreen")}
           @click=${() => this.enterFullscreen("interactive-browser")}
         ></sl-icon-button>
       </div>
@@ -198,6 +200,7 @@ export class ProfileBrowser extends LiteElement {
     return html`
       <sl-icon-button
         name="layout-sidebar-reverse"
+        label=${!this.showOriginSidebar ? msg("Show sidebar") : msg("Hide sidebar")}
         class="${this.showOriginSidebar ? "text-blue-600" : ""}"
         @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
       ></sl-icon-button>

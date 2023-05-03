@@ -339,7 +339,7 @@ export class CrawlListItem extends LitElement {
           <sl-icon-button
             class="dropdownTrigger"
             name="three-dots-vertical"
-            label=${msg("More")}
+            label=${msg("Actions")}
             @click=${(e: MouseEvent) => {
               // Prevent anchor link default behavior
               e.preventDefault();
@@ -451,6 +451,8 @@ export class CrawlList extends LitElement {
         border: 1px solid var(--sl-panel-border-color);
         border-radius: var(--sl-border-radius-medium);
         overflow: hidden;
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
       }
 
       .row {
