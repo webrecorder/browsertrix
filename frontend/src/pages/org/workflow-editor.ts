@@ -1048,6 +1048,29 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
+        ["host", "domain", "custom", "any"].includes(this.formState.scopeType),
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-input
+              name="maxCrawlDepth"
+              label=${msg("Max Depth")}
+              value=${this.formState.maxCrawlDepth || ""}
+              placeholder=${msg("Default: Unlimited")}
+              min="0"
+              type="number"
+              inputmode="numeric"
+            >
+              <span slot="suffix">${msg("hops")}</span>
+            </sl-input>
+          `)}
+          ${this.renderHelpTextCol(
+            msg(
+              `Limits how many hops away the crawler can visit while staying within the Start URL Scope.`
+            )
+          )}
+        `
+      )}
+      ${when(
         this.formState.scopeType === "custom",
         () => html`
           ${this.renderFormCol(html`
@@ -1079,7 +1102,7 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`),
+        Start URL Scope.`),
         false
       )}
       <div class="col-span-5">
@@ -1280,27 +1303,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         )
       )}
       ${this.renderSectionHeading(msg("Limit Per Crawl"))}
-      ${when(
-        this.jobType === "seed-crawl",
-        () => html`
-          ${this.renderFormCol(html`
-            <sl-input
-              name="maxCrawlDepth"
-              label=${msg("Max Depth")}
-              value=${this.formState.maxCrawlDepth || ""}
-              placeholder=${msg("Default: Unlimited")}
-              min="0"
-              type="number"
-              inputmode="numeric"
-            >
-              <span slot="suffix">${msg("levels")}</span>
-            </sl-input>
-          `)}
-          ${this.renderHelpTextCol(
-            msg(`Limits on the level of paths the crawler will visit.`)
-          )}
-        `
-      )}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
