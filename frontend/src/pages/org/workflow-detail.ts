@@ -79,7 +79,7 @@ export class WorkflowDetail extends LiteElement {
   private isAttemptCancel: boolean = false;
 
   @state()
-  private isCancelingOrDeletingCrawl: boolean = false;
+  private isCancelingOrStoppingCrawl: boolean = false;
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
@@ -280,7 +280,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
-            ?loading=${this.isCancelingOrDeletingCrawl}
+            ?loading=${this.isCancelingOrStoppingCrawl}
             @click=${async () => {
               await this.cancel();
               this.isAttemptCancel = false;
@@ -397,6 +397,7 @@ export class WorkflowDetail extends LiteElement {
             size="small"
             @click=${() => this.stop()}
             ?disabled=${!this.workflow?.currCrawlId ||
+            this.isCancelingOrStoppingCrawl ||
             this.workflow?.currCrawlState === "stopping"}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
@@ -405,7 +406,8 @@ export class WorkflowDetail extends LiteElement {
           <sl-button
             size="small"
             @click=${() => this.requestCancelCrawl()}
-            ?disabled=${!this.workflow?.currCrawlId}
+            ?disabled=${!this.workflow?.currCrawlId ||
+            this.isCancelingOrStoppingCrawl}
           >
             <sl-icon
               name="x-octagon"
@@ -478,13 +480,15 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() => this.stop()}
-                ?disabled=${workflow.currCrawlState === "stopping"}
+                ?disabled=${workflow.currCrawlState === "stopping" ||
+                this.isCancelingOrStoppingCrawl}
               >
                 <sl-icon name="dash-circle" slot="prefix"></sl-icon>
                 ${msg("Stop Crawl")}
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
+                ?disabled=${this.isCancelingOrStoppingCrawl}
                 @click=${() => this.requestCancelCrawl()}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
@@ -1180,7 +1184,7 @@ export class WorkflowDetail extends LiteElement {
   private async cancel() {
     if (!this.workflow?.currCrawlId) return;
 
-    this.isCancelingOrDeletingCrawl = true;
+    this.isCancelingOrStoppingCrawl = true;
 
     try {
       const data = await this.apiFetch(
@@ -1203,13 +1207,13 @@ export class WorkflowDetail extends LiteElement {
       });
     }
 
-    this.isCancelingOrDeletingCrawl = false;
+    this.isCancelingOrStoppingCrawl = false;
   }
 
   private async stop() {
     if (!this.workflow?.currCrawlId) return;
 
-    this.isCancelingOrDeletingCrawl = true;
+    this.isCancelingOrStoppingCrawl = true;
 
     try {
       const data = await this.apiFetch(
@@ -1232,7 +1236,7 @@ export class WorkflowDetail extends LiteElement {
       });
     }
 
-    this.isCancelingOrDeletingCrawl = false;
+    this.isCancelingOrStoppingCrawl = false;
   }
 
   private async runNow(): Promise<void> {
