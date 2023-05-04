@@ -156,17 +156,18 @@ export class WorkflowDetail extends LiteElement {
 
   updated(changedProperties: Map<string, any>) {
     const prevWorkflow = changedProperties.get("workflow");
-    if (prevWorkflow?.currCrawlId && !this.workflow?.currCrawlId) {
+    if (
+      prevWorkflow?.currCrawlId &&
+      !this.workflow?.currCrawlId &&
+      this.activePanel === "watch"
+    ) {
       this.goToTab(DEFAULT_SECTION, { replace: true });
     }
   }
 
   private getActivePanelFromHash = () => {
     const hashValue = window.location.hash.slice(1);
-    if (
-      SECTIONS.includes(hashValue as any) &&
-      !(hashValue === "watch" && !this.workflow?.currCrawlId)
-    ) {
+    if (SECTIONS.includes(hashValue as any)) {
       this.activePanel = hashValue as Tab;
     } else {
       this.goToTab(DEFAULT_SECTION, { replace: true });
