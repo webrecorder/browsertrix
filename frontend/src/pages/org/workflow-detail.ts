@@ -403,7 +403,7 @@ export class WorkflowDetail extends LiteElement {
           </sl-button>
           <sl-button
             size="small"
-            @click=${() => this.attemptCancel()}
+            @click=${() => this.requestCancelCrawl()}
             ?disabled=${!this.workflow?.currCrawlId}
           >
             <sl-icon
@@ -484,7 +484,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.attemptCancel()}
+                @click=${() => this.requestCancelCrawl()}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel & Discard Crawl")}
@@ -975,7 +975,7 @@ export class WorkflowDetail extends LiteElement {
     this.fetchWorkflow();
   }
 
-  private attemptCancel() {
+  private requestCancelCrawl() {
     const pagesDone = this.currentCrawl?.stats?.done;
     if (pagesDone && +pagesDone > 0) {
       this.isAttemptCancel = true;
