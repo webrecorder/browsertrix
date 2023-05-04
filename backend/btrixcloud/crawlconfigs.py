@@ -191,6 +191,9 @@ class CrawlConfig(CrawlConfigCore):
     lastCrawlState: Optional[str]
     lastCrawlSize: Optional[int]
 
+    currCrawlId: Optional[str]
+    currCrawlStartTime: Optional[datetime]
+
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
@@ -200,8 +203,6 @@ class CrawlConfig(CrawlConfigCore):
 class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output, includes currCrawlId of running crawl"""
 
-    currCrawlId: Optional[str]
-    currCrawlStartTime: Optional[datetime]
     currCrawlState: Optional[str]
     currCrawlSize: Optional[int] = 0
     currCrawlStopping: Optional[bool] = False
@@ -641,8 +642,6 @@ class CrawlConfigOps:
         if not crawl:
             return
 
-        crawlconfig.currCrawlId = crawl.id
-        crawlconfig.currCrawlStartTime = crawl.started
         crawlconfig.currCrawlState = crawl.state
         crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
         crawlconfig.currCrawlStopping = crawl.stopping
@@ -891,6 +890,26 @@ async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
 
 
 # ============================================================================
+async def set_curr_crawl(
+    crawl_configs, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
+):
+    """Set current crawl info in config"""
+    result = await crawl_configs.find_one_and_update(
+        {"_id": cid, "inactive": {"$ne": True}},
+        {
+            "$set": {
+                "currCrawlId": crawl_id,
+                "currCrawlStartTime": crawl_start,
+            }
+        },
+        return_document=pymongo.ReturnDocument.AFTER,
+    )
+    if result:
+        return True
+    return False
+
+
+# ============================================================================
 # pylint: disable=too-many-locals
 async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
     """re-calculate and update crawl statistics for config"""
@@ -903,6 +922,8 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         "lastCrawlTime": None,
         "lastCrawlState": None,
         "lastCrawlSize": None,
+        "currCrawlId": None,
+        "currCrawlStartTime": None,
     }
 
     match_query = {"cid": cid, "finished": {"$ne": None}}
