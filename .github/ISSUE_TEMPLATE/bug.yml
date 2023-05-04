@@ -1,0 +1,43 @@
+name: Bug Report
+description: If something isn't working as expected and you're sure your issue is reproducible, please file this type of issue!
+title: ""
+labels: ["type:bug"]
+body:
+  # Version number
+  - type: input
+    id: version
+    attributes:
+      label: Browsertrix Cloud Version
+      description: This can be found in the site footer
+      placeholder: "v1.5.0-beta.0-67d0c6a"
+    validations:
+      required: true
+  # What did the user expect to happen? What was the actual behavior?
+  - type: textarea
+    attributes:
+      label: What did you expect to happen? What happened instead?
+      description: |
+        "I was trying to modify the Page Load Timeout value in a saved workflow, however..."
+
+        Please submit any screenshots/videos that can be used to understand how to reproduce the issue. You can attach images by clicking this area to highlight it and then dragging files into the browser window.
+        
+        If your problem is related to crawling, or something wasn't captured in the way you expect please include a link to the finished crawl/workflow if possible.
+    validations:
+      required: true
+  # Step-by-step reproduction instructions
+  - type: textarea
+    attributes:
+      label: Step-by-step reproduction instructions
+      placeholder: |
+        1. Navigate to...
+        2. Click on...
+        3. See error...
+    validations:
+      required: true
+  # Additional details
+  - type: textarea
+    attributes:
+      label: Additional details
+      description: Add any other relevant information here, such as your local environment if you are running Browsertrix Cloud locally.
+    validations:
+      required: false
