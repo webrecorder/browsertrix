@@ -613,20 +613,6 @@ class CrawlOps:
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """stop or cancel specified crawl"""
         result = None
-        redis_err = (
-            "Unable to connect to redis to set crawl-stop. Trying again in 1 second"
-        )
-
-        if graceful:
-            while True:
-                try:
-                    redis = await self.get_redis(crawl_id)
-                    redis.set(f"{crawl_id}:crawl-stop", "1")
-                    break
-                except exceptions.ConnectionError:
-                    print(redis_err, flush=True)
-                    time.sleep(1)
-
         try:
             result = await self.crawl_manager.shutdown_crawl(
                 crawl_id, org.id_str, graceful=graceful
