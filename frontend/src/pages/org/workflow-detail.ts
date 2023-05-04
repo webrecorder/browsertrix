@@ -76,6 +76,12 @@ export class WorkflowDetail extends LiteElement {
   private isDialogVisible: boolean = false;
 
   @state()
+  private isAttemptCancel: boolean = false;
+
+  @state()
+  private isStoppingOrCanceling: boolean = false;
+
+  @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
@@ -249,6 +255,31 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
       </div>
+
+      <btrix-dialog
+        label=${msg("Cancel Crawl?")}
+        ?open=${this.isAttemptCancel}
+        @sl-request-close=${() => (this.isAttemptCancel = false)}
+      >
+        ${msg(
+          "Canceling will discard all pages crawled. Are you sure you want to discard them?"
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button size="small" @click=${() => (this.isAttemptCancel = false)}
+            >Keep Crawling</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            ?loading=${this.isStoppingOrCanceling}
+            @click=${async () => {
+              await this.cancel();
+              this.isAttemptCancel = false;
+            }}
+            >Cancel & Discard Crawl</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -361,7 +392,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             <span>${msg("Stop")}</span>
           </sl-button>
-          <sl-button size="small" @click=${() => this.cancel()}>
+          <sl-button size="small" @click=${() => this.attemptCancel()}>
             <sl-icon
               name="x-octagon"
               slot="prefix"
@@ -441,7 +472,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.cancel()}
+                @click=${() => this.attemptCancel()}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel & Discard Crawl")}
@@ -925,6 +956,15 @@ export class WorkflowDetail extends LiteElement {
     this.fetchWorkflow();
   }
 
+  private attemptCancel() {
+    const pagesDone = this.currentCrawl?.stats?.done;
+    if (pagesDone && +pagesDone > 0) {
+      this.isAttemptCancel = true;
+    } else {
+      this.cancel();
+    }
+  }
+
   private async scale(value: Crawl["scale"]) {
     if (!this.workflow?.currCrawlId) return;
     this.isSubmittingUpdate = true;
@@ -1119,13 +1159,10 @@ export class WorkflowDetail extends LiteElement {
 
   private async cancel() {
     if (!this.workflow?.currCrawlId) return;
-    if (
-      window.confirm(
-        msg(
-          "Are you sure you want to cancel the crawl? Canceling will discard all crawl artifact data, including pages crawled so far."
-        )
-      )
-    ) {
+
+    this.isStoppingOrCanceling = true;
+
+    try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/cancel`,
         this.authState!,
@@ -1136,24 +1173,25 @@ export class WorkflowDetail extends LiteElement {
       if (data.success === true) {
         this.fetchWorkflow();
       } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't cancel crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+        throw data;
       }
+    } catch {
+      this.notify({
+        message: msg("Something went wrong, couldn't cancel crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
+
+    this.isStoppingOrCanceling = false;
   }
 
   private async stop() {
     if (!this.workflow?.currCrawlId) return;
-    if (
-      window.confirm(
-        msg(
-          "Are you sure you want to stop the crawl? The pages crawled so far will be preserved and the crawl will be marked as incomplete."
-        )
-      )
-    ) {
+
+    this.isStoppingOrCanceling = true;
+
+    try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/stop`,
         this.authState!,
@@ -1164,13 +1202,17 @@ export class WorkflowDetail extends LiteElement {
       if (data.success === true) {
         this.fetchWorkflow();
       } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't stop crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+        throw data;
       }
+    } catch {
+      this.notify({
+        message: msg("Something went wrong, couldn't stop crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
+
+    this.isStoppingOrCanceling = false;
   }
 
   private async runNow(): Promise<void> {
