@@ -1,6 +1,6 @@
 name: Bug Report
 description: If something isn't working as expected and you're sure your issue is reproducible, please file this type of issue!
-title: ""
+title: "[Bug]: "
 labels: ["type:bug"]
 body:
   # Version number
