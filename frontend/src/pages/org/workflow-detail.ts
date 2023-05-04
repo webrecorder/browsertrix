@@ -79,7 +79,7 @@ export class WorkflowDetail extends LiteElement {
   private isAttemptCancel: boolean = false;
 
   @state()
-  private isStoppingOrCanceling: boolean = false;
+  private isCancelingOrDeletingCrawl: boolean = false;
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
@@ -279,7 +279,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
-            ?loading=${this.isStoppingOrCanceling}
+            ?loading=${this.isCancelingOrDeletingCrawl}
             @click=${async () => {
               await this.cancel();
               this.isAttemptCancel = false;
@@ -705,8 +705,15 @@ export class WorkflowDetail extends LiteElement {
                       hour="2-digit"
                       minute="2-digit"
                     ></sl-format-date>
-                    <!-- Hide menu trigger: -->
-                    <div slot="menuTrigger" role="none"></div>
+                    <sl-menu slot="menu">
+                      <sl-menu-item
+                        style="--sl-color-neutral-700: var(--danger)"
+                        @click=${() => this.deleteCrawl(crawl)}
+                      >
+                        <sl-icon name="trash" slot="prefix"></sl-icon>
+                        ${msg("Delete Crawl")}
+                      </sl-menu-item>
+                    </sl-menu>
                   </btrix-crawl-list-item>
                 `
               ),
@@ -1172,7 +1179,7 @@ export class WorkflowDetail extends LiteElement {
   private async cancel() {
     if (!this.workflow?.currCrawlId) return;
 
-    this.isStoppingOrCanceling = true;
+    this.isCancelingOrDeletingCrawl = true;
 
     try {
       const data = await this.apiFetch(
@@ -1195,13 +1202,13 @@ export class WorkflowDetail extends LiteElement {
       });
     }
 
-    this.isStoppingOrCanceling = false;
+    this.isCancelingOrDeletingCrawl = false;
   }
 
   private async stop() {
     if (!this.workflow?.currCrawlId) return;
 
-    this.isStoppingOrCanceling = true;
+    this.isCancelingOrDeletingCrawl = true;
 
     try {
       const data = await this.apiFetch(
@@ -1224,7 +1231,7 @@ export class WorkflowDetail extends LiteElement {
       });
     }
 
-    this.isStoppingOrCanceling = false;
+    this.isCancelingOrDeletingCrawl = false;
   }
 
   private async runNow(): Promise<void> {
@@ -1256,6 +1263,37 @@ export class WorkflowDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteCrawl(crawl: Crawl) {
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${crawl.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [crawl.id],
+          }),
+        }
+      );
+
+      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      this.notify({
+        message: msg(`Successfully deleted crawl`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.fetchCrawls();
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e.isApiError && e.message) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
