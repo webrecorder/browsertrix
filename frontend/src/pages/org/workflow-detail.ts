@@ -25,7 +25,7 @@ import { DASHBOARD_ROUTE } from "../../routes";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
-
+const DEFAULT_SECTION: Tab = "artifacts";
 const POLL_INTERVAL_SECONDS = 10;
 
 /**
@@ -112,10 +112,7 @@ export class WorkflowDetail extends LiteElement {
 
   connectedCallback(): void {
     // Set initial active section and dialog based on URL #hash value
-    const hash = window.location.hash.slice(1);
-    if (SECTIONS.includes(hash as any)) {
-      this.activePanel = hash as Tab;
-    }
+    this.getActivePanelFromHash();
 
     if (
       this.openDialogName &&
@@ -124,11 +121,13 @@ export class WorkflowDetail extends LiteElement {
       this.isDialogVisible = true;
     }
     super.connectedCallback();
+    window.addEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   disconnectedCallback(): void {
     this.stopPoll();
     super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -149,14 +148,39 @@ export class WorkflowDetail extends LiteElement {
         });
       }
 
-      if (this.activePanel !== window.location.hash.slice(1)) {
-        window.location.hash = `#${this.activePanel}`;
-      }
-
       if (this.activePanel === "artifacts") {
         this.fetchCrawls();
       }
     }
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    const prevWorkflow = changedProperties.get("workflow");
+    if (prevWorkflow?.currCrawlId && !this.workflow?.currCrawlId) {
+      this.goToTab(DEFAULT_SECTION, { replace: true });
+    }
+  }
+
+  private getActivePanelFromHash = () => {
+    const hashValue = window.location.hash.slice(1);
+    if (
+      SECTIONS.includes(hashValue as any) &&
+      !(hashValue === "watch" && !this.workflow?.currCrawlId)
+    ) {
+      this.activePanel = hashValue as Tab;
+    } else {
+      this.goToTab(DEFAULT_SECTION, { replace: true });
+    }
+  };
+
+  private goToTab(tab: Tab, { replace = false } = {}) {
+    const path = `${window.location.href.split("#")[0]}#${tab}`;
+    if (replace) {
+      window.history.replaceState(null, "", path);
+    } else {
+      window.history.pushState(null, "", path);
+    }
+    this.activePanel = tab;
   }
 
   private async fetchWorkflow() {
@@ -165,25 +189,9 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       this.workflow = await this.getWorkflow();
-      let activePanel = this.activePanel;
-
-      if (!this.activePanel) {
-        if (this.workflow.currCrawlId) {
-          activePanel = "watch";
-        } else {
-          activePanel = "artifacts";
-        }
+      if (this.workflow.currCrawlId) {
+        this.fetchCurrentCrawl();
       }
-
-      if (activePanel === "watch") {
-        if (this.workflow.currCrawlId) {
-          this.fetchCurrentCrawl();
-        } else {
-          activePanel = "artifacts";
-        }
-      }
-
-      this.activePanel = activePanel;
     } catch (e: any) {
       this.notify({
         message:
@@ -387,12 +395,17 @@ export class WorkflowDetail extends LiteElement {
           <sl-button
             size="small"
             @click=${() => this.stop()}
-            ?disabled=${this.workflow?.currCrawlState === "stopping"}
+            ?disabled=${!this.workflow?.currCrawlId ||
+            this.workflow?.currCrawlState === "stopping"}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             <span>${msg("Stop")}</span>
           </sl-button>
-          <sl-button size="small" @click=${() => this.attemptCancel()}>
+          <sl-button
+            size="small"
+            @click=${() => this.attemptCancel()}
+            ?disabled=${!this.workflow?.currCrawlId}
+          >
             <sl-icon
               name="x-octagon"
               slot="prefix"
@@ -415,7 +428,6 @@ export class WorkflowDetail extends LiteElement {
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm"
           : "text-neutral-600 hover:bg-neutral-50"}"
-        @click=${() => (this.activePanel = tabName)}
         aria-selected=${isActive}
       >
         ${this.tabLabels[tabName]}
@@ -1224,7 +1236,6 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
-      this.activePanel = "watch";
       this.fetchWorkflow();
 
       this.notify({
@@ -1233,8 +1244,8 @@ export class WorkflowDetail extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${this.workflowId}"
-              @click="${this.navLink.bind(this)}"
+              href="/orgs/${this.orgId}/workflows/crawl/${this
+                .workflowId}#watch"
               >Watch crawl</a
             >`
         ),
