@@ -282,6 +282,13 @@ class CrawlConfigOps:
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
+        await self.crawl_configs.create_index(
+            [
+                ("currCrawlStartTime", pymongo.DESCENDING),
+                ("lastCrawlTime", pymongo.DESCENDING),
+            ]
+        )
+
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
 
         await self.config_revs.create_index(
@@ -531,7 +538,15 @@ class CrawlConfigOps:
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+            # if sorting by lastCrawlTime, make sure running crawls show up first
+            # if sorting in default (descending) order based on their start time
+            if sort_by == "lastCrawlTime":
+                sort_query = {
+                    "currCrawlStartTime": sort_direction,
+                    "lastCrawlTime": sort_direction,
+                }
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [

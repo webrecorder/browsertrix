@@ -46,8 +46,9 @@ class ScheduledJob(K8sAPI):
         new_crawl = await add_new_crawl(
             self.crawls, crawl_id, crawlconfig, uuid.UUID(userid), manual=False
         )
-        return await set_curr_crawl(
-            self.crawl_configs.crawl_configs,
+        # pylint: disable=duplicate-code
+        await set_curr_crawl(
+            self.crawlconfigs.crawl_configs,
             crawlconfig.id,
             new_crawl["id"],
             new_crawl["started"],

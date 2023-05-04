@@ -862,7 +862,7 @@ async def add_new_crawl(
     )
 
     try:
-        result = crawls.insert_one(crawl.to_dict())
+        result = await crawls.insert_one(crawl.to_dict())
         return {"id": str(result.inserted_id), "started": started}
     except pymongo.errors.DuplicateKeyError:
         # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
