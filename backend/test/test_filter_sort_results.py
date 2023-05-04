@@ -431,13 +431,19 @@ def test_sort_crawl_configs(
     data = r.json()
     items = data["items"]
 
+    curr_crawl_time = None
     last_crawl_time = None
     for config in items:
-        if not config.get("lastCrawlTime"):
+        config_curr_time = config.get("currCrawlStartTime")
+        config_last_time = config.get("lastCrawlTime")
+        if not config_curr_time or config_last_time:
             continue
-        if last_crawl_time:
-            assert config["lastCrawlTime"] <= last_crawl_time
-        last_crawl_time = config["lastCrawlTime"]
+        if curr_crawl_time and config_curr_time:
+            assert config_curr_time <= curr_crawl_time
+        elif last_crawl_time and config_last_time:
+            assert config_last_time <= last_crawl_time
+        curr_crawl_time = config_curr_time
+        last_crawl_time = config_last_time
 
     # Sort by lastCrawlTime, ascending
     r = requests.get(
@@ -447,13 +453,19 @@ def test_sort_crawl_configs(
     data = r.json()
     items = data["items"]
 
+    curr_crawl_time = None
     last_crawl_time = None
     for config in items:
-        if not config.get("lastCrawlTime"):
+        config_curr_time = config.get("currCrawlStartTime")
+        config_last_time = config.get("lastCrawlTime")
+        if not config_curr_time or config_last_time:
             continue
-        if last_crawl_time:
-            assert config["lastCrawlTime"] >= last_crawl_time
-        last_crawl_time = config["lastCrawlTime"]
+        if curr_crawl_time and config_curr_time:
+            assert config_curr_time >= curr_crawl_time
+        elif last_crawl_time and config_last_time:
+            assert config_last_time >= last_crawl_time
+        curr_crawl_time = config_curr_time
+        last_crawl_time = config_last_time
 
     # Invalid sort value
     r = requests.get(
