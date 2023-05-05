@@ -76,6 +76,18 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
+      case "waiting": {
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: var(--sl-color-orange-600)"
+        ></sl-icon>`;
+        label = msg("Waiting");
+        break;
+      }
+
       case "running": {
         icon = html`<sl-icon
           name="dot"

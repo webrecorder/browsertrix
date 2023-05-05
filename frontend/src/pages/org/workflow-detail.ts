@@ -794,15 +794,16 @@ export class WorkflowDetail extends LiteElement {
     if (!this.authState || !this.workflow?.currCrawlState) return "";
 
     const isStarting = this.workflow.currCrawlState === "starting";
+    const isWaiting = this.workflow.currCrawlState === "waiting";
     const isRunning = this.workflow.currCrawlState === "running";
     const isStopping = this.workflow.currCrawlState === "stopping";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      ${isStarting
+      ${isStarting || isWaiting
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${msg("Crawl starting...")}
+              ${isStarting ? msg("Crawl starting...") : msg("Crawl waiting for available resources before it can start...")}
             </p>
           </div>`
         : isActive(this.workflow.currCrawlState)

@@ -236,7 +236,7 @@ class CrawlOps:
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": ["running", "starting", "stopping"]}
+            query["state"] = {"$in": ["running", "starting", "stopping", "waiting"]}
 
         # Override running_only if state list is explicitly passed
         if state:
