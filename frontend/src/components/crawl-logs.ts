@@ -9,6 +9,7 @@ import type { APIPaginatedList } from "../types/api";
 type CrawlLog = {
   timestamp: string;
   logLevel: "error";
+  details: Record<string, any>;
   context: string;
   message: string;
 };
@@ -24,8 +25,9 @@ export class CrawlLogs extends LitElement {
 
       .row {
         display: grid;
-        grid-template-columns: 9rem 4rem 5rem 1fr;
+        grid-template-columns: 9rem 4rem 14rem 1fr;
         line-height: 1.3;
+        max-width: 800px;
       }
 
       .cell {
@@ -53,6 +55,13 @@ export class CrawlLogs extends LitElement {
       .message {
         white-space: pre-wrap;
       }
+
+      .url {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
     `,
   ];
 
@@ -66,8 +75,8 @@ export class CrawlLogs extends LitElement {
           <div class="row">
             <div class="cell">${msg("Date")}</div>
             <div class="cell">${msg("Level")}</div>
-            <div class="cell">${msg("Context")}</div>
             <div class="cell">${msg("Error Message")}</div>
+            <div class="cell">${msg("Page URL")}</div>
           </div>
         </btrix-numbered-list-header>
         ${this.logs.items.map(
@@ -90,8 +99,8 @@ export class CrawlLogs extends LitElement {
                 <div>
                   <span class="tag">${log.logLevel}</span>
                 </div>
-                <div>${log.context}</div>
                 <div class="message">${log.message}</div>
+                <div class="url" title="${log.details?.page}">${log.details?.page}</div>
               </div>
             </btrix-numbered-list-item>
           `
