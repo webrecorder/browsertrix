@@ -87,20 +87,24 @@ export class CrawlPendingExclusions extends LiteElement {
     }
 
     return html`
-      <btrix-numbered-list
-        class="text-xs break-all"
-        .items=${this.pageResults.map((url, idx) => ({
-          order: idx + 1 + (this.page - 1) * this.pageSize,
-          content: html`<a
-            href=${url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >${url}</a
-          >`,
-        }))}
-        aria-live="polite"
-        style="--link-color: var(--sl-color-danger-600); --link-hover-color: var(--sl-color-danger-400);"
-      ></btrix-numbered-list>
+      <btrix-numbered-list class="text-xs break-all" aria-live="polite">
+        ${this.pageResults.map(
+          (url, idx) => html`
+            <btrix-numbered-list-item>
+              <span class="text-red-600" slot="marker"
+                >${idx + 1 + (this.page - 1) * this.pageSize}.</span
+              >
+              <a
+                class="text-red-600 hover:text-red-500"
+                href=${url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                >${url}</a
+              >
+            </btrix-numbered-list-item>
+          `
+        )}
+      </btrix-numbered-list>
     `;
   }
 }

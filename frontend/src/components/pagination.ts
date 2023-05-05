@@ -314,6 +314,7 @@ export class Pagination extends LitElement {
     this.dispatchEvent(
       <PageChangeEvent>new CustomEvent("page-change", {
         detail: { page: page, pages: this.pages },
+        composed: true,
       })
     );
   }

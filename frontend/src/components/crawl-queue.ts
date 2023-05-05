@@ -100,29 +100,28 @@ export class CrawlQueue extends LiteElement {
 
     if (!this.queue) return;
 
-    const excludedURLStyles = [
-      "--marker-color: var(--sl-color-danger-500)",
-      "--link-color: var(--sl-color-danger-500)",
-      "--link-hover-color: var(--sl-color-danger-400)",
-    ].join(";");
-
     return html`
-      <btrix-numbered-list
-        class="text-xs break-all"
-        .items=${this.queue.results.map((url, idx) => ({
-          order: idx + 1,
-          style: this.queue!.matched.some((v) => v === url)
-            ? excludedURLStyles
-            : "",
-          content: html`<a
-            href=${url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >${url}</a
-          >`,
-        }))}
-        aria-live="polite"
-      ></btrix-numbered-list>
+      <btrix-numbered-list class="text-xs break-all" aria-live="polite">
+        ${this.queue.results.map((url, idx) => {
+          const isMatch = this.queue!.matched.some((v) => v === url);
+          return html`
+            <btrix-numbered-list-item>
+              <span class="${isMatch ? "text-red-600" : ""}" slot="marker"
+                >${idx + 1}.</span
+              >
+              <a
+                class="${isMatch
+                  ? "text-red-500 hover:text-red-400"
+                  : "text-blue-500 hover:text-blue-400"}"
+                href=${url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                >${url}</a
+              >
+            </btrix-numbered-list-item>
+          `;
+        })}
+      </btrix-numbered-list>
 
       <footer class="text-center">
         ${when(

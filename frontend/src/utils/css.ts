@@ -18,10 +18,9 @@ export const srOnly = css`
   }
 `;
 
-// From https://tailwindcss.com/docs/text-overflow#truncate
 export const truncate = css`
   .truncate {
-    overflow: hidden;
+    overflow: clip visible;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

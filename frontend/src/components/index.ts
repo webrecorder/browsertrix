@@ -46,9 +46,13 @@ import("./queue-exclusion-form").then(({ QueueExclusionForm }) => {
 import("./queue-exclusion-table").then(({ QueueExclusionTable }) => {
   customElements.define("btrix-queue-exclusion-table", QueueExclusionTable);
 });
-import("./numbered-list").then(({ NumberedList }) => {
-  customElements.define("btrix-numbered-list", NumberedList);
-});
+import("./numbered-list").then(
+  ({ NumberedList, NumberedListItem, NumberedListHeader }) => {
+    customElements.define("btrix-numbered-list", NumberedList);
+    customElements.define("btrix-numbered-list-item", NumberedListItem);
+    customElements.define("btrix-numbered-list-header", NumberedListHeader);
+  }
+);
 import("./pagination").then(({ Pagination }) => {
   customElements.define("btrix-pagination", Pagination);
 });
@@ -89,6 +93,9 @@ import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
 import("./workflow-list").then(({ WorkflowListItem, WorkflowList }) => {
   customElements.define("btrix-workflow-list-item", WorkflowListItem);
   customElements.define("btrix-workflow-list", WorkflowList);
+});
+import("./crawl-logs").then(({ CrawlLogs }) => {
+  customElements.define("btrix-crawl-logs", CrawlLogs);
 });
 import("./section-heading").then(({ SectionHeading }) => {
   customElements.define("btrix-section-heading", SectionHeading);
