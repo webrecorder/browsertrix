@@ -304,6 +304,18 @@ export class ConfigDetails extends LiteElement {
           : msg("None"),
         true
       )}
+      ${when(
+        ["host", "domain", "custom", "any"].includes(
+          primarySeedConfig.scopeType || seedsConfig.scopeType
+        ),
+        () =>
+          this.renderSetting(
+            msg("Max Depth"),
+            primarySeedConfig.depth
+              ? msg(str`${primarySeedConfig.depth} hop(s)`)
+              : msg("None")
+          )
+      )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(primarySeedConfig.extraHops ?? seedsConfig.extraHops)

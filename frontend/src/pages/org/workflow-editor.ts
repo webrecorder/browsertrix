@@ -79,6 +79,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
+  maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
@@ -148,6 +149,7 @@ const getDefaultFormState = (): FormState => ({
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
+  maxScopeDepth: null,
   scopeType: "host",
   exclusions: [],
   pageLimit: null,
@@ -485,6 +487,7 @@ export class CrawlConfigEditor extends LiteElement {
         seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
       pageExtraDelaySeconds:
         seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
+      maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
       lang: this.initialWorkflow.config.lang,
@@ -1045,6 +1048,29 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
+        ["host", "domain", "custom", "any"].includes(this.formState.scopeType),
+        () => html`
+          ${this.renderFormCol(html`
+            <sl-input
+              name="maxScopeDepth"
+              label=${msg("Max Depth")}
+              value=${this.formState.maxScopeDepth}
+              placeholder=${msg("Default: Unlimited")}
+              min="0"
+              type="number"
+              inputmode="numeric"
+            >
+              <span slot="suffix">${msg("hops")}</span>
+            </sl-input>
+          `)}
+          ${this.renderHelpTextCol(
+            msg(
+              `Limits how many hops away the crawler can visit while staying within the Start URL Scope.`
+            )
+          )}
+        `
+      )}
+      ${when(
         this.formState.scopeType === "custom",
         () => html`
           ${this.renderFormCol(html`
@@ -1076,7 +1102,7 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`),
+        Start URL Scope.`),
         false
       )}
       <div class="col-span-5">
@@ -2047,6 +2073,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
+
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
@@ -2103,6 +2130,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
+
+    if (
+      ["host", "domain", "custom", "any"].includes(this.formState.scopeType)
+    ) {
+      primarySeed.depth = this.formState.maxScopeDepth;
+    }
+
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: additionalSeedUrlList.length

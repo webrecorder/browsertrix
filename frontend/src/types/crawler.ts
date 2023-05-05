@@ -14,6 +14,7 @@ export type Seed = {
   exclude?: string[] | null;
   limit?: number | null;
   extraHops?: number | null;
+  depth?: number | null;
 };
 
 export type SeedConfig = Pick<
@@ -28,6 +29,7 @@ export type SeedConfig = Pick<
   pageExtraDelay: number | null;
   behaviors?: string | null;
   extraHops?: number | null;
+  depth?: number | null;
 };
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
