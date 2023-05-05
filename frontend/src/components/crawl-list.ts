@@ -20,8 +20,9 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
+import type { SlMenu } from "@shoelace-style/shoelace";
 
+import type { Button } from "./button";
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
@@ -190,7 +191,7 @@ export class CrawlListItem extends LitElement {
   dropdown!: HTMLElement;
 
   @query(".dropdownTrigger")
-  dropdownTrigger!: SlIconButton;
+  dropdownTrigger!: Button;
 
   @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
   private menuArr!: Array<SlMenu>;
@@ -336,10 +337,10 @@ export class CrawlListItem extends LitElement {
       </div>
       <div class="col action">
         <slot name="menuTrigger">
-          <sl-icon-button
+          <btrix-button
             class="dropdownTrigger"
-            name="three-dots-vertical"
             label=${msg("Actions")}
+            icon
             @click=${(e: MouseEvent) => {
               // Prevent anchor link default behavior
               e.preventDefault();
@@ -361,7 +362,9 @@ export class CrawlListItem extends LitElement {
               }
               this.dropdownIsOpen = false;
             }}
-          ></sl-icon-button>
+          >
+            <sl-icon name="three-dots-vertical"></sl-icon>
+          </btrix-button>
         </slot>
       </div>
     </a>`;
@@ -443,6 +446,11 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
+      .listHeader, .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
+      }
+
       .listHeader {
         line-height: 1;
       }
@@ -451,8 +459,6 @@ export class CrawlList extends LitElement {
         border: 1px solid var(--sl-panel-border-color);
         border-radius: var(--sl-border-radius-medium);
         overflow: hidden;
-        margin-left: var(--row-offset);
-        margin-right: var(--row-offset);
       }
 
       .row {
