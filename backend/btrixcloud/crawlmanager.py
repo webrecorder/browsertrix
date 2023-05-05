@@ -24,10 +24,6 @@ class CrawlManager(K8sAPI):
         self.job_image = os.environ["JOB_IMAGE"]
         self.job_image_pull_policy = os.environ.get("JOB_PULL_POLICY", "Always")
 
-        self.no_delete_jobs = os.environ.get("NO_DELETE_JOBS", "0") != "0"
-
-        self.crawler_node_type = os.environ.get("CRAWLER_NODE_TYPE", "")
-
         self.cron_namespace = os.environ.get("CRON_NAMESPACE", "default")
 
         self._default_storages = {}
