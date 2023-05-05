@@ -792,7 +792,7 @@ ${this.crawl?.notes}
                         class="h-4 pr-2 shrink-0 text-neutral-600"
                       ></sl-icon>
                       <a
-                        class="text-primary hover:underline"
+                        class="text-primary hover:underline truncate mr-2"
                         href=${file.path}
                         download
                         title=${file.name}
