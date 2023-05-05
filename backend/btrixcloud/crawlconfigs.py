@@ -469,6 +469,7 @@ class CrawlConfigOps:
         name: str = None,
         description: str = None,
         tags: Optional[List[str]] = None,
+        schedule: Optional[bool] = None,
         sort_by: str = None,
         sort_direction: int = -1,
     ):
@@ -494,6 +495,12 @@ class CrawlConfigOps:
 
         if description:
             match_query["description"] = description
+
+        if schedule is not None:
+            if schedule:
+                match_query["schedule"] = {"$nin": ["", None]}
+            else:
+                match_query["schedule"] = {"$in": ["", None]}
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -977,6 +984,7 @@ def init_crawl_config_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
+        schedule: Optional[bool] = None,
         sortBy: str = None,
         sortDirection: int = -1,
     ):
@@ -998,6 +1006,7 @@ def init_crawl_config_api(
             name=name,
             description=description,
             tags=tag,
+            schedule=schedule,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

@@ -11,6 +11,7 @@ UPDATED_TAGS = ["tag3", "tag4"]
 
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Create crawl config
+    sample_crawl_data["schedule"] = "0 0 * * *"
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
