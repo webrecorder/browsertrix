@@ -244,7 +244,7 @@ class BtrixOperator(K8sAPI):
                     "apiVersion": "v1",
                     "resource": "persistentvolumeclaims",
                     "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                }
+                },
             ]
         }
 
