@@ -23,9 +23,14 @@ class Migration(BaseMigration):
         crawl_configs = self.mdb["crawl_configs"]
         crawls = self.mdb["crawls"]
 
-        configs = [res async for res in crawl_configs.find({})]
+        configs = [res async for res in crawl_configs.find({"inactive": {"$ne": True}})]
         if not configs:
             return
 
         for config in configs:
-            await update_config_crawl_stats(crawl_configs, crawls, config["_id"])
+            config_id = config["_id"]
+            try:
+                await update_config_crawl_stats(crawl_configs, crawls, config_id)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(f"Unable to update workflow {config_id}: {err}", flush=True)
