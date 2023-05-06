@@ -67,10 +67,12 @@ def test_get_configs_by_description(
         assert config["description"] == description
 
 
-def test_get_configs_by_schedule_true(crawler_auth_headers, default_org_id, crawler_crawl_id):
+def test_get_configs_by_schedule_true(
+    crawler_auth_headers, default_org_id, crawler_crawl_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?schedule=True",
-        headers=crawler_auth_headers
+        headers=crawler_auth_headers,
     )
     data = r.json()
     assert data["total"] == 1
@@ -78,10 +80,12 @@ def test_get_configs_by_schedule_true(crawler_auth_headers, default_org_id, craw
     assert workflow.get("schedule") not in ("", None)
 
 
-def test_get_configs_by_schedule_false(crawler_auth_headers, default_org_id, crawler_crawl_id):
+def test_get_configs_by_schedule_false(
+    crawler_auth_headers, default_org_id, crawler_crawl_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?schedule=False",
-        headers=crawler_auth_headers
+        headers=crawler_auth_headers,
     )
     data = r.json()
     assert data["total"] >= 1

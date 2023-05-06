@@ -622,7 +622,11 @@ class CrawlConfigOps:
 
     async def update_crawl_stats(self, cid: uuid.UUID):
         """Update crawl count, total size, and last crawl information for config."""
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        result = await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        if not result:
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' not found to update"
+            )
 
     def _add_curr_crawl_stats(self, crawlconfig, crawl):
         """Add stats from current running crawl, if any"""
@@ -920,11 +924,6 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         {"$set": update_query},
         return_document=pymongo.ReturnDocument.AFTER,
     )
-
-    if not result:
-        raise HTTPException(
-            status_code=404, detail=f"Crawl Config '{cid}' not found to update"
-        )
 
     return result
 
