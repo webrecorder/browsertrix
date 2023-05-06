@@ -139,6 +139,7 @@ class BtrixOperator(K8sAPI):
 
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
+        cid = spec["cid"]
 
         scale = spec.get("scale", 1)
         status.scale = scale
@@ -149,21 +150,19 @@ class BtrixOperator(K8sAPI):
         if data.finalizing:
             # if not yet finished, assume it was canceled, mark as such
             if not status.finished:
-                await self.cancel_crawl(redis_url, crawl_id, status, "canceled")
+                await self.cancel_crawl(redis_url, crawl_id, cid, status, "canceled")
 
             return await self.finalize_crawl(crawl_id, status, data.related)
 
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
 
-        cid = spec["cid"]
-
         try:
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
         # pylint: disable=bare-except, broad-except
         except:
             # fail crawl if config somehow missing, shouldn't generally happen
-            await self.cancel_crawl(redis_url, crawl_id, status, "failed")
+            await self.cancel_crawl(redis_url, crawl_id, cid, status, "failed")
 
             return self._done_response(status)
 
@@ -278,10 +277,10 @@ class BtrixOperator(K8sAPI):
             print("PVC Delete failed", exc, flush=True)
 
     # pylint: disable=too-many-arguments
-    async def cancel_crawl(self, redis_url, crawl_id, status, state):
+    async def cancel_crawl(self, redis_url, crawl_id, cid, status, state):
         """immediately cancel crawl with specified state"""
         redis = await self._get_redis(redis_url)
-        await self.mark_finished(redis, crawl_id, status, state)
+        await self.mark_finished(redis, crawl_id, cid, status, state)
 
     def _done_response(self, status, finalized=False):
         """done response for removing crawl"""
@@ -421,25 +420,29 @@ class BtrixOperator(K8sAPI):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                return await self.mark_finished(redis, crawl.id, status, state="failed")
+                return await self.mark_finished(
+                    redis, crawl.id, crawl.cid, status, state="failed"
+                )
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             state = "complete" if completed else "partial_complete"
 
             status = await self.mark_finished(
-                redis, crawl.id, status, state, crawl, stats
+                redis, crawl.id, crawl.cid, status, state, crawl, stats
             )
 
         # check if all crawlers failed
         if failed >= crawl.scale:
-            status = await self.mark_finished(redis, crawl.id, status, state="failed")
+            status = await self.mark_finished(
+                redis, crawl.id, crawl.cid, status, state="failed"
+            )
 
         return status
 
     # pylint: disable=too-many-arguments
     async def mark_finished(
-        self, redis, crawl_id, status, state, crawl=None, stats=None
+        self, redis, crawl_id, cid, status, state, crawl=None, stats=None
     ):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
@@ -448,10 +451,9 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        crawl = await update_crawl(self.crawls, crawl_id, **kwargs)
-        crawl_cid = crawl.get("cid")
+        await update_crawl(self.crawls, crawl_id, **kwargs)
 
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, crawl_cid)
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
