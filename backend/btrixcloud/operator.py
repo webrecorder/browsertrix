@@ -20,7 +20,7 @@ from .k8sapi import K8sAPI
 from .db import init_db
 from .orgs import inc_org_stats
 from .colls import add_successful_crawl_to_collections
-from .crawlconfigs import update_config_crawl_stats
+from .crawlconfigs import stats_recompute_last
 from .crawls import (
     CrawlFile,
     CrawlCompleteIn,
@@ -505,6 +505,12 @@ class BtrixOperator(K8sAPI):
         self, redis, crawl_id, cid, status, state, crawl=None, stats=None
     ):
         """mark crawl as finished, set finished timestamp and final state"""
+
+        # already marked as finished
+        if status.state == state:
+            print("already finished, ignoring mark_finished")
+            return status
+
         finished = dt_now()
 
         status.state = state

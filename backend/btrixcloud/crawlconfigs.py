@@ -658,9 +658,11 @@ class CrawlConfigOps:
 
         return None
 
-    async def update_crawl_stats(self, cid: uuid.UUID):
-        """Update crawl count, total size, and last crawl information for config."""
-        result = await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+    async def stats_recompute_remove_crawl(self, cid: uuid.UUID, size: int):
+        """Update last crawl, crawl count and total size by removing size of last crawl"""
+        result = await stats_recompute_last(
+            self.crawl_configs, self.crawls, cid, -size, -1
+        )
         if not result:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found to update"
@@ -943,7 +945,7 @@ async def set_config_current_crawl_info(
 
 # ============================================================================
 # pylint: disable=too-many-locals
-async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
+async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
     """Re-calculate and update crawl statistics for config.
 
     Should only be called when a crawl completes from operator or on migration
@@ -1000,6 +1002,43 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         {"_id": cid, "inactive": {"$ne": True}},
         {"$set": update_query},
         return_document=pymongo.ReturnDocument.AFTER,
+    )
+
+    return result
+
+
+# ============================================================================
+async def stats_recompute_last(
+    crawl_configs, crawls, cid: uuid.UUID, size: int, inc_crawls=1
+):
+    """recompute stats by incrementing size counter and number of crawls"""
+    update_query = {
+        "lastCrawlId": None,
+        "lastCrawlStartTime": None,
+        "lastStartedBy": None,
+        "lastCrawlTime": None,
+        "lastCrawlState": None,
+        "lastCrawlSize": None,
+    }
+
+    match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
+    last_crawl = await crawls.find_one(
+        match_query, sort=[("finished", pymongo.DESCENDING)]
+    )
+
+    if last_crawl:
+        update_query["lastCrawlId"] = str(last_crawl.get("_id"))
+        update_query["lastCrawlStartTime"] = last_crawl.get("started")
+        update_query["lastStartedBy"] = last_crawl.get("userid")
+        update_query["lastCrawlTime"] = last_crawl.get("finished")
+        update_query["lastCrawlState"] = last_crawl.get("state")
+        update_query["lastCrawlSize"] = sum(
+            file_.get("size", 0) for file_ in last_crawl.get("files", [])
+        )
+
+    result = await crawl_configs.find_one_and_update(
+        {"_id": cid, "inactive": {"$ne": True}},
+        {"$set": update_query, "$inc": {"totalSize": size, "crawlCount": inc_crawls}},
     )
 
     return result
