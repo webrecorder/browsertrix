@@ -181,7 +181,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "runNow": False,
         "name": "Crawler User Test Crawl",
         "description": "crawler test crawl",
-        "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
+        "config": {"seeds": [{"url": "https://webrecorder.net/"}], "pageExtraDelay": 5},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
