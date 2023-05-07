@@ -201,6 +201,7 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlStartTime: Optional[datetime]
     currCrawlState: Optional[str]
     currCrawlSize: Optional[int] = 0
+    currCrawlStopping: Optional[bool] = False
 
     profileName: Optional[str]
 
@@ -637,6 +638,7 @@ class CrawlConfigOps:
         crawlconfig.currCrawlStartTime = crawl.started
         crawlconfig.currCrawlState = crawl.state
         crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.currCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active

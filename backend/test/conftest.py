@@ -175,6 +175,25 @@ def crawler_userid(crawler_auth_headers):
 
 
 @pytest.fixture(scope="session")
+def _crawler_create_config_only(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": False,
+        "name": "Crawler User Test Crawl",
+        "description": "crawler test crawl",
+        "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    global _crawler_config_id
+    _crawler_config_id = data["added"]
+
+@pytest.fixture(scope="session")
 def crawler_crawl_id(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
@@ -238,6 +257,10 @@ def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
 def crawler_config_id(crawler_crawl_id):
     return _crawler_config_id
 
+
+@pytest.fixture(scope="session")
+def crawler_config_id_only(_crawler_create_config_only):
+    return _crawler_config_id
 
 @pytest.fixture(scope="session")
 def sample_crawl_data():
