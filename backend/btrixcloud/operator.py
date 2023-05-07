@@ -391,7 +391,7 @@ class BtrixOperator(K8sAPI):
             )
 
         if crawl.stopping:
-            await redis.set(f"{crawl.id}:crawl-stop", "1")
+            await redis.set("crawl-stop", "1")
 
         # optimization: don't update db once crawl is already running
         # will set stats at when crawl is finished, otherwise can read
