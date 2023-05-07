@@ -297,6 +297,7 @@ export class WorkflowListItem extends LitElement {
                   state=${workflow.currCrawlState ||
                   workflow.lastCrawlState ||
                   msg("No Crawls Yet")}
+                  ?stopping=${workflow.currCrawlStopping}
                 ></btrix-crawl-status>
               `
           )}

@@ -71,6 +71,7 @@ export type Workflow = CrawlConfig & {
   currCrawlState: CrawlState | null;
   currCrawlStartTime: string | null;
   currCrawlSize: number | null;
+  currCrawlStopping: boolean | null;
   totalSize: string | null;
   inactive: boolean;
   firstSeed: string;
@@ -119,4 +120,5 @@ export type Crawl = CrawlConfig & {
   notes: string | null;
   firstSeed: string;
   seedCount: number;
+  stopping: boolean;
 };

@@ -15,6 +15,9 @@ export class CrawlStatus extends LitElement {
   @property({ type: Boolean })
   hideLabel = false;
 
+  @property({ type: Boolean })
+  stopping = false;
+
   static styles = [
     animatePulse,
     css`
@@ -41,6 +44,10 @@ export class CrawlStatus extends LitElement {
       .label {
         height: 1rem;
         line-height: 1rem;
+      }
+
+      .stopping {
+        margin-left: var(--sl-spacing-x-small);
       }
 
       sl-skeleton {
@@ -184,6 +191,14 @@ export class CrawlStatus extends LitElement {
     if (label) {
       return html`<div class="wrapper with-label">
         ${icon}<span class="label">${label}</span>
+        ${this.stopping ? html`
+        <sl-icon
+          name="dash-circle"
+          class="stopping animatePulse"
+          title="Stopping Crawl..."
+          slot="prefix"
+          style="color: var(--sl-color-orange-600)"
+        ></sl-icon>` : ``}
       </div>`;
     }
     return html`<div class="wrapper with-label">
