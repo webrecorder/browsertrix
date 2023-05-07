@@ -402,6 +402,8 @@ class BtrixOperator(K8sAPI):
         if crawl.stopping:
             print("Graceful Stop")
             await redis.set(f"{crawl.id}:stopping", "1")
+            # backwards compatibility with older crawler
+            await redis.set("crawl-stop", "1")
 
         # optimization: don't update db once crawl is already running
         # will set stats at when crawl is finished, otherwise can read
