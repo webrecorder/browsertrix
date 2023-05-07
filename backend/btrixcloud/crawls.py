@@ -432,8 +432,12 @@ class CrawlOps:
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
         if crawl.state in RUNNING_STATES:
-            redis = await self.get_redis(crawl.id)
-            crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+            try:
+                redis = await self.get_redis(crawl.id)
+                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+            # redis not available, ignore
+            except exceptions.ConnectionError:
+                pass
 
         return crawl
 
