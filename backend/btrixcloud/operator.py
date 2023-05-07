@@ -86,7 +86,10 @@ class CrawlStatus(BaseModel):
     size: str = ""
     scale: int = 1
     filesAdded: int = 0
+    filesAddedSize: int = 0
     finished: Optional[str] = None
+    stopping: bool = False
+    # forceRestart: Optional[str]
 
 
 # ============================================================================
@@ -356,14 +359,15 @@ class BtrixOperator(K8sAPI):
                 msg = json.loads(file_done)
                 # add completed file
                 if msg.get("filename"):
-                    await self.add_file_to_crawl(msg, crawl)
+                    await self.add_file_to_crawl(msg, crawl, redis)
                     await redis.incr("filesAdded")
 
                 # get next file done
                 file_done = await redis.lpop(self.done_key)
 
-            # ensure filesAdded always set
+            # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
+            status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
             return await self.update_crawl_state(redis, crawl, status, pods)
@@ -388,7 +392,7 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def add_file_to_crawl(self, cc_data, crawl):
+    async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
 
         filecomplete = CrawlCompleteIn(**cc_data)
@@ -407,6 +411,8 @@ class BtrixOperator(K8sAPI):
             size=filecomplete.size,
             hash=filecomplete.hash,
         )
+
+        await redis.incr("filesAddedSize", filecomplete.size)
 
         await add_crawl_file(self.crawls, crawl.id, crawl_file)
 
