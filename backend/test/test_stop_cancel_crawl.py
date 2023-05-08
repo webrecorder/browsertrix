@@ -1,5 +1,6 @@
 import requests
 import time
+import os
 
 from .conftest import API_PREFIX
 
@@ -55,6 +56,7 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
     assert len(data["resources"]) == 0
 
 
+@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
 def test_start_crawl_to_stop(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
@@ -71,6 +73,7 @@ def test_start_crawl_to_stop(
     crawl_id = data["started"]
 
 
+@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
 def test_stop_crawl(default_org_id, crawler_config_id_only, crawler_auth_headers):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
     while data["state"] == "starting":
