@@ -431,7 +431,7 @@ class BtrixOperator(K8sAPI):
         # check if at least one pod started running
         # otherwise, mark as 'waiting' and return
         if not await self.check_if_pods_running(pods):
-            if status.state != "waiting":
+            if status.state != "waiting" and status.state != "canceled":
                 await update_crawl(self.crawls, crawl.id, state="waiting")
                 status.state = "waiting"
 
