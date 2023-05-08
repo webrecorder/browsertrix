@@ -97,12 +97,12 @@ class CrawlManager(K8sAPI):
         # Create Config Map
         await self._create_config_map(
             crawlconfig,
-            STORE_PATH=storage_path,
-            STORE_FILENAME=out_filename,
-            STORAGE_NAME=storage_name,
             USER_ID=str(crawlconfig.modifiedBy),
             ORG_ID=str(crawlconfig.oid),
             CRAWL_CONFIG_ID=str(crawlconfig.id),
+            STORE_PATH=storage_path,
+            STORE_FILENAME=out_filename,
+            STORAGE_NAME=storage_name,
             PROFILE_FILENAME=profile_filename,
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout)
@@ -147,9 +147,8 @@ class CrawlManager(K8sAPI):
         ):
             await self._update_config_map(
                 crawlconfig,
-                update.scale,
+                update,
                 profile_filename,
-                update.crawlTimeout,
                 has_config_update,
             )
 
@@ -397,21 +396,23 @@ class CrawlManager(K8sAPI):
     async def _update_config_map(
         self,
         crawlconfig,
-        scale=None,
+        update,
         profile_filename=None,
-        crawl_timeout=None,
         update_config=False,
     ):
         config_map = await self.get_configmap(crawlconfig.id)
 
-        if scale is not None:
-            config_map.data["INITIAL_SCALE"] = str(scale)
+        if update.scale is not None:
+            config_map.data["INITIAL_SCALE"] = str(update.scale)
+
+        if update.crawlTimeout is not None:
+            config_map.data["CRAWL_TIMEOUT"] = str(update.crawlTimeout)
+
+        if update.crawlFilenameTemplate is not None:
+            config_map.data["STORE_FILENAME"] = update.crawlFilenameTemplate
 
         if profile_filename is not None:
             config_map.data["PROFILE_FILENAME"] = profile_filename
-
-        if crawl_timeout is not None:
-            config_map.data["CRAWL_TIMEOUT"] = str(crawl_timeout)
 
         if update_config:
             config_map.data["crawl-config.json"] = json.dumps(

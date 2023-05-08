@@ -3,6 +3,7 @@ import hashlib
 import time
 import io
 import zipfile
+import re
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
@@ -57,6 +58,10 @@ def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
 
     assert len(data["resources"]) == 1
     assert data["resources"][0]["path"]
+
+    # ensure filename matches specified pattern
+    # set in default_crawl_filename_template
+    assert re.search('/[\\d]+-testing-[\\w-]+\.wacz', data["resources"][0]["path"])
 
     assert data["tags"] == ["wr-test-1", "wr-test-2"]
 
