@@ -114,7 +114,7 @@ def main():
     if run_once_lock("btrix-init-db"):
         asyncio.create_task(
             update_and_prepare_db(
-                mdb, user_manager, org_ops, crawl_config_ops, coll_ops, invites
+                mdb, user_manager, org_ops, crawls, crawl_config_ops, coll_ops, invites
             )
         )
 

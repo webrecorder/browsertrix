@@ -18,7 +18,7 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig
+from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig, UpdateCrawlConfig
 from .db import BaseMongoModel
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -27,16 +27,13 @@ from .users import User
 from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_messages
 
 
-CRAWL_STATES = (
-    "starting",
-    "running",
-    "stopping",
-    "complete",
-    "canceled",
-    "partial_complete",
-    "timed_out",
-    "failed",
-)
+RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+
+RUNNING_AND_STARTING_STATES = ("starting", "waiting", *RUNNING_STATES)
+
+NON_RUNNING_STATES = ("complete", "canceled", "partial_complete", "timed_out", "failed")
+
+ALL_CRAWL_STATES = (*NON_RUNNING_STATES, *RUNNING_AND_STARTING_STATES)
 
 
 # ============================================================================
@@ -104,6 +101,8 @@ class Crawl(CrawlConfigCore):
 
     errors: Optional[List[str]] = []
 
+    stopping: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -155,6 +154,8 @@ class ListCrawlOut(BaseMongoModel):
     seedCount: Optional[int] = 0
     errors: Optional[List[str]]
 
+    stopping: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlCompleteIn(BaseModel):
@@ -196,6 +197,10 @@ class CrawlOps:
 
         self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
 
+    async def init_index(self):
+        """init index for crawls db collection"""
+        await self.crawls.create_index([("finished", pymongo.DESCENDING)])
+
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
@@ -232,11 +237,11 @@ class CrawlOps:
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": ["running", "starting", "stopping"]}
+            query["state"] = {"$in": list(RUNNING_AND_STARTING_STATES)}
 
         # Override running_only if state list is explicitly passed
         if state:
-            validated_states = [value for value in state if value in CRAWL_STATES]
+            validated_states = [value for value in state if value in ALL_CRAWL_STATES]
             query["state"] = {"$in": validated_states}
 
         if crawl_id:
@@ -380,45 +385,6 @@ class CrawlOps:
 
         return await self._resolve_crawl_refs(crawl, org)
 
-    async def get_latest_crawl_and_count_by_config(self, cid: str):
-        """Get crawl statistics for a crawl_config with id cid."""
-        stats = {
-            "crawl_count": 0,
-            "total_size": 0,
-            "last_crawl_id": None,
-            "last_crawl_started": None,
-            "last_crawl_finished": None,
-            "last_crawl_state": None,
-            "last_started_by": None,
-            "last_crawl_size": 0,
-        }
-
-        match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
-        cursor = self.crawls.find(match_query).sort("finished", pymongo.DESCENDING)
-        results = await cursor.to_list(length=1000)
-        if results:
-            stats["crawl_count"] = len(results)
-
-            last_crawl = Crawl.from_dict(results[0])
-            stats["last_crawl_id"] = str(last_crawl.id)
-            stats["last_crawl_started"] = last_crawl.started
-            stats["last_crawl_finished"] = last_crawl.finished
-            stats["last_crawl_state"] = last_crawl.state
-            stats["last_crawl_size"] = sum(file_.size for file_ in last_crawl.files)
-
-            user = await self.user_manager.get(last_crawl.userid)
-            if user:
-                stats["last_started_by"] = user.name
-
-            total_size = 0
-            for res in results:
-                files = res["files"]
-                for file in files:
-                    total_size += file["size"]
-            stats["total_size"] = total_size
-
-        return stats
-
     async def _resolve_crawl_refs(
         self,
         crawl: Union[CrawlOut, ListCrawlOut],
@@ -465,9 +431,13 @@ class CrawlOps:
 
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
-        if crawl.state == "running":
-            redis = await self.get_redis(crawl.id)
-            crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+        if crawl.state in RUNNING_STATES:
+            try:
+                redis = await self.get_redis(crawl.id)
+                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+            # redis not available, ignore
+            except exceptions.ConnectionError:
+                pass
 
         return crawl
 
@@ -527,12 +497,21 @@ class CrawlOps:
 
     async def delete_crawls(self, org: Organization, delete_list: DeleteCrawlList):
         """Delete a list of crawls by id for given org"""
+        cids_to_update = set()
+
         for crawl_id in delete_list.crawl_ids:
             await self._delete_crawl_files(org, crawl_id)
+            await self.remove_crawl_from_collections(org, crawl_id)
+
+            crawl = await self.get_crawl_raw(crawl_id, org)
+            cids_to_update.add(crawl["cid"])
 
         res = await self.crawls.delete_many(
             {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         )
+
+        for cid in cids_to_update:
+            await self.crawl_configs.update_crawl_stats(cid)
 
         return res.deleted_count
 
@@ -579,9 +558,13 @@ class CrawlOps:
         return {"success": True}
 
     async def update_crawl_scale(
-        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale
+        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
     ):
         """Update crawl scale in the db"""
+        crawl = await self.get_crawl_raw(crawl_id, org)
+        update = UpdateCrawlConfig(scale=crawl_scale.scale)
+        await self.crawl_configs.update_crawl_config(crawl["cid"], org, user, update)
+
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": org.id},
             {"$set": {"scale": crawl_scale.scale}},
@@ -618,11 +601,12 @@ class CrawlOps:
             )
 
             if result.get("success"):
-                # for canceletion, just set to canceled immediately if succeeded
-                await self.update_crawl_state(
-                    crawl_id, "stopping" if graceful else "canceled"
-                )
-                return {"success": True}
+                if graceful:
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id, "oid": org.id},
+                        {"$set": {"stopping": True}},
+                    )
+                return result
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -780,17 +764,17 @@ class CrawlOps:
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
+        upper_bound = skip + page_size - 1
 
         try:
             redis = await self.get_redis(crawl_id)
-            errors = await redis.lrange(f"{crawl_id}:e", skip, page_size)
+            errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
+            total = await redis.llen(f"{crawl_id}:e")
         except exceptions.ConnectionError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=503, detail="redis_connection_error")
 
         parsed_errors = parse_jsonl_error_messages(errors)
-        total = len(parsed_errors)
-
         return parsed_errors, total
 
     async def get_redis(self, crawl_id):
@@ -833,7 +817,7 @@ class CrawlOps:
 
         return resp
 
-    async def remove_crawl_from_collections(self, oid: uuid.UUID, crawl_id: str):
+    async def remove_crawl_from_collections(self, org: Organization, crawl_id: str):
         """Remove crawl with given crawl_id from all collections it belongs to"""
         collections = [
             coll["name"]
@@ -841,7 +825,7 @@ class CrawlOps:
         ]
         for collection_name in collections:
             await self.collections.find_one_and_update(
-                {"name": collection_name, "oid": oid},
+                {"name": collection_name, "oid": org.id},
                 {"$pull": {"crawlIds": crawl_id}},
             )
 
@@ -880,7 +864,11 @@ async def add_new_crawl(
 # ============================================================================
 async def update_crawl(crawls, crawl_id, **kwargs):
     """update crawl state in db"""
-    await crawls.find_one_and_update({"_id": crawl_id}, {"$set": kwargs})
+    return await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {"$set": kwargs},
+        return_document=pymongo.ReturnDocument.AFTER,
+    )
 
 
 # ============================================================================
@@ -1052,8 +1040,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
 
-        await ops.remove_crawl_from_collections(crawl.oid, crawl.id)
-
         res = await ops.delete_crawls(org, delete_list)
 
         return {"deleted": res}
@@ -1115,9 +1101,12 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         tags=["crawls"],
     )
     async def scale_crawl(
-        scale: CrawlScale, crawl_id, org: Organization = Depends(org_crawl_dep)
+        scale: CrawlScale,
+        crawl_id,
+        user: User = Depends(user_dep),
+        org: Organization = Depends(org_crawl_dep),
     ):
-        await ops.update_crawl_scale(crawl_id, org, scale)
+        await ops.update_crawl_scale(crawl_id, org, scale, user)
 
         result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
         if not result or not result.get("success"):
@@ -1240,10 +1229,10 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
 
         if crawl.finished:
             skip = (page - 1) * pageSize
-            upper_bound = skip + pageSize - 1
+            upper_bound = skip + pageSize
             errors = crawl.errors[skip:upper_bound]
             parsed_errors = parse_jsonl_error_messages(errors)
-            total = len(parsed_errors)
+            total = len(crawl.errors)
             return paginated_format(parsed_errors, total, page, pageSize)
 
         errors, total = await ops.get_errors_from_redis(crawl_id, pageSize, page)

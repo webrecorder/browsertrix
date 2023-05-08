@@ -14,6 +14,7 @@ export type Seed = {
   exclude?: string[] | null;
   limit?: number | null;
   extraHops?: number | null;
+  depth?: number | null;
 };
 
 export type SeedConfig = Pick<
@@ -28,6 +29,7 @@ export type SeedConfig = Pick<
   pageExtraDelay: number | null;
   behaviors?: string | null;
   extraHops?: number | null;
+  depth?: number | null;
 };
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
@@ -108,7 +110,7 @@ export type Crawl = CrawlConfig & {
   finished?: string; // UTC ISO date
   state: CrawlState;
   scale: number;
-  stats: { done: string; found: string } | null;
+  stats: { done: string; found: string; size: string } | null;
   resources?: { name: string; path: string; hash: string; size: number }[];
   fileCount?: number;
   fileSize?: number;

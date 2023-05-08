@@ -25,7 +25,7 @@ import { DASHBOARD_ROUTE } from "../../routes";
 
 const SECTIONS = ["artifacts", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
-
+const DEFAULT_SECTION: Tab = "artifacts";
 const POLL_INTERVAL_SECONDS = 10;
 
 /**
@@ -76,6 +76,12 @@ export class WorkflowDetail extends LiteElement {
   private isDialogVisible: boolean = false;
 
   @state()
+  private isAttemptCancel: boolean = false;
+
+  @state()
+  private isCancelingOrStoppingCrawl: boolean = false;
+
+  @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
@@ -106,10 +112,7 @@ export class WorkflowDetail extends LiteElement {
 
   connectedCallback(): void {
     // Set initial active section and dialog based on URL #hash value
-    const hash = window.location.hash.slice(1);
-    if (SECTIONS.includes(hash as any)) {
-      this.activePanel = hash as Tab;
-    }
+    this.getActivePanelFromHash();
 
     if (
       this.openDialogName &&
@@ -118,11 +121,13 @@ export class WorkflowDetail extends LiteElement {
       this.isDialogVisible = true;
     }
     super.connectedCallback();
+    window.addEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   disconnectedCallback(): void {
     this.stopPoll();
     super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -143,14 +148,40 @@ export class WorkflowDetail extends LiteElement {
         });
       }
 
-      if (this.activePanel !== window.location.hash.slice(1)) {
-        window.location.hash = `#${this.activePanel}`;
-      }
-
       if (this.activePanel === "artifacts") {
         this.fetchCrawls();
       }
     }
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    const prevWorkflow = changedProperties.get("workflow");
+    if (
+      prevWorkflow?.currCrawlId &&
+      !this.workflow?.currCrawlId &&
+      this.activePanel === "watch"
+    ) {
+      this.goToTab(DEFAULT_SECTION, { replace: true });
+    }
+  }
+
+  private getActivePanelFromHash = () => {
+    const hashValue = window.location.hash.slice(1);
+    if (SECTIONS.includes(hashValue as any)) {
+      this.activePanel = hashValue as Tab;
+    } else {
+      this.goToTab(DEFAULT_SECTION, { replace: true });
+    }
+  };
+
+  private goToTab(tab: Tab, { replace = false } = {}) {
+    const path = `${window.location.href.split("#")[0]}#${tab}`;
+    if (replace) {
+      window.history.replaceState(null, "", path);
+    } else {
+      window.history.pushState(null, "", path);
+    }
+    this.activePanel = tab;
   }
 
   private async fetchWorkflow() {
@@ -159,25 +190,9 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       this.workflow = await this.getWorkflow();
-      let activePanel = this.activePanel;
-
-      if (!this.activePanel) {
-        if (this.workflow.currCrawlId) {
-          activePanel = "watch";
-        } else {
-          activePanel = "artifacts";
-        }
+      if (this.workflow.currCrawlId) {
+        this.fetchCurrentCrawl();
       }
-
-      if (activePanel === "watch") {
-        if (this.workflow.currCrawlId) {
-          this.fetchCurrentCrawl();
-        } else {
-          activePanel = "artifacts";
-        }
-      }
-
-      this.activePanel = activePanel;
     } catch (e: any) {
       this.notify({
         message:
@@ -249,6 +264,31 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
       </div>
+
+      <btrix-dialog
+        label=${msg("Cancel Crawl?")}
+        ?open=${this.isAttemptCancel}
+        @sl-request-close=${() => (this.isAttemptCancel = false)}
+      >
+        ${msg(
+          "Canceling will discard all pages crawled. Are you sure you want to discard them?"
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button size="small" @click=${() => (this.isAttemptCancel = false)}
+            >Keep Crawling</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            ?loading=${this.isCancelingOrStoppingCrawl}
+            @click=${async () => {
+              await this.cancel();
+              this.isAttemptCancel = false;
+            }}
+            >Cancel & Discard Crawl</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -313,25 +353,70 @@ export class WorkflowDetail extends LiteElement {
     if (!this.activePanel) return;
     if (this.activePanel === "artifacts") {
       return html`<h3>
-        ${this.workflow?.crawlCount === 1
-          ? msg(str`${this.workflow?.crawlCount} Crawl`)
-          : msg(str`${this.workflow?.crawlCount} Crawls`)}
-      </h3>`;
+          ${this.workflow?.crawlCount === 1
+            ? msg(str`${this.workflow?.crawlCount} Crawl`)
+            : msg(str`${this.workflow?.crawlCount} Crawls`)}
+        </h3>
+        <sl-button
+          size="small"
+          @click=${() => this.runNow()}
+          ?disabled=${this.workflow?.currCrawlId}
+        >
+          <sl-icon name="play" slot="prefix"></sl-icon>
+          <span>${msg("Run")}</span>
+        </sl-button>`;
     }
-
-    if (this.activePanel === "watch") {
+    if (this.activePanel === "settings") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${this.workflow?.currCrawlState !== "running"}
-          @click=${() => {
-            this.openDialogName = "scale";
-            this.isDialogVisible = true;
-          }}
+          @click=${() =>
+            this.navTo(
+              `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
+            )}
         >
-          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-          <span> ${msg("Crawler Instances")} </span>
+          <sl-icon name="gear" slot="prefix"></sl-icon>
+          <span>${msg("Edit")}</span>
         </sl-button>`;
+    }
+    if (this.activePanel === "watch") {
+      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+        <sl-button-group>
+          <sl-button
+            size="small"
+            ?disabled=${this.workflow?.currCrawlState !== "running"}
+            @click=${() => {
+              this.openDialogName = "scale";
+              this.isDialogVisible = true;
+            }}
+          >
+            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+            <span> ${msg("Edit Instances")} </span>
+          </sl-button>
+          <sl-button
+            size="small"
+            @click=${() => this.stop()}
+            ?disabled=${!this.workflow?.currCrawlId ||
+            this.isCancelingOrStoppingCrawl ||
+            this.workflow?.currCrawlState === "stopping"}
+          >
+            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            <span>${msg("Stop")}</span>
+          </sl-button>
+          <sl-button
+            size="small"
+            @click=${() => this.requestCancelCrawl()}
+            ?disabled=${!this.workflow?.currCrawlId ||
+            this.isCancelingOrStoppingCrawl}
+          >
+            <sl-icon
+              name="x-octagon"
+              slot="prefix"
+              class="text-danger"
+            ></sl-icon>
+            <span class="text-danger">${msg("Cancel")}</span>
+          </sl-button>
+        </sl-button-group>`;
     }
 
     return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
@@ -346,7 +431,6 @@ export class WorkflowDetail extends LiteElement {
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm"
           : "text-neutral-600 hover:bg-neutral-50"}"
-        @click=${() => (this.activePanel = tabName)}
         aria-selected=${isActive}
       >
         ${this.tabLabels[tabName]}
@@ -384,7 +468,7 @@ export class WorkflowDetail extends LiteElement {
     const workflow = this.workflow;
 
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
+      <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
@@ -396,14 +480,16 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() => this.stop()}
-                ?disabled=${workflow.currCrawlState === "stopping"}
+                ?disabled=${workflow.currCrawlState === "stopping" ||
+                this.isCancelingOrStoppingCrawl}
               >
                 <sl-icon name="dash-circle" slot="prefix"></sl-icon>
                 ${msg("Stop Crawl")}
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.cancel()}
+                ?disabled=${this.isCancelingOrStoppingCrawl}
+                @click=${() => this.requestCancelCrawl()}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                 ${msg("Cancel & Discard Crawl")}
@@ -473,7 +559,7 @@ export class WorkflowDetail extends LiteElement {
             @click=${() =>
               shouldDeactivate ? this.deactivate() : this.delete()}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${
               shouldDeactivate
                 ? msg("Deactivate Workflow")
@@ -624,8 +710,15 @@ export class WorkflowDetail extends LiteElement {
                       hour="2-digit"
                       minute="2-digit"
                     ></sl-format-date>
-                    <!-- Hide menu trigger: -->
-                    <div slot="menuTrigger" role="none"></div>
+                    <sl-menu slot="menu">
+                      <sl-menu-item
+                        style="--sl-color-neutral-700: var(--danger)"
+                        @click=${() => this.deleteCrawl(crawl)}
+                      >
+                        <sl-icon name="trash" slot="prefix"></sl-icon>
+                        ${msg("Delete Crawl")}
+                      </sl-menu-item>
+                    </sl-menu>
                   </btrix-crawl-list-item>
                 `
               ),
@@ -887,6 +980,15 @@ export class WorkflowDetail extends LiteElement {
     this.fetchWorkflow();
   }
 
+  private requestCancelCrawl() {
+    const pagesDone = this.currentCrawl?.stats?.done;
+    if (pagesDone && +pagesDone > 0) {
+      this.isAttemptCancel = true;
+    } else {
+      this.cancel();
+    }
+  }
+
   private async scale(value: Crawl["scale"]) {
     if (!this.workflow?.currCrawlId) return;
     this.isSubmittingUpdate = true;
@@ -1081,7 +1183,10 @@ export class WorkflowDetail extends LiteElement {
 
   private async cancel() {
     if (!this.workflow?.currCrawlId) return;
-    if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
+
+    this.isCancelingOrStoppingCrawl = true;
+
+    try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/cancel`,
         this.authState!,
@@ -1092,18 +1197,25 @@ export class WorkflowDetail extends LiteElement {
       if (data.success === true) {
         this.fetchWorkflow();
       } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't cancel crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+        throw data;
       }
+    } catch {
+      this.notify({
+        message: msg("Something went wrong, couldn't cancel crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
+
+    this.isCancelingOrStoppingCrawl = false;
   }
 
   private async stop() {
     if (!this.workflow?.currCrawlId) return;
-    if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
+
+    this.isCancelingOrStoppingCrawl = true;
+
+    try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/stop`,
         this.authState!,
@@ -1114,13 +1226,17 @@ export class WorkflowDetail extends LiteElement {
       if (data.success === true) {
         this.fetchWorkflow();
       } else {
-        this.notify({
-          message: msg("Something went wrong, couldn't stop crawl."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+        throw data;
       }
+    } catch {
+      this.notify({
+        message: msg("Something went wrong, couldn't stop crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
+
+    this.isCancelingOrStoppingCrawl = false;
   }
 
   private async runNow(): Promise<void> {
@@ -1132,7 +1248,6 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
-      this.activePanel = "watch";
       this.fetchWorkflow();
 
       this.notify({
@@ -1141,8 +1256,8 @@ export class WorkflowDetail extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${this.workflowId}"
-              @click="${this.navLink.bind(this)}"
+              href="/orgs/${this.orgId}/workflows/crawl/${this
+                .workflowId}#watch"
               >Watch crawl</a
             >`
         ),
@@ -1153,6 +1268,37 @@ export class WorkflowDetail extends LiteElement {
     } catch {
       this.notify({
         message: msg("Sorry, couldn't run crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteCrawl(crawl: Crawl) {
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${crawl.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [crawl.id],
+          }),
+        }
+      );
+
+      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      this.notify({
+        message: msg(`Successfully deleted crawl`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.fetchCrawls();
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e.isApiError && e.message) ||
+          msg("Sorry, couldn't run crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

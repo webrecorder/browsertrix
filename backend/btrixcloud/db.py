@@ -13,7 +13,7 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 
-CURR_DB_VERSION = "0005"
+CURR_DB_VERSION = "0006"
 
 
 # ============================================================================
@@ -55,6 +55,7 @@ async def update_and_prepare_db(
     mdb,
     user_manager,
     org_ops,
+    crawl_ops,
     crawl_config_ops,
     coll_ops,
     invite_ops,
@@ -70,7 +71,7 @@ async def update_and_prepare_db(
     print("Database setup started", flush=True)
     if await run_db_migrations(mdb, user_manager):
         await drop_indexes(mdb)
-    await create_indexes(org_ops, crawl_config_ops, coll_ops, invite_ops)
+    await create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops)
     await user_manager.create_super_user()
     await org_ops.create_default_org()
     print("Database updated and ready", flush=True)
@@ -134,10 +135,11 @@ async def drop_indexes(mdb):
 
 
 # ============================================================================
-async def create_indexes(org_ops, crawl_config_ops, coll_ops, invite_ops):
+async def create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
     await org_ops.init_index()
+    await crawl_ops.init_index()
     await crawl_config_ops.init_index()
     await coll_ops.init_index()
     await invite_ops.init_index()

@@ -181,6 +181,16 @@ class CrawlConfig(CrawlConfigCore):
 
     rev: int = 0
 
+    crawlCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
+    lastCrawlId: Optional[str]
+    lastCrawlStartTime: Optional[datetime]
+    lastStartedBy: Optional[UUID4]
+    lastCrawlTime: Optional[datetime]
+    lastCrawlState: Optional[str]
+    lastCrawlSize: Optional[int]
+
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
@@ -194,6 +204,7 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlStartTime: Optional[datetime]
     currCrawlState: Optional[str]
     currCrawlSize: Optional[int] = 0
+    currCrawlStopping: Optional[bool] = False
 
     profileName: Optional[str]
 
@@ -202,15 +213,6 @@ class CrawlConfigOut(CrawlConfig):
     lastStartedByName: Optional[str]
 
     firstSeed: Optional[str]
-
-    totalSize: Optional[int] = 0
-
-    crawlCount: Optional[int] = 0
-    lastCrawlId: Optional[str]
-    lastCrawlStartTime: Optional[datetime]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-    lastCrawlSize: Optional[int]
 
 
 # ============================================================================
@@ -245,6 +247,7 @@ class CrawlConfigOps:
 
     def __init__(self, dbclient, mdb, user_manager, org_ops, crawl_manager, profiles):
         self.dbclient = dbclient
+        self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
         self.config_revs = mdb["configs_revs"]
         self.user_manager = user_manager
@@ -269,7 +272,7 @@ class CrawlConfigOps:
         self.crawl_ops = ops
 
     async def init_index(self):
-        """init index for crawls db"""
+        """init index for crawlconfigs db collection"""
         await self.crawl_configs.create_index(
             [("oid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )
@@ -476,6 +479,7 @@ class CrawlConfigOps:
         name: str = None,
         description: str = None,
         tags: Optional[List[str]] = None,
+        schedule: Optional[bool] = None,
         sort_by: str = None,
         sort_direction: int = -1,
     ):
@@ -502,6 +506,12 @@ class CrawlConfigOps:
         if description:
             match_query["description"] = description
 
+        if schedule is not None:
+            if schedule:
+                match_query["schedule"] = {"$nin": ["", None]}
+            else:
+                match_query["schedule"] = {"$in": ["", None]}
+
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": match_query},
@@ -509,84 +519,6 @@ class CrawlConfigOps:
             # Set firstSeed
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject"]},
-            {
-                "$lookup": {
-                    "from": "crawls",
-                    "localField": "_id",
-                    "foreignField": "cid",
-                    "as": "configCrawls",
-                },
-            },
-            # Filter workflow crawls on finished and active
-            {
-                "$set": {
-                    "finishedCrawls": {
-                        "$filter": {
-                            "input": "$configCrawls",
-                            "as": "filterCrawls",
-                            "cond": {
-                                "$and": [
-                                    {"$ne": ["$$filterCrawls.finished", None]},
-                                    {"$ne": ["$$filterCrawls.inactive", True]},
-                                ]
-                            },
-                        }
-                    }
-                }
-            },
-            # Set crawl count to number of finished crawls
-            {"$set": {"crawlCount": {"$size": "$finishedCrawls"}}},
-            # Sort finished crawls by finished time descending to get latest
-            {
-                "$set": {
-                    "sortedCrawls": {
-                        "$sortArray": {
-                            "input": "$finishedCrawls",
-                            "sortBy": {"finished": -1},
-                        }
-                    }
-                }
-            },
-            {"$unset": ["finishedCrawls"]},
-            {"$set": {"lastCrawl": {"$arrayElemAt": ["$sortedCrawls", 0]}}},
-            {"$set": {"lastCrawlId": "$lastCrawl._id"}},
-            {"$set": {"lastCrawlStartTime": "$lastCrawl.started"}},
-            {"$set": {"lastCrawlTime": "$lastCrawl.finished"}},
-            {"$set": {"lastCrawlState": "$lastCrawl.state"}},
-            # Get userid of last started crawl
-            {"$set": {"lastStartedBy": "$lastCrawl.userid"}},
-            {"$set": {"lastCrawlSize": {"$sum": "$lastCrawl.files.size"}}},
-            {
-                "$lookup": {
-                    "from": "users",
-                    "localField": "lastStartedBy",
-                    "foreignField": "id",
-                    "as": "lastStartedByName",
-                },
-            },
-            {
-                "$set": {
-                    "lastStartedByName": {
-                        "$arrayElemAt": ["$lastStartedByName.name", 0]
-                    }
-                }
-            },
-            {
-                "$set": {
-                    "totalSize": {
-                        "$sum": {
-                            "$map": {
-                                "input": "$sortedCrawls.files",
-                                "as": "crawlFile",
-                                "in": {"$arrayElemAt": ["$$crawlFile.size", 0]},
-                            }
-                        }
-                    }
-                }
-            },
-            # unset
-            {"$unset": ["lastCrawl"]},
-            {"$unset": ["sortedCrawls"]},
         ]
 
         if first_seed:
@@ -611,6 +543,19 @@ class CrawlConfigOps:
                     },
                 },
                 {"$set": {"createdByName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "lastStartedBy",
+                        "foreignField": "id",
+                        "as": "startedName",
+                    },
+                },
+                {
+                    "$set": {
+                        "lastStartedByName": {"$arrayElemAt": ["$startedName.name", 0]}
+                    }
+                },
                 {
                     "$lookup": {
                         "from": "users",
@@ -648,22 +593,12 @@ class CrawlConfigOps:
         except (IndexError, ValueError):
             total = 0
 
-        # crawls = await self.crawl_manager.list_running_crawls(oid=org.id)
-        crawls, _ = await self.crawl_ops.list_crawls(
-            org=org,
-            running_only=True,
-            # Set high so that when we lower default we still get all running crawls
-            page_size=1_000,
-        )
-        running = {}
-        for crawl in crawls:
-            running[crawl.cid] = crawl
-
         configs = []
         for res in items:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
-            self._add_curr_crawl_stats(config, running.get(config.id))
+            if not config.inactive:
+                self._add_curr_crawl_stats(config, await self.get_running_crawl(config))
             configs.append(config)
 
         return configs, total
@@ -693,20 +628,13 @@ class CrawlConfigOps:
 
         return None
 
-    async def _annotate_with_crawl_stats(self, crawlconfig: CrawlConfigOut):
-        """Annotate crawlconfig with information about associated crawls"""
-        crawl_stats = await self.crawl_ops.get_latest_crawl_and_count_by_config(
-            cid=crawlconfig.id
-        )
-        crawlconfig.crawlCount = crawl_stats["crawl_count"]
-        crawlconfig.totalSize = crawl_stats["total_size"]
-        crawlconfig.lastCrawlId = crawl_stats["last_crawl_id"]
-        crawlconfig.lastCrawlStartTime = crawl_stats["last_crawl_started"]
-        crawlconfig.lastCrawlTime = crawl_stats["last_crawl_finished"]
-        crawlconfig.lastStartedByName = crawl_stats["last_started_by"]
-        crawlconfig.lastCrawlState = crawl_stats["last_crawl_state"]
-        crawlconfig.lastCrawlSize = crawl_stats["last_crawl_size"]
-        return crawlconfig
+    async def update_crawl_stats(self, cid: uuid.UUID):
+        """Update crawl count, total size, and last crawl information for config."""
+        result = await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        if not result:
+            raise HTTPException(
+                status_code=404, detail=f"Crawl Config '{cid}' not found to update"
+            )
 
     def _add_curr_crawl_stats(self, crawlconfig, crawl):
         """Add stats from current running crawl, if any"""
@@ -717,6 +645,7 @@ class CrawlConfigOps:
         crawlconfig.currCrawlStartTime = crawl.started
         crawlconfig.currCrawlState = crawl.state
         crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.currCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
@@ -745,12 +674,16 @@ class CrawlConfigOps:
         if modified_user:
             crawlconfig.modifiedByName = modified_user.name
 
+        if crawlconfig.lastStartedBy:
+            last_started_user = await self.user_manager.get(crawlconfig.lastStartedBy)
+            # pylint: disable=invalid-name
+            if last_started_user:
+                crawlconfig.lastStartedByName = last_started_user.name
+
         if crawlconfig.profileid:
             crawlconfig.profileName = await self.profiles.get_profile_name(
                 crawlconfig.profileid, org
             )
-
-        crawlconfig = await self._annotate_with_crawl_stats(crawlconfig)
 
         return crawlconfig
 
@@ -958,6 +891,53 @@ async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
 
 
 # ============================================================================
+# pylint: disable=too-many-locals
+async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
+    """re-calculate and update crawl statistics for config"""
+    update_query = {
+        "crawlCount": 0,
+        "totalSize": 0,
+        "lastCrawlId": None,
+        "lastCrawlStartTime": None,
+        "lastStartedBy": None,
+        "lastCrawlTime": None,
+        "lastCrawlState": None,
+        "lastCrawlSize": None,
+    }
+
+    match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
+    cursor = crawls.find(match_query).sort("finished", pymongo.DESCENDING)
+    results = await cursor.to_list(length=10_000)
+    if results:
+        update_query["crawlCount"] = len(results)
+
+        last_crawl = results[0]
+        update_query["lastCrawlId"] = str(last_crawl.get("_id"))
+        update_query["lastCrawlStartTime"] = last_crawl.get("started")
+        update_query["lastStartedBy"] = last_crawl.get("userid")
+        update_query["lastCrawlTime"] = last_crawl.get("finished")
+        update_query["lastCrawlState"] = last_crawl.get("state")
+        update_query["lastCrawlSize"] = sum(
+            file_.get("size", 0) for file_ in last_crawl.get("files", [])
+        )
+
+        total_size = 0
+        for res in results:
+            files = res.get("files", [])
+            for file in files:
+                total_size += file.get("size", 0)
+        update_query["totalSize"] = total_size
+
+    result = await crawl_configs.find_one_and_update(
+        {"_id": cid, "inactive": {"$ne": True}},
+        {"$set": update_query},
+        return_document=pymongo.ReturnDocument.AFTER,
+    )
+
+    return result
+
+
+# ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
     dbclient, mdb, user_dep, user_manager, org_ops, crawl_manager, profiles
@@ -984,6 +964,7 @@ def init_crawl_config_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
+        schedule: Optional[bool] = None,
         sortBy: str = None,
         sortDirection: int = -1,
     ):
@@ -1005,6 +986,7 @@ def init_crawl_config_api(
             name=name,
             description=description,
             tags=tag,
+            schedule=schedule,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
