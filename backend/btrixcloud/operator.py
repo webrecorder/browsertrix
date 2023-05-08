@@ -77,7 +77,7 @@ class CrawlSpec(BaseModel):
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
-    state: str = "waiting"
+    state: str = "new"
     pagesFound: int = 0
     pagesDone: int = 0
     size: str = ""
@@ -149,10 +149,15 @@ class BtrixOperator(K8sAPI):
         # if finalizing, crawl is being deleted
         if data.finalizing:
             # if not yet finished, assume it was canceled, mark as such
+            print(f"Finalizing crawl {crawl_id}, finished {status.finished}")
             if not status.finished:
-                await self.cancel_crawl(redis_url, crawl_id, cid, status, "canceled")
+                finalize = await self.cancel_crawl(
+                    redis_url, crawl_id, cid, status, "canceled"
+                )
+            else:
+                finalize = True
 
-            return await self.finalize_crawl(crawl_id, status, data.related)
+            return await self.finalize_crawl(crawl_id, status, data.related, finalize)
 
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
@@ -184,7 +189,7 @@ class BtrixOperator(K8sAPI):
         has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
         if has_crawl_children:
             status = await self.sync_crawl_state(redis_url, crawl, status)
-        else:
+        elif not status.finished:
             status.state = "starting"
 
         if status.finished:
@@ -278,9 +283,15 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def cancel_crawl(self, redis_url, crawl_id, cid, status, state):
-        """immediately cancel crawl with specified state"""
-        redis = await self._get_redis(redis_url)
-        await self.mark_finished(redis, crawl_id, cid, status, state)
+        """immediately cancel crawl with specified state
+        return true if db mark_finished update succeeds"""
+        try:
+            redis = await self._get_redis(redis_url)
+            await self.mark_finished(redis, crawl_id, cid, status, state)
+            return True
+        # pylint: disable=bare-except
+        except:
+            return False
 
     def _done_response(self, status, finalized=False):
         """done response for removing crawl"""
@@ -290,17 +301,15 @@ class BtrixOperator(K8sAPI):
             "finalized": finalized,
         }
 
-    async def finalize_crawl(self, crawl_id, status, related):
+    async def finalize_crawl(self, crawl_id, status, related, finalized=True):
         """ensure crawl id ready for deletion
         return with finalized state"""
 
         pvcs = list(related[PVC].keys())
         if pvcs:
             print("Deleting PVCs", pvcs)
-            await self.delete_pvc(crawl_id)
+            asyncio.create_task(self.delete_pvc(crawl_id))
             finalized = False
-        else:
-            finalized = True
 
         return self._done_response(status, finalized)
 
@@ -391,6 +400,9 @@ class BtrixOperator(K8sAPI):
             )
 
         if crawl.stopping:
+            print("Graceful Stop")
+            await redis.set(f"{crawl.id}:stopping", "1")
+            # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
 
         # optimization: don't update db once crawl is already running

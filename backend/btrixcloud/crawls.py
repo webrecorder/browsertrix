@@ -27,16 +27,13 @@ from .users import User
 from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_messages
 
 
-CRAWL_STATES = (
-    "starting",
-    "running",
-    "stopping",
-    "complete",
-    "canceled",
-    "partial_complete",
-    "timed_out",
-    "failed",
-)
+RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+
+RUNNING_AND_STARTING_STATES = ("starting", "waiting", *RUNNING_STATES)
+
+NON_RUNNING_STATES = ("complete", "canceled", "partial_complete", "timed_out", "failed")
+
+ALL_CRAWL_STATES = (*NON_RUNNING_STATES, *RUNNING_AND_STARTING_STATES)
 
 
 # ============================================================================
@@ -104,6 +101,8 @@ class Crawl(CrawlConfigCore):
 
     errors: Optional[List[str]] = []
 
+    stopping: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -154,6 +153,8 @@ class ListCrawlOut(BaseMongoModel):
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
     errors: Optional[List[str]]
+
+    stopping: Optional[bool] = False
 
 
 # ============================================================================
@@ -236,11 +237,11 @@ class CrawlOps:
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": ["running", "starting", "stopping"]}
+            query["state"] = {"$in": list(RUNNING_AND_STARTING_STATES)}
 
         # Override running_only if state list is explicitly passed
         if state:
-            validated_states = [value for value in state if value in CRAWL_STATES]
+            validated_states = [value for value in state if value in ALL_CRAWL_STATES]
             query["state"] = {"$in": validated_states}
 
         if crawl_id:
@@ -430,9 +431,13 @@ class CrawlOps:
 
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
-        if crawl.state == "running":
-            redis = await self.get_redis(crawl.id)
-            crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+        if crawl.state in RUNNING_STATES:
+            try:
+                redis = await self.get_redis(crawl.id)
+                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+            # redis not available, ignore
+            except exceptions.ConnectionError:
+                pass
 
         return crawl
 
@@ -596,11 +601,12 @@ class CrawlOps:
             )
 
             if result.get("success"):
-                # for canceletion, just set to canceled immediately if succeeded
-                await self.update_crawl_state(
-                    crawl_id, "stopping" if graceful else "canceled"
-                )
-                return {"success": True}
+                if graceful:
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id, "oid": org.id},
+                        {"$set": {"stopping": True}},
+                    )
+                return result
 
         except Exception as exc:
             # pylint: disable=raise-missing-from

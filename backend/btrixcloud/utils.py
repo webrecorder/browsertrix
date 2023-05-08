@@ -47,7 +47,7 @@ async def get_redis_crawl_stats(redis, crawl_id):
         pages_done = await redis.llen(f"{crawl_id}:d")
 
     pages_found = await redis.scard(f"{crawl_id}:s")
-    archive_size = await redis.hvals("crawl-size")
+    archive_size = await redis.hvals(f"{crawl_id}:size")
     archive_size = sum(int(x) for x in archive_size)
 
     stats = {"found": pages_found, "done": pages_done, "size": archive_size}
