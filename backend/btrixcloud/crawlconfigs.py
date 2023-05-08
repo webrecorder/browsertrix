@@ -7,6 +7,7 @@ from enum import Enum
 import uuid
 import asyncio
 import re
+import os
 from datetime import datetime
 import urllib.parse
 
@@ -116,6 +117,8 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
+    crawlFilenameTemplate: Optional[str]
+
 
 # ============================================================================
 class ConfigRevision(BaseMongoModel):
@@ -201,6 +204,7 @@ class CrawlConfigOut(CrawlConfig):
     currCrawlStartTime: Optional[datetime]
     currCrawlState: Optional[str]
     currCrawlSize: Optional[int] = 0
+    currCrawlStopping: Optional[bool] = False
 
     profileName: Optional[str]
 
@@ -232,6 +236,7 @@ class UpdateCrawlConfig(BaseModel):
     profileid: Optional[str]
     crawlTimeout: Optional[int]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    crawlFilenameTemplate: Optional[str]
     config: Optional[RawCrawlConfig]
 
 
@@ -251,6 +256,7 @@ class CrawlConfigOps:
         self.profiles = profiles
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = None
+        self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -330,10 +336,9 @@ class CrawlConfigOps:
 
         crawlconfig = CrawlConfig.from_dict(data)
 
-        suffix = f"{self.sanitize(str(crawlconfig.id))}-{self.sanitize(user.name)}"
-
-        # pylint: disable=line-too-long
-        out_filename = f"data/{self.sanitize(str(crawlconfig.id))}-@id/{suffix}-@ts-@hostsuffix.wacz"
+        out_filename = (
+            data.get("crawlFilenameTemplate") or self.default_filename_template
+        )
 
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
@@ -380,6 +385,9 @@ class CrawlConfigOps:
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "schedule")
@@ -637,6 +645,7 @@ class CrawlConfigOps:
         crawlconfig.currCrawlStartTime = crawl.started
         crawlconfig.currCrawlState = crawl.state
         crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.currCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active

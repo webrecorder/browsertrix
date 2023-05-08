@@ -66,6 +66,11 @@ spec:
           jsonPath: .status.finished
           description: "if set, time crawl has finished"
 
+        - name: Stopping
+          type: boolean
+          jsonPath: .spec.stopping
+          description: "if set, crawl is being stopped"
+
         - name: Files Added
           type: integer
           jsonPath: .status.filesAdded
