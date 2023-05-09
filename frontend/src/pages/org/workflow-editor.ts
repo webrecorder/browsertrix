@@ -721,7 +721,7 @@ export class CrawlConfigEditor extends LiteElement {
                 >
                   ${this.formState.scheduleType === "now" ||
                   this.formState.runNow
-                    ? msg("Save & Run Crawl")
+                    ? msg("Save & Run Workflow")
                     : this.formState.scheduleType === "none"
                     ? msg("Save Workflow")
                     : msg("Save & Schedule Crawl")}

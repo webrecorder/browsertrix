@@ -614,7 +614,7 @@ export class WorkflowDetail extends LiteElement {
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
-                ${msg("Run Crawl")}
+                ${msg("Run Workflow")}
               </sl-menu-item>
             `
           )}
