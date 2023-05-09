@@ -65,6 +65,9 @@ export class WorkflowDetail extends LiteElement {
   private currentCrawlId: Workflow["currCrawlId"] = null;
 
   @state()
+  private currentCrawlStartTime: Workflow["currCrawlStartTime"] = null;
+
+  @state()
   private currentCrawlStats?: Crawl["stats"];
 
   @state()
@@ -196,7 +199,7 @@ export class WorkflowDetail extends LiteElement {
       this.workflow = await this.getWorkflowPromise;
       this.currentCrawlId = this.workflow.currCrawlId;
       if (this.currentCrawlId) {
-        this.fetchCurrentCrawl();
+        this.fetchCurrentCrawlStats();
       }
     } catch (e: any) {
       this.notify({
@@ -836,12 +839,12 @@ export class WorkflowDetail extends LiteElement {
             : html`<sl-spinner></sl-spinner>`
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
-          this.workflow
+          this.workflow?.currCrawlStartTime
             ? RelativeDuration.humanize(
                 new Date().valueOf() -
                   new Date(`${this.workflow.currCrawlStartTime}Z`).valueOf()
               )
-            : skeleton
+            : msg("<10s")
         )}
         ${this.renderDetailItem(msg("Crawl Size"), () =>
           this.workflow
@@ -1135,7 +1138,7 @@ export class WorkflowDetail extends LiteElement {
     return data.items;
   }
 
-  private async fetchCurrentCrawl() {
+  private async fetchCurrentCrawlStats() {
     if (!this.currentCrawlId) return;
 
     try {
@@ -1320,6 +1323,8 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       this.currentCrawlId = data.started;
+      // remove 'Z' from timestamp to match API response
+      this.currentCrawlStartTime = new Date().toISOString().slice(0, -1);
       this.fetchWorkflow();
       this.goToTab("watch");
 
