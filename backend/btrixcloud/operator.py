@@ -32,6 +32,7 @@ from .crawls import (
 STS = "StatefulSet.apps/v1"
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
+POD = "Pod.v1"
 
 DEFAULT_TTL = 30
 
@@ -186,9 +187,10 @@ class BtrixOperator(K8sAPI):
         crawl_sts = f"crawl-{crawl_id}"
         redis_sts = f"redis-{crawl_id}"
 
-        has_crawl_children = STS in data.children and crawl_sts in data.children[STS]
+        has_crawl_children = crawl_sts in data.children[STS]
         if has_crawl_children:
-            status = await self.sync_crawl_state(redis_url, crawl, status)
+            pods = data.related[POD]
+            status = await self.sync_crawl_state(redis_url, crawl, status, pods)
         elif not status.finished:
             status.state = "starting"
 
@@ -220,7 +222,7 @@ class BtrixOperator(K8sAPI):
                 "spec"
             ]["volumeClaimTemplates"]
 
-        has_redis_children = STS in data.children and redis_sts in data.children[STS]
+        has_redis_children = redis_sts in data.children[STS]
         if has_redis_children:
             children[2]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_sts][
                 "spec"
@@ -250,6 +252,13 @@ class BtrixOperator(K8sAPI):
                     "apiVersion": "v1",
                     "resource": "persistentvolumeclaims",
                     "labelSelector": {"matchLabels": {"crawl": crawl_id}},
+                },
+                {
+                    "apiVersion": "v1",
+                    "resource": "pods",
+                    "labelSelector": {
+                        "matchLabels": {"crawl": crawl_id, "role": "crawler"}
+                    },
                 },
             ]
         }
@@ -328,7 +337,7 @@ class BtrixOperator(K8sAPI):
         except:
             return None
 
-    async def sync_crawl_state(self, redis_url, crawl, status):
+    async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         redis = await self._get_redis(redis_url)
         if not redis:
@@ -354,13 +363,27 @@ class BtrixOperator(K8sAPI):
             status.filesAdded = int(await redis.get("filesAdded") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status)
+            return await self.update_crawl_state(redis, crawl, status, pods)
 
         # pylint: disable=broad-except
         except Exception as exc:
             traceback.print_exc()
             print(f"Crawl get failed: {exc}, will try again")
             return status
+
+    async def check_if_pods_running(self, pods):
+        """check if at least one crawler pod has started"""
+        try:
+            for pod in pods.values():
+                print("Phase", pod["status"]["phase"])
+                if pod["status"]["phase"] == "Running":
+                    return True
+        # pylint: disable=bare-except
+        except:
+            # assume no valid pod found
+            pass
+
+        return False
 
     async def add_file_to_crawl(self, cc_data, crawl):
         """Handle finished CrawlFile to db"""
@@ -386,7 +409,7 @@ class BtrixOperator(K8sAPI):
 
         return True
 
-    async def update_crawl_state(self, redis, crawl, status):
+    async def update_crawl_state(self, redis, crawl, status, pods):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
         stats = await get_redis_crawl_stats(redis, crawl.id)
@@ -404,6 +427,15 @@ class BtrixOperator(K8sAPI):
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
+
+        # check if at least one pod started running
+        # otherwise, mark as 'waiting' and return
+        if not await self.check_if_pods_running(pods):
+            if status.state not in ("waiting", "canceled"):
+                await update_crawl(self.crawls, crawl.id, state="waiting")
+                status.state = "waiting"
+
+            return status
 
         # optimization: don't update db once crawl is already running
         # will set stats at when crawl is finished, otherwise can read

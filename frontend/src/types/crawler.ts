@@ -90,6 +90,7 @@ export type Profile = {
 
 export type CrawlState =
   | "starting"
+  | "waiting"
   | "running"
   | "complete"
   | "failed"
