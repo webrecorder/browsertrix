@@ -107,7 +107,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("Crawls"),
+    artifacts: msg("All Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -257,7 +257,7 @@ export class WorkflowDetail extends LiteElement {
           <div class="flex-0 flex justify-end">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
-              this.renderMenu
+              this.renderActions
             )}
           </div>
         </header>
@@ -372,8 +372,9 @@ export class WorkflowDetail extends LiteElement {
         </header>
       </btrix-observable>
 
-      ${when(this.workflow?.currCrawlId, () => this.renderTab("watch"))}
-      ${this.renderTab("artifacts")} ${this.renderTab("settings")}
+      ${this.renderTab("artifacts")}
+      ${this.renderTab("watch", { disabled: true })}
+      ${this.renderTab("settings")}
 
       <btrix-tab-panel name="artifacts"
         >${this.renderArtifacts()}</btrix-tab-panel
@@ -397,18 +398,10 @@ export class WorkflowDetail extends LiteElement {
     if (!this.activePanel) return;
     if (this.activePanel === "artifacts") {
       return html`<h3>
-          ${this.workflow?.crawlCount === 1
-            ? msg(str`${this.workflow?.crawlCount} Crawl`)
-            : msg(str`${this.workflow?.crawlCount} Crawls`)}
-        </h3>
-        <sl-button
-          size="small"
-          @click=${() => this.runNow()}
-          ?disabled=${this.workflow?.currCrawlId}
-        >
-          <sl-icon name="play" slot="prefix"></sl-icon>
-          <span>${msg("Run")}</span>
-        </sl-button>`;
+        ${this.workflow?.crawlCount === 1
+          ? msg(str`${this.workflow?.crawlCount} Crawl`)
+          : msg(str`${this.workflow?.crawlCount} Crawls`)}
+      </h3> `;
     }
     if (this.activePanel === "settings") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
@@ -425,54 +418,37 @@ export class WorkflowDetail extends LiteElement {
     }
     if (this.activePanel === "watch") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button-group>
-          <sl-button
-            size="small"
-            ?disabled=${this.workflow?.currCrawlState !== "running"}
-            @click=${() => (this.openDialogName = "scale")}
-          >
-            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-            <span> ${msg("Edit Instances")} </span>
-          </sl-button>
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = "stop")}
-            ?disabled=${!this.workflow?.currCrawlId ||
-            this.isCancelingOrStoppingCrawl ||
-            this.workflow?.currCrawlStopping}
-          >
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
-            <span>${msg("Stop")}</span>
-          </sl-button>
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = "cancel")}
-            ?disabled=${!this.workflow?.currCrawlId ||
-            this.isCancelingOrStoppingCrawl}
-          >
-            <sl-icon
-              name="x-octagon"
-              slot="prefix"
-              class="text-danger"
-            ></sl-icon>
-            <span class="text-danger">${msg("Cancel")}</span>
-          </sl-button>
-        </sl-button-group>`;
+        <sl-button
+          size="small"
+          ?disabled=${this.workflow?.currCrawlState !== "running"}
+          @click=${() => (this.openDialogName = "scale")}
+        >
+          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
+          <span> ${msg("Edit Instances")} </span>
+        </sl-button>`;
     }
 
     return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
   }
 
-  private renderTab(tabName: Tab) {
+  private renderTab(tabName: Tab, { disabled = false } = {}) {
     const isActive = tabName === this.activePanel;
+    let className = "text-neutral-600 hover:bg-neutral-50";
+    if (isActive) {
+      className = "text-blue-600 bg-blue-50 shadow-sm";
+    } else if (disabled) {
+      className = "text-neutral-300 cursor-not-allowed";
+    }
     return html`
       <a
         slot="nav"
         href=${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#${tabName}`}
-        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
-          ? "text-blue-600 bg-blue-50 shadow-sm"
-          : "text-neutral-600 hover:bg-neutral-50"}"
+        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${className}"
         aria-selected=${isActive}
+        aria-disabled=${disabled}
+        @click=${(e: MouseEvent) => {
+          if (disabled) e.preventDefault();
+        }}
       >
         ${this.tabLabels[tabName]}
       </a>
@@ -504,11 +480,53 @@ export class WorkflowDetail extends LiteElement {
     )}
   `;
 
-  private renderMenu = () => {
+  private renderActions = () => {
     if (!this.workflow) return;
     const workflow = this.workflow;
 
     return html`
+      ${when(
+        workflow.currCrawlId,
+        () => html`
+          <sl-button-group class="mr-2">
+            <sl-button
+              size="small"
+              @click=${() => this.stop()}
+              ?disabled=${!this.workflow?.currCrawlId ||
+              this.isCancelingOrStoppingCrawl ||
+              this.workflow?.currCrawlStopping}
+            >
+              <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+              <span>${msg("Stop")}</span>
+            </sl-button>
+            <sl-button
+              size="small"
+              @click=${() => this.requestCancelCrawl()}
+              ?disabled=${!this.workflow?.currCrawlId ||
+              this.isCancelingOrStoppingCrawl}
+            >
+              <sl-icon
+                name="x-octagon"
+                slot="prefix"
+                class="text-danger"
+              ></sl-icon>
+              <span class="text-danger">${msg("Cancel")}</span>
+            </sl-button>
+          </sl-button-group>
+        `,
+        () => html`
+          <sl-button
+            size="small"
+            variant="primary"
+            class="mr-2"
+            @click=${() => this.runNow()}
+          >
+            <sl-icon name="play" slot="prefix"></sl-icon>
+            <span>${msg("Run Workflow")}</span>
+          </sl-button>
+        `
+      )}
+
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
@@ -1281,6 +1299,7 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
+      this.goToTab("watch");
       this.fetchWorkflow();
 
       this.notify({
