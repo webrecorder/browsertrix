@@ -113,7 +113,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("All Crawls"),
+    artifacts: msg("Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -150,6 +150,13 @@ export class WorkflowDetail extends LiteElement {
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
     }
+    if (
+      changedProperties.get("currentCrawlId") &&
+      !this.currentCrawlId &&
+      this.activePanel === "watch"
+    ) {
+      this.handleCrawlRunEnd();
+    }
     if (changedProperties.has("activePanel") && this.activePanel) {
       if (!this.isPanelHeaderVisible) {
         // Scroll panel header into view
@@ -181,6 +188,47 @@ export class WorkflowDetail extends LiteElement {
       window.history.pushState(null, "", path);
     }
     this.activePanel = tab;
+  }
+
+  private async handleCrawlRunEnd() {
+    this.goToTab("artifacts", { replace: true });
+    await this.fetchWorkflow();
+
+    let notifyOpts = {
+      message: msg("Workflow run finished."),
+      variant: "info",
+      icon: "info-circle",
+    } as any;
+    // TODO consolidate with `CrawlStatus.getContent`
+    switch (this.workflow!.lastCrawlState) {
+      case "complete":
+        notifyOpts = {
+          message: msg("Workflow run complete."),
+          variant: "success",
+          icon: "check-circle",
+        };
+        break;
+      case "canceled":
+        notifyOpts = {
+          message: msg("Workflow run canceled."),
+          variant: "danger",
+          icon: "x-octagon",
+        };
+        break;
+      case "failed":
+        notifyOpts = {
+          message: msg("Workflow run failed."),
+          variant: "danger",
+          icon: "exclamation-triangle",
+        };
+        break;
+      default:
+        break;
+    }
+    this.notify({
+      ...notifyOpts,
+      duration: 8000,
+    });
   }
 
   private async fetchWorkflow() {
@@ -722,22 +770,6 @@ export class WorkflowDetail extends LiteElement {
 
   private renderArtifacts() {
     return html`
-      ${when(
-        this.currentCrawlId,
-        () => html`<div class="mb-4">
-          <btrix-alert variant="success" class="text-sm">
-            ${msg(
-              html`Workflow is currently running.
-                <a
-                  href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
-                  class="underline hover:no-underline"
-                  >Watch Crawl Progress</a
-                >`
-            )}
-          </btrix-alert>
-        </div>`
-      )}
-
       <section>
         <div
           class="mb-3 p-4 bg-neutral-50 border rounded-lg flex items-center justify-end"
@@ -751,7 +783,7 @@ export class WorkflowDetail extends LiteElement {
               pill
               multiple
               max-tags-visible="1"
-              placeholder=${msg("All Crawls")}
+              placeholder=${msg("Finished Crawls")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
                 await this.updateComplete;
@@ -766,6 +798,22 @@ export class WorkflowDetail extends LiteElement {
             </sl-select>
           </div>
         </div>
+
+        ${when(
+          this.currentCrawlId,
+          () => html`<div class="mb-4">
+            <btrix-alert variant="success" class="text-sm">
+              ${msg(
+                html`Workflow is currently running.
+                  <a
+                    href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
+                    class="underline hover:no-underline"
+                    >Watch Crawl Progress</a
+                  >`
+              )}
+            </btrix-alert>
+          </div>`
+        )}
 
         <btrix-crawl-list
           baseUrl=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact`}
@@ -1375,7 +1423,7 @@ export class WorkflowDetail extends LiteElement {
       this.goToTab("watch");
 
       this.notify({
-        message: msg("Started new crawl."),
+        message: msg("Starting Workflow run."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
