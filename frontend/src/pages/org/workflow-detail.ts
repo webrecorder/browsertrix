@@ -62,6 +62,9 @@ export class WorkflowDetail extends LiteElement {
   private crawls?: Crawl[]; // Only inactive crawls
 
   @state()
+  private currentCrawlId: Workflow["currCrawlId"] = null;
+
+  @state()
   private currentCrawl?: Crawl;
 
   @state()
@@ -141,6 +144,13 @@ export class WorkflowDetail extends LiteElement {
     ) {
       this.fetchWorkflow();
     }
+    if (
+      changedProperties.get("currentCrawlId") &&
+      !this.currentCrawlId &&
+      this.activePanel === "watch"
+    ) {
+      this.goToTab(DEFAULT_SECTION, { replace: true });
+    }
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
     }
@@ -155,17 +165,6 @@ export class WorkflowDetail extends LiteElement {
       if (this.activePanel === "artifacts") {
         this.fetchCrawls();
       }
-    }
-  }
-
-  updated(changedProperties: Map<string, any>) {
-    const prevWorkflow = changedProperties.get("workflow");
-    if (
-      prevWorkflow?.currCrawlId &&
-      !this.workflow?.currCrawlId &&
-      this.activePanel === "watch"
-    ) {
-      this.goToTab(DEFAULT_SECTION, { replace: true });
     }
   }
 
@@ -195,7 +194,8 @@ export class WorkflowDetail extends LiteElement {
     try {
       this.getWorkflowPromise = this.getWorkflow();
       this.workflow = await this.getWorkflowPromise;
-      if (this.workflow.currCrawlId) {
+      this.currentCrawlId = this.workflow.currCrawlId;
+      if (this.currentCrawlId && this.activePanel === "watch") {
         this.fetchCurrentCrawl();
       }
     } catch (e: any) {
@@ -373,7 +373,7 @@ export class WorkflowDetail extends LiteElement {
       </btrix-observable>
 
       ${this.renderTab("artifacts")}
-      ${this.renderTab("watch", { disabled: true })}
+      ${this.renderTab("watch", { disabled: !this.currentCrawlId })}
       ${this.renderTab("settings")}
 
       <btrix-tab-panel name="artifacts"
@@ -486,13 +486,13 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       ${when(
-        workflow.currCrawlId,
+        this.currentCrawlId,
         () => html`
           <sl-button-group class="mr-2">
             <sl-button
               size="small"
               @click=${() => this.stop()}
-              ?disabled=${!this.workflow?.currCrawlId ||
+              ?disabled=${!this.currentCrawlId ||
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.currCrawlStopping}
             >
@@ -502,7 +502,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-button
               size="small"
               @click=${() => this.requestCancelCrawl()}
-              ?disabled=${!this.workflow?.currCrawlId ||
+              ?disabled=${!this.currentCrawlId ||
               this.isCancelingOrStoppingCrawl}
             >
               <sl-icon
@@ -533,7 +533,7 @@ export class WorkflowDetail extends LiteElement {
         >
         <sl-menu>
           ${when(
-            workflow.currCrawlId,
+            this.currentCrawlId,
             // HACK shoelace doesn't current have a way to override non-hover
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
@@ -601,7 +601,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
-          ${when(!workflow.currCrawlId, () => {
+          ${when(!this.currentCrawlId, () => {
             const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
             return html`
           <sl-divider></sl-divider>
@@ -882,7 +882,7 @@ export class WorkflowDetail extends LiteElement {
             <btrix-screencast
               authToken=${authToken}
               orgId=${this.orgId}
-              crawlId=${this.workflow!.currCrawlId}
+              crawlId=${this.currentCrawlId}
               scale=${this.currentCrawl!.scale}
             ></btrix-screencast>
           </div>
@@ -928,11 +928,11 @@ export class WorkflowDetail extends LiteElement {
       </header>
 
       ${when(
-        this.workflow?.currCrawlId,
+        this.currentCrawlId,
         () => html`
           <btrix-crawl-queue
             orgId=${this.orgId}
-            crawlId=${this.workflow!.currCrawlId}
+            crawlId=${this.currentCrawlId}
             .authState=${this.authState}
           ></btrix-crawl-queue>
         `
@@ -949,7 +949,7 @@ export class WorkflowDetail extends LiteElement {
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
               orgId=${this.orgId}
-              crawlId=${ifDefined(this.workflow.currCrawlId)}
+              crawlId=${ifDefined(this.currentCrawlId)}
               .config=${this.workflow.config}
               .authState=${this.authState}
               ?isActiveCrawl=${isActive(this.workflow.currCrawlState!)}
@@ -1039,12 +1039,12 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async scale(value: Crawl["scale"]) {
-    if (!this.workflow?.currCrawlId) return;
+    if (!this.currentCrawlId) return;
     this.isSubmittingUpdate = true;
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/scale`,
+        `/orgs/${this.orgId}/crawls/${this.currentCrawlId}/scale`,
         this.authState!,
         {
           method: "POST",
@@ -1118,10 +1118,11 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async fetchCurrentCrawl() {
-    if (!this.workflow?.currCrawlId) return;
+    if (!this.currentCrawlId) return;
 
     try {
-      this.currentCrawl = await this.getCrawl(this.workflow.currCrawlId);
+      console.log("fetch:", this.currentCrawlId);
+      this.currentCrawl = await this.getCrawl(this.currentCrawlId);
     } catch (e) {
       // TODO handle error
       console.debug(e);
@@ -1233,13 +1234,13 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async cancel() {
-    if (!this.workflow?.currCrawlId) return;
+    if (!this.currentCrawlId) return;
 
     this.isCancelingOrStoppingCrawl = true;
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/cancel`,
+        `/orgs/${this.orgId}/crawls/${this.currentCrawlId}/cancel`,
         this.authState!,
         {
           method: "POST",
@@ -1262,13 +1263,13 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async stop() {
-    if (!this.workflow?.currCrawlId) return;
+    if (!this.currentCrawlId) return;
 
     this.isCancelingOrStoppingCrawl = true;
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${this.workflow.currCrawlId}/stop`,
+        `/orgs/${this.orgId}/crawls/${this.currentCrawlId}/stop`,
         this.authState!,
         {
           method: "POST",
@@ -1299,20 +1300,13 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         }
       );
+      this.currentCrawlId = data.started;
+      this.fetchCurrentCrawl();
+      await this.fetchWorkflow();
       this.goToTab("watch");
-      this.fetchWorkflow();
 
       this.notify({
-        message: msg(
-          html`Started crawl from <strong>${this.renderName()}</strong>.
-            <br />
-            <a
-              class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${this
-                .workflowId}#watch"
-              >Watch crawl</a
-            >`
-        ),
+        message: msg("Started new crawl."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
