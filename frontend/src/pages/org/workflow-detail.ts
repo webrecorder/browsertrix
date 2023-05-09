@@ -191,6 +191,7 @@ export class WorkflowDetail extends LiteElement {
       this.getWorkflowPromise = this.getWorkflow();
       this.workflow = await this.getWorkflowPromise;
       this.currentCrawlId = this.workflow.currCrawlId;
+      this.currentCrawlStartTime = this.workflow.currCrawlStartTime;
       if (this.currentCrawlId) {
         this.fetchCurrentCrawlStats();
       }
@@ -844,12 +845,12 @@ export class WorkflowDetail extends LiteElement {
             : html`<sl-spinner></sl-spinner>`
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
-          this.workflow?.currCrawlStartTime
+          this.currentCrawlStartTime
             ? RelativeDuration.humanize(
                 new Date().valueOf() -
-                  new Date(`${this.workflow.currCrawlStartTime}Z`).valueOf()
+                  new Date(`${this.currentCrawlStartTime}Z`).valueOf()
               )
-            : msg("<10s")
+            : skeleton
         )}
         ${this.renderDetailItem(msg("Crawl Size"), () =>
           this.workflow
@@ -934,21 +935,35 @@ export class WorkflowDetail extends LiteElement {
       <section
         class="border rounded-lg p-4 h-56 min-h-max flex flex-col items-center justify-center"
       >
-        <p class="font-medium text-base">${msg("Workflow run complete.")}</p>
+        <p class="font-medium text-base">
+          ${msg("Workflow is not currently running.")}
+        </p>
         <div class="mt-4">
-          <sl-button
-            class="mr-2"
-            href=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact/${this.workflow?.lastCrawlId}#replay`}
-            variant="primary"
-            size="small"
-            @click=${this.navLink}
-          >
-            <sl-icon slot="prefix" name="link-replay" library="app"></sl-icon>
-            ${msg("Replay Crawl")}</sl-button
-          >
-          <sl-button size="small">
+          ${when(
+            this.workflow?.lastCrawlId,
+            () => html`
+              <sl-button
+                class="mr-2"
+                href=${`/orgs/${this.orgId}/workflows/crawl/${
+                  this.workflowId
+                }/artifact/${this.workflow!.lastCrawlId}#replay`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="link-replay"
+                  library="app"
+                ></sl-icon>
+                ${msg("Replay Latest Crawl")}</sl-button
+              >
+            `
+          )}
+
+          <sl-button size="small" @click=${() => this.runNow()}>
             <sl-icon name="play" slot="prefix"></sl-icon>
-            ${msg("Run Workflow Again")}
+            ${msg("Run Workflow")}
           </sl-button>
         </div>
       </section>
