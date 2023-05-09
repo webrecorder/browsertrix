@@ -46,10 +46,6 @@ export class CrawlStatus extends LitElement {
         line-height: 1rem;
       }
 
-      .stopping {
-        margin-left: var(--sl-spacing-x-small);
-      }
-
       sl-skeleton {
         width: 4em;
       }
