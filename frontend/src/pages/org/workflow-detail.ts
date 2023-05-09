@@ -59,7 +59,7 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private crawls?: Crawl[]; // Only inactive crawls
+  private crawls?: APIPaginatedList; // Only inactive crawls
 
   @state()
   private currentCrawlId: Workflow["currCrawlId"] = null;
@@ -146,13 +146,6 @@ export class WorkflowDetail extends LiteElement {
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       this.fetchWorkflow();
-    }
-    if (
-      changedProperties.get("currentCrawlId") &&
-      !this.currentCrawlId &&
-      this.activePanel === "watch"
-    ) {
-      this.goToTab(DEFAULT_SECTION, { replace: true });
     }
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
@@ -383,12 +376,13 @@ export class WorkflowDetail extends LiteElement {
         >${this.renderArtifacts()}</btrix-tab-panel
       >
       <btrix-tab-panel name="watch"
-        >${when(
-          this.activePanel === "watch",
-          () => html` <div class="border rounded-lg py-2 mb-5 h-14">
-              ${this.renderCurrentCrawl()}
-            </div>
-            ${this.renderWatchCrawl()}`
+        >${when(this.activePanel === "watch", () =>
+          this.currentCrawlId
+            ? html` <div class="border rounded-lg py-2 mb-5 h-14">
+                  ${this.renderCurrentCrawl()}
+                </div>
+                ${this.renderWatchCrawl()}`
+            : this.renderInactiveWatchCrawl()
         )}</btrix-tab-panel
       >
       <btrix-tab-panel name="settings">
@@ -401,10 +395,19 @@ export class WorkflowDetail extends LiteElement {
     if (!this.activePanel) return;
     if (this.activePanel === "artifacts") {
       return html`<h3>
-        ${this.workflow?.crawlCount === 1
-          ? msg(str`${this.workflow?.crawlCount} Crawl`)
-          : msg(str`${this.workflow?.crawlCount} Crawls`)}
-      </h3> `;
+        ${this.tabLabels[this.activePanel]}
+        ${when(
+          this.crawls,
+          () =>
+            html`
+              <span class="text-neutral-500"
+                >(${this.crawls!.total.toLocaleString()}${this.currentCrawlId
+                  ? html`<span class="text-success"> + 1</span>`
+                  : ""})</span
+              >
+            `
+        )}
+      </h3>`;
     }
     if (this.activePanel === "settings") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
@@ -723,11 +726,11 @@ export class WorkflowDetail extends LiteElement {
         () => html`<div class="mb-4">
           <btrix-alert variant="success" class="text-sm">
             ${msg(
-              html`A crawl is currently running.
+              html`Workflow is currently running.
                 <a
                   href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
                   class="underline hover:no-underline"
-                  >Watch Crawl</a
+                  >Watch Crawl Progress</a
                 >`
             )}
           </btrix-alert>
@@ -735,7 +738,9 @@ export class WorkflowDetail extends LiteElement {
       )}
 
       <section>
-        <div class="mb-3 p-4 bg-neutral-50 border rounded-lg flex justify-end">
+        <div
+          class="mb-3 p-4 bg-neutral-50 border rounded-lg flex items-center justify-end"
+        >
           <div class="flex items-center">
             <div class="text-neutral-500 mx-2">${msg("View:")}</div>
             <sl-select
@@ -768,8 +773,8 @@ export class WorkflowDetail extends LiteElement {
           ${when(
             this.crawls,
             () =>
-              this.crawls!.map(
-                (crawl) => html`
+              this.crawls!.items.map(
+                (crawl: Crawl) => html`
                   <btrix-crawl-list-item .crawl=${crawl}>
                     <sl-format-date
                       slot="id"
@@ -801,11 +806,11 @@ export class WorkflowDetail extends LiteElement {
         </btrix-crawl-list>
 
         ${when(
-          this.crawls && !this.crawls.length,
+          this.crawls && !this.crawls.items.length,
           () => html`
             <div class="p-4">
               <p class="text-center text-neutral-400">
-                ${this.workflow?.crawlCount
+                ${this.crawls?.total
                   ? msg("No matching crawls found.")
                   : msg("No crawls yet.")}
               </p>
@@ -923,6 +928,32 @@ export class WorkflowDetail extends LiteElement {
       )}
     `;
   };
+
+  private renderInactiveWatchCrawl() {
+    return html`
+      <section
+        class="border rounded-lg p-4 h-56 min-h-max flex flex-col items-center justify-center"
+      >
+        <p class="font-medium text-base">${msg("Workflow run complete.")}</p>
+        <div class="mt-4">
+          <sl-button
+            class="mr-2"
+            href=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact/${this.workflow?.lastCrawlId}#replay`}
+            variant="primary"
+            size="small"
+            @click=${this.navLink}
+          >
+            <sl-icon slot="prefix" name="link-replay" library="app"></sl-icon>
+            ${msg("Replay Crawl")}</sl-button
+          >
+          <sl-button size="small">
+            <sl-icon name="play" slot="prefix"></sl-icon>
+            ${msg("Run Workflow Again")}
+          </sl-button>
+        </div>
+      </section>
+    `;
+  }
 
   private renderInactiveCrawlMessage() {
     return html`
@@ -1119,7 +1150,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawls(): Promise<Crawl[]> {
+  private async getCrawls(): Promise<APIPaginatedList> {
     const query = queryString.stringify(
       {
         state: this.filterBy.state || inactiveCrawlStates,
@@ -1135,7 +1166,7 @@ export class WorkflowDetail extends LiteElement {
       this.authState!
     );
 
-    return data.items;
+    return data;
   }
 
   private async fetchCurrentCrawlStats() {
@@ -1356,7 +1387,10 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.crawls = this.crawls!.filter((c) => c.id !== crawl.id);
+      this.crawls = {
+        ...this.crawls!,
+        items: this.crawls!.items.filter((c) => c.id !== crawl.id),
+      };
       this.notify({
         message: msg(`Successfully deleted crawl`),
         variant: "success",
