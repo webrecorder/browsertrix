@@ -65,7 +65,7 @@ export class WorkflowDetail extends LiteElement {
   private currentCrawlId: Workflow["currCrawlId"] = null;
 
   @state()
-  private currentCrawl?: Crawl;
+  private currentCrawlStats?: Crawl["stats"];
 
   @state()
   private activePanel?: Tab;
@@ -195,7 +195,7 @@ export class WorkflowDetail extends LiteElement {
       this.getWorkflowPromise = this.getWorkflow();
       this.workflow = await this.getWorkflowPromise;
       this.currentCrawlId = this.workflow.currCrawlId;
-      if (this.currentCrawlId && this.activePanel === "watch") {
+      if (this.currentCrawlId) {
         this.fetchCurrentCrawl();
       }
     } catch (e: any) {
@@ -501,7 +501,7 @@ export class WorkflowDetail extends LiteElement {
             </sl-button>
             <sl-button
               size="small"
-              @click=${() => this.requestCancelCrawl()}
+              @click=${() => (this.openDialogName = "cancel")}
               ?disabled=${!this.currentCrawlId ||
               this.isCancelingOrStoppingCrawl}
             >
@@ -805,37 +805,40 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private renderCurrentCrawl = () => {
-    const crawl = this.currentCrawl;
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     return html`
       <dl class="px-3 md:px-0 md:flex justify-evenly">
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
-          crawl
+          this.currentCrawlStats
             ? msg(
                 str`${this.numberFormatter.format(
-                  +(crawl.stats?.done || 0)
-                )} / ${this.numberFormatter.format(+(crawl.stats?.found || 0))}`
+                  +(this.currentCrawlStats.done || 0)
+                )} / ${this.numberFormatter.format(
+                  +(this.currentCrawlStats.found || 0)
+                )}`
               )
-            : skeleton
+            : html`<sl-spinner></sl-spinner>`
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
-          crawl
+          this.workflow
             ? RelativeDuration.humanize(
-                new Date().valueOf() - new Date(`${crawl.started}Z`).valueOf()
+                new Date().valueOf() -
+                  new Date(`${this.workflow.currCrawlStartTime}Z`).valueOf()
               )
             : skeleton
         )}
-        ${this.renderDetailItem(
-          msg("Crawl Size"),
-          () => html`<sl-format-bytes
-            value=${this.workflow?.currCrawlSize || 0}
-            display="narrow"
-          ></sl-format-bytes>`
+        ${this.renderDetailItem(msg("Crawl Size"), () =>
+          this.workflow
+            ? html`<sl-format-bytes
+                value=${this.workflow.currCrawlSize || 0}
+                display="narrow"
+              ></sl-format-bytes>`
+            : skeleton
         )}
         ${this.renderDetailItem(
           msg("Crawler Instances"),
-          () => (crawl ? crawl.scale : skeleton),
+          () => (this.workflow ? this.workflow.scale : skeleton),
           true
         )}
       </dl>
@@ -876,14 +879,14 @@ export class WorkflowDetail extends LiteElement {
           `
         : this.renderInactiveCrawlMessage()}
       ${when(
-        this.currentCrawl && isRunning,
+        isRunning,
         () => html`
           <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
               orgId=${this.orgId}
               crawlId=${this.currentCrawlId}
-              scale=${this.currentCrawl!.scale}
+              scale=${this.workflow!.scale}
             ></btrix-screencast>
           </div>
 
@@ -968,7 +971,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderEditScale() {
-    if (!this.currentCrawl) return;
+    if (!this.workflow) return;
 
     const scaleOptions = [
       {
@@ -988,7 +991,7 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <div>
         <sl-radio-group
-          value=${this.currentCrawl!.scale}
+          value=${this.workflow.scale}
           help-text=${msg(
             "This change will only apply to the currently running crawl."
           )}
@@ -1121,8 +1124,9 @@ export class WorkflowDetail extends LiteElement {
     if (!this.currentCrawlId) return;
 
     try {
-      console.log("fetch:", this.currentCrawlId);
-      this.currentCrawl = await this.getCrawl(this.currentCrawlId);
+      // TODO see if API can pass stats in GET workflow
+      const { stats } = await this.getCrawl(this.currentCrawlId);
+      this.currentCrawlStats = stats;
     } catch (e) {
       // TODO handle error
       console.debug(e);
@@ -1301,8 +1305,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       this.currentCrawlId = data.started;
-      this.fetchCurrentCrawl();
-      await this.fetchWorkflow();
+      this.fetchWorkflow();
       this.goToTab("watch");
 
       this.notify({
