@@ -405,16 +405,15 @@ export class WorkflowDetail extends LiteElement {
     }
     if (this.activePanel === "settings") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button
-          size="small"
+        <sl-icon-button
+          name="gear"
+          label="Edit workflow settings"
           @click=${() =>
             this.navTo(
               `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
             )}
         >
-          <sl-icon name="gear" slot="prefix"></sl-icon>
-          <span>${msg("Edit")}</span>
-        </sl-button>`;
+        </sl-icon-button>`;
     }
     if (this.activePanel === "watch") {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
@@ -716,6 +715,22 @@ export class WorkflowDetail extends LiteElement {
 
   private renderArtifacts() {
     return html`
+      ${when(
+        this.currentCrawlId,
+        () => html`<div class="mb-4">
+          <btrix-alert variant="success" class="text-sm">
+            ${msg(
+              html`A crawl is currently running.
+                <a
+                  href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
+                  class="underline hover:no-underline"
+                  >Watch Crawl</a
+                >`
+            )}
+          </btrix-alert>
+        </div>`
+      )}
+
       <section>
         <div class="mb-3 p-4 bg-neutral-50 border rounded-lg flex justify-end">
           <div class="flex items-center">
