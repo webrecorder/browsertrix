@@ -361,7 +361,7 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             @click=${() => this.stop(workflow.currCrawlId)}
-            ?disabled=${workflow.currCrawlState === "stopping"}
+            ?disabled=${workflow.currCrawlStopping}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}

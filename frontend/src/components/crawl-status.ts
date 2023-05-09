@@ -15,6 +15,9 @@ export class CrawlStatus extends LitElement {
   @property({ type: Boolean })
   hideLabel = false;
 
+  @property({ type: Boolean })
+  stopping = false;
+
   static styles = [
     animatePulse,
     css`
@@ -173,7 +176,8 @@ export class CrawlStatus extends LitElement {
   }
 
   render() {
-    const { icon, label } = CrawlStatus.getContent(this.state);
+    const state = this.stopping && this.state === "running" ? "stopping" : this.state;
+    const { icon, label } = CrawlStatus.getContent(state);
     if (this.hideLabel) {
       return html`<div class="icon-only">
         <sl-tooltip content=${label}

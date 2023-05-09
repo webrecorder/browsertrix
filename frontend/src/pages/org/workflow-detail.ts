@@ -398,7 +398,7 @@ export class WorkflowDetail extends LiteElement {
             @click=${() => this.stop()}
             ?disabled=${!this.workflow?.currCrawlId ||
             this.isCancelingOrStoppingCrawl ||
-            this.workflow?.currCrawlState === "stopping"}
+            this.workflow?.currCrawlStopping}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             <span>${msg("Stop")}</span>
@@ -480,7 +480,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() => this.stop()}
-                ?disabled=${workflow.currCrawlState === "stopping" ||
+                ?disabled=${workflow.currCrawlStopping ||
                 this.isCancelingOrStoppingCrawl}
               >
                 <sl-icon name="dash-circle" slot="prefix"></sl-icon>
@@ -586,6 +586,7 @@ export class WorkflowDetail extends LiteElement {
               state=${this.workflow!.currCrawlState ||
               this.workflow!.lastCrawlState ||
               msg("No Crawls Yet")}
+              ?stopping=${this.workflow?.currCrawlStopping}
             ></btrix-crawl-status>
           `
         )}
@@ -796,7 +797,7 @@ export class WorkflowDetail extends LiteElement {
     const isStarting = this.workflow.currCrawlState === "starting";
     const isWaiting = this.workflow.currCrawlState === "waiting";
     const isRunning = this.workflow.currCrawlState === "running";
-    const isStopping = this.workflow.currCrawlState === "stopping";
+    const isStopping = this.workflow.currCrawlStopping;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
