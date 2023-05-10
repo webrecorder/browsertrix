@@ -52,7 +52,7 @@ export class WorkflowDetail extends LiteElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?: "scale" | "exclusions";
+  openDialogName?: "scale" | "exclusions" | "cancel" | "stop";
 
   @state()
   private workflow?: Workflow;
@@ -74,9 +74,6 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private isDialogVisible: boolean = false;
-
-  @state()
-  private isAttemptCancel: boolean = false;
 
   @state()
   private isCancelingOrStoppingCrawl: boolean = false;
@@ -267,14 +264,18 @@ export class WorkflowDetail extends LiteElement {
 
       <btrix-dialog
         label=${msg("Cancel Crawl?")}
-        ?open=${this.isAttemptCancel}
-        @sl-request-close=${() => (this.isAttemptCancel = false)}
+        ?open=${this.openDialogName === "cancel"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${() => (this.isDialogVisible = true)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
           "Canceling will discard all pages crawled. Are you sure you want to discard them?"
         )}
         <div slot="footer" class="flex justify-between">
-          <sl-button size="small" @click=${() => (this.isAttemptCancel = false)}
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
             >Keep Crawling</sl-button
           >
           <sl-button
@@ -283,7 +284,7 @@ export class WorkflowDetail extends LiteElement {
             ?loading=${this.isCancelingOrStoppingCrawl}
             @click=${async () => {
               await this.cancel();
-              this.isAttemptCancel = false;
+              this.openDialogName = undefined;
             }}
             >Cancel & Discard Crawl</sl-button
           >
@@ -804,7 +805,11 @@ export class WorkflowDetail extends LiteElement {
       ${isStarting || isWaiting
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${isStarting ? msg("Crawl starting...") : msg("Crawl waiting for available resources before it can start...")}
+              ${isStarting
+                ? msg("Crawl starting...")
+                : msg(
+                    "Crawl waiting for available resources before it can start..."
+                  )}
             </p>
           </div>`
         : isActive(this.workflow.currCrawlState)
@@ -983,12 +988,8 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private requestCancelCrawl() {
-    const pagesDone = this.currentCrawl?.stats?.done;
-    if (pagesDone && +pagesDone > 0) {
-      this.isAttemptCancel = true;
-    } else {
-      this.cancel();
-    }
+    this.openDialogName = "cancel";
+    this.isDialogVisible = true;
   }
 
   private async scale(value: Crawl["scale"]) {
