@@ -285,7 +285,7 @@ export class WorkflowDetail extends LiteElement {
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
-          "Pages crawled so far will be saved but incomplete. Are you sure you want to stop crawling?"
+          "Pages crawled so far will be saved and marked as incomplete. Are you sure you want to stop crawling?"
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
