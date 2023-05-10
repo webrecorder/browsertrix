@@ -296,7 +296,7 @@ class BtrixOperator(K8sAPI):
         return true if db mark_finished update succeeds"""
         try:
             redis = await self._get_redis(redis_url)
-            await self.mark_finished(redis, crawl_id, cid, status, state)
+            await self.mark_finished(redis, crawl_id, uuid.UUID(cid), status, state)
             return True
         # pylint: disable=bare-except
         except:
@@ -497,7 +497,7 @@ class BtrixOperator(K8sAPI):
 
         await update_crawl(self.crawls, crawl_id, **kwargs)
 
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, uuid.UUID(cid))
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
