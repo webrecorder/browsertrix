@@ -14,6 +14,7 @@ import "./workflows-list";
 import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
+import "./collections-list";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
@@ -30,6 +31,7 @@ export type OrgTab =
   | "workflows"
   | "artifacts"
   | "browser-profiles"
+  | "collections"
   | "settings";
 
 type Params = {
@@ -127,6 +129,9 @@ export class Org extends LiteElement {
         break;
       case "browser-profiles":
         tabPanelContent = this.renderBrowserProfiles();
+        break;
+      case "collections":
+        tabPanelContent = this.renderCollections();
         break;
       case "settings": {
         if (this.isAdmin) {
@@ -317,6 +322,15 @@ export class Org extends LiteElement {
       .orgId=${this.orgId!}
       ?showCreateDialog=${isNewResourceTab}
     ></btrix-browser-profiles-list>`;
+  }
+
+  private renderCollections() {
+    return html`<btrix-collections-list
+      .authState=${this.authState!}
+      orgId=${this.orgId!}
+      userId=${this.userInfo!.id}
+      ?isCrawler=${this.isCrawler}
+    ></btrix-collections-list>`;
   }
 
   private renderOrgSettings() {
