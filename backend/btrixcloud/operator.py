@@ -296,7 +296,7 @@ class BtrixOperator(K8sAPI):
         return true if db mark_finished update succeeds"""
         try:
             redis = await self._get_redis(redis_url)
-            await self.mark_finished(redis, crawl_id, cid, status, state)
+            await self.mark_finished(redis, crawl_id, uuid.UUID(cid), status, state)
             return True
         # pylint: disable=bare-except
         except:
