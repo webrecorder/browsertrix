@@ -980,7 +980,10 @@ export class WorkflowDetail extends LiteElement {
               <sl-radio-button
                 value=${value}
                 size="small"
-                @click=${() => this.scale(value)}
+                @click=${async () => {
+                  await this.scale(value);
+                  this.openDialogName = undefined;
+                }}
                 ?disabled=${this.isSubmittingUpdate}
                 >${label}</sl-radio-button
               >
@@ -1041,9 +1044,6 @@ export class WorkflowDetail extends LiteElement {
       } else {
         throw new Error("unhandled API response");
       }
-
-      this.openDialogName = undefined;
-      this.isDialogVisible = false;
     } catch {
       this.notify({
         message: msg("Sorry, couldn't change crawl scale at this time."),
