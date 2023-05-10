@@ -42,16 +42,23 @@ class Migration(BaseMigration):
             config = CrawlConfig.from_dict(config_dict)
             print(
                 f"Updating Crawl Config {config.id}: schedule: {config.schedule}, "
-                + "timeout: {config.crawlTimeout}, scale: {config.scale}"
+                + f"timeout: {config.crawlTimeout}, scale: {config.scale}"
             )
-            await crawl_manager.update_crawl_config(
-                config,
-                UpdateCrawlConfig(
-                    scale=config.scale,
-                    crawlTimeout=config.crawlTimeout,
-                    schedule=config.schedule,
-                ),
-            )
+            try:
+                await crawl_manager.update_crawl_config(
+                    config,
+                    UpdateCrawlConfig(
+                        scale=config.scale,
+                        crawlTimeout=config.crawlTimeout,
+                        schedule=config.schedule,
+                    ),
+                )
+            # pylint: disable=broad-except
+            except Exception as exc:
+                print(
+                    "Skip crawl config migration due to error, likely missing config",
+                    exc,
+                )
 
         # Delete existing scheduled jobs from crawler namespace
         print("Deleting cronjobs from crawler namespace")
