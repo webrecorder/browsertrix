@@ -545,7 +545,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-button-group class="mr-2">
             <sl-button
               size="small"
-              @click=${() => this.stop()}
+              @click=${() => (this.openDialogName = "stop")}
               ?disabled=${!this.currentCrawlId ||
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.currCrawlStopping}
