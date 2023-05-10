@@ -195,7 +195,7 @@ export class WorkflowDetail extends LiteElement {
     await this.fetchWorkflow();
 
     let notifyOpts = {
-      message: msg("Workflow run finished."),
+      message: msg("Crawl finished."),
       variant: "info",
       icon: "info-circle",
     } as any;
@@ -203,21 +203,21 @@ export class WorkflowDetail extends LiteElement {
     switch (this.workflow!.lastCrawlState) {
       case "complete":
         notifyOpts = {
-          message: msg("Workflow run complete."),
+          message: msg("Crawl complete."),
           variant: "success",
           icon: "check-circle",
         };
         break;
       case "canceled":
         notifyOpts = {
-          message: msg("Workflow run canceled."),
+          message: msg("Crawl canceled."),
           variant: "danger",
           icon: "x-octagon",
         };
         break;
       case "failed":
         notifyOpts = {
-          message: msg("Workflow run failed."),
+          message: msg("Crawl failed."),
           variant: "danger",
           icon: "exclamation-triangle",
         };
@@ -576,7 +576,7 @@ export class WorkflowDetail extends LiteElement {
             @click=${() => this.runNow()}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
-            <span>${msg("Run Workflow")}</span>
+            <span>${msg("Run Crawl")}</span>
           </sl-button>
         `
       )}
@@ -614,7 +614,7 @@ export class WorkflowDetail extends LiteElement {
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
-                ${msg("Run Workflow")}
+                ${msg("Run Crawl")}
               </sl-menu-item>
             `
           )}
@@ -804,7 +804,7 @@ export class WorkflowDetail extends LiteElement {
           () => html`<div class="mb-4">
             <btrix-alert variant="success" class="text-sm">
               ${msg(
-                html`Workflow is currently running.
+                html`Crawl is currently running.
                   <a
                     href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
                     class="underline hover:no-underline"
@@ -984,7 +984,7 @@ export class WorkflowDetail extends LiteElement {
         class="border rounded-lg p-4 h-56 min-h-max flex flex-col items-center justify-center"
       >
         <p class="font-medium text-base">
-          ${msg("Workflow is not currently running.")}
+          ${msg("Crawl is not currently running.")}
         </p>
         <div class="mt-4">
           ${when(
@@ -1011,7 +1011,7 @@ export class WorkflowDetail extends LiteElement {
 
           <sl-button size="small" @click=${() => this.runNow()}>
             <sl-icon name="play" slot="prefix"></sl-icon>
-            ${msg("Run Workflow")}
+            ${msg("Run Crawl")}
           </sl-button>
         </div>
       </section>
@@ -1423,7 +1423,7 @@ export class WorkflowDetail extends LiteElement {
       this.goToTab("watch");
 
       this.notify({
-        message: msg("Starting Workflow run."),
+        message: msg("Starting crawl."),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
