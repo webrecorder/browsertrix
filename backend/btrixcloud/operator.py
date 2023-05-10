@@ -497,7 +497,7 @@ class BtrixOperator(K8sAPI):
 
         await update_crawl(self.crawls, crawl_id, **kwargs)
 
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, uuid.UUID(cid))
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)

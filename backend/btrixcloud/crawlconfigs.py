@@ -905,7 +905,7 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         "lastCrawlSize": None,
     }
 
-    match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
+    match_query = {"cid": cid, "finished": {"$ne": None}}
     cursor = crawls.find(match_query).sort("finished", pymongo.DESCENDING)
     results = await cursor.to_list(length=10_000)
     if results:
