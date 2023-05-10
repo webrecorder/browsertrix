@@ -278,6 +278,34 @@ export class WorkflowDetail extends LiteElement {
       </div>
 
       <btrix-dialog
+        label=${msg("Stop Crawl?")}
+        ?open=${this.openDialogName === "stop"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${msg(
+          "Pages crawled so far will be saved but incomplete. Are you sure you want to stop crawling?"
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >Keep Crawling</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            ?loading=${this.isCancelingOrStoppingCrawl}
+            @click=${async () => {
+              await this.stop();
+              this.openDialogName = undefined;
+            }}
+            >Stop Crawling</sl-button
+          >
+        </div>
+      </btrix-dialog>
+      <btrix-dialog
         label=${msg("Cancel Crawl?")}
         ?open=${this.openDialogName === "cancel"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
@@ -408,7 +436,7 @@ export class WorkflowDetail extends LiteElement {
           </sl-button>
           <sl-button
             size="small"
-            @click=${() => this.stop()}
+            @click=${() => (this.openDialogName = "stop")}
             ?disabled=${!this.workflow?.currCrawlId ||
             this.isCancelingOrStoppingCrawl ||
             this.workflow?.currCrawlStopping}
@@ -492,7 +520,7 @@ export class WorkflowDetail extends LiteElement {
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
               <sl-menu-item
-                @click=${() => this.stop()}
+                @click=${() => (this.openDialogName = "stop")}
                 ?disabled=${workflow.currCrawlStopping ||
                 this.isCancelingOrStoppingCrawl}
               >
@@ -982,7 +1010,6 @@ export class WorkflowDetail extends LiteElement {
 
   private showDialog = async () => {
     await this.getWorkflowPromise;
-    await this.updateComplete;
     this.isDialogVisible = true;
   };
 
