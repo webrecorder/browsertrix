@@ -15,6 +15,7 @@ import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./collections-list";
+import "./collections-new";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
@@ -325,10 +326,18 @@ export class Org extends LiteElement {
   }
 
   private renderCollections() {
+    const isNewResourceTab = this.params.hasOwnProperty("new");
+
+    if (isNewResourceTab) {
+      return html`<btrix-collections-new
+        .authState=${this.authState!}
+        orgId=${this.orgId!}
+      ></btrix-collections-new>`;
+    }
+
     return html`<btrix-collections-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
-      userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
     ></btrix-collections-list>`;
   }

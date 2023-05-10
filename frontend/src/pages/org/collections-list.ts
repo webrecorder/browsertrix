@@ -17,9 +17,6 @@ export class CollectionsList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: String })
-  userId!: string;
-
   @property({ type: Boolean })
   isCrawler!: boolean;
 
