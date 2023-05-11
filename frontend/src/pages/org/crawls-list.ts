@@ -277,7 +277,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-tags-visible="1"
-            placeholder=${msg("All Finished Crawls")}
+            placeholder=${msg("Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
