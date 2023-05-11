@@ -206,10 +206,10 @@ def test_filter_sort_collections(
 
     coll = items[0]
     assert coll["id"]
-    assert second_coll["name"] == SECOND_COLLECTION_NAME
-    assert second_coll["oid"] == default_org_id
-    assert second_coll.get("description") is None
-    assert second_coll["crawlIds"] == [crawler_crawl_id]
+    assert coll["name"] == SECOND_COLLECTION_NAME
+    assert coll["oid"] == default_org_id
+    assert coll.get("description") is None
+    assert coll["crawlIds"] == [crawler_crawl_id]
 
     # Test sorting by name, ascending (default)
     r = requests.get(
@@ -221,8 +221,8 @@ def test_filter_sort_collections(
     assert data["total"] == 2
 
     items = data["items"]
-    assert item[0]["name"] == SECOND_COLLECTION_NAME
-    assert item[1]["name"] == UPDATED_NAME
+    assert items[0]["name"] == SECOND_COLLECTION_NAME
+    assert items[1]["name"] == UPDATED_NAME
 
     # Test sorting by name, descending
     r = requests.get(
@@ -234,8 +234,8 @@ def test_filter_sort_collections(
     assert data["total"] == 2
 
     items = data["items"]
-    assert item[0]["name"] == UPDATED_NAME
-    assert item[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[0]["name"] == UPDATED_NAME
+    assert items[1]["name"] == SECOND_COLLECTION_NAME
 
     # Test sorting by description, ascending (default)
     r = requests.get(
@@ -247,10 +247,10 @@ def test_filter_sort_collections(
     assert data["total"] == 2
 
     items = data["items"]
-    assert item[0]["name"] == SECOND_COLLECTION_NAME
-    assert item[0].get("description") is None
-    assert item[1]["name"] == UPDATED_NAME
-    assert item[1]["description"] == DESCRIPTION
+    assert items[0]["name"] == SECOND_COLLECTION_NAME
+    assert items[0].get("description") is None
+    assert items[1]["name"] == UPDATED_NAME
+    assert items[1]["description"] == DESCRIPTION
 
     # Test sorting by description, descending
     r = requests.get(
@@ -262,7 +262,7 @@ def test_filter_sort_collections(
     assert data["total"] == 2
 
     items = data["items"]
-    assert item[0]["name"] == UPDATED_NAME
-    assert item[0]["description"] == DESCRIPTION
-    assert item[1]["name"] == SECOND_COLLECTION_NAME
-    assert item[1].get("description") is None
+    assert items[0]["name"] == UPDATED_NAME
+    assert items[0]["description"] == DESCRIPTION
+    assert items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[1].get("description") is None

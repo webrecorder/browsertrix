@@ -49,6 +49,8 @@ class UpdateColl(BaseModel):
 class CollectionOps:
     """ops for working with named collections of crawls"""
 
+    # pylint: disable=too-many-arguments
+
     def __init__(self, mdb, crawls, crawl_manager, orgs):
         self.collections = mdb["collections"]
 
@@ -165,6 +167,7 @@ class CollectionOps:
         name: Optional[str] = None,
     ):
         """List all collections for org"""
+        # pylint: disable=too-many-locals
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -174,21 +177,43 @@ class CollectionOps:
         if name:
             match_query["name"] = name
 
-        total = await self.collections.count_documents(match_query)
+        aggregate = [{"$match": match_query}]
 
-        sort = []
         if sort_by:
             if sort_by not in ("name", "description"):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
-            sort = [{sort_by: sort_direction}]
 
-        cursor = self.collections.find(
-            match_query, skip=skip, limit=page_size, sort=sort
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
         )
-        results = await cursor.to_list(length=page_size)
-        collections = [Collection.from_dict(res) for res in results]
+
+        cursor = self.collections.aggregate(
+            aggregate, collation=pymongo.collation.Collation(locale="en")
+        )
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        collections = [Collection.from_dict(res) for res in items]
 
         return collections, total
 
@@ -221,7 +246,7 @@ class CollectionOps:
 # pylint: disable=too-many-locals
 def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     """init collections api"""
-    # pylint: disable=invalid-name, unused-argument
+    # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
     colls = CollectionOps(mdb, crawls, crawl_manager, orgs)
 
