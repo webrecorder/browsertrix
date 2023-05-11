@@ -1,6 +1,7 @@
 import type { HTMLTemplateResult, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { until } from "lit/directives/until.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
@@ -424,16 +425,22 @@ export class WorkflowDetail extends LiteElement {
       <btrix-tab-panel name="artifacts"
         >${this.renderArtifacts()}</btrix-tab-panel
       >
-      <btrix-tab-panel name="watch"
-        >${when(this.activePanel === "watch", () =>
-          this.currentCrawlId
-            ? html` <div class="border rounded-lg py-2 mb-5 h-14">
-                  ${this.renderCurrentCrawl()}
-                </div>
-                ${this.renderWatchCrawl()}`
-            : this.renderInactiveWatchCrawl()
-        )}</btrix-tab-panel
-      >
+      <btrix-tab-panel name="watch">
+        ${until(
+          this.getWorkflowPromise?.then(
+            () => html`
+              ${when(this.activePanel === "watch", () =>
+                this.currentCrawlId
+                  ? html` <div class="border rounded-lg py-2 mb-5 h-14">
+                        ${this.renderCurrentCrawl()}
+                      </div>
+                      ${this.renderWatchCrawl()}`
+                  : this.renderInactiveWatchCrawl()
+              )}
+            `
+          )
+        )}
+      </btrix-tab-panel>
       <btrix-tab-panel name="settings">
         ${this.renderSettings()}
       </btrix-tab-panel>
