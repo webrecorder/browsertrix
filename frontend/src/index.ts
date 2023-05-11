@@ -705,7 +705,7 @@ export class App extends LiteElement {
             @submit=${(e: any) => {
               e.preventDefault();
               const id = new FormData(e.target).get("crawlId") as string;
-              this.navigate(`/crawls/crawl/${id}`);
+              this.navigate(`/crawls/crawl/${id}#watch`);
               e.target.closest("sl-dropdown").hide();
             }}
           >
