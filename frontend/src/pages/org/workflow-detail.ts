@@ -496,7 +496,7 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <a
         slot="nav"
-        href=${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#${tabName}`}
+        href=${`${window.location.pathname}#${tabName}`}
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${className}"
         aria-selected=${isActive}
         aria-disabled=${disabled}
@@ -806,7 +806,7 @@ export class WorkflowDetail extends LiteElement {
               ${msg(
                 html`Crawl is currently running.
                   <a
-                    href="${`/orgs/${this.orgId}/workflows/crawl/${this.workflow?.id}#watch`}"
+                    href="${`${window.location.pathname}#watch`}"
                     class="underline hover:no-underline"
                     >Watch Crawl Progress</a
                   >`

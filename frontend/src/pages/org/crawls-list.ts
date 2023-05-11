@@ -472,7 +472,7 @@ export class CrawlsList extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list>
+      <btrix-crawl-list baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}>
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 

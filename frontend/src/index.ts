@@ -705,7 +705,8 @@ export class App extends LiteElement {
             @submit=${(e: any) => {
               e.preventDefault();
               const id = new FormData(e.target).get("crawlId") as string;
-              this.jumpToCrawl(id);
+              this.navigate(`/crawls/crawl/${id}`);
+              e.target.closest("sl-dropdown").hide();
             }}
           >
             <div class="flex flex-wrap items-center">
@@ -728,18 +729,6 @@ export class App extends LiteElement {
         </div>
       </sl-dropdown>
     `;
-  }
-
-  private async jumpToCrawl(crawlId: string) {
-    try {
-      const crawl = await this.apiFetch(
-        `/orgs/all/crawls/${crawlId}/replay.json`,
-        this.authService.authState!
-      );
-      this.navigate(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}#watch`);
-    } catch (e) {
-      console.debug(e);
-    }
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
