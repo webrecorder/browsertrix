@@ -156,7 +156,13 @@ class CollectionOps:
         return [result["name"] for result in results]
 
     async def list_collections(
-        self, oid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+        self,
+        oid: uuid.UUID,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: str = None,
+        sort_direction: int = -1,
+        name: Optional[str] = None,
     ):
         """List all collections for org"""
         # Zero-index page for query
@@ -165,9 +171,22 @@ class CollectionOps:
 
         match_query = {"oid": oid}
 
+        if name:
+            match_query["name"] = name
+
         total = await self.collections.count_documents(match_query)
 
-        cursor = self.collections.find(match_query, skip=skip, limit=page_size)
+        sort = []
+        if sort_by:
+            if sort_by not in ("name", "description"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+            sort = [{sort_by: sort_direction}]
+
+        cursor = self.collections.find(
+            match_query, skip=skip, limit=page_size, sort=sort
+        )
         results = await cursor.to_list(length=page_size)
         collections = [Collection.from_dict(res) for res in results]
 
@@ -221,9 +240,17 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sortBy: str = None,
+        sortDirection: int = -1,
+        name: Optional[str] = None,
     ):
         collections, total = await colls.list_collections(
-            org.id, page_size=pageSize, page=page
+            org.id,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            name=name,
         )
         return paginated_format(collections, total, page, pageSize)
 
