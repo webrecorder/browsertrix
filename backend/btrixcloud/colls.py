@@ -161,7 +161,7 @@ class CollectionOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
-        sort_direction: int = -1,
+        sort_direction: int = 1,
         name: Optional[str] = None,
     ):
         """List all collections for org"""
@@ -245,7 +245,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = None,
-        sortDirection: int = -1,
+        sortDirection: int = 1,
         name: Optional[str] = None,
     ):
         collections, total = await colls.list_collections(
