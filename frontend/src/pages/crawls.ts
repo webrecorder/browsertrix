@@ -42,6 +42,8 @@ export class Crawls extends LiteElement {
       .authState=${this.authState!}
       crawlsBaseUrl=${ROUTES.crawls}
       crawlsAPIBaseUrl="/orgs/all/crawls"
+      isCrawler
+      isAdminView
       shouldFetch
     ></btrix-crawls-list>`;
   }

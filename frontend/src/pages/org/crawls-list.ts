@@ -18,7 +18,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import { isActive } from "../../utils/crawler";
+import { isActive, activeCrawlStates } from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -78,6 +78,7 @@ export class CrawlsList extends LiteElement {
     firstSeed: msg("Crawl Start URL"),
     cid: msg("Workflow ID"),
   };
+
   @property({ type: Object })
   authState!: AuthState;
 
@@ -86,6 +87,11 @@ export class CrawlsList extends LiteElement {
 
   @property({ type: Boolean })
   isCrawler!: boolean;
+
+  // TODO better handling of using same crawls-list
+  // component between superadmin view and regular view
+  @property({ type: Boolean })
+  isAdminView = false;
 
   // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
@@ -103,7 +109,7 @@ export class CrawlsList extends LiteElement {
   shouldFetch?: boolean;
 
   @state()
-  private lastFetched?: number;
+  private crawlStates: CrawlState[] = finishedCrawlStates;
 
   @state()
   private crawls?: Crawls;
@@ -166,6 +172,15 @@ export class CrawlsList extends LiteElement {
   }
 
   protected willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("isAdminView") && this.isAdminView === true) {
+      // TODO better handling of using same crawls-list
+      // component between superadmin view and regular view
+      this.crawlStates = activeCrawlStates;
+      this.orderBy = {
+        field: "started",
+        direction: sortableFields["started"].defaultDirection!,
+      };
+    }
     if (
       changedProperties.has("shouldFetch") ||
       changedProperties.get("crawlsBaseUrl") ||
@@ -199,7 +214,10 @@ export class CrawlsList extends LiteElement {
       changedProperties.has("crawlsBaseUrl") ||
       changedProperties.has("crawlsAPIBaseUrl")
     ) {
-      this.fetchConfigSearchValues();
+      // TODO add back when API supports `orgs/all/crawlconfigs`
+      if (!this.isAdminView) {
+        this.fetchConfigSearchValues();
+      }
     }
   }
 
@@ -223,7 +241,11 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">${msg("Finished Crawls")}</h1>
+            <h1 class="text-xl font-semibold">
+              ${this.isAdminView
+                ? msg("Running Crawls")
+                : msg("Finished Crawls")}
+            </h1>
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
@@ -266,7 +288,7 @@ export class CrawlsList extends LiteElement {
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          ${this.renderSearch()}
+          ${when(!this.isAdminView, () => this.renderSearch())}
         </div>
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
@@ -277,7 +299,9 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-tags-visible="1"
-            placeholder=${msg("Finished Crawls")}
+            placeholder=${this.isAdminView
+              ? msg("All Active Crawls")
+              : msg("Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -287,7 +311,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${finishedCrawlStates.map(this.renderStatusMenuItem)}
+            ${this.crawlStates.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -639,7 +663,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
-    const state = this.filterBy.state || finishedCrawlStates;
+    const state = this.filterBy.state || this.crawlStates;
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -666,7 +690,6 @@ export class CrawlsList extends LiteElement {
     );
 
     this.getCrawlsController = null;
-    this.lastFetched = Date.now();
 
     return data;
   }
