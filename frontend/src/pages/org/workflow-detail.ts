@@ -1254,7 +1254,6 @@ export class WorkflowDetail extends LiteElement {
 
   private stopPoll() {
     window.clearTimeout(this.timerId);
-    this.cancelInProgressGetWorkflow();
   }
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
