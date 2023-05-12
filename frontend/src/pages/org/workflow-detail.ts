@@ -103,8 +103,6 @@ export class WorkflowDetail extends LiteElement {
 
   private isPanelHeaderVisible?: boolean;
 
-  // Use to cancel requests
-  private getWorkflowController: AbortController | null = null;
   private getWorkflowPromise?: Promise<Workflow>;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
@@ -264,13 +262,6 @@ export class WorkflowDetail extends LiteElement {
       this.timerId = window.setTimeout(() => {
         this.fetchWorkflow();
       }, 1000 * POLL_INTERVAL_SECONDS);
-    }
-  }
-
-  private cancelInProgressGetWorkflow() {
-    if (this.getWorkflowController) {
-      this.getWorkflowController.abort(ABORT_REASON_CANCLED);
-      this.getWorkflowController = null;
     }
   }
 
@@ -1198,15 +1189,10 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async getWorkflow(): Promise<Workflow> {
-    this.getWorkflowController = new AbortController();
     const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-      this.authState!,
-      {
-        signal: this.getWorkflowController.signal,
-      }
+      this.authState!
     );
-    this.getWorkflowController = null;
     return data;
   }
 
