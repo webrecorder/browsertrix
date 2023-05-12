@@ -173,6 +173,8 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private getActivePanelFromHash = () => {
+    if (this.isEditing) return;
+
     const hashValue = window.location.hash.slice(1);
     if (SECTIONS.includes(hashValue as any)) {
       this.activePanel = hashValue as Tab;
