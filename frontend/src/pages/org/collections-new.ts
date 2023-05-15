@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { TemplateResult } from "lit";
 
 const STEPS = ["crawls", "metadata"] as const;
 type Tab = (typeof STEPS)[number];
@@ -63,7 +64,7 @@ export class CollectionsNew extends LiteElement {
         ${this.renderCrawls()}
       </btrix-tab-panel>
       <btrix-tab-panel name="newCollection-metadata">
-        TODO metadata
+        ${this.renderMetadata()}
       </btrix-tab-panel>
     </btrix-tab-list>`;
   }
@@ -106,24 +107,49 @@ export class CollectionsNew extends LiteElement {
 
   private renderCrawls() {
     return html`
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="col-span-1">${this.renderCrawlsInCollection()}</div>
         <div class="col-span-1">${this.renderCrawlsNotInCollection()}</div>
-      </div>
+        <footer
+          class="col-span-2 border rounded-lg px-6 py-4 flex justify-between"
+        >
+          <sl-button variant="primary" size="small" class="ml-auto">
+            <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+            ${msg("Next Step")}
+          </sl-button>
+        </footer>
+      </section>
     `;
+  }
+
+  private renderMetadata() {
+    return html`<section>
+      <div class="border rounded-t-lg p-6"></div>
+      <footer class="border rounded-b-lg px-6 py-4 flex justify-between">
+        <sl-button size="small">
+          <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+          ${msg("Previous Step")}
+        </sl-button>
+        <sl-button variant="primary" size="small">
+          ${msg("Save New Collection")}
+        </sl-button>
+      </footer>
+    </section>`;
   }
 
   private renderCrawlsInCollection() {
     return html`<section>
-      <header>${msg("Crawls in Collection")}</header>
-      <div class="border rounded-lg"></div>
+      <h4 class="text-base font-semibold mb-3">
+        ${msg("Crawls in Collection")}
+      </h4>
+      <div class="border rounded-lg p-6"></div>
     </section>`;
   }
 
   private renderCrawlsNotInCollection() {
     return html`<section>
-      <header>${msg("Finished Crawls")}</header>
-      <div class="border rounded-lg"></div>
+      <h4 class="text-base font-semibold mb-3">${msg("Finished Crawls")}</h4>
+      <div class="border rounded-lg p-6"></div>
     </section>`;
   }
 }
