@@ -151,7 +151,7 @@ export class Org extends LiteElement {
       ${this.renderOrgNavBar()}
       <main>
         <div
-          class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
+          class="w-full max-w-screen-2xl mx-auto px-3 box-border py-5"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
@@ -228,23 +228,27 @@ export class Org extends LiteElement {
     const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
     if (this.params.crawlOrWorkflowId) {
-      return html` <btrix-crawl-detail
-        .authState=${this.authState!}
-        crawlId=${this.params.crawlOrWorkflowId}
-        crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-        crawlsBaseUrl=${crawlsBaseUrl}
-        ?isCrawler=${this.isCrawler}
-      ></btrix-crawl-detail>`;
+      return html`<div class="max-w-screen-lg mx-auto">
+        <btrix-crawl-detail
+          .authState=${this.authState!}
+          crawlId=${this.params.crawlOrWorkflowId}
+          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+          crawlsBaseUrl=${crawlsBaseUrl}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-crawl-detail>
+      </div>`;
     }
 
-    return html`<btrix-crawls-list
-      .authState=${this.authState!}
-      userId=${this.userInfo!.id}
-      ?isCrawler=${this.isCrawler}
-      crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-      crawlsBaseUrl=${crawlsBaseUrl}
-      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
-    ></btrix-crawls-list>`;
+    return html`<div class="max-w-screen-lg mx-auto">
+      <btrix-crawls-list
+        .authState=${this.authState!}
+        userId=${this.userInfo!.id}
+        ?isCrawler=${this.isCrawler}
+        crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+        crawlsBaseUrl=${crawlsBaseUrl}
+        ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
+      ></btrix-crawls-list>
+    </div>`;
   }
 
   private renderWorkflows() {
@@ -258,71 +262,85 @@ export class Org extends LiteElement {
         // TODO abstract into breadcrumbs
         const crawlsBaseUrl = `/orgs/${this.orgId}/workflows/crawl/${workflowId}`;
 
-        return html` <btrix-crawl-detail
-          .authState=${this.authState!}
-          crawlId=${this.params.artifactId}
-          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-          crawlsBaseUrl=${crawlsBaseUrl}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-crawl-detail>`;
+        return html`<div class="max-w-screen-lg mx-auto">
+          <btrix-crawl-detail
+            .authState=${this.authState!}
+            crawlId=${this.params.artifactId}
+            crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+            crawlsBaseUrl=${crawlsBaseUrl}
+            ?isCrawler=${this.isCrawler}
+          ></btrix-crawl-detail>
+        </div>`;
       }
       return html`
-        <btrix-workflow-detail
-          class="col-span-5 mt-6"
-          .authState=${this.authState!}
-          orgId=${this.orgId!}
-          workflowId=${workflowId}
-          openDialogName=${this.viewStateData?.dialog}
-          ?isEditing=${isEditing}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-workflow-detail>
+        <div class="max-w-screen-lg mx-auto">
+          <btrix-workflow-detail
+            class="col-span-5 mt-6"
+            .authState=${this.authState!}
+            orgId=${this.orgId!}
+            workflowId=${workflowId}
+            openDialogName=${this.viewStateData?.dialog}
+            ?isEditing=${isEditing}
+            ?isCrawler=${this.isCrawler}
+          ></btrix-workflow-detail>
+        </div>
       `;
     }
 
     if (isNewResourceTab) {
       const workflow = this.viewStateData?.workflow;
 
-      return html` <btrix-workflows-new
-        class="col-span-5 mt-6"
-        .authState=${this.authState!}
-        orgId=${this.orgId!}
-        ?isCrawler=${this.isCrawler}
-        .initialWorkflow=${workflow}
-      ></btrix-workflows-new>`;
+      return html`<div class="max-w-screen-lg mx-auto">
+        <btrix-workflows-new
+          class="col-span-5 mt-6"
+          .authState=${this.authState!}
+          orgId=${this.orgId!}
+          ?isCrawler=${this.isCrawler}
+          .initialWorkflow=${workflow}
+        ></btrix-workflows-new>
+      </div>`;
     }
 
-    return html`<btrix-workflows-list
-      .authState=${this.authState!}
-      orgId=${this.orgId!}
-      userId=${this.userInfo!.id}
-      ?isCrawler=${this.isCrawler}
-    ></btrix-workflows-list>`;
+    return html`<div class="max-w-screen-lg mx-auto">
+      <btrix-workflows-list
+        .authState=${this.authState!}
+        orgId=${this.orgId!}
+        userId=${this.userInfo!.id}
+        ?isCrawler=${this.isCrawler}
+      ></btrix-workflows-list>
+    </div>`;
   }
 
   private renderBrowserProfiles() {
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
     if (this.params.browserProfileId) {
-      return html`<btrix-browser-profiles-detail
-        .authState=${this.authState!}
-        .orgId=${this.orgId!}
-        profileId=${this.params.browserProfileId}
-      ></btrix-browser-profiles-detail>`;
+      return html`<div class="max-w-screen-lg mx-auto">
+        <btrix-browser-profiles-detail
+          .authState=${this.authState!}
+          .orgId=${this.orgId!}
+          profileId=${this.params.browserProfileId}
+        ></btrix-browser-profiles-detail>
+      </div>`;
     }
 
     if (this.params.browserId) {
-      return html`<btrix-browser-profiles-new
-        .authState=${this.authState!}
-        .orgId=${this.orgId!}
-        .browserId=${this.params.browserId}
-      ></btrix-browser-profiles-new>`;
+      return html`<div class="max-w-screen-lg mx-auto">
+        <btrix-browser-profiles-new
+          .authState=${this.authState!}
+          .orgId=${this.orgId!}
+          .browserId=${this.params.browserId}
+        ></btrix-browser-profiles-new>
+      </div>`;
     }
 
-    return html`<btrix-browser-profiles-list
-      .authState=${this.authState!}
-      .orgId=${this.orgId!}
-      ?showCreateDialog=${isNewResourceTab}
-    ></btrix-browser-profiles-list>`;
+    return html`<div class="max-w-screen-lg mx-auto">
+      <btrix-browser-profiles-list
+        .authState=${this.authState!}
+        .orgId=${this.orgId!}
+        ?showCreateDialog=${isNewResourceTab}
+      ></btrix-browser-profiles-list>
+    </div>`;
   }
 
   private renderCollections() {
@@ -335,11 +353,13 @@ export class Org extends LiteElement {
       ></btrix-collections-new>`;
     }
 
-    return html`<btrix-collections-list
-      .authState=${this.authState!}
-      orgId=${this.orgId!}
-      ?isCrawler=${this.isCrawler}
-    ></btrix-collections-list>`;
+    return html`<div class="max-w-screen-lg mx-auto">
+      <btrix-collections-list
+        .authState=${this.authState!}
+        orgId=${this.orgId!}
+        ?isCrawler=${this.isCrawler}
+      ></btrix-collections-list>
+    </div>`;
   }
 
   private renderOrgSettings() {
@@ -348,18 +368,20 @@ export class Org extends LiteElement {
       : "information";
     const isAddingMember = this.params.hasOwnProperty("invite");
 
-    return html`<btrix-org-settings
-      .authState=${this.authState}
-      .userInfo=${this.userInfo}
-      .org=${this.org}
-      .orgId=${this.orgId}
-      activePanel=${activePanel}
-      ?isAddingMember=${isAddingMember}
-      ?isSavingOrgName=${this.isSavingOrgName}
-      @org-name-change=${this.onOrgNameChange}
-      @org-user-role-change=${this.onUserRoleChange}
-      @org-remove-member=${this.onOrgRemoveMember}
-    ></btrix-org-settings>`;
+    return html`<div class="max-w-screen-lg mx-auto">
+      <btrix-org-settings
+        .authState=${this.authState}
+        .userInfo=${this.userInfo}
+        .org=${this.org}
+        .orgId=${this.orgId}
+        activePanel=${activePanel}
+        ?isAddingMember=${isAddingMember}
+        ?isSavingOrgName=${this.isSavingOrgName}
+        @org-name-change=${this.onOrgNameChange}
+        @org-user-role-change=${this.onUserRoleChange}
+        @org-remove-member=${this.onOrgRemoveMember}
+      ></btrix-org-settings>
+    </div>`;
   }
 
   private async getOrg(orgId: string): Promise<OrgData> {
