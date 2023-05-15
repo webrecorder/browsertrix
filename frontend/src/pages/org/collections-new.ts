@@ -1,14 +1,20 @@
+import type { PropertyValueMap, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { TemplateResult } from "lit";
+
+import type { Crawl } from "./types";
 
 const STEPS = ["crawls", "metadata"] as const;
 type Tab = (typeof STEPS)[number];
-type Collection = any; // TODO
+type Collection = {
+  name: string;
+  description: string;
+  crawlIds: string[];
+};
 
 @localized()
 export class CollectionsNew extends LiteElement {
@@ -19,11 +25,17 @@ export class CollectionsNew extends LiteElement {
   orgId!: string;
 
   @state()
+  private collection?: Collection;
+
+  @state()
+  private crawlsToAdd: Crawl[] = [];
+
+  @state()
   private activeTab: Tab = STEPS[0];
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
-    metadata: msg("Metadata"),
+    metadata: msg("Information"),
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {}
@@ -108,8 +120,22 @@ export class CollectionsNew extends LiteElement {
   private renderCrawls() {
     return html`
       <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div class="col-span-1">${this.renderCrawlsInCollection()}</div>
-        <div class="col-span-1">${this.renderCrawlsNotInCollection()}</div>
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">
+            ${msg("Crawls in Collection")}
+          </h4>
+          <div class="border rounded-lg p-6 flex-1">
+            ${this.renderCrawlsInCollection()}
+          </div>
+        </section>
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">
+            ${msg("Finished Crawls")}
+          </h4>
+          <div class="border rounded-lg p-6 flex-1">
+            ${this.renderCrawlsNotInCollection()}
+          </div>
+        </section>
         <footer
           class="col-span-2 border rounded-lg px-6 py-4 flex justify-between"
         >
@@ -123,34 +149,67 @@ export class CollectionsNew extends LiteElement {
   }
 
   private renderMetadata() {
-    return html`<section>
-      <div class="border rounded-t-lg p-6"></div>
-      <footer class="border rounded-b-lg px-6 py-4 flex justify-between">
-        <sl-button size="small">
-          <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-          ${msg("Previous Step")}
-        </sl-button>
-        <sl-button variant="primary" size="small">
-          ${msg("Save New Collection")}
-        </sl-button>
-      </footer>
-    </section>`;
+    return html`
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">${msg("Metadata")}</h4>
+          <div class="border rounded-lg p-6 flex-1">
+            <sl-input
+              class="mb-4"
+              name="collectionName"
+              label=${msg("Name")}
+              autocomplete="off"
+              placeholder=${msg("My Collection")}
+              required
+            ></sl-input>
+            <sl-textarea
+              name="collectionDescription"
+              label=${msg("Description Preview")}
+              autocomplete="off"
+            ></sl-textarea>
+          </div>
+        </section>
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">${msg("Preview")}</h4>
+          <div class="border rounded-lg p-6 flex-1">
+            <btrix-markdown-viewer></btrix-markdown-viewer>
+          </div>
+        </section>
+        <footer
+          class="col-span-2 border rounded-lg px-6 py-4 flex justify-between"
+        >
+          <sl-button size="small">
+            <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+            ${msg("Previous Step")}
+          </sl-button>
+          <sl-button variant="primary" size="small">
+            ${msg("Save New Collection")}
+          </sl-button>
+        </footer>
+      </section>
+    `;
   }
 
   private renderCrawlsInCollection() {
-    return html`<section>
-      <h4 class="text-base font-semibold mb-3">
-        ${msg("Crawls in Collection")}
-      </h4>
-      <div class="border rounded-lg p-6"></div>
-    </section>`;
+    if (!this.crawlsToAdd.length) {
+      return html`
+        <div>
+          <span class="text-base font-semibold"
+            >${msg("Add Crawls to this Collection")}</span
+          >
+          <p>
+            ${msg(
+              "Select finished crawls to include them in this collection. You can always come back and add them later."
+            )}
+          </p>
+        </div>
+      `;
+    }
+    return html``;
   }
 
   private renderCrawlsNotInCollection() {
-    return html`<section>
-      <h4 class="text-base font-semibold mb-3">${msg("Finished Crawls")}</h4>
-      <div class="border rounded-lg p-6"></div>
-    </section>`;
+    return html``;
   }
 }
 customElements.define("btrix-collections-new", CollectionsNew);

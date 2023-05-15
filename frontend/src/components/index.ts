@@ -127,6 +127,9 @@ import("./observable").then(({ Observable }) => {
 import("./combobox").then(({ Combobox }) => {
   customElements.define("btrix-combobox", Combobox);
 });
+import("./markdown").then(({ MarkdownViewer }) => {
+  customElements.define("btrix-markdown-viewer", MarkdownViewer);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
