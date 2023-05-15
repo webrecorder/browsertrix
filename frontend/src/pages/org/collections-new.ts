@@ -60,7 +60,7 @@ export class CollectionsNew extends LiteElement {
       ${STEPS.map(this.renderTab)}
 
       <btrix-tab-panel name="newCollection-crawls">
-        TODO crawls
+        ${this.renderCrawls()}
       </btrix-tab-panel>
       <btrix-tab-panel name="newCollection-metadata">
         TODO metadata
@@ -103,5 +103,28 @@ export class CollectionsNew extends LiteElement {
       </btrix-tab>
     `;
   };
+
+  private renderCrawls() {
+    return html`
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="col-span-1">${this.renderCrawlsInCollection()}</div>
+        <div class="col-span-1">${this.renderCrawlsNotInCollection()}</div>
+      </div>
+    `;
+  }
+
+  private renderCrawlsInCollection() {
+    return html`<section>
+      <header>${msg("Crawls in Collection")}</header>
+      <div class="border rounded-lg"></div>
+    </section>`;
+  }
+
+  private renderCrawlsNotInCollection() {
+    return html`<section>
+      <header>${msg("Finished Crawls")}</header>
+      <div class="border rounded-lg"></div>
+    </section>`;
+  }
 }
 customElements.define("btrix-collections-new", CollectionsNew);
