@@ -105,6 +105,7 @@ const theme = css`
   sl-input::part(form-control-label),
   sl-textarea::part(form-control-label),
   sl-select::part(form-control-label) {
+    display: block;
     line-height: 1.4;
     margin-bottom: 0.375rem;
   }

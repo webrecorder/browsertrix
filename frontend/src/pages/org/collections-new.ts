@@ -3,7 +3,7 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { mergeDeep } from "immutable";
-import type { SlTextarea } from "@shoelace-style/shoelace";
+import type { SlTextarea, SlCheckbox } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -47,9 +47,12 @@ export class CollectionsNew extends LiteElement {
     workflows: [],
   };
 
+  @state()
+  private isPreviewingDescription = true;
+
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
-    metadata: msg("Information"),
+    metadata: msg("Metadata"),
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {}
@@ -175,65 +178,81 @@ export class CollectionsNew extends LiteElement {
 
   private renderMetadata() {
     return html`
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">${msg("Metadata")}</h4>
-          <div class="border rounded-lg p-6 flex-1">
-            <sl-input
-              class="mb-4"
-              name="collectionName"
-              label=${msg("Name")}
-              autocomplete="off"
-              placeholder=${msg("My Collection")}
-              value=${this.formState.name}
-              required
-            ></sl-input>
-            <sl-textarea
-              name="collectionDescription"
-              label=${msg("Description")}
-              value=${this.formState.description}
-              autocomplete="off"
-              rows="10"
-              @sl-input=${(e: Event) => {
-                const inputEl = e.target as SlTextarea;
-                this.updateFormState({
-                  description: inputEl.value,
-                });
-              }}
-            >
-              <p slot="help-text">
-                ${msg(
-                  html`Markdown supported.
-                    <a
-                      class="text-primary underline hover:no-underline"
-                      href="https://commonmark.org/help/"
-                      target="_blank"
-                      rel="noopener noreferrer nofollow"
-                      >Reference guide</a
-                    >`
-                )}
-              </p>
-            </sl-textarea>
-          </div>
-        </section>
-        <section
-          class="col-span-1 flex flex-col transition-colors ${this.formState
-            .description
-            ? ""
-            : "bg-neutral-50"}"
-        >
-          <h4 class="text-base font-semibold mb-3">
-            ${msg("Description Preview")}
-          </h4>
-          <div class="border rounded-lg p-6 flex-1">
-            <btrix-markdown-viewer
-              value=${this.formState.description}
-            ></btrix-markdown-viewer>
-          </div>
-        </section>
-        <footer
-          class="col-span-2 border rounded-lg px-6 py-4 flex justify-between"
-        >
+      <section class="border rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-2">
+          <section
+            class=" col-span-1 border-r ${this.isPreviewingDescription
+              ? "border-neutral-200"
+              : "border-transparent"}"
+          >
+            <div class="p-6 flex-1">
+              <sl-input
+                class="mb-4"
+                name="collectionName"
+                label=${msg("Name")}
+                autocomplete="off"
+                placeholder=${msg("My Collection")}
+                value=${this.formState.name}
+                required
+              ></sl-input>
+              <sl-textarea
+                name="collectionDescription"
+                value=${this.formState.description}
+                autocomplete="off"
+                rows="10"
+                @sl-input=${(e: Event) => {
+                  const inputEl = e.target as SlTextarea;
+                  this.updateFormState({
+                    description: inputEl.value,
+                  });
+                }}
+              >
+                <div slot="label" class="flex justify-between">
+                  <div>${msg("Description")}</div>
+                  <sl-switch
+                    @sl-change=${(e: CustomEvent) =>
+                      (this.isPreviewingDescription = (
+                        e.target as SlCheckbox
+                      ).checked)}
+                    ?checked=${this.isPreviewingDescription}
+                    >${msg("Preview")}</sl-switch
+                  >
+                </div>
+                <p slot="help-text">
+                  ${msg(
+                    html`Markdown supported.
+                      <a
+                        class="text-primary underline hover:no-underline"
+                        href="https://commonmark.org/help/"
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        >Reference guide</a
+                      >`
+                  )}
+                </p>
+              </sl-textarea>
+            </div>
+          </section>
+          <section class="col-span-1">
+            ${when(
+              this.isPreviewingDescription,
+              () => html`
+                <div class="p-6">
+                  <div
+                    class="bg-neutral-50 rounded p-2 text-xs text-neutral-500"
+                  >
+                    <p>${msg("Markdown preview")}</p>
+                  </div>
+                  <btrix-markdown-viewer
+                    value=${this.formState.description}
+                  ></btrix-markdown-viewer>
+                </div>
+              `
+            )}
+          </section>
+        </div>
+
+        <footer class="border-t px-6 py-4 flex justify-between">
           <sl-button size="small">
             <sl-icon slot="prefix" name="chevron-left"></sl-icon>
             ${msg("Previous Step")}
