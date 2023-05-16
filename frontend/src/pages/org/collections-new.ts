@@ -2,13 +2,13 @@ import type { PropertyValueMap, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import { mergeDeep } from "immutable";
+import { mergeDeep, removeIn } from "immutable";
 import type { SlTextarea, SlCheckbox, SlInput } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-
-import type { Crawl } from "./types";
+import type { APIPaginatedList } from "../../types/api";
+import type { Crawl, Workflow } from "./types";
 
 const TABS = ["crawls", "metadata"] as const;
 type Tab = (typeof TABS)[number];
@@ -33,6 +33,16 @@ export class CollectionsNew extends LiteElement {
 
   @state()
   private collection?: Collection;
+
+  @state()
+  private workflows?: APIPaginatedList & {
+    items: Workflow[];
+  };
+
+  @state()
+  private selectedWorkflows: {
+    [id: string]: Workflow;
+  } = {};
 
   @state()
   private crawlsToAdd: Crawl[] = [];
@@ -61,7 +71,11 @@ export class CollectionsNew extends LiteElement {
     metadata: msg("Metadata"),
   };
 
-  protected async willUpdate(changedProperties: Map<string, any>) {}
+  protected async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("orgId") && this.orgId) {
+      this.fetchWorkflows();
+    }
+  }
 
   connectedCallback(): void {
     // Set initial active section and dialog based on URL #hash value
@@ -165,9 +179,7 @@ export class CollectionsNew extends LiteElement {
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">
-            ${msg("All Crawl Workflows")}
-          </h4>
+          <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
           <div class="border rounded-lg p-6 flex-1">
             ${this.renderCrawlsNotInCollection()}
           </div>
@@ -292,7 +304,8 @@ export class CollectionsNew extends LiteElement {
   }
 
   private renderCrawlsInCollection() {
-    if (!this.crawlsToAdd.length) {
+    const workflows = Object.values(this.selectedWorkflows);
+    if (!workflows.length) {
       return html`
         <div>
           <span class="text-base font-semibold"
@@ -306,11 +319,55 @@ export class CollectionsNew extends LiteElement {
         </div>
       `;
     }
-    return html``;
+    return html`
+      <ul>
+        ${workflows.map(
+          (workflow) => html`
+            <li>
+              <sl-checkbox></sl-checkbox>
+              ${workflow.name || workflow.firstSeed}
+            </li>
+          `
+        )}
+      </ul>
+    `;
   }
 
   private renderCrawlsNotInCollection() {
-    return html``;
+    if (!this.workflows) {
+      return html`
+        <div class="w-full flex items-center justify-center my-24 text-3xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
+
+    return html`
+      <ul>
+        ${this.workflows.items.map(
+          (workflow) => html`
+            <li>
+              <sl-checkbox
+                ?checked=${this.selectedWorkflows[workflow.id]}
+                @sl-change=${(e: Event) => {
+                  const inputEl = e.target as SlCheckbox;
+                  if (inputEl.checked) {
+                    this.selectedWorkflows = mergeDeep(this.selectedWorkflows, {
+                      [workflow.id]: workflow,
+                    });
+                  } else {
+                    this.selectedWorkflows = removeIn(this.selectedWorkflows, [
+                      workflow.id,
+                    ]);
+                  }
+                }}
+              ></sl-checkbox>
+              ${workflow.name || workflow.firstSeed}
+            </li>
+          `
+        )}
+      </ul>
+    `;
   }
 
   private getActivePanelFromHash = () => {
@@ -384,6 +441,27 @@ export class CollectionsNew extends LiteElement {
     }
 
     this.isSubmitting = false;
+  }
+
+  private async fetchWorkflows() {
+    try {
+      this.workflows = await this.getWorkflows();
+    } catch (e: any) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve Workflows at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getWorkflows(): Promise<APIPaginatedList> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 customElements.define("btrix-collections-new", CollectionsNew);
