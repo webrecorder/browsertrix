@@ -29,6 +29,10 @@ export class Details extends LitElement {
       display: block;
     }
 
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
     summary {
       color: var(--sl-color-neutral-500);
       margin-bottom: var(--sl-spacing-2x-small);
