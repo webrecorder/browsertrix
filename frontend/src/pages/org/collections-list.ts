@@ -108,7 +108,11 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
-  private renderList = () => html` TODO `;
+  private renderList = () => html`<ul>
+    ${this.collections?.items.map(
+      (col: Collection) => html` <li>${col.name}</li> `
+    )}
+  </ul>`;
 
   private renderFetchError = () => html`
     <div>

@@ -194,11 +194,11 @@ export class CollectionsNew extends LiteElement {
       <section class="border rounded-lg">
         <div class="grid grid-cols-1 md:grid-cols-2">
           <section
-            class=" col-span-1 border-r ${this.isPreviewingDescription
+            class="col-span-1 border-r ${this.isPreviewingDescription
               ? "border-neutral-200"
               : "border-transparent"}"
           >
-            <div class="p-6 flex-1">
+            <div class="p-6">
               <sl-input
                 class="mb-4"
                 name="name"
@@ -219,6 +219,7 @@ export class CollectionsNew extends LiteElement {
                 value=${this.formState.description}
                 autocomplete="off"
                 rows="10"
+                resize="auto"
                 @sl-input=${(e: Event) => {
                   const inputEl = e.target as SlTextarea;
                   this.updateFormState({
@@ -252,7 +253,7 @@ export class CollectionsNew extends LiteElement {
               </sl-textarea>
             </div>
           </section>
-          <section class="col-span-1">
+          <section class="col-span-1 overflow-auto">
             ${when(
               this.isPreviewingDescription,
               () => html`

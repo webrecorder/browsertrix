@@ -38,6 +38,10 @@ export class MarkdownViewer extends LitElement {
     a:hover {
       text-decoration: none;
     }
+
+    img {
+      max-width: 100%;
+    }
   `;
 
   @property({ type: String })
