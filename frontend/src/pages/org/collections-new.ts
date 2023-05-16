@@ -193,16 +193,35 @@ export class CollectionsNew extends LiteElement {
               label=${msg("Description")}
               value=${this.formState.description}
               autocomplete="off"
+              rows="10"
               @sl-input=${(e: Event) => {
                 const inputEl = e.target as SlTextarea;
                 this.updateFormState({
                   description: inputEl.value,
                 });
               }}
-            ></sl-textarea>
+            >
+              <p slot="help-text">
+                ${msg(
+                  html`Markdown supported.
+                    <a
+                      class="text-primary underline hover:no-underline"
+                      href="https://commonmark.org/help/"
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      >Reference guide</a
+                    >`
+                )}
+              </p>
+            </sl-textarea>
           </div>
         </section>
-        <section class="col-span-1 flex flex-col">
+        <section
+          class="col-span-1 flex flex-col transition-colors ${this.formState
+            .description
+            ? ""
+            : "bg-neutral-50"}"
+        >
           <h4 class="text-base font-semibold mb-3">
             ${msg("Description Preview")}
           </h4>
