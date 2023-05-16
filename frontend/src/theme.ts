@@ -101,6 +101,7 @@ const theme = css`
   }
 
   /* Add more spacing between label, input and help text */
+  .form-label,
   btrix-tag-input::part(form-control-label),
   sl-input::part(form-control-label),
   sl-textarea::part(form-control-label),

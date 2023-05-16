@@ -5,6 +5,7 @@ import { when } from "lit/directives/when.js";
 import { mergeDeep, removeIn } from "immutable";
 import type { SlTextarea, SlCheckbox, SlInput } from "@shoelace-style/shoelace";
 
+import type { MarkdownChangeEvent } from "../../components/markdown-editor";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { APIPaginatedList } from "../../types/api";
@@ -204,86 +205,38 @@ export class CollectionsNew extends LiteElement {
   private renderMetadata() {
     return html`
       <section class="border rounded-lg">
-        <div class="grid grid-cols-1 md:grid-cols-2">
-          <section
-            class="col-span-1 border-r ${this.isPreviewingDescription
-              ? "border-neutral-200"
-              : "border-transparent"}"
-          >
-            <div class="p-6">
-              <sl-input
-                class="mb-4"
-                name="name"
-                label=${msg("Name")}
-                autocomplete="off"
-                placeholder=${msg("My Collection")}
-                value=${this.formState.name}
-                required
-                @sl-change=${(e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  this.updateFormState({
-                    [inputEl.name]: inputEl.value,
-                  });
-                }}
-              ></sl-input>
-              <sl-textarea
-                name="description"
-                value=${this.formState.description}
-                autocomplete="off"
-                rows="10"
-                resize="auto"
-                @sl-input=${(e: Event) => {
-                  const inputEl = e.target as SlTextarea;
-                  this.updateFormState({
-                    [inputEl.name]: inputEl.value,
-                  });
-                }}
-              >
-                <div slot="label" class="flex justify-between">
-                  <div>${msg("Description")}</div>
-                  <sl-switch
-                    @sl-change=${(e: CustomEvent) =>
-                      (this.isPreviewingDescription = (
-                        e.target as SlCheckbox
-                      ).checked)}
-                    ?checked=${this.isPreviewingDescription}
-                    >${msg("Preview")}</sl-switch
-                  >
-                </div>
-                <p slot="help-text">
-                  ${msg(
-                    html`Markdown supported.
-                      <a
-                        class="text-primary underline hover:no-underline"
-                        href="https://commonmark.org/help/"
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
-                        >Reference guide</a
-                      >`
-                  )}
-                </p>
-              </sl-textarea>
-            </div>
-          </section>
-          <section class="col-span-1 overflow-auto">
-            ${when(
-              this.isPreviewingDescription,
-              () => html`
-                <div class="p-6">
-                  <div
-                    class="bg-neutral-50 rounded p-2 text-xs text-neutral-500"
-                  >
-                    <p>${msg("Markdown preview")}</p>
-                  </div>
-                  <btrix-markdown-viewer
-                    value=${this.formState.description}
-                  ></btrix-markdown-viewer>
-                </div>
-              `
-            )}
-          </section>
+        <div class="p-6 grid grid-cols-5 gap-4">
+          ${this.renderFormCol(html`
+            <sl-input
+              class="mb-4"
+              name="name"
+              label=${msg("Name")}
+              autocomplete="off"
+              placeholder=${msg("My Collection")}
+              value=${this.formState.name}
+              required
+              @sl-change=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                this.updateFormState({
+                  [inputEl.name]: inputEl.value,
+                });
+              }}
+            ></sl-input>
+          `)}
+          ${this.renderHelpTextCol(msg("TODO"))}
+          ${this.renderFormCol(html`
+            <h4 class="form-label">${msg("Description")}</h4>
+            <btrix-markdown-editor
+              initialValue=${this.formState.description}
+              @on-change=${(e: MarkdownChangeEvent) => {
+                this.updateFormState({
+                  description: e.detail.value,
+                });
+              }}
+            ></btrix-markdown-editor>
+          `)}
+          ${this.renderHelpTextCol(msg("TODO"))}
         </div>
-
         <footer class="border-t px-6 py-4 flex justify-between">
           <sl-button size="small" @click=${() => this.goToTab("crawls")}>
             <sl-icon slot="prefix" name="chevron-left"></sl-icon>
@@ -367,6 +320,21 @@ export class CollectionsNew extends LiteElement {
           `
         )}
       </ul>
+    `;
+  }
+
+  private renderFormCol = (content: TemplateResult) => {
+    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
+  };
+
+  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
+    return html`
+      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
+        <div class="text-base mr-2">
+          <sl-icon name="info-circle"></sl-icon>
+        </div>
+        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
+      </div>
     `;
   }
 
