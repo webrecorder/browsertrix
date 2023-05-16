@@ -1,10 +1,11 @@
 /**
- * ByteMD wrapper
- * https://github.com/bytedance/bytemd
+ * Parse markdown
+ * TODO editor
  */
 import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
-import { Viewer } from "bytemd";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
+import { micromark } from "micromark";
 
 export class MarkdownViewer extends LitElement {
   static styles = css`
@@ -42,28 +43,7 @@ export class MarkdownViewer extends LitElement {
   @property({ type: String })
   value = "";
 
-  private viewer?: Viewer;
-
-  protected firstUpdated(): void {
-    this.viewer = new (Viewer as any)({
-      target: this.shadowRoot!.querySelector("div"),
-      props: {
-        value: this.value,
-      },
-    });
-  }
-
-  protected async willUpdate(changedProperties: Map<string, any>) {
-    if (
-      this.viewer &&
-      changedProperties.has("value") &&
-      this.value !== undefined
-    ) {
-      (this.viewer as any).$$set({ value: this.value });
-    }
-  }
-
   render() {
-    return html`<div></div>`;
+    return staticHtml`<div>${unsafeStatic(micromark(this.value || ""))}</div>`;
   }
 }
