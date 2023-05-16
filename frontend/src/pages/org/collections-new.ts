@@ -2,18 +2,25 @@ import type { PropertyValueMap, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import { mergeDeep } from "immutable";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 
 import type { Crawl } from "./types";
 
-const STEPS = ["crawls", "metadata"] as const;
-type Tab = (typeof STEPS)[number];
+const TABS = ["crawls", "metadata"] as const;
+type Tab = (typeof TABS)[number];
 type Collection = {
   name: string;
   description: string;
   crawlIds: string[];
+};
+type FormState = {
+  name: string;
+  description: string | null;
+  workflows: any[];
 };
 
 @localized()
@@ -31,7 +38,14 @@ export class CollectionsNew extends LiteElement {
   private crawlsToAdd: Crawl[] = [];
 
   @state()
-  private activeTab: Tab = STEPS[0];
+  private activeTab: Tab = TABS[0];
+
+  @state()
+  private formState: FormState = {
+    name: "",
+    description: "",
+    workflows: [],
+  };
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
@@ -39,6 +53,18 @@ export class CollectionsNew extends LiteElement {
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {}
+
+  connectedCallback(): void {
+    // Set initial active section and dialog based on URL #hash value
+    this.getActivePanelFromHash();
+    super.connectedCallback();
+    window.addEventListener("hashchange", this.getActivePanelFromHash);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.getActivePanelFromHash);
+  }
 
   render() {
     return html`${this.renderHeader()}
@@ -70,7 +96,7 @@ export class CollectionsNew extends LiteElement {
         ${this.tabLabels[this.activeTab]}
       </h3>
 
-      ${STEPS.map(this.renderTab)}
+      ${TABS.map(this.renderTab)}
 
       <btrix-tab-panel name="newCollection-crawls">
         ${this.renderCrawls()}
@@ -96,14 +122,13 @@ export class CollectionsNew extends LiteElement {
     } else if (completed) {
       iconProps.name = "check-circle";
     }
+
     return html`
       <btrix-tab
         slot="nav"
         name="newCollection-${tab}"
         class="whitespace-nowrap"
-        @click=${() => {
-          this.activeTab = tab;
-        }}
+        @click=${() => this.goToTab(tab)}
       >
         <sl-icon
           name=${iconProps.name}
@@ -160,19 +185,31 @@ export class CollectionsNew extends LiteElement {
               label=${msg("Name")}
               autocomplete="off"
               placeholder=${msg("My Collection")}
+              value=${this.formState.name}
               required
             ></sl-input>
             <sl-textarea
               name="collectionDescription"
-              label=${msg("Description Preview")}
+              label=${msg("Description")}
+              value=${this.formState.description}
               autocomplete="off"
+              @sl-input=${(e: Event) => {
+                const inputEl = e.target as SlTextarea;
+                this.updateFormState({
+                  description: inputEl.value,
+                });
+              }}
             ></sl-textarea>
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">${msg("Preview")}</h4>
+          <h4 class="text-base font-semibold mb-3">
+            ${msg("Description Preview")}
+          </h4>
           <div class="border rounded-lg p-6 flex-1">
-            <btrix-markdown-viewer></btrix-markdown-viewer>
+            <btrix-markdown-viewer
+              value=${this.formState.description}
+            ></btrix-markdown-viewer>
           </div>
         </section>
         <footer
@@ -210,6 +247,29 @@ export class CollectionsNew extends LiteElement {
 
   private renderCrawlsNotInCollection() {
     return html``;
+  }
+
+  private getActivePanelFromHash = () => {
+    const hashValue = window.location.hash.slice(1);
+    if (TABS.includes(hashValue as any)) {
+      this.activeTab = hashValue as Tab;
+    } else {
+      this.goToTab(TABS[0], { replace: true });
+    }
+  };
+
+  private goToTab(tab: Tab, { replace = false } = {}) {
+    const path = `${window.location.href.split("#")[0]}#${tab}`;
+    if (replace) {
+      window.history.replaceState(null, "", path);
+    } else {
+      window.history.pushState(null, "", path);
+    }
+    this.activeTab = tab;
+  }
+
+  private updateFormState(nextState: Partial<FormState>) {
+    this.formState = mergeDeep(this.formState, nextState);
   }
 }
 customElements.define("btrix-collections-new", CollectionsNew);

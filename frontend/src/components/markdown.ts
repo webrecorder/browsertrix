@@ -2,12 +2,42 @@
  * ByteMD wrapper
  * https://github.com/bytedance/bytemd
  */
-import { LitElement, html } from "lit";
+import { LitElement, html, css } from "lit";
 import { state, property } from "lit/decorators.js";
 import { Viewer } from "bytemd";
 
 export class MarkdownViewer extends LitElement {
-  // TODO style
+  static styles = css`
+    h1 {
+      font-size: var(--sl-font-size-x-large);
+    }
+
+    h2 {
+      font-size: var(--sl-font-size-large);
+    }
+
+    h3 {
+      font-size: var(--sl-font-size-medium);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-weight: var(--sl-font-weight-semibold);
+      margin-top: 0;
+    }
+
+    a {
+      color: var(--primary);
+    }
+
+    a:hover {
+      text-decoration: none;
+    }
+  `;
 
   @property({ type: String })
   value = "";
