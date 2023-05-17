@@ -7,8 +7,8 @@ import asyncio
 import sys
 
 from fastapi import FastAPI
-from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRouter
 
 from .db import init_db, update_and_prepare_db
 

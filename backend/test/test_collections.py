@@ -44,6 +44,20 @@ def test_create_collection_taken_name(
     assert r.json()["detail"] == "collection_name_taken"
 
 
+def test_create_collection_empty_name(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "name": "",
+        },
+    )
+    assert r.status_code == 500
+
+
 def test_update_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
