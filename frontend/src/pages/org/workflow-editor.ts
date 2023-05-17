@@ -802,7 +802,7 @@ https://example.com/path`}
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
             if (
-              inputEl.invalid &&
+              !inputEl.checkValidity() &&
               !urlListToArray(inputEl.value).some((url) => !validURL(url))
             ) {
               inputEl.setCustomValidity("");
@@ -817,7 +817,6 @@ https://example.com/path`}
               urlListToArray(inputEl.value).some((url) => !validURL(url))
             ) {
               const text = msg("Please fix invalid URL in list.");
-              inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
             }
@@ -997,7 +996,7 @@ https://example.com/path`}
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
-            if (inputEl.invalid && validURL(inputEl.value)) {
+            if (!inputEl.checkValidity() && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
               inputEl.helpText = "";
             }
@@ -1007,7 +1006,6 @@ https://example.com/path`}
             await inputEl.updateComplete;
             if (inputEl.value && !validURL(inputEl.value)) {
               const text = msg("Please enter a valid URL.");
-              inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
             }
@@ -1165,7 +1163,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   const inputEl = e.target as SlInput;
                   await inputEl.updateComplete;
                   if (
-                    inputEl.invalid &&
+                    !inputEl.checkValidity() &&
                     !urlListToArray(inputEl.value).some((url) => !validURL(url))
                   ) {
                     inputEl.setCustomValidity("");
@@ -1180,7 +1178,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     urlListToArray(inputEl.value).some((url) => !validURL(url))
                   ) {
                     const text = msg("Please fix invalid URL in list.");
-                    inputEl.invalid = true;
                     inputEl.helpText = text;
                     inputEl.setCustomValidity(text);
                   }
@@ -1208,7 +1205,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const inputEl = e.target as SlInput;
       await inputEl.updateComplete;
       let helpText = "";
-      if (inputEl.invalid) {
+      if (!inputEl.checkValidity()) {
         const value = +inputEl.value;
         const min = inputEl.min;
         const max = inputEl.max;
@@ -1781,8 +1778,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     await this.updateComplete;
 
     const currentTab = this.progressState.activeTab as StepName;
-    // Check [data-user-invalid] instead of .invalid property
-    // to validate only touched inputs
+    // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState.tabs[currentTab].error) return;
       this.updateProgressState({

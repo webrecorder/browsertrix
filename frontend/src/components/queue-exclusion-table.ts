@@ -292,7 +292,7 @@ export class QueueExclusionTable extends LiteElement {
               index,
             };
 
-            if (inputElem.invalid) {
+            if (!inputElem.checkValidity()) {
               inputElem.classList.add("invalid");
             }
             inputElem.reportValidity();
