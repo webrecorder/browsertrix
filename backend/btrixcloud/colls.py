@@ -7,7 +7,7 @@ from typing import Optional, List
 import pymongo
 from fastapi import Depends, HTTPException
 
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 
 from .db import BaseMongoModel
 from .orgs import Organization
@@ -18,7 +18,9 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
-    name: str
+    id: UUID4
+
+    name: str = Field(..., min_length=1)
 
     oid: UUID4
 
@@ -40,15 +42,9 @@ class CollIn(BaseModel):
 class UpdateColl(BaseModel):
     """Update collection"""
 
+    name: Optional[str]
     crawlIds: Optional[List[str]] = []
     description: Optional[str]
-
-
-# ============================================================================
-class RenameColl(BaseModel):
-    """Rename collection"""
-
-    name: str
 
 
 # ============================================================================
@@ -77,8 +73,9 @@ class CollectionOps:
     ):
         """Add new collection"""
         crawl_ids = crawl_ids if crawl_ids else []
+        coll_id = uuid.uuid4()
         coll = Collection(
-            id=uuid.uuid4(),
+            id=coll_id,
             oid=oid,
             name=name,
             crawlIds=crawl_ids,
@@ -86,66 +83,69 @@ class CollectionOps:
         )
         try:
             await self.collections.insert_one(coll.to_dict())
-            return {"added": name}
+            return {"added": {"id": coll_id, "name": name}}
         except pymongo.errors.DuplicateKeyError:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="collection_already_exists")
+            raise HTTPException(status_code=400, detail="collection_name_taken")
 
-    async def update_collection(self, oid: uuid.UUID, name: str, update: UpdateColl):
+    async def update_collection(self, coll_id: uuid.UUID, update: UpdateColl):
         """Update collection"""
         query = update.dict(exclude_unset=True)
 
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        result = await self.collections.find_one_and_update(
-            {"name": name, "oid": oid},
-            {"$set": query},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
+        try:
+            result = await self.collections.find_one_and_update(
+                {"_id": coll_id},
+                {"$set": query},
+                return_document=pymongo.ReturnDocument.AFTER,
+            )
+        except pymongo.errors.DuplicateKeyError:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="collection_name_taken")
+
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
+
+        result["id"] = result["_id"]
+        del result["_id"]
 
         return result
 
-    async def rename_collection(self, oid: uuid.UUID, name: str, new_name: str):
-        """Rename collection"""
-        result = await self.collections.find_one_and_update(
-            {"name": name, "oid": oid},
-            {"$set": {"name": new_name}},
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
-        return new_name
-
-    async def add_crawl_to_collection(self, oid: uuid.UUID, name: str, crawl_id: str):
+    async def add_crawl_to_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Add crawl to collection"""
         result = await self.collections.find_one_and_update(
-            {"name": name, "oid": oid},
+            {"_id": coll_id},
             {"$push": {"crawlIds": crawl_id}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
+
+        result["id"] = result["_id"]
+        del result["_id"]
+
         return result
 
-    async def remove_crawl_from_collection(
-        self, oid: uuid.UUID, name: str, crawl_id: str
-    ):
+    async def remove_crawl_from_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Remove crawl from collection"""
         result = await self.collections.find_one_and_update(
-            {"name": name, "oid": oid},
+            {"_id": coll_id},
             {"$pull": {"crawlIds": crawl_id}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
+
+        result["id"] = result["_id"]
+        del result["_id"]
+
         return result
 
-    async def get_collection(self, oid: uuid.UUID, name: str):
-        """Get collection by org + name"""
-        res = await self.collections.find_one({"name": name, "oid": oid})
+    async def get_collection(self, coll_id: uuid.UUID):
+        """Get collection by id"""
+        res = await self.collections.find_one({"_id": coll_id})
         return Collection.from_dict(res) if res else None
 
     async def find_collections(self, oid: uuid.UUID, names: List[str]):
@@ -184,10 +184,10 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawls(self, oid: uuid.UUID, name: str):
-        """Find collection and get all crawls by collection name per org"""
+    async def get_collection_crawls(self, coll_id: uuid.UUID, oid: uuid.UUID):
+        """Find collection and get all crawl resources"""
 
-        coll = await self.get_collection(oid, name)
+        coll = await self.get_collection(coll_id)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
@@ -209,7 +209,7 @@ class CollectionOps:
 # pylint: disable=too-many-locals
 def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     """init collections api"""
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, unused-argument
 
     colls = CollectionOps(mdb, crawls, crawl_manager, orgs)
 
@@ -252,10 +252,12 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.get("/orgs/{oid}/collections/{name}", tags=["collections"])
-    async def get_collection(name: str, org: Organization = Depends(org_viewer_dep)):
+    @app.get("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
+    async def get_collection_crawls(
+        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+    ):
         try:
-            results = await colls.get_collection_crawls(org.id, name)
+            results = await colls.get_collection_crawls(coll_id, org.id)
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -265,29 +267,24 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.post("/orgs/{oid}/collections/{name}/update", tags=["collections"])
+    @app.post("/orgs/{oid}/collections/{coll_id}/update", tags=["collections"])
     async def update_collection(
-        name: str, update: UpdateColl, org: Organization = Depends(org_crawl_dep)
+        coll_id: uuid.UUID,
+        update: UpdateColl,
+        org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.update_collection(org.id, name, update)
+        return await colls.update_collection(coll_id, update)
 
-    @app.post("/orgs/{oid}/collections/{name}/rename", tags=["collections"])
-    async def rename_collection(
-        name: str, rename: RenameColl, org: Organization = Depends(org_crawl_dep)
-    ):
-        await colls.rename_collection(org.id, name, rename.name)
-        return {"renamed": rename.name}
-
-    @app.get("/orgs/{oid}/collections/{name}/add", tags=["collections"])
+    @app.get("/orgs/{oid}/collections/{coll_id}/add", tags=["collections"])
     async def add_crawl_to_collection(
-        crawlId: str, name: str, org: Organization = Depends(org_crawl_dep)
+        crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.add_crawl_to_collection(org.id, name, crawlId)
+        return await colls.add_crawl_to_collection(coll_id, crawlId)
 
-    @app.get("/orgs/{oid}/collections/{name}/remove", tags=["collections"])
+    @app.get("/orgs/{oid}/collections/{coll_id}/remove", tags=["collections"])
     async def remove_crawl_from_collection(
-        crawlId: str, name: str, org: Organization = Depends(org_crawl_dep)
+        crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.remove_crawl_from_collection(org.id, name, crawlId)
+        return await colls.remove_crawl_from_collection(coll_id, crawlId)
 
     return colls
