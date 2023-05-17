@@ -124,6 +124,9 @@ export class CheckboxListItem extends LitElement {
   checked = false;
 
   @property({ type: Boolean })
+  allChecked = false;
+
+  @property({ type: Boolean })
   disabled = false;
 
   @property({ type: Boolean })
@@ -134,7 +137,8 @@ export class CheckboxListItem extends LitElement {
       <div
         class="item"
         role="checkbox"
-        aria-checked=${this.checked && (this.group ? "mixed" : "true")}
+        aria-checked=${this.checked &&
+        (this.group && !this.allChecked ? "mixed" : "true")}
         @click=${() => {
           this.dispatchEvent(
             <CheckboxChangeEvent>new CustomEvent("on-change", {
@@ -157,6 +161,8 @@ export class CheckboxListItem extends LitElement {
   }
 
   private renderCheckbox() {
+    // The `indeterminate` prop doesn't seem to be working properly,
+    // using checkbox instead
     return html`
       <div
         class=${classMap({
@@ -167,9 +173,9 @@ export class CheckboxListItem extends LitElement {
       >
         <span class="checkbox__control">
           ${this.checked
-            ? this.group
-              ? html`<sl-icon name="dash-lg"></sl-icon>`
-              : html` <sl-icon library="system" name="check"></sl-icon>`
+            ? this.group && !this.allChecked
+              ? html`<sl-icon library="system" name="indeterminate"></sl-icon>`
+              : html`<sl-icon library="system" name="check"></sl-icon>`
             : ""}
         </span>
       </div>

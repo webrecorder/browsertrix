@@ -51,11 +51,13 @@ export class CollectionsNew extends LiteElement {
 
   @state()
   private selectedWorkflows: {
-    [id: string]: Workflow;
+    [workflowId: string]: Workflow;
   } = {};
 
   @state()
-  private crawlsToAdd: Crawl[] = [];
+  private selectedCrawls: {
+    [crawlId: string]: Crawl;
+  } = {};
 
   @state()
   private activeTab: Tab = TABS[0];
@@ -279,12 +281,14 @@ export class CollectionsNew extends LiteElement {
         </div>
       `;
     }
+
     return html`
       <btrix-checkbox-list>
         ${workflows.map(
           (workflow) => html`
             <btrix-checkbox-list-item
-              ?checked=${this.selectedWorkflows[workflow.id]}
+              checked
+              ?allChecked=${false}
               group
               @on-change=${(e: CheckboxChangeEvent) => {
                 // if (e.detail.checked) {
@@ -313,12 +317,19 @@ export class CollectionsNew extends LiteElement {
               <div
                 id=${`workflow-${workflow.id}-group`}
                 slot="group"
-                class="checkboxGroup transition-all overflow-hidden outline"
+                class="checkboxGroup transition-all overflow-hidden"
               >
                 <btrix-checkbox-group-list>
-                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
-                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
-                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
+                  ${Array.from({ length: workflow.crawlCount }).map(
+                    (x, i) => html`
+                      <btrix-checkbox-list-item
+                        ?checked=${this.selectedCrawls[
+                          `${workflow.id}___${i + 1}`
+                        ]}
+                        >TODO ${i + 1}</btrix-checkbox-list-item
+                      >
+                    `
+                  )}
                 </btrix-checkbox-group-list>
               </div>
             </btrix-checkbox-list-item>
@@ -542,6 +553,25 @@ export class CollectionsNew extends LiteElement {
         [this.workflows.items[0]!.id]: this.workflows.items[0],
         [this.workflows.items[1]!.id]: this.workflows.items[1],
       };
+      const selectedCrawls = [
+        ...Array.from({
+          length: this.workflows.items[0].crawlCount,
+        }).map((x, i) => ({
+          id: `${this.workflows!.items[0]!.id}___${i + 1}`,
+        })),
+        ...Array.from({
+          length: this.workflows.items[1].crawlCount,
+        }).map((x, i) => ({
+          id: `${this.workflows!.items[1]!.id}___${i + 1}`,
+        })),
+      ];
+      this.selectedCrawls = selectedCrawls.reduce(
+        (acc, curr: any) => ({
+          ...acc,
+          [curr.id]: curr,
+        }),
+        {}
+      ) as any;
     } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't retrieve Workflows at this time."),
