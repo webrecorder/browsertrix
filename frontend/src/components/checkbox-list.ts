@@ -84,10 +84,14 @@ export class CheckboxListItem extends LitElement {
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
         overflow: hidden;
-        border: 1px solid var(--sl-panel-border-color);
-        border-radius: var(--sl-border-radius-medium);
-        box-shadow: var(--sl-shadow-x-small);
-        padding: var(--sl-spacing-small);
+        border-top: var(--item-border-top, 0);
+        border-left: var(--item-border-left, 0);
+        border-right: var(--item-border-right, 0);
+        border-bottom: var(--item-border-bottom, 0);
+        border-radius: var(--item-border-radius, 0);
+        box-shadow: var(--item-box-shadow, none);
+        display: flex;
+        align-items: center;
       }
 
       .item:hover,
@@ -100,6 +104,19 @@ export class CheckboxListItem extends LitElement {
         background-color: var(--sl-color-neutral-50);
         box-shadow: var(--sl-shadow-small);
       }
+
+      .checkbox {
+        flex: 0 0 auto;
+        margin: var(--sl-spacing-small) var(--sl-spacing-medium);
+      }
+
+      .content {
+        flex: 1 1 auto;
+      }
+
+      .group {
+        overflow: hidden;
+      }
     `,
   ];
 
@@ -109,12 +126,15 @@ export class CheckboxListItem extends LitElement {
   @property({ type: Boolean })
   disabled = false;
 
+  @property({ type: Boolean })
+  group = false;
+
   render() {
     return html`
       <div
         class="item"
         role="checkbox"
-        aria-checked=${this.checked}
+        aria-checked=${this.checked && (this.group ? "mixed" : "true")}
         @click=${() => {
           this.dispatchEvent(
             <CheckboxChangeEvent>new CustomEvent("on-change", {
@@ -126,8 +146,13 @@ export class CheckboxListItem extends LitElement {
         }}
       >
         ${this.renderCheckbox()}
-        <slot></slot>
+        <div class="content">
+          <slot></slot>
+        </div>
       </div>
+      ${this.group
+        ? html`<div class="group"><slot name="group"></slot></div>`
+        : ""}
     `;
   }
 
@@ -140,15 +165,11 @@ export class CheckboxListItem extends LitElement {
           "checkbox--disabled": this.disabled,
         })}
       >
-        <span part="control" class="checkbox__control">
+        <span class="checkbox__control">
           ${this.checked
-            ? html`
-                <sl-icon
-                  part="checked-icon"
-                  library="system"
-                  name="check"
-                ></sl-icon>
-              `
+            ? this.group
+              ? html`<sl-icon name="dash-lg"></sl-icon>`
+              : html` <sl-icon library="system" name="check"></sl-icon>`
             : ""}
         </span>
       </div>
@@ -156,17 +177,67 @@ export class CheckboxListItem extends LitElement {
   }
 }
 
-export class CheckboxList extends LitElement {
+export class CheckboxGroupList extends LitElement {
   static styles = [
     hostVars,
     css`
-      .listHeader,
       .list {
         margin-left: var(--row-offset);
         margin-right: var(--row-offset);
       }
 
       ::slotted(btrix-checkbox-list-item) {
+        --border: 1px solid var(--sl-panel-border-color);
+        --item-border-top: 0;
+        --item-box-shadow: none;
+      }
+
+      ::slotted(btrix-checkbox-list-item:not(:last-of-type)) {
+        --item-border-radius: 0;
+      }
+
+      ::slotted(btrix-checkbox-list-item:last-of-type) {
+        --item-border-radius: 0 0 var(--sl-border-radius-medium)
+          var(--sl-border-radius-medium);
+      }
+    `,
+  ];
+
+  @queryAssignedElements({ selector: "btrix-checkbox-list-item" })
+  listItems!: Array<HTMLElement>;
+
+  render() {
+    return html`<div class="list" role="list">
+      <slot @slotchange=${this.handleSlotchange}></slot>
+    </div>`;
+  }
+
+  private handleSlotchange() {
+    this.listItems.map((el) => {
+      if (!el.attributes.getNamedItem("role")) {
+        el.setAttribute("role", "listitem");
+      }
+    });
+  }
+}
+
+export class CheckboxList extends LitElement {
+  static styles = [
+    hostVars,
+    css`
+      .list {
+        margin-left: var(--row-offset);
+        margin-right: var(--row-offset);
+      }
+
+      ::slotted(btrix-checkbox-list-item) {
+        --border: 1px solid var(--sl-panel-border-color);
+        --item-border-top: var(--border);
+        --item-border-left: var(--border);
+        --item-border-right: var(--border);
+        --item-border-bottom: var(--border);
+        --item-box-shadow: var(--sl-shadow-x-small);
+        --item-border-radius: var(--sl-border-radius-medium);
         display: block;
       }
 

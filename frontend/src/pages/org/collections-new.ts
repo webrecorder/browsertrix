@@ -3,9 +3,17 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { mergeDeep, removeIn } from "immutable";
-import type { SlTextarea, SlCheckbox, SlInput } from "@shoelace-style/shoelace";
+import type {
+  SlTextarea,
+  SlCheckbox,
+  SlInput,
+  SlIconButton,
+} from "@shoelace-style/shoelace";
 
-import type { CheckboxChangeEvent } from "../../components/checkbox-list";
+import type {
+  CheckboxChangeEvent,
+  CheckboxGroupList,
+} from "../../components/checkbox-list";
 import type { MarkdownChangeEvent } from "../../components/markdown-editor";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -176,7 +184,7 @@ export class CollectionsNew extends LiteElement {
           <h4 class="text-base font-semibold mb-3">
             ${msg("Crawls in Collection")}
           </h4>
-          <div class="border rounded-lg p-6 flex-1">
+          <div class="border rounded-lg px-2 py-4 flex-1">
             ${this.renderCrawlsInCollection()}
           </div>
         </section>
@@ -272,16 +280,108 @@ export class CollectionsNew extends LiteElement {
       `;
     }
     return html`
-      <ul>
+      <btrix-checkbox-list>
         ${workflows.map(
           (workflow) => html`
-            <li>
-              <sl-checkbox></sl-checkbox>
-              ${workflow.name || workflow.firstSeed}
-            </li>
+            <btrix-checkbox-list-item
+              ?checked=${this.selectedWorkflows[workflow.id]}
+              group
+              @on-change=${(e: CheckboxChangeEvent) => {
+                // if (e.detail.checked) {
+                //   this.selectedWorkflows = mergeDeep(this.selectedWorkflows, {
+                //     [workflow.id]: workflow,
+                //   });
+                // } else {
+                //   this.selectedWorkflows = removeIn(this.selectedWorkflows, [
+                //     workflow.id,
+                //   ]);
+                // }
+              }}
+            >
+              <div class="flex-0 flex justify-between">
+                ${this.renderWorkflowDetails(workflow)}
+                <div class="border-l flex items-center justify-center">
+                  <sl-icon-button
+                    class="expandBtn p-2 text-lg"
+                    name="chevron-double-down"
+                    aria-expanded="true"
+                    aria-controls=${`workflow-${workflow.id}`}
+                    @click=${this.onWorkflowExpandClick}
+                  ></sl-icon-button>
+                </div>
+              </div>
+              <div
+                id=${`workflow-${workflow.id}-group`}
+                slot="group"
+                class="checkboxGroup transition-all overflow-hidden outline"
+              >
+                <btrix-checkbox-group-list>
+                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
+                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
+                  <btrix-checkbox-list-item>TODO</btrix-checkbox-list-item>
+                </btrix-checkbox-group-list>
+              </div>
+            </btrix-checkbox-list-item>
           `
         )}
-      </ul>
+      </btrix-checkbox-list>
+    `;
+  }
+
+  private renderWorkflowDetails(workflow: Workflow) {
+    return html`
+      <div class="flex-1 py-3">
+        <div class="text-neutral-700 truncate h-6">
+          ${this.renderName(workflow)}
+        </div>
+        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
+          <sl-format-date
+            date=${workflow.lastCrawlTime}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>
+        </div>
+      </div>
+      <div class="w-28 flex-0 py-3">
+        <div class="text-neutral-700 truncate h-6">
+          <sl-format-bytes
+            value=${workflow.totalSize}
+            display="narrow"
+          ></sl-format-bytes>
+        </div>
+        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
+          ${workflow.crawlCount > 0
+            ? msg(str`${workflow.crawlCount.toLocaleString()} crawls`)
+            : msg("1 crawl")}
+        </div>
+      </div>
+    `;
+  }
+
+  // TODO consolidate collections/workflow name
+  private renderName(workflow: Workflow) {
+    if (workflow.name)
+      return html`<span class="truncate">${workflow.name}</span>`;
+    if (!workflow.firstSeed)
+      return html`<span class="truncate">${workflow.id}</span>`;
+    const remainder = workflow.config.seeds.length - 1;
+    let nameSuffix: any = "";
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="ml-1 text-neutral-500"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="ml-1 text-neutral-500"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <span class="break-all truncate">${workflow.firstSeed}</span>${nameSuffix}
     `;
   }
 
@@ -312,7 +412,9 @@ export class CollectionsNew extends LiteElement {
                 }
               }}
             >
-              ${workflow.name || workflow.firstSeed}
+              <div class="flex justify-between">
+                ${this.renderWorkflowDetails(workflow)}
+              </div>
             </btrix-checkbox-list-item>
           `
         )}
@@ -334,6 +436,30 @@ export class CollectionsNew extends LiteElement {
       </div>
     `;
   }
+
+  private onWorkflowExpandClick = (e: MouseEvent) => {
+    const listItem = (e.target as HTMLElement).closest(
+      "btrix-checkbox-list-item"
+    );
+    if (!listItem) {
+      console.debug(e);
+      return;
+    }
+    const checkboxGroup = listItem.querySelector(
+      ".checkboxGroup"
+    ) as HTMLElement;
+    const expandBtn = listItem.querySelector(".expandBtn") as SlIconButton;
+    const expanded = !(expandBtn.getAttribute("aria-expanded") === "true");
+    expandBtn.setAttribute("aria-expanded", expanded.toString());
+
+    if (expanded) {
+      checkboxGroup.style.marginTop = "0px";
+      checkboxGroup.style.pointerEvents = "auto";
+    } else {
+      checkboxGroup.style.marginTop = `-${checkboxGroup.clientHeight}px`;
+      checkboxGroup.style.pointerEvents = "none";
+    }
+  };
 
   private getActivePanelFromHash = () => {
     const hashValue = window.location.hash.slice(1);
@@ -411,6 +537,11 @@ export class CollectionsNew extends LiteElement {
   private async fetchWorkflows() {
     try {
       this.workflows = await this.getWorkflows();
+      // TODO remove
+      this.selectedWorkflows = {
+        [this.workflows.items[0]!.id]: this.workflows.items[0],
+        [this.workflows.items[1]!.id]: this.workflows.items[1],
+      };
     } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't retrieve Workflows at this time."),

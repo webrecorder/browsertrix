@@ -86,10 +86,13 @@ import("./desc-list").then(({ DescListItem, DescList }) => {
   customElements.define("btrix-desc-list-item", DescListItem);
   customElements.define("btrix-desc-list", DescList);
 });
-import("./checkbox-list").then(({ CheckboxListItem, CheckboxList }) => {
-  customElements.define("btrix-checkbox-list-item", CheckboxListItem);
-  customElements.define("btrix-checkbox-list", CheckboxList);
-});
+import("./checkbox-list").then(
+  ({ CheckboxListItem, CheckboxGroupList, CheckboxList }) => {
+    customElements.define("btrix-checkbox-list-item", CheckboxListItem);
+    customElements.define("btrix-checkbox-group-list", CheckboxGroupList);
+    customElements.define("btrix-checkbox-list", CheckboxList);
+  }
+);
 import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
   customElements.define("btrix-crawl-list-item", CrawlListItem);
   customElements.define("btrix-crawl-list", CrawlList);

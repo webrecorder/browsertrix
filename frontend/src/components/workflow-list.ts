@@ -458,6 +458,7 @@ export class WorkflowListItem extends LitElement {
     return render(this.workflow);
   }
 
+  // TODO consolidate collections/workflow name
   private renderName(workflow: Workflow) {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
