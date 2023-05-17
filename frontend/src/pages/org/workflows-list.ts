@@ -234,8 +234,8 @@ export class WorkflowsList extends LiteElement {
             size="small"
             pill
             value=${this.orderBy.field}
-            @sl-select=${(e: any) => {
-              const field = e.detail.item.value as SortField;
+            @sl-change=${(e: Event) => {
+              const field = (e.target as HTMLSelectElement).value as SortField;
               this.orderBy = {
                 field: field,
                 direction:
@@ -246,7 +246,7 @@ export class WorkflowsList extends LiteElement {
           >
             ${Object.entries(sortableFields).map(
               ([value, { label }]) => html`
-                <sl-menu-item value=${value}>${label}</sl-menu-item>
+                <sl-option value=${value}>${label}</sl-option>
               `
             )}
           </sl-select>

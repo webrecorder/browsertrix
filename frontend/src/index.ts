@@ -407,7 +407,10 @@ export class App extends LiteElement {
           ${when(
             this.userInfo.isAdmin,
             () => html`
-              <sl-menu-item value="" ?checked=${!selectedOption.id}
+              <sl-menu-item
+                type="checkbox"
+                value=""
+                ?checked=${!selectedOption.id}
                 >${msg("All Organizations")}</sl-menu-item
               >
               <sl-divider></sl-divider>
@@ -416,6 +419,7 @@ export class App extends LiteElement {
           ${this.orgs.map(
             (org) => html`
               <sl-menu-item
+                type="checkbox"
                 value=${org.id}
                 ?checked=${org.id === selectedOption.id}
                 >${org.name.slice(0, orgNameLength)}</sl-menu-item

@@ -836,33 +836,33 @@ https://example.com/path`}
               name="scopeType"
               label=${msg("Crawl Scope")}
               value=${this.formState.scopeType}
-              @sl-select=${(e: Event) =>
+              @sl-change=${(e: Event) =>
                 this.updateFormState({
                   scopeType: (e.target as HTMLSelectElement)
                     .value as FormState["scopeType"],
                 })}
             >
-              <sl-menu-item value="prefix">
+              <sl-option value="prefix">
                 ${this.scopeTypeLabels["prefix"]}
-              </sl-menu-item>
-              <sl-menu-item value="host">
+              </sl-option>
+              <sl-option value="host">
                 ${this.scopeTypeLabels["host"]}
-              </sl-menu-item>
-              <sl-menu-item value="domain">
+              </sl-option>
+              <sl-option value="domain">
                 ${this.scopeTypeLabels["domain"]}
-              </sl-menu-item>
-              <sl-menu-item value="page-spa">
+              </sl-option>
+              <sl-option value="page-spa">
                 ${this.scopeTypeLabels["page-spa"]}
-              </sl-menu-item>
-              <sl-menu-item value="page">
+              </sl-option>
+              <sl-option value="page">
                 ${this.scopeTypeLabels["page"]}
-              </sl-menu-item>
-              <sl-menu-item value="custom">
+              </sl-option>
+              <sl-option value="custom">
                 ${this.scopeTypeLabels["custom"]}
-              </sl-menu-item>
-              <sl-menu-item value="any">
+              </sl-option>
+              <sl-option value="any">
                 ${this.scopeTypeLabels["any"]}
-              </sl-menu-item>
+              </sl-option>
             </sl-select>
           `)}
           ${this.renderHelpTextCol(
@@ -1020,28 +1020,26 @@ https://example.com/path`}
           name="scopeType"
           label=${msg("Start URL Scope")}
           value=${this.formState.scopeType}
-          @sl-select=${(e: Event) =>
+          @sl-change=${(e: Event) =>
             this.updateFormState({
               scopeType: (e.target as HTMLSelectElement)
                 .value as FormState["scopeType"],
             })}
         >
           <div slot="help-text">${helpText}</div>
-          <sl-menu-item value="page-spa">
+          <sl-option value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
-          </sl-menu-item>
-          <sl-menu-item value="prefix">
+          </sl-option>
+          <sl-option value="prefix">
             ${this.scopeTypeLabels["prefix"]}
-          </sl-menu-item>
-          <sl-menu-item value="host">
-            ${this.scopeTypeLabels["host"]}
-          </sl-menu-item>
-          <sl-menu-item value="domain">
+          </sl-option>
+          <sl-option value="host"> ${this.scopeTypeLabels["host"]} </sl-option>
+          <sl-option value="domain">
             ${this.scopeTypeLabels["domain"]}
-          </sl-menu-item>
-          <sl-menu-item value="custom">
+          </sl-option>
+          <sl-option value="custom">
             ${this.scopeTypeLabels["custom"]}
-          </sl-menu-item>
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -1421,14 +1419,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
-          .value=${this.formState.lang}
-          @sl-select=${(e: CustomEvent) =>
+          value=${this.formState.lang}
+          @on-change=${(e: CustomEvent) => {
             this.updateFormState({
-              lang: e.detail.item.value,
-            })}
-          @sl-clear=${() => {
-            this.updateFormState({
-              lang: null,
+              lang: (e.detail as any).value,
             });
           }}
         >
@@ -1478,20 +1472,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="scheduleFrequency"
           label=${msg("Frequency")}
           value=${this.formState.scheduleFrequency}
-          @sl-select=${(e: Event) =>
+          @sl-change=${(e: Event) =>
             this.updateFormState({
               scheduleFrequency: (e.target as HTMLSelectElement)
                 .value as FormState["scheduleFrequency"],
             })}
         >
-          <sl-menu-item value="daily"
-            >${this.scheduleFrequencyLabels["daily"]}</sl-menu-item
+          <sl-option value="daily"
+            >${this.scheduleFrequencyLabels["daily"]}</sl-option
           >
-          <sl-menu-item value="weekly"
-            >${this.scheduleFrequencyLabels["weekly"]}</sl-menu-item
+          <sl-option value="weekly"
+            >${this.scheduleFrequencyLabels["weekly"]}</sl-option
           >
-          <sl-menu-item value="monthly"
-            >${this.scheduleFrequencyLabels["monthly"]}</sl-menu-item
+          <sl-option value="monthly"
+            >${this.scheduleFrequencyLabels["monthly"]}</sl-option
           >
         </sl-select>
       `)}

@@ -8,7 +8,7 @@
     "@lit/localize": "^0.11.4",
     "@novnc/novnc": "^1.4.0-beta",
     "@rollup/plugin-commonjs": "^18.0.0",
-    "@shoelace-style/shoelace": "2.0.0-beta.87",
+    "@shoelace-style/shoelace": "2.0.0-beta.88",
     "@types/color": "^3.0.2",
     "@types/lodash": "^4.14.178",
     "@types/sinon": "^10.0.6",

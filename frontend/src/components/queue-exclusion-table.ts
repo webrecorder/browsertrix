@@ -230,7 +230,7 @@ export class QueueExclusionTable extends LiteElement {
           .value=${exclusion.type}
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
-          @sl-select=${(e: Event) => {
+          @sl-change=${(e: Event) => {
             this.updateExclusion({
               type: (e.target as HTMLSelectElement).value as Exclusion["type"],
               value: exclusion.value,
@@ -239,8 +239,8 @@ export class QueueExclusionTable extends LiteElement {
           }}
           hoist
         >
-          <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
-          <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
+          <sl-option value="text">${msg("Matches Text")}</sl-option>
+          <sl-option value="regex">${msg("Regex")}</sl-option>
         </sl-select>
       `;
     }

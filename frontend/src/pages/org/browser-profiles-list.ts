@@ -207,8 +207,8 @@ export class BrowserProfilesList extends LiteElement {
               @sl-hide=${this.stopProp}
               @sl-after-hide=${this.stopProp}
             >
-              <sl-menu-item value="http://">http://</sl-menu-item>
-              <sl-menu-item value="https://">https://</sl-menu-item>
+              <sl-option value="http://">http://</sl-option>
+              <sl-option value="https://">https://</sl-option>
             </sl-select>
             <sl-input
               class="grow"

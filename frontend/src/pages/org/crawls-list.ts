@@ -298,7 +298,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             pill
             multiple
-            max-tags-visible="1"
+            max-options-visible="1"
             placeholder=${this.isAdminView
               ? msg("All Active Crawls")
               : msg("Finished Crawls")}
@@ -325,8 +325,9 @@ export class CrawlsList extends LiteElement {
               size="small"
               pill
               value=${this.orderBy.field}
-              @sl-select=${(e: any) => {
-                const field = e.detail.item.value as SortField;
+              @sl-change=${(e: Event) => {
+                const field = (e.target as HTMLSelectElement)
+                  .value as SortField;
                 this.orderBy = {
                   field: field,
                   direction:
@@ -337,7 +338,7 @@ export class CrawlsList extends LiteElement {
             >
               ${Object.entries(sortableFields).map(
                 ([value, { label }]) => html`
-                  <sl-menu-item value=${value}>${label}</sl-menu-item>
+                  <sl-option value=${value}>${label}</sl-option>
                 `
               )}
             </sl-select>
@@ -568,7 +569,7 @@ export class CrawlsList extends LiteElement {
   private renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
-    return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
+    return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
   private renderEmptyState() {

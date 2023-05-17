@@ -341,21 +341,21 @@
   resolved "https://registry.npmjs.org/@shoelace-style/animations/-/animations-1.1.0.tgz"
   integrity sha512-Be+cahtZyI2dPKRm8EZSx3YJQ+jLvEcn3xzRP7tM4tqBnvd/eW/64Xh0iOf0t2w5P8iJKfdBbpVNE9naCaOf2g==
 
-"@shoelace-style/localize@^3.0.3":
+"@shoelace-style/localize@^3.0.4":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.1.0.tgz#69eae2f6f6f3176af81578396aa237add9df5309"
   integrity sha512-evGxn5wIQh1/Ks1RbZm7rY4DxPKAUnXKTixZNgnYV/N2V8Bbbvsi+S14gNa42SQNUJK5WooNtlar2B8cehEwZQ==
 
-"@shoelace-style/shoelace@2.0.0-beta.87":
-  version "2.0.0-beta.87"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.87.tgz#b9f4d5f37601a7189180171734036f900b508c23"
-  integrity sha512-EeoMVnjkO2BI0fePZsM/x5SJd1GmUHKo8IJTHJM9mH4fqUOtnzLSlv3bHr9YQ8Zl9Wj8/Jj0uvaNdQVm3ND6ig==
+"@shoelace-style/shoelace@2.0.0-beta.88":
+  version "2.0.0-beta.88"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.88.tgz#3d1616178488986a097fe46c68fcddcdbd08027f"
+  integrity sha512-AoT3jtD7Gh5jgEtvbyqgOL+VDmxlcW0UYpKBZ0FzfF7bV38UeZqosnfeXZzQXaP/U/s4BpgkSS0+ZpPuepjDtw==
   dependencies:
     "@ctrl/tinycolor" "^3.5.0"
     "@floating-ui/dom" "^1.0.7"
     "@lit-labs/react" "^1.1.0"
     "@shoelace-style/animations" "^1.1.0"
-    "@shoelace-style/localize" "^3.0.3"
+    "@shoelace-style/localize" "^3.0.4"
     lit "^2.4.1"
     qr-creator "^1.0.0"
 

@@ -63,13 +63,13 @@ export class SelectBrowserProfile extends LiteElement {
       >
         ${this.browserProfiles
           ? html`
-              <sl-menu-item value="">${msg("Default Profile")}</sl-menu-item>
+              <sl-option value="">${msg("Default Profile")}</sl-option>
               <sl-divider></sl-divider>
             `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
         ${this.browserProfiles?.map(
           (profile) => html`
-            <sl-menu-item value=${profile.id}>
+            <sl-option value=${profile.id}>
               ${profile.name}
               <div slot="suffix">
                 <div class="text-xs">
@@ -80,7 +80,7 @@ export class SelectBrowserProfile extends LiteElement {
                     year="2-digit"
                   ></sl-format-date>
                 </div></div
-            ></sl-menu-item>
+            ></sl-option>
           `
         )}
         ${this.browserProfiles && !this.browserProfiles.length

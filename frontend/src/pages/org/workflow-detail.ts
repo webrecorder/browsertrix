@@ -787,7 +787,7 @@ export class WorkflowDetail extends LiteElement {
               size="small"
               pill
               multiple
-              max-tags-visible="1"
+              max-options-visible="1"
               placeholder=${msg("Finished Crawls")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
@@ -878,7 +878,7 @@ export class WorkflowDetail extends LiteElement {
   private renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
-    return html`<sl-menu-item value=${state}>${icon}${label}</sl-menu-item>`;
+    return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
   private renderCurrentCrawl = () => {

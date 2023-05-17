@@ -48,6 +48,7 @@ export class LocalePicker extends LitElement {
           ${allLocales.map(
             (locale) =>
               html`<sl-menu-item
+                type="checkbox"
                 value=${locale}
                 ?checked=${locale === selectedLocale}
               >
