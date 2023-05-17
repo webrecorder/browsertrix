@@ -2,7 +2,8 @@ import type { PropertyValueMap, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import { mergeDeep, removeIn } from "immutable";
+import { mergeDeep } from "immutable";
+import omit from "lodash/fp/omit";
 import type {
   SlTextarea,
   SlCheckbox,
@@ -284,58 +285,87 @@ export class CollectionsNew extends LiteElement {
 
     return html`
       <btrix-checkbox-list>
-        ${workflows.map(
-          (workflow) => html`
-            <btrix-checkbox-list-item
-              checked
-              ?allChecked=${false}
-              group
-              @on-change=${(e: CheckboxChangeEvent) => {
-                // if (e.detail.checked) {
-                //   this.selectedWorkflows = mergeDeep(this.selectedWorkflows, {
-                //     [workflow.id]: workflow,
-                //   });
-                // } else {
-                //   this.selectedWorkflows = removeIn(this.selectedWorkflows, [
-                //     workflow.id,
-                //   ]);
-                // }
-              }}
-            >
-              <div class="flex-0 flex justify-between">
-                ${this.renderWorkflowDetails(workflow)}
-                <div class="border-l flex items-center justify-center">
-                  <sl-icon-button
-                    class="expandBtn p-2 text-lg"
-                    name="chevron-double-down"
-                    aria-expanded="true"
-                    aria-controls=${`workflow-${workflow.id}`}
-                    @click=${this.onWorkflowExpandClick}
-                  ></sl-icon-button>
-                </div>
-              </div>
-              <div
-                id=${`workflow-${workflow.id}-group`}
-                slot="group"
-                class="checkboxGroup transition-all overflow-hidden"
-              >
-                <btrix-checkbox-group-list>
-                  ${Array.from({ length: workflow.crawlCount }).map(
-                    (x, i) => html`
-                      <btrix-checkbox-list-item
-                        ?checked=${this.selectedCrawls[
-                          `${workflow.id}___${i + 1}`
-                        ]}
-                        >TODO ${i + 1}</btrix-checkbox-list-item
-                      >
-                    `
-                  )}
-                </btrix-checkbox-group-list>
-              </div>
-            </btrix-checkbox-list-item>
-          `
-        )}
+        ${workflows.map((workflow) => this.renderWorkflowItem(workflow))}
       </btrix-checkbox-list>
+    `;
+  }
+
+  private renderWorkflowItem(workflow: Workflow) {
+    const crawlIds = Object.keys(this.selectedCrawls).filter((id) =>
+      id.startsWith(workflow.id)
+    );
+    const someChecked = crawlIds.length > 0;
+    const allChecked = crawlIds.length === workflow.crawlCount;
+    return html`
+      <btrix-checkbox-list-item
+        ?checked=${someChecked}
+        ?allChecked=${allChecked}
+        group
+        aria-controls=${crawlIds.join(" ")}
+        @on-change=${(e: CheckboxChangeEvent) => {
+          const allCrawlIds = Array.from({ length: workflow.crawlCount }).map(
+            (x, i) => `${workflow.id}___${i + 1}`
+          );
+          const checkAll = () => {
+            const allCrawls = allCrawlIds.reduce(
+              (acc: any, id: any) => ({
+                ...acc,
+                [id]: { id },
+              }),
+              {}
+            );
+            this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
+          };
+          if (e.detail.checked) {
+            checkAll();
+          } else if (allChecked) {
+            this.selectedCrawls = omit(allCrawlIds)(this.selectedCrawls) as any;
+          } else {
+            checkAll();
+          }
+        }}
+      >
+        <div class="flex-0 flex justify-between">
+          ${this.renderWorkflowDetails(workflow)}
+          <div class="border-l flex items-center justify-center">
+            <sl-icon-button
+              class="expandBtn p-2 text-lg"
+              name="chevron-double-down"
+              aria-expanded="true"
+              aria-controls=${`workflow-${workflow.id}`}
+              @click=${this.onWorkflowExpandClick}
+            ></sl-icon-button>
+          </div>
+        </div>
+        <div
+          id=${`workflow-${workflow.id}-group`}
+          slot="group"
+          class="checkboxGroup transition-all overflow-hidden"
+        >
+          <btrix-checkbox-group-list>
+            ${Array.from({ length: workflow.crawlCount }).map(
+              (x, i) => html`
+                <btrix-checkbox-list-item
+                  id=${`${workflow.id}___${i + 1}`}
+                  ?checked=${this.selectedCrawls[`${workflow.id}___${i + 1}`]}
+                  @on-change=${(e: CheckboxChangeEvent) => {
+                    if (e.detail.checked) {
+                      this.selectedCrawls = mergeDeep(this.selectedCrawls, {
+                        [`${workflow.id}___${i + 1}`]: workflow,
+                      });
+                    } else {
+                      this.selectedCrawls = omit([`${workflow.id}___${i + 1}`])(
+                        this.selectedCrawls
+                      ) as any;
+                    }
+                  }}
+                  >TODO ${i + 1}</btrix-checkbox-list-item
+                >
+              `
+            )}
+          </btrix-checkbox-group-list>
+        </div>
+      </btrix-checkbox-list-item>
     `;
   }
 
@@ -417,9 +447,9 @@ export class CollectionsNew extends LiteElement {
                     [workflow.id]: workflow,
                   });
                 } else {
-                  this.selectedWorkflows = removeIn(this.selectedWorkflows, [
-                    workflow.id,
-                  ]);
+                  this.selectedWorkflows = omit([workflow.id])(
+                    this.selectedWorkflows
+                  ) as any;
                 }
               }}
             >
