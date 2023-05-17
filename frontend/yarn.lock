@@ -28,6 +28,11 @@
   resolved "https://registry.npmjs.org/@cheap-glitch/mi-cron/-/mi-cron-1.0.1.tgz"
   integrity sha512-kxl7vhg+SUgyHRn22qVbR9MfSm5CzdlYZDJTbGemqFFi/Jmno/hdoQIvBIPoqFY9dcPyxzOUNRRFn6x88UQMpw==
 
+"@ctrl/tinycolor@^3.5.0":
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/@ctrl/tinycolor/-/tinycolor-3.6.0.tgz#53fa5fe9c34faee89469e48f91d51a3766108bc8"
+  integrity sha512-/Z3l6pXthq0JvMYdUFyX9j0MaCltlIn6mfh9jLyQwg5aPKxkyNa0PTHtU1AlFXLNk55ZuAeJRcpvq+tmLfKmaQ==
+
 "@discoveryjs/json-ext@^0.5.0":
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz#1d572bfbbe14b7704e0ba0f39b74815b84870d70"
@@ -341,16 +346,16 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.1.0.tgz#69eae2f6f6f3176af81578396aa237add9df5309"
   integrity sha512-evGxn5wIQh1/Ks1RbZm7rY4DxPKAUnXKTixZNgnYV/N2V8Bbbvsi+S14gNa42SQNUJK5WooNtlar2B8cehEwZQ==
 
-"@shoelace-style/shoelace@2.0.0-beta.85":
-  version "2.0.0-beta.85"
-  resolved "https://registry.npmjs.org/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.85.tgz"
-  integrity sha512-Kq4BUEtB2tNlBPx97qM1/UQDBFYINMnlL4qNAHs0cCZF6q4J6U1NHot8TzWO83G4ufPHzNtjz9gaJLgzGWnNOA==
+"@shoelace-style/shoelace@2.0.0-beta.87":
+  version "2.0.0-beta.87"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.0.0-beta.87.tgz#b9f4d5f37601a7189180171734036f900b508c23"
+  integrity sha512-EeoMVnjkO2BI0fePZsM/x5SJd1GmUHKo8IJTHJM9mH4fqUOtnzLSlv3bHr9YQ8Zl9Wj8/Jj0uvaNdQVm3ND6ig==
   dependencies:
+    "@ctrl/tinycolor" "^3.5.0"
     "@floating-ui/dom" "^1.0.7"
     "@lit-labs/react" "^1.1.0"
     "@shoelace-style/animations" "^1.1.0"
     "@shoelace-style/localize" "^3.0.3"
-    color "4.2"
     lit "^2.4.1"
     qr-creator "^1.0.0"
 
@@ -1926,7 +1931,7 @@ color-string@^1.9.0:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
 
-color@4.2, color@^4.0.1:
+color@^4.0.1:
   version "4.2.3"
   resolved "https://registry.npmjs.org/color/-/color-4.2.3.tgz"
   integrity sha512-1rXeuUUiGGrykh+CeBdu5Ie7OJwinCgQY0bc7GCRxy5xVHy+moaqkpL/jqQq0MtQOeYcrqEz4abc5f0KtU7W4A==
