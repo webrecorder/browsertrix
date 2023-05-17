@@ -182,17 +182,20 @@ export class CollectionsNew extends LiteElement {
 
   private renderCrawls() {
     return html`
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">
             ${msg("Crawls in Collection")}
           </h4>
-          <div class="border rounded-lg px-2 py-4 flex-1">
+          <div class="border rounded-lg py-2 flex-1">
             ${this.renderCrawlsInCollection()}
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
+          <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
+            TODO controls
+          </div>
           <div class="flex-1">${this.renderCrawlsNotInCollection()}</div>
         </section>
         <footer
@@ -329,7 +332,7 @@ export class CollectionsNew extends LiteElement {
           ${this.renderWorkflowDetails(workflow)}
           <div class="border-l flex items-center justify-center">
             <sl-icon-button
-              class="expandBtn p-2 text-lg"
+              class="expandBtn p-1 text-base"
               name="chevron-double-down"
               aria-expanded="true"
               aria-controls=${`workflow-${workflow.id}`}
