@@ -7,7 +7,13 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { APIPaginatedList } from "../../types/api";
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
 
-type Collection = any; // TODO
+type Collection = {
+  id: string;
+  oid: string;
+  name: string;
+  description: string;
+  crawlIds: string[];
+}; // TODO
 
 @localized()
 export class CollectionsList extends LiteElement {
@@ -108,11 +114,45 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
-  private renderList = () => html`<ul>
-    ${this.collections?.items.map(
-      (col: Collection) => html` <li>${col.name}</li> `
-    )}
-  </ul>`;
+  private renderList = () =>
+    this.collections?.items.length
+      ? html`
+          <header class="p-2 text-xs text-neutral-600 leading-none">
+            <div
+              class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5"
+            >
+              <div class="col-span-1 px-2">${msg("Collection Name")}</div>
+              <div class="col-span-1">${msg("Description")}</div>
+              <div class="col-span-2">${msg("Total Crawls")}</div>
+            </div>
+          </header>
+          <ul class="contents">
+            ${this.collections.items.map(this.renderItem)}
+          </ul>
+        `
+      : html`TODO`;
+
+  private renderItem = (col: Collection) =>
+    html`<li class="border rounded shadow-sm p-2 leading-none mb-2 last:mb-0">
+      <div
+        class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5 items-center"
+      >
+        <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
+        <div class="col-span-1 truncate">${col.description}</div>
+        <div
+          class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+        >
+          ${col.crawlIds.length === 1
+            ? msg("1 crawl")
+            : msg(str`${col.crawlIds.length.toLocaleString()} crawls`)}
+        </div>
+        <div class="col-span-1 flex items-center justify-center">
+          <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>
+            <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
+          </btrix-button>
+        </div>
+      </div>
+    </li>`;
 
   private renderFetchError = () => html`
     <div>

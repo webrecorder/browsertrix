@@ -228,6 +228,11 @@ const theme = css`
     font-family: var(--font-monostyle-family);
     font-variation-settings: var(--font-monostyle-variation);
   }
+
+  .truncate {
+    /* Fix tailwind clipping vertical */
+    overflow: clip visible;
+  }
 `;
 
 export default theme;
