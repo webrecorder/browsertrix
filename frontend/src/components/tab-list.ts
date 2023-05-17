@@ -3,9 +3,9 @@ import { property, queryAsync } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Match max-w-screen-lg
+// Match witch tailwind 4xl max width
 // https://tailwindcss.com/docs/max-width
-const SCREEN_LG = 1024;
+const SCREEN_LG = 896;
 
 /**
  * Tab list
@@ -126,7 +126,7 @@ export class TabList extends LitElement {
         "header"
         "main";
       grid-template-columns: 1fr;
-      grid-gap: 2rem;
+      grid-gap: 1rem;
     }
 
     @media only screen and (min-width: ${SCREEN_LG}px) {
@@ -134,7 +134,7 @@ export class TabList extends LitElement {
         grid-template-areas:
           ". header"
           "menu main";
-        grid-template-columns: max-content 1fr;
+        grid-template-columns: auto ${SCREEN_LG}px;
       }
     }
 
