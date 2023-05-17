@@ -18,7 +18,13 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig, UpdateCrawlConfig, set_curr_crawl
+from .crawlconfigs import (
+    Seed,
+    CrawlConfigCore,
+    CrawlConfig,
+    UpdateCrawlConfig,
+    set_config_current_crawl_info,
+)
 from .db import BaseMongoModel
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -537,7 +543,7 @@ class CrawlOps:
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
         new_crawl = await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
-        return await set_curr_crawl(
+        return await set_config_current_crawl_info(
             self.crawl_configs.crawl_configs,
             crawlconfig.id,
             new_crawl["id"],

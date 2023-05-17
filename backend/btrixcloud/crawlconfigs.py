@@ -194,6 +194,8 @@ class CrawlConfig(CrawlConfigCore):
     currCrawlId: Optional[str]
     currCrawlStartTime: Optional[datetime]
 
+    lastUpdated: Optional[datetime]
+
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
@@ -282,12 +284,7 @@ class CrawlConfigOps:
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
-        await self.crawl_configs.create_index(
-            [
-                ("currCrawlStartTime", pymongo.DESCENDING),
-                ("lastCrawlTime", pymongo.DESCENDING),
-            ]
-        )
+        await self.crawl_configs.create_index([("lastUpdated", pymongo.DESCENDING)])
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
 
@@ -533,20 +530,18 @@ class CrawlConfigOps:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
 
         if sort_by:
-            if sort_by not in ("created", "modified", "firstSeed", "lastCrawlTime"):
+            if sort_by not in (
+                "created",
+                "modified",
+                "firstSeed",
+                "lastCrawlTime",
+                "lastUpdated",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            sort_query = {sort_by: sort_direction}
-            # if sorting by lastCrawlTime, make sure running crawls show up first
-            # if sorting in default (descending) order based on their start time
-            if sort_by == "lastCrawlTime":
-                sort_query = {
-                    "currCrawlStartTime": sort_direction,
-                    "lastCrawlTime": sort_direction,
-                }
-            aggregate.extend([{"$sort": sort_query}])
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
             [
@@ -905,16 +900,17 @@ async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
 
 
 # ============================================================================
-async def set_curr_crawl(
+async def set_config_current_crawl_info(
     crawl_configs, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
 ):
-    """Set current crawl info in config"""
+    """Set current crawl info in config when crawl begins"""
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},
         {
             "$set": {
                 "currCrawlId": crawl_id,
                 "currCrawlStartTime": crawl_start,
+                "lastUpdated": crawl_start,
             }
         },
         return_document=pymongo.ReturnDocument.AFTER,
@@ -927,7 +923,11 @@ async def set_curr_crawl(
 # ============================================================================
 # pylint: disable=too-many-locals
 async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
-    """re-calculate and update crawl statistics for config"""
+    """Re-calculate and update crawl statistics for config.
+
+    Should only be called when a crawl completes from operator or on migration
+    when no crawls are running.
+    """
     update_query = {
         "crawlCount": 0,
         "totalSize": 0,
@@ -948,14 +948,20 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         update_query["crawlCount"] = len(results)
 
         last_crawl = results[0]
+
+        last_crawl_finished = last_crawl.get("finished")
+
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
         update_query["lastCrawlStartTime"] = last_crawl.get("started")
         update_query["lastStartedBy"] = last_crawl.get("userid")
-        update_query["lastCrawlTime"] = last_crawl.get("finished")
+        update_query["lastCrawlTime"] = last_crawl_finished
         update_query["lastCrawlState"] = last_crawl.get("state")
         update_query["lastCrawlSize"] = sum(
             file_.get("size", 0) for file_ in last_crawl.get("files", [])
         )
+
+        if last_crawl_finished:
+            update_query["lastUpdated"] = last_crawl_finished
 
         total_size = 0
         for res in results:
