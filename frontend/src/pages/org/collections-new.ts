@@ -5,6 +5,7 @@ import { when } from "lit/directives/when.js";
 import { mergeDeep, removeIn } from "immutable";
 import type { SlTextarea, SlCheckbox, SlInput } from "@shoelace-style/shoelace";
 
+import type { CheckboxChangeEvent } from "../../components/checkbox-list";
 import type { MarkdownChangeEvent } from "../../components/markdown-editor";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -181,9 +182,7 @@ export class CollectionsNew extends LiteElement {
         </section>
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
-          <div class="border rounded-lg p-6 flex-1">
-            ${this.renderCrawlsNotInCollection()}
-          </div>
+          <div class="flex-1">${this.renderCrawlsNotInCollection()}</div>
         </section>
         <footer
           class="col-span-2 border rounded-lg px-6 py-4 flex justify-between"
@@ -296,30 +295,28 @@ export class CollectionsNew extends LiteElement {
     }
 
     return html`
-      <ul>
+      <btrix-checkbox-list>
         ${this.workflows.items.map(
           (workflow) => html`
-            <li>
-              <sl-checkbox
-                ?checked=${this.selectedWorkflows[workflow.id]}
-                @sl-change=${(e: Event) => {
-                  const inputEl = e.target as SlCheckbox;
-                  if (inputEl.checked) {
-                    this.selectedWorkflows = mergeDeep(this.selectedWorkflows, {
-                      [workflow.id]: workflow,
-                    });
-                  } else {
-                    this.selectedWorkflows = removeIn(this.selectedWorkflows, [
-                      workflow.id,
-                    ]);
-                  }
-                }}
-              ></sl-checkbox>
+            <btrix-checkbox-list-item
+              ?checked=${this.selectedWorkflows[workflow.id]}
+              @on-change=${(e: CheckboxChangeEvent) => {
+                if (e.detail.checked) {
+                  this.selectedWorkflows = mergeDeep(this.selectedWorkflows, {
+                    [workflow.id]: workflow,
+                  });
+                } else {
+                  this.selectedWorkflows = removeIn(this.selectedWorkflows, [
+                    workflow.id,
+                  ]);
+                }
+              }}
+            >
               ${workflow.name || workflow.firstSeed}
-            </li>
+            </btrix-checkbox-list-item>
           `
         )}
-      </ul>
+      </btrix-checkbox-list>
     `;
   }
 

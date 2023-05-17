@@ -347,10 +347,12 @@ export class Org extends LiteElement {
     const isNewResourceTab = this.params.hasOwnProperty("new");
 
     if (isNewResourceTab) {
-      return html`<btrix-collections-new
-        .authState=${this.authState!}
-        orgId=${this.orgId!}
-      ></btrix-collections-new>`;
+      return html`<div class="lg:px-5">
+        <btrix-collections-new
+          .authState=${this.authState!}
+          orgId=${this.orgId!}
+        ></btrix-collections-new>
+      </div>`;
     }
 
     return html`<div class="max-w-screen-lg mx-auto">
