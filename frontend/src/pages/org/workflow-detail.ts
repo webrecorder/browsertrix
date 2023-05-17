@@ -72,7 +72,7 @@ export class WorkflowDetail extends LiteElement {
   private currentCrawlStats?: Crawl["stats"];
 
   @state()
-  private activePanel?: Tab;
+  private activePanel: Tab = SECTIONS[0];
 
   @state()
   private isLoading: boolean = false;
@@ -156,7 +156,11 @@ export class WorkflowDetail extends LiteElement {
     ) {
       this.handleCrawlRunEnd();
     }
-    if (changedProperties.has("activePanel") && this.activePanel) {
+    if (
+      !this.isEditing &&
+      changedProperties.has("activePanel") &&
+      this.activePanel
+    ) {
       if (!this.isPanelHeaderVisible) {
         // Scroll panel header into view
         this.querySelector("btrix-tab-list")?.scrollIntoView({
@@ -170,7 +174,8 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private getActivePanelFromHash = () => {
+  private getActivePanelFromHash = async () => {
+    await this.updateComplete;
     if (this.isEditing) return;
 
     const hashValue = window.location.hash.slice(1);
@@ -391,7 +396,7 @@ export class WorkflowDetail extends LiteElement {
           ></sl-icon>
           <span class="inline-block align-middle"
             >${workflowId
-              ? msg(str`Back to ${this.renderName()}`)
+              ? msg(html`Back to ${this.renderName()}`)
               : msg("Back to Crawl Workflows")}</span
           >
         </a>
