@@ -55,7 +55,7 @@ def test_create_collection_empty_name(
             "name": "",
         },
     )
-    assert r.status_code == 500
+    assert r.status_code == 422
 
 
 def test_update_collection(

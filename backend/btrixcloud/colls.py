@@ -33,7 +33,7 @@ class Collection(BaseMongoModel):
 class CollIn(BaseModel):
     """Collection Passed in By User"""
 
-    name: str
+    name: str = Field(..., min_length=1)
     description: Optional[str]
     crawlIds: Optional[List[str]] = []
 
