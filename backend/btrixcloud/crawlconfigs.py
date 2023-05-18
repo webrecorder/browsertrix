@@ -537,6 +537,7 @@ class CrawlConfigOps:
                 "modified",
                 "firstSeed",
                 "lastCrawlTime",
+                "lastCrawlStartTime",
                 "lastRun",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
@@ -547,7 +548,12 @@ class CrawlConfigOps:
 
             # Add modified as final sort key to give some order to workflows that
             # haven't been run yet.
-            if sort_by in ("firstSeed", "lastCrawlTime", "lastRun"):
+            if sort_by in (
+                "firstSeed",
+                "lastCrawlTime",
+                "lastCrawlStartTime",
+                "lastRun",
+            ):
                 sort_query = {sort_by: sort_direction, "modified": sort_direction}
 
             aggregate.extend([{"$sort": sort_query}])
