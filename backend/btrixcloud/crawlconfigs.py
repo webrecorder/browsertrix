@@ -284,7 +284,9 @@ class CrawlConfigOps:
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
-        await self.crawl_configs.create_index([("lastUpdated", pymongo.DESCENDING)])
+        await self.crawl_configs.create_index(
+            [("lastUpdated", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+        )
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
 
@@ -541,7 +543,14 @@ class CrawlConfigOps:
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # Add modified as final sort key to give some order to workflows that
+            # haven't been run yet.
+            if sort_by in ("firstSeed", "lastCrawlTime", "lastUpdated"):
+                sort_query = {sort_by: sort_direction, "modified": sort_direction}
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [
