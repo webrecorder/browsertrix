@@ -2,7 +2,7 @@
 Collections API
 """
 import uuid
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 import pymongo
 from fastapi import Depends, HTTPException
@@ -11,7 +11,6 @@ from pydantic import BaseModel, UUID4, Field
 
 from .db import BaseMongoModel
 from .orgs import Organization
-from .crawls import CrawlFileOut
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
@@ -215,7 +214,8 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         )
 
     @app.get(
-        "/orgs/{oid}/collections", tags=["collections"], response_model=List[Collection]
+        "/orgs/{oid}/collections",
+        tags=["collections"],
     )
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),
@@ -230,7 +230,6 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/$all",
         tags=["collections"],
-        response_model=Dict[str, List[CrawlFileOut]],
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
@@ -251,7 +250,6 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/{coll_id}",
         tags=["collections"],
-        response_model=List[CrawlFileOut],
     )
     async def get_collection_crawls(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
