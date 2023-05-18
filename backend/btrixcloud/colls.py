@@ -2,7 +2,7 @@
 Collections API
 """
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import pymongo
 from fastapi import Depends, HTTPException
@@ -11,14 +11,13 @@ from pydantic import BaseModel, UUID4, Field
 
 from .db import BaseMongoModel
 from .orgs import Organization
+from .crawls import CrawlFileOut
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
 # ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
-
-    id: UUID4
 
     name: str = Field(..., min_length=1)
 
@@ -108,10 +107,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["id"] = result["_id"]
-        del result["_id"]
-
-        return result
+        return Collection.from_dict(result)
 
     async def add_crawl_to_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Add crawl to collection"""
@@ -123,10 +119,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["id"] = result["_id"]
-        del result["_id"]
-
-        return result
+        return Collection.from_dict(result)
 
     async def remove_crawl_from_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Remove crawl from collection"""
@@ -138,10 +131,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["id"] = result["_id"]
-        del result["_id"]
-
-        return result
+        return Collection.from_dict(result)
 
     async def get_collection(self, coll_id: uuid.UUID):
         """Get collection by id"""
@@ -224,7 +214,9 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             org.id, new_coll.name, new_coll.crawlIds, new_coll.description
         )
 
-    @app.get("/orgs/{oid}/collections", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections", tags=["collections"], response_model=List[Collection]
+    )
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -235,7 +227,11 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         )
         return paginated_format(collections, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/collections/$all", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/$all",
+        tags=["collections"],
+        response_model=Dict[str, List[CrawlFileOut]],
+    )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
         try:
@@ -252,7 +248,11 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.get("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}",
+        tags=["collections"],
+        response_model=List[CrawlFileOut],
+    )
     async def get_collection_crawls(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
@@ -267,7 +267,11 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.post("/orgs/{oid}/collections/{coll_id}/update", tags=["collections"])
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/update",
+        tags=["collections"],
+        response_model=Collection,
+    )
     async def update_collection(
         coll_id: uuid.UUID,
         update: UpdateColl,
@@ -275,13 +279,21 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     ):
         return await colls.update_collection(coll_id, update)
 
-    @app.get("/orgs/{oid}/collections/{coll_id}/add", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/add",
+        tags=["collections"],
+        response_model=Collection,
+    )
     async def add_crawl_to_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.add_crawl_to_collection(coll_id, crawlId)
 
-    @app.get("/orgs/{oid}/collections/{coll_id}/remove", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/remove",
+        tags=["collections"],
+        response_model=Collection,
+    )
     async def remove_crawl_from_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
