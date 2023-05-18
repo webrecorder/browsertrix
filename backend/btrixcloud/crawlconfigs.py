@@ -487,7 +487,7 @@ class CrawlConfigOps:
         description: str = None,
         tags: Optional[List[str]] = None,
         schedule: Optional[bool] = None,
-        sort_by: str = None,
+        sort_by: str = "lastRun",
         sort_direction: int = -1,
     ):
         """Get all crawl configs for an organization is a member of"""
