@@ -255,7 +255,7 @@ export class WorkflowListItem extends LitElement {
       role="button"
       href=${`/orgs/${this.workflow?.oid}/workflows/crawl/${
         this.workflow?.id
-      }#${this.workflow?.currCrawlId ? "watch" : "artifacts"}`}
+      }#${this.workflow?.lastCrawlState === "running" ? "watch" : "artifacts"}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -294,20 +294,19 @@ export class WorkflowListItem extends LitElement {
             (workflow) =>
               html`
                 <btrix-crawl-status
-                  state=${workflow.currCrawlState ||
-                  workflow.lastCrawlState ||
+                  state=${workflow.lastCrawlState ||
                   msg("No Crawls Yet")}
-                  ?stopping=${workflow.currCrawlStopping}
+                  ?stopping=${workflow.lastCrawlStopping}
                 ></btrix-crawl-status>
               `
           )}
         </div>
         <div class="desc duration">
           ${this.safeRender((workflow) => {
-            if (workflow.currCrawlStartTime) {
+            if (workflow.lastCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
-                new Date(`${workflow.currCrawlStartTime}Z`).valueOf();
+                new Date(`${workflow.lastCrawlStartTime}Z`).valueOf();
               if (diff < 1000) {
                 return "";
               }
@@ -333,7 +332,7 @@ export class WorkflowListItem extends LitElement {
       <div class="col">
         <div class="detail">
           ${this.safeRender((workflow) => {
-            if (workflow.totalSize && workflow.currCrawlSize) {
+            if (workflow.totalSize && workflow.lastCrawlSize && workflow.lastCrawlState === "running") {
               return html`<sl-format-bytes
                   value=${workflow.totalSize}
                   display="narrow"
@@ -341,15 +340,21 @@ export class WorkflowListItem extends LitElement {
                 <span class="currCrawlSize">
                   +
                   <sl-format-bytes
-                    value=${workflow.currCrawlSize}
+                    value=${workflow.lastCrawlSize}
                     display="narrow"
                   ></sl-format-bytes>
                 </span>`;
             }
-            if (workflow.currCrawlSize) {
+            if (workflow.totalSize && workflow.lastCrawlSize) {
+              return html`<sl-format-bytes
+                  value=${workflow.totalSize}
+                  display="narrow"
+                ></sl-format-bytes>`;
+            }
+            if (workflow.lastCrawlState === "running" && workflow.lastCrawlSize) {
               return html`<span class="currCrawlSize">
                 <sl-format-bytes
-                  value=${workflow.currCrawlSize}
+                  value=${workflow.lastCrawlSize}
                   display="narrow"
                 ></sl-format-bytes>
               </span>`;

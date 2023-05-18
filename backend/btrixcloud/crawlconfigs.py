@@ -191,9 +191,6 @@ class CrawlConfig(CrawlConfigCore):
     lastCrawlState: Optional[str]
     lastCrawlSize: Optional[int]
 
-    currCrawlId: Optional[str]
-    currCrawlStartTime: Optional[datetime]
-
     lastRun: Optional[datetime]
 
     def get_raw_config(self):
@@ -203,11 +200,9 @@ class CrawlConfig(CrawlConfigCore):
 
 # ============================================================================
 class CrawlConfigOut(CrawlConfig):
-    """Crawl Config Output, includes currCrawlId of running crawl"""
+    """Crawl Config Output"""
 
-    currCrawlState: Optional[str]
-    currCrawlSize: Optional[int] = 0
-    currCrawlStopping: Optional[bool] = False
+    lastCrawlStopping: Optional[bool] = False
 
     profileName: Optional[str]
 
@@ -667,9 +662,9 @@ class CrawlConfigOps:
         if not crawl:
             return
 
-        crawlconfig.currCrawlState = crawl.state
-        crawlconfig.currCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
-        crawlconfig.currCrawlStopping = crawl.stopping
+        crawlconfig.lastCrawlState = crawl.state
+        crawlconfig.lastCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.lastCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: uuid.UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
@@ -923,8 +918,9 @@ async def set_config_current_crawl_info(
         {"_id": cid, "inactive": {"$ne": True}},
         {
             "$set": {
-                "currCrawlId": crawl_id,
-                "currCrawlStartTime": crawl_start,
+                "lastCrawlId": crawl_id,
+                "lastCrawlStartTime": crawl_start,
+                "lastCrawlTime": None,
                 "lastRun": crawl_start,
             }
         },
@@ -952,8 +948,7 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         "lastCrawlTime": None,
         "lastCrawlState": None,
         "lastCrawlSize": None,
-        "currCrawlId": None,
-        "currCrawlStartTime": None,
+        "lastCrawlStopping": False,
     }
 
     match_query = {"cid": cid, "finished": {"$ne": None}}
