@@ -194,7 +194,7 @@ class CrawlConfig(CrawlConfigCore):
     currCrawlId: Optional[str]
     currCrawlStartTime: Optional[datetime]
 
-    lastUpdated: Optional[datetime]
+    lastRun: Optional[datetime]
 
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
@@ -285,7 +285,7 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("lastUpdated", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+            [("lastRun", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
         )
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
@@ -537,7 +537,7 @@ class CrawlConfigOps:
                 "modified",
                 "firstSeed",
                 "lastCrawlTime",
-                "lastUpdated",
+                "lastRun",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
@@ -547,7 +547,7 @@ class CrawlConfigOps:
 
             # Add modified as final sort key to give some order to workflows that
             # haven't been run yet.
-            if sort_by in ("firstSeed", "lastCrawlTime", "lastUpdated"):
+            if sort_by in ("firstSeed", "lastCrawlTime", "lastRun"):
                 sort_query = {sort_by: sort_direction, "modified": sort_direction}
 
             aggregate.extend([{"$sort": sort_query}])
@@ -919,7 +919,7 @@ async def set_config_current_crawl_info(
             "$set": {
                 "currCrawlId": crawl_id,
                 "currCrawlStartTime": crawl_start,
-                "lastUpdated": crawl_start,
+                "lastRun": crawl_start,
             }
         },
         return_document=pymongo.ReturnDocument.AFTER,
@@ -970,7 +970,7 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         )
 
         if last_crawl_finished:
-            update_query["lastUpdated"] = last_crawl_finished
+            update_query["lastRun"] = last_crawl_finished
 
         total_size = 0
         for res in results:
