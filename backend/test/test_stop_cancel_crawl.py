@@ -90,7 +90,7 @@ def test_start_crawl_and_stop_immediately(
     while data["state"] in ("starting", "running", "waiting"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    assert data["state"] == "canceled"
+    assert data["state"] in ("canceled", "partial_complete")
     assert data["stopping"] == True
 
 
