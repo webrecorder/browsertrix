@@ -17,7 +17,7 @@ def get_crawl(org_id, auth_headers, crawl_id):
     return r.json()
 
 
-def _test_start_crawl_to_cancel(
+def test_start_crawl_to_cancel(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
     r = requests.post(
@@ -33,7 +33,7 @@ def _test_start_crawl_to_cancel(
     crawl_id = data["started"]
 
 
-def _test_cancel_crawl(default_org_id, crawler_auth_headers):
+def test_cancel_crawl(default_org_id, crawler_auth_headers):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
     while data["state"] == "starting":
         time.sleep(5)
