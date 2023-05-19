@@ -71,6 +71,7 @@ export type Workflow = CrawlConfig & {
   totalSize: string | null;
   inactive: boolean;
   firstSeed: string;
+  isCrawlRunning: boolean | null;
 };
 
 export type Profile = {
