@@ -303,19 +303,13 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.get(
-        "/orgs/{oid}/collections/names",
-        tags=["collections"]
-    )
+    @app.get("/orgs/{oid}/collections/names", tags=["collections"])
     async def get_collection_names(
         org: Organization = Depends(org_viewer_dep),
     ):
         return await colls.get_collection_names(org)
 
-    @app.get(
-        "/orgs/{oid}/collections/{coll_id}",
-        tags=["collections"]
-    )
+    @app.get("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
     async def get_collection_crawls(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
