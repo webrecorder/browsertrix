@@ -469,12 +469,6 @@ class BtrixOperator(K8sAPI):
                     redis, crawl.id, crawl.cid, status, state="failed"
                 )
 
-            # if stopping, and no pages finished, mark as canceled
-            if crawl.stopping and not status.pagesDone:
-                return await self.mark_finished(
-                    redis, crawl.id, crawl.cid, status, state="canceled"
-                )
-
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             state = "complete" if completed else "partial_complete"
@@ -485,8 +479,15 @@ class BtrixOperator(K8sAPI):
 
         # check if all crawlers failed
         if failed >= crawl.scale:
+
+            # if stopping, and no pages finished, mark as canceled
+            if crawl.stopping and not status.pagesDone:
+                state = "canceled"
+            else:
+                state = "failed"
+
             status = await self.mark_finished(
-                redis, crawl.id, crawl.cid, status, state="failed"
+                redis, crawl.id, crawl.cid, status, state=state
             )
 
         return status
