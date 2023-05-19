@@ -255,7 +255,7 @@ export class WorkflowListItem extends LitElement {
       role="button"
       href=${`/orgs/${this.workflow?.oid}/workflows/crawl/${
         this.workflow?.id
-      }#${this.workflow?.lastCrawlState === "running" ? "watch" : "artifacts"}`}
+      }#${this.workflow?.isCrawlRunning ? "watch" : "artifacts"}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -332,7 +332,7 @@ export class WorkflowListItem extends LitElement {
       <div class="col">
         <div class="detail">
           ${this.safeRender((workflow) => {
-            if (workflow.totalSize && workflow.lastCrawlSize && workflow.lastCrawlState === "running") {
+            if (workflow.isCrawlRunning && workflow.totalSize && workflow.lastCrawlSize) {
               return html`<sl-format-bytes
                   value=${workflow.totalSize}
                   display="narrow"
@@ -351,7 +351,7 @@ export class WorkflowListItem extends LitElement {
                   display="narrow"
                 ></sl-format-bytes>`;
             }
-            if (workflow.lastCrawlState === "running" && workflow.lastCrawlSize) {
+            if (workflow.isCrawlRunning && workflow.lastCrawlSize) {
               return html`<span class="currCrawlSize">
                 <sl-format-bytes
                   value=${workflow.lastCrawlSize}

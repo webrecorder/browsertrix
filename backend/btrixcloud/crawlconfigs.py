@@ -193,6 +193,8 @@ class CrawlConfig(CrawlConfigCore):
 
     lastRun: Optional[datetime]
 
+    isCrawlRunning: Optional[bool] = False
+
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
@@ -922,6 +924,7 @@ async def set_config_current_crawl_info(
                 "lastCrawlStartTime": crawl_start,
                 "lastCrawlTime": None,
                 "lastRun": crawl_start,
+                "isCrawlRunning": True,
             }
         },
         return_document=pymongo.ReturnDocument.AFTER,
@@ -949,6 +952,7 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
         "lastCrawlState": None,
         "lastCrawlSize": None,
         "lastCrawlStopping": False,
+        "isCrawlRunning": False,
     }
 
     match_query = {"cid": cid, "finished": {"$ne": None}}

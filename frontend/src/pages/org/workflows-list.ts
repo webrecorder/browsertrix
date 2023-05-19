@@ -355,7 +355,7 @@ export class WorkflowsList extends LiteElement {
   private renderMenuItems(workflow: Workflow) {
     return html`
       ${when(
-        workflow.lastCrawlState === "running",
+        workflow.isCrawlRunning,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -385,7 +385,7 @@ export class WorkflowsList extends LiteElement {
         `
       )}
       ${when(
-        workflow.lastCrawlState === "running",
+        workflow.isCrawlRunning,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -438,7 +438,7 @@ export class WorkflowsList extends LiteElement {
         <sl-icon name="files" slot="prefix"></sl-icon>
         ${msg("Duplicate Workflow")}
       </sl-menu-item>
-      ${when(workflow.lastCrawlState !== "running", () => {
+      ${when(workflow.isCrawlRunning, () => {
         const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
         return html`
           <sl-divider></sl-divider>

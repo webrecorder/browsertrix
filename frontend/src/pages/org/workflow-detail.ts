@@ -455,7 +455,7 @@ export class WorkflowDetail extends LiteElement {
           () =>
             html`
               <span class="text-neutral-500"
-                >(${this.crawls!.total.toLocaleString()}${this.workflow?.lastCrawlState === "running"
+                >(${this.crawls!.total.toLocaleString()}${this.workflow?.isCrawlRunning
                   ? html`<span class="text-success"> + 1</span>`
                   : ""})</span
               >
@@ -479,7 +479,7 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${this.workflow?.lastCrawlState !== "running"}
+          ?disabled=${this.workflow?.isCrawlRunning}
           @click=${() => (this.openDialogName = "scale")}
         >
           <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
@@ -545,7 +545,7 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       ${when(
-        this.workflow?.lastCrawlState === "running",
+        this.workflow?.isCrawlRunning,
         () => html`
           <sl-button-group class="mr-2">
             <sl-button
@@ -592,7 +592,7 @@ export class WorkflowDetail extends LiteElement {
         >
         <sl-menu>
           ${when(
-            this.workflow?.lastCrawlState === "running",
+            this.workflow?.isCrawlRunning,
             // HACK shoelace doesn't current have a way to override non-hover
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
@@ -624,7 +624,7 @@ export class WorkflowDetail extends LiteElement {
             `
           )}
           ${when(
-            workflow.lastCrawlState === "running",
+            workflow.isCrawlRunning,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item @click=${() => (this.openDialogName = "scale")}>
@@ -804,7 +804,7 @@ export class WorkflowDetail extends LiteElement {
         </div>
 
         ${when(
-          this.workflow?.lastCrawlState === "running",
+          this.workflow?.isCrawlRunning,
           () => html`<div class="mb-4">
             <btrix-alert variant="success" class="text-sm">
               ${msg(
