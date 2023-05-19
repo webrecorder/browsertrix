@@ -93,7 +93,7 @@ class Crawl(CrawlConfigCore):
 
     state: str
 
-    stats: Optional[Dict[str, str]]
+    stats: Optional[Dict[str, int]]
 
     files: Optional[List[CrawlFile]] = []
 
@@ -140,7 +140,7 @@ class ListCrawlOut(BaseMongoModel):
 
     state: str
 
-    stats: Optional[Dict[str, str]]
+    stats: Optional[Dict[str, int]]
 
     fileSize: int = 0
     fileCount: int = 0

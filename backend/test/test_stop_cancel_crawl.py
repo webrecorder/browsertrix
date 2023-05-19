@@ -48,7 +48,7 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
 
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    while data["state"] == "running":
+    while data["state"] in ("running", "waiting"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] == "canceled"
@@ -57,7 +57,6 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
     assert len(data["resources"]) == 0
 
 
-@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
 def test_start_crawl_to_stop(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
@@ -74,12 +73,13 @@ def test_start_crawl_to_stop(
     crawl_id = data["started"]
 
 
-@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
 def test_stop_crawl(default_org_id, crawler_config_id_only, crawler_auth_headers):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
-    while data["state"] == "starting":
-        time.sleep(5)
+    done = False
+    while not done:
+        time.sleep(2)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
+        done = data.get("stats") and data.get("stats").get("done") > 0
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/stop",
