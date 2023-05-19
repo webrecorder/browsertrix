@@ -93,6 +93,7 @@ def test_start_crawl_and_stop_immediately(
     assert data["state"] == "canceled"
     assert data["stopping"] == True
 
+
 def test_start_crawl_to_stop_partial(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
@@ -109,7 +110,9 @@ def test_start_crawl_to_stop_partial(
     crawl_id = data["started"]
 
 
-def test_stop_crawl_partial(default_org_id, crawler_config_id_only, crawler_auth_headers):
+def test_stop_crawl_partial(
+    default_org_id, crawler_config_id_only, crawler_auth_headers
+):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
     done = False
     while not done:
