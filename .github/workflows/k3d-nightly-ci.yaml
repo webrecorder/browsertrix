@@ -62,7 +62,7 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml --set invite_expire_seconds=10 btrix ./chart/
+          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml --set invite_expire_seconds=10 --set max_pages_per_crawl=1000 btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v3
