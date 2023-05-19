@@ -139,7 +139,7 @@ def test_verify_wacz():
     assert '"https://webrecorder.net/"' in pages
 
     # 1 seed page + header line
-    assert len(pages.strip().split("\n")) == 1
+    assert len(pages.strip().split("\n")) == 2
 
     # 1 other page
     pages = z.open("pages/extraPages.jsonl").read().decode("utf-8")
