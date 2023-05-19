@@ -6,7 +6,11 @@ frontend_pull_policy: "Never"
 
 default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
 
-operator_resync_seconds: 1
+operator_resync_seconds: 3
+
+frontend_limits_cpu: "30m"
+
+frontend_limits_memory: "40Mi"
 
 mongo_auth:
   # specify either username + password (for local mongo)
