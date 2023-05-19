@@ -1,7 +1,6 @@
 name: Nightly tests (K3d)
 
 on:
-  push:
   schedule:
     # Run daily at 8am UTC
     - cron:  '0 8 * * *'
