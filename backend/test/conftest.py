@@ -184,7 +184,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
             "pageExtraDelay": 20,
-            "limit": 4
+            "limit": 4,
         },
     }
     r = requests.post(

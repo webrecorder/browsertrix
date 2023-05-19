@@ -409,6 +409,7 @@ class BtrixOperator(K8sAPI):
 
         return True
 
+    # pylint: disable=too-many-branches
     async def update_crawl_state(self, redis, crawl, status, pods):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
@@ -466,6 +467,12 @@ class BtrixOperator(K8sAPI):
             if status.pagesFound == 1 and not status.filesAdded:
                 return await self.mark_finished(
                     redis, crawl.id, crawl.cid, status, state="failed"
+                )
+
+            # if stopping, and no pages finished, mark as canceled
+            if crawl.stopping and not status.pagesDone:
+                return await self.mark_finished(
+                    redis, crawl.id, crawl.cid, status, state="canceled"
                 )
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
