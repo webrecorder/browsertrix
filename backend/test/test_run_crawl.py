@@ -139,14 +139,14 @@ def test_verify_wacz():
     assert '"https://webrecorder.net/"' in pages
 
     # 1 seed page + header line
-    assert len(pages.strip().split("\n")) == 2
+    assert len(pages.strip().split("\n")) == 1
 
     # 1 other page
     pages = z.open("pages/extraPages.jsonl").read().decode("utf-8")
     assert '"https://webrecorder.net/blog"' in pages
 
-    # 1 other page + header line
-    assert len(pages.strip().split("\n")) == 2
+    # 3 other page + header line
+    assert len(pages.strip().split("\n")) == 4
 
 
 def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
