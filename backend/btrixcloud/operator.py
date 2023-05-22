@@ -18,7 +18,7 @@ from .utils import from_k8s_date, to_k8s_date, dt_now, get_redis_crawl_stats
 from .k8sapi import K8sAPI
 
 from .db import init_db
-from .orgs import inc_org_stats
+from .orgs import inc_org_stats, get_max_parallel_crawls
 from .crawlconfigs import update_config_crawl_stats
 from .crawls import (
     CrawlFile,
@@ -26,6 +26,8 @@ from .crawls import (
     add_crawl_file,
     update_crawl,
     add_crawl_errors,
+    NON_RUNNING_STATES,
+    RUNNING_STATES,
 )
 
 
@@ -33,6 +35,7 @@ STS = "StatefulSet.apps/v1"
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
+CJS = "CrawlJob.btrix.cloud/v1"
 
 DEFAULT_TTL = 30
 
@@ -78,7 +81,7 @@ class CrawlSpec(BaseModel):
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
-    state: str = "new"
+    state: str = "starting"
     pagesFound: int = 0
     pagesDone: int = 0
     size: str = ""
@@ -88,6 +91,7 @@ class CrawlStatus(BaseModel):
 
 
 # ============================================================================
+# pylint: disable=too-many-statements
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
@@ -141,6 +145,7 @@ class BtrixOperator(K8sAPI):
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
         cid = spec["cid"]
+        oid = spec["oid"]
 
         scale = spec.get("scale", 1)
         status.scale = scale
@@ -175,7 +180,7 @@ class BtrixOperator(K8sAPI):
         crawl = CrawlSpec(
             id=crawl_id,
             cid=cid,
-            oid=configmap["ORG_ID"],
+            oid=oid,
             storage_name=configmap["STORAGE_NAME"],
             storage_path=configmap["STORE_PATH"],
             scale=scale,
@@ -184,6 +189,10 @@ class BtrixOperator(K8sAPI):
             expire_time=from_k8s_date(spec.get("expireTime")),
         )
 
+        if status.state in ("starting", "waiting_org_limit"):
+            if not await self.can_start_new(crawl, data, status):
+                return self._done_response(status)
+
         crawl_sts = f"crawl-{crawl_id}"
         redis_sts = f"redis-{crawl_id}"
 
@@ -191,11 +200,13 @@ class BtrixOperator(K8sAPI):
         if has_crawl_children:
             pods = data.related[POD]
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
-        elif not status.finished:
-            status.state = "starting"
+            if status.finished:
+                return await self.handle_finished_delete_if_needed(
+                    crawl_id, status, spec
+                )
 
-        if status.finished:
-            return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
+        elif status.state not in RUNNING_STATES:
+            await self.set_state("starting", status, crawl.id)
 
         params = {}
         params.update(self.shared_params)
@@ -230,6 +241,13 @@ class BtrixOperator(K8sAPI):
 
         return {"status": status.dict(exclude_none=True), "children": children}
 
+    async def set_state(self, state, status, crawl_id):
+        """set status state and update db, if changed"""
+        if status.state != state:
+            print(f"Setting state: {status.state} -> {state}, {crawl_id}")
+            status.state = state
+            await update_crawl(self.crawls, crawl_id, state=state)
+
     def load_from_yaml(self, filename, params):
         """load and parse k8s template from yaml file"""
         return list(
@@ -241,6 +259,7 @@ class BtrixOperator(K8sAPI):
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
         crawl_id = spec["id"]
+        oid = spec.get("oid")
         return {
             "relatedResources": [
                 {
@@ -260,8 +279,48 @@ class BtrixOperator(K8sAPI):
                         "matchLabels": {"crawl": crawl_id, "role": "crawler"}
                     },
                 },
+                {
+                    "apiVersion": "btrix.cloud/v1",
+                    "resource": "crawljobs",
+                    "labelSelector": {"matchLabels": {"oid": oid}},
+                },
             ]
         }
+
+    async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
+        """return true if crawl can start, otherwise set crawl to 'queued' state
+        until more crawls for org finish"""
+        max_crawls = await get_max_parallel_crawls(self.orgs, crawl.oid)
+        if not max_crawls:
+            return True
+
+        if len(data.related[CJS]) <= max_crawls:
+            return True
+
+        name = data.parent.get("metadata").get("name")
+
+        # def metadata_key(val):
+        #    return val.get("metadata").get("creationTimestamp")
+
+        # all_crawljobs = sorted(data.related[CJS].values(), key=metadata_key)
+        # print(list(data.related[CJS].keys()))
+
+        i = 0
+        for crawl_sorted in data.related[CJS].values():
+            if crawl_sorted.get("status", {}).get("state") in NON_RUNNING_STATES:
+                continue
+
+            # print(i, crawl_sorted.get("metadata").get("name"))
+            if crawl_sorted.get("metadata").get("name") == name:
+                # print("found: ", name, "index", i)
+                if i < max_crawls:
+                    return True
+
+                break
+            i += 1
+
+        await self.set_state("waiting_org_limit", status, crawl.id)
+        return False
 
     async def handle_finished_delete_if_needed(self, crawl_id, status, spec):
         """return status for finished job (no children)
@@ -375,7 +434,6 @@ class BtrixOperator(K8sAPI):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
-                print("Phase", pod["status"]["phase"])
                 if pod["status"]["phase"] == "Running":
                     return True
         # pylint: disable=bare-except
@@ -432,9 +490,8 @@ class BtrixOperator(K8sAPI):
         # check if at least one pod started running
         # otherwise, mark as 'waiting' and return
         if not await self.check_if_pods_running(pods):
-            if status.state not in ("waiting", "canceled"):
-                await update_crawl(self.crawls, crawl.id, state="waiting")
-                status.state = "waiting"
+            if status.state not in ("waiting_capacity", "canceled"):
+                await self.set_state("waiting_capacity", status, crawl.id)
 
             return status
 

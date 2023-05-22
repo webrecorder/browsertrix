@@ -924,21 +924,31 @@ export class WorkflowDetail extends LiteElement {
   private renderWatchCrawl = () => {
     if (!this.authState || !(this.workflow?.lastCrawlState)) return "";
 
-    const isStarting = this.workflow.lastCrawlState === "starting";
-    const isWaiting = this.workflow.lastCrawlState === "waiting";
+    let waitingMsg = null;
+
+    switch (this.workflow.currCrawlState) {
+      case "starting":
+        waitingMsg = msg("Crawl starting...");
+        break;
+
+      case "waiting_capacity":
+        waitingMsg = msg("Crawl waiting for available resources before it can start...");
+        break;
+
+      case "waiting_org_limit":
+        waitingMsg = msg("Crawl waiting for others to finish, concurrent limit per Organization reached...");
+        break;
+    }
+
     const isRunning = this.workflow.lastCrawlState === "running";
     const isStopping = this.workflow.lastCrawlStopping;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      ${isStarting || isWaiting
+      ${waitingMsg
         ? html`<div class="rounded border p-3">
             <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${isStarting
-                ? msg("Crawl starting...")
-                : msg(
-                    "Crawl waiting for available resources before it can start..."
-                  )}
+              ${waitingMsg}
             </p>
           </div>`
         : isActive(this.workflow.lastCrawlState)

@@ -5,6 +5,8 @@ metadata:
   labels:
     crawl: "{{ id }}"
     role: "job"
+    oid: "{{ oid }}"
+    userid: "{{ userid }}"
 
 spec:
   selector:
@@ -14,6 +16,7 @@ spec:
   id: "{{ id }}"
   userid: "{{ userid }}"
   cid: "{{ cid }}"
+  oid: "{{ oid }}"
   scale: {{ scale }}
   ttlSecondsAfterFinished: 30
 

@@ -1,7 +1,8 @@
 import type { CrawlState } from "../types/crawler";
 export const activeCrawlStates: CrawlState[] = [
   "starting",
-  "waiting",
+  "waiting_org_limit",
+  "waiting_capacity",
   "running",
   "stopping",
 ];

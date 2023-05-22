@@ -11,7 +11,7 @@ from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.api import custom_objects_api
 from kubernetes_asyncio.utils import create_from_dict
-
+from kubernetes_asyncio.client.exceptions import ApiException
 
 from fastapi.templating import Jinja2Templates
 from .utils import get_templates_dir, dt_now, to_k8s_date
@@ -63,7 +63,9 @@ class K8sAPI:
         return redis_url
 
     # pylint: disable=too-many-arguments
-    async def new_crawl_job(self, cid, userid, scale=1, crawl_timeout=0, manual=True):
+    async def new_crawl_job(
+        self, cid, userid, oid, scale=1, crawl_timeout=0, manual=True
+    ):
         """load job template from yaml"""
         if crawl_timeout:
             crawl_expire_time = to_k8s_date(dt_now() + timedelta(seconds=crawl_timeout))
@@ -77,6 +79,7 @@ class K8sAPI:
         params = {
             "id": crawl_id,
             "cid": cid,
+            "oid": oid,
             "userid": userid,
             "scale": scale,
             "expire_time": crawl_expire_time,
@@ -135,12 +138,10 @@ class K8sAPI:
                 grace_period_seconds=0,
                 propagation_policy="Foreground",
             )
-            return True
+            return {"success": True}
 
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print("CrawlJob delete failed", exc)
-            return False
+        except ApiException as api_exc:
+            return {"error": str(api_exc.reason)}
 
     async def delete_profile_browser(self, browserid):
         """delete custom crawljob object"""
@@ -156,9 +157,7 @@ class K8sAPI:
             )
             return True
 
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print("ProfileJob delete failed", exc)
+        except ApiException:
             return False
 
     async def get_profile_browser(self, browserid):

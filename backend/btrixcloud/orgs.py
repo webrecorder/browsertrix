@@ -79,6 +79,13 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
+class OrgQuotasIn(BaseModel):
+    """Organization quotas (settable by superadmin)"""
+
+    max_parallel_crawls: Optional[int] = 0
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -91,6 +98,8 @@ class Organization(BaseMongoModel):
     usage: Dict[str, int] = {}
 
     default: bool = False
+
+    max_parallel_crawls: Optional[int] = 0
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -315,6 +324,12 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"storage": storage.dict()}}
         )
 
+    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn):
+        """update organization quotas"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": quotas.dict(exclude_unset=True)}
+        )
+
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
@@ -361,6 +376,15 @@ async def inc_org_stats(orgs, oid, duration):
     # init org crawl stats
     yymm = datetime.utcnow().strftime("%Y-%m")
     await orgs.find_one_and_update({"_id": oid}, {"$inc": {f"usage.{yymm}": duration}})
+
+
+# ============================================================================
+async def get_max_parallel_crawls(orgs, oid):
+    """return max allowed parallel crawls, if any"""
+    org = await orgs.find_one({"_id": oid})
+    if org:
+        return org.get("max_parallel_crawls", 0)
+    return 0
 
 
 # ============================================================================
@@ -468,6 +492,19 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
+
+        return {"updated": True}
+
+    @router.post("/quotas", tags=["organizations"])
+    async def update_quotas(
+        quotas: OrgQuotasIn,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_quotas(org, quotas)
 
         return {"updated": True}
 

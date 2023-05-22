@@ -79,14 +79,15 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
-      case "waiting": {
+      case "waiting_capacity":
+      case "waiting_org_limit": {
         icon = html`<sl-icon
           name="hourglass-split"
           class="animatePulse"
           slot="prefix"
           style="color: var(--sl-color-purple-600)"
         ></sl-icon>`;
-        label = msg("Waiting");
+        label = state === "waiting_capacity" ? msg("Waiting (At Capacity)") : msg("Waiting (Crawl Limit)");
         break;
       }
 
