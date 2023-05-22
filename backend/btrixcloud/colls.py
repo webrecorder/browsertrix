@@ -64,6 +64,11 @@ class CollectionOps:
             [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
         )
 
+        await self.collections.create_index(
+            [("oid", pymongo.ASCENDING), ("description", pymongo.ASCENDING)],
+            unique=True,
+        )
+
     async def add_collection(
         self,
         oid: uuid.UUID,
