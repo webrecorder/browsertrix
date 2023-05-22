@@ -187,3 +187,82 @@ def test_list_collections(
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
     assert second_coll["crawlIds"] == [crawler_crawl_id]
+
+
+def test_filter_sort_collections(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    # Test filtering by name
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?name={SECOND_COLLECTION_NAME}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    items = data["items"]
+    assert len(items) == 1
+
+    coll = items[0]
+    assert coll["id"]
+    assert coll["name"] == SECOND_COLLECTION_NAME
+    assert coll["oid"] == default_org_id
+    assert coll.get("description") is None
+    assert coll["crawlIds"] == [crawler_crawl_id]
+
+    # Test sorting by name, ascending (default)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=name",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["name"] == SECOND_COLLECTION_NAME
+    assert items[1]["name"] == UPDATED_NAME
+
+    # Test sorting by name, descending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=name&sortDirection=-1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["name"] == UPDATED_NAME
+    assert items[1]["name"] == SECOND_COLLECTION_NAME
+
+    # Test sorting by description, ascending (default)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=description",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["name"] == SECOND_COLLECTION_NAME
+    assert items[0].get("description") is None
+    assert items[1]["name"] == UPDATED_NAME
+    assert items[1]["description"] == DESCRIPTION
+
+    # Test sorting by description, descending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=description&sortDirection=-1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["name"] == UPDATED_NAME
+    assert items[0]["description"] == DESCRIPTION
+    assert items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[1].get("description") is None
