@@ -377,7 +377,7 @@ export class CollectionsNew extends LiteElement {
           selectedCrawlIdsAsync.then((ids) => ids.length > 0),
           false
         )}
-        ?allChecked=${until(allCheckedAsync, false)}
+        ?allChecked=${until(allCheckedAsync, true)}
         group
         aria-controls=${until(
           selectedCrawlIdsAsync.then((ids) => ids.join(" ")),
@@ -414,13 +414,20 @@ export class CollectionsNew extends LiteElement {
             workflow.crawlCount,
             () => html`
               <div class="border-l flex items-center justify-center">
-                <sl-icon-button
-                  class="expandBtn p-1 text-base"
-                  name="chevron-double-down"
+                <btrix-button
+                  class="expandBtn p-2 text-base"
                   aria-expanded="false"
                   aria-controls=${`workflow-${workflow.id}`}
                   @click=${this.onWorkflowExpandClick(workflow)}
-                ></sl-icon-button>
+                  icon
+                >
+                  ${until(
+                    workflowCrawlsAsync.then(
+                      () => html`<sl-icon name="chevron-double-down"></sl-icon>`
+                    ),
+                    html`<sl-spinner></sl-spinner>`
+                  )}
+                </btrix-button>
               </div>
             `
           )}
@@ -502,16 +509,14 @@ export class CollectionsNew extends LiteElement {
   private onWorkflowExpandClick =
     (workflow: Workflow) => async (e: MouseEvent) => {
       e.stopPropagation();
-      this.fetchCrawls(workflow);
-      await this.workflowCrawls[workflow.id];
+      const checkboxGroup = this.querySelector(
+        `#workflow-${workflow.id}-group`
+      ) as HTMLElement;
+      const expandBtn = e.currentTarget as HTMLElement;
+
+      await this.fetchCrawls(workflow);
       await this.updateComplete;
 
-      const listItem = (e.target as HTMLElement).closest(
-        "btrix-checkbox-list-item"
-      )!;
-      const checkboxGroup = listItem.querySelector(
-        ".checkboxGroup"
-      ) as HTMLElement;
       if (checkboxGroup.classList.contains("hidden")) {
         // Approximate initial height to min-height of
         // checkbox-list-item * count
@@ -520,7 +525,6 @@ export class CollectionsNew extends LiteElement {
         checkboxGroup.style.pointerEvents = "none";
         checkboxGroup.classList.remove("hidden");
       }
-      const expandBtn = listItem.querySelector(".expandBtn") as SlIconButton;
       const expanded = !(expandBtn.getAttribute("aria-expanded") === "true");
       expandBtn.setAttribute("aria-expanded", expanded.toString());
 

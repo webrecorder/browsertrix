@@ -1,5 +1,11 @@
+import { SlCheckbox } from "@shoelace-style/shoelace";
 import { LitElement, html, css } from "lit";
-import { property, queryAssignedElements } from "lit/decorators.js";
+import {
+  property,
+  query,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
 export type CheckboxChangeEvent = CustomEvent<{
@@ -75,6 +81,15 @@ export class CheckboxListItem extends LitElement {
   @property({ type: Boolean })
   group = false;
 
+  @query("sl-checkbox")
+  private checkbox!: SlCheckbox;
+
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("checked")) {
+      this.checked = this.checked;
+    }
+  }
+
   render() {
     return html`
       <div
@@ -82,14 +97,10 @@ export class CheckboxListItem extends LitElement {
         role="checkbox"
         aria-checked=${this.checked &&
         (this.group && !this.allChecked ? "mixed" : "true")}
-        @click=${() => {
-          this.dispatchEvent(
-            <CheckboxChangeEvent>new CustomEvent("on-change", {
-              detail: {
-                checked: !this.checked,
-              },
-            })
-          );
+        aria-disabled=${this.disabled}
+        @click=${async (e: MouseEvent) => {
+          if (this.disabled) return;
+          this.onChange(!this.checkbox.checked);
         }}
       >
         ${this.renderCheckbox()}
@@ -109,8 +120,27 @@ export class CheckboxListItem extends LitElement {
       class="checkbox"
       ?checked=${this.checked && !isIndeterminate}
       ?indeterminate=${isIndeterminate}
-      @sl-change=${(e: Event) => {}}
+      ?disabled=${this.disabled}
+      @click=${(e: MouseEvent) => {
+        e.stopPropagation();
+      }}
+      @sl-change=${(e: Event) => {
+        e.stopPropagation();
+        this.onChange((e.target as SlCheckbox).checked);
+      }}
     ></sl-checkbox>`;
+  }
+
+  private async onChange(value: boolean) {
+    this.checked = value;
+    await this.updateComplete;
+    this.dispatchEvent(
+      <CheckboxChangeEvent>new CustomEvent("on-change", {
+        detail: {
+          checked: value,
+        },
+      })
+    );
   }
 }
 
@@ -141,7 +171,7 @@ export class CheckboxGroupList extends LitElement {
   ];
 
   @queryAssignedElements({ selector: "btrix-checkbox-list-item" })
-  listItems!: Array<HTMLElement>;
+  private listItems!: Array<HTMLElement>;
 
   render() {
     return html`<div class="list" role="list">
