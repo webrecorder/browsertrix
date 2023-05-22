@@ -226,6 +226,7 @@ def test_workflow_total_size_and_last_crawl_stats(
         if last_crawl_id and last_crawl_id in (admin_crawl_id, crawler_crawl_id):
             assert workflow["totalSize"] > 0
             assert workflow["crawlCount"] > 0
+            assert workflow["crawlSuccessfulCount"] > 0
 
             assert workflow["lastCrawlId"]
             assert workflow["lastCrawlStartTime"]
@@ -249,6 +250,7 @@ def test_workflow_total_size_and_last_crawl_stats(
     data = r.json()
     assert data["totalSize"] > 0
     assert data["crawlCount"] > 0
+    assert data["crawlSuccessfulCount"] > 0
 
     assert data["lastCrawlId"]
     assert data["lastCrawlStartTime"]
