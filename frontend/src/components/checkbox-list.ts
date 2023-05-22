@@ -34,6 +34,7 @@ export class CheckboxListItem extends LitElement {
         box-shadow: var(--item-box-shadow, none);
         display: flex;
         align-items: center;
+        min-height: 3rem;
       }
 
       .item:hover,
