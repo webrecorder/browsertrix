@@ -1,7 +1,6 @@
 import { LitElement, html, css, PropertyValueMap } from "lit";
 import { state, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
-// import { micromark } from "micromark";
 import { createWysimark } from "@wysimark/standalone";
 
 export type MarkdownChangeEvent = CustomEvent<{
@@ -18,11 +17,12 @@ export class MarkdownEditor extends LitElement {
   initialValue = "";
 
   createRenderRoot() {
+    // Disable shadow DOM for styles to work
     return this;
   }
 
   protected firstUpdated(): void {
-    const editor = createWysimark(this.querySelector(".editor")!, {
+    const editor = createWysimark(this.querySelector(".markdown-editor")!, {
       initialMarkdown: this.initialValue,
       onChange: () => {
         this.dispatchEvent(
@@ -37,6 +37,16 @@ export class MarkdownEditor extends LitElement {
   }
 
   render() {
-    return html`<div class="editor"></div>`;
+    return html` <style>
+        .markdown-editor {
+          --blue-100: var(--sl-color-blue-100);
+        }
+        /* NOTE Should open an issue with wysimark */
+        .markdown-editor > div {
+          overflow: hidden;
+          border-radius: var(--sl-input-border-radius-medium);
+        }
+      </style>
+      <div class="markdown-editor font-sm"></div>`;
   }
 }
