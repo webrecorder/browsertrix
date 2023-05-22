@@ -2,7 +2,7 @@ import { LitElement, html, css, PropertyValueMap } from "lit";
 import { state, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 // import { micromark } from "micromark";
-import { createWysimark } from "@wysimark/standalone/.dist/standalone.js";
+import { createWysimark } from "@wysimark/standalone";
 
 export type MarkdownChangeEvent = CustomEvent<{
   value: string;
