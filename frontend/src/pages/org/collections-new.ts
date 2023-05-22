@@ -482,6 +482,7 @@ export class CollectionsNew extends LiteElement {
   }
 
   private onWorkflowExpandClick = (e: MouseEvent) => {
+    e.stopPropagation();
     const listItem = (e.target as HTMLElement).closest(
       "btrix-checkbox-list-item"
     );

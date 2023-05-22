@@ -12,70 +12,12 @@ const hostVars = css`
     --row-offset: var(--sl-spacing-x-small);
   }
 `;
-// From https://github.com/shoelace-style/shoelace/blob/v2.0.0-beta.85/src/components/checkbox/checkbox.styles.ts
-const checkboxStyles = css`
-  .checkbox {
-    display: inline-flex;
-    align-items: top;
-    font-family: var(--sl-input-font-family);
-    font-size: var(--sl-input-font-size-medium);
-    font-weight: var(--sl-input-font-weight);
-    color: var(--sl-input-color);
-    vertical-align: middle;
-    cursor: pointer;
-  }
-
-  .checkbox__control {
-    flex: 0 0 auto;
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--sl-toggle-size);
-    height: var(--sl-toggle-size);
-    border: solid var(--sl-input-border-width) var(--sl-input-border-color);
-    border-radius: 2px;
-    background-color: var(--sl-input-background-color);
-    color: var(--sl-color-neutral-0);
-    transition: var(--sl-transition-fast) border-color,
-      var(--sl-transition-fast) background-color,
-      var(--sl-transition-fast) color, var(--sl-transition-fast) box-shadow;
-  }
-
-  .checkbox__control .checkbox__icon {
-    display: inline-flex;
-    width: var(--sl-toggle-size);
-    height: var(--sl-toggle-size);
-  }
-
-  /* Hover */
-  .checkbox:not(.checkbox--checked):not(.checkbox--disabled)
-    .checkbox__control:hover {
-    border-color: var(--sl-input-border-color-hover);
-    background-color: var(--sl-input-background-color-hover);
-  }
-
-  /* Checked */
-  .checkbox--checked .checkbox__control {
-    border-color: var(--sl-color-primary-600);
-    background-color: var(--sl-color-primary-600);
-  }
-
-  /* Checked + hover */
-  .checkbox.checkbox--checked:not(.checkbox--disabled)
-    .checkbox__control:hover
-    .checkbox__control:hover {
-    border-color: var(--sl-color-primary-500);
-    background-color: var(--sl-color-primary-500);
-  }
-`;
 
 /**
  * @event on-change CheckboxChangeEvent
  */
 export class CheckboxListItem extends LitElement {
   static styles = [
-    checkboxStyles,
     hostVars,
     css`
       .item {
@@ -161,25 +103,13 @@ export class CheckboxListItem extends LitElement {
   }
 
   private renderCheckbox() {
-    // The `indeterminate` prop doesn't seem to be working properly,
-    // using checkbox instead
-    return html`
-      <div
-        class=${classMap({
-          checkbox: true,
-          "checkbox--checked": this.checked,
-          "checkbox--disabled": this.disabled,
-        })}
-      >
-        <span class="checkbox__control">
-          ${this.checked
-            ? this.group && !this.allChecked
-              ? html`<sl-icon library="system" name="indeterminate"></sl-icon>`
-              : html`<sl-icon library="system" name="check"></sl-icon>`
-            : ""}
-        </span>
-      </div>
-    `;
+    const isIndeterminate = this.group && this.checked && !this.allChecked;
+    return html`<sl-checkbox
+      class="checkbox"
+      ?checked=${this.checked && !isIndeterminate}
+      ?indeterminate=${isIndeterminate}
+      @sl-change=${(e: Event) => {}}
+    ></sl-checkbox>`;
   }
 }
 
