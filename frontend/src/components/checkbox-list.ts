@@ -40,7 +40,6 @@ export class CheckboxListItem extends LitElement {
         box-shadow: var(--item-box-shadow, none);
         display: flex;
         align-items: center;
-        min-height: 3rem;
       }
 
       .item:hover,
@@ -57,10 +56,12 @@ export class CheckboxListItem extends LitElement {
       .checkbox {
         flex: 0 0 auto;
         margin: var(--sl-spacing-small) var(--sl-spacing-medium);
+        /* TODO remove if shoelace makes margin-inline-start configurable */
+        margin-right: calc(var(--sl-spacing-medium) - 0.5em);
       }
 
       .content {
-        flex: 1 1 auto;
+        flex-grow: 1;
       }
 
       .group {
@@ -116,19 +117,20 @@ export class CheckboxListItem extends LitElement {
 
   private renderCheckbox() {
     const isIndeterminate = this.group && this.checked && !this.allChecked;
-    return html`<sl-checkbox
-      class="checkbox"
-      ?checked=${this.checked && !isIndeterminate}
-      ?indeterminate=${isIndeterminate}
-      ?disabled=${this.disabled}
-      @click=${(e: MouseEvent) => {
-        e.stopPropagation();
-      }}
-      @sl-change=${(e: Event) => {
-        e.stopPropagation();
-        this.onChange((e.target as SlCheckbox).checked);
-      }}
-    ></sl-checkbox>`;
+    return html`<div class="checkbox">
+      <sl-checkbox
+        ?checked=${this.checked && !isIndeterminate}
+        ?indeterminate=${isIndeterminate}
+        ?disabled=${this.disabled}
+        @click=${(e: MouseEvent) => {
+          e.stopPropagation();
+        }}
+        @sl-change=${(e: Event) => {
+          e.stopPropagation();
+          this.onChange((e.target as SlCheckbox).checked);
+        }}
+      ></sl-checkbox>
+    </div>`;
   }
 
   private async onChange(value: boolean) {
