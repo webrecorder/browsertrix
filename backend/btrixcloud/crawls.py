@@ -18,7 +18,13 @@ from pydantic import BaseModel, UUID4, conint, HttpUrl
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
-from .crawlconfigs import Seed, CrawlConfigCore, CrawlConfig, UpdateCrawlConfig
+from .crawlconfigs import (
+    Seed,
+    CrawlConfigCore,
+    CrawlConfig,
+    UpdateCrawlConfig,
+    set_config_current_crawl_info,
+)
 from .db import BaseMongoModel
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -536,7 +542,13 @@ class CrawlOps:
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
-        return await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
+        new_crawl = await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
+        return await set_config_current_crawl_info(
+            self.crawl_configs.crawl_configs,
+            crawlconfig.id,
+            new_crawl["id"],
+            new_crawl["started"],
+        )
 
     async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
         """Update existing crawl (tags and notes only for now)"""
@@ -835,6 +847,8 @@ async def add_new_crawl(
     crawls, crawl_id: str, crawlconfig: CrawlConfig, userid: UUID4, manual=True
 ):
     """initialize new crawl"""
+    started = ts_now()
+
     crawl = Crawl(
         id=crawl_id,
         state="starting",
@@ -849,13 +863,13 @@ async def add_new_crawl(
         schedule=crawlconfig.schedule,
         crawlTimeout=crawlconfig.crawlTimeout,
         manual=manual,
-        started=ts_now(),
+        started=started,
         tags=crawlconfig.tags,
     )
 
     try:
-        await crawls.insert_one(crawl.to_dict())
-        return True
+        result = await crawls.insert_one(crawl.to_dict())
+        return {"id": str(result.inserted_id), "started": started}
     except pymongo.errors.DuplicateKeyError:
         # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
         return False

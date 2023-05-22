@@ -355,20 +355,20 @@ export class WorkflowsList extends LiteElement {
   private renderMenuItems(workflow: Workflow) {
     return html`
       ${when(
-        workflow.currCrawlId,
+        workflow.isCrawlRunning,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
           <sl-menu-item
-            @click=${() => this.stop(workflow.currCrawlId)}
-            ?disabled=${workflow.currCrawlStopping}
+            @click=${() => this.stop(workflow.lastCrawlId)}
+            ?disabled=${workflow.lastCrawlStopping}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(workflow.currCrawlId)}
+            @click=${() => this.cancel(workflow.lastCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
             ${msg("Cancel & Discard Crawl")}
@@ -385,7 +385,9 @@ export class WorkflowsList extends LiteElement {
         `
       )}
       ${when(
-        workflow.currCrawlState === "running",
+        workflow.isCrawlRunning,
+        // HACK shoelace doesn't current have a way to override non-hover
+        // color without resetting the --sl-color-neutral-700 variable
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -436,7 +438,7 @@ export class WorkflowsList extends LiteElement {
         <sl-icon name="files" slot="prefix"></sl-icon>
         ${msg("Duplicate Workflow")}
       </sl-menu-item>
-      ${when(!workflow.currCrawlId, () => {
+      ${when(workflow.isCrawlRunning, () => {
         const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
         return html`
           <sl-divider></sl-divider>
@@ -482,7 +484,6 @@ export class WorkflowsList extends LiteElement {
     return new Date(
       Math.max(
         ...[
-          workflow.currCrawlStartTime,
           workflow.lastCrawlTime,
           workflow.lastCrawlStartTime,
           workflow.modified,
@@ -597,7 +598,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async cancel(crawlId: Workflow["currCrawlId"]) {
+  private async cancel(crawlId: Workflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
@@ -619,7 +620,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async stop(crawlId: Workflow["currCrawlId"]) {
+  private async stop(crawlId: Workflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(

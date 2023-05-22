@@ -433,11 +433,12 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
-        if not config.get("lastCrawlTime"):
+        config_last_time = config.get("lastCrawlTime")
+        if not config_last_time:
             continue
-        if last_crawl_time:
-            assert config["lastCrawlTime"] <= last_crawl_time
-        last_crawl_time = config["lastCrawlTime"]
+        elif last_crawl_time and config_last_time:
+            assert config_last_time <= last_crawl_time
+        last_crawl_time = config_last_time
 
     # Sort by lastCrawlTime, ascending
     r = requests.get(
@@ -449,11 +450,80 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
-        if not config.get("lastCrawlTime"):
+        config_last_time = config.get("lastCrawlTime")
+        if not config_last_time:
             continue
-        if last_crawl_time:
-            assert config["lastCrawlTime"] >= last_crawl_time
-        last_crawl_time = config["lastCrawlTime"]
+        elif last_crawl_time and config_last_time:
+            assert config_last_time >= last_crawl_time
+        last_crawl_time = config_last_time
+
+    # Sort by lastCrawlStartTime
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=lastCrawlStartTime",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_crawl_time = None
+    for config in items:
+        config_last_time = config.get("lastCrawlStartTime")
+        if not config_last_time:
+            continue
+        elif last_crawl_time and config_last_time:
+            assert config_last_time <= last_crawl_time
+        last_crawl_time = config_last_time
+
+    # Sort by lastCrawlStartTime, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=lastCrawlStartTime&sortDirection=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_crawl_time = None
+    for config in items:
+        config_last_time = config.get("lastCrawlStartTime")
+        if not config_last_time:
+            continue
+        elif last_crawl_time and config_last_time:
+            assert config_last_time >= last_crawl_time
+        last_crawl_time = config_last_time
+
+    # Sort by lastRun
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=lastRun",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_updated_time = None
+    for config in items:
+        config_last_updated = config.get("lastRun")
+        if not config_last_updated:
+            continue
+        elif last_updated_time and config_last_updated:
+            assert config_last_updated <= last_updated_time
+        last_updated_time = config_last_updated
+
+    # Sort by lastRun, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=lastRun&sortDirection=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_updated_time = None
+    for config in items:
+        config_last_updated = config.get("lastRun")
+        if not config_last_updated:
+            continue
+        elif last_updated_time and config_last_updated:
+            assert config_last_updated >= last_updated_time
+        last_updated_time = config_last_updated
 
     # Invalid sort value
     r = requests.get(

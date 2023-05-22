@@ -232,6 +232,7 @@ def test_workflow_total_size_and_last_crawl_stats(
             assert workflow["lastStartedByName"]
             assert workflow["lastCrawlTime"]
             assert workflow["lastCrawlState"]
+            assert workflow["lastRun"]
             assert workflow["lastCrawlSize"] > 0
 
             if last_crawl_id == admin_crawl_id:
@@ -254,4 +255,5 @@ def test_workflow_total_size_and_last_crawl_stats(
     assert data["lastStartedByName"]
     assert data["lastCrawlTime"]
     assert data["lastCrawlState"]
+    assert data["lastRun"]
     assert data["lastCrawlSize"] > 0
