@@ -5,6 +5,7 @@ import { localized, msg } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
 import ISO6391 from "iso-639-1";
 import type { LanguageCode } from "iso-639-1";
+import type { SlSelect } from "@shoelace-style/shoelace";
 
 const languages = sortBy("name")(
   ISO6391.getLanguages(ISO6391.getAllCodes())
@@ -20,10 +21,12 @@ const languages = sortBy("name")(
  *
  * Usage:
  * ```ts
- * <btrix-language-select value=${defaultValue} @sl-select=${console.debug}>
+ * <btrix-language-select value=${defaultValue} @on-change=${console.debug}>
  *   <span slot="label">Label</span>
  * </btrix-language-select>
  * ```
+ *
+ * @event on-change
  */
 @localized()
 export class LanguageSelect extends LitElement {
@@ -49,14 +52,24 @@ export class LanguageSelect extends LitElement {
         placeholder=${msg("Browser Default")}
         value=${ifDefined(this.value)}
         ?hoist=${this.hoist}
+        @sl-change=${(e: Event) => {
+          e.stopPropagation();
+
+          this.dispatchEvent(
+            new CustomEvent("on-change", {
+              detail: {
+                value: (e.target as SlSelect).value,
+              },
+            })
+          );
+        }}
       >
         <div slot="label"><slot name="label">${msg("Language")}</slot></div>
         ${languages.map(
           ({ code, name, nativeName }) => html`
-            <sl-menu-item value=${code}>
+            <sl-option value=${code}>
               ${name} <span class="secondaryText">(${nativeName})</span>
-              <code slot="suffix" class="secondaryText">${code}</code>
-            </sl-menu-item>
+            </sl-option>
           `
         )}
       </sl-select>

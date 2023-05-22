@@ -138,17 +138,17 @@ export class TimeInput extends LitElement {
             hoist
             @sl-hide=${this.stopProp}
             @sl-after-hide=${this.stopProp}
-            @sl-select=${(e: any) => {
+            @sl-change=${(e: any) => {
               e.stopPropagation();
               this.period = e.target.value;
               this.dispatchChange();
             }}
           >
-            <sl-menu-item value="AM"
-              >${msg("AM", { desc: "Time AM/PM" })}</sl-menu-item
+            <sl-option value="AM"
+              >${msg("AM", { desc: "Time AM/PM" })}</sl-option
             >
-            <sl-menu-item value="PM"
-              >${msg("PM", { desc: "Time AM/PM" })}</sl-menu-item
+            <sl-option value="PM"
+              >${msg("PM", { desc: "Time AM/PM" })}</sl-option
             >
           </sl-select>
         </div>

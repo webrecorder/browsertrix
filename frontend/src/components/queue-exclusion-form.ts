@@ -61,8 +61,6 @@ export class QueueExclusionForm extends LiteElement {
     ) {
       this.fieldErrorMessage = "";
       this.checkInputValidity();
-
-      await this.updateComplete;
       this.dispatchChangeEvent();
     }
   }
@@ -80,15 +78,15 @@ export class QueueExclusionForm extends LiteElement {
             <sl-select
               placeholder=${msg("Select Type")}
               size="small"
-              .value=${this.selectValue}
+              value=${this.selectValue}
               @sl-hide=${this.stopProp}
               @sl-after-hide=${this.stopProp}
-              @sl-select=${(e: any) => {
+              @sl-change=${(e: any) => {
                 this.selectValue = e.target.value;
               }}
             >
-              <sl-menu-item value="text">${msg("Matches Text")}</sl-menu-item>
-              <sl-menu-item value="regex">${msg("Regex")}</sl-menu-item>
+              <sl-option value="text">${msg("Matches Text")}</sl-option>
+              <sl-option value="regex">${msg("Regex")}</sl-option>
             </sl-select>
           </div>
           <div class="pl-1 flex-1 flex">
@@ -192,7 +190,8 @@ export class QueueExclusionForm extends LiteElement {
     this.isRegexInvalid = !isValid;
   }
 
-  private dispatchChangeEvent() {
+  private async dispatchChangeEvent() {
+    await this.updateComplete;
     this.dispatchEvent(
       new CustomEvent("on-change", {
         detail: {

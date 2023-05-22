@@ -802,7 +802,7 @@ https://example.com/path`}
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
             if (
-              inputEl.invalid &&
+              !inputEl.checkValidity() &&
               !urlListToArray(inputEl.value).some((url) => !validURL(url))
             ) {
               inputEl.setCustomValidity("");
@@ -817,7 +817,6 @@ https://example.com/path`}
               urlListToArray(inputEl.value).some((url) => !validURL(url))
             ) {
               const text = msg("Please fix invalid URL in list.");
-              inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
             }
@@ -836,33 +835,33 @@ https://example.com/path`}
               name="scopeType"
               label=${msg("Crawl Scope")}
               value=${this.formState.scopeType}
-              @sl-select=${(e: Event) =>
+              @sl-change=${(e: Event) =>
                 this.updateFormState({
                   scopeType: (e.target as HTMLSelectElement)
                     .value as FormState["scopeType"],
                 })}
             >
-              <sl-menu-item value="prefix">
+              <sl-option value="prefix">
                 ${this.scopeTypeLabels["prefix"]}
-              </sl-menu-item>
-              <sl-menu-item value="host">
+              </sl-option>
+              <sl-option value="host">
                 ${this.scopeTypeLabels["host"]}
-              </sl-menu-item>
-              <sl-menu-item value="domain">
+              </sl-option>
+              <sl-option value="domain">
                 ${this.scopeTypeLabels["domain"]}
-              </sl-menu-item>
-              <sl-menu-item value="page-spa">
+              </sl-option>
+              <sl-option value="page-spa">
                 ${this.scopeTypeLabels["page-spa"]}
-              </sl-menu-item>
-              <sl-menu-item value="page">
+              </sl-option>
+              <sl-option value="page">
                 ${this.scopeTypeLabels["page"]}
-              </sl-menu-item>
-              <sl-menu-item value="custom">
+              </sl-option>
+              <sl-option value="custom">
                 ${this.scopeTypeLabels["custom"]}
-              </sl-menu-item>
-              <sl-menu-item value="any">
+              </sl-option>
+              <sl-option value="any">
                 ${this.scopeTypeLabels["any"]}
-              </sl-menu-item>
+              </sl-option>
             </sl-select>
           `)}
           ${this.renderHelpTextCol(
@@ -997,7 +996,7 @@ https://example.com/path`}
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
-            if (inputEl.invalid && validURL(inputEl.value)) {
+            if (!inputEl.checkValidity() && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
               inputEl.helpText = "";
             }
@@ -1007,7 +1006,6 @@ https://example.com/path`}
             await inputEl.updateComplete;
             if (inputEl.value && !validURL(inputEl.value)) {
               const text = msg("Please enter a valid URL.");
-              inputEl.invalid = true;
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
             }
@@ -1020,28 +1018,26 @@ https://example.com/path`}
           name="scopeType"
           label=${msg("Start URL Scope")}
           value=${this.formState.scopeType}
-          @sl-select=${(e: Event) =>
+          @sl-change=${(e: Event) =>
             this.updateFormState({
               scopeType: (e.target as HTMLSelectElement)
                 .value as FormState["scopeType"],
             })}
         >
           <div slot="help-text">${helpText}</div>
-          <sl-menu-item value="page-spa">
+          <sl-option value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
-          </sl-menu-item>
-          <sl-menu-item value="prefix">
+          </sl-option>
+          <sl-option value="prefix">
             ${this.scopeTypeLabels["prefix"]}
-          </sl-menu-item>
-          <sl-menu-item value="host">
-            ${this.scopeTypeLabels["host"]}
-          </sl-menu-item>
-          <sl-menu-item value="domain">
+          </sl-option>
+          <sl-option value="host"> ${this.scopeTypeLabels["host"]} </sl-option>
+          <sl-option value="domain">
             ${this.scopeTypeLabels["domain"]}
-          </sl-menu-item>
-          <sl-menu-item value="custom">
+          </sl-option>
+          <sl-option value="custom">
             ${this.scopeTypeLabels["custom"]}
-          </sl-menu-item>
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -1167,7 +1163,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   const inputEl = e.target as SlInput;
                   await inputEl.updateComplete;
                   if (
-                    inputEl.invalid &&
+                    !inputEl.checkValidity() &&
                     !urlListToArray(inputEl.value).some((url) => !validURL(url))
                   ) {
                     inputEl.setCustomValidity("");
@@ -1182,7 +1178,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     urlListToArray(inputEl.value).some((url) => !validURL(url))
                   ) {
                     const text = msg("Please fix invalid URL in list.");
-                    inputEl.invalid = true;
                     inputEl.helpText = text;
                     inputEl.setCustomValidity(text);
                   }
@@ -1210,7 +1205,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const inputEl = e.target as SlInput;
       await inputEl.updateComplete;
       let helpText = "";
-      if (inputEl.invalid) {
+      if (!inputEl.checkValidity()) {
         const value = +inputEl.value;
         const min = inputEl.min;
         const max = inputEl.max;
@@ -1421,14 +1416,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
-          .value=${this.formState.lang}
-          @sl-select=${(e: CustomEvent) =>
+          value=${this.formState.lang}
+          @on-change=${(e: CustomEvent) => {
             this.updateFormState({
-              lang: e.detail.item.value,
-            })}
-          @sl-clear=${() => {
-            this.updateFormState({
-              lang: null,
+              lang: (e.detail as any).value,
             });
           }}
         >
@@ -1478,20 +1469,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="scheduleFrequency"
           label=${msg("Frequency")}
           value=${this.formState.scheduleFrequency}
-          @sl-select=${(e: Event) =>
+          @sl-change=${(e: Event) =>
             this.updateFormState({
               scheduleFrequency: (e.target as HTMLSelectElement)
                 .value as FormState["scheduleFrequency"],
             })}
         >
-          <sl-menu-item value="daily"
-            >${this.scheduleFrequencyLabels["daily"]}</sl-menu-item
+          <sl-option value="daily"
+            >${this.scheduleFrequencyLabels["daily"]}</sl-option
           >
-          <sl-menu-item value="weekly"
-            >${this.scheduleFrequencyLabels["weekly"]}</sl-menu-item
+          <sl-option value="weekly"
+            >${this.scheduleFrequencyLabels["weekly"]}</sl-option
           >
-          <sl-menu-item value="monthly"
-            >${this.scheduleFrequencyLabels["monthly"]}</sl-menu-item
+          <sl-option value="monthly"
+            >${this.scheduleFrequencyLabels["monthly"]}</sl-option
           >
         </sl-select>
       `)}
@@ -1787,8 +1778,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     await this.updateComplete;
 
     const currentTab = this.progressState.activeTab as StepName;
-    // Check [data-user-invalid] instead of .invalid property
-    // to validate only touched inputs
+    // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState.tabs[currentTab].error) return;
       this.updateProgressState({

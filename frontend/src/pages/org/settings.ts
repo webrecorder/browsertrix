@@ -255,11 +255,12 @@ export class OrgSettings extends LiteElement {
     return html`<sl-select
       value=${userRole}
       size="small"
-      @sl-select=${this.selectUserRole(user)}
+      @sl-change=${this.selectUserRole(user)}
+      hoist
     >
-      <sl-menu-item value=${AccessCode.owner}>${"Admin"}</sl-menu-item>
-      <sl-menu-item value=${AccessCode.crawler}>${"Crawler"}</sl-menu-item>
-      <sl-menu-item value=${AccessCode.viewer}>${"Viewer"}</sl-menu-item>
+      <sl-option value=${AccessCode.owner}>${"Admin"}</sl-option>
+      <sl-option value=${AccessCode.crawler}>${"Crawler"}</sl-option>
+      <sl-option value=${AccessCode.viewer}>${"Viewer"}</sl-option>
     </sl-select>`;
   }
 
@@ -403,12 +404,12 @@ export class OrgSettings extends LiteElement {
     );
   }
 
-  private selectUserRole = (user: User) => (e: CustomEvent) => {
+  private selectUserRole = (user: User) => (e: Event) => {
     this.dispatchEvent(
       <UserRoleChangeEvent>new CustomEvent("org-user-role-change", {
         detail: {
           user,
-          newRole: Number(e.detail.item.value),
+          newRole: Number((e.target as HTMLSelectElement).value),
         },
       })
     );

@@ -66,15 +66,15 @@ export class InviteForm extends LiteElement {
           <sl-select
             label=${msg("Organization")}
             value=${this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id}
-            @sl-select=${(e: CustomEvent) => {
-              this.selectedOrgId = e.detail.item.value;
+            @sl-change=${(e: Event) => {
+              this.selectedOrgId = (e.target as HTMLSelectElement).value;
             }}
             ?disabled=${sortedOrgs.length === 1}
             required
           >
             ${sortedOrgs.map(
               (org) => html`
-                <sl-menu-item value=${org.id}>${org.name}</sl-menu-item>
+                <sl-option value=${org.id}>${org.name}</sl-option>
               `
             )}
           </sl-select>

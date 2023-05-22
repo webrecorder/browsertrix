@@ -16,6 +16,8 @@ import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
 import "@shoelace-style/shoelace/dist/components/radio-button/radio-button";
 import "@shoelace-style/shoelace/dist/components/resize-observer/resize-observer";
 import "@shoelace-style/shoelace/dist/components/select/select";
+import "@shoelace-style/shoelace/dist/components/option/option";
+import "@shoelace-style/shoelace/dist/components/dropdown/dropdown";
 import "@shoelace-style/shoelace/dist/components/switch/switch";
 import "@shoelace-style/shoelace/dist/components/textarea/textarea";
 import "@shoelace-style/shoelace/dist/components/mutation-observer/mutation-observer";
