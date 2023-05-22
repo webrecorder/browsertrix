@@ -175,13 +175,14 @@ class CrawlConfig(CrawlConfigCore):
 
     colls: Optional[List[str]] = []
 
-    crawlAttemptCount: Optional[int] = 0
-
     inactive: Optional[bool] = False
 
     rev: int = 0
 
+    crawlAttemptCount: Optional[int] = 0
     crawlCount: Optional[int] = 0
+    crawlSuccessfulCount: Optional[int] = 0
+
     totalSize: Optional[int] = 0
 
     lastCrawlId: Optional[str]
@@ -896,6 +897,7 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
     """re-calculate and update crawl statistics for config"""
     update_query = {
         "crawlCount": 0,
+        "crawlSuccessfulCount": 0,
         "totalSize": 0,
         "lastCrawlId": None,
         "lastCrawlStartTime": None,
@@ -910,6 +912,10 @@ async def update_config_crawl_stats(crawl_configs, crawls, cid: uuid.UUID):
     results = await cursor.to_list(length=10_000)
     if results:
         update_query["crawlCount"] = len(results)
+
+        update_query["crawlSuccessfulCount"] = len(
+            [res for res in results if res["state"] not in ("canceled", "failed")]
+        )
 
         last_crawl = results[0]
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
