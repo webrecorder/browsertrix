@@ -471,30 +471,36 @@ export class CollectionsNew extends LiteElement {
             hideLabel
           ></btrix-crawl-status>
           <div class="flex-1">
-            ${workflowId
-              ? html`<sl-format-date
-                  date=${`${crawl.finished}Z`}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="2-digit"
-                  minute="2-digit"
-                ></sl-format-date>`
-              : this.renderSeedsLabel(crawl.firstSeed, crawl.seedCount)}
+            ${
+              workflowId
+                ? html`<sl-format-date
+                    date=${`${crawl.finished}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>`
+                : this.renderSeedsLabel(crawl.firstSeed, crawl.seedCount)
+            }
           </div>
           <sl-format-bytes
             class="w-14 text-xs font-monostyle"
             value=${crawl.fileSize || 0}
             display="narrow"
           ></sl-format-bytes>
-          <div class="w-24 text-neutral-500 text-xs font-monostyle truncate">
-            ${crawl.stats?.done === "1"
-              ? msg("1 page")
-              : msg(
-                  `${this.numberFormatter.format(
-                    +(crawl.stats?.done || 0)
-                  )} pages`
-                )}
+          <div class="w-16 text-neutral-500  font-monostyle truncate">
+            <sl-tooltip content=${msg("Pages in crawl")}>
+              <div class="flex items-center">
+                <sl-icon
+                  class="text-base"
+                  name="file-earmark-richtext"
+                ></sl-icon>
+                <div class="ml-1 text-xs">
+                  ${this.numberFormatter.format(+(crawl.stats?.done || 0))}
+                </span>
+              </div>
+            </sl-tooltip>
           </div>
         </div>
       </btrix-checkbox-list-item>
