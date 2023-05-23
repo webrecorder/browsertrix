@@ -13,9 +13,14 @@ import type { CheckboxChangeEvent, CheckboxGroupList } from "./checkbox-list";
 import type { MarkdownChangeEvent } from "./markdown-editor";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
-import type { APIPaginatedList } from "../types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "../types/api";
 import type { Collection } from "../types/collection";
 import type { Crawl, CrawlState, Workflow } from "../types/crawler";
+import type { PageChangeEvent } from "./pagination";
 
 const TABS = ["crawls", "metadata"] as const;
 type Tab = (typeof TABS)[number];
@@ -24,6 +29,7 @@ const finishedCrawlStates: CrawlState[] = [
   "partial_complete",
   "timed_out",
 ];
+const INITIAL_PAGE_SIZE = 5;
 
 export type CollectionSubmitEvent = CustomEvent<{
   values: {
@@ -179,6 +185,26 @@ export class CollectionEditor extends LiteElement {
             TODO controls
           </div>
           <div class="flex-1">${this.renderWorkflows()}</div>
+          <footer class="mt-4 flex justify-center">
+            ${when(
+              this.workflows?.total,
+              () => html`
+                <btrix-pagination
+                  page=${this.workflows!.page}
+                  totalCount=${this.workflows!.total}
+                  size=${this.workflows!.pageSize}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchWorkflows({
+                      page: e.detail.page,
+                    });
+
+                    // Scroll to top of list
+                    this.scrollIntoView({ behavior: "smooth" });
+                  }}
+                ></btrix-pagination>
+              `
+            )}
+          </footer>
         </section>
         <footer
           class="col-span-1 lg:col-span-2 border rounded-lg px-6 py-4 flex justify-between"
@@ -603,9 +629,15 @@ export class CollectionEditor extends LiteElement {
     this.activeTab = tab;
   }
 
-  private async fetchWorkflows() {
+  private async fetchWorkflows(params: APIPaginationQuery = {}) {
     try {
-      this.workflows = await this.getWorkflows();
+      this.workflows = await this.getWorkflows({
+        page: params.page || this.workflows?.page || 1,
+        pageSize:
+          params.pageSize || this.workflows?.pageSize || INITIAL_PAGE_SIZE,
+        sortBy: "lastCrawlTime",
+        sortDirection: -1,
+      });
 
       // TODO remove
       this.fetchWorkflowCrawls(this.workflows.items[0].id);
@@ -619,7 +651,7 @@ export class CollectionEditor extends LiteElement {
   }
 
   private async getWorkflows(
-    params?: any /* TODO */
+    params: APIPaginationQuery & APISortQuery
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify(params);
     const data: APIPaginatedList = await this.apiFetch(
