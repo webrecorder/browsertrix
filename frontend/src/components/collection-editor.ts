@@ -3,11 +3,15 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { until } from "lit/directives/until.js";
+import { guard } from "lit/directives/guard.js";
+import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
 import omit from "lodash/fp/omit";
 import groupBy from "lodash/fp/groupBy";
+import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 
 import type { CheckboxChangeEvent, CheckboxGroupList } from "./checkbox-list";
 import type { MarkdownChangeEvent } from "./markdown-editor";
@@ -24,12 +28,20 @@ import type { PageChangeEvent } from "./pagination";
 
 const TABS = ["crawls", "metadata"] as const;
 type Tab = (typeof TABS)[number];
+type SearchFields = "name" | "firstSeed";
+type SearchResult = {
+  item: {
+    key: SearchFields;
+    value: string;
+  };
+};
 const finishedCrawlStates: CrawlState[] = [
   "complete",
   "partial_complete",
   "timed_out",
 ];
 const INITIAL_PAGE_SIZE = 5;
+const MIN_SEARCH_LENGTH = 2;
 
 export type CollectionSubmitEvent = CustomEvent<{
   values: {
@@ -74,10 +86,41 @@ export class CollectionEditor extends LiteElement {
   @state()
   private activeTab: Tab = TABS[0];
 
+  @state()
+  private filterBy: Partial<Record<keyof Crawl, any>> = {};
+
+  @state()
+  private searchByValue: string = "";
+
+  @state()
+  private searchResultsOpen = false;
+
+  private get hasSearchStr() {
+    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+  }
+
+  private get selectedSearchFilterKey() {
+    return Object.keys(this.fieldLabels).find((key) =>
+      Boolean((this.filterBy as any)[key])
+    );
+  }
+
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
+
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    keys: ["value"],
+    shouldSort: false,
+    threshold: 0.2, // stricter; default is 0.6
+  });
+
+  private readonly fieldLabels: Record<SearchFields, string> = {
+    name: msg("Name"),
+    firstSeed: msg("Crawl Start URL"),
+  };
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
@@ -87,6 +130,7 @@ export class CollectionEditor extends LiteElement {
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       this.fetchWorkflows();
+      this.fetchSearchValues();
     }
     if (changedProperties.has("collection") && this.collection) {
       this.selectedCrawls = this.collection.crawlIds.reduce(
@@ -176,15 +220,15 @@ export class CollectionEditor extends LiteElement {
             ${msg("Crawls in Collection")}
           </h4>
           <div class="border rounded-lg py-2 flex-1">
-            ${this.renderCollectionWorkflows()}
+            ${this.renderCollectionWorkflowList()}
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
           <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
-            TODO controls
+            ${this.renderWorkflowListControls()}
           </div>
-          <div class="flex-1">${this.renderWorkflows()}</div>
+          <div class="flex-1">${this.renderWorkflowList()}</div>
           <footer class="mt-4 flex justify-center">
             ${when(
               this.workflows?.total,
@@ -265,7 +309,7 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderCollectionWorkflows() {
+  private renderCollectionWorkflowList() {
     // TODO show crawls in collection
     const crawls = Object.values(this.selectedCrawls);
     if (!crawls.length) {
@@ -428,7 +472,109 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderWorkflows() {
+  private renderWorkflowListControls() {
+    return html`
+      <div class="flex flex-wrap items-center md:gap-4 gap-2">
+        <div class="grow">${this.renderSearch()}</div>
+      </div>
+    `;
+  }
+
+  private renderSearch() {
+    return html`
+      <btrix-combobox
+        ?open=${this.searchResultsOpen}
+        @request-close=${() => {
+          this.searchResultsOpen = false;
+          this.searchByValue = "";
+        }}
+        @sl-select=${async (e: CustomEvent) => {
+          this.searchResultsOpen = false;
+          const item = e.detail.item as SlMenuItem;
+          const key = item.dataset["key"] as SearchFields;
+          this.searchByValue = item.value;
+          await this.updateComplete;
+          this.filterBy = {
+            ...this.filterBy,
+            [key]: item.value,
+          };
+        }}
+      >
+        <sl-input
+          size="small"
+          placeholder=${msg("Search by Workflow Name or Crawl Start URL")}
+          clearable
+          value=${this.searchByValue}
+          @sl-clear=${() => {
+            this.searchResultsOpen = false;
+            this.onSearchInput.cancel();
+            const { name, firstSeed, ...otherFilters } = this.filterBy;
+            this.filterBy = otherFilters;
+          }}
+          @sl-input=${this.onSearchInput}
+          @focus=${() => {
+            if (this.hasSearchStr) {
+              this.searchResultsOpen = true;
+            }
+          }}
+        >
+          ${when(
+            this.selectedSearchFilterKey,
+            () =>
+              html`<sl-tag
+                slot="prefix"
+                size="small"
+                pill
+                style="margin-left: var(--sl-spacing-3x-small)"
+                >${this.fieldLabels[
+                  this.selectedSearchFilterKey as SearchFields
+                ]}</sl-tag
+              >`,
+            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
+          )}
+        </sl-input>
+        ${this.renderSearchResults()}
+      </btrix-combobox>
+    `;
+  }
+
+  private renderSearchResults() {
+    if (!this.hasSearchStr) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+        >
+      `;
+    }
+
+    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
+    if (!searchResults.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("No matching crawls found.")}</sl-menu-item
+        >
+      `;
+    }
+
+    return html`
+      ${searchResults.map(
+        ({ item }: SearchResult) => html`
+          <sl-menu-item
+            slot="menu-item"
+            data-key=${item.key}
+            value=${item.value}
+          >
+            <sl-tag slot="prefix" size="small" pill
+              >${this.fieldLabels[item.key]}</sl-tag
+            >
+            ${item.value}
+          </sl-menu-item>
+        `
+      )}
+    `;
+  }
+
+  private renderWorkflowList() {
     if (!this.workflows) {
       return html`
         <div class="w-full flex items-center justify-center my-24 text-3xl">
@@ -589,6 +735,24 @@ export class CollectionEditor extends LiteElement {
       }
     };
 
+  private onSearchInput = debounce(150)((e: any) => {
+    this.searchByValue = e.target.value.trim();
+
+    if (this.searchResultsOpen === false && this.hasSearchStr) {
+      this.searchResultsOpen = true;
+    }
+
+    if (!this.searchByValue && this.selectedSearchFilterKey) {
+      const {
+        [this.selectedSearchFilterKey as SearchFields]: _,
+        ...otherFilters
+      } = this.filterBy;
+      this.filterBy = {
+        ...otherFilters,
+      };
+    }
+  }) as any;
+
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -697,5 +861,28 @@ export class CollectionEditor extends LiteElement {
     );
 
     return data;
+  }
+
+  private async fetchSearchValues() {
+    try {
+      const { names, firstSeeds } = await this.apiFetch(
+        `/orgs/${this.orgId}/crawlconfigs/search-values`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem =
+        (key: SearchFields) =>
+        (value: string): SearchResult["item"] => ({
+          key,
+          value,
+        });
+      this.fuse.setCollection([
+        ...names.map(toSearchItem("name")),
+        ...firstSeeds.map(toSearchItem("firstSeed")),
+      ] as any);
+    } catch (e) {
+      console.debug(e);
+    }
   }
 }
