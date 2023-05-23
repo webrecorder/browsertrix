@@ -416,7 +416,7 @@ export class CollectionEditor extends LiteElement {
           </div>
           <div class="col-span-1 border-l flex items-center justify-center">
             <btrix-button
-              class="expandBtn p-2 text-base"
+              class="expandBtn p-2 text-base transition-transform rotate-180"
               aria-expanded="true"
               aria-controls=${`workflow-${workflowId}`}
               @click=${this.onWorkflowExpandClick(workflowId, crawls.length)}
@@ -746,10 +746,12 @@ export class CollectionEditor extends LiteElement {
       expandBtn.setAttribute("aria-expanded", expanded.toString());
 
       if (expanded) {
+        expandBtn.classList.add("rotate-180");
         checkboxGroup.style.marginTop = "0px";
         checkboxGroup.style.opacity = "100%";
         checkboxGroup.style.pointerEvents = "auto";
       } else {
+        expandBtn.classList.remove("rotate-180");
         checkboxGroup.style.marginTop = `-${checkboxGroup.clientHeight}px`;
         checkboxGroup.style.opacity = "0";
         checkboxGroup.style.pointerEvents = "none";
