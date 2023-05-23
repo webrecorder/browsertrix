@@ -298,9 +298,9 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
         "runNow": True,
         "name": "Auto Add",
         "description": "For testing auto-adding new workflow crawls to collections",
+        "autoAddCollections": [auto_add_collection_id],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
-            "colls": [auto_add_collection_id],
         },
     }
     r = requests.post(
