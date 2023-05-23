@@ -42,6 +42,7 @@ export class CollectionEdit extends LiteElement {
       <h2 class="text-xl font-semibold mb-6">${this.collection?.name}</h2>
       <btrix-collection-editor
         .authState=${this.authState}
+        .collection=${this.collection}
         orgId=${this.orgId}
         ?isSubmitting=${this.isSubmitting}
         @on-submit=${this.onSubmit}
@@ -119,12 +120,17 @@ export class CollectionEdit extends LiteElement {
   }
 
   private async getCollection(): Promise<Collection> {
-    const data: Collection = await this.apiFetch(
-      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+    // TODO replace endpoint once resource endpoint returns metadata
+    // const data = await this.apiFetch(
+    //   `/orgs/${this.orgId}/collections/${this.collectionId}`,
+    //   this.authState!
+    // );
+    const data: any = await this.apiFetch(
+      `/orgs/${this.orgId}/collections`,
       this.authState!
     );
 
-    return data;
+    return data.items.find(({ id }: any) => id === this.collectionId);
   }
 }
 customElements.define("btrix-collection-edit", CollectionEdit);

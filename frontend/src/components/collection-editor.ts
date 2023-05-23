@@ -44,6 +44,9 @@ export class CollectionEditor extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Object })
+  collection?: Collection;
+
   @property({ type: Boolean })
   isSubmitting = false;
 
@@ -78,6 +81,15 @@ export class CollectionEditor extends LiteElement {
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       this.fetchWorkflows();
+    }
+    if (changedProperties.has("collection") && this.collection) {
+      this.selectedCrawls = this.collection.crawlIds.reduce(
+        (acc, id) => ({
+          ...acc,
+          [id]: { id }, // TODO replace with crawl
+        }),
+        {}
+      );
     }
   }
 
@@ -172,13 +184,12 @@ export class CollectionEditor extends LiteElement {
           class="col-span-1 md:col-span-2 border rounded-lg px-6 py-4 flex justify-between"
         >
           <sl-button
-            variant="primary"
             size="small"
             class="ml-auto"
             @click=${() => this.goToTab("metadata")}
           >
             <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-            ${msg("Next Step")}
+            ${msg("Enter Metadata")}
           </sl-button>
         </footer>
       </section>
@@ -212,7 +223,7 @@ export class CollectionEditor extends LiteElement {
         <footer class="border-t px-6 py-4 flex justify-between">
           <sl-button size="small" @click=${() => this.goToTab("crawls")}>
             <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-            ${msg("Previous Step")}
+            ${msg("Select Crawls")}
           </sl-button>
           <sl-button
             type="submit"
@@ -221,7 +232,7 @@ export class CollectionEditor extends LiteElement {
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Save New Collection")}
+            ${msg("Save Collection")}
           </sl-button>
         </footer>
       </section>
@@ -251,80 +262,13 @@ export class CollectionEditor extends LiteElement {
       <btrix-checkbox-list>
         ${Object.keys(groupedByWorkflow).map((workflowId) =>
           until(
-            this.workflowCrawls[workflowId].then((crawls) =>
-              this.renderWorkflowCrawls(
-                workflowId,
-                // TODO show crawls in collection
-                crawls
-              )
-            )
+            // TODO show crawls in collection
+            Promise.resolve(
+              this.workflowCrawls[workflowId] || groupedByWorkflow[workflowId]
+            ).then((crawls) => this.renderWorkflowCrawls(workflowId, crawls))
           )
         )}
       </btrix-checkbox-list>
-    `;
-  }
-
-  private renderWorkflows() {
-    if (!this.workflows) {
-      return html`
-        <div class="w-full flex items-center justify-center my-24 text-3xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
-    }
-
-    return html`
-      <btrix-checkbox-list>
-        ${this.workflows.items.map((workflow) =>
-          this.renderWorkflowItem(workflow)
-        )}
-      </btrix-checkbox-list>
-    `;
-  }
-
-  private renderFormCol = (content: TemplateResult) => {
-    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
-  };
-
-  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
-    return html`
-      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
-        <div class="text-base mr-2">
-          <sl-icon name="info-circle"></sl-icon>
-        </div>
-        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
-      </div>
-    `;
-  }
-
-  // TODO consolidate collections/workflow name
-  private renderWorkflowName(workflow: Workflow) {
-    if (workflow.name)
-      return html`<span class="truncate">${workflow.name}</span>`;
-    if (!workflow.firstSeed)
-      return html`<span class="truncate">${workflow.id}</span>`;
-    return this.renderSeedsLabel(
-      workflow.firstSeed,
-      workflow.config.seeds.length
-    );
-  }
-
-  private renderSeedsLabel(firstSeed: string, seedCount: number) {
-    let nameSuffix: any = "";
-    const remainder = seedCount - 1;
-    if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="ml-1 text-neutral-500"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="ml-1 text-neutral-500"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
-    }
-    return html`
-      <span class="inline-block truncate">${firstSeed}</span>${nameSuffix}
     `;
   }
 
@@ -458,6 +402,70 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
+  private renderWorkflows() {
+    if (!this.workflows) {
+      return html`
+        <div class="w-full flex items-center justify-center my-24 text-3xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `;
+    }
+
+    return html`
+      <btrix-checkbox-list>
+        ${this.workflows.items.map((workflow) =>
+          this.renderWorkflowItem(workflow)
+        )}
+      </btrix-checkbox-list>
+    `;
+  }
+
+  private renderFormCol = (content: TemplateResult) => {
+    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
+  };
+
+  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
+    return html`
+      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
+        <div class="text-base mr-2">
+          <sl-icon name="info-circle"></sl-icon>
+        </div>
+        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
+      </div>
+    `;
+  }
+
+  // TODO consolidate collections/workflow name
+  private renderWorkflowName(workflow: Workflow) {
+    if (workflow.name)
+      return html`<span class="truncate">${workflow.name}</span>`;
+    if (!workflow.firstSeed)
+      return html`<span class="truncate">${workflow.id}</span>`;
+    return this.renderSeedsLabel(
+      workflow.firstSeed,
+      workflow.config.seeds.length
+    );
+  }
+
+  private renderSeedsLabel(firstSeed: string, seedCount: number) {
+    let nameSuffix: any = "";
+    const remainder = seedCount - 1;
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="ml-1 text-neutral-500"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="ml-1 text-neutral-500"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <span class="inline-block truncate">${firstSeed}</span>${nameSuffix}
+    `;
+  }
+
   private renderWorkflowItem(workflow: Workflow) {
     const workflowCrawlsAsync =
       this.workflowCrawls[workflow.id] || Promise.resolve([]);
@@ -469,7 +477,7 @@ export class CollectionEditor extends LiteElement {
       <btrix-checkbox-list-item
         ?checked=${until(someSelectedAsync, false)}
         @on-change=${async (e: CheckboxChangeEvent) => {
-          this.fetchCrawls(workflow.id);
+          this.fetchWorkflowCrawls(workflow.id);
           const workflowCrawls = await this.workflowCrawls[workflow.id];
 
           if (e.detail.checked) {
@@ -598,7 +606,7 @@ export class CollectionEditor extends LiteElement {
       this.workflows = await this.getWorkflows();
 
       // TODO remove
-      this.fetchCrawls(this.workflows.items[0].id);
+      this.fetchWorkflowCrawls(this.workflows.items[0].id);
     } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't retrieve Workflows at this time."),
@@ -620,7 +628,7 @@ export class CollectionEditor extends LiteElement {
     return data;
   }
 
-  private fetchCrawls(workflowId: string) {
+  private fetchWorkflowCrawls(workflowId: string) {
     if (this.workflowCrawls[workflowId] !== undefined) {
       return Promise.resolve(this.workflowCrawls[workflowId] || []);
     }
@@ -640,8 +648,13 @@ export class CollectionEditor extends LiteElement {
     });
   }
 
-  private async getCrawls(params?: any /* TODO */): Promise<APIPaginatedList> {
-    const query = queryString.stringify(params, {
+  private async getCrawls(
+    params: Partial<{
+      cid: string;
+      state: CrawlState[];
+    }>
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",
     });
     const data: APIPaginatedList = await this.apiFetch(
