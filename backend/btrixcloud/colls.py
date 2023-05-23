@@ -1,6 +1,7 @@
 """
 Collections API
 """
+from datetime import datetime
 import uuid
 from typing import Optional, List
 
@@ -23,6 +24,8 @@ class Collection(BaseMongoModel):
     oid: UUID4
 
     description: Optional[str]
+
+    modified: Optional[datetime]
 
 
 # ============================================================================
@@ -82,11 +85,14 @@ class CollectionOps:
         """Add new collection"""
         crawl_ids = crawl_ids if crawl_ids else []
         coll_id = uuid.uuid4()
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
         coll = Collection(
             id=coll_id,
             oid=oid,
             name=name,
             description=description,
+            modified=modified,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -106,6 +112,8 @@ class CollectionOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
+        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
         try:
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
@@ -119,26 +127,48 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        return Collection.from_dict(result)
+        return await self._get_annotated_coll_out(result, coll_id)
 
     async def add_crawl_to_collection(
         self, coll_id: uuid.UUID, crawl_id: str, org: Organization
     ):
         """Add crawl to collection"""
         await self.crawls.add_to_collection(crawl_id, coll_id, org)
-        return {"success": True}
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        result = await self.collections.find_one_and_update(
+            {"_id": coll_id},
+            {"$set": {"modified": modified}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return await self._get_annotated_coll_out(result, coll_id)
 
     async def remove_crawl_from_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Remove crawl from collection"""
         await self.crawls.remove_from_collection(crawl_id, coll_id)
-        return {"success": True}
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        result = await self.collections.find_one_and_update(
+            {"_id": coll_id},
+            {"$set": {"modified": modified}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return await self._get_annotated_coll_out(result, coll_id)
 
     async def get_collection(self, coll_id: uuid.UUID):
         """Get collection by id"""
-        res = await self.collections.find_one({"_id": coll_id})
+        result = await self.collections.find_one({"_id": coll_id})
+        return await self._get_annotated_coll_out(result, coll_id)
+
+    async def _get_annotated_coll_out(self, result, coll_id: uuid.UUID):
+        """Add crawlCount to db collection result and return CollOut."""
         crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
-        res["crawlCount"] = len(crawl_ids)
-        return CollOut.from_dict(res) if res else None
+        result["crawlCount"] = len(crawl_ids)
+        return CollOut.from_dict(result)
 
     async def find_collections(self, oid: uuid.UUID, names: List[str]):
         """Find all collections for org given a list of names"""
@@ -380,7 +410,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/update",
         tags=["collections"],
-        response_model=Collection,
+        response_model=CollOut,
     )
     async def update_collection(
         coll_id: uuid.UUID,
@@ -392,6 +422,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/add",
         tags=["collections"],
+        response_model=CollOut,
     )
     async def add_crawl_to_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
@@ -401,6 +432,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/remove",
         tags=["collections"],
+        response_model=CollOut,
     )
     async def remove_crawl_from_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)

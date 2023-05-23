@@ -10,6 +10,8 @@ DESCRIPTION = "Test description"
 _coll_id = None
 _second_coll_id = None
 
+modified = None
+
 
 def test_create_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
@@ -81,6 +83,10 @@ def test_update_collection(
     assert data["id"] == _coll_id
     assert data["name"] == COLLECTION_NAME
     assert data["description"] == DESCRIPTION
+    assert data["crawlCount"] >= 0
+    global modified
+    modified = data["modified"]
+    assert modified
 
 
 def test_rename_collection(
@@ -95,6 +101,7 @@ def test_rename_collection(
     data = r.json()
     assert data["id"] == _coll_id
     assert data["name"] == UPDATED_NAME
+    assert data["modified"] >= modified
 
 
 def test_rename_collection_taken_name(
@@ -135,7 +142,10 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["success"]
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 2
+    assert data["modified"] >= modified
 
     # Verify it was added
     r = requests.get(
@@ -150,7 +160,10 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["success"]
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 1
+    assert data["modified"] >= modified
 
     # Verify it was removed
     r = requests.get(
@@ -165,7 +178,10 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["success"]
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 2
+    assert data["modified"] >= modified
 
 
 def test_get_collection(crawler_auth_headers, default_org_id):
@@ -180,6 +196,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
     assert data["crawlCount"] == 2
+    assert data["modified"] >= modified
 
 
 def test_get_collection_crawl_resources(
@@ -218,6 +235,7 @@ def test_list_collections(
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
     assert first_coll["crawlCount"] == 2
+    assert first_coll["modified"]
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -225,6 +243,7 @@ def test_list_collections(
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
     assert second_coll["crawlCount"] == 1
+    assert second_coll["modified"]
 
 
 def test_list_collections_no_crawl_count(
