@@ -886,6 +886,7 @@ async def add_new_crawl(
         manual=manual,
         started=started,
         tags=crawlconfig.tags,
+        collections=crawlconfig.colls,
     )
 
     try:
