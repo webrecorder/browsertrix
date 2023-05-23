@@ -17,6 +17,7 @@ CRAWLER_PW = "crawlerPASSWORD!"
 
 _admin_config_id = None
 _crawler_config_id = None
+_auto_add_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
@@ -276,3 +277,54 @@ def sample_crawl_data():
         "config": {"seeds": [{"url": "https://example.com/"}]},
         "tags": ["tag1", "tag2"],
     }
+
+
+@pytest.fixture(scope="session")
+def auto_add_collection_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={"name": "Auto Add Collection"},
+    )
+    assert r.status_code == 200
+    return r.json()["added"]["id"]
+
+
+@pytest.fixture(scope="session")
+def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Auto Add",
+        "description": "For testing auto-adding new workflow crawls to collections",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "colls": [auto_add_collection_id],
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    global _auto_add_config_id
+    _auto_add_config_id = data["added"]
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            return crawl_id
+        time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def auto_add_config_id(auto_add_crawl_id):
+    return _auto_add_config_id

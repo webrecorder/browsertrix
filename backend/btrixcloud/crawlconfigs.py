@@ -111,7 +111,7 @@ class CrawlConfigIn(BaseModel):
 
     profileid: Optional[str]
 
-    colls: Optional[List[str]] = []
+    colls: Optional[List[UUID4]] = []
     tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
@@ -173,7 +173,7 @@ class CrawlConfig(CrawlConfigCore):
     modified: Optional[datetime]
     modifiedBy: Optional[UUID4]
 
-    colls: Optional[List[str]] = []
+    colls: Optional[List[UUID4]] = []
 
     inactive: Optional[bool] = False
 
@@ -335,7 +335,7 @@ class CrawlConfigOps:
         )
 
         if config.colls:
-            data["colls"] = await self.coll_ops.find_collections(org.id, config.colls)
+            data["colls"] = config.colls
 
         result = await self.crawl_configs.insert_one(data)
 
