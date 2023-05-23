@@ -85,7 +85,7 @@ def test_start_crawl_and_stop_immediately(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["currCrawlStopping"] == True
+    assert r.json()["lastCrawlStopping"] == True
 
     while data["state"] in ("starting", "running", "waiting"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
@@ -97,6 +97,15 @@ def test_start_crawl_and_stop_immediately(
 def test_start_crawl_to_stop_partial(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
+    while True:
+        time.sleep(2)
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}",
+            headers=crawler_auth_headers,
+        )
+        if r.json().get("isCrawlRunning") is False:
+            break
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}/run",
         headers=crawler_auth_headers,
@@ -136,7 +145,7 @@ def test_stop_crawl_partial(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["currCrawlStopping"] == True
+    assert r.json()["lastCrawlStopping"] == True
 
     while data["state"] == "running":
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
