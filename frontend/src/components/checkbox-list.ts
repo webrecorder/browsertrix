@@ -54,10 +54,12 @@ export class CheckboxListItem extends LitElement {
       }
 
       .checkbox {
+        --checkbox-margin: 0.625rem;
         flex: 0 0 auto;
-        margin: var(--sl-spacing-small) var(--sl-spacing-medium);
-        /* TODO remove if shoelace makes margin-inline-start configurable */
-        margin-right: calc(var(--sl-spacing-medium) - 0.5em);
+        margin-top: var(--checkbox-margin);
+        margin-bottom: var(--checkbox-margin);
+        margin-left: var(--sl-spacing-small);
+        margin-right: calc(var(--sl-spacing-small) - 0.5em);
       }
 
       .content {

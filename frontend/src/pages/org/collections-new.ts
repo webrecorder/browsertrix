@@ -416,7 +416,7 @@ export class CollectionsNew extends LiteElement {
           }
         }}
       >
-        <div class="grid grid-cols-[1fr_4rem_2.5rem] gap-3 items-center">
+        <div class="grid grid-cols-[1fr_4.6rem_2.5rem] gap-3 items-center">
           <div class="truncate">
             ${this.renderSeedsLabel(firstCrawl.firstSeed, firstCrawl.seedCount)}
           </div>
@@ -471,25 +471,18 @@ export class CollectionsNew extends LiteElement {
             hideLabel
           ></btrix-crawl-status>
           <div class="flex-1">
-            ${
-              workflowId
-                ? html`<sl-format-date
-                    date=${`${crawl.finished}Z`}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></sl-format-date>`
-                : this.renderSeedsLabel(crawl.firstSeed, crawl.seedCount)
-            }
+            ${workflowId
+              ? html`<sl-format-date
+                  date=${`${crawl.finished}Z`}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></sl-format-date>`
+              : this.renderSeedsLabel(crawl.firstSeed, crawl.seedCount)}
           </div>
-          <sl-format-bytes
-            class="w-14 text-xs font-monostyle"
-            value=${crawl.fileSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
-          <div class="w-16 text-neutral-500  font-monostyle truncate">
+          <div class="w-16 font-monostyle truncate">
             <sl-tooltip content=${msg("Pages in crawl")}>
               <div class="flex items-center">
                 <sl-icon
@@ -498,9 +491,16 @@ export class CollectionsNew extends LiteElement {
                 ></sl-icon>
                 <div class="ml-1 text-xs">
                   ${this.numberFormatter.format(+(crawl.stats?.done || 0))}
-                </span>
+                </div>
               </div>
             </sl-tooltip>
+          </div>
+          <div class="w-14">
+            <sl-format-bytes
+              class="text-neutral-500 text-xs font-monostyle"
+              value=${crawl.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
           </div>
         </div>
       </btrix-checkbox-list-item>
@@ -708,11 +708,13 @@ export class CollectionsNew extends LiteElement {
     }
 
     this.workflowCrawls = mergeDeep(this.workflowCrawls, {
+      // TODO paginate
       [workflowId]: this.getCrawls({
         cid: workflowId,
         state: finishedCrawlStates,
       })
-        .then((data) => data.items)
+        // TODO remove omit once API removes
+        .then((data) => data.items.map(omit("errors")))
         .catch((err: any) => {
           console.debug(err);
           this.workflowCrawls = omit([workflowId], this.workflowCrawls);
