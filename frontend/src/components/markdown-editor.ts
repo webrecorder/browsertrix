@@ -41,6 +41,7 @@ export class MarkdownEditor extends LitElement {
   protected firstUpdated(): void {
     const editor = createWysimark(this.querySelector(".markdown-editor")!, {
       initialMarkdown: this.initialValue,
+      minHeight: "15rem",
       onChange: async () => {
         const value = editor.getMarkdown();
         const input = this.querySelector(
