@@ -164,7 +164,7 @@ export class CollectionEditor extends LiteElement {
 
   private renderSelectCrawls() {
     return html`
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">
             ${msg("Crawls in Collection")}
@@ -181,7 +181,7 @@ export class CollectionEditor extends LiteElement {
           <div class="flex-1">${this.renderWorkflows()}</div>
         </section>
         <footer
-          class="col-span-1 md:col-span-2 border rounded-lg px-6 py-4 flex justify-between"
+          class="col-span-1 lg:col-span-2 border rounded-lg px-6 py-4 flex justify-between"
         >
           <sl-button
             size="small"
@@ -310,7 +310,7 @@ export class CollectionEditor extends LiteElement {
         }}
       >
         <div class="grid grid-cols-[1fr_4.6rem_2.5rem] gap-3 items-center">
-          <div class="truncate">
+          <div>
             ${this.renderSeedsLabel(firstCrawl.firstSeed, firstCrawl.seedCount)}
           </div>
           <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
@@ -438,9 +438,9 @@ export class CollectionEditor extends LiteElement {
   // TODO consolidate collections/workflow name
   private renderWorkflowName(workflow: Workflow) {
     if (workflow.name)
-      return html`<span class="truncate">${workflow.name}</span>`;
+      return html`<span class="min-w-0">${workflow.name}</span>`;
     if (!workflow.firstSeed)
-      return html`<span class="truncate">${workflow.id}</span>`;
+      return html`<span class="min-w-0">${workflow.id}</span>`;
     return this.renderSeedsLabel(
       workflow.firstSeed,
       workflow.config.seeds.length
@@ -462,7 +462,9 @@ export class CollectionEditor extends LiteElement {
       }
     }
     return html`
-      <span class="inline-block truncate">${firstSeed}</span>${nameSuffix}
+      <div class="flex">
+        <span class="flex-1 min-w-0 truncate">${firstSeed}</span>${nameSuffix}
+      </div>
     `;
   }
 
@@ -508,7 +510,7 @@ export class CollectionEditor extends LiteElement {
   private renderWorkflowDetails(workflow: Workflow) {
     return html`
       <div class="col-span-1 py-3 whitespace-nowrap truncate">
-        <div class="text-neutral-700 h-6">
+        <div class="text-neutral-700 h-6 truncate">
           ${this.renderWorkflowName(workflow)}
         </div>
         <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
