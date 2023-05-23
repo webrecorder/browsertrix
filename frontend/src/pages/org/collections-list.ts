@@ -79,8 +79,8 @@ export class CollectionsList extends LiteElement {
         <div class="w-[27rem] max-w-[100vw] aspect-square">
           <img src=${noCollectionsImg} />
         </div>
-        <figcaption class="text-lg font-semibold">
-          ${msg("No Collections Yet")}
+        <figcaption class="text-lg text-primary font-semibold">
+          ${msg("Start building your Collection")}
         </figcaption>
       </figure>
       ${when(
@@ -88,7 +88,7 @@ export class CollectionsList extends LiteElement {
         () => html`
           <p class="max-w-[16em]">
             ${msg(
-              "Select and group crawls to create a collection of related content."
+              "Organize your crawls into a Collection to easily replay them together."
             )}
           </p>
           <div>

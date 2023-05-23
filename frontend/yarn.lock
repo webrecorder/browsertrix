@@ -1542,7 +1542,7 @@
   resolved "https://registry.yarnpkg.com/@webpack-cli/serve/-/serve-1.7.0.tgz#e1993689ac42d2b16e9194376cfb6753f6254db1"
   integrity sha512-oxnCNGj88fL+xzV+dacXs44HcDwf1ovs3AuEzvP7mqXw7fQntqIhQ1BRmynh4qEKQSSSRSWVyXRjmTbZIX9V2Q==
 
-"@wysimark/standalone@^2.2.13":
+"@wysimark/standalone@2.2.13":
   version "2.2.13"
   resolved "https://registry.yarnpkg.com/@wysimark/standalone/-/standalone-2.2.13.tgz#3002551182961e7a9724bffd498f9cd219a42c10"
   integrity sha512-ksrTZTj9aY7gtYQvKEkDA8zyBc5N/ybeot62OiNp/H0RYA9uLLU/t9EKSXs1CvSsjS2tXHnFduhXTsP0mS/Biw==

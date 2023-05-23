@@ -17,6 +17,7 @@ import type { CheckboxChangeEvent, CheckboxGroupList } from "./checkbox-list";
 import type { MarkdownChangeEvent } from "./markdown-editor";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
+import { maxLengthValidator } from "../utils/form";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -117,6 +118,8 @@ export class CollectionEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private validateNameMax = maxLengthValidator(50);
+
   private readonly fieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
@@ -162,7 +165,11 @@ export class CollectionEditor extends LiteElement {
   }
 
   render() {
-    return html`<form name="collectionForm" @submit=${this.onSubmit}>
+    return html`<form
+      name="collectionForm"
+      autocomplete="off"
+      @submit=${this.onSubmit}
+    >
       <btrix-tab-list
         activePanel="collectionForm-${this.activeTab}"
         progressPanel="collectionForm-${this.activeTab}"
@@ -270,7 +277,7 @@ export class CollectionEditor extends LiteElement {
           </footer>
         </section>
         <footer
-          class="col-span-1 lg:col-span-2 border rounded-lg px-6 py-4 flex justify-between"
+          class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
         >
           <sl-button
             size="small"
@@ -288,26 +295,26 @@ export class CollectionEditor extends LiteElement {
   private renderMetadata = () => {
     return html`
       <section class="border rounded-lg">
-        <div class="p-6 grid grid-cols-5 gap-4">
-          ${this.renderFormCol(html`
-            <sl-input
-              class="mb-4"
-              name="name"
-              label=${msg("Name")}
-              autocomplete="off"
-              placeholder=${msg("My Collection")}
-              required
-            ></sl-input>
-          `)}
-          ${this.renderHelpTextCol(msg("TODO"))}
-          ${this.renderFormCol(html`
-            <h4 class="form-label">${msg("Description")}</h4>
+        <div class="p-6">
+          <sl-input
+            class="mb-2 with-max-help-text"
+            name="name"
+            label=${msg("Name")}
+            placeholder=${msg("My Collection")}
+            autocomplete="off"
+            required
+            help-text=${this.validateNameMax.helpText}
+            @sl-input=${this.validateNameMax.validate}
+          ></sl-input>
+
+          <fieldset>
+            <label class="form-label">${msg("Description")}</label>
             <btrix-markdown-editor
               name="description"
               initialValue=${""}
+              maxlength=${1000}
             ></btrix-markdown-editor>
-          `)}
-          ${this.renderHelpTextCol(msg("TODO"))}
+          </fieldset>
         </div>
         <footer class="border-t px-6 py-4 flex justify-between">
           <sl-button size="small" @click=${() => this.goToTab("crawls")}>
@@ -335,11 +342,11 @@ export class CollectionEditor extends LiteElement {
       return html`
         <div class="flex flex-col items-center justify-center text-center p-4">
           <span class="text-base font-semibold text-primary"
-            >${msg("Add Crawls to This Collection")}</span
+            >${msg("No Crawls in this Collection, yet")}</span
           >
           <p class="max-w-[24em] mx-auto mt-4">
             ${msg(
-              "Select entire Workflows or individual Crawls. You can always come back and add Crawls later."
+              "Select Workflows or individual Crawls. You can always come back and add Crawls later."
             )}
           </p>
         </div>
@@ -701,7 +708,7 @@ export class CollectionEditor extends LiteElement {
         </div>
         <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
           <sl-format-date
-            date=${workflow.lastCrawlTime}
+            date=${workflow.lastCrawlTime || workflow.modified}
             month="2-digit"
             day="2-digit"
             year="2-digit"
