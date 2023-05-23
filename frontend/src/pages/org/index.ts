@@ -16,6 +16,8 @@ import "./crawl-detail";
 import "./crawls-list";
 import "./collections-list";
 import "./collections-new";
+import "./collection-edit";
+import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
@@ -40,6 +42,7 @@ type Params = {
   browserProfileId?: string;
   browserId?: string;
   artifactId?: string;
+  resourceId?: string;
 };
 
 const defaultTab = "crawls";
@@ -326,13 +329,34 @@ export class Org extends LiteElement {
   }
 
   private renderCollections() {
-    const isNewResourceTab = this.params.hasOwnProperty("new");
+    if (this.params.resourceId) {
+      if (this.orgPath.includes(`/edit/${this.params.resourceId}`)) {
+        return html`<div class="lg:px-5">
+          <btrix-collection-edit
+            .authState=${this.authState!}
+            orgId=${this.orgId!}
+            collectionId=${this.params.resourceId}
+            ?isCrawler=${this.isCrawler}
+          ></btrix-collection-edit>
+        </div>`;
+      }
 
-    if (isNewResourceTab) {
+      return html`<div class="lg:px-5">
+        <btrix-collection-detail
+          .authState=${this.authState!}
+          orgId=${this.orgId!}
+          collectionId=${this.params.resourceId}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-collection-detail>
+      </div>`;
+    }
+
+    if (this.orgPath.endsWith("/new")) {
       return html`<div class="lg:px-5">
         <btrix-collections-new
           .authState=${this.authState!}
           orgId=${this.orgId!}
+          ?isCrawler=${this.isCrawler}
         ></btrix-collections-new>
       </div>`;
     }

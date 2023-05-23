@@ -13,6 +13,9 @@ export const ROUTES = {
   org: [
     "/orgs/:orgId/:orgTab",
     // Optional segments:
+    "(/new)",
+    "(/view/:resourceId)",
+    "(/edit/:resourceId)",
     "(/crawls)",
     "(/crawl/:crawlOrWorkflowId)",
     "(/artifact/:artifactId)",

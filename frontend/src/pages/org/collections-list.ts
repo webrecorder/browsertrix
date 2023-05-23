@@ -5,15 +5,8 @@ import { when } from "lit/directives/when.js";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { APIPaginatedList } from "../../types/api";
+import type { Collection } from "../../types/collection";
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
-
-type Collection = {
-  id: string;
-  oid: string;
-  name: string;
-  description: string;
-  crawlIds: string[];
-}; // TODO
 
 @localized()
 export class CollectionsList extends LiteElement {
@@ -24,7 +17,7 @@ export class CollectionsList extends LiteElement {
   orgId!: string;
 
   @property({ type: Boolean })
-  isCrawler!: boolean;
+  isCrawler?: boolean;
 
   @state()
   private collections?: APIPaginatedList & {
@@ -50,7 +43,7 @@ export class CollectionsList extends LiteElement {
             this.isCrawler,
             () => html`
               <sl-button
-                href=${`/orgs/${this.orgId}/collections?new`}
+                href=${`/orgs/${this.orgId}/collections/new`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
@@ -133,25 +126,31 @@ export class CollectionsList extends LiteElement {
       : html`TODO`;
 
   private renderItem = (col: Collection) =>
-    html`<li class="border rounded shadow-sm p-2 leading-none mb-2 last:mb-0">
-      <div
-        class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5 items-center"
+    html`<li class="mb-2 last:mb-0">
+      <a
+        href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
+        class="block border rounded shadow-sm p-2 leading-none hover:bg-neutral-50"
+        @click=${this.navLink}
       >
-        <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
-        <div class="col-span-1 truncate">${col.description}</div>
         <div
-          class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5 items-center"
         >
-          ${col.crawlIds.length === 1
-            ? msg("1 crawl")
-            : msg(str`${col.crawlIds.length.toLocaleString()} crawls`)}
+          <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
+          <div class="col-span-1 truncate">${col.description}</div>
+          <div
+            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          >
+            ${col.crawlIds.length === 1
+              ? msg("1 crawl")
+              : msg(str`${col.crawlIds.length.toLocaleString()} crawls`)}
+          </div>
+          <div class="col-span-1 flex items-center justify-center">
+            <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>
+              <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
+            </btrix-button>
+          </div>
         </div>
-        <div class="col-span-1 flex items-center justify-center">
-          <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>
-            <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
-          </btrix-button>
-        </div>
-      </div>
+      </a>
     </li>`;
 
   private renderFetchError = () => html`
