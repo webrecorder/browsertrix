@@ -48,7 +48,7 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
 
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    while data["state"] == "running":
+    while data["state"] in ("running", "waiting"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] == "canceled"
@@ -57,8 +57,44 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
     assert len(data["resources"]) == 0
 
 
-@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
-def test_start_crawl_to_stop(
+def test_start_crawl_and_stop_immediately(
+    default_org_id, crawler_config_id_only, crawler_auth_headers
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}/run",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    crawl_id = data["started"]
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/stop",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    assert data["success"] == True
+
+    # test crawl
+    data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
+    assert data["stopping"] == True
+
+    # test workflow
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id_only}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["currCrawlStopping"] == True
+
+    while data["state"] in ("starting", "running", "waiting"):
+        data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
+
+    assert data["state"] in ("canceled", "partial_complete")
+    assert data["stopping"] == True
+
+
+def test_start_crawl_to_stop_partial(
     default_org_id, crawler_config_id_only, crawler_auth_headers
 ):
     r = requests.post(
@@ -74,12 +110,15 @@ def test_start_crawl_to_stop(
     crawl_id = data["started"]
 
 
-@pytest.mark.skipif(os.environ.get("CI") is not None, reason="Skip Test on CI")
-def test_stop_crawl(default_org_id, crawler_config_id_only, crawler_auth_headers):
+def test_stop_crawl_partial(
+    default_org_id, crawler_config_id_only, crawler_auth_headers
+):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
-    while data["state"] == "starting":
-        time.sleep(5)
+    done = False
+    while not done:
+        time.sleep(2)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
+        done = data.get("stats") and data.get("stats").get("done") > 0
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/stop",

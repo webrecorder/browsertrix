@@ -183,7 +183,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "description": "crawler test crawl",
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
-            "pageExtraDelay": 5,
+            "pageExtraDelay": 20,
             "limit": 4,
         },
     }

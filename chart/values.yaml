@@ -94,10 +94,10 @@ frontend_image: "docker.io/webrecorder/browsertrix-frontend:latest"
 frontend_pull_policy: "Always"
 
 frontend_requests_cpu: "3m"
-frontend_limits_cpu: "10m"
+frontend_limits_cpu: "30m"
 
 frontend_requests_memory: "12Mi"
-frontend_limits_memory: "20Mi"
+frontend_limits_memory: "40Mi"
 
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767

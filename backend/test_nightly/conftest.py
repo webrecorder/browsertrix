@@ -232,8 +232,11 @@ def error_crawl_id(admin_auth_headers, default_org_id):
         "runNow": True,
         "name": "Youtube crawl with errors",
         "config": {
-            "seeds": [{"url": "https://www.youtube.com/watch?v=Sh-x3QmbRZc"}],
-            "limit": 10,
+            "seeds": [
+                {"url": "https://invalid.webrecorder.net/"},
+                {"url": "https://invalid-2.webrecorder.net/"},
+            ],
+            "limit": 1,
         },
     }
     r = requests.post(

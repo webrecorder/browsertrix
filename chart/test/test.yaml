@@ -6,7 +6,7 @@ frontend_pull_policy: "Never"
 
 default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
 
-operator_resync_seconds: 5
+operator_resync_seconds: 3
 
 mongo_auth:
   # specify either username + password (for local mongo)
@@ -26,7 +26,7 @@ superuser:
 local_service_port: 30870
 
 # test max pages per crawl global limit
-max_pages_per_crawl: 2
+max_pages_per_crawl: 4
 
 registration_enabled: "0"
 
