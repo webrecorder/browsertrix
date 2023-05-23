@@ -1,11 +1,14 @@
 """
-Migration 0006 - Precomputing workflow crawl stats
+Migration 0007 - Workflows changes
+
+- Rename colls to autoAddCollections 
+- Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
 from btrixcloud.crawlconfigs import update_config_crawl_stats
 from btrixcloud.migrations import BaseMigration
 
 
-MIGRATION_VERSION = "0006"
+MIGRATION_VERSION = "0007"
 
 
 class Migration(BaseMigration):
@@ -15,15 +18,12 @@ class Migration(BaseMigration):
         super().__init__(mdb, migration_version)
 
     async def migrate_up(self):
-        """Perform migration up.
-
-        Add data on workflow crawl statistics that was previously dynamically
-        computed when needed to the database.
-        """
+        """Perform migration up."""
         # pylint: disable=duplicate-code
         crawl_configs = self.mdb["crawl_configs"]
         crawls = self.mdb["crawls"]
 
+        # Update workflows crawl stats to populate crawlSuccessfulCount
         configs = [res async for res in crawl_configs.find({"inactive": {"$ne": True}})]
         if not configs:
             return
@@ -35,3 +35,7 @@ class Migration(BaseMigration):
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)
+
+        # Rename colls to autoAddCollections
+        await crawl_configs.update_many({}, {"$set": {"autoAddCollections": "$colls"}})
+        await crawl_configs.update_many({}, {"$unset": {"colls": 1}})

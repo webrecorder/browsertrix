@@ -19,7 +19,7 @@ def test_workflow_crawl_auto_added_to_collection(
     assert auto_add_collection_id in r.json()["collections"]
 
 
-def test_workflow_crawl_auto_added_to_collection(
+def test_workflow_crawl_auto_added_subsequent_runs(
     crawler_auth_headers,
     default_org_id,
     auto_add_collection_id,
