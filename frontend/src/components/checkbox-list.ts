@@ -26,6 +26,7 @@ export class CheckboxListItem extends LitElement {
     hostVars,
     css`
       .item {
+        display: block;
         cursor: pointer;
         transition-property: background-color, box-shadow;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -37,8 +38,6 @@ export class CheckboxListItem extends LitElement {
         border-bottom: var(--item-border-bottom, 0);
         border-radius: var(--item-border-radius, 0);
         box-shadow: var(--item-box-shadow, none);
-        display: flex;
-        align-items: center;
       }
 
       .item:hover,
@@ -52,17 +51,18 @@ export class CheckboxListItem extends LitElement {
         box-shadow: var(--sl-shadow-small);
       }
 
-      .checkbox {
-        --checkbox-margin: 0.625rem;
-        flex: 0 0 auto;
-        margin-top: var(--checkbox-margin);
-        margin-bottom: var(--checkbox-margin);
-        margin-left: var(--sl-spacing-small);
-        margin-right: calc(var(--sl-spacing-small) - 0.5em);
+      .checkbox::part(base) {
+        display: flex;
+        align-items: center;
       }
 
-      .content {
+      .checkbox::part(control) {
+        margin: 0.625rem var(--sl-spacing-small);
+      }
+
+      .checkbox::part(label) {
         flex-grow: 1;
+        margin-inline-start: 0;
       }
 
       .group {
@@ -93,33 +93,10 @@ export class CheckboxListItem extends LitElement {
   }
 
   render() {
-    return html`
-      <div
-        class="item"
-        role="checkbox"
-        aria-checked=${this.checked &&
-        (this.group && !this.allChecked ? "mixed" : "true")}
-        aria-disabled=${this.disabled}
-        @click=${async (e: MouseEvent) => {
-          if (this.disabled) return;
-          this.onChange(!this.checkbox.checked);
-        }}
-      >
-        ${this.renderCheckbox()}
-        <div class="content">
-          <slot></slot>
-        </div>
-      </div>
-      ${this.group
-        ? html`<div class="group"><slot name="group"></slot></div>`
-        : ""}
-    `;
-  }
-
-  private renderCheckbox() {
     const isIndeterminate = this.group && this.checked && !this.allChecked;
-    return html`<div class="checkbox">
+    return html`
       <sl-checkbox
+        class="item checkbox"
         ?checked=${this.checked && !isIndeterminate}
         ?indeterminate=${isIndeterminate}
         ?disabled=${this.disabled}
@@ -130,8 +107,13 @@ export class CheckboxListItem extends LitElement {
           e.stopPropagation();
           this.onChange((e.target as SlCheckbox).checked);
         }}
-      ></sl-checkbox>
-    </div>`;
+      >
+        <slot></slot>
+      </sl-checkbox>
+      ${this.group
+        ? html`<div class="group"><slot name="group"></slot></div>`
+        : ""}
+    `;
   }
 
   private async onChange(value: boolean) {

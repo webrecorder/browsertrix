@@ -101,11 +101,11 @@ const theme = css`
   }
 
   /* Add more spacing between label, input and help text */
-  .form-label,
-  btrix-tag-input::part(form-control-label),
-  sl-input::part(form-control-label),
-  sl-textarea::part(form-control-label),
-  sl-select::part(form-control-label) {
+  .form-label:not([aria-hidden="true"]),
+  btrix-tag-input::part(form-control-label):not([aria-hidden="true"]),
+  sl-input::part(form-control-label):not([aria-hidden="true"]),
+  sl-textarea::part(form-control-label):not([aria-hidden="true"]),
+  sl-select::part(form-control-label):not([aria-hidden="true"]) {
     display: block;
     line-height: 1.4;
     margin-bottom: 0.375rem;
