@@ -8,6 +8,7 @@ SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
 
 _coll_id = None
+_second_coll_id = None
 
 
 def test_create_collection(
@@ -111,6 +112,9 @@ def test_rename_collection_taken_name(
     assert r.status_code == 200
     data = r.json()
     assert data["added"]["name"] == SECOND_COLLECTION_NAME
+
+    global _second_coll_id
+    _second_coll_id = data["added"]["id"]
 
     # Try to rename first coll to second collection's name
     r = requests.post(
@@ -296,3 +300,20 @@ def test_filter_sort_collections(
     assert items[0]["description"] == DESCRIPTION
     assert items[1]["name"] == SECOND_COLLECTION_NAME
     assert items[1].get("description") is None
+
+
+def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Delete second collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}/delete",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    # Verify collection id was removed from crawl
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _second_coll_id not in r.json()["collections"]

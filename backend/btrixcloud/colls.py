@@ -234,6 +234,18 @@ class CollectionOps:
         """Return list of collection names"""
         return await self.collections.distinct("name", {"oid": org.id})
 
+    async def delete_collection(self, coll_id: uuid.UUID, org: Organization):
+        """Delete collection and remove from associated crawls."""
+        crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
+        for crawl_id in crawl_ids:
+            await self.crawls.remove_from_collection(crawl_id, coll_id)
+
+        result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
+        if result.deleted_count < 1:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -359,5 +371,14 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.remove_crawl_from_collection(coll_id, crawlId)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/delete",
+        tags=["collections"],
+    )
+    async def delete_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await colls.delete_collection(coll_id, org)
 
     return colls
