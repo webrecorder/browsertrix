@@ -48,7 +48,7 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
 
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    while data["state"] in ("running", "waiting"):
+    while data["state"] in ("running", "waiting_capacity"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] == "canceled"
@@ -87,7 +87,7 @@ def test_start_crawl_and_stop_immediately(
     )
     assert r.json()["lastCrawlStopping"] == True
 
-    while data["state"] in ("starting", "running", "waiting"):
+    while data["state"] in ("starting", "running", "waiting_capacity"):
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] in ("canceled", "partial_complete")
