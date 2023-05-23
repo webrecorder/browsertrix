@@ -37,9 +37,11 @@ RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
 
 RUNNING_AND_STARTING_STATES = ("starting", "waiting", *RUNNING_STATES)
 
-NON_RUNNING_STATES = ("complete", "canceled", "partial_complete", "timed_out", "failed")
+FAILED_STATES = ("canceled", "failed")
 
-ALL_CRAWL_STATES = (*NON_RUNNING_STATES, *RUNNING_AND_STARTING_STATES)
+SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *FAILED_STATES, *SUCCESSFUL_STATES)
 
 
 # ============================================================================
@@ -164,6 +166,9 @@ class ListCrawlOut(BaseMongoModel):
 
     collections: Optional[List[UUID4]] = []
 
+    files: Optional[List[CrawlFile]] = []
+    resources: Optional[List[CrawlFileOut]] = []
+
 
 # ============================================================================
 class CrawlCompleteIn(BaseModel):
@@ -225,6 +230,7 @@ class CrawlOps:
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = -1,
+        resources: bool = False,
     ):
         """List all finished crawls from the db"""
         # pylint: disable=too-many-locals,too-many-branches
@@ -260,7 +266,6 @@ class CrawlOps:
             {"$match": query},
             {"$set": {"fileSize": {"$sum": "$files.size"}}},
             {"$set": {"fileCount": {"$size": "$files"}}},
-            {"$unset": ["files"]},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject"]},
@@ -279,6 +284,9 @@ class CrawlOps:
                 }
             },
         ]
+
+        if not resources:
+            aggregate.extend([{"$unset": ["files"]}])
 
         if name:
             aggregate.extend([{"$match": {"name": name}}])
@@ -337,7 +345,9 @@ class CrawlOps:
         crawls = []
         for result in items:
             crawl = ListCrawlOut.from_dict(result)
-            crawl = await self._resolve_crawl_refs(crawl, org, add_first_seed=False)
+            crawl = await self._resolve_crawl_refs(
+                crawl, org, add_first_seed=False, resources=resources
+            )
             crawls.append(crawl)
 
         return crawls, total
@@ -377,8 +387,10 @@ class CrawlOps:
         crawl: Union[CrawlOut, ListCrawlOut],
         org: Optional[Organization],
         add_first_seed: bool = True,
+        resources: bool = False,
     ):
         """Resolve running crawl data"""
+        # pylint: disable=too-many-branches
         config = await self.crawl_configs.get_crawl_config(
             crawl.cid, org, active_only=False
         )
@@ -417,6 +429,14 @@ class CrawlOps:
             # redis not available, ignore
             except exceptions.ConnectionError:
                 pass
+
+        if resources and crawl.state in SUCCESSFUL_STATES:
+            crawl.resources = await self._resolve_signed_urls(
+                crawl.files, org, crawl.id
+            )
+
+        if crawl.files:
+            crawl.files = None
 
         return crawl
 

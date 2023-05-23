@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException
 
 from pydantic import BaseModel, UUID4, Field
 
-from .crawls import CrawlFileOut
+from .crawls import CrawlFileOut, SUCCESSFUL_STATES
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -285,22 +285,23 @@ class CollectionOps:
     async def get_collection_crawl_resources(
         self, coll_id: uuid.UUID, org: Organization
     ):
-        """Find collection and get all crawl resources"""
-
+        """Return pre-signed resources for all collection crawl files."""
         coll = await self.get_collection(coll_id, org)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         all_files = []
 
-        crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
-        for crawl_id in crawl_ids:
-            crawl = await self.crawls.get_crawl(crawl_id, org)
-            if not crawl.resources:
-                continue
+        crawls, _ = await self.crawls.list_crawls(
+            collection_id=coll_id,
+            state=SUCCESSFUL_STATES,
+            page_size=10_000,
+            resources=True,
+        )
 
-            for resource in crawl.resources:
-                all_files.append(resource)
+        for crawl in crawls:
+            if crawl.resources:
+                all_files.extend(crawl.resources)
 
         return all_files
 
