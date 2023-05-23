@@ -545,7 +545,7 @@ export class CrawlsList extends LiteElement {
         ${msg("Copy Crawl ID")}
       </sl-menu-item>
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(crawl.tags.join(","))}
+        @click=${() => CopyButton.copyToClipboard(crawl.tags.join(", "))}
         ?disabled=${!crawl.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
