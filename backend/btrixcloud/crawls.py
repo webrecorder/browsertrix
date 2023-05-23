@@ -192,7 +192,7 @@ class UpdateCrawl(BaseModel):
 class CrawlOps:
     """Crawl Ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
         self.crawls = mdb["crawls"]
         self.collections = mdb["collections"]
@@ -828,6 +828,15 @@ class CrawlOps:
         )
         if not result:
             raise HTTPException(status_code=404, detail="crawl_not_found")
+
+    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
+        """Remove collection id from all crawls it's currently in."""
+        result = await self.crawls.update_many(
+            {"collections": collection_id},
+            {"$pull": {"collections": collection_id}},
+        )
+        if result.modified_count < 1:
+            raise HTTPException(status_code=404, detail="crawls_not_found")
 
     async def get_crawls_in_collection(self, collection_id: uuid.UUID):
         """Get list of ids for crawls in a given collection."""
