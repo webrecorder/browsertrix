@@ -179,6 +179,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["name"] == UPDATED_NAME
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
+    assert data["crawlCount"] == 2
 
 
 def test_get_collection_crawl_resources(
@@ -216,12 +217,30 @@ def test_list_collections(
     assert first_coll["name"] == UPDATED_NAME
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
+    assert first_coll["crawlCount"] == 2
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
     assert second_coll["name"] == SECOND_COLLECTION_NAME
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
+    assert second_coll["crawlCount"] == 1
+
+
+def test_list_collections_no_crawl_count(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?crawlCount=False",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+    items = data["items"]
+    assert len(items) == 2
+    for coll in items:
+        assert coll.get("crawlCount") is None
 
 
 def test_filter_sort_collections(

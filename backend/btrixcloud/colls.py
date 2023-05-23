@@ -35,6 +35,13 @@ class CollIn(BaseModel):
 
 
 # ============================================================================
+class CollOut(Collection):
+    """Collection output model with annotations."""
+
+    crawlCount: Optional[int] = 0
+
+
+# ============================================================================
 class UpdateColl(BaseModel):
     """Update collection"""
 
@@ -129,7 +136,9 @@ class CollectionOps:
     async def get_collection(self, coll_id: uuid.UUID):
         """Get collection by id"""
         res = await self.collections.find_one({"_id": coll_id})
-        return Collection.from_dict(res) if res else None
+        crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
+        res["crawlCount"] = len(crawl_ids)
+        return CollOut.from_dict(res) if res else None
 
     async def find_collections(self, oid: uuid.UUID, names: List[str]):
         """Find all collections for org given a list of names"""
@@ -156,6 +165,7 @@ class CollectionOps:
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = 1,
+        crawl_count: bool = True,
         name: Optional[str] = None,
     ):
         """List all collections for org"""
@@ -170,6 +180,31 @@ class CollectionOps:
             match_query["name"] = name
 
         aggregate = [{"$match": match_query}]
+
+        if crawl_count:
+            aggregate.extend(
+                [
+                    {
+                        "$lookup": {
+                            "from": "crawls",
+                            "let": {"collection_id": "$_id"},
+                            "pipeline": [
+                                {
+                                    "$match": {
+                                        "$expr": {
+                                            "$in": ["$$collection_id", "$collections"]
+                                        }
+                                    }
+                                }
+                            ],
+                            "as": "collectionCrawls",
+                        }
+                    },
+                    {"$set": {"crawlCount": {"$size": "$collectionCrawls"}}},
+                ]
+            )
+        else:
+            aggregate.extend([{"$set": {"crawlCount": None}}])
 
         if sort_by:
             if sort_by not in ("name", "description"):
@@ -205,7 +240,7 @@ class CollectionOps:
         except (IndexError, ValueError):
             total = 0
 
-        collections = [Collection.from_dict(res) for res in items]
+        collections = [CollOut.from_dict(res) for res in items]
 
         return collections, total
 
@@ -275,6 +310,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         sortBy: str = None,
         sortDirection: int = 1,
         name: Optional[str] = None,
+        crawlCount: Optional[bool] = True,
     ):
         collections, total = await colls.list_collections(
             org.id,
@@ -282,6 +318,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            crawl_count=crawlCount,
             name=name,
         )
         return paginated_format(collections, total, page, pageSize)
@@ -315,7 +352,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/{coll_id}",
         tags=["collections"],
-        response_model=Collection,
+        response_model=CollOut,
     )
     async def get_collection(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
