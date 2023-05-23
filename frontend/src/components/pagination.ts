@@ -99,7 +99,6 @@ export class Pagination extends LitElement {
         grid-gap: var(--sl-spacing-x-small);
         margin: 0 var(--sl-spacing-x-small);
         align-items: center;
-        align-items: center;
         font-weight: 500;
         transition: opacity 0.2s;
         min-height: 1.5rem;
@@ -118,6 +117,11 @@ export class Pagination extends LitElement {
         display: block;
         width: var(--sl-spacing-medium);
         height: var(--sl-spacing-medium);
+      }
+
+      .compact .navButton {
+        display: flex;
+        justify-content: center;
       }
     `,
   ];

@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { until } from "lit/directives/until.js";
 import { guard } from "lit/directives/guard.js";
+import { styleMap } from "lit/directives/style-map.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
 import omit from "lodash/fp/omit";
@@ -41,7 +42,8 @@ const finishedCrawlStates: CrawlState[] = [
   "partial_complete",
   "timed_out",
 ];
-const INITIAL_PAGE_SIZE = 5;
+const WORKFLOW_PAGE_SIZE = 10;
+const CRAWL_PAGE_SIZE = 5;
 const MIN_SEARCH_LENGTH = 2;
 
 export type CollectionSubmitEvent = CustomEvent<{
@@ -77,6 +79,11 @@ export class CollectionEditor extends LiteElement {
   @state()
   private workflowCrawls: {
     [workflowId: string]: Promise<Crawl[]>;
+  } = {};
+
+  @state()
+  private selectedWorkflowPagination: {
+    [workflowId: string]: APIPaginationQuery;
   } = {};
 
   @state()
@@ -239,7 +246,12 @@ export class CollectionEditor extends LiteElement {
           </h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
-              [this.collection, this.workflowCrawls, this.selectedCrawls],
+              [
+                this.collection,
+                this.workflowCrawls,
+                this.selectedCrawls,
+                this.selectedWorkflowPagination,
+              ],
               this.renderCollectionWorkflowList
             )}
           </div>
@@ -247,7 +259,10 @@ export class CollectionEditor extends LiteElement {
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
           <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
-            ${this.renderWorkflowListControls()}
+            ${guard(
+              [this.searchResultsOpen, this.searchByValue, this.filterBy],
+              this.renderWorkflowListControls
+            )}
           </div>
           <div class="flex-1">
             ${guard(
@@ -394,14 +409,10 @@ export class CollectionEditor extends LiteElement {
             );
             this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
           };
-          if (e.detail.checked) {
+          if (e.detail.checked || !allChecked) {
             checkAll();
-          } else if (allChecked) {
-            this.selectedCrawls = omit(crawls.map(({ id }) => id))(
-              this.selectedCrawls
-            ) as any;
           } else {
-            checkAll();
+            this.deselectWorkflow(workflowId, crawls);
           }
         }}
       >
@@ -426,18 +437,61 @@ export class CollectionEditor extends LiteElement {
             </btrix-button>
           </div>
         </div>
-        <div
+        <section
           id=${`workflow-${workflowId}-group`}
           slot="group"
           class="checkboxGroup transition-all overflow-hidden"
         >
-          <btrix-checkbox-group-list>
-            ${crawls.map((crawl) => this.renderCrawl(crawl, workflowId))}
-          </btrix-checkbox-group-list>
-        </div>
+          ${guard(
+            [this.selectedCrawls, this.selectedWorkflowPagination[workflowId]],
+            () => this.renderWorkflowCrawlList(crawls, workflowId)
+          )}
+        </section>
       </btrix-checkbox-list-item>
     `;
   }
+
+  private renderWorkflowCrawlList = (crawls: Crawl[], workflowId: string) => {
+    const { page = 1 } = this.selectedWorkflowPagination[workflowId];
+    return html`
+      <div
+        style=${styleMap({
+          // Prevent list from collapsing when page has less items
+          // TODO replace hardcoded item height
+          "min-height":
+            crawls.length > CRAWL_PAGE_SIZE ? `${CRAWL_PAGE_SIZE * 40}px` : "0",
+        })}
+      >
+        <btrix-checkbox-group-list>
+          ${crawls
+            .slice((page - 1) * CRAWL_PAGE_SIZE, page * CRAWL_PAGE_SIZE)
+            .map((crawl) => this.renderCrawl(crawl, workflowId))}
+        </btrix-checkbox-group-list>
+      </div>
+
+      ${when(
+        crawls.length > CRAWL_PAGE_SIZE,
+        () => html`
+          <footer class="flex justify-center">
+            <btrix-pagination
+              page=${page}
+              totalCount=${crawls.length}
+              size=${CRAWL_PAGE_SIZE}
+              compact
+              @page-change=${async (e: PageChangeEvent) => {
+                this.selectedWorkflowPagination = mergeDeep(
+                  this.selectedWorkflowPagination,
+                  {
+                    [workflowId]: { page: e.detail.page },
+                  }
+                );
+              }}
+            ></btrix-pagination>
+          </footer>
+        `
+      )}
+    `;
+  };
 
   private renderCrawl(crawl: Crawl, workflowId?: string) {
     return html`
@@ -498,13 +552,13 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderWorkflowListControls() {
+  private renderWorkflowListControls = () => {
     return html`
       <div class="flex flex-wrap items-center md:gap-4 gap-2">
         <div class="grow">${this.renderSearch()}</div>
       </div>
     `;
-  }
+  };
 
   private renderSearch() {
     return html`
@@ -613,21 +667,6 @@ export class CollectionEditor extends LiteElement {
     `;
   };
 
-  private renderFormCol = (content: TemplateResult) => {
-    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
-  };
-
-  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
-    return html`
-      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
-        <div class="text-base mr-2">
-          <sl-icon name="info-circle"></sl-icon>
-        </div>
-        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
-      </div>
-    `;
-  }
-
   // TODO consolidate collections/workflow name
   private renderWorkflowName(workflow: Workflow) {
     if (workflow.name)
@@ -687,9 +726,7 @@ export class CollectionEditor extends LiteElement {
               )
             );
           } else {
-            this.selectedCrawls = omit(workflowCrawls.map(({ id }) => id))(
-              this.selectedCrawls
-            ) as any;
+            this.deselectWorkflow(workflow.id, workflowCrawls);
           }
         }}
       >
@@ -733,6 +770,19 @@ export class CollectionEditor extends LiteElement {
         </div>
       </div>
     `;
+  }
+
+  private deselectWorkflow(workflowId: string, crawls: Crawl[]) {
+    this.selectedCrawls = omit(crawls.map(({ id }) => id))(
+      this.selectedCrawls
+    ) as any;
+    // Reset pagination
+    this.selectedWorkflowPagination = mergeDeep(
+      this.selectedWorkflowPagination,
+      {
+        [workflowId]: { page: 1 },
+      }
+    );
   }
 
   private onWorkflowExpandClick =
@@ -821,7 +871,7 @@ export class CollectionEditor extends LiteElement {
       this.workflows = await this.getWorkflows({
         page: params.page || this.workflows?.page || 1,
         pageSize:
-          params.pageSize || this.workflows?.pageSize || INITIAL_PAGE_SIZE,
+          params.pageSize || this.workflows?.pageSize || WORKFLOW_PAGE_SIZE,
         sortBy: "lastCrawlTime",
         sortDirection: -1,
       });
@@ -864,7 +914,17 @@ export class CollectionEditor extends LiteElement {
         state: finishedCrawlStates,
       })
         // TODO remove omit once API removes
-        .then((data) => data.items.map(omit("errors")))
+        .then(({ items }) => {
+          // Initial pagination setup
+          this.selectedWorkflowPagination = mergeDeep(
+            this.selectedWorkflowPagination,
+            {
+              [workflowId]: { page: 1 },
+            }
+          );
+
+          return items.map(omit("errors"));
+        })
         .catch((err: any) => {
           console.debug(err);
           this.workflowCrawls = omit([workflowId], this.workflowCrawls);
