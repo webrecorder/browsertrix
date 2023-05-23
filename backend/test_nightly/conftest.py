@@ -1,6 +1,7 @@
 import pytest
 import requests
 import time
+import datetime
 
 
 HOST_PREFIX = "http://127.0.0.1:30870"
@@ -257,3 +258,14 @@ def error_crawl_id(admin_auth_headers, default_org_id):
         if data["state"] == "complete":
             return crawl_id
         time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def org_with_quotas(admin_auth_headers):
+    name = "Quota Org " + datetime.datetime.utcnow().isoformat()
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create", headers=admin_auth_headers, json={"name": name}
+    )
+    data = r.json()
+
+    return data["id"]

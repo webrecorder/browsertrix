@@ -471,9 +471,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
             users={},
             storage=DefaultStorage(name="default", path=storage_path),
         )
-        await ops.add_org(org)
+        if not await ops.add_org(org):
+            return {"added": False, "error": "already_exists"}
 
-        return {"added": True}
+        return {"id": id_, "added": True}
 
     @router.get("", tags=["organizations"])
     async def get_org(
