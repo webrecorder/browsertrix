@@ -926,7 +926,7 @@ export class WorkflowDetail extends LiteElement {
 
     let waitingMsg = null;
 
-    switch (this.workflow.currCrawlState) {
+    switch (this.workflow.lastCrawlState) {
       case "starting":
         waitingMsg = msg("Crawl starting...");
         break;
