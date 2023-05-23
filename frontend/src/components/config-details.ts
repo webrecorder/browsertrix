@@ -341,12 +341,11 @@ export class ConfigDetails extends LiteElement {
     if (!this.anchorLinks) return;
     const currentUrl = window.location.href;
     return html`
-      <a
-        href=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-        class="text-base hover:text-primary mr-1"
-      >
-        <sl-icon name="link-45deg" class="inline-block align-middle"></sl-icon>
-      </a>
+      <btrix-copy-button
+        value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
+        name="link-45deg"
+        content=${msg("Copy Link to Section")}
+      ></btrix-copy-button>
     `;
   }
 
