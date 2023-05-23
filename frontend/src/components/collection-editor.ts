@@ -129,9 +129,15 @@ export class CollectionEditor extends LiteElement {
 
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
-      this.fetchWorkflows();
       this.fetchSearchValues();
     }
+    if (
+      (changedProperties.has("orgId") && this.orgId) ||
+      changedProperties.has("filterBy")
+    ) {
+      this.fetchWorkflows();
+    }
+
     if (changedProperties.has("collection") && this.collection) {
       this.selectedCrawls = this.collection.crawlIds.reduce(
         (acc, id) => ({
@@ -161,17 +167,22 @@ export class CollectionEditor extends LiteElement {
         activePanel="collectionForm-${this.activeTab}"
         progressPanel="collectionForm-${this.activeTab}"
       >
-        <h3 slot="header" class="font-semibold">
-          ${this.tabLabels[this.activeTab]}
-        </h3>
+        ${guard(
+          [this.activeTab],
+          () => html`
+            <h3 slot="header" class="font-semibold">
+              ${this.tabLabels[this.activeTab]}
+            </h3>
 
-        ${TABS.map(this.renderTab)}
+            ${TABS.map(this.renderTab)}
+          `
+        )}
 
         <btrix-tab-panel name="collectionForm-crawls">
           ${this.renderSelectCrawls()}
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-metadata">
-          ${this.renderMetadata()}
+          ${guard([this.collection, this.isSubmitting], this.renderMetadata)}
         </btrix-tab-panel>
       </btrix-tab-list>
     </form>`;
@@ -212,7 +223,7 @@ export class CollectionEditor extends LiteElement {
     `;
   };
 
-  private renderSelectCrawls() {
+  private renderSelectCrawls = () => {
     return html`
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
@@ -220,7 +231,10 @@ export class CollectionEditor extends LiteElement {
             ${msg("Crawls in Collection")}
           </h4>
           <div class="border rounded-lg py-2 flex-1">
-            ${this.renderCollectionWorkflowList()}
+            ${guard(
+              [this.collection, this.workflowCrawls, this.selectedCrawls],
+              this.renderCollectionWorkflowList
+            )}
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
@@ -228,7 +242,12 @@ export class CollectionEditor extends LiteElement {
           <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
             ${this.renderWorkflowListControls()}
           </div>
-          <div class="flex-1">${this.renderWorkflowList()}</div>
+          <div class="flex-1">
+            ${guard(
+              [this.workflows, this.workflowCrawls, this.selectedCrawls],
+              this.renderWorkflowList
+            )}
+          </div>
           <footer class="mt-4 flex justify-center">
             ${when(
               this.workflows?.total,
@@ -264,9 +283,9 @@ export class CollectionEditor extends LiteElement {
         </footer>
       </section>
     `;
-  }
+  };
 
-  private renderMetadata() {
+  private renderMetadata = () => {
     return html`
       <section class="border rounded-lg">
         <div class="p-6 grid grid-cols-5 gap-4">
@@ -307,9 +326,9 @@ export class CollectionEditor extends LiteElement {
         </footer>
       </section>
     `;
-  }
+  };
 
-  private renderCollectionWorkflowList() {
+  private renderCollectionWorkflowList = () => {
     // TODO show crawls in collection
     const crawls = Object.values(this.selectedCrawls);
     if (!crawls.length) {
@@ -340,7 +359,7 @@ export class CollectionEditor extends LiteElement {
         )}
       </btrix-checkbox-list>
     `;
-  }
+  };
 
   private renderWorkflowCrawls(workflowId: string, crawls: Crawl[]) {
     const selectedCrawlIds = Object.keys(this.selectedCrawls).filter((id) =>
@@ -502,7 +521,7 @@ export class CollectionEditor extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by Workflow Name or Crawl Start URL")}
+          placeholder=${msg("Search by name or Crawl Start URL")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
@@ -512,11 +531,6 @@ export class CollectionEditor extends LiteElement {
             this.filterBy = otherFilters;
           }}
           @sl-input=${this.onSearchInput}
-          @focus=${() => {
-            if (this.hasSearchStr) {
-              this.searchResultsOpen = true;
-            }
-          }}
         >
           ${when(
             this.selectedSearchFilterKey,
@@ -574,7 +588,7 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderWorkflowList() {
+  private renderWorkflowList = () => {
     if (!this.workflows) {
       return html`
         <div class="w-full flex items-center justify-center my-24 text-3xl">
@@ -590,7 +604,7 @@ export class CollectionEditor extends LiteElement {
         )}
       </btrix-checkbox-list>
     `;
-  }
+  };
 
   private renderFormCol = (content: TemplateResult) => {
     return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
@@ -817,7 +831,10 @@ export class CollectionEditor extends LiteElement {
   private async getWorkflows(
     params: APIPaginationQuery & APISortQuery
   ): Promise<APIPaginatedList> {
-    const query = queryString.stringify(params);
+    const query = queryString.stringify({
+      ...params,
+      ...this.filterBy,
+    });
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       this.authState!
