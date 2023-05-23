@@ -199,15 +199,22 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["modified"] >= modified
 
 
-def test_get_collection_crawl_resources(
+def test_get_collection_replay(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/crawl-resources",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
+    assert data["id"] == _coll_id
+    assert data["name"] == UPDATED_NAME
+    assert data["oid"] == default_org_id
+    assert data["description"] == DESCRIPTION
+    assert data["crawlCount"] == 2
+    assert data["modified"] >= modified
+
     resources = data["resources"]
     assert resources
     for resource in resources:

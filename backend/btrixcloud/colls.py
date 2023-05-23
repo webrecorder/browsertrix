@@ -10,6 +10,7 @@ from fastapi import Depends, HTTPException
 
 from pydantic import BaseModel, UUID4, Field
 
+from .crawls import CrawlFileOut
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -42,6 +43,7 @@ class CollOut(Collection):
     """Collection output model with annotations."""
 
     crawlCount: Optional[int] = 0
+    resources: Optional[List[CrawlFileOut]] = []
 
 
 # ============================================================================
@@ -159,9 +161,15 @@ class CollectionOps:
 
         return await self._get_annotated_coll_out(result, coll_id)
 
-    async def get_collection(self, coll_id: uuid.UUID):
+    async def get_collection(
+        self, coll_id: uuid.UUID, org: Organization, resources=False
+    ):
         """Get collection by id"""
         result = await self.collections.find_one({"_id": coll_id})
+        if resources:
+            result["resources"] = await self.get_collection_crawl_resources(
+                coll_id, org
+            )
         return await self._get_annotated_coll_out(result, coll_id)
 
     async def _get_annotated_coll_out(self, result, coll_id: uuid.UUID):
@@ -274,10 +282,12 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawl_resources(self, coll_id: uuid.UUID, oid: uuid.UUID):
+    async def get_collection_crawl_resources(
+        self, coll_id: uuid.UUID, org: Organization
+    ):
         """Find collection and get all crawl resources"""
 
-        coll = await self.get_collection(coll_id)
+        coll = await self.get_collection(coll_id, org)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
@@ -285,7 +295,6 @@ class CollectionOps:
 
         crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
         for crawl_id in crawl_ids:
-            org = await self.orgs.get_org_by_id(oid)
             crawl = await self.crawls.get_crawl(crawl_id, org)
             if not crawl.resources:
                 continue
@@ -293,7 +302,7 @@ class CollectionOps:
             for resource in crawl.resources:
                 all_files.append(resource)
 
-        return {"resources": all_files}
+        return all_files
 
     async def get_collection_names(self, org: Organization):
         """Return list of collection names"""
@@ -387,25 +396,19 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     async def get_collection(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        coll = await colls.get_collection(coll_id)
+        coll = await colls.get_collection(coll_id, org)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
         return coll
 
-    @app.get("/orgs/{oid}/collections/{coll_id}/crawl-resources", tags=["collections"])
-    async def get_collection_crawl_resources(
+    @app.get("/orgs/{oid}/collections/{coll_id}/replay.json", tags=["collections"])
+    async def get_collection_replay(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        try:
-            results = await colls.get_collection_crawl_resources(coll_id, org.id)
-
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=400, detail=f"Error Listing Collection: {exc}"
-            )
-
-        return results
+        coll = await colls.get_collection(coll_id, org, resources=True)
+        if not coll:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+        return coll
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/update",
