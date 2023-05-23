@@ -1,6 +1,5 @@
-import { LitElement, html, css, PropertyValueMap } from "lit";
+import { LitElement, html } from "lit";
 import { state, property } from "lit/decorators.js";
-import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { createWysimark } from "@wysimark/standalone";
 
 export type MarkdownChangeEvent = CustomEvent<{

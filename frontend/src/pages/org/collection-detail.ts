@@ -23,6 +23,9 @@ export class CollectionDetail extends LiteElement {
   @state()
   private collection?: Collection;
 
+  @state()
+  private isEditingDescription = false;
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
@@ -32,12 +35,16 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <h2 class="text-xl font-semibold mb-6">${this.collection?.name}</h2>
-      <sl-button
-        href=${`/orgs/${this.orgId}/collections/edit/${this.collectionId}`}
-        >edit</sl-button
-      >
-      ${this.renderDetail()}`;
+      <header class="md:flex justify-between items-end">
+        <h2
+          class="flex-1 min-w-0 text-xl font-semibold leading-10 truncate mr-2"
+        >
+          ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
+        </h2>
+        ${when(this.isCrawler, this.renderActions)}
+      </header>
+      <hr class="my-4" />
+      ${this.renderDescription()} ${this.renderReplay()} `;
   }
 
   private renderHeader = () => html`
@@ -55,7 +62,78 @@ export class CollectionDetail extends LiteElement {
     </nav>
   `;
 
-  private renderDetail() {
+  private renderActions = () => {
+    return html`
+      <sl-dropdown placement="bottom-end" distance="4" hoist>
+        <sl-button slot="trigger" size="small" caret
+          >${msg("Actions")}</sl-button
+        >
+        <sl-menu>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `/orgs/${this.orgId}/collections/edit/${this.collectionId}`
+              )}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Collection")}
+          </sl-menu-item>
+        </sl-menu>
+      </sl-dropdown>
+    `;
+  };
+
+  private renderDescription() {
+    return html`
+      <section>
+        <header class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
+            ${msg("Description")}
+          </h3>
+          ${when(this.isCrawler, () =>
+            this.isEditingDescription
+              ? html`<sl-icon-button
+                  class="text-base"
+                  name="x-lg"
+                  @click=${() => (this.isEditingDescription = false)}
+                  label=${msg("Cancel editing description")}
+                ></sl-icon-button>`
+              : html`
+                  <sl-icon-button
+                    class="text-base"
+                    name="pencil"
+                    @click=${() => (this.isEditingDescription = true)}
+                    label=${msg("Edit description")}
+                  ></sl-icon-button>
+                `
+          )}
+        </header>
+        <main>
+          ${when(
+            this.isEditingDescription,
+            () => html`<btrix-markdown-editor
+              initialValue=${this.collection?.description || ""}
+              @on-change=${console.log}
+            ></btrix-markdown-editor>`,
+            () =>
+              html`
+                <div class="border rounded-lg p-5">
+                  ${this.collection?.description
+                    ? html`<btrix-markdown-viewer
+                        value=${this.collection!.description}
+                      ></btrix-markdown-viewer>`
+                    : html`<div class="text-center text-neutral-400">
+                        ${msg("No description added.")}
+                      </div>`}
+                </div>
+              `
+          )}
+        </main>
+      </section>
+    `;
+  }
+
+  private renderReplay() {
     return html`TODO`;
   }
 
@@ -78,12 +156,17 @@ export class CollectionDetail extends LiteElement {
   }
 
   private async getCollection(): Promise<Collection> {
-    const data: Collection = await this.apiFetch(
-      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+    // TODO replace endpoint once resource endpoint returns metadata
+    // const data = await this.apiFetch(
+    //   `/orgs/${this.orgId}/collections/${this.collectionId}`,
+    //   this.authState!
+    // );
+    const data: any = await this.apiFetch(
+      `/orgs/${this.orgId}/collections`,
       this.authState!
     );
 
-    return data;
+    return data.items.find(({ id }: any) => id === this.collectionId);
   }
 }
 customElements.define("btrix-collection-detail", CollectionDetail);

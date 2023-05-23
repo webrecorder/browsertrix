@@ -137,6 +137,9 @@ import("./combobox").then(({ Combobox }) => {
 import("./markdown-editor").then(({ MarkdownEditor }) => {
   customElements.define("btrix-markdown-editor", MarkdownEditor);
 });
+import("./markdown-viewer").then(({ MarkdownViewer }) => {
+  customElements.define("btrix-markdown-viewer", MarkdownViewer);
+});
 import("./collection-editor").then(({ CollectionEditor }) => {
   customElements.define("btrix-collection-editor", CollectionEditor);
 });

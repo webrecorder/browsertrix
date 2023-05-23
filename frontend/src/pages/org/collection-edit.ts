@@ -53,12 +53,14 @@ export class CollectionEdit extends LiteElement {
     <nav class="mb-5">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-        href=${`/orgs/${this.orgId}/collections`}
+        href=${`/orgs/${this.orgId}/collections/view/${this.collectionId}`}
         @click=${this.navLink}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
         <span class="inline-block align-middle"
-          >${msg("Back to Collections")}</span
+          >${msg(
+            str`Back to ${this.collection?.name || msg("Collection")}`
+          )}</span
         >
       </a>
     </nav>
@@ -86,14 +88,14 @@ export class CollectionEdit extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Successfully created "${data.added.name}" Collection.`
+          str`Successfully updated "${data.added.name}" Collection.`
         ),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
 
-      this.navTo(`/orgs/${this.orgId}/collections`);
+      this.navTo(`/orgs/${this.orgId}/collections/${this.collectionId}`);
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message;

@@ -663,26 +663,21 @@ export class WorkflowDetail extends LiteElement {
           ${when(!this.lastCrawlId, () => {
             const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
             return html`
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() =>
-              shouldDeactivate ? this.deactivate() : this.delete()}
-          >
-            <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${
-              shouldDeactivate
-                ? msg("Deactivate Workflow")
-                : msg("Delete Workflow")
-            }
-          </sl-menu-item>
-            </sl-menu>
-
-      </sl-dropdown>
-        `;
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() =>
+                  shouldDeactivate ? this.deactivate() : this.delete()}
+              >
+                <sl-icon name="trash3" slot="prefix"></sl-icon>
+                ${shouldDeactivate
+                  ? msg("Deactivate Workflow")
+                  : msg("Delete Workflow")}
+              </sl-menu-item>
+            `;
           })}
-        </sl-menu></sl-dropdown
-      >
+        </sl-menu>
+      </sl-dropdown>
     `;
   };
 
