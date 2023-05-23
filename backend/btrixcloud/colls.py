@@ -22,8 +22,6 @@ class Collection(BaseMongoModel):
 
     oid: UUID4
 
-    crawlIds: Optional[List[str]] = []
-
     description: Optional[str]
 
 
@@ -41,7 +39,6 @@ class UpdateColl(BaseModel):
     """Update collection"""
 
     name: Optional[str]
-    crawlIds: Optional[List[str]] = []
     description: Optional[str]
 
 
@@ -82,11 +79,14 @@ class CollectionOps:
             id=coll_id,
             oid=oid,
             name=name,
-            crawlIds=crawl_ids,
             description=description,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
+            org = await self.orgs.get_org_by_id(oid)
+            for crawl_id in crawl_ids:
+                await self.crawls.add_to_collection(crawl_id, coll_id, org)
+
             return {"added": {"id": coll_id, "name": name}}
         except pymongo.errors.DuplicateKeyError:
             # pylint: disable=raise-missing-from
@@ -114,29 +114,17 @@ class CollectionOps:
 
         return Collection.from_dict(result)
 
-    async def add_crawl_to_collection(self, coll_id: uuid.UUID, crawl_id: str):
+    async def add_crawl_to_collection(
+        self, coll_id: uuid.UUID, crawl_id: str, org: Organization
+    ):
         """Add crawl to collection"""
-        result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
-            {"$push": {"crawlIds": crawl_id}},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
-        return Collection.from_dict(result)
+        await self.crawls.add_to_collection(crawl_id, coll_id, org)
+        return {"success": True}
 
     async def remove_crawl_from_collection(self, coll_id: uuid.UUID, crawl_id: str):
         """Remove crawl from collection"""
-        result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
-            {"$pull": {"crawlIds": crawl_id}},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
-        return Collection.from_dict(result)
+        await self.crawls.remove_from_collection(crawl_id, coll_id)
+        return {"success": True}
 
     async def get_collection(self, coll_id: uuid.UUID):
         """Get collection by id"""
@@ -221,7 +209,7 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawls(self, coll_id: uuid.UUID, oid: uuid.UUID):
+    async def get_collection_crawl_resources(self, coll_id: uuid.UUID, oid: uuid.UUID):
         """Find collection and get all crawl resources"""
 
         coll = await self.get_collection(coll_id)
@@ -230,7 +218,8 @@ class CollectionOps:
 
         all_files = []
 
-        for crawl_id in coll.crawlIds:
+        crawl_ids = await self.crawls.get_crawls_in_collection(coll_id)
+        for crawl_id in crawl_ids:
             org = await self.orgs.get_org_by_id(oid)
             crawl = await self.crawls.get_crawl(crawl_id, org)
             if not crawl.resources:
@@ -296,7 +285,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         try:
             all_collections, _ = colls.list_collections(org.id, page_size=10_000)
             for collection in all_collections:
-                results[collection.name] = await colls.get_collection_crawls(
+                results[collection.name] = await colls.get_collection_crawl_resources(
                     org.id, str(collection.id)
                 )
         except Exception as exc:
@@ -313,12 +302,25 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     ):
         return await colls.get_collection_names(org)
 
-    @app.get("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
-    async def get_collection_crawls(
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}",
+        tags=["collections"],
+        response_model=Collection,
+    )
+    async def get_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+    ):
+        coll = await colls.get_collection(coll_id)
+        if not coll:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+        return coll
+
+    @app.get("/orgs/{oid}/collections/{coll_id}/crawl-resources", tags=["collections"])
+    async def get_collection_crawl_resources(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
         try:
-            results = await colls.get_collection_crawls(coll_id, org.id)
+            results = await colls.get_collection_crawl_resources(coll_id, org.id)
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -343,17 +345,15 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/add",
         tags=["collections"],
-        response_model=Collection,
     )
     async def add_crawl_to_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.add_crawl_to_collection(coll_id, crawlId)
+        return await colls.add_crawl_to_collection(coll_id, crawlId, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/remove",
         tags=["collections"],
-        response_model=Collection,
     )
     async def remove_crawl_from_collection(
         crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
