@@ -16,6 +16,9 @@ export class MarkdownEditor extends LitElement {
   @property({ type: String })
   initialValue = "";
 
+  @property({ type: String })
+  name = "markdown";
+
   createRenderRoot() {
     // Disable shadow DOM for styles to work
     return this;
@@ -25,6 +28,13 @@ export class MarkdownEditor extends LitElement {
     const editor = createWysimark(this.querySelector(".markdown-editor")!, {
       initialMarkdown: this.initialValue,
       onChange: () => {
+        const text = editor.getMarkdown();
+        const input = this.querySelector(
+          `input[name=${this.name}]`
+        ) as HTMLTextAreaElement;
+        if (input) {
+          input.value = text;
+        }
         this.dispatchEvent(
           <MarkdownChangeEvent>new CustomEvent("on-change", {
             detail: {
@@ -37,7 +47,8 @@ export class MarkdownEditor extends LitElement {
   }
 
   render() {
-    return html` <style>
+    return html`
+      <style>
         .markdown-editor {
           --blue-100: var(--sl-color-blue-100);
         }
@@ -47,6 +58,8 @@ export class MarkdownEditor extends LitElement {
           border-radius: var(--sl-input-border-radius-medium);
         }
       </style>
-      <div class="markdown-editor font-sm"></div>`;
+      <input name=${this.name} type="hidden" />
+      <div class="markdown-editor font-sm"></div>
+    `;
   }
 }

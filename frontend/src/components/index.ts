@@ -137,6 +137,9 @@ import("./combobox").then(({ Combobox }) => {
 import("./markdown-editor").then(({ MarkdownEditor }) => {
   customElements.define("btrix-markdown-editor", MarkdownEditor);
 });
+import("./collection-editor").then(({ CollectionEditor }) => {
+  customElements.define("btrix-collection-editor", CollectionEditor);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

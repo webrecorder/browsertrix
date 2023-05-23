@@ -6,7 +6,6 @@ import {
   queryAssignedElements,
   state,
 } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 
 export type CheckboxChangeEvent = CustomEvent<{
   checked: boolean;
