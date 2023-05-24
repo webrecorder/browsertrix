@@ -48,7 +48,6 @@ export class CopyButton extends LitElement {
     return html`
       <sl-tooltip content=${this.isCopied ? msg("Copied to clipboard!") : (this.content ? this.content : msg("Copy"))}>
         <sl-icon-button
-          size="small"
           name=${this.isCopied ? "check-lg" : (this.name ? this.name : "files")}
           label=${msg("Copy to clipboard")}
           @click=${this.onClick}
