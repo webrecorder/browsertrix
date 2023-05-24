@@ -428,7 +428,7 @@ export class WorkflowsList extends LiteElement {
         ${msg("Edit Workflow Settings")}
       </sl-menu-item>
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(","))}
+        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(", "))}
         ?disabled=${!workflow.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
