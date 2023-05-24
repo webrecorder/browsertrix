@@ -166,6 +166,11 @@ class ListCrawlOut(BaseMongoModel):
 
     collections: Optional[List[UUID4]] = []
 
+
+# ============================================================================
+class ListCrawlOutWithResources(ListCrawlOut):
+    """Crawl output model used internally with files and resources."""
+
     files: Optional[List[CrawlFile]] = []
     resources: Optional[List[CrawlFileOut]] = []
 
@@ -342,9 +347,13 @@ class CrawlOps:
         except (IndexError, ValueError):
             total = 0
 
+        cls = ListCrawlOut
+        if resources:
+            cls = ListCrawlOutWithResources
+
         crawls = []
         for result in items:
-            crawl = ListCrawlOut.from_dict(result)
+            crawl = cls.from_dict(result)
             crawl = await self._resolve_crawl_refs(
                 crawl, org, add_first_seed=False, resources=resources
             )
@@ -434,9 +443,6 @@ class CrawlOps:
             crawl.resources = await self._resolve_signed_urls(
                 crawl.files, org, crawl.id
             )
-
-        if crawl.files:
-            crawl.files = None
 
         return crawl
 
