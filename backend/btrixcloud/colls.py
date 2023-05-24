@@ -387,6 +387,25 @@ async def update_crawl_collections(collections, crawls, crawl_id: str):
 
 
 # ============================================================================
+async def add_successful_crawl_to_auto_add_collections(crawls, crawl_id: str):
+    """Add successful crawl to its auto-add collections."""
+    await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {
+            "$set": {
+                "collections": {
+                    "$reduce": {
+                        "input": "$autoAddCollections",
+                        "initialValue": [],
+                        "in": {"$concatArrays": ["$$value", "$$this"]},
+                    }
+                }
+            }
+        },
+    )
+
+
+# ============================================================================
 async def remove_failed_crawl_from_collections(crawls, crawl_id: str):
     """Removed cancelled or failed crawl from all collections."""
     await crawls.find_one_and_update({"_id": crawl_id}, {"$set": {"collections": []}})

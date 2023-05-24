@@ -113,6 +113,9 @@ class Crawl(CrawlConfigCore):
 
     collections: Optional[List[UUID4]] = []
 
+    # Auto-added collections tracked here until crawl successfully finishes
+    autoAddCollections: Optional[List[UUID4]] = []
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -238,7 +241,7 @@ class CrawlOps:
         resources: bool = False,
     ):
         """List all finished crawls from the db"""
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -892,7 +895,7 @@ async def add_new_crawl(
         manual=manual,
         started=started,
         tags=crawlconfig.tags,
-        collections=crawlconfig.autoAddCollections,
+        autoAddCollections=crawlconfig.autoAddCollections,
     )
 
     try:
