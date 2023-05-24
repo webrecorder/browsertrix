@@ -62,6 +62,7 @@ async def ping_db(mdb, db_inited):
             db_inited["inited"] = True
             print("DB Ready!")
             break
+        # pylint: disable=broad-exception-caught
         except Exception:
             print("Retrying, waiting for DB to be ready")
             await asyncio.sleep(3)
