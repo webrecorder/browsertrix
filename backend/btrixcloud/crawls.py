@@ -833,7 +833,8 @@ class CrawlOps:
         """Add crawls to collection."""
         for crawl_id in crawl_ids:
             crawl_raw = await self.get_crawl_raw(crawl_id, org)
-            if crawl_id in crawl_raw.get("collections"):
+            crawl_collections = crawl_raw.get("collections")
+            if collections and crawl_id in crawl_collections:
                 raise HTTPException(
                     status_code=400, detail="crawl_already_in_collection"
                 )

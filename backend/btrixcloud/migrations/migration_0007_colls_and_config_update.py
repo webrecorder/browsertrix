@@ -36,6 +36,9 @@ class Migration(BaseMigration):
             except Exception as err:
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)
 
+        # Make sure crawls have collections array
+        await crawls.update_many({"collections": None}, {"$set": {"collections": []}})
+
         # Rename colls to autoAddCollections
         await crawl_configs.update_many({}, {"$unset": {"autoAddCollections": 1}})
         await crawl_configs.update_many(
