@@ -205,6 +205,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
         "runNow": True,
         "name": "Crawler User Test Crawl",
         "description": "crawler test crawl",
+        "tags": ["wr-test-2"],
         "config": {"seeds": [{"url": "https://webrecorder.net/"}], "limit": 1},
     }
     r = requests.post(

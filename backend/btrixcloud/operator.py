@@ -19,6 +19,7 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
+from .colls import update_crawl_collections, remove_failed_crawl_from_collections
 from .crawlconfigs import update_config_crawl_stats
 from .crawls import (
     CrawlFile,
@@ -26,6 +27,7 @@ from .crawls import (
     add_crawl_file,
     update_crawl,
     add_crawl_errors,
+    FAILED_STATES,
 )
 
 
@@ -98,6 +100,7 @@ class BtrixOperator(K8sAPI):
         self.config_file = "/config/config.yaml"
 
         _, mdb = init_db()
+        self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]
@@ -511,6 +514,11 @@ class BtrixOperator(K8sAPI):
 
         status.state = state
         status.finished = to_k8s_date(finished)
+
+        if state in FAILED_STATES:
+            await remove_failed_crawl_from_collections(self.crawls, crawl_id)
+        else:
+            await update_crawl_collections(self.collections, self.crawls, crawl_id)
 
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
