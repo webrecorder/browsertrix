@@ -534,7 +534,9 @@ class BtrixOperator(K8sAPI):
             await self.add_crawl_errors_to_db(redis, crawl_id)
 
         if state in SUCCESSFUL_STATES:
-            await add_successful_crawl_to_auto_add_collections(self.crawls, crawl_id)
+            await add_successful_crawl_to_auto_add_collections(
+                self.crawls, self.crawl_configs, crawl_id, cid
+            )
             await update_crawl_collections(self.collections, self.crawls, crawl_id)
         else:
             await remove_failed_crawl_from_collections(self.crawls, crawl_id)

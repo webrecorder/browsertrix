@@ -113,9 +113,6 @@ class Crawl(CrawlConfigCore):
 
     collections: Optional[List[UUID4]] = []
 
-    # Auto-added collections tracked here until crawl successfully finishes
-    autoAddCollections: Optional[List[UUID4]] = []
-
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -895,7 +892,6 @@ async def add_new_crawl(
         manual=manual,
         started=started,
         tags=crawlconfig.tags,
-        autoAddCollections=crawlconfig.autoAddCollections,
     )
 
     try:
