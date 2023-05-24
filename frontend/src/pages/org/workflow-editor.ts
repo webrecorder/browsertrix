@@ -422,13 +422,13 @@ export class CrawlConfigEditor extends LiteElement {
         formState.primarySeedUrl = primarySeedConfig.url;
       }
       if (
-        primarySeedConfig.scopeType === "custom" &&
         primarySeedConfig.include?.length
       ) {
         formState.customIncludeUrlList = primarySeedConfig.include
           // Unescape regex
           .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
           .join("\n");
+        formState.scopeType = "custom";
       }
       const additionalSeeds = seeds.slice(1);
       if (additionalSeeds.length) {
@@ -1044,7 +1044,7 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
-        ["host", "domain", "custom", "any"].includes(this.formState.scopeType),
+        ["prefix", "host", "domain", "custom"].includes(this.formState.scopeType),
         () => html`
           ${this.renderFormCol(html`
             <sl-input
@@ -2110,19 +2110,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      scopeType: this.formState.scopeType,
+      scopeType: this.formState.scopeType === "custom" ? "prefix" : this.formState.scopeType,
       include:
         this.formState.scopeType === "custom"
           ? [
-              `${regexEscape(primarySeedUrl)}\/.*`,
-              ...includeUrlList.map((url) => `${regexEscape(url)}\/.*`),
+              ...includeUrlList.map((url) => regexEscape(url)),
             ]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
     if (
-      ["host", "domain", "custom", "any"].includes(this.formState.scopeType)
+      ["prefix", "host", "domain", "custom"].includes(this.formState.scopeType)
     ) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
