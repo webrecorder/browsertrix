@@ -822,32 +822,30 @@ class CrawlOps:
         return resp
 
     async def add_to_collection(
-        self, crawl_id: uuid.UUID, collection_id: uuid.UUID, org: Organization
+        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization
     ):
-        """Add crawl to collection."""
-        crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        if crawl_id in crawl_raw.get("collections"):
-            raise HTTPException(status_code=400, detail="crawl_already_in_collection")
+        """Add crawls to collection."""
+        for crawl_id in crawl_ids:
+            crawl_raw = await self.get_crawl_raw(crawl_id, org)
+            if crawl_id in crawl_raw.get("collections"):
+                raise HTTPException(
+                    status_code=400, detail="crawl_already_in_collection"
+                )
 
-        result = await self.crawls.find_one_and_update(
-            {"_id": crawl_id},
-            {"$push": {"collections": collection_id}},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$push": {"collections": collection_id}},
+            )
 
     async def remove_from_collection(
-        self, crawl_id: uuid.UUID, collection_id: uuid.UUID
+        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
     ):
-        """Remove crawl from collection."""
-        result = await self.crawls.find_one_and_update(
-            {"_id": crawl_id},
-            {"$pull": {"collections": collection_id}},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
+        """Remove crawls from collection."""
+        for crawl_id in crawl_ids:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$pull": {"collections": collection_id}},
+            )
 
     async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
         """Remove collection id from all crawls it's currently in."""

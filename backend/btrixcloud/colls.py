@@ -55,6 +55,13 @@ class UpdateColl(BaseModel):
 
 
 # ============================================================================
+class AddRemoveCrawlList(BaseModel):
+    """Update crawl config name, crawl schedule, or tags"""
+
+    crawlIds: Optional[List[str]] = []
+
+
+# ============================================================================
 class CollectionOps:
     """ops for working with named collections of crawls"""
 
@@ -99,8 +106,7 @@ class CollectionOps:
         try:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
-            for crawl_id in crawl_ids:
-                await self.crawls.add_to_collection(crawl_id, coll_id, org)
+            await self.crawls.add_to_collection(crawl_ids, coll_id, org)
 
             return {"added": {"id": coll_id, "name": name}}
         except pymongo.errors.DuplicateKeyError:
@@ -131,11 +137,12 @@ class CollectionOps:
 
         return await self._get_annotated_coll_out(result, coll_id)
 
-    async def add_crawl_to_collection(
-        self, coll_id: uuid.UUID, crawl_id: str, org: Organization
+    async def add_crawls_to_collection(
+        self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
     ):
-        """Add crawl to collection"""
-        await self.crawls.add_to_collection(crawl_id, coll_id, org)
+        """Add crawls to collection"""
+        await self.crawls.add_to_collection(crawl_ids, coll_id, org)
+
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -147,9 +154,11 @@ class CollectionOps:
 
         return await self._get_annotated_coll_out(result, coll_id)
 
-    async def remove_crawl_from_collection(self, coll_id: uuid.UUID, crawl_id: str):
-        """Remove crawl from collection"""
-        await self.crawls.remove_from_collection(crawl_id, coll_id)
+    async def remove_crawls_from_collection(
+        self, coll_id: uuid.UUID, crawl_ids: List[str]
+    ):
+        """Remove crawls from collection"""
+        await self.crawls.remove_from_collection(crawl_ids, coll_id)
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -423,25 +432,29 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     ):
         return await colls.update_collection(coll_id, update)
 
-    @app.get(
+    @app.post(
         "/orgs/{oid}/collections/{coll_id}/add",
         tags=["collections"],
         response_model=CollOut,
     )
     async def add_crawl_to_collection(
-        crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+        crawlList: AddRemoveCrawlList,
+        coll_id: uuid.UUID,
+        org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.add_crawl_to_collection(coll_id, crawlId, org)
+        return await colls.add_crawls_to_collection(coll_id, crawlList.crawlIds, org)
 
-    @app.get(
+    @app.post(
         "/orgs/{oid}/collections/{coll_id}/remove",
         tags=["collections"],
         response_model=CollOut,
     )
     async def remove_crawl_from_collection(
-        crawlId: str, coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+        crawlList: AddRemoveCrawlList,
+        coll_id: uuid.UUID,
+        org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.remove_crawl_from_collection(coll_id, crawlId)
+        return await colls.remove_crawls_from_collection(coll_id, crawlList.crawlIds)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/delete",

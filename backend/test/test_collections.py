@@ -137,8 +137,9 @@ def test_add_remove_crawl_from_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
     # Add crawl
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add?crawlId={admin_crawl_id}",
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [admin_crawl_id]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -154,27 +155,35 @@ def test_add_remove_crawl_from_collection(
     )
     assert _coll_id in r.json()["collections"]
 
-    # Remove crawl
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove?crawlId={admin_crawl_id}",
+    # Remove crawls
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove",
+        json={"crawlIds": [admin_crawl_id, crawler_crawl_id]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["id"] == _coll_id
-    assert data["crawlCount"] == 1
+    assert data["crawlCount"] == 0
     assert data["modified"] >= modified
 
-    # Verify it was removed
+    # Verify they were removed
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
     assert _coll_id not in r.json()["collections"]
 
-    # Add crawl back for further tests
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add?crawlId={admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collections"]
+
+    # Add crawls back for further tests
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [admin_crawl_id, crawler_crawl_id]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
