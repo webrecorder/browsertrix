@@ -64,13 +64,11 @@ helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.y
 
 The local setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
 
-An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created.
-
 This config uses the standard config (`./chart/values.yaml`) with a couple additional settings for local deployment (`./chart/examples/local-config.yaml`). With Helm, additional YAML files can be added to further override previous settings.
 
 These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
-Note that the admin user and password will not be reset after creation.
+For example, to enable a default superadmin user, uncomment the `superadmin` block in `local-config.yaml`. An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created. Note that the admin user and password will not be reset after creation.
 
 ## Waiting for Cluster to Start
 
