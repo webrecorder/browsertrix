@@ -1,6 +1,6 @@
 # Local Deployment
 
-To just test out Browsertrix Cloud on your local machine, you'll first need to have a working Kubernetes cluster.
+To try out the latest release of Browsertrix Cloud on your local machine, you'll first need to have a working Kubernetes cluster.
 
 ## Installing Kubernetes
 
@@ -23,7 +23,6 @@ Here are some environment specific instructions for setting up a local cluster f
     3. Restart Docker Desktop if asked, and wait for it to fully restart.
 
     4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
-
 
 ??? info "MicroK8S (recommended for Ubuntu)"
 
@@ -55,7 +54,6 @@ Here are some environment specific instructions for setting up a local cluster f
 
     3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
-
 ## Launching Browsertrix Cloud with Helm
 
 Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can then run from the Browsertrix Cloud repo directory:
@@ -73,7 +71,6 @@ This config uses the standard config (`./chart/values.yaml`) with a couple addit
 These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
 Note that the admin user and password will not be reset after creation.
-
 
 ## Waiting for Cluster to Start
 
@@ -127,7 +124,6 @@ By default, the database + storage volumes are not automatically deleted, so you
 
 To fully delete all persistent data created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
 
-
 ## Running With Local Images
 
 By default, this setup will pull the latest release of Browsertrix Cloud. However, if you are developing locally, you may want to use your local images instead.
@@ -135,23 +131,21 @@ By default, this setup will pull the latest release of Browsertrix Cloud. Howeve
 First, open `./chart/examples/local-config.yaml` and add the following, which will ensure only local images are used:
 
 ```yaml
-backend_pull_policy: "Never"
-frontend_pull_policy: "Never"
+backend_pull_policy: 'Never'
+frontend_pull_policy: 'Never'
 ```
 
 Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
-
 
 ??? info "Docker Desktop"
 
     Rebuild the local images by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts to build the images in the local Docker.
 
-
 ??? info "MicroK8S"
 
-    MicroK8s uses its own container registry, running on port 32000. 
+    MicroK8s uses its own container registry, running on port 32000.
 
-    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry. 
+    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
 
     2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
 
@@ -160,7 +154,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
     ```
 
-??? info "Minikube" 
+??? info "Minikube"
 
     Minikube comes with its own image builder to update the images used in Minikube.
 
@@ -171,7 +165,7 @@ Now, rebuild either the backend and/or frontend images locally. The exact proces
     ```
 
     To build a local frontend image, run:
-    
+
     ```shell
     minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
     ```
