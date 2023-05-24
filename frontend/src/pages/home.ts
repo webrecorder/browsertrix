@@ -41,9 +41,6 @@ export class Home extends LiteElement {
   connectedCallback() {
     if (this.authState) {
       super.connectedCallback();
-      if (this.userInfo && !this.orgId) {
-        this.fetchOrgs();
-      }
     } else {
       this.navTo("/log-in");
     }
@@ -54,6 +51,16 @@ export class Home extends LiteElement {
       this.navTo(`/orgs/${this.orgId}/workflows/crawls`);
     } else if (changedProperties.has("authState") && this.authState) {
       this.fetchOrgs();
+    }
+  }
+
+  async updated(changedProperties: Map<string, any>) {
+    const orgListUpdated = changedProperties.has("orgList") && this.orgList;
+    const userInfoUpdated = changedProperties.has("userInfo") && this.userInfo;
+    if (orgListUpdated || userInfoUpdated) {
+      if (this.userInfo?.isAdmin && this.orgList && !this.orgList.length) {
+        this.isAddingOrg = true;
+      }
     }
   }
 
@@ -71,7 +78,7 @@ export class Home extends LiteElement {
 
     if (this.userInfo.isAdmin === true) {
       title = msg("Welcome");
-      content = this.renderLoggedInAdmin();
+      content = this.renderAdminOrgs();
     }
 
     if (this.userInfo.isAdmin === false) {
@@ -91,22 +98,6 @@ export class Home extends LiteElement {
       <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
         ${content}
       </main>
-    `;
-  }
-
-  private renderLoggedInAdmin() {
-    if (this.orgList!.length) {
-      return this.renderAdminOrgs();
-    }
-
-    return html`
-      <section class="border rounded-lg bg-white p-4 md:p-8 mb-5">
-        <p class="text-lg mb-4 text-neutral-600">
-          ${msg("Invite users to start archiving.")}
-        </p>
-
-        ${this.renderInvite()}
-      </section>
     `;
   }
 
@@ -180,7 +171,14 @@ export class Home extends LiteElement {
       <btrix-dialog
         label=${msg("New Organization")}
         ?open=${this.isAddingOrg}
-        @sl-request-close=${() => (this.isAddingOrg = false)}
+        @sl-request-close=${(e: CustomEvent) => {
+          // Disable closing if there are no orgs
+          if (this.orgList?.length) {
+            this.isAddingOrg = false;
+          } else {
+            e.preventDefault();
+          }
+        }}
         @sl-show=${() => (this.isAddOrgFormVisible = true)}
         @sl-after-hide=${() => (this.isAddOrgFormVisible = false)}
       >
@@ -206,9 +204,12 @@ export class Home extends LiteElement {
                 </div>
               </form>
               <div slot="footer" class="flex justify-between">
-                <sl-button form="newOrgForm" type="reset" size="small"
-                  >${msg("Cancel")}</sl-button
-                >
+                ${this.orgList?.length
+                  ? html`<sl-button form="newOrgForm" type="reset" size="small">
+                      ${msg("Cancel")}
+                    </sl-button>`
+                  : ""}
+
                 <sl-button
                   form="newOrgForm"
                   variant="primary"
