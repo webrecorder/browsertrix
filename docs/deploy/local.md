@@ -68,7 +68,7 @@ This config uses the standard config (`./chart/values.yaml`) with a couple addit
 
 These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
-For example, to enable a default superadmin user, uncomment the `superadmin` block in `local-config.yaml`. An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created. Note that the admin user and password will not be reset after creation.
+For example, to enable a default superadmin user, uncomment the `superadmin` block in `local-config.yaml`. An admin user with username `admin@example.com` and password `PASSW0RD!` will be automatically created. Note that the admin user and password will not be reset after creation.
 
 ## Waiting for Cluster to Start
 
