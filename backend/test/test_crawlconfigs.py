@@ -8,6 +8,8 @@ UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
+_coll_id = None
+
 
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Create crawl config
@@ -55,6 +57,22 @@ def test_update_desription_only(crawler_auth_headers, default_org_id):
 
 
 def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
+    # Make a new collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [],
+            "name": "autoAddUpdate",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    global _coll_id
+    _coll_id = data["added"]["id"]
+    assert _coll_id
+
     # Update crawl config
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
@@ -63,6 +81,7 @@ def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
             "name": UPDATED_NAME,
             "description": UPDATED_DESCRIPTION,
             "tags": UPDATED_TAGS,
+            "autoAddCollections": [_coll_id],
         },
     )
     assert r.status_code == 200
@@ -85,6 +104,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["name"] == UPDATED_NAME
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+    assert data["autoAddCollections"] == [_coll_id]
 
 
 def test_update_config_invalid_format(

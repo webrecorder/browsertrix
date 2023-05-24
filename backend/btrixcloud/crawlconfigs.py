@@ -231,6 +231,7 @@ class UpdateCrawlConfig(BaseModel):
     name: Optional[str]
     tags: Optional[List[str]]
     description: Optional[str]
+    autoAddCollections: Optional[List[UUID4]]
 
     # crawl data: revision tracked
     schedule: Optional[str]
@@ -412,6 +413,11 @@ class CrawlConfigOps:
         metadata_changed = metadata_changed or (
             update.tags is not None
             and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
+        )
+        metadata_changed = metadata_changed or (
+            update.autoAddCollections is not None
+            and sorted(orig_crawl_config.autoAddCollections)
+            != sorted(update.autoAddCollections)
         )
 
         if not changed and not metadata_changed:
