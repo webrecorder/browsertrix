@@ -505,6 +505,23 @@ class BtrixOperator(K8sAPI):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
+        status.state = state
+        status.finished = to_k8s_date(finished)
+
+        if crawl:
+            await self.inc_crawl_complete_stats(crawl, finished)
+
+        asyncio.create_task(
+            self.do_crawl_finished_tasks(redis, crawl_id, cid, state, stats, finished)
+        )
+
+        return status
+
+    # pylint: disable=too-many-arguments
+    async def do_crawl_finished_tasks(
+        self, redis, crawl_id, cid, state, stats, finished
+    ):
+        """Run tasks after crawl completes in asyncio.task coroutine."""
         kwargs = {"state": state, "finished": finished}
         if stats:
             kwargs["stats"] = stats
@@ -516,19 +533,11 @@ class BtrixOperator(K8sAPI):
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
 
-        status.state = state
-        status.finished = to_k8s_date(finished)
-
         if state in SUCCESSFUL_STATES:
             await add_successful_crawl_to_auto_add_collections(self.crawls, crawl_id)
             await update_crawl_collections(self.collections, self.crawls, crawl_id)
         else:
             await remove_failed_crawl_from_collections(self.crawls, crawl_id)
-
-        if crawl:
-            await self.inc_crawl_complete_stats(crawl, finished)
-
-        return status
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
