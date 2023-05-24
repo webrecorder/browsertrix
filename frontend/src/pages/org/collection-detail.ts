@@ -35,7 +35,7 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex justify-between items-end">
+      <header class="md:flex justify-between items-end pb-3 border-b">
         <h2
           class="flex-1 min-w-0 text-xl font-semibold leading-10 truncate mr-2"
         >
@@ -43,8 +43,8 @@ export class CollectionDetail extends LiteElement {
         </h2>
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      <hr class="my-4" />
-      ${this.renderDescription()} ${this.renderReplay()} `;
+      <div class="my-7">${this.renderDescription()}</div>
+      <div>${this.renderReplay()}</div>`;
   }
 
   private renderHeader = () => html`
@@ -117,7 +117,7 @@ export class CollectionDetail extends LiteElement {
             ></btrix-markdown-editor>`,
             () =>
               html`
-                <div class="border rounded-lg p-5">
+                <main class="border rounded-lg p-5 max-h-screen overflow-auto">
                   ${this.collection?.description
                     ? html`<div class="max-w-prose mx-auto">
                         <btrix-markdown-viewer
@@ -127,7 +127,7 @@ export class CollectionDetail extends LiteElement {
                     : html`<div class="text-center text-neutral-400">
                         ${msg("No description added.")}
                       </div>`}
-                </div>
+                </main>
               `
           )}
         </main>
@@ -136,7 +136,19 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderReplay() {
-    return html`TODO`;
+    return html`<section>
+      <header class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
+          ${msg("Replay")}
+        </h3>
+      </header>
+      <main class="flex">
+        <div class="flex-0 border rounded-lg p-5 mr-3 overflow-auto"></div>
+        <div class="flex-1 aspect-4/3 border rounded-lg overflow-hidden">
+          replay
+        </div>
+      </main>
+    </section>`;
   }
 
   private renderLoading = () => html`<div
