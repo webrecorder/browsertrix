@@ -14,19 +14,22 @@ import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlMenuItem } from "@shoelace-style/shoelace";
 
-import type { CheckboxChangeEvent, CheckboxGroupList } from "./checkbox-list";
-import type { MarkdownChangeEvent } from "./markdown-editor";
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import { maxLengthValidator } from "../utils/form";
+import type {
+  CheckboxChangeEvent,
+  CheckboxGroupList,
+} from "../../components/checkbox-list";
+import type { MarkdownChangeEvent } from "../../components/markdown-editor";
+import type { AuthState } from "../../utils/AuthService";
+import LiteElement, { html } from "../../utils/LiteElement";
+import { maxLengthValidator } from "../../utils/form";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
-} from "../types/api";
-import type { Collection } from "../types/collection";
-import type { Crawl, CrawlState, Workflow } from "../types/crawler";
-import type { PageChangeEvent } from "./pagination";
+} from "../../types/api";
+import type { Collection } from "../../types/collection";
+import type { Crawl, CrawlState, Workflow } from "../../types/crawler";
+import type { PageChangeEvent } from "../../components/pagination";
 
 const TABS = ["crawls", "metadata"] as const;
 type Tab = (typeof TABS)[number];
@@ -149,13 +152,15 @@ export class CollectionEditor extends LiteElement {
     }
 
     if (changedProperties.has("collection") && this.collection) {
-      this.selectedCrawls = this.collection.crawlIds.reduce(
-        (acc, id) => ({
-          ...acc,
-          [id]: { id }, // TODO replace with crawl
-        }),
-        {}
-      );
+      console.log(this.collection);
+      // TODO
+      // this.selectedCrawls = this.collection.crawlIds.reduce(
+      //   (acc, id) => ({
+      //     ...acc,
+      //     [id]: { id }, // TODO replace with crawl
+      //   }),
+      //   {}
+      // );
     }
   }
 
@@ -317,6 +322,7 @@ export class CollectionEditor extends LiteElement {
             label=${msg("Name")}
             placeholder=${msg("My Collection")}
             autocomplete="off"
+            value=${this.collection?.name}
             required
             help-text=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
@@ -326,8 +332,8 @@ export class CollectionEditor extends LiteElement {
             <label class="form-label">${msg("Description")}</label>
             <btrix-markdown-editor
               name="description"
-              initialValue=${""}
-              maxlength=${1000}
+              initialValue=${this.collection?.description}
+              maxlength=${4000}
             ></btrix-markdown-editor>
           </fieldset>
         </div>
@@ -972,3 +978,4 @@ export class CollectionEditor extends LiteElement {
     }
   }
 }
+customElements.define("btrix-collection-editor", CollectionEditor);

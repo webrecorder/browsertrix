@@ -1,10 +1,11 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { CollectionSubmitEvent } from "../../components/collection-editor";
+import type { CollectionSubmitEvent } from "./collection-editor";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Collection } from "../../types/collection";
+import "./collection-editor";
 
 @localized()
 export class CollectionsNew extends LiteElement {

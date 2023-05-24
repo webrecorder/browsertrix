@@ -140,9 +140,6 @@ import("./markdown-editor").then(({ MarkdownEditor }) => {
 import("./markdown-viewer").then(({ MarkdownViewer }) => {
   customElements.define("btrix-markdown-viewer", MarkdownViewer);
 });
-import("./collection-editor").then(({ CollectionEditor }) => {
-  customElements.define("btrix-collection-editor", CollectionEditor);
-});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

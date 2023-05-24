@@ -3,5 +3,9 @@ export type Collection = {
   oid: string;
   name: string;
   description: string | null;
-  crawlIds: string[];
+  modified: string; // date
+  crawlCount: number;
+  pageCount: number;
+  tags: string[];
+  resources: string[];
 };

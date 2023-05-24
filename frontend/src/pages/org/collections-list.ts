@@ -80,13 +80,13 @@ export class CollectionsList extends LiteElement {
           <img src=${noCollectionsImg} />
         </div>
         <figcaption class="text-lg text-primary font-semibold">
-          ${msg("Start building your Collection")}
+          ${msg("Start building your Collection.")}
         </figcaption>
       </figure>
       ${when(
         this.isCrawler,
         () => html`
-          <p class="max-w-[16em]">
+          <p class="max-w-[18em]">
             ${msg(
               "Organize your crawls into a Collection to easily replay them together."
             )}
@@ -95,10 +95,8 @@ export class CollectionsList extends LiteElement {
             <sl-button
               href=${`/orgs/${this.orgId}/collections?new`}
               variant="primary"
-              size="small"
               @click=${this.navLink}
             >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("Create Collection")}
             </sl-button>
           </div>
@@ -140,9 +138,9 @@ export class CollectionsList extends LiteElement {
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
           >
-            ${col.crawlIds.length === 1
+            ${col.crawlCount === 1
               ? msg("1 crawl")
-              : msg(str`${col.crawlIds.length.toLocaleString()} crawls`)}
+              : msg(str`${col.crawlCount.toLocaleString()} crawls`)}
           </div>
           <div class="col-span-1 flex items-center justify-center">
             <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>

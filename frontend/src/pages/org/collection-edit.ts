@@ -2,10 +2,11 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 
-import type { CollectionSubmitEvent } from "../../components/collection-editor";
+import type { CollectionSubmitEvent } from "./collection-editor";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Collection } from "../../types/collection";
+import "./collection-editor";
 
 @localized()
 export class CollectionEdit extends LiteElement {
@@ -40,13 +41,18 @@ export class CollectionEdit extends LiteElement {
   render() {
     return html`${this.renderHeader()}
       <h2 class="text-xl font-semibold mb-6">${this.collection?.name}</h2>
-      <btrix-collection-editor
-        .authState=${this.authState}
-        .collection=${this.collection}
-        orgId=${this.orgId}
-        ?isSubmitting=${this.isSubmitting}
-        @on-submit=${this.onSubmit}
-      ></btrix-collection-editor>`;
+      ${when(
+        this.collection,
+        () => html`
+          <btrix-collection-editor
+            .authState=${this.authState}
+            .collection=${this.collection}
+            orgId=${this.orgId}
+            ?isSubmitting=${this.isSubmitting}
+            @on-submit=${this.onSubmit}
+          ></btrix-collection-editor>
+        `
+      )} `;
   }
 
   private renderHeader = () => html`
@@ -74,28 +80,29 @@ export class CollectionEdit extends LiteElement {
 
   private async onSubmit(e: CollectionSubmitEvent) {
     this.isSubmitting = true;
-    console.log("submit", e.detail.values);
+    const { values } = e.detail;
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        `/orgs/${this.orgId}/collections/${this.collectionId}/update`,
         this.authState!,
         {
           method: "POST",
-          body: JSON.stringify(e.detail.values),
+          body: JSON.stringify({
+            name: values.name,
+            description: values.description,
+          }),
         }
       );
 
       this.notify({
-        message: msg(
-          str`Successfully updated "${data.added.name}" Collection.`
-        ),
+        message: msg(str`Successfully updated "${data.name}" Collection.`),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
       });
 
-      this.navTo(`/orgs/${this.orgId}/collections/${this.collectionId}`);
+      this.navTo(`/orgs/${this.orgId}/collections/view/${this.collectionId}`);
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message;

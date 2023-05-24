@@ -90,22 +90,24 @@ export class CollectionDetail extends LiteElement {
           <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
             ${msg("Description")}
           </h3>
-          ${when(this.isCrawler, () =>
-            this.isEditingDescription
-              ? html`<sl-icon-button
-                  class="text-base"
-                  name="x-lg"
-                  @click=${() => (this.isEditingDescription = false)}
-                  label=${msg("Cancel editing description")}
-                ></sl-icon-button>`
-              : html`
-                  <sl-icon-button
-                    class="text-base"
-                    name="pencil"
-                    @click=${() => (this.isEditingDescription = true)}
-                    label=${msg("Edit description")}
-                  ></sl-icon-button>
-                `
+          ${when(
+            this.isCrawler,
+            () => "" // TODO
+            // this.isEditingDescription
+            //   ? html`<sl-icon-button
+            //       class="text-base"
+            //       name="x-lg"
+            //       @click=${() => (this.isEditingDescription = false)}
+            //       label=${msg("Cancel editing description")}
+            //     ></sl-icon-button>`
+            //   : html`
+            //       <sl-icon-button
+            //         class="text-base"
+            //         name="pencil"
+            //         @click=${() => (this.isEditingDescription = true)}
+            //         label=${msg("Edit description")}
+            //       ></sl-icon-button>
+            //     `
           )}
         </header>
         <main>
