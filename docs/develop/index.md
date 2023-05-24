@@ -7,7 +7,9 @@ Browsertrix Cloud consists of a Python-based backend and TypeScript-based fronte
 The backend is an API-only system, using the FastAPI framework. The latest API reference is available
 under ./api of a running cluster.
 
-*TODO Add additional info here*
+See [Running the Backend](./backend-dev) to get set up for local development.
+
+<!-- *TODO Add additional info here* -->
 
 ### Frontend
 
@@ -17,5 +19,4 @@ The static build of the frontend is bundled with nginx, but the frontend can be 
 
 See [Running Frontend](./frontend-dev) for more details.
 
-*TODO Add additional info here*
-
+<!-- *TODO Add additional info here* -->
