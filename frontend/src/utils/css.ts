@@ -3,6 +3,60 @@
  */
 import { css } from "lit";
 
+// Base typography styles, from Figma Webrecorder Primitives
+export const typography = css`
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: var(--sl-font-weight-semibold);
+    line-height: 150%;
+    margin-top: var(--sl-spacing-medium);
+    margin-bottom: var(--sl-spacing-medium);
+  }
+
+  h1:first-child,
+  h2:first-child,
+  h3:first-child,
+  h4:first-child,
+  h5:first-child,
+  h6:first-child {
+    margin-top: 0;
+  }
+
+  h2 {
+    font-size: var(--sl-font-size-x-large);
+  }
+
+  h3 {
+    font-size: var(--sl-font-size-large);
+  }
+
+  h4 {
+    font-size: 1rem;
+  }
+
+  h5 {
+    font-size: var(--sl-font-size-small);
+  }
+
+  h6 {
+    font-size: var(--sl-font-size-x-small);
+  }
+
+  p {
+    font-size: var(--sl-font-size-medium);
+    line-height: 143%;
+  }
+
+  strong,
+  b {
+    font-weight: var(--sl-font-weight-semibold);
+  }
+`;
+
 // From https://tailwindcss.com/docs/screen-readers#screen-reader-only-elements
 export const srOnly = css`
   .srOnly {

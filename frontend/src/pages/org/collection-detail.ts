@@ -119,9 +119,11 @@ export class CollectionDetail extends LiteElement {
               html`
                 <div class="border rounded-lg p-5">
                   ${this.collection?.description
-                    ? html`<btrix-markdown-viewer
-                        value=${this.collection!.description}
-                      ></btrix-markdown-viewer>`
+                    ? html`<div class="max-w-prose mx-auto">
+                        <btrix-markdown-viewer
+                          value=${this.collection!.description}
+                        ></btrix-markdown-viewer>
+                      </div>`
                     : html`<div class="text-center text-neutral-400">
                         ${msg("No description added.")}
                       </div>`}
