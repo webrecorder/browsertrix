@@ -37,5 +37,8 @@ class Migration(BaseMigration):
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)
 
         # Rename colls to autoAddCollections
-        await crawl_configs.update_many({}, {"$set": {"autoAddCollections": "$colls"}})
+        await crawl_configs.update_many({}, {"$unset": {"autoAddCollections": 1}})
+        await crawl_configs.update_many(
+            {}, {"$rename": {"colls": "autoAddCollections"}}
+        )
         await crawl_configs.update_many({}, {"$unset": {"colls": 1}})
