@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { ref } from "lit/directives/ref.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
 import omit from "lodash/fp/omit";
@@ -453,18 +454,26 @@ export class CollectionEditor extends LiteElement {
         }}
       >
         <div class="grid grid-cols-[1fr_4.6rem_2.5rem] gap-3 items-center">
-          <div>${this.renderCrawlName(firstCrawl)}</div>
-          <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
+          <div class="col-span-1 min-w-0 truncate">
+            ${this.renderCrawlName(firstCrawl)}
+          </div>
+          <div
+            class="col-span-1 text-neutral-500 text-xs font-monostyle truncate h-4"
+          >
             ${crawls.length === 1
               ? msg("1 crawl")
               : msg(`${this.numberFormatter.format(crawls.length)} crawls`)}
           </div>
           <div class="col-span-1 border-l flex items-center justify-center">
             <btrix-button
-              class="expandBtn p-2 text-base transition-transform rotate-180"
-              aria-expanded="true"
+              class="expandBtn p-2 text-base transition-transform"
+              aria-expanded="false"
               aria-controls=${`workflow-${workflowId}`}
-              @click=${this.onWorkflowExpandClick(workflowId)}
+              @click=${(e: MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleWorkflow(workflowId);
+              }}
               icon
             >
               <sl-icon name="chevron-double-down"></sl-icon>
@@ -474,7 +483,8 @@ export class CollectionEditor extends LiteElement {
         <section
           id=${`workflow-${workflowId}-group`}
           slot="group"
-          class="checkboxGroup transition-all overflow-hidden"
+          class="checkboxGroup overflow-hidden offscreen"
+          ${ref(this.checkboxGroupUpdated)}
         >
           ${guard(
             [this.selectedCrawls, this.workflowPagination[workflowId]],
@@ -488,20 +498,11 @@ export class CollectionEditor extends LiteElement {
   private renderWorkflowCrawlList = (workflowId: string, crawls: Crawl[]) => {
     const { page = 1 } = this.workflowPagination[workflowId] || {};
     return html`
-      <div
-        style=${styleMap({
-          // Prevent list from collapsing when page has less items
-          // TODO replace hardcoded item height
-          "min-height":
-            crawls.length > CRAWL_PAGE_SIZE ? `${CRAWL_PAGE_SIZE * 40}px` : "0",
-        })}
-      >
-        <btrix-checkbox-group-list>
-          ${crawls
-            .slice((page - 1) * CRAWL_PAGE_SIZE, page * CRAWL_PAGE_SIZE)
-            .map((crawl) => this.renderCrawl(crawl, workflowId))}
-        </btrix-checkbox-group-list>
-      </div>
+      <btrix-checkbox-group-list>
+        ${crawls
+          .slice((page - 1) * CRAWL_PAGE_SIZE, page * CRAWL_PAGE_SIZE)
+          .map((crawl) => this.renderCrawl(crawl, workflowId))}
+      </btrix-checkbox-group-list>
 
       ${when(
         crawls.length > CRAWL_PAGE_SIZE,
@@ -798,17 +799,17 @@ export class CollectionEditor extends LiteElement {
     if (remainder) {
       if (remainder === 1) {
         nameSuffix = html`<span class="ml-1 text-neutral-500"
-          >${msg(str`+${remainder} URL`)}</span
+          >${msg(str`+${this.numberFormatter.format(remainder)} URL`)}</span
         >`;
       } else {
         nameSuffix = html`<span class="ml-1 text-neutral-500"
-          >${msg(str`+${remainder} URLs`)}</span
+          >${msg(str`+${this.numberFormatter.format(remainder)} URLs`)}</span
         >`;
       }
     }
     return html`
       <div class="flex">
-        <span class="flex-1 min-w-0 truncate">${firstSeed}</span>${nameSuffix}
+        <span class="min-w-0 truncate">${firstSeed}</span>${nameSuffix}
       </div>
     `;
   }
@@ -841,34 +842,44 @@ export class CollectionEditor extends LiteElement {
     this.selectCrawls(crawls);
   }
 
-  private async deselectWorkflow(workflowId: string) {
-    this.workflowPagination = mergeDeep(this.workflowPagination, {
-      [workflowId]: { page: 1 },
-    });
-  }
-
-  private onWorkflowExpandClick =
-    (workflowId: string) => async (e: MouseEvent) => {
-      e.stopPropagation();
-      const checkboxGroup = this.querySelector(
-        `#workflow-${workflowId}-group`
-      ) as HTMLElement;
-      const expandBtn = e.currentTarget as HTMLElement;
-      const expanded = !(expandBtn.getAttribute("aria-expanded") === "true");
-      expandBtn.setAttribute("aria-expanded", expanded.toString());
-
-      if (expanded) {
-        expandBtn.classList.add("rotate-180");
-        checkboxGroup.style.marginTop = "0px";
-        checkboxGroup.style.opacity = "100%";
-        checkboxGroup.style.pointerEvents = "auto";
-      } else {
-        expandBtn.classList.remove("rotate-180");
-        checkboxGroup.style.marginTop = `-${checkboxGroup.clientHeight}px`;
-        checkboxGroup.style.opacity = "0";
-        checkboxGroup.style.pointerEvents = "none";
+  private checkboxGroupUpdated = async (el: any) => {
+    await this.updateComplete;
+    if (el) {
+      await el.updateComplete;
+      if (el.classList.contains("offscreen")) {
+        // Set up initial position for expand/contract toggle
+        el.style.marginTop = `-${el.clientHeight}px`;
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+        el.classList.remove("offscreen");
       }
-    };
+    }
+  };
+
+  private toggleWorkflow = async (workflowId: string) => {
+    const checkboxGroup = this.querySelector(
+      `#workflow-${workflowId}-group`
+    ) as HTMLElement;
+    const listItem = checkboxGroup.closest(
+      "btrix-checkbox-list-item"
+    ) as HTMLElement;
+    const expandBtn = listItem.querySelector(".expandBtn") as HTMLElement;
+    const expand = !(expandBtn.getAttribute("aria-expanded") === "true");
+    expandBtn.setAttribute("aria-expanded", expand.toString());
+    checkboxGroup.classList.add("transition-all");
+
+    if (expand) {
+      expandBtn.classList.add("rotate-180");
+      checkboxGroup.style.marginTop = "0px";
+      checkboxGroup.style.opacity = "100%";
+      checkboxGroup.style.pointerEvents = "auto";
+    } else {
+      expandBtn.classList.remove("rotate-180");
+      checkboxGroup.style.marginTop = `-${checkboxGroup.clientHeight}px`;
+      checkboxGroup.style.opacity = "0";
+      checkboxGroup.style.pointerEvents = "none";
+    }
+  };
 
   private onSearchInput = debounce(150)((e: any) => {
     this.searchByValue = e.target.value.trim();

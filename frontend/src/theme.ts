@@ -242,6 +242,14 @@ const theme = css`
     /* Fix tailwind clipping vertical */
     overflow: clip visible;
   }
+
+  .offscreen {
+    position: absolute;
+    left: -9999px;
+    bottom: -9999px;
+    visibility: hidden;
+    clip: rect(0 0 0 0);
+  }
 `;
 
 export default theme;
