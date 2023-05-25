@@ -38,13 +38,11 @@ Here are some environment specific instructions for setting up a local cluster f
 
 ??? info "Minikube (Windows, Mac or Linux)"
 
-    1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`
+    1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`.
+       Note that Minikube also requires Docker or another container management system to be installed as well.
 
     2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
-    3. Run the Helm command as described above.
-
-    4. Mac Only: To access Browsertrix Cloud running in minikube on a mac, run `minikube service browsertrix-cloud-frontend --url` and then access Browsertrix Cloud via the provided URL. This is needed as Browsertrix Cloud is running in a VM.
 
 ??? info "K3S (recommended for non-Ubuntu Linux)"
 
