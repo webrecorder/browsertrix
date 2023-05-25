@@ -195,24 +195,6 @@ class CollectionOps:
             )
         return CollOut.from_dict(result)
 
-    async def find_collections(self, oid: uuid.UUID, names: List[str]):
-        """Find all collections for org given a list of names"""
-        cursor = self.collections.find(
-            {"oid": oid, "name": {"$in": names}}, projection=["_id", "name"]
-        )
-        results = await cursor.to_list(length=1000)
-        if len(results) != len(names):
-            for result in results:
-                names.remove(result["name"])
-
-            if names:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Specified collection(s) not found: {', '.join(names)}",
-                )
-
-        return [result["name"] for result in results]
-
     async def list_collections(
         self,
         oid: uuid.UUID,
