@@ -1,7 +1,15 @@
-# Running the Frontend
+# Running the Frontend for Development
 
 This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
-The frontend can connect to a Browsertrix Cloud API backend running locally or remotely.
+
+This setup may be ideal for rapid development on the frontend, as it will allow running the frontend
+via `yarn` instead of the frontend image deployed in Kubernetes.
+
+## Requirements
+
+This setup does require a Browsertrix Cloud API backend already in a Kubernetes cluster.
+
+Refer to [setup for local deployment](./local-dev-setup.md) for additional details on this setup.
 
 ## Quickstart
 

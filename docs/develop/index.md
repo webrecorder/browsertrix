@@ -1,13 +1,22 @@
+---
+hide:
+    - toc
+---
+
 # Developing Browsertrix Cloud
 
 Browsertrix Cloud consists of a Python-based backend and TypeScript-based frontend.
+
+To develop Browsertrix Cloud, the system must [first be deployed locally](../deploy/local.md) in a Kubernetes cluster.
+
+The deployment can then be [further customized for local development](./local-dev-setup.md).
 
 ### Backend
 
 The backend is an API-only system, using the FastAPI framework. The latest API reference is available
 under ./api of a running cluster.
 
-See [Running the Backend](./backend-dev) to get set up for local development.
+At this time, the backend must be deployed in the Kubernetes cluster.
 
 <!-- *TODO Add additional info here* -->
 

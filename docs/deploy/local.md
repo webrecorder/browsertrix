@@ -64,11 +64,13 @@ helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.y
 
 The local setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
 
+An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created.
+
 This config uses the standard config (`./chart/values.yaml`) with a couple additional settings for local deployment (`./chart/examples/local-config.yaml`). With Helm, additional YAML files can be added to further override previous settings.
 
 These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
-For example, to enable a default superadmin user, uncomment the `superadmin` block in `local-config.yaml`. An admin user with username `admin@example.com` and password `PASSW0RD!` will be automatically created. Note that the admin user and password will not be reset after creation.
+For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment)
 
 ## Waiting for Cluster to Start
 
@@ -118,74 +120,17 @@ helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.y
 
 To uninstall, run `helm uninstall btrix`.
 
-By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade...` again to restart the cluster in its current state.
+By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade ...` again to restart the cluster in its current state.
 
-To fully delete all persistent data created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
+If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend
+uninstalling and then re-running upgrade.
 
-## Running With Local Images
+## Deleting all Data
 
-By default, this setup will pull the latest release of Browsertrix Cloud. However, if you are developing locally, you may want to use your local images instead.
+To fully delete all persistent data (db + archives) created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
 
-First, open `./chart/examples/local-config.yaml` and add the following, which will ensure only local images are used:
+## Deploying for Local Development
 
-```yaml
-backend_pull_policy: 'Never'
-frontend_pull_policy: 'Never'
-```
-
-Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
-
-??? info "Docker Desktop"
-
-    Rebuild the local images by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts to build the images in the local Docker.
-
-??? info "MicroK8S"
-
-    MicroK8s uses its own container registry, running on port 32000.
-
-    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
-
-    2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
-
-    ```yaml
-    backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-    frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
-    ```
-
-??? info "Minikube"
-
-    Minikube comes with its own image builder to update the images used in Minikube.
-
-    To build the backend image, run:
-
-    ```shell
-    minikube image build -t webrecorder/browsertrix-backend:latest ./backend
-    ```
-
-    To build a local frontend image, run:
-
-    ```shell
-    minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
-    ```
-
-??? info "K3S"
-
-    K3S uses `containerd` by default. To use local images, they need to be imported after rebuilding.
-
-    1. Rebuild the images with Docker by running by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts. (Requires Docker to be installed as well).
-
-    2. Serializer the images to .tar:
-
-    ```shell
-    docker save webrecorder/browsertrix-backend:latest > ./backend.tar
-    docker save webrecorder/browsertrix-frontend:latest > ./frontend.tar
-    ```
-
-    3. Import images into k3s containerd:
-
-    ```shell
-    k3s ctr images import --base-name webrecorder/browsertrix-backend:latest ./backend.tar
-    k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
-    ```
-
-Once the images have been built and any other config changes made per the above instructions, simply run the `helm upgrade...` command again to restart with local images.
+These instructions are intended for deploying the cluster from the latest release.
+See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to
+developing Browsertrix Cloud and deploying from local images.
