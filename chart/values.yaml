@@ -24,7 +24,8 @@ default_page_load_time_seconds: 120
 # disk utilization threshold percentage - when used disk space passes
 # this percentage of total, crawls will gracefully stop to prevent the
 # disk from being filled
-disk_utilization_threshold: 90
+# This should be a string so that it can be included in crawler_args
+disk_utilization_threshold: "90"
 
 # max pages per crawl
 # set to non-zero value to enforce global max pages per crawl limit
@@ -163,7 +164,7 @@ crawler_namespace: "crawlers"
 crawl_retries: 1000
 
 # browsertrix-crawler args:
-crawler_args: "--logging stats,behaviors,debug --generateWACZ --text --collection thecrawl --screencastPort 9037 --logErrorsToRedis --diskUtilization {{ .Values.disk_utilization_threshold | default 90 }} --waitOnDone"
+crawler_args: "--logging stats,behaviors,debug --generateWACZ --text --collection thecrawl --screencastPort 9037 --logErrorsToRedis --diskUtilization {{ tpl .Values.disk_utilization_threshold . }} --waitOnDone"
 
 crawler_browser_instances: 2
 
