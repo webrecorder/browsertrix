@@ -6,7 +6,8 @@ First, see our [Local Deployment guide](../deploy/local.md#installing-kubernetes
 
 ## Local Dev Configuration
 
-The local deployment guide deploys Browsertrix Cloud with latest released images.
+The local deployment guide explains how to deploy Browsertrix Cloud with latest published images.
+
 However, if you are developing locally, you will need to use your local images instead.
 
 We recommend the following setup:
