@@ -513,16 +513,12 @@ class BtrixOperator(K8sAPI):
 
         await update_crawl(self.crawls, crawl_id, **kwargs)
 
-        asyncio.create_task(
-            self.do_crawl_finished_tasks(redis, crawl_id, cid, state)
-        )
+        asyncio.create_task(self.do_crawl_finished_tasks(redis, crawl_id, cid, state))
 
         return status
 
     # pylint: disable=too-many-arguments
-    async def do_crawl_finished_tasks(
-        self, redis, crawl_id, cid, state
-    ):
+    async def do_crawl_finished_tasks(self, redis, crawl_id, cid, state):
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
 
