@@ -193,7 +193,7 @@ class CollectionOps:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
             )
-        return await CollOut.from_dict(result)
+        return CollOut.from_dict(result)
 
     async def find_collections(self, oid: uuid.UUID, names: List[str]):
         """Find all collections for org given a list of names"""
