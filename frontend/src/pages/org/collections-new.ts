@@ -56,7 +56,7 @@ export class CollectionsNew extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/`,
+        `/orgs/${this.orgId}/collections`,
         this.authState!,
         {
           method: "POST",
