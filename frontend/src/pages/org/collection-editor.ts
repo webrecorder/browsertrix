@@ -47,6 +47,7 @@ const finishedCrawlStates: CrawlState[] = [
   "partial_complete",
   "timed_out",
 ];
+const WORKFLOW_CRAWL_LIMIT = 100;
 const WORKFLOW_PAGE_SIZE = 10;
 const CRAWL_PAGE_SIZE = 5;
 const MIN_SEARCH_LENGTH = 2;
@@ -303,16 +304,31 @@ export class CollectionEditor extends LiteElement {
           </footer>
         </section>
         <footer
-          class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
+          class="col-span-full border rounded-lg px-6 py-4 flex justify-end"
         >
-          <sl-button
-            size="small"
-            class="ml-auto"
-            @click=${() => this.goToTab("metadata")}
-          >
-            <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-            ${msg("Enter Metadata")}
-          </sl-button>
+          ${when(
+            this.collection,
+            () => html`
+              <sl-button
+                type="submit"
+                size="small"
+                variant="primary"
+                ?disabled=${this.isSubmitting ||
+                Object.values(this.workflowIsLoading).some(
+                  (isLoading) => isLoading === true
+                )}
+                ?loading=${this.isSubmitting}
+              >
+                ${msg("Save Changes")}
+              </sl-button>
+            `,
+            () => html`
+              <sl-button size="small" @click=${() => this.goToTab("metadata")}>
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Enter Metadata")}
+              </sl-button>
+            `
+          )}
         </footer>
       </section>
     `;
@@ -344,11 +360,17 @@ export class CollectionEditor extends LiteElement {
           </fieldset>
         </div>
         <footer class="border-t px-6 py-4 flex justify-between">
-          <sl-button size="small" @click=${() => this.goToTab("crawls")}>
-            <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-            ${msg("Select Crawls")}
-          </sl-button>
+          ${when(
+            !this.collection,
+            () => html`
+              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Select Crawls")}
+              </sl-button>
+            `
+          )}
           <sl-button
+            class="ml-auto"
             type="submit"
             size="small"
             variant="primary"
@@ -358,7 +380,7 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Save Collection")}
+            ${this.collection ? msg("Save Changes") : msg("Save Collection")}
           </sl-button>
         </footer>
       </section>
@@ -436,7 +458,7 @@ export class CollectionEditor extends LiteElement {
               class="expandBtn p-2 text-base transition-transform rotate-180"
               aria-expanded="true"
               aria-controls=${`workflow-${workflowId}`}
-              @click=${this.onWorkflowExpandClick(workflowId, crawls.length)}
+              @click=${this.onWorkflowExpandClick(workflowId)}
               icon
             >
               <sl-icon name="chevron-double-down"></sl-icon>
@@ -686,7 +708,7 @@ export class CollectionEditor extends LiteElement {
         }}
       >
         <div class="relative">
-          <div class="grid grid-cols-[1fr_10ch] gap-3">
+          <div class="grid grid-cols-[1fr_12ch] gap-3">
             ${this.renderWorkflowDetails(workflow)}
           </div>
           ${this.workflowIsLoading[workflow.id]
@@ -726,16 +748,33 @@ export class CollectionEditor extends LiteElement {
           ></sl-format-bytes>
         </div>
         <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
-          ${workflow.crawlSuccessfulCount === 1
-            ? msg("1 crawl")
-            : msg(
-                str`${this.numberFormatter.format(
-                  workflow.crawlSuccessfulCount
-                )} crawls`
-              )}
+          ${this.renderCrawlCount(workflow)}
         </div>
       </div>
     `;
+  }
+
+  private renderCrawlCount(workflow: Workflow) {
+    const count = Math.min(WORKFLOW_CRAWL_LIMIT, workflow.crawlSuccessfulCount);
+    let message = "";
+    if (count === 1) {
+      message = msg("1 crawl");
+    } else {
+      message = msg(str`${this.numberFormatter.format(count)} crawls`);
+    }
+    return html`<span class="inline-block align-middle">${message}</span
+      >${workflow.crawlSuccessfulCount > count
+        ? html`<sl-tooltip
+            content=${msg(
+              str`Only showing latest ${WORKFLOW_CRAWL_LIMIT} crawls`
+            )}
+          >
+            <sl-icon
+              class="inline-block align-middle"
+              name="exclamation-triangle"
+            ></sl-icon>
+          </sl-tooltip>`
+        : ""}`;
   }
 
   private renderCrawlName(item: Workflow | Crawl) {
@@ -803,7 +842,7 @@ export class CollectionEditor extends LiteElement {
   }
 
   private onWorkflowExpandClick =
-    (workflowId: string, crawlCount: number) => async (e: MouseEvent) => {
+    (workflowId: string) => async (e: MouseEvent) => {
       e.stopPropagation();
       const checkboxGroup = this.querySelector(
         `#workflow-${workflowId}-group`
@@ -924,6 +963,7 @@ export class CollectionEditor extends LiteElement {
       const paginatedCrawls = await this.getCrawls({
         collectionId: this.collection.id,
         sortBy: "finished",
+        pageSize: WORKFLOW_CRAWL_LIMIT,
       });
       const crawls = paginatedCrawls.items;
       this.selectedCrawls = mergeDeep(
@@ -962,6 +1002,7 @@ export class CollectionEditor extends LiteElement {
         cid: workflowId,
         state: finishedCrawlStates,
         sortBy: "finished",
+        pageSize: WORKFLOW_CRAWL_LIMIT,
       });
       // TODO remove omit once API removes errors
       const crawls = paginatedCrawls.items.map(omit("errors")) as Crawl[];
@@ -993,6 +1034,7 @@ export class CollectionEditor extends LiteElement {
       collectionId?: string;
       state: CrawlState[];
     }> &
+      APIPaginationQuery &
       APISortQuery
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify(params || {}, {
