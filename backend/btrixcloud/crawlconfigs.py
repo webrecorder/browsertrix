@@ -1019,6 +1019,8 @@ async def stats_recompute_last(
         "lastCrawlTime": None,
         "lastCrawlState": None,
         "lastCrawlSize": None,
+        "lastCrawlStopping": False,
+        "isCrawlRunning": False,
     }
 
     match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
@@ -1027,14 +1029,19 @@ async def stats_recompute_last(
     )
 
     if last_crawl:
+        last_crawl_finished = last_crawl.get("finished")
+
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
         update_query["lastCrawlStartTime"] = last_crawl.get("started")
         update_query["lastStartedBy"] = last_crawl.get("userid")
-        update_query["lastCrawlTime"] = last_crawl.get("finished")
+        update_query["lastCrawlTime"] = last_crawl_finished
         update_query["lastCrawlState"] = last_crawl.get("state")
         update_query["lastCrawlSize"] = sum(
             file_.get("size", 0) for file_ in last_crawl.get("files", [])
         )
+
+        if last_crawl_finished:
+            update_query["lastRun"] = last_crawl_finished
 
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},

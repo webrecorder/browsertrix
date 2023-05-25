@@ -523,16 +523,24 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        await update_crawl(self.crawls, crawl_id, **kwargs)
+        await update_crawl(self.crawls, crawl_id, stopping=False, **kwargs)
 
-        asyncio.create_task(self.do_crawl_finished_tasks(redis, crawl_id, cid, state))
+        asyncio.create_task(
+            self.do_crawl_finished_tasks(
+                redis, crawl_id, cid, status.filesAddedSize, state
+            )
+        )
 
         return status
 
     # pylint: disable=too-many-arguments
-    async def do_crawl_finished_tasks(self, redis, crawl_id, cid, state):
+    async def do_crawl_finished_tasks(
+        self, redis, crawl_id, cid, files_added_size, state
+    ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        await stats_recompute_last(
+            self.crawl_configs, self.crawls, cid, files_added_size, 1
+        )
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
