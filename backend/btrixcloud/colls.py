@@ -387,17 +387,18 @@ async def update_crawl_collections(collections, crawls, crawl_id: str):
 
 
 # ============================================================================
-async def add_successful_crawl_to_auto_add_collections(
-    crawls, crawl_configs, crawl_id: str, cid: uuid.UUID
+async def add_successful_crawl_to_collections(
+    crawls, crawl_configs, collections, crawl_id: str, cid: uuid.UUID
 ):
     """Add successful crawl to its auto-add collections."""
     workflow = await crawl_configs.find_one({"_id": cid})
-    collections = workflow.get("autoAddCollections")
-    if collections:
+    auto_add_collections = workflow.get("autoAddCollections")
+    if auto_add_collections:
         await crawls.find_one_and_update(
             {"_id": crawl_id},
-            {"$set": {"collections": collections}},
+            {"$set": {"collections": auto_add_collections}},
         )
+        await update_crawl_collections(collections, crawls, crawl_id)
 
 
 # ============================================================================

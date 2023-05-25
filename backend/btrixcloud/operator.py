@@ -20,8 +20,7 @@ from .k8sapi import K8sAPI
 from .db import init_db
 from .orgs import inc_org_stats
 from .colls import (
-    add_successful_crawl_to_auto_add_collections,
-    remove_failed_crawl_from_collections,
+    add_successful_crawl_to_collections,
     update_crawl_collections,
 )
 from .crawlconfigs import update_config_crawl_stats
@@ -534,12 +533,9 @@ class BtrixOperator(K8sAPI):
             await self.add_crawl_errors_to_db(redis, crawl_id)
 
         if state in SUCCESSFUL_STATES:
-            await add_successful_crawl_to_auto_add_collections(
-                self.crawls, self.crawl_configs, crawl_id, cid
+            await add_successful_crawl_to_collections(
+                self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
-            await update_crawl_collections(self.collections, self.crawls, crawl_id)
-        else:
-            await remove_failed_crawl_from_collections(self.crawls, crawl_id)
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
