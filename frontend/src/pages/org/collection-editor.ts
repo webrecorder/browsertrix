@@ -2,13 +2,15 @@ import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import { until } from "lit/directives/until.js";
 import { guard } from "lit/directives/guard.js";
 import { styleMap } from "lit/directives/style-map.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
 import omit from "lodash/fp/omit";
 import groupBy from "lodash/fp/groupBy";
+import keyBy from "lodash/fp/keyBy";
+import orderBy from "lodash/fp/orderBy";
+import flow from "lodash/fp/flow";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -75,18 +77,23 @@ export class CollectionEditor extends LiteElement {
   isSubmitting = false;
 
   @state()
+  private collectionCrawls: Crawl[] = [];
+
+  @state()
   private workflows?: APIPaginatedList & {
     items: Workflow[];
   };
 
   @state()
-  private workflowCrawls: {
-    [workflowId: string]: Promise<Crawl[]>;
+  private workflowPagination: {
+    [workflowId: string]: APIPaginationQuery & {
+      items: Workflow[];
+    };
   } = {};
 
   @state()
-  private selectedWorkflowPagination: {
-    [workflowId: string]: APIPaginationQuery;
+  private workflowIsLoading: {
+    [workflowId: string]: boolean;
   } = {};
 
   @state()
@@ -152,15 +159,7 @@ export class CollectionEditor extends LiteElement {
     }
 
     if (changedProperties.has("collection") && this.collection) {
-      console.log(this.collection);
-      // TODO
-      // this.selectedCrawls = this.collection.crawlIds.reduce(
-      //   (acc, id) => ({
-      //     ...acc,
-      //     [id]: { id }, // TODO replace with crawl
-      //   }),
-      //   {}
-      // );
+      this.fetchCollectionCrawls();
     }
   }
 
@@ -201,7 +200,10 @@ export class CollectionEditor extends LiteElement {
           ${this.renderSelectCrawls()}
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-metadata">
-          ${guard([this.collection, this.isSubmitting], this.renderMetadata)}
+          ${guard(
+            [this.collection, this.isSubmitting, this.workflowIsLoading],
+            this.renderMetadata
+          )}
         </btrix-tab-panel>
       </btrix-tab-list>
     </form>`;
@@ -252,10 +254,9 @@ export class CollectionEditor extends LiteElement {
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [
-                this.collection,
-                this.workflowCrawls,
+                this.collectionCrawls,
                 this.selectedCrawls,
-                this.selectedWorkflowPagination,
+                this.workflowPagination,
               ],
               this.renderCollectionWorkflowList
             )}
@@ -271,7 +272,12 @@ export class CollectionEditor extends LiteElement {
           </div>
           <div class="flex-1">
             ${guard(
-              [this.workflows, this.workflowCrawls, this.selectedCrawls],
+              [
+                this.workflows,
+                this.collectionCrawls,
+                this.selectedCrawls,
+                this.workflowIsLoading,
+              ],
               this.renderWorkflowList
             )}
           </div>
@@ -346,7 +352,10 @@ export class CollectionEditor extends LiteElement {
             type="submit"
             size="small"
             variant="primary"
-            ?disabled=${this.isSubmitting}
+            ?disabled=${this.isSubmitting ||
+            Object.values(this.workflowIsLoading).some(
+              (isLoading) => isLoading === true
+            )}
             ?loading=${this.isSubmitting}
           >
             ${msg("Save Collection")}
@@ -357,9 +366,12 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderCollectionWorkflowList = () => {
-    // TODO show crawls in collection
-    const crawls = Object.values(this.selectedCrawls);
-    if (!crawls.length) {
+    // TODO
+    // if (this.collection && !this.collectionCrawls) {
+    //   return this.renderLoading();
+    // }
+
+    if (!this.collectionCrawls.length) {
       return html`
         <div class="flex flex-col items-center justify-center text-center p-4">
           <span class="text-base font-semibold text-primary"
@@ -373,16 +385,16 @@ export class CollectionEditor extends LiteElement {
         </div>
       `;
     }
-    const groupedByWorkflow = groupBy("cid")(crawls);
+    const groupedByWorkflow = groupBy("cid")(this.collectionCrawls) as any;
 
     return html`
       <btrix-checkbox-list>
         ${Object.keys(groupedByWorkflow).map((workflowId) =>
-          until(
-            // TODO show crawls in collection
-            Promise.resolve(
-              this.workflowCrawls[workflowId] || groupedByWorkflow[workflowId]
-            ).then((crawls) => this.renderWorkflowCrawls(workflowId, crawls))
+          this.renderWorkflowCrawls(
+            workflowId,
+            orderBy(["finished"])(["desc"])(
+              groupedByWorkflow[workflowId]
+            ) as any
           )
         )}
       </btrix-checkbox-list>
@@ -390,9 +402,9 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderWorkflowCrawls(workflowId: string, crawls: Crawl[]) {
-    const selectedCrawlIds = Object.keys(this.selectedCrawls).filter((id) =>
-      crawls.some((crawl) => id === crawl.id)
-    );
+    const selectedCrawlIds = crawls
+      .filter(({ id }) => this.selectedCrawls[id])
+      .map(({ id }) => id);
     const allChecked = crawls.length === selectedCrawlIds.length;
     // Use latest crawl for workflow information, since we
     // may not have access to workflow details
@@ -405,27 +417,15 @@ export class CollectionEditor extends LiteElement {
         group
         aria-controls=${selectedCrawlIds.join(" ")}
         @on-change=${(e: CheckboxChangeEvent) => {
-          const checkAll = () => {
-            const allCrawls = crawls.reduce(
-              (acc: any, crawl: Crawl) => ({
-                ...acc,
-                [crawl.id]: crawl,
-              }),
-              {}
-            );
-            this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
-          };
           if (e.detail.checked || !allChecked) {
-            checkAll();
+            this.selectCrawls(crawls);
           } else {
-            this.deselectWorkflow(workflowId, crawls);
+            this.deselectCrawls(crawls);
           }
         }}
       >
         <div class="grid grid-cols-[1fr_4.6rem_2.5rem] gap-3 items-center">
-          <div>
-            ${this.renderSeedsLabel(firstCrawl.firstSeed, firstCrawl.seedCount)}
-          </div>
+          <div>${this.renderCrawlName(firstCrawl)}</div>
           <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
             ${crawls.length === 1
               ? msg("1 crawl")
@@ -449,16 +449,16 @@ export class CollectionEditor extends LiteElement {
           class="checkboxGroup transition-all overflow-hidden"
         >
           ${guard(
-            [this.selectedCrawls, this.selectedWorkflowPagination[workflowId]],
-            () => this.renderWorkflowCrawlList(crawls, workflowId)
+            [this.selectedCrawls, this.workflowPagination[workflowId]],
+            () => this.renderWorkflowCrawlList(workflowId, crawls)
           )}
         </section>
       </btrix-checkbox-list-item>
     `;
   }
 
-  private renderWorkflowCrawlList = (crawls: Crawl[], workflowId: string) => {
-    const { page = 1 } = this.selectedWorkflowPagination[workflowId];
+  private renderWorkflowCrawlList = (workflowId: string, crawls: Crawl[]) => {
+    const { page = 1 } = this.workflowPagination[workflowId] || {};
     return html`
       <div
         style=${styleMap({
@@ -485,12 +485,9 @@ export class CollectionEditor extends LiteElement {
               size=${CRAWL_PAGE_SIZE}
               compact
               @page-change=${async (e: PageChangeEvent) => {
-                this.selectedWorkflowPagination = mergeDeep(
-                  this.selectedWorkflowPagination,
-                  {
-                    [workflowId]: { page: e.detail.page },
-                  }
-                );
+                this.workflowPagination = mergeDeep(this.workflowPagination, {
+                  [workflowId]: { page: e.detail.page },
+                });
               }}
             ></btrix-pagination>
           </footer>
@@ -657,31 +654,96 @@ export class CollectionEditor extends LiteElement {
 
   private renderWorkflowList = () => {
     if (!this.workflows) {
-      return html`
-        <div class="w-full flex items-center justify-center my-24 text-3xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `;
+      return this.renderLoading();
     }
+
+    const groupedByWorkflow = groupBy("cid")(this.collectionCrawls) as any;
 
     return html`
       <btrix-checkbox-list>
         ${this.workflows.items.map((workflow) =>
-          this.renderWorkflowItem(workflow)
+          this.renderWorkflowItem(workflow, groupedByWorkflow[workflow.id])
         )}
       </btrix-checkbox-list>
     `;
   };
 
-  // TODO consolidate collections/workflow name
-  private renderWorkflowName(workflow: Workflow) {
-    if (workflow.name)
-      return html`<span class="min-w-0">${workflow.name}</span>`;
-    if (!workflow.firstSeed)
-      return html`<span class="min-w-0">${workflow.id}</span>`;
+  private renderWorkflowItem(workflow: Workflow, crawls: Crawl[] = []) {
+    const selectedCrawls = crawls.filter(({ id }) => this.selectedCrawls[id]);
+    const allChecked = workflow.crawlSuccessfulCount === selectedCrawls.length;
+    return html`
+      <btrix-checkbox-list-item
+        ?checked=${selectedCrawls.length}
+        ?allChecked=${allChecked}
+        ?disabled=${this.collection && !this.collectionCrawls}
+        group
+        @on-change=${(e: CheckboxChangeEvent) => {
+          if (e.detail.checked || !allChecked) {
+            this.selectWorkflow(workflow.id);
+          } else {
+            this.deselectCrawls(crawls);
+          }
+        }}
+      >
+        <div class="relative">
+          <div class="grid grid-cols-[1fr_10ch] gap-3">
+            ${this.renderWorkflowDetails(workflow)}
+          </div>
+          ${this.workflowIsLoading[workflow.id]
+            ? html`<div
+                class="absolute top-0 left-0 right-0 bottom-0 bg-white bg-opacity-50 flex items-center justify-center text-lg -ml-11"
+              >
+                <sl-spinner></sl-spinner>
+              </div>`
+            : ""}
+        </div>
+      </btrix-checkbox-list-item>
+    `;
+  }
+
+  private renderWorkflowDetails(workflow: Workflow) {
+    return html`
+      <div class="col-span-1 py-3 whitespace-nowrap truncate">
+        <div class="text-neutral-700 h-6 truncate">
+          ${this.renderCrawlName(workflow)}
+        </div>
+        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
+          <sl-format-date
+            date=${workflow.lastCrawlTime || workflow.modified}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>
+        </div>
+      </div>
+      <div class="col-span-1 py-3">
+        <div class="text-neutral-700 truncate h-6">
+          <sl-format-bytes
+            value=${workflow.totalSize}
+            display="narrow"
+          ></sl-format-bytes>
+        </div>
+        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
+          ${workflow.crawlSuccessfulCount === 1
+            ? msg("1 crawl")
+            : msg(
+                str`${this.numberFormatter.format(
+                  workflow.crawlSuccessfulCount
+                )} crawls`
+              )}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderCrawlName(item: Workflow | Crawl) {
+    if (item.name) return html`<span class="min-w-0">${item.name}</span>`;
+    if (!item.firstSeed) return html`<span class="min-w-0">${item.id}</span>`;
     return this.renderSeedsLabel(
-      workflow.firstSeed,
-      workflow.config.seeds.length
+      item.firstSeed,
+      (item as Crawl).seedCount || item.config?.seeds.length
     );
   }
 
@@ -706,89 +768,38 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderWorkflowItem(workflow: Workflow) {
-    const workflowCrawlsAsync =
-      this.workflowCrawls[workflow.id] || Promise.resolve([]);
-    const someSelectedAsync = workflowCrawlsAsync.then((crawls) =>
-      crawls.some(({ id }) => this.selectedCrawls[id])
+  private renderLoading = () => html`
+    <div class="w-full flex items-center justify-center my-24 text-3xl">
+      <sl-spinner></sl-spinner>
+    </div>
+  `;
+
+  private selectCrawls(crawls: Crawl[]) {
+    const allCrawls = crawls.reduce(
+      (acc: any, crawl: Crawl) => ({
+        ...acc,
+        [crawl.id]: crawl,
+      }),
+      {}
     );
-
-    return html`
-      <btrix-checkbox-list-item
-        ?checked=${until(someSelectedAsync, false)}
-        @on-change=${async (e: CheckboxChangeEvent) => {
-          this.fetchWorkflowCrawls(workflow.id);
-          const workflowCrawls = await this.workflowCrawls[workflow.id];
-
-          if (e.detail.checked) {
-            this.selectedCrawls = mergeDeep(
-              this.selectedCrawls,
-              workflowCrawls.reduce(
-                (acc: any, crawl: Crawl) => ({
-                  ...acc,
-                  [crawl.id]: crawl,
-                }),
-                {}
-              )
-            );
-          } else {
-            this.deselectWorkflow(workflow.id, workflowCrawls);
-          }
-        }}
-      >
-        <div class="grid grid-cols-[1fr_10ch] gap-3">
-          ${this.renderWorkflowDetails(workflow)}
-        </div>
-      </btrix-checkbox-list-item>
-    `;
+    this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
   }
 
-  private renderWorkflowDetails(workflow: Workflow) {
-    return html`
-      <div class="col-span-1 py-3 whitespace-nowrap truncate">
-        <div class="text-neutral-700 h-6 truncate">
-          ${this.renderWorkflowName(workflow)}
-        </div>
-        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
-          <sl-format-date
-            date=${workflow.lastCrawlTime || workflow.modified}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
-        </div>
-      </div>
-      <div class="col-span-1 py-3">
-        <div class="text-neutral-700 truncate h-6">
-          <sl-format-bytes
-            value=${workflow.totalSize}
-            display="narrow"
-          ></sl-format-bytes>
-        </div>
-        <div class="text-neutral-500 text-xs font-monostyle truncate h-4">
-          ${workflow.crawlCount === 1
-            ? msg("1 crawl")
-            : msg(
-                str`${this.numberFormatter.format(workflow.crawlCount)} crawls`
-              )}
-        </div>
-      </div>
-    `;
-  }
-
-  private deselectWorkflow(workflowId: string, crawls: Crawl[]) {
+  private deselectCrawls(crawls: Crawl[]) {
     this.selectedCrawls = omit(crawls.map(({ id }) => id))(
       this.selectedCrawls
     ) as any;
-    // Reset pagination
-    this.selectedWorkflowPagination = mergeDeep(
-      this.selectedWorkflowPagination,
-      {
-        [workflowId]: { page: 1 },
-      }
-    );
+  }
+
+  private async selectWorkflow(workflowId: string) {
+    const crawls = await this.fetchWorkflowCrawls(workflowId);
+    this.selectCrawls(crawls);
+  }
+
+  private async deselectWorkflow(workflowId: string) {
+    this.workflowPagination = mergeDeep(this.workflowPagination, {
+      [workflowId]: { page: 1 },
+    });
   }
 
   private onWorkflowExpandClick =
@@ -881,9 +892,6 @@ export class CollectionEditor extends LiteElement {
         sortBy: "lastCrawlTime",
         sortDirection: -1,
       });
-
-      // TODO remove
-      this.fetchWorkflowCrawls(this.workflows.items[0].id);
     } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't retrieve Workflows at this time."),
@@ -908,41 +916,84 @@ export class CollectionEditor extends LiteElement {
     return data;
   }
 
-  private fetchWorkflowCrawls(workflowId: string) {
-    if (this.workflowCrawls[workflowId] !== undefined) {
-      return Promise.resolve(this.workflowCrawls[workflowId] || []);
-    }
+  private async fetchCollectionCrawls() {
+    if (!this.collection) return;
 
-    this.workflowCrawls = mergeDeep(this.workflowCrawls, {
-      // TODO paginate
-      [workflowId]: this.getCrawls({
+    try {
+      // TODO handle crawl pagination
+      const paginatedCrawls = await this.getCrawls({
+        collectionId: this.collection.id,
+        sortBy: "finished",
+      });
+      const crawls = paginatedCrawls.items;
+      this.selectedCrawls = mergeDeep(
+        this.selectedCrawls,
+        crawls.reduce(
+          (acc, crawl) => ({
+            ...acc,
+            [crawl.id]: crawl,
+          }),
+          {}
+        )
+      );
+      // TODO remove omit once API removes errors
+      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve Crawls in Collection at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async fetchWorkflowCrawls(workflowId: string): Promise<Crawl[]> {
+    this.workflowIsLoading = mergeDeep(this.workflowIsLoading, {
+      [workflowId]: true,
+    });
+
+    let workflowCrawls: Crawl[] = [];
+
+    try {
+      // TODO handle crawl pagination
+      const paginatedCrawls = await this.getCrawls({
         cid: workflowId,
         state: finishedCrawlStates,
-      })
-        // TODO remove omit once API removes
-        .then(({ items }) => {
-          // Initial pagination setup
-          this.selectedWorkflowPagination = mergeDeep(
-            this.selectedWorkflowPagination,
-            {
-              [workflowId]: { page: 1 },
-            }
-          );
+        sortBy: "finished",
+      });
+      // TODO remove omit once API removes errors
+      const crawls = paginatedCrawls.items.map(omit("errors")) as Crawl[];
+      this.collectionCrawls = flow(
+        keyBy("id"),
+        (res) => mergeDeep(keyBy("id")(this.collectionCrawls), res),
+        Object.values
+      )(crawls) as any;
 
-          return items.map(omit("errors"));
-        })
-        .catch((err: any) => {
-          console.debug(err);
-          this.workflowCrawls = omit([workflowId], this.workflowCrawls);
-        }),
+      workflowCrawls = crawls;
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve Crawl Workflow at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.workflowIsLoading = mergeDeep(this.workflowIsLoading, {
+      [workflowId]: false,
     });
+
+    return workflowCrawls;
   }
 
   private async getCrawls(
     params: Partial<{
-      cid: string;
+      cid?: string;
+      collectionId?: string;
       state: CrawlState[];
-    }>
+    }> &
+      APISortQuery
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",

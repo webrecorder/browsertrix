@@ -61,6 +61,7 @@ export type Workflow = CrawlConfig & {
   modified: string; // Date string
   crawlCount: number;
   crawlAttemptCount: number;
+  crawlSuccessfulCount: number;
   lastCrawlId: string | null; // last finished or current crawl
   lastCrawlStartTime: string | null;
   lastCrawlTime: string | null; // when last crawl finished

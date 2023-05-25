@@ -172,17 +172,14 @@ export class CollectionDetail extends LiteElement {
   }
 
   private async getCollection(): Promise<Collection> {
-    // TODO replace endpoint once resource endpoint returns metadata
-    // const data = await this.apiFetch(
-    //   `/orgs/${this.orgId}/collections/${this.collectionId}`,
-    //   this.authState!
-    // );
-    const data: any = await this.apiFetch(
-      `/orgs/${this.orgId}/collections`,
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!
     );
 
-    return data.items.find(({ id }: any) => id === this.collectionId);
+    console.log(data);
+
+    return data;
   }
 }
 customElements.define("btrix-collection-detail", CollectionDetail);
