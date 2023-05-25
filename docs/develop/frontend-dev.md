@@ -39,6 +39,15 @@ If connecting to a local deployment cluster, set API_BASE_URL to:
 API_BASE_URL=http://localhost:30870/api
 ```
 
+??? info "Minikube (on Mac)"
+
+    When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
+    obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
+
+    Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
+
+
+
 Start the dev server:
 
 ```sh

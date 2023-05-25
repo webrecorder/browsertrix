@@ -107,6 +107,13 @@ The command will exit when all pods have been loaded, or if there is an error an
 
 If the command succeeds, you should be able to access Browsertrix Cloud by loading: **[http://localhost:30870/](http://localhost:30870/)** in your browser.
 
+??? info "Minikube (on Mac)"
+
+    When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
+    obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
+    Use the provided URL (in the format `http://127.0.0.1:<TUNNEL_PORT>`) instead.
+
+
 ### Debugging Pod Issues
 
 If this command fails, you can also run `kubectl get pods` to see the status of each of the pods.
