@@ -38,7 +38,22 @@ theme:
     edit: bootstrap/pencil
     view: bootstrap/eye
 
-
+nav:
+  - index.md
+  - Deploy:
+      - deploy/index.md
+      - deploy/local.md
+      - deploy/production.md
+      - Ansible:
+        - deploy/ansible/digitalocean.md
+        - deploy/ansible/microk8s.md
+  - Develop:
+      - develop/index.md
+      - develop/local-dev-setup.md
+      - develop/frontend-dev.md
+      - develop/docs.md
+  - User Guide:
+      - user-guide/index.md
 
 markdown_extensions:
   - toc:
