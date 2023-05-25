@@ -37,9 +37,11 @@ RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
 
 RUNNING_AND_STARTING_STATES = ("starting", "waiting", *RUNNING_STATES)
 
-NON_RUNNING_STATES = ("complete", "canceled", "partial_complete", "timed_out", "failed")
+FAILED_STATES = ("canceled", "failed")
 
-ALL_CRAWL_STATES = (*NON_RUNNING_STATES, *RUNNING_AND_STARTING_STATES)
+SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *FAILED_STATES, *SUCCESSFUL_STATES)
 
 
 # ============================================================================
@@ -109,6 +111,8 @@ class Crawl(CrawlConfigCore):
 
     stopping: Optional[bool] = False
 
+    collections: Optional[List[UUID4]] = []
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -122,7 +126,6 @@ class CrawlOut(Crawl):
     firstSeed: Optional[str]
     seedCount: Optional[int] = 0
     errors: Optional[List[str]]
-    collections: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -151,7 +154,6 @@ class ListCrawlOut(BaseMongoModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    collections: Optional[List[str]] = []
     tags: Optional[List[str]] = []
 
     notes: Optional[str]
@@ -161,6 +163,16 @@ class ListCrawlOut(BaseMongoModel):
     errors: Optional[List[str]]
 
     stopping: Optional[bool] = False
+
+    collections: Optional[List[UUID4]] = []
+
+
+# ============================================================================
+class ListCrawlOutWithResources(ListCrawlOut):
+    """Crawl output model used internally with files and resources."""
+
+    files: Optional[List[CrawlFile]] = []
+    resources: Optional[List[CrawlFileOut]] = []
 
 
 # ============================================================================
@@ -190,7 +202,7 @@ class UpdateCrawl(BaseModel):
 class CrawlOps:
     """Crawl Ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
         self.crawls = mdb["crawls"]
         self.collections = mdb["collections"]
@@ -218,14 +230,15 @@ class CrawlOps:
         first_seed: str = None,
         name: str = None,
         description: str = None,
-        collection_name: str = None,
+        collection_id: uuid.UUID = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = -1,
+        resources: bool = False,
     ):
         """List all finished crawls from the db"""
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -258,7 +271,6 @@ class CrawlOps:
             {"$match": query},
             {"$set": {"fileSize": {"$sum": "$files.size"}}},
             {"$set": {"fileCount": {"$size": "$files"}}},
-            {"$unset": ["files"]},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject"]},
@@ -276,28 +288,10 @@ class CrawlOps:
                     "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
                 }
             },
-            {
-                "$lookup": {
-                    "from": "collections",
-                    "let": {"crawl_id": {"$toString": "$_id"}},
-                    "pipeline": [
-                        {"$match": {"$expr": {"$in": ["$$crawl_id", "$crawlIds"]}}}
-                    ],
-                    "as": "colls",
-                },
-            },
-            {
-                "$set": {
-                    "collections": {
-                        "$map": {
-                            "input": "$colls",
-                            "as": "coll",
-                            "in": {"$getField": {"field": "name", "input": "$$coll"}},
-                        }
-                    }
-                }
-            },
         ]
+
+        if not resources:
+            aggregate.extend([{"$unset": ["files"]}])
 
         if name:
             aggregate.extend([{"$match": {"name": name}}])
@@ -308,8 +302,8 @@ class CrawlOps:
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
 
-        if collection_name:
-            aggregate.extend([{"$match": {"collections": {"$in": [collection_name]}}}])
+        if collection_id:
+            aggregate.extend([{"$match": {"collections": {"$in": [collection_id]}}}])
 
         if sort_by:
             if sort_by not in ("started, finished, fileSize, firstSeed"):
@@ -353,10 +347,16 @@ class CrawlOps:
         except (IndexError, ValueError):
             total = 0
 
+        cls = ListCrawlOut
+        if resources:
+            cls = ListCrawlOutWithResources
+
         crawls = []
         for result in items:
-            crawl = ListCrawlOut.from_dict(result)
-            crawl = await self._resolve_crawl_refs(crawl, org, add_first_seed=False)
+            crawl = cls.from_dict(result)
+            crawl = await self._resolve_crawl_refs(
+                crawl, org, add_first_seed=False, resources=resources
+            )
             crawls.append(crawl)
 
         return crawls, total
@@ -396,8 +396,10 @@ class CrawlOps:
         crawl: Union[CrawlOut, ListCrawlOut],
         org: Optional[Organization],
         add_first_seed: bool = True,
+        resources: bool = False,
     ):
         """Resolve running crawl data"""
+        # pylint: disable=too-many-branches
         config = await self.crawl_configs.get_crawl_config(
             crawl.cid, org, active_only=False
         )
@@ -423,14 +425,6 @@ class CrawlOps:
                 crawl.profileid, org
             )
 
-        if not crawl.collections:
-            crawl.collections = [
-                coll["name"]
-                async for coll in self.collections.find(
-                    {"crawlIds": {"$in": [crawl.id]}}
-                )
-            ]
-
         user = await self.user_manager.get(crawl.userid)
         if user:
             crawl.userName = user.name
@@ -444,6 +438,11 @@ class CrawlOps:
             # redis not available, ignore
             except exceptions.ConnectionError:
                 pass
+
+        if resources and crawl.state in SUCCESSFUL_STATES:
+            crawl.resources = await self._resolve_signed_urls(
+                crawl.files, org, crawl.id
+            )
 
         return crawl
 
@@ -507,7 +506,6 @@ class CrawlOps:
 
         for crawl_id in delete_list.crawl_ids:
             await self._delete_crawl_files(org, crawl_id)
-            await self.remove_crawl_from_collections(org, crawl_id)
 
             crawl = await self.get_crawl_raw(crawl_id, org)
             cids_to_update.add(crawl["cid"])
@@ -829,17 +827,41 @@ class CrawlOps:
 
         return resp
 
-    async def remove_crawl_from_collections(self, org: Organization, crawl_id: str):
-        """Remove crawl with given crawl_id from all collections it belongs to"""
-        collections = [
-            coll["name"]
-            async for coll in self.collections.find({"crawlIds": {"$in": [crawl_id]}})
-        ]
-        for collection_name in collections:
-            await self.collections.find_one_and_update(
-                {"name": collection_name, "oid": org.id},
-                {"$pull": {"crawlIds": crawl_id}},
+    async def add_to_collection(
+        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization
+    ):
+        """Add crawls to collection."""
+        for crawl_id in crawl_ids:
+            crawl_raw = await self.get_crawl_raw(crawl_id, org)
+            crawl_collections = crawl_raw.get("collections")
+            if crawl_collections and crawl_id in crawl_collections:
+                raise HTTPException(
+                    status_code=400, detail="crawl_already_in_collection"
+                )
+
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$push": {"collections": collection_id}},
             )
+
+    async def remove_from_collection(
+        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
+    ):
+        """Remove crawls from collection."""
+        for crawl_id in crawl_ids:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$pull": {"collections": collection_id}},
+            )
+
+    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
+        """Remove collection id from all crawls it's currently in."""
+        result = await self.crawls.update_many(
+            {"collections": collection_id},
+            {"$pull": {"collections": collection_id}},
+        )
+        if result.modified_count < 1:
+            raise HTTPException(status_code=404, detail="crawls_not_found")
 
 
 # ============================================================================
@@ -926,7 +948,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collection: Optional[str] = None,
+        collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
         runningOnly: Optional[bool] = True,
@@ -946,9 +968,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
-        if collection:
-            collection = urllib.parse.unquote(collection)
-
         crawls, total = await ops.list_crawls(
             None,
             userid=userid,
@@ -958,7 +977,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
-            collection_name=collection,
+            collection_id=collectionId,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -977,7 +996,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collection: Optional[str] = None,
+        collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
     ):
@@ -994,9 +1013,6 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if description:
             description = urllib.parse.unquote(description)
 
-        if collection:
-            collection = urllib.parse.unquote(collection)
-
         crawls, total = await ops.list_crawls(
             org,
             userid=userid,
@@ -1006,7 +1022,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             first_seed=firstSeed,
             name=name,
             description=description,
-            collection_name=collection,
+            collection_id=collectionId,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

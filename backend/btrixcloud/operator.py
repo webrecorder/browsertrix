@@ -19,6 +19,7 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
+from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import update_config_crawl_stats
 from .crawls import (
     CrawlFile,
@@ -26,6 +27,7 @@ from .crawls import (
     add_crawl_file,
     update_crawl,
     add_crawl_errors,
+    SUCCESSFUL_STATES,
 )
 
 
@@ -98,6 +100,7 @@ class BtrixOperator(K8sAPI):
         self.config_file = "/config/config.yaml"
 
         _, mdb = init_db()
+        self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]
@@ -498,24 +501,34 @@ class BtrixOperator(K8sAPI):
         """mark crawl as finished, set finished timestamp and final state"""
         finished = dt_now()
 
-        kwargs = {"state": state, "finished": finished}
-        if stats:
-            kwargs["stats"] = stats
-
-        await update_crawl(self.crawls, crawl_id, **kwargs)
-
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
-
-        if redis:
-            await self.add_crawl_errors_to_db(redis, crawl_id)
-
         status.state = state
         status.finished = to_k8s_date(finished)
 
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
 
+        kwargs = {"state": state, "finished": finished}
+        if stats:
+            kwargs["stats"] = stats
+
+        await update_crawl(self.crawls, crawl_id, **kwargs)
+
+        asyncio.create_task(self.do_crawl_finished_tasks(redis, crawl_id, cid, state))
+
         return status
+
+    # pylint: disable=too-many-arguments
+    async def do_crawl_finished_tasks(self, redis, crawl_id, cid, state):
+        """Run tasks after crawl completes in asyncio.task coroutine."""
+        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+
+        if redis:
+            await self.add_crawl_errors_to_db(redis, crawl_id)
+
+        if state in SUCCESSFUL_STATES:
+            await add_successful_crawl_to_collections(
+                self.crawls, self.crawl_configs, self.collections, crawl_id, cid
+            )
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
