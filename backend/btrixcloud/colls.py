@@ -226,7 +226,6 @@ class CollectionOps:
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = 1,
-        crawl_count: bool = True,
         name: Optional[str] = None,
     ):
         """List all collections for org"""
@@ -241,31 +240,6 @@ class CollectionOps:
             match_query["name"] = name
 
         aggregate = [{"$match": match_query}]
-
-        if crawl_count:
-            aggregate.extend(
-                [
-                    {
-                        "$lookup": {
-                            "from": "crawls",
-                            "let": {"collection_id": "$_id"},
-                            "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {
-                                            "$in": ["$$collection_id", "$collections"]
-                                        }
-                                    }
-                                }
-                            ],
-                            "as": "collectionCrawls",
-                        }
-                    },
-                    {"$set": {"crawlCount": {"$size": "$collectionCrawls"}}},
-                ]
-            )
-        else:
-            aggregate.extend([{"$set": {"crawlCount": None}}])
 
         if sort_by:
             if sort_by not in ("name", "description"):
@@ -437,7 +411,6 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         sortBy: str = None,
         sortDirection: int = 1,
         name: Optional[str] = None,
-        crawlCount: Optional[bool] = True,
     ):
         collections, total = await colls.list_collections(
             org.id,
@@ -445,7 +418,6 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
-            crawl_count=crawlCount,
             name=name,
         )
         return paginated_format(collections, total, page, pageSize)
