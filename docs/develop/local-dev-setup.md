@@ -24,6 +24,19 @@ backend_pull_policy: 'Never'
 frontend_pull_policy: 'Never'
 ```
 
+    ??? info "MicroK8S"
+
+        For microk8s, the pull policies actually need to be set to `IfNotPresent` instead of `Never`:
+
+        ```yaml
+        backend_pull_policy: 'IfNotPresent'
+        frontend_pull_policy: 'IfNotPresent'
+        ```
+
+        This will ensure images are pulled from the MicroK8S registry (configured in next section).
+
+
+
 3. Build the local backend and frontend images. The exact process depends on the Kubernetes environment you've selected in your initial deployment. Environment specific build instructions are as follows:
 
     ??? info "Docker Desktop"
@@ -34,16 +47,15 @@ frontend_pull_policy: 'Never'
 
         MicroK8s uses its own container registry, running on port 32000.
 
-        1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
+        1. Ensure the registry add-on is enabled by running `microk8s enable registry`
 
-        2. In `./chart/local.yaml`, also uncomment the following lines to use the local images:
+        2. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
 
+        3. In `./chart/local.yaml`, also uncomment the following lines to use the local images:
         ```yaml
         backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
         frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
         ```
-
-        Note: whenever `helm` is mentioned, you'll need to run `microk8s helm3` instead.
 
     ??? info "Minikube"
 
@@ -101,7 +113,13 @@ helm upgrade --install -f ./chart/values.yaml \
 -f ./chart/local.yaml btrix ./chart/
 ```
 
-    (Note: if using microk8s, instead of `helm` you will need to run `microk8s helm3`)
+    ??? info "MicroK8S"
+
+        If using microk8s, the commend will be:
+
+        ```sh
+        microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
+        ```
 
 Refer back to the [Local Development guide](../deploy/local.md#waiting-for-cluster-to-start) for additional information on running and debugging your local cluster.
 

@@ -59,8 +59,21 @@ Here are some environment specific instructions for setting up a local cluster f
 Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can then run from the Browsertrix Cloud repo directory:
 
 ```shell
-helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart/
+helm upgrade --install -f ./chart/values.yaml \
+-f ./chart/examples/local-config.yaml btrix ./chart/
 ```
+
+??? info "MicroK8S"
+
+    If using microk8s, the command will be:
+
+    ```sh
+    microk8s helm3 upgrade --install -f ./chart/values.yaml \
+    -f ./chart/examples/local-config.yaml btrix ./chart/
+    ```
+
+    Subsequent commands will also use `microk8s helm3` instead of `helm`.
+
 
 The local setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
 
