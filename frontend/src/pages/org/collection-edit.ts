@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import difference from "lodash/fp/difference";
 
 import type { CollectionSubmitEvent } from "./collection-editor";
 import type { AuthState } from "../../utils/AuthService";
@@ -46,8 +47,9 @@ export class CollectionEdit extends LiteElement {
         () => html`
           <btrix-collection-editor
             .authState=${this.authState}
-            .collection=${this.collection}
             orgId=${this.orgId}
+            collectionId=${this.collectionId}
+            .metadataValues=${this.collection}
             ?isSubmitting=${this.isSubmitting}
             @on-submit=${this.onSubmit}
           ></btrix-collection-editor>
@@ -80,20 +82,15 @@ export class CollectionEdit extends LiteElement {
 
   private async onSubmit(e: CollectionSubmitEvent) {
     this.isSubmitting = true;
-    const { values } = e.detail;
+    const { name, description, crawlIds, oldCrawlIds } = e.detail.values;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${this.collectionId}/update`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: values.name,
-            description: values.description,
-          }),
-        }
-      );
+      let data: any;
+      if (oldCrawlIds && oldCrawlIds) {
+        data = await this.saveCrawlSelection({ crawlIds, oldCrawlIds });
+      } else {
+        data = await this.saveMetadata({ name, description });
+      }
 
       this.notify({
         message: msg(str`Successfully updated "${data.name}" Collection.`),
@@ -114,6 +111,59 @@ export class CollectionEdit extends LiteElement {
     }
 
     this.isSubmitting = false;
+  }
+
+  private saveMetadata(values: { name: string; description: string | null }) {
+    return this.apiFetch(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/update`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify(values),
+      }
+    );
+  }
+
+  private saveCrawlSelection({
+    crawlIds,
+    oldCrawlIds,
+  }: {
+    crawlIds: string[];
+    oldCrawlIds: string[];
+  }) {
+    const remove = difference(oldCrawlIds)(crawlIds);
+    const add = difference(crawlIds)(oldCrawlIds);
+    const requests = [];
+    if (add.length) {
+      requests.push(
+        this.apiFetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+          this.authState!,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: add }),
+          }
+        )
+      );
+    }
+    if (remove.length) {
+      requests.push(
+        this.apiFetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+          this.authState!,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: remove }),
+          }
+        )
+      );
+    }
+
+    if (requests.length) {
+      return Promise.all(requests).then(([data]) => data);
+    }
+
+    return Promise.resolve(this.collection);
   }
 
   private async fetchCollection() {

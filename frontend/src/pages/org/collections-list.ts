@@ -113,7 +113,7 @@ export class CollectionsList extends LiteElement {
               class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5"
             >
               <div class="col-span-1 px-2">${msg("Collection Name")}</div>
-              <div class="col-span-1">${msg("Description")}</div>
+              <div class="col-span-1">${msg("Tags")}</div>
               <div class="col-span-2">${msg("Total Crawls")}</div>
             </div>
           </header>
@@ -134,7 +134,7 @@ export class CollectionsList extends LiteElement {
           class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5 items-center"
         >
           <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
-          <div class="col-span-1 truncate">${col.description}</div>
+          <div class="col-span-1 truncate">${col.tags.join(", ")}</div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
           >

@@ -115,13 +115,12 @@ export class CollectionDetail extends LiteElement {
             this.isEditingDescription,
             () => html`<btrix-markdown-editor
               initialValue=${this.collection?.description || ""}
-              @on-change=${console.log}
             ></btrix-markdown-editor>`,
             () =>
               html`
                 <main class="border rounded-lg p-5 max-h-screen overflow-auto">
                   ${this.collection?.description
-                    ? html`<div class="max-w-prose mx-auto">
+                    ? html`<div>
                         <btrix-markdown-viewer
                           value=${this.collection!.description}
                         ></btrix-markdown-viewer>
@@ -145,9 +144,9 @@ export class CollectionDetail extends LiteElement {
         </h3>
       </header>
       <main class="flex">
-        <div class="flex-0 border rounded-lg p-5 mr-3 overflow-auto"></div>
+        <div class="flex-0 border rounded-lg p-5 mr-3 overflow-auto">TODO</div>
         <div class="flex-1 aspect-4/3 border rounded-lg overflow-hidden">
-          replay
+          TODO
         </div>
       </main>
     </section>`;
@@ -176,8 +175,6 @@ export class CollectionDetail extends LiteElement {
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!
     );
-
-    console.log(data);
 
     return data;
   }

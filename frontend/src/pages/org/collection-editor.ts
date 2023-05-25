@@ -57,6 +57,7 @@ export type CollectionSubmitEvent = CustomEvent<{
     name: string;
     description: string | null;
     crawlIds: string[];
+    oldCrawlIds?: string[];
   };
 }>;
 
@@ -71,14 +72,20 @@ export class CollectionEditor extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: String })
+  collectionId?: string;
+
   @property({ type: Object })
-  collection?: Collection;
+  metadataValues?: Collection;
 
   @property({ type: Boolean })
   isSubmitting = false;
 
   @state()
-  private collectionCrawls: Crawl[] = [];
+  private collectionCrawls?: Crawl[];
+
+  // Store crawl IDs to compare later
+  private savedCollectionCrawlIds: string[] = [];
 
   @state()
   private workflows?: APIPaginatedList & {
@@ -159,7 +166,7 @@ export class CollectionEditor extends LiteElement {
       this.fetchWorkflows();
     }
 
-    if (changedProperties.has("collection") && this.collection) {
+    if (changedProperties.has("collectionId") && this.collectionId) {
       this.fetchCollectionCrawls();
     }
   }
@@ -202,7 +209,7 @@ export class CollectionEditor extends LiteElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-metadata">
           ${guard(
-            [this.collection, this.isSubmitting, this.workflowIsLoading],
+            [this.metadataValues, this.isSubmitting, this.workflowIsLoading],
             this.renderMetadata
           )}
         </btrix-tab-panel>
@@ -307,10 +314,9 @@ export class CollectionEditor extends LiteElement {
           class="col-span-full border rounded-lg px-6 py-4 flex justify-end"
         >
           ${when(
-            this.collection,
+            this.collectionId,
             () => html`
               <sl-button
-                type="submit"
                 size="small"
                 variant="primary"
                 ?disabled=${this.isSubmitting ||
@@ -318,6 +324,7 @@ export class CollectionEditor extends LiteElement {
                   (isLoading) => isLoading === true
                 )}
                 ?loading=${this.isSubmitting}
+                @click=${this.submitCrawlSelectionChanges}
               >
                 ${msg("Save Changes")}
               </sl-button>
@@ -344,7 +351,7 @@ export class CollectionEditor extends LiteElement {
             label=${msg("Name")}
             placeholder=${msg("My Collection")}
             autocomplete="off"
-            value=${this.collection?.name}
+            value=${this.metadataValues?.name}
             required
             help-text=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
@@ -354,14 +361,14 @@ export class CollectionEditor extends LiteElement {
             <label class="form-label">${msg("Description")}</label>
             <btrix-markdown-editor
               name="description"
-              initialValue=${this.collection?.description}
+              initialValue=${this.metadataValues?.description}
               maxlength=${4000}
             ></btrix-markdown-editor>
           </fieldset>
         </div>
         <footer class="border-t px-6 py-4 flex justify-between">
           ${when(
-            !this.collection,
+            !this.collectionId,
             () => html`
               <sl-button size="small" @click=${() => this.goToTab("crawls")}>
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
@@ -380,7 +387,7 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collection ? msg("Save Changes") : msg("Save Collection")}
+            ${this.collectionId ? msg("Save Changes") : msg("Save Collection")}
           </sl-button>
         </footer>
       </section>
@@ -388,12 +395,11 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderCollectionWorkflowList = () => {
-    // TODO
-    // if (this.collection && !this.collectionCrawls) {
-    //   return this.renderLoading();
-    // }
+    if (this.collectionId && !this.collectionCrawls) {
+      return this.renderLoading();
+    }
 
-    if (!this.collectionCrawls.length) {
+    if (!this.collectionCrawls?.length) {
       return html`
         <div class="flex flex-col items-center justify-center text-center p-4">
           <span class="text-base font-semibold text-primary"
@@ -697,7 +703,7 @@ export class CollectionEditor extends LiteElement {
       <btrix-checkbox-list-item
         ?checked=${selectedCrawls.length}
         ?allChecked=${allChecked}
-        ?disabled=${this.collection && !this.collectionCrawls}
+        ?disabled=${this.collectionId && !this.collectionCrawls}
         group
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked || !allChecked) {
@@ -882,6 +888,19 @@ export class CollectionEditor extends LiteElement {
     }
   }) as any;
 
+  private async submitCrawlSelectionChanges() {
+    this.dispatchEvent(
+      <CollectionSubmitEvent>new CustomEvent("on-submit", {
+        detail: {
+          values: {
+            oldCrawlIds: this.savedCollectionCrawlIds,
+            crawlIds: Object.keys(this.selectedCrawls),
+          },
+        },
+      })
+    );
+  }
+
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -892,10 +911,11 @@ export class CollectionEditor extends LiteElement {
       return;
     }
 
-    const values = {
-      ...serialize(form),
-      crawlIds: Object.keys(this.selectedCrawls),
-    };
+    const values = serialize(form);
+    if (!this.collectionId) {
+      // Crawl IDs can only be saved in new collections
+      values.crawlIds = Object.keys(this.selectedCrawls);
+    }
     this.dispatchEvent(
       <CollectionSubmitEvent>new CustomEvent("on-submit", {
         detail: { values },
@@ -956,16 +976,14 @@ export class CollectionEditor extends LiteElement {
   }
 
   private async fetchCollectionCrawls() {
-    if (!this.collection) return;
+    if (!this.collectionId) return;
 
     try {
-      // TODO handle crawl pagination
-      const paginatedCrawls = await this.getCrawls({
-        collectionId: this.collection.id,
+      const { items: crawls } = await this.getCrawls({
+        collectionId: this.collectionId,
         sortBy: "finished",
         pageSize: WORKFLOW_CRAWL_LIMIT,
       });
-      const crawls = paginatedCrawls.items;
       this.selectedCrawls = mergeDeep(
         this.selectedCrawls,
         crawls.reduce(
@@ -978,6 +996,8 @@ export class CollectionEditor extends LiteElement {
       );
       // TODO remove omit once API removes errors
       this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
+      // Store crawl IDs to compare later
+      this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
     } catch {
       this.notify({
         message: msg(
@@ -997,15 +1017,14 @@ export class CollectionEditor extends LiteElement {
     let workflowCrawls: Crawl[] = [];
 
     try {
-      // TODO handle crawl pagination
-      const paginatedCrawls = await this.getCrawls({
+      const { items } = await this.getCrawls({
         cid: workflowId,
         state: finishedCrawlStates,
         sortBy: "finished",
         pageSize: WORKFLOW_CRAWL_LIMIT,
       });
       // TODO remove omit once API removes errors
-      const crawls = paginatedCrawls.items.map(omit("errors")) as Crawl[];
+      const crawls = items.map(omit("errors")) as Crawl[];
       this.collectionCrawls = flow(
         keyBy("id"),
         (res) => mergeDeep(keyBy("id")(this.collectionCrawls), res),
