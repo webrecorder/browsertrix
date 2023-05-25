@@ -1045,7 +1045,14 @@ async def stats_recompute_last(
 
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},
-        {"$set": update_query, "$inc": {"totalSize": size, "crawlCount": inc_crawls}},
+        {
+            "$set": update_query,
+            "$inc": {
+                "totalSize": size,
+                "crawlCount": inc_crawls,
+                "crawlSuccessfulCount": inc_crawls,
+            },
+        },
     )
 
     return result
