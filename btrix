@@ -90,12 +90,25 @@ runNightlyTests() {
 
 microk8s=false
 
+CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
+
 if [[ $(microk8s) ]]; then
     microk8s=true
 fi
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
 if [[ $1 = "bootstrap" ]]; then
+
+    echo "Current context: $CONTEXT"
+    echo "Are you sure you want to update this context?"
+    if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
+        echo Continuing
+    else
+        echo Stopping
+        exit 1
+    fi
+
+
     if [ "$microk8s" = true ] ; then
         bootstrapMicrok8s
     else
@@ -113,6 +126,16 @@ fi
 
 # reset: uninstall, delete data, then bootstrap
 if [[ $1 = "reset" ]]; then
+    
+    echo "Current context: $CONTEXT"
+    echo "Resetting k8s cluster will delete the database. Are you sure you want to do this?"
+    if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
+        echo Continuing
+    else
+        echo Stopping
+        exit 1
+    fi
+
     if [ "$microk8s" = true ] ; then
         resetMicrok8s
         bootstrapMicrok8s
