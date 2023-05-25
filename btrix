@@ -5,9 +5,6 @@
 # Note: btrix helper expects a local.yaml file to exist in
 # the chart directory alongside values.yaml.
 #
-# The utility will check if microk8s is installed and if so
-# will preface all helm and kubectl commands with microk8s.
-#
 # Test commands require installing pytest first, e.g.:
 # python3 -m pip install pytest
 #
@@ -16,11 +13,13 @@
 # $ ./btrix bootstrap
 # Build frontend and backend and upgrade
 # Optional args:
+#   -microk8s: Preface kubectl/helm commands with microk8s
 #   -wait: Wait until pods are ready
 #
 # $ ./btrix reset
 # Uinstall, delete data, then bootstrap
 # Optional args:
+#   -microk8s: Preface kubectl/helm commands with microk8s
 #   -wait: Wait until pods are ready
 #
 # $ ./btrix test
@@ -49,7 +48,7 @@ bootstrapMicrok8s(){
     ./scripts/build-frontend.sh
 
     echo "Installing..."
-    microk8s helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+    microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
 waitUntilReady(){
@@ -88,13 +87,9 @@ runNightlyTests() {
     python3 -m pytest backend/test_nightly/*.py
 }
 
-microk8s=false
-
 CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
-
-if [[ $(microk8s) ]]; then
-    microk8s=true
-fi
+MICROK8S="-microk8s"
+WAIT="-wait"
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
 if [[ $1 = "bootstrap" ]]; then
@@ -108,15 +103,15 @@ if [[ $1 = "bootstrap" ]]; then
         exit 1
     fi
 
-
-    if [ "$microk8s" = true ] ; then
+    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
         bootstrapMicrok8s
     else
         bootstrap
     fi
 
-    if [[ $2 = "-wait" ]]; then
-        if [ "$microk8s" = true ] ; then
+    
+    if [[ $2 = "$WAIT" || $3 = "$WAIT" ]]; then
+        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
             waitUntilReadyMicrok8s
         else
             waitUntilReady
@@ -136,7 +131,7 @@ if [[ $1 = "reset" ]]; then
         exit 1
     fi
 
-    if [ "$microk8s" = true ] ; then
+    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
         resetMicrok8s
         bootstrapMicrok8s
     else
@@ -144,8 +139,8 @@ if [[ $1 = "reset" ]]; then
         bootstrap
     fi
 
-    if [[ $2 = "-wait" ]]; then
-        if [ "$microk8s" = true ] ; then
+    if [[ $2 = "$WAIT" || $3 = "$WAIT" ]] ; then
+        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
             waitUntilReadyMicrok8s
         else
             waitUntilReady
