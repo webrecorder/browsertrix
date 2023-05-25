@@ -863,12 +863,6 @@ class CrawlOps:
         if result.modified_count < 1:
             raise HTTPException(status_code=404, detail="crawls_not_found")
 
-    async def get_crawls_in_collection(self, collection_id: uuid.UUID):
-        """Get list of ids for crawls in a given collection."""
-        cursor = self.crawls.find({"collections": collection_id})
-        crawls = await cursor.to_list(length=10_000)
-        return [crawl["_id"] for crawl in crawls]
-
 
 # ============================================================================
 async def add_new_crawl(

@@ -193,13 +193,7 @@ class CollectionOps:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
             )
-        return await self._get_annotated_coll_out(result)
-
-    async def _get_annotated_coll_out(self, result):
-        """Add crawlCount to db collection result and return CollOut."""
-        crawl_ids = await self.crawl_ops.get_crawls_in_collection(result["_id"])
-        result["crawlCount"] = len(crawl_ids)
-        return CollOut.from_dict(result)
+        return await CollOut.from_dict(result)
 
     async def find_collections(self, oid: uuid.UUID, names: List[str]):
         """Find all collections for org given a list of names"""
