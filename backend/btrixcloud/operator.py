@@ -19,10 +19,7 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
-from .colls import (
-    add_successful_crawl_to_collections,
-    update_crawl_collections,
-)
+from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import update_config_crawl_stats
 from .crawls import (
     CrawlFile,
