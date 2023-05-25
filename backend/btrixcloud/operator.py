@@ -507,6 +507,12 @@ class BtrixOperator(K8sAPI):
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
 
+        kwargs = {"state": state, "finished": finished}
+        if stats:
+            kwargs["stats"] = stats
+
+        await update_crawl(self.crawls, crawl_id, **kwargs)
+
         asyncio.create_task(
             self.do_crawl_finished_tasks(redis, crawl_id, cid, state, stats, finished)
         )
@@ -518,12 +524,6 @@ class BtrixOperator(K8sAPI):
         self, redis, crawl_id, cid, state, stats, finished
     ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        kwargs = {"state": state, "finished": finished}
-        if stats:
-            kwargs["stats"] = stats
-
-        await update_crawl(self.crawls, crawl_id, **kwargs)
-
         await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
 
         if redis:
