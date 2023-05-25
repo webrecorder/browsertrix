@@ -4,6 +4,8 @@ Browsertrix API Mongo DB initialization
 import importlib.util
 import os
 import urllib
+import asyncio
+
 from typing import Optional
 
 import motor.motor_asyncio
@@ -50,6 +52,23 @@ def init_db():
 
 
 # ============================================================================
+async def ping_db(mdb, db_inited):
+    """run in loop until db is up, set db_inited['inited'] property to true"""
+    print("Waiting DB", flush=True)
+    while True:
+        try:
+            result = await mdb.command("ping")
+            assert result.get("ok")
+            db_inited["inited"] = True
+            print("DB Ready!")
+            break
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            print("Retrying, waiting for DB to be ready")
+            await asyncio.sleep(3)
+
+
+# ============================================================================
 async def update_and_prepare_db(
     # pylint: disable=R0913
     mdb,
@@ -59,6 +78,7 @@ async def update_and_prepare_db(
     crawl_config_ops,
     coll_ops,
     invite_ops,
+    db_inited,
 ):
     """Prepare database for application.
 
@@ -68,6 +88,7 @@ async def update_and_prepare_db(
     - Create/update default org
 
     """
+    await ping_db(mdb, db_inited)
     print("Database setup started", flush=True)
     if await run_db_migrations(mdb, user_manager):
         await drop_indexes(mdb)

@@ -6,11 +6,11 @@ import os
 import asyncio
 import sys
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 
-from .db import init_db, update_and_prepare_db
+from .db import init_db, ping_db, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -34,6 +34,8 @@ app_root = FastAPI(
     redoc_url=API_PREFIX + "/redoc",
     openapi_url=API_PREFIX + "/openapi.json",
 )
+
+db_inited = {"inited": False}
 
 
 # ============================================================================
@@ -114,14 +116,25 @@ def main():
     if run_once_lock("btrix-init-db"):
         asyncio.create_task(
             update_and_prepare_db(
-                mdb, user_manager, org_ops, crawls, crawl_config_ops, coll_ops, invites
+                mdb,
+                user_manager,
+                org_ops,
+                crawls,
+                crawl_config_ops,
+                coll_ops,
+                invites,
+                db_inited,
             )
         )
+    else:
+        asyncio.create_task(ping_db(mdb, db_inited))
 
     app.include_router(org_ops.router)
 
     @app.get("/settings")
     async def get_settings():
+        if not db_inited.get("inited"):
+            raise HTTPException(status_code=503, detail="not_ready_yet")
         return settings
 
     # internal routes
@@ -132,6 +145,8 @@ def main():
 
     @app_root.get("/healthz", include_in_schema=False)
     async def healthz():
+        if not db_inited.get("inited"):
+            raise HTTPException(status_code=503, detail="not_ready_yet")
         return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
