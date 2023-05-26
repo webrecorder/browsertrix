@@ -19,7 +19,6 @@ from .utils import (
     to_k8s_date,
     dt_now,
     get_redis_crawl_stats,
-    run_once_lock,
 )
 from .k8sapi import K8sAPI
 
@@ -31,7 +30,7 @@ from .crawls import (
     CrawlFile,
     CrawlCompleteIn,
     add_crawl_file,
-    update_crawl,
+    update_crawl_state_if_changed,
     add_crawl_errors,
     SUCCESSFUL_STATES,
 )
@@ -328,7 +327,7 @@ class BtrixOperator(K8sAPI):
 
         pvcs = list(related[PVC].keys())
         if pvcs:
-            print("Deleting PVCs", pvcs)
+            print(f"Deleting PVCs for {crawl_id}", pvcs)
             asyncio.create_task(self.delete_pvc(crawl_id))
             finalized = False
 
@@ -388,7 +387,6 @@ class BtrixOperator(K8sAPI):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
-                print("Phase", pod["status"]["phase"])
                 if pod["status"]["phase"] == "Running":
                     return True
         # pylint: disable=bare-except
@@ -448,7 +446,9 @@ class BtrixOperator(K8sAPI):
         # otherwise, mark as 'waiting' and return
         if not await self.check_if_pods_running(pods):
             if status.state not in ("waiting", "canceled"):
-                await update_crawl(self.crawls, crawl.id, state="waiting")
+                await update_crawl_state_if_changed(
+                    self.crawls, crawl.id, state="waiting"
+                )
                 status.state = "waiting"
 
             return status
@@ -457,7 +457,7 @@ class BtrixOperator(K8sAPI):
         # will set stats at when crawl is finished, otherwise can read
         # directly from redis
         if status.state != "running":
-            await update_crawl(self.crawls, crawl.id, state="running")
+            await update_crawl_state_if_changed(self.crawls, crawl.id, state="running")
 
         # update status
         status.state = "running"
@@ -522,22 +522,24 @@ class BtrixOperator(K8sAPI):
         status.state = state
         status.finished = to_k8s_date(finished)
 
-        if crawl:
-            await self.inc_crawl_complete_stats(crawl, finished)
-
-        kwargs = {"state": state, "finished": finished}
+        kwargs = {"finished": finished}
         if stats:
             kwargs["stats"] = stats
 
-        await update_crawl(self.crawls, crawl_id, stopping=False, **kwargs)
+        if not await update_crawl_state_if_changed(
+            self.crawls, crawl_id, state=state, **kwargs
+        ):
+            print("already finished, ignoring mark_finished")
+            return status
 
-        lock_file = f"operator-crawl-finished-{crawl_id}"
-        if run_once_lock(lock_file):
-            asyncio.create_task(
-                self.do_crawl_finished_tasks(
-                    redis, crawl_id, cid, status.filesAddedSize, state
-                )
+        if crawl:
+            await self.inc_crawl_complete_stats(crawl, finished)
+
+        asyncio.create_task(
+            self.do_crawl_finished_tasks(
+                redis, crawl_id, cid, status.filesAddedSize, state
             )
+        )
 
         return status
 

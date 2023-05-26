@@ -880,13 +880,16 @@ async def add_new_crawl(
 
 
 # ============================================================================
-async def update_crawl(crawls, crawl_id, **kwargs):
-    """update crawl state in db"""
-    return await crawls.find_one_and_update(
-        {"_id": crawl_id},
+async def update_crawl_state_if_changed(crawls, crawl_id, state, **kwargs):
+    """update crawl state and other properties in db if state has changed"""
+    kwargs["state"] = state
+    res = await crawls.find_one_and_update(
+        {"_id": crawl_id, "state": {"$ne": state}},
         {"$set": kwargs},
         return_document=pymongo.ReturnDocument.AFTER,
     )
+    print("** UPDATE", crawl_id, state, res is not None)
+    return res
 
 
 # ============================================================================
