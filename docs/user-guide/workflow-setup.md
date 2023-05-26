@@ -1,5 +1,13 @@
 # Workflow Setup
 
+The first step in creating a new workflow is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
+
+`URL List`{ .badge-blue }
+:   The crawler visits every URL specified in a list, and optionally every URL linked on those pages.
+
+`Seeded Crawl`{ .badge-orange }
+:   The crawler automatically discovers and archives pages starting from a single seed URL.
+
 ## Scope
 
 ### List of URLs
