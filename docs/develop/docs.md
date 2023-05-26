@@ -47,7 +47,7 @@ In a list of three or more items, the list item proceeding the word "and" should
 
 ### Acronyms
 
-Avoid using acronyms when reuse is not frequent enough to warrant space savings. When acronyms must be used, spell the full phrase first and include the acronym in parentheses `()` the first time it is used in each document.
+Avoid using acronyms when reuse is not frequent enough to warrant space savings. When acronyms must be used, spell the full phrase first and include the acronym in parentheses `()` the first time it is used in each document.  This can be omitted for extremely common acronyms such as "URL" or "HTTP".
 
 > When running in a Virtual Machine (VM), use the....
 
