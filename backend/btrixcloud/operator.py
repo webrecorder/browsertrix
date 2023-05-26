@@ -14,7 +14,13 @@ import humanize
 from pydantic import BaseModel
 from redis import asyncio as aioredis
 
-from .utils import from_k8s_date, to_k8s_date, dt_now, get_redis_crawl_stats
+from .utils import (
+    from_k8s_date,
+    to_k8s_date,
+    dt_now,
+    get_redis_crawl_stats,
+    run_once_lock,
+)
 from .k8sapi import K8sAPI
 
 from .db import init_db
@@ -525,11 +531,13 @@ class BtrixOperator(K8sAPI):
 
         await update_crawl(self.crawls, crawl_id, stopping=False, **kwargs)
 
-        asyncio.create_task(
-            self.do_crawl_finished_tasks(
-                redis, crawl_id, cid, status.filesAddedSize, state
+        lock_file = f"operator-crawl-finished-{crawl_id}"
+        if run_once_lock(lock_file):
+            asyncio.create_task(
+                self.do_crawl_finished_tasks(
+                    redis, crawl_id, cid, status.filesAddedSize, state
+                )
             )
-        )
 
         return status
 
