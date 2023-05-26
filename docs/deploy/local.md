@@ -1,6 +1,6 @@
 # Local Deployment
 
-To just test out Browsertrix Cloud on your local machine, you'll first need to have a working Kubernetes cluster.
+To try out the latest release of Browsertrix Cloud on your local machine, you'll first need to have a working Kubernetes cluster.
 
 ## Installing Kubernetes
 
@@ -24,7 +24,6 @@ Here are some environment specific instructions for setting up a local cluster f
 
     4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
-
 ??? info "MicroK8S (recommended for Ubuntu)"
 
     For Ubuntu and other linux distros, we recommend using MicroK8S for both local deployment and production.
@@ -39,13 +38,11 @@ Here are some environment specific instructions for setting up a local cluster f
 
 ??? info "Minikube (Windows, Mac or Linux)"
 
-    1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`
+    1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`.
+       Note that Minikube also requires Docker or another container management system to be installed as well.
 
     2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
-    3. Run the Helm command as described above.
-
-    4. Mac Only: To access Browsertrix Cloud running in minikube on a mac, run `minikube service browsertrix-cloud-frontend --url` and then access Browsertrix Cloud via the provided URL. This is needed as Browsertrix Cloud is running in a VM.
 
 ??? info "K3S (recommended for non-Ubuntu Linux)"
 
@@ -55,14 +52,26 @@ Here are some environment specific instructions for setting up a local cluster f
 
     3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
-
 ## Launching Browsertrix Cloud with Helm
 
 Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can then run from the Browsertrix Cloud repo directory:
 
 ```shell
-helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart/
+helm upgrade --install -f ./chart/values.yaml \
+-f ./chart/examples/local-config.yaml btrix ./chart/
 ```
+
+??? info "MicroK8S"
+
+    If using microk8s, the command will be:
+
+    ```sh
+    microk8s helm3 upgrade --install -f ./chart/values.yaml \
+    -f ./chart/examples/local-config.yaml btrix ./chart/
+    ```
+
+    Subsequent commands will also use `microk8s helm3` instead of `helm`.
+
 
 The local setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
 
@@ -72,8 +81,7 @@ This config uses the standard config (`./chart/values.yaml`) with a couple addit
 
 These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
-Note that the admin user and password will not be reset after creation.
-
+For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment)
 
 ## Waiting for Cluster to Start
 
@@ -96,6 +104,13 @@ You can try running the command: `kubectl wait --for=condition=ready pod --all -
 The command will exit when all pods have been loaded, or if there is an error and it times out.
 
 If the command succeeds, you should be able to access Browsertrix Cloud by loading: **[http://localhost:30870/](http://localhost:30870/)** in your browser.
+
+??? info "Minikube (on Mac)"
+
+    When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
+    obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
+    Use the provided URL (in the format `http://127.0.0.1:<TUNNEL_PORT>`) instead.
+
 
 ### Debugging Pod Issues
 
@@ -123,77 +138,17 @@ helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.y
 
 To uninstall, run `helm uninstall btrix`.
 
-By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade...` again to restart the cluster in its current state.
+By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade ...` again to restart the cluster in its current state.
 
-To fully delete all persistent data created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
+If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend
+uninstalling and then re-running upgrade.
 
+## Deleting all Data
 
-## Running With Local Images
+To fully delete all persistent data (db + archives) created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
 
-By default, this setup will pull the latest release of Browsertrix Cloud. However, if you are developing locally, you may want to use your local images instead.
+## Deploying for Local Development
 
-First, open `./chart/examples/local-config.yaml` and add the following, which will ensure only local images are used:
-
-```yaml
-backend_pull_policy: "Never"
-frontend_pull_policy: "Never"
-```
-
-Now, rebuild either the backend and/or frontend images locally. The exact process depends on the Kubernetes deployment in use:
-
-
-??? info "Docker Desktop"
-
-    Rebuild the local images by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts to build the images in the local Docker.
-
-
-??? info "MicroK8S"
-
-    MicroK8s uses its own container registry, running on port 32000. 
-
-    1. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry. 
-
-    2. In `./chart/examples/local-config.yaml`, uncomment out one or both of the following lines to use the local images:
-
-    ```yaml
-    backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
-    frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
-    ```
-
-??? info "Minikube" 
-
-    Minikube comes with its own image builder to update the images used in Minikube.
-
-    To build the backend image, run:
-
-    ```shell
-    minikube image build -t webrecorder/browsertrix-backend:latest ./backend
-    ```
-
-    To build a local frontend image, run:
-    
-    ```shell
-    minikube image build -t webrecorder/browsertrix-frontend:latest ./frontend
-    ```
-
-??? info "K3S"
-
-    K3S uses `containerd` by default. To use local images, they need to be imported after rebuilding.
-
-    1. Rebuild the images with Docker by running by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts. (Requires Docker to be installed as well).
-
-    2. Serializer the images to .tar:
-
-    ```shell
-    docker save webrecorder/browsertrix-backend:latest > ./backend.tar
-    docker save webrecorder/browsertrix-frontend:latest > ./frontend.tar
-    ```
-
-    3. Import images into k3s containerd:
-
-    ```shell
-    k3s ctr images import --base-name webrecorder/browsertrix-backend:latest ./backend.tar
-    k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
-    ```
-
-Once the images have been built and any other config changes made per the above instructions, simply run the `helm upgrade...` command again to restart with local images.
+These instructions are intended for deploying the cluster from the latest release.
+See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to
+developing Browsertrix Cloud and deploying from local images.

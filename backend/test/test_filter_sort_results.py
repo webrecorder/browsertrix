@@ -175,17 +175,23 @@ def test_get_crawls_by_description(
         assert crawl["description"] == description
 
 
-def test_get_crawls_by_collection_name(
+def test_get_crawls_by_collection_id(
     crawler_auth_headers, default_org_id, crawler_crawl_id
 ):
     encoded_collection = urllib.parse.quote(COLLECTION_NAME)
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?collection={encoded_collection}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?name={encoded_collection}",
+        headers=crawler_auth_headers,
+    )
+    collection_id = r.json()["items"][0]["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?collectionId={collection_id}",
         headers=crawler_auth_headers,
     )
     assert r.json()["total"] >= 1
     for crawl in r.json()["items"]:
-        assert COLLECTION_NAME in crawl["collections"]
+        assert collection_id in crawl["collections"]
 
 
 def test_sort_crawls(

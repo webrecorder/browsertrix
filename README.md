@@ -33,7 +33,7 @@ If you are looking to just try running a single crawl, you may want to try [Brow
 
 Browsertrix Cloud is currently in a beta, though the system and backend API is fairly stable, we are working on many additional features.
 
-Additional developer documentation is available at [https://docs.browsertrix.cloud/dev](https://docs.browsertrix.cloud/dev)
+Additional developer documentation is available at [https://docs.browsertrix.cloud/develop](https://docs.browsertrix.cloud/develop/)
 
 Please see the GitHub issues and [this GitHub Project](https://github.com/orgs/webrecorder/projects/9) for our current project plan and tasks.
 

@@ -8,6 +8,9 @@ SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
 
 _coll_id = None
+_second_coll_id = None
+
+modified = None
 
 
 def test_create_collection(
@@ -27,6 +30,13 @@ def test_create_collection(
 
     global _coll_id
     _coll_id = data["added"]["id"]
+
+    # Verify crawl in collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id in r.json()["collections"]
 
 
 def test_create_collection_taken_name(
@@ -65,7 +75,6 @@ def test_update_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/update",
         headers=crawler_auth_headers,
         json={
-            "crawlIds": [crawler_crawl_id, admin_crawl_id],
             "description": DESCRIPTION,
         },
     )
@@ -74,7 +83,11 @@ def test_update_collection(
     assert data["id"] == _coll_id
     assert data["name"] == COLLECTION_NAME
     assert data["description"] == DESCRIPTION
-    assert sorted(data["crawlIds"]) == sorted([admin_crawl_id, crawler_crawl_id])
+    assert data["crawlCount"] == 1
+    assert data["pageCount"] > 0
+    global modified
+    modified = data["modified"]
+    assert modified
 
 
 def test_rename_collection(
@@ -89,6 +102,7 @@ def test_rename_collection(
     data = r.json()
     assert data["id"] == _coll_id
     assert data["name"] == UPDATED_NAME
+    assert data["modified"] >= modified
 
 
 def test_rename_collection_taken_name(
@@ -107,6 +121,9 @@ def test_rename_collection_taken_name(
     data = r.json()
     assert data["added"]["name"] == SECOND_COLLECTION_NAME
 
+    global _second_coll_id
+    _second_coll_id = data["added"]["id"]
+
     # Try to rename first coll to second collection's name
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/update",
@@ -117,48 +134,113 @@ def test_rename_collection_taken_name(
     assert r.json()["detail"] == "collection_name_taken"
 
 
-def test_remove_crawl_from_collection(
+def test_add_remove_crawl_from_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove?crawlId={admin_crawl_id}",
+    # Add crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [admin_crawl_id]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["id"] == _coll_id
-    assert data["crawlIds"] == [crawler_crawl_id]
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] > 0
+    assert data["modified"] >= modified
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
 
-
-def test_add_crawl_to_collection(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
-):
+    # Verify it was added
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add?crawlId={admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id in r.json()["collections"]
+
+    # Remove crawls
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove",
+        json={"crawlIds": [admin_crawl_id, crawler_crawl_id]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["id"] == _coll_id
-    assert sorted(data["crawlIds"]) == sorted([admin_crawl_id, crawler_crawl_id])
+    assert data["crawlCount"] == 0
+    assert data["pageCount"] == 0
+    assert data["modified"] >= modified
+    assert data.get("tags", []) == []
+
+    # Verify they were removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collections"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collections"]
+
+    # Add crawls back for further tests
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [admin_crawl_id, crawler_crawl_id]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] > 0
+    assert data["modified"] >= modified
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
 
 
-def test_get_collection(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
-):
+def test_get_collection(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
+    assert data["id"] == _coll_id
+    assert data["name"] == UPDATED_NAME
+    assert data["oid"] == default_org_id
+    assert data["description"] == DESCRIPTION
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] > 0
+    assert data["modified"] >= modified
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+
+
+def test_get_collection_replay(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["name"] == UPDATED_NAME
+    assert data["oid"] == default_org_id
+    assert data["description"] == DESCRIPTION
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] > 0
+    assert data["modified"] >= modified
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+
     resources = data["resources"]
     assert resources
     for resource in resources:
         assert resource["name"]
         assert resource["path"]
         assert resource["size"]
-        assert resource["crawlId"] in (crawler_crawl_id, admin_crawl_id)
 
 
 def test_list_collections(
@@ -179,14 +261,20 @@ def test_list_collections(
     assert first_coll["name"] == UPDATED_NAME
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
-    assert sorted(first_coll["crawlIds"]) == sorted([crawler_crawl_id, admin_crawl_id])
+    assert first_coll["crawlCount"] == 2
+    assert first_coll["pageCount"] > 0
+    assert first_coll["modified"]
+    assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
     assert second_coll["name"] == SECOND_COLLECTION_NAME
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
-    assert second_coll["crawlIds"] == [crawler_crawl_id]
+    assert second_coll["crawlCount"] == 1
+    assert second_coll["pageCount"] > 0
+    assert second_coll["modified"]
+    assert second_coll["tags"] == ["wr-test-2"]
 
 
 def test_filter_sort_collections(
@@ -209,7 +297,6 @@ def test_filter_sort_collections(
     assert coll["name"] == SECOND_COLLECTION_NAME
     assert coll["oid"] == default_org_id
     assert coll.get("description") is None
-    assert coll["crawlIds"] == [crawler_crawl_id]
 
     # Test sorting by name, ascending (default)
     r = requests.get(
@@ -266,3 +353,20 @@ def test_filter_sort_collections(
     assert items[0]["description"] == DESCRIPTION
     assert items[1]["name"] == SECOND_COLLECTION_NAME
     assert items[1].get("description") is None
+
+
+def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Delete second collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}/delete",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    # Verify collection id was removed from crawl
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _second_coll_id not in r.json()["collections"]

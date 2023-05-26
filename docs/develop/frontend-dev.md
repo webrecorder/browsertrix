@@ -1,7 +1,15 @@
-# Running the Frontend
+# Running the Frontend for Development
 
 This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
-The frontend can connect to a Browsertrix Cloud API backend running locally or remotely.
+
+This setup may be ideal for rapid development on the frontend, as it will allow running the frontend
+via `yarn` instead of the frontend image deployed in Kubernetes.
+
+## Requirements
+
+This setup does require a Browsertrix Cloud API backend already in a Kubernetes cluster.
+
+Refer to [setup for local deployment](./local-dev-setup.md) for additional details on this setup.
 
 ## Quickstart
 
@@ -30,6 +38,15 @@ If connecting to a local deployment cluster, set API_BASE_URL to:
 ```
 API_BASE_URL=http://localhost:30870/api
 ```
+
+??? info "Minikube (on Mac)"
+
+    When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
+    obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
+
+    Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
+
+
 
 Start the dev server:
 
