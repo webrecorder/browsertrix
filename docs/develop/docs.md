@@ -14,6 +14,11 @@ In the project root directory run `mkdocs serve` to run a local version of the d
 
 The docs hosted on [docs.browsertrix.cloud](https://docs.browsertrix.cloud) are created from the main branch of [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud)
 
+## Adding New Pages
+
+1. Create a Markdown file in the directory of choice
+2. Add the newly created Markdown file to the `nav` value under the subsection as defined by the file's location in `mkdocs.yml`.
+
 ## Adding Icons
 
 We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects.  This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused.  If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
