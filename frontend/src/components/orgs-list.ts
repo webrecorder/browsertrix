@@ -57,7 +57,7 @@ export class OrgsList extends LiteElement {
     value=${value}
     type="number"
     @sl-input="${this.onUpdateQuota}"
-    ><span slot="prefix">${msg(key)}</span></sl-input>`;
+    ><span slot="prefix">${key}</span></sl-input>`;
   })}
   <sl-button @click="${this.onSubmitQuotas}" class="mt-2" variant="primary">Update Quotas</sl-button>
 
