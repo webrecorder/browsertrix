@@ -8,7 +8,7 @@ This list informs the crawler what pages it should capture as part of a URL List
 
 ### Include Any Linked Page
 
-If checked, the crawler will visit all the links it finds within each page defined in the _List of URLs_ field.
+When enabled, the crawler will visit all the links it finds within each page defined in the _List of URLs_ field.
 
 ??? tip "Crawling tags & search queries with URL List crawls"
     This setting can be useful for crawling the content of specific tags or searh queries. Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
@@ -50,7 +50,7 @@ This can be useful for crawling websites that span multiple domains such as `exa
 
 ### Include Any Linked Page ("one hop out")
 
-If checked, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
+When Enabled, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
 
 This can be useful for capturing links on a page that lead outside the website that is being crawled but should still be included in the archive for context.
 
@@ -72,8 +72,91 @@ This can be useful for avoiding crawler traps — sites that may automatically g
 
 ## Limits
 
+### Page Load Timeout
+
+Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
+
+### Behavior Timeout
+
+Limits how long behaviors can run on each page.
+
+### Auto Scroll Behavior
+
+When enabled, the browser will automatically scroll to the end of the page.
+
+### Delay Before Next Page
+
+Waits on the page for a set period of time after any behaviors have finished running. This can be helpful to avoid rate limiting however it will slow down your crawl.
+
+### Max Pages
+
+Adds a hard limit on the number of pages that will be crawled. The crawl will be gracefully stopped after this limit is reached.
+
+### Crawl Time Limit
+
+The crawl will be gracefully stopped after this set period of time.
+
+### Crawler Instances
+
+Increasing the amount of crawler instances will speed up crawls by using additional browser windows to capture more pages in parallel. This will also increase the amount of traffic to the website and may have a higher chance of getting rate limited as a result.
+
 ## Browser Settings
+
+### Browser Profile
+
+Sets the _Browser Profile_ to be used for this crawl.
+
+### Block Ads by Domain
+
+Will prevent any content from the domains listed in [Steven Black's Unified Hosts file](https://github.com/StevenBlack/hosts) (ads & malware) from being captured by the crawler.
+
+### Language
+
+Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
 
 ## Scheduling
 
+### Crawl Schedule Type
+
+`Run Immediately on Save`
+:   When selected, the crawl will run immediately as configured. It will not run again unless manually instructed.
+
+`Run on a Recurring Basis`
+:   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
+
+`No Schedule`
+:   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
+
+### Frequency
+
+Set how often a scheduled crawl will run.
+
+### Day
+
+For crawls scheduled with a `Weekly` _Frequency_, sets the day of the week for which the crawl will run.
+
+### Date
+
+For crawls scheduled with a `Monthly` _Frequency_, sets the date of the month for which the crawl will run.
+
+### Start Time
+
+Sets the time that the scheduled crawl will start according to your current timezone.
+
+### Also Run a Crawl Immediately On Save
+
+When enabled, a crawl will run immediately on save as if the `Run Immediately on Save` _Crawl Schedule Type_ was selected, in addition to scheduling a crawl to run according to the above settings.
+
 ## Metadata
+
+### Name
+
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For URL List crawls, the workflow's name will be set to the first URL present in the _List of URLs_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+
+### Description
+
+Leave optional notes about the workflow's configuration.
+
+### Tags
+
+Apply tags to the workflow. Tags applied to the workflow will propigate to every crawl created at the time of crawl creation.
