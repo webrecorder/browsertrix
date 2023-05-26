@@ -46,7 +46,9 @@ FAILED_STATES = ("canceled", "failed")
 
 SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
 
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *FAILED_STATES, *SUCCESSFUL_STATES)
+NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
