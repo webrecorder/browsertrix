@@ -79,10 +79,10 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
-class OrgQuotasIn(BaseModel):
+class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
-    max_parallel_crawls: Optional[int] = 0
+    maxParallelCrawls: Optional[int] = 0
 
 
 # ============================================================================
@@ -99,7 +99,7 @@ class Organization(BaseMongoModel):
 
     default: bool = False
 
-    max_parallel_crawls: Optional[int] = 0
+    quotas: Optional[OrgQuotas] = OrgQuotas()
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -170,6 +170,8 @@ class OrgOut(BaseMongoModel):
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False
+
+    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
@@ -324,10 +326,17 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"storage": storage.dict()}}
         )
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn):
+    async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
         return await self.orgs.find_one_and_update(
-            {"_id": org.id}, {"$set": quotas.dict(exclude_unset=True)}
+            {"_id": org.id},
+            {
+                "$set": {
+                    "quotas": quotas.dict(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    )
+                }
+            },
         )
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
@@ -383,7 +392,8 @@ async def get_max_parallel_crawls(orgs, oid):
     """return max allowed parallel crawls, if any"""
     org = await orgs.find_one({"_id": oid})
     if org:
-        return org.get("max_parallel_crawls", 0)
+        org = Organization.from_dict(org)
+        return org.quotas.maxParallelCrawls
     return 0
 
 
@@ -498,7 +508,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
     @router.post("/quotas", tags=["organizations"])
     async def update_quotas(
-        quotas: OrgQuotasIn,
+        quotas: OrgQuotas,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
