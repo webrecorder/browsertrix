@@ -11,6 +11,7 @@ export const AccessCode: Record<UserRole, number> = {
 export type OrgData = {
   id: string;
   name: string;
+  quotas: Record<string, number>;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];
