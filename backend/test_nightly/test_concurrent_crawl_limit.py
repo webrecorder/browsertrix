@@ -28,7 +28,7 @@ def test_run_two_only_one_concurrent(org_with_quotas, admin_auth_headers):
     while (
         get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) == "starting"
     ):
-        time.sleep(5)
+        time.sleep(2)
 
     assert (
         get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) == "running"
@@ -37,7 +37,7 @@ def test_run_two_only_one_concurrent(org_with_quotas, admin_auth_headers):
     while (
         get_crawl_status(org_with_quotas, crawl_id_b, admin_auth_headers) == "starting"
     ):
-        time.sleep(5)
+        time.sleep(2)
 
     assert (
         get_crawl_status(org_with_quotas, crawl_id_b, admin_auth_headers)
@@ -56,7 +56,7 @@ def test_cancel_and_run_other(org_with_quotas, admin_auth_headers):
     while (
         get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) != "canceled"
     ):
-        time.sleep(5)
+        time.sleep(2)
 
     while (
         get_crawl_status(org_with_quotas, crawl_id_b, admin_auth_headers)
@@ -69,6 +69,13 @@ def test_cancel_and_run_other(org_with_quotas, admin_auth_headers):
         "running",
     )
 
+    # cancel second crawl as well
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/crawls/{crawl_id_b}/cancel",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["success"] == True
 
 def run_crawl(org_id, headers):
     crawl_data = {
