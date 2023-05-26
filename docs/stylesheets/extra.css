@@ -29,6 +29,8 @@
 :root {
     --md-code-font: "Recursive", monospace;
     --md-text-font: "Inter", "Helvetica", "Arial", sans-serif;
+    --wr-blue-primary: #2E7CAB;
+    --wr-orange-primary: #B85D20;
 }
 
 [data-md-color-scheme="webrecorder"] {
@@ -93,4 +95,22 @@ code {
 .md-typeset h1, h2, h3 {
     font-weight: 650 !important;
     font-variation-settings: "OPSZ" 35;
+}
+
+/* Custom badge classes, applies custom overrides to inline-code blocks */
+
+.badge-blue {
+    background-color: var(--wr-blue-primary) !important;
+    border-color: var(--wr-blue-primary) !important;
+    color: white !important;
+    font-family: var(--md-text-font);
+    font-weight: 600;
+}
+
+.badge-orange {
+    background-color: var(--wr-orange-primary) !important;
+    border-color: var(--wr-orange-primary) !important;
+    color: white !important;
+    font-family: var(--md-text-font);
+    font-weight: 600;
 }
