@@ -11,7 +11,7 @@ This list informs the crawler what pages it should capture as part of a URL List
 If checked, the crawler will visit all the links it finds within each page defined in the _List of URLs_ field.
 
 ??? tip "Crawling tags & search queries with URL List crawls"
-    This setting can be useful for crawling the content of specific tags or searh queries.  Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
+    This setting can be useful for crawling the content of specific tags or searh queries. Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
 ### Crawl Start URL
 
@@ -22,21 +22,21 @@ You must specify the protocol (likely `http://` or `https://`) as a part of the 
 ### Start URL Scope
 
 `Hashtag Links Only`
-:   This scope will ignore links that lead to other addresses such as `example.com/linkedpage` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection`.
+:   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection`.
 
     This scope can be useful for crawling certian web apps that may not use unique URLs for their pages.
 
 `Pages in the Same Directory`
-:   
+:   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
 
 `Pages on This Domain`
-:   
+:   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
 
 `Pages on This Domain and Subdomains`
-:   
+:   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 `Custom Page Prefix`
-:   
+:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URLs in Scope`
 
 ### Max Depth
 
@@ -44,7 +44,7 @@ Only shown with a _Start URL Scope_ of `Pages on This Domain` and above, the _Ma
 
 ### Extra URLs in Scope
 
-Only shown with a _Start URL Scope_ of `Custom Page Prefix`, this field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.  
+Only shown with a _Start URL Scope_ of `Custom Page Prefix`, this field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.
 
 This can be useful for crawling websites that span multiple domains such as `example.org` and `example.net`
 
