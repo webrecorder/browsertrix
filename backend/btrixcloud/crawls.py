@@ -511,9 +511,10 @@ class CrawlOps:
         """Delete a list of crawls by id for given org"""
         cids_to_update = set()
 
-        for crawl_id in delete_list.crawl_ids:
-            await self._delete_crawl_files(org, crawl_id)
+        size = 0
 
+        for crawl_id in delete_list.crawl_ids:
+            size += await self._delete_crawl_files(org, crawl_id)
             crawl = await self.get_crawl_raw(crawl_id, org)
             cids_to_update.add(crawl["cid"])
 
@@ -522,7 +523,7 @@ class CrawlOps:
         )
 
         for cid in cids_to_update:
-            await self.crawl_configs.update_crawl_stats(cid)
+            await self.crawl_configs.stats_recompute_remove_crawl(cid, size)
 
         return res.deleted_count
 
@@ -530,10 +531,14 @@ class CrawlOps:
         """Delete files associated with crawl from storage."""
         crawl_raw = await self.get_crawl_raw(crawl_id, org)
         crawl = Crawl.from_dict(crawl_raw)
+        size = 0
         for file_ in crawl.files:
+            size += file_.size
             status_code = await delete_crawl_file_object(org, file_, self.crawl_manager)
             if status_code != 204:
                 raise HTTPException(status_code=400, detail="file_deletion_error")
+
+        return size
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -642,7 +647,7 @@ class CrawlOps:
                 return {"success": True}
 
         # return whatever detail may be included in the response
-        raise HTTPException(status_code=400, detail=result.get("error"))
+        raise HTTPException(status_code=400, detail=result)
 
     async def _crawl_queue_len(self, redis, key):
         try:
@@ -907,13 +912,16 @@ async def add_new_crawl(
 
 
 # ============================================================================
-async def update_crawl(crawls, crawl_id, **kwargs):
-    """update crawl state in db"""
-    return await crawls.find_one_and_update(
-        {"_id": crawl_id},
+async def update_crawl_state_if_changed(crawls, crawl_id, state, **kwargs):
+    """update crawl state and other properties in db if state has changed"""
+    kwargs["state"] = state
+    res = await crawls.find_one_and_update(
+        {"_id": crawl_id, "state": {"$ne": state}},
         {"$set": kwargs},
         return_document=pymongo.ReturnDocument.AFTER,
     )
+    print("** UPDATE", crawl_id, state, res is not None)
+    return res
 
 
 # ============================================================================
