@@ -643,7 +643,7 @@ class CrawlOps:
             if not graceful:
                 await self.update_crawl_state(crawl_id, "canceled")
                 crawl = await self.get_crawl_raw(crawl_id, org)
-                await self.crawl_configs.update_crawl_stats(crawl["cid"])
+                await self.crawl_configs.stats_recompute_remove_crawl(crawl["cid"], 0)
                 return {"success": True}
 
         # return whatever detail may be included in the response
