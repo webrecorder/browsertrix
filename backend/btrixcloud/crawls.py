@@ -920,7 +920,7 @@ async def update_crawl_state_if_changed(crawls, crawl_id, state, **kwargs):
         {"$set": kwargs},
         return_document=pymongo.ReturnDocument.AFTER,
     )
-    print("** UPDATE", crawl_id, state, res is not None)
+    print("** crawl state changed?", crawl_id, state, res is not None)
     return res
 
 

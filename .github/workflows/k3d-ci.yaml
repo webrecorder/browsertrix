@@ -84,6 +84,10 @@ jobs:
       - name: Run Tests
         run: pytest -vv ./backend/test/*.py
 
-      - name: Print Backend Logs
+      - name: Print Backend Logs (API)
         if: ${{ failure() }}
-        run: kubectl logs svc/browsertrix-cloud-backend
+        run: kubectl logs svc/browsertrix-cloud-backend -c api
+
+      - name: Print Backend Logs (Operator)
+        if: ${{ failure() }}
+        run: kubectl logs svc/browsertrix-cloud-backend -c op
