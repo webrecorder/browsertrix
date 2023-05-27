@@ -85,7 +85,7 @@ class CrawlSpec(BaseModel):
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
-    state: str = "new"
+    state: str = "starting"
     pagesFound: int = 0
     pagesDone: int = 0
     size: str = ""
@@ -202,8 +202,6 @@ class BtrixOperator(K8sAPI):
         if has_crawl_children:
             pods = data.related[POD]
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
-        elif not status.finished:
-            status.state = "starting"
 
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
