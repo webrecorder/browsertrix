@@ -30,7 +30,7 @@ from .crawls import (
     CrawlFile,
     CrawlCompleteIn,
     add_crawl_file,
-    update_crawl_state_if_changed,
+    update_crawl_state_if_allowed,
     add_crawl_errors,
     NON_RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -203,7 +203,9 @@ class BtrixOperator(K8sAPI):
             if not await self.can_start_new(crawl, data, status):
                 return self._done_response(status)
 
-            await self.set_state("starting", status, crawl.id)
+            await self.set_state(
+                "starting", status, crawl.id, allowed_from=("waiting_org_limit")
+            )
 
         crawl_sts = f"crawl-{crawl_id}"
         redis_sts = f"redis-{crawl_id}"
@@ -250,13 +252,13 @@ class BtrixOperator(K8sAPI):
 
         return {"status": status.dict(exclude_none=True), "children": children}
 
-    async def set_state(self, state, status, crawl_id, **kwargs):
+    async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed"""
-        if status.state != state:
+        if status.state in allowed_from:
             print(f"Setting state: {status.state} -> {state}, {crawl_id}")
             status.state = state
-            return await update_crawl_state_if_changed(
-                self.crawls, crawl_id, state=state, **kwargs
+            return await update_crawl_state_if_allowed(
+                self.crawls, crawl_id, state=state, allowed_from=allowed_from, **kwargs
             )
 
     def load_from_yaml(self, filename, params):
@@ -330,7 +332,9 @@ class BtrixOperator(K8sAPI):
                 break
             i += 1
 
-        await self.set_state("waiting_org_limit", status, crawl.id)
+        await self.set_state(
+            "waiting_org_limit", status, crawl.id, allowed_from=("starting")
+        )
         return False
 
     async def handle_finished_delete_if_needed(self, crawl_id, status, spec):
@@ -504,13 +508,19 @@ class BtrixOperator(K8sAPI):
         # check if at least one pod started running
         # otherwise, mark as 'waiting' and return
         if not await self.check_if_pods_running(pods):
-            if status.state not in ("waiting_capacity", "canceled"):
-                await self.set_state("waiting_capacity", status, crawl.id)
+            await self.set_state(
+                "waiting_capacity",
+                status,
+                crawl.id,
+                allowed_from=("starting", "running"),
+            )
 
             return status
 
         # set state to running (if not already)
-        await self.set_state("running", status, crawl.id)
+        await self.set_state(
+            "running", status, crawl.id, allowed_from=("starting", "waiting_capacity")
+        )
 
         # update status
         status.pagesDone = stats["done"]
@@ -571,7 +581,9 @@ class BtrixOperator(K8sAPI):
             kwargs["stats"] = stats
 
         # if set_state returns false, already set to same status, return
-        if not await self.set_state(state, status, crawl_id, **kwargs):
+        if not await self.set_state(
+            state, status, crawl_id, allowed_from=("running"), **kwargs
+        ):
             print("already finished, ignoring mark_finished")
             return status
 

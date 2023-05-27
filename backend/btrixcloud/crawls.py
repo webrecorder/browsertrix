@@ -35,16 +35,13 @@ from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_mess
 
 RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
 
-RUNNING_AND_STARTING_STATES = (
-    "starting",
-    "waiting_capacity",
-    "waiting_org_limit",
-    *RUNNING_STATES,
-)
+STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
 
 FAILED_STATES = ("canceled", "failed")
 
 SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
+
+RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
 
 NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
 
@@ -912,11 +909,13 @@ async def add_new_crawl(
 
 
 # ============================================================================
-async def update_crawl_state_if_changed(crawls, crawl_id, state, **kwargs):
+async def update_crawl_state_if_allowed(
+    crawls, crawl_id, state, allowed_from, **kwargs
+):
     """update crawl state and other properties in db if state has changed"""
     kwargs["state"] = state
     res = await crawls.find_one_and_update(
-        {"_id": crawl_id, "state": {"$ne": state}},
+        {"_id": crawl_id, "state": {"$in": list(allowed_from)}},
         {"$set": kwargs},
         return_document=pymongo.ReturnDocument.AFTER,
     )
