@@ -31,6 +31,7 @@ from .crawls import (
     CrawlCompleteIn,
     add_crawl_file,
     update_crawl_state_if_allowed,
+    get_crawl_state,
     add_crawl_errors,
     NON_RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -204,7 +205,7 @@ class BtrixOperator(K8sAPI):
                 return self._done_response(status)
 
             await self.set_state(
-                "starting", status, crawl.id, allowed_from=("waiting_org_limit")
+                "starting", status, crawl.id, allowed_from=["waiting_org_limit"]
             )
 
         crawl_sts = f"crawl-{crawl_id}"
@@ -255,11 +256,21 @@ class BtrixOperator(K8sAPI):
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed"""
         if status.state in allowed_from:
-            print(f"Setting state: {status.state} -> {state}, {crawl_id}")
-            status.state = state
-            return await update_crawl_state_if_allowed(
+            res = await update_crawl_state_if_allowed(
                 self.crawls, crawl_id, state=state, allowed_from=allowed_from, **kwargs
             )
+            if res:
+                print(f"Setting state: {status.state} -> {state}, {crawl_id}")
+                status.state = state
+                return True
+
+            # get actual crawl state
+            new_state = await get_crawl_state(self.crawls, crawl_id)
+            if new_state:
+                status.state = state
+
+        print(f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed")
+        return False
 
     def load_from_yaml(self, filename, params):
         """load and parse k8s template from yaml file"""
@@ -333,7 +344,7 @@ class BtrixOperator(K8sAPI):
             i += 1
 
         await self.set_state(
-            "waiting_org_limit", status, crawl.id, allowed_from=("starting")
+            "waiting_org_limit", status, crawl.id, allowed_from=["starting"]
         )
         return False
 
@@ -512,14 +523,14 @@ class BtrixOperator(K8sAPI):
                 "waiting_capacity",
                 status,
                 crawl.id,
-                allowed_from=("starting", "running"),
+                allowed_from=["starting", "running"],
             )
 
             return status
 
         # set state to running (if not already)
         await self.set_state(
-            "running", status, crawl.id, allowed_from=("starting", "waiting_capacity")
+            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
         )
 
         # update status
@@ -582,7 +593,7 @@ class BtrixOperator(K8sAPI):
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
-            state, status, crawl_id, allowed_from=("running"), **kwargs
+            state, status, crawl_id, allowed_from=["running"], **kwargs
         ):
             print("already finished, ignoring mark_finished")
             return status

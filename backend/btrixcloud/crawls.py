@@ -917,10 +917,16 @@ async def update_crawl_state_if_allowed(
     res = await crawls.find_one_and_update(
         {"_id": crawl_id, "state": {"$in": list(allowed_from)}},
         {"$set": kwargs},
-        return_document=pymongo.ReturnDocument.AFTER,
+        return_document=pymongo.ReturnDocument.BEFORE,
     )
-    print("** crawl state changed?", crawl_id, state, res is not None)
     return res
+
+
+# ============================================================================
+async def get_crawl_state(crawls, crawl_id):
+    """return current crawl state of a crawl"""
+    res = await crawls.find_one({"_id": crawl_id})
+    return res and res.get("state")
 
 
 # ============================================================================
