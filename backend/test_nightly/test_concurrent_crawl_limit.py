@@ -77,6 +77,7 @@ def test_cancel_and_run_other(org_with_quotas, admin_auth_headers):
     data = r.json()
     assert data["success"] == True
 
+
 def run_crawl(org_id, headers):
     crawl_data = {
         "runNow": True,

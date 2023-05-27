@@ -33,7 +33,6 @@ from .crawls import (
     update_crawl_state_if_changed,
     add_crawl_errors,
     NON_RUNNING_STATES,
-    RUNNING_STATES,
     SUCCESSFUL_STATES,
 )
 
@@ -204,6 +203,8 @@ class BtrixOperator(K8sAPI):
             if not await self.can_start_new(crawl, data, status):
                 return self._done_response(status)
 
+            await self.set_state("starting", status, crawl.id)
+
         crawl_sts = f"crawl-{crawl_id}"
         redis_sts = f"redis-{crawl_id}"
 
@@ -215,9 +216,6 @@ class BtrixOperator(K8sAPI):
                 return await self.handle_finished_delete_if_needed(
                     crawl_id, status, spec
                 )
-
-        elif status.state not in RUNNING_STATES:
-            await self.set_state("starting", status, crawl.id)
 
         params = {}
         params.update(self.shared_params)
@@ -515,7 +513,6 @@ class BtrixOperator(K8sAPI):
         await self.set_state("running", status, crawl.id)
 
         # update status
-        status.state = "running"
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
         if stats["size"] is not None:
@@ -569,9 +566,6 @@ class BtrixOperator(K8sAPI):
 
         finished = dt_now()
 
-        status.state = state
-        status.finished = to_k8s_date(finished)
-
         kwargs = {"finished": finished}
         if stats:
             kwargs["stats"] = stats
@@ -580,6 +574,8 @@ class BtrixOperator(K8sAPI):
         if not await self.set_state(state, status, crawl_id, **kwargs):
             print("already finished, ignoring mark_finished")
             return status
+
+        status.finished = to_k8s_date(finished)
 
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
