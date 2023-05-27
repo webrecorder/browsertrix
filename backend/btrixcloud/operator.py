@@ -14,18 +14,23 @@ import humanize
 from pydantic import BaseModel
 from redis import asyncio as aioredis
 
-from .utils import from_k8s_date, to_k8s_date, dt_now, get_redis_crawl_stats
+from .utils import (
+    from_k8s_date,
+    to_k8s_date,
+    dt_now,
+    get_redis_crawl_stats,
+)
 from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats
 from .colls import add_successful_crawl_to_collections
-from .crawlconfigs import update_config_crawl_stats
+from .crawlconfigs import stats_recompute_last
 from .crawls import (
     CrawlFile,
     CrawlCompleteIn,
     add_crawl_file,
-    update_crawl,
+    update_crawl_state_if_changed,
     add_crawl_errors,
     SUCCESSFUL_STATES,
 )
@@ -80,13 +85,16 @@ class CrawlSpec(BaseModel):
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
-    state: str = "new"
+    state: str = "starting"
     pagesFound: int = 0
     pagesDone: int = 0
     size: str = ""
     scale: int = 1
     filesAdded: int = 0
+    filesAddedSize: int = 0
     finished: Optional[str] = None
+    stopping: bool = False
+    # forceRestart: Optional[str]
 
 
 # ============================================================================
@@ -194,8 +202,6 @@ class BtrixOperator(K8sAPI):
         if has_crawl_children:
             pods = data.related[POD]
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
-        elif not status.finished:
-            status.state = "starting"
 
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
@@ -319,7 +325,7 @@ class BtrixOperator(K8sAPI):
 
         pvcs = list(related[PVC].keys())
         if pvcs:
-            print("Deleting PVCs", pvcs)
+            print(f"Deleting PVCs for {crawl_id}", pvcs)
             asyncio.create_task(self.delete_pvc(crawl_id))
             finalized = False
 
@@ -356,14 +362,15 @@ class BtrixOperator(K8sAPI):
                 msg = json.loads(file_done)
                 # add completed file
                 if msg.get("filename"):
-                    await self.add_file_to_crawl(msg, crawl)
+                    await self.add_file_to_crawl(msg, crawl, redis)
                     await redis.incr("filesAdded")
 
                 # get next file done
                 file_done = await redis.lpop(self.done_key)
 
-            # ensure filesAdded always set
+            # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
+            status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
             return await self.update_crawl_state(redis, crawl, status, pods)
@@ -378,7 +385,6 @@ class BtrixOperator(K8sAPI):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
-                print("Phase", pod["status"]["phase"])
                 if pod["status"]["phase"] == "Running":
                     return True
         # pylint: disable=bare-except
@@ -388,7 +394,7 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def add_file_to_crawl(self, cc_data, crawl):
+    async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
 
         filecomplete = CrawlCompleteIn(**cc_data)
@@ -407,6 +413,8 @@ class BtrixOperator(K8sAPI):
             size=filecomplete.size,
             hash=filecomplete.hash,
         )
+
+        await redis.incr("filesAddedSize", filecomplete.size)
 
         await add_crawl_file(self.crawls, crawl.id, crawl_file)
 
@@ -436,7 +444,9 @@ class BtrixOperator(K8sAPI):
         # otherwise, mark as 'waiting' and return
         if not await self.check_if_pods_running(pods):
             if status.state not in ("waiting", "canceled"):
-                await update_crawl(self.crawls, crawl.id, state="waiting")
+                await update_crawl_state_if_changed(
+                    self.crawls, crawl.id, state="waiting"
+                )
                 status.state = "waiting"
 
             return status
@@ -445,7 +455,7 @@ class BtrixOperator(K8sAPI):
         # will set stats at when crawl is finished, otherwise can read
         # directly from redis
         if status.state != "running":
-            await update_crawl(self.crawls, crawl.id, state="running")
+            await update_crawl_state_if_changed(self.crawls, crawl.id, state="running")
 
         # update status
         status.state = "running"
@@ -499,28 +509,46 @@ class BtrixOperator(K8sAPI):
         self, redis, crawl_id, cid, status, state, crawl=None, stats=None
     ):
         """mark crawl as finished, set finished timestamp and final state"""
+
+        # already marked as finished
+        if status.state == state:
+            print("already finished, ignoring mark_finished")
+            return status
+
         finished = dt_now()
 
         status.state = state
         status.finished = to_k8s_date(finished)
 
-        if crawl:
-            await self.inc_crawl_complete_stats(crawl, finished)
-
-        kwargs = {"state": state, "finished": finished}
+        kwargs = {"finished": finished}
         if stats:
             kwargs["stats"] = stats
 
-        await update_crawl(self.crawls, crawl_id, **kwargs)
+        if not await update_crawl_state_if_changed(
+            self.crawls, crawl_id, state=state, **kwargs
+        ):
+            print("already finished, ignoring mark_finished")
+            return status
 
-        asyncio.create_task(self.do_crawl_finished_tasks(redis, crawl_id, cid, state))
+        if crawl:
+            await self.inc_crawl_complete_stats(crawl, finished)
+
+        asyncio.create_task(
+            self.do_crawl_finished_tasks(
+                redis, crawl_id, cid, status.filesAddedSize, state
+            )
+        )
 
         return status
 
     # pylint: disable=too-many-arguments
-    async def do_crawl_finished_tasks(self, redis, crawl_id, cid, state):
+    async def do_crawl_finished_tasks(
+        self, redis, crawl_id, cid, files_added_size, state
+    ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await update_config_crawl_stats(self.crawl_configs, self.crawls, cid)
+        await stats_recompute_last(
+            self.crawl_configs, self.crawls, cid, files_added_size, 1
+        )
 
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)

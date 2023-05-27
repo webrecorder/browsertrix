@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 from .conftest import API_PREFIX
@@ -9,6 +11,7 @@ UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
 _coll_id = None
+_admin_crawl_cid = None
 
 
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
@@ -231,8 +234,6 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
 def test_workflow_total_size_and_last_crawl_stats(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
-    admin_crawl_cid = ""
-
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=crawler_auth_headers,
@@ -257,13 +258,14 @@ def test_workflow_total_size_and_last_crawl_stats(
             assert workflow["lastCrawlSize"] > 0
 
             if last_crawl_id == admin_crawl_id:
-                admin_crawl_cid = workflow["id"]
-                assert admin_crawl_cid
+                global _admin_crawl_cid
+                _admin_crawl_cid = workflow["id"]
+                assert _admin_crawl_cid
         else:
             assert workflow["totalSize"] == 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_cid}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -279,3 +281,87 @@ def test_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlState"]
     assert data["lastRun"]
     assert data["lastCrawlSize"] > 0
+
+
+def test_incremental_workflow_total_size_and_last_crawl_stats(
+    crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
+):
+    # Get baseline values
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] == 1
+    assert data["crawlSuccessfulCount"] == 1
+    total_size = data["totalSize"]
+    last_crawl_id = data["lastCrawlId"]
+    last_crawl_started = data["lastCrawlStartTime"]
+    last_crawl_finished = data["lastCrawlTime"]
+    last_run = data["lastRun"]
+
+    # Run new crawl in this workflow
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/run",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawl_id = r.json()["started"]
+
+    # Wait for it to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Give time for stats to re-compute
+    time.sleep(10)
+
+    # Re-check stats
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] == 2
+    assert data["crawlSuccessfulCount"] == 2
+    assert data["totalSize"] > total_size
+    assert data["lastCrawlId"] == crawl_id
+    assert data["lastCrawlStartTime"] > last_crawl_started
+    assert data["lastCrawlTime"] > last_crawl_finished
+    assert data["lastRun"] > last_run
+
+    # Delete new crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        headers=crawler_auth_headers,
+        json={"crawl_ids": [crawl_id]},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"] == 1
+
+    # Re-check stats
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] == 1
+    assert data["crawlSuccessfulCount"] == 1
+    assert data["totalSize"] == total_size
+    assert data["lastCrawlId"] == last_crawl_id
+    assert data["lastCrawlStartTime"] == last_crawl_started
+    assert data["lastCrawlTime"] == last_crawl_finished
+    assert data["lastRun"] == last_run

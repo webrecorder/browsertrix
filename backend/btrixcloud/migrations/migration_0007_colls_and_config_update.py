@@ -4,7 +4,7 @@ Migration 0007 - Workflows changes
 - Rename colls to autoAddCollections 
 - Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
-from btrixcloud.crawlconfigs import update_config_crawl_stats
+from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 
 
@@ -31,7 +31,7 @@ class Migration(BaseMigration):
         for config in configs:
             config_id = config["_id"]
             try:
-                await update_config_crawl_stats(crawl_configs, crawls, config_id)
+                await stats_recompute_all(crawl_configs, crawls, config_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)
