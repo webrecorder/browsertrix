@@ -591,14 +591,15 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
+        if not status.finished:
+            status.finished = to_k8s_date(finished)
+
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
             state, status, crawl_id, allowed_from=["running"], **kwargs
         ):
             print("already finished, ignoring mark_finished")
             return status
-
-        status.finished = to_k8s_date(finished)
 
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)
