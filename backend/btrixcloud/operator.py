@@ -272,7 +272,9 @@ class BtrixOperator(K8sAPI):
                 status.finished = to_k8s_date(finished)
 
         if status.state != state:
-            print(f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed")
+            print(
+                f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed"
+            )
         return False
 
     def load_from_yaml(self, filename, params):
