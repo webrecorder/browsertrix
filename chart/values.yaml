@@ -99,11 +99,9 @@ backend_num_replicas: 1
 # number of workers per pod
 backend_workers: 2
 
-backend_requests_cpu: "10m"
-backend_limits_cpu: "768m"
+backend_cpu: "10m"
 
-backend_requests_memory: "100Mi"
-backend_limits_memory: "512Mi"
+backend_memory: "256Mi"
 
 # port for operator service
 opPort: 8756
@@ -119,11 +117,9 @@ profile_browser_idle_seconds: 60
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:latest"
 frontend_pull_policy: "Always"
 
-frontend_requests_cpu: "3m"
-frontend_limits_cpu: "30m"
+frontend_cpu: "5m"
 
-frontend_requests_memory: "12Mi"
-frontend_limits_memory: "40Mi"
+frontend_memory: "36Mi"
 
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767
@@ -140,11 +136,9 @@ mongo_host: "local-mongo.default"
 mongo_image: "docker.io/library/mongo:6.0.5"
 mongo_pull_policy: "IfNotPresent"
 
-mongo_requests_cpu: "12m"
-mongo_limits_cpu: "128m"
+mongo_cpu: "12m"
 
-mongo_requests_memory: "96Mi"
-mongo_limits_memory: "512Mi"
+mongo_memory: "512Mi"
 
 
 mongo_auth:
@@ -165,12 +159,9 @@ redis_pull_policy: "IfNotPresent"
 
 redis_url: "redis://local-redis.default:6379/1"
 
-redis_requests_cpu: "3m"
-redis_limits_cpu: "48m"
+redis_cpu: "5m"
 
-redis_requests_memory: "10Mi"
-redis_limits_memory: "64Mi"
-
+redis_memory: "48Mi"
 
 
 # Crawler Image
@@ -190,15 +181,13 @@ crawl_retries: 1000
 
 crawler_browser_instances: 2
 
-crawler_requests_cpu: "800m"
-crawler_limits_cpu: "1200m"
+crawler_cpu_per_browser: 600
 
-crawler_requests_memory: "512Mi"
-crawler_limits_memory: "1024Mi"
+crawler_memory_per_browser: 768
 
 # minimum size allocated to each crawler
 # should be at least double crawl session size to ensure space for WACZ
-crawler_requests_storage: "22Gi"
+crawler_storage: "22Gi"
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
@@ -229,6 +218,9 @@ minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
+
+minio_cpu: "10m"
+minio_memory: "1024Mi"
 
 
 # Storage
@@ -285,11 +277,9 @@ signer:
   # image_pull_policy: "IfNotPresent"
   # auth_token: <set to custom value>
 
-signer_requests_cpu: "3m"
-signer_limits_cpu: "32m"
+signer_cpu: "5m"
 
-signer_requests_memory: "36Mi"
-signer_limits_memory: "96Mi"
+signer_memory: "40Mi"
 
 
 # Optional: configure load balancing annotations

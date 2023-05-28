@@ -104,12 +104,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ redis_limits_cpu }}
-              memory: {{ redis_limits_memory }}
+              memory: {{ redis_memory }}
 
             requests:
-              cpu: {{ redis_requests_cpu }}
-              memory: {{ redis_requests_memory }}
+              cpu: {{ redis_cpu }}
+              memory: {{ redis_memory }}
 
           readinessProbe:
             exec:
