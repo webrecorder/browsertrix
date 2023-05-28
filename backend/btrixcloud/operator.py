@@ -265,11 +265,14 @@ class BtrixOperator(K8sAPI):
                 return True
 
             # get actual crawl state
-            new_state = await get_crawl_state(self.crawls, crawl_id)
+            new_state, finished = await get_crawl_state(self.crawls, crawl_id)
             if new_state:
                 status.state = state
+            if finished:
+                status.finished = to_k8s_date(finished)
 
-        print(f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed")
+        if status.state != state:
+            print(f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed")
         return False
 
     def load_from_yaml(self, filename, params):
@@ -591,15 +594,14 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        if not status.finished:
-            status.finished = to_k8s_date(finished)
-
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
             state, status, crawl_id, allowed_from=["running"], **kwargs
         ):
             print("already finished, ignoring mark_finished")
             return status
+
+        status.finished = to_k8s_date(finished)
 
         if crawl:
             await self.inc_crawl_complete_stats(crawl, finished)

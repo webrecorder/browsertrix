@@ -222,6 +222,9 @@ class CrawlOps:
     async def init_index(self):
         """init index for crawls db collection"""
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
+        await self.crawls.create_index([("oid", pymongo.HASHED)])
+        await self.crawls.create_index([("cid", pymongo.HASHED)])
+        await self.crawls.create_index([("state", pymongo.HASHED)])
 
     async def list_crawls(
         self,
@@ -925,8 +928,10 @@ async def update_crawl_state_if_allowed(
 # ============================================================================
 async def get_crawl_state(crawls, crawl_id):
     """return current crawl state of a crawl"""
-    res = await crawls.find_one({"_id": crawl_id})
-    return res and res.get("state")
+    res = await crawls.find_one({"_id": crawl_id}, projection=["state", "finished"])
+    if not res:
+        return None, None
+    return res.get("state"), res.get("finished")
 
 
 # ============================================================================
