@@ -122,7 +122,9 @@ export class CollectionsList extends LiteElement {
           <img src=${noCollectionsImg} />
         </div>
         <figcaption class="text-lg text-primary font-semibold">
-          ${msg("Start building your Collection.")}
+          ${this.isCrawler
+            ? msg("Start building your Collection.")
+            : msg("No Collections Found")}
         </figcaption>
       </figure>
       ${when(
@@ -142,6 +144,11 @@ export class CollectionsList extends LiteElement {
               ${msg("Create Collection")}
             </sl-button>
           </div>
+        `,
+        () => html`
+          <p class="max-w-[18em]">
+            ${msg("Your organization doesn't have any Collections, yet.")}
+          </p>
         `
       )}
     </div>
@@ -225,7 +232,7 @@ export class CollectionsList extends LiteElement {
               : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
           </div>
           <div class="actionsCol col-span-1 flex items-center justify-center">
-            ${this.renderActions(col)}
+            ${this.isCrawler ? this.renderActions(col) : ""}
           </div>
         </div>
       </a>

@@ -722,9 +722,7 @@ export class CollectionEditor extends LiteElement {
             () =>
               html`
                 <p class="text-neutral-400 text-center max-w-[24em]">
-                  ${msg(
-                    "Your organization doesn't have any Crawl Workflows yet."
-                  )}
+                  ${msg("Your organization doesn't have any Crawl Workflows.")}
                 </p>
               `
           )}
