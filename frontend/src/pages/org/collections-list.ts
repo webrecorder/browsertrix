@@ -93,7 +93,7 @@ export class CollectionsList extends LiteElement {
           </p>
           <div>
             <sl-button
-              href=${`/orgs/${this.orgId}/collections?new`}
+              href=${`/orgs/${this.orgId}/collections/new`}
               variant="primary"
               @click=${this.navLink}
             >

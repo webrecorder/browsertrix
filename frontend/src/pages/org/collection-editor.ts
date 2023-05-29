@@ -402,7 +402,9 @@ export class CollectionEditor extends LiteElement {
 
     if (!this.collectionCrawls?.length) {
       return html`
-        <div class="flex flex-col items-center justify-center text-center p-4">
+        <div
+          class="flex flex-col items-center justify-center text-center p-4 my-12"
+        >
           <span class="text-base font-semibold text-primary"
             >${msg("No Crawls in this Collection, yet")}</span
           >

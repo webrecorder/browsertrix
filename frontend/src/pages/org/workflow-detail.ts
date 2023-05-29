@@ -455,7 +455,8 @@ export class WorkflowDetail extends LiteElement {
           () =>
             html`
               <span class="text-neutral-500"
-                >(${this.crawls!.total.toLocaleString()}${this.workflow?.isCrawlRunning
+                >(${this.crawls!.total.toLocaleString()}${this.workflow
+                  ?.isCrawlRunning
                   ? html`<span class="text-success"> + 1</span>`
                   : ""})</span
               >
@@ -561,8 +562,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "cancel")}
-              ?disabled=${!this.lastCrawlId ||
-              this.isCancelingOrStoppingCrawl}
+              ?disabled=${!this.lastCrawlId || this.isCancelingOrStoppingCrawl}
             >
               <sl-icon
                 name="x-octagon"
@@ -688,8 +688,7 @@ export class WorkflowDetail extends LiteElement {
           msg("Status"),
           () => html`
             <btrix-crawl-status
-              state=${this.workflow!.lastCrawlState ||
-              msg("No Crawls Yet")}
+              state=${this.workflow!.lastCrawlState || msg("No Crawls Yet")}
               ?stopping=${this.workflow?.lastCrawlStopping}
             ></btrix-crawl-status>
           `
@@ -917,7 +916,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private renderWatchCrawl = () => {
-    if (!this.authState || !(this.workflow?.lastCrawlState)) return "";
+    if (!this.authState || !this.workflow?.lastCrawlState) return "";
 
     const isStarting = this.workflow.lastCrawlState === "starting";
     const isWaiting = this.workflow.lastCrawlState === "waiting";
@@ -1322,7 +1321,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/${DASHBOARD_ROUTE}`);
+      this.navTo(`/orgs/${this.orgId}/workflows/crawls`);
 
       this.notify({
         message: isDeactivating
