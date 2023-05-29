@@ -357,8 +357,8 @@ def test_filter_sort_collections(
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}/delete",
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200

@@ -478,8 +478,8 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             coll_id, crawlList.crawlIds, org
         )
 
-    @app.get(
-        "/orgs/{oid}/collections/{coll_id}/delete",
+    @app.delete(
+        "/orgs/{oid}/collections/{coll_id}",
         tags=["collections"],
     )
     async def delete_collection(
