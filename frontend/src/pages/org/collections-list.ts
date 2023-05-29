@@ -27,6 +27,11 @@ export class CollectionsList extends LiteElement {
   @state()
   private fetchErrorStatusCode?: number;
 
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+  });
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collections = undefined;
@@ -108,13 +113,17 @@ export class CollectionsList extends LiteElement {
   private renderList = () =>
     this.collections?.items.length
       ? html`
-          <header class="p-2 text-xs text-neutral-600 leading-none">
+          <header class="p-2 text-neutral-600 leading-none">
             <div
-              class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5"
+              class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_1.5rem] gap-4"
             >
-              <div class="col-span-1 px-2">${msg("Collection Name")}</div>
-              <div class="col-span-1">${msg("Tags")}</div>
-              <div class="col-span-2">${msg("Total Crawls")}</div>
+              <div class="col-span-1 text-xs px-2">
+                ${msg("Collection Name")}
+              </div>
+              <div class="col-span-1 text-xs">${msg("Top Tags")}</div>
+              <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
+              <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
+              <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
             </div>
           </header>
           <ul class="contents">
@@ -131,16 +140,40 @@ export class CollectionsList extends LiteElement {
         @click=${this.navLink}
       >
         <div
-          class="grid grid-cols-1 md:grid-cols-[20rem,1fr,10rem,1.5rem] gap-5 items-center"
+          class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_1.5rem] gap-4 items-center"
         >
           <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
-          <div class="col-span-1 truncate">${col.tags.join(", ")}</div>
+          <div class="col-span-1 truncate">
+            ${col.tags
+              .slice(0, 5)
+              .map(
+                (tag) =>
+                  html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
+              )}
+          </div>
+          <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
+            <sl-format-date
+              date=${`${col.modified}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          </div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
           >
             ${col.crawlCount === 1
               ? msg("1 crawl")
-              : msg(str`${col.crawlCount.toLocaleString()} crawls`)}
+              : msg(str`${this.numberFormatter.format(col.crawlCount)} crawls`)}
+          </div>
+          <div
+            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          >
+            ${col.pageCount === 1
+              ? msg("1 page")
+              : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
           </div>
           <div class="col-span-1 flex items-center justify-center">
             <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>
