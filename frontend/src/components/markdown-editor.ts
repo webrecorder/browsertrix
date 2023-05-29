@@ -69,12 +69,26 @@ export class MarkdownEditor extends LitElement {
               .markdown-editor {
                 --blue-100: var(--sl-color-blue-100);
               }
-              /* NOTE Should open an issue with wysimark about customizing */
+              /* NOTE wysimark doesn't support customization or
+              a way of selecting elements as of 2.2.15
+              https://github.com/portive/wysimark/issues/10 */
+              /* Editor container: */
               .markdown-editor > div {
-                overflow: hidden;
+                /* overflow: hidden; */
                 border-radius: var(--sl-input-border-radius-medium);
                 font-family: var(--sl-font-sans);
                 font-size: 1rem;
+              }
+              /* Dropdown appended to body: */
+              .--icon svg {
+                top: 0 !important;
+              }
+              /* Hide unsupported button features */
+              /* Text styles: */
+              .markdown-editor > div > div > div:nth-child(5),
+              /* Table: */
+              .markdown-editor > div > div > div:nth-child(9) {
+                display: none !important;
               }
               .markdown-editor div[role="textbox"] {
                 font-size: var(--sl-font-size-medium);
