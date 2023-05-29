@@ -99,8 +99,6 @@ export class CollectionEdit extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
-
-      this.navTo(`/orgs/${this.orgId}/collections/view/${this.collectionId}`);
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message;

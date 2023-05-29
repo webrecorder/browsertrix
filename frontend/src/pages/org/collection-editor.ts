@@ -338,7 +338,7 @@ export class CollectionEditor extends LiteElement {
                 ?loading=${this.isSubmitting}
                 @click=${this.submitCrawlSelectionChanges}
               >
-                ${msg("Save Changes")}
+                ${msg("Save Crawl Selection")}
               </sl-button>
             `,
             () => html`
@@ -399,7 +399,7 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collectionId ? msg("Save Changes") : msg("Save Collection")}
+            ${this.collectionId ? msg("Save Metadata") : msg("Save Collection")}
           </sl-button>
         </footer>
       </section>
