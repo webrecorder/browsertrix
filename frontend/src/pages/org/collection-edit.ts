@@ -51,6 +51,7 @@ export class CollectionEdit extends LiteElement {
             collectionId=${this.collectionId}
             .metadataValues=${this.collection}
             ?isSubmitting=${this.isSubmitting}
+            ?isCrawler=${this.isCrawler}
             @on-submit=${this.onSubmit}
           ></btrix-collection-editor>
         `

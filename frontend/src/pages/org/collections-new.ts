@@ -15,6 +15,9 @@ export class CollectionsNew extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  isCrawler?: boolean;
+
   @state()
   private collection?: Collection;
 
@@ -31,6 +34,7 @@ export class CollectionsNew extends LiteElement {
         .authState=${this.authState}
         orgId=${this.orgId}
         ?isSubmitting=${this.isSubmitting}
+        ?isCrawler=${this.isCrawler}
         @on-submit=${this.onSubmit}
       ></btrix-collection-editor>`;
   }

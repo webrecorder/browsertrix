@@ -73,6 +73,9 @@ export class CollectionEditor extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  isCrawler?: boolean;
+
   @property({ type: String })
   collectionId?: string;
 
@@ -263,6 +266,7 @@ export class CollectionEditor extends LiteElement {
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [
+                this.isCrawler,
                 this.collectionCrawls,
                 this.selectedCrawls,
                 this.workflowPagination,
@@ -273,15 +277,22 @@ export class CollectionEditor extends LiteElement {
         </section>
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
-          <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
-            ${guard(
-              [this.searchResultsOpen, this.searchByValue, this.filterBy],
-              this.renderWorkflowListControls
-            )}
-          </div>
+          ${when(
+            this.workflows?.total,
+            () =>
+              html`
+                <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
+                  ${guard(
+                    [this.searchResultsOpen, this.searchByValue, this.filterBy],
+                    this.renderWorkflowListControls
+                  )}
+                </div>
+              `
+          )}
           <div class="flex-1">
             ${guard(
               [
+                this.isCrawler,
                 this.workflows,
                 this.collectionCrawls,
                 this.selectedCrawls,
@@ -409,9 +420,13 @@ export class CollectionEditor extends LiteElement {
             >${msg("No Crawls in this Collection, yet")}</span
           >
           <p class="max-w-[24em] mx-auto mt-4">
-            ${msg(
-              "Select Workflows or individual Crawls. You can always come back and add Crawls later."
-            )}
+            ${(this.workflows && !this.workflows.total) || !this.isCrawler
+              ? msg(
+                  "Select Workflows or individual Crawls. You can always come back and add Crawls later."
+                )
+              : msg(
+                  "Create a Workflow to select Crawls. You can always come back and add Crawls later."
+                )}
           </p>
         </div>
       `;
@@ -686,6 +701,34 @@ export class CollectionEditor extends LiteElement {
   private renderWorkflowList = () => {
     if (!this.workflows) {
       return this.renderLoading();
+    }
+
+    if (!this.workflows.total) {
+      return html`
+        <div class="h-full flex justify-center items-center">
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-button
+                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                variant="primary"
+                @click=${this.navLink}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Crawl Workflow")}
+              </sl-button>
+            `,
+            () =>
+              html`
+                <p class="text-neutral-400 text-center max-w-[24em]">
+                  ${msg(
+                    "Your organization doesn't have any Crawl Workflows yet."
+                  )}
+                </p>
+              `
+          )}
+        </div>
+      `;
     }
 
     const groupedByWorkflow = groupBy("cid")(this.collectionCrawls) as any;
