@@ -917,12 +917,11 @@ async def update_crawl_state_if_allowed(
 ):
     """update crawl state and other properties in db if state has changed"""
     kwargs["state"] = state
-    res = await crawls.find_one_and_update(
-        {"_id": crawl_id, "state": {"$in": list(allowed_from)}},
-        {"$set": kwargs},
-        return_document=pymongo.ReturnDocument.BEFORE,
-    )
-    return res
+    query = {"_id": crawl_id}
+    if allowed_from:
+        query["state"] = {"$in": allowed_from}
+
+    return await crawls.find_one_and_update(query, {"$set": kwargs})
 
 
 # ============================================================================

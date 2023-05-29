@@ -255,7 +255,7 @@ class BtrixOperator(K8sAPI):
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed"""
-        if status.state in allowed_from:
+        if not allowed_from or status.state in allowed_from:
             res = await update_crawl_state_if_allowed(
                 self.crawls, crawl_id, state=state, allowed_from=allowed_from, **kwargs
             )
@@ -596,16 +596,21 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
+        if state in SUCCESSFUL_STATES:
+            allowed_from = ["running"]
+        else:
+            allowed_from = []
+
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
-            state, status, crawl_id, allowed_from=["running"], **kwargs
+            state, status, crawl_id, allowed_from=allowed_from, **kwargs
         ):
             print("already finished, ignoring mark_finished")
             return status
 
         status.finished = to_k8s_date(finished)
 
-        if crawl:
+        if crawl and state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
 
         asyncio.create_task(
