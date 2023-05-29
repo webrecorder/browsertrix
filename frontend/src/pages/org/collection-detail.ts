@@ -137,16 +137,23 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderReplay() {
+    const bearer = this.authState!.headers.Authorization.split(" ", 2)[1];
+    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json?auth_bearer=${bearer}`;
+
     return html`<section>
       <header class="flex items-center justify-between">
         <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
           ${msg("Replay")}
         </h3>
       </header>
-      <main class="flex">
-        <div class="flex-0 border rounded-lg p-5 mr-3 overflow-auto">TODO</div>
-        <div class="flex-1 aspect-4/3 border rounded-lg overflow-hidden">
-          TODO
+      <main>
+        <div class="aspect-4/3 border rounded-lg overflow-hidden">
+          <replay-web-page
+            source=${replaySource}
+            replayBase="/replay/"
+            noSandbox="true"
+            noCache="true"
+          ></replay-web-page>
         </div>
       </main>
     </section>`;
