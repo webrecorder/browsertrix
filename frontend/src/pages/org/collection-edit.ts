@@ -86,15 +86,19 @@ export class CollectionEdit extends LiteElement {
     const { name, description, crawlIds, oldCrawlIds } = e.detail.values;
 
     try {
-      let data: any;
       if (oldCrawlIds && oldCrawlIds) {
-        data = await this.saveCrawlSelection({ crawlIds, oldCrawlIds });
+        this.collection = await this.saveCrawlSelection({
+          crawlIds,
+          oldCrawlIds,
+        });
       } else {
-        data = await this.saveMetadata({ name, description });
+        this.collection = await this.saveMetadata({ name, description });
       }
 
       this.notify({
-        message: msg(str`Successfully updated "${data.name}" Collection.`),
+        message: msg(
+          str`Successfully updated "${this.collection!.name}" Collection.`
+        ),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
