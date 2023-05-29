@@ -484,6 +484,7 @@ export class CollectionEditor extends LiteElement {
           <div class="col-span-1 border-l flex items-center justify-center">
             <btrix-button
               class="expandBtn p-2 text-base transition-transform"
+              aria-label=${msg("Expand row")}
               aria-expanded="false"
               aria-controls=${`workflow-${workflowId}`}
               @click=${(e: MouseEvent) => {

@@ -1,10 +1,14 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import { guard } from "lit/directives/guard.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Collection } from "../../types/collection";
+import type { IntersectEvent } from "../../components/observable";
+
+const DESCRIPTION_MAX_HEIGHT_PX = 200;
 
 @localized()
 export class CollectionDetail extends LiteElement {
@@ -26,10 +30,19 @@ export class CollectionDetail extends LiteElement {
   @state()
   private isEditingDescription = false;
 
+  @state()
+  private isDescriptionExpanded = false;
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
       this.fetchCollection();
+    }
+  }
+
+  protected async updated(changedProperties: Map<string, any>) {
+    if (changedProperties.has("collection") && this.collection) {
+      this.checkTruncateDescription();
     }
   }
 
@@ -112,24 +125,46 @@ export class CollectionDetail extends LiteElement {
         </header>
         <main>
           ${when(
-            this.isEditingDescription,
-            () => html`<btrix-markdown-editor
-              initialValue=${this.collection?.description || ""}
-            ></btrix-markdown-editor>`,
-            () =>
-              html`
-                <main class="border rounded-lg p-5 max-h-screen overflow-auto">
-                  ${this.collection?.description
-                    ? html`<div>
+            this.collection,
+            () => html`
+              <main class="border rounded-lg">
+                ${this.collection?.description
+                  ? html`<div
+                        class="description max-w-prose overflow-hidden mx-auto py-5 transition-all"
+                        style=${`height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
+                      >
                         <btrix-markdown-viewer
                           value=${this.collection!.description}
                         ></btrix-markdown-viewer>
-                      </div>`
-                    : html`<div class="text-center text-neutral-400">
-                        ${msg("No description added.")}
-                      </div>`}
-                </main>
-              `
+                      </div>
+                      <div
+                        role="button"
+                        class="descriptionExpandBtn hidden border-t p-2 text-right text-neutral-500 hover:bg-neutral-50 transition-colors font-medium"
+                        @click=${this.toggleTruncateDescription}
+                      >
+                        <span class="inline-block align-middle mr-1"
+                          >${this.isDescriptionExpanded
+                            ? msg("Less")
+                            : msg("More")}</span
+                        >
+                        <sl-icon
+                          class="inline-block align-middle text-base"
+                          name=${this.isDescriptionExpanded
+                            ? "chevron-double-up"
+                            : "chevron-double-down"}
+                        ></sl-icon>
+                      </div> `
+                  : html`<div class="text-center text-neutral-400 p-5">
+                      ${msg("No description added.")}
+                    </div>`}
+              </main>
+            `,
+            () => html`<div
+              class="border rounded flex items-center justify-center text-3xl"
+              style=${`height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
+            >
+              <sl-spinner></sl-spinner>
+            </div>`
           )}
         </main>
       </section>
@@ -148,22 +183,49 @@ export class CollectionDetail extends LiteElement {
       </header>
       <main>
         <div class="aspect-4/3 border rounded-lg overflow-hidden">
-          <replay-web-page
-            source=${replaySource}
-            replayBase="/replay/"
-            noSandbox="true"
-            noCache="true"
-          ></replay-web-page>
+          ${guard(
+            [replaySource],
+            () => html`
+              <replay-web-page
+                source=${replaySource}
+                replayBase="/replay/"
+                noSandbox="true"
+                noCache="true"
+              ></replay-web-page>
+            `
+          )}
         </div>
       </main>
     </section>`;
   }
 
-  private renderLoading = () => html`<div
-    class="w-full flex items-center justify-center my-24 text-3xl"
-  >
-    <sl-spinner></sl-spinner>
-  </div>`;
+  private async checkTruncateDescription() {
+    await this.updateComplete;
+    window.requestAnimationFrame(() => {
+      const description = this.querySelector(".description") as HTMLElement;
+      console.log(description?.scrollHeight, description?.clientHeight);
+      if (description?.scrollHeight > description?.clientHeight) {
+        this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
+      }
+    });
+  }
+
+  private toggleTruncateDescription = () => {
+    const description = this.querySelector(".description") as HTMLElement;
+    if (!description) {
+      console.debug("no .description");
+      return;
+    }
+    this.isDescriptionExpanded = !this.isDescriptionExpanded;
+    if (this.isDescriptionExpanded) {
+      description.style.height = `${description.scrollHeight}px`;
+    } else {
+      description.style.height = `${DESCRIPTION_MAX_HEIGHT_PX}px`;
+      description.closest("section")?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
 
   private async fetchCollection() {
     try {
