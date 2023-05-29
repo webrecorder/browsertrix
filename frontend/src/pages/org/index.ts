@@ -177,11 +177,14 @@ export class Org extends LiteElement {
             label: msg("Finished Crawls"),
             path: "artifacts/crawls",
           })}
-          ${this.renderNavTab({
-            tabName: "collections",
-            label: msg("Collections"),
-            path: "collections",
-          })}
+          ${
+            //   this.renderNavTab({
+            //   tabName: "collections",
+            //   label: msg("Collections"),
+            //   path: "collections",
+            // })
+            ""
+          }
           ${when(this.isCrawler, () =>
             this.renderNavTab({
               tabName: "browser-profiles",
