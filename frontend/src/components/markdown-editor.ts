@@ -32,32 +32,17 @@ export class MarkdownEditor extends LitElement {
     return this;
   }
 
-  protected willUpdate(changedProperties: Map<string, any>) {
+  protected updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("initialValue") && this.initialValue) {
       this.value = this.initialValue;
+      this.initEditor();
     }
   }
 
   protected firstUpdated(): void {
-    const editor = createWysimark(this.querySelector(".markdown-editor")!, {
-      initialMarkdown: this.initialValue,
-      onChange: async () => {
-        const value = editor.getMarkdown();
-        const input = this.querySelector(
-          `input[name=${this.name}]`
-        ) as HTMLTextAreaElement;
-        input.value = value;
-        this.value = value;
-        await this.updateComplete;
-        this.dispatchEvent(
-          <MarkdownChangeEvent>new CustomEvent("on-change", {
-            detail: {
-              value: value,
-            },
-          })
-        );
-      },
-    });
+    if (!this.initialValue) {
+      this.initEditor();
+    }
   }
 
   render() {
@@ -106,5 +91,27 @@ export class MarkdownEditor extends LitElement {
           : ""}
       </fieldset>
     `;
+  }
+
+  private initEditor() {
+    const editor = createWysimark(this.querySelector(".markdown-editor")!, {
+      initialMarkdown: this.initialValue,
+      onChange: async () => {
+        const value = editor.getMarkdown();
+        const input = this.querySelector(
+          `input[name=${this.name}]`
+        ) as HTMLTextAreaElement;
+        input.value = value;
+        this.value = value;
+        await this.updateComplete;
+        this.dispatchEvent(
+          <MarkdownChangeEvent>new CustomEvent("on-change", {
+            detail: {
+              value: value,
+            },
+          })
+        );
+      },
+    });
   }
 }
