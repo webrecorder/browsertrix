@@ -150,11 +150,11 @@ export class CollectionsList extends LiteElement {
   private renderList = () =>
     this.collections?.items.length
       ? html`
-          <header class="p-2 text-neutral-600 leading-none">
+          <header class="py-2 text-neutral-600 leading-none">
             <div
-              class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_1.5rem] gap-4"
+              class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_2.5rem] gap-4"
             >
-              <div class="col-span-1 text-xs px-2">
+              <div class="col-span-1 text-xs pl-3">
                 ${msg("Collection Name")}
               </div>
               <div class="col-span-1 text-xs">${msg("Top Tags")}</div>
@@ -173,7 +173,7 @@ export class CollectionsList extends LiteElement {
     html`<li class="mb-2 last:mb-0">
       <a
         href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
-        class="block border rounded shadow-sm p-2 leading-none hover:bg-neutral-50"
+        class="block border rounded shadow-sm leading-none hover:bg-neutral-50"
         @click=${(e: MouseEvent) => {
           if (
             (
@@ -189,9 +189,9 @@ export class CollectionsList extends LiteElement {
         }}
       >
         <div
-          class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_1.5rem] gap-4 items-center"
+          class="h-10 grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_2.5rem] gap-4 items-center"
         >
-          <div class="col-span-1 truncate px-2 font-semibold">${col.name}</div>
+          <div class="col-span-1 truncate pl-3 font-semibold">${col.name}</div>
           <div class="col-span-1 truncate">
             ${col.tags
               .slice(0, 5)
@@ -234,14 +234,7 @@ export class CollectionsList extends LiteElement {
   private renderActions = (col: Collection) => {
     return html`
       <sl-dropdown distance="4">
-        <btrix-button
-          slot="trigger"
-          label=${msg("Actions")}
-          icon
-          @click=${(e: MouseEvent) => {
-            // e.stopPropagation();
-          }}
-        >
+        <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
           <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
         </btrix-button>
         <sl-menu>

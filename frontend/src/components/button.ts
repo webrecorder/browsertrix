@@ -18,6 +18,9 @@ export class Button extends LitElement {
   @property({ type: String })
   variant: "primary" | "danger" | "neutral" = "neutral";
 
+  @property({ type: String })
+  label?: string;
+
   @property({ type: Boolean })
   raised = false;
 
@@ -112,6 +115,7 @@ export class Button extends LitElement {
         raised: this.raised,
       })}
       ?disabled=${this.disabled}
+      aria-label=${ifDefined(this.label)}
       @click=${this.handleClick}
     >
       ${this.loading ? html`<sl-spinner></sl-spinner>` : html`<slot></slot>`}
