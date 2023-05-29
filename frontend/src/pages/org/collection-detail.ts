@@ -146,22 +146,16 @@ export class CollectionDetail extends LiteElement {
           </h3>
           ${when(
             this.isCrawler,
-            () => "" // TODO
-            // this.isEditingDescription
-            //   ? html`<sl-icon-button
-            //       class="text-base"
-            //       name="x-lg"
-            //       @click=${() => (this.isEditingDescription = false)}
-            //       label=${msg("Cancel editing description")}
-            //     ></sl-icon-button>`
-            //   : html`
-            //       <sl-icon-button
-            //         class="text-base"
-            //         name="pencil"
-            //         @click=${() => (this.isEditingDescription = true)}
-            //         label=${msg("Edit description")}
-            //       ></sl-icon-button>
-            //     `
+            () =>
+              html`
+                <sl-icon-button
+                  class="text-base"
+                  name="pencil"
+                  href=${`/orgs/${this.orgId}/collections/edit/${this.collectionId}#metadata`}
+                  @click=${this.navLink}
+                  label=${msg("Edit description")}
+                ></sl-icon-button>
+              `
           )}
         </header>
         <main>
