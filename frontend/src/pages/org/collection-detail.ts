@@ -28,7 +28,10 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private isEditingDescription = false;
+  private openDialogName?: "delete";
+
+  @state()
+  private isDialogVisible: boolean = false;
 
   @state()
   private isDescriptionExpanded = false;
@@ -57,7 +60,38 @@ export class CollectionDetail extends LiteElement {
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="my-7">${this.renderDescription()}</div>
-      <div>${this.renderReplay()}</div>`;
+      ${when(
+        this.collection?.resources.length,
+        () => html`<div>${this.renderReplay()}</div>`
+      )}
+
+      <btrix-dialog
+        label=${msg("Delete Collection?")}
+        ?open=${this.openDialogName === "delete"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${msg(
+          html`Are you sure you want to delete
+            <strong>${this.collection?.name}</strong>?`
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >Cancel</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              await this.deleteCollection();
+              this.openDialogName = undefined;
+            }}
+            >Delete Collection</sl-button
+          >
+        </div>
+      </btrix-dialog>`;
   }
 
   private renderHeader = () => html`
@@ -77,7 +111,7 @@ export class CollectionDetail extends LiteElement {
 
   private renderActions = () => {
     return html`
-      <sl-dropdown placement="bottom-end" distance="4" hoist>
+      <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
@@ -90,6 +124,13 @@ export class CollectionDetail extends LiteElement {
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}
+          </sl-menu-item>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${this.confirmDelete}
+          >
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
+            ${msg("Delete Collection")}
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
@@ -203,7 +244,6 @@ export class CollectionDetail extends LiteElement {
     await this.updateComplete;
     window.requestAnimationFrame(() => {
       const description = this.querySelector(".description") as HTMLElement;
-      console.log(description?.scrollHeight, description?.clientHeight);
       if (description?.scrollHeight > description?.clientHeight) {
         this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
       }
@@ -227,6 +267,40 @@ export class CollectionDetail extends LiteElement {
     }
   };
 
+  private confirmDelete = () => {
+    this.openDialogName = "delete";
+  };
+
+  private async deleteCollection(): Promise<void> {
+    if (!this.collection) return;
+
+    try {
+      const name = this.collection.name;
+      await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${this.collection.id}/delete`,
+        this.authState!
+        // FIXME API method is GET right now
+        // {
+        //   method: "DELETE",
+        // }
+      );
+
+      this.navTo(`/orgs/${this.orgId}/collections`);
+
+      this.notify({
+        message: msg(html`Deleted <strong>${name}</strong> Collection.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't delete Collection at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async fetchCollection() {
     try {
       this.collection = await this.getCollection();
@@ -241,7 +315,7 @@ export class CollectionDetail extends LiteElement {
 
   private async getCollection(): Promise<Collection> {
     const data = await this.apiFetch(
-      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
       this.authState!
     );
 

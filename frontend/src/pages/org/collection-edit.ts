@@ -97,7 +97,8 @@ export class CollectionEdit extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Successfully updated "${this.collection!.name}" Collection.`
+          html`Successfully updated
+            <strong>${this.collection!.name}</strong> Collection.`
         ),
         variant: "success",
         icon: "check2-circle",

@@ -25,6 +25,15 @@ export class CollectionsList extends LiteElement {
   };
 
   @state()
+  private openDialogName?: "delete";
+
+  @state()
+  private isDialogVisible: boolean = false;
+
+  @state()
+  private collectionToDelete?: Collection;
+
+  @state()
   private fetchErrorStatusCode?: number;
 
   // TODO localize
@@ -67,6 +76,34 @@ export class CollectionsList extends LiteElement {
           ? when(this.collections.total, this.renderList, this.renderEmpty)
           : this.renderLoading()
       )}
+
+      <btrix-dialog
+        label=${msg("Delete Collection?")}
+        ?open=${this.openDialogName === "delete"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${msg(
+          html`Are you sure you want to delete
+            <strong>${this.collectionToDelete?.name}</strong>?`
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >Cancel</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              await this.deleteCollection(this.collectionToDelete!);
+              this.openDialogName = undefined;
+            }}
+            >Delete Collection</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -137,7 +174,19 @@ export class CollectionsList extends LiteElement {
       <a
         href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
         class="block border rounded shadow-sm p-2 leading-none hover:bg-neutral-50"
-        @click=${this.navLink}
+        @click=${(e: MouseEvent) => {
+          if (
+            (
+              (e.currentTarget as HTMLElement)?.querySelector(
+                ".actionsCol"
+              ) as HTMLElement
+            ).contains(e.target as HTMLElement)
+          ) {
+            e.preventDefault();
+          } else {
+            this.navLink(e);
+          }
+        }}
       >
         <div
           class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_1.5rem] gap-4 items-center"
@@ -175,14 +224,45 @@ export class CollectionsList extends LiteElement {
               ? msg("1 page")
               : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
           </div>
-          <div class="col-span-1 flex items-center justify-center">
-            <btrix-button class="dropdownTrigger" label=${msg("Actions")} icon>
-              <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
-            </btrix-button>
+          <div class="actionsCol col-span-1 flex items-center justify-center">
+            ${this.renderActions(col)}
           </div>
         </div>
       </a>
     </li>`;
+
+  private renderActions = (col: Collection) => {
+    return html`
+      <sl-dropdown distance="4">
+        <btrix-button
+          slot="trigger"
+          label=${msg("Actions")}
+          icon
+          @click=${(e: MouseEvent) => {
+            // e.stopPropagation();
+          }}
+        >
+          <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
+        </btrix-button>
+        <sl-menu>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(`/orgs/${this.orgId}/collections/edit/${col.id}`)}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Collection")}
+          </sl-menu-item>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => this.confirmDelete(col)}
+          >
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
+            ${msg("Delete Collection")}
+          </sl-menu-item>
+        </sl-menu>
+      </sl-dropdown>
+    `;
+  };
 
   private renderFetchError = () => html`
     <div>
@@ -191,6 +271,40 @@ export class CollectionsList extends LiteElement {
       </btrix-alert>
     </div>
   `;
+
+  private confirmDelete = (collection: Collection) => {
+    this.collectionToDelete = collection;
+    this.openDialogName = "delete";
+  };
+
+  private async deleteCollection(collection: Collection): Promise<void> {
+    try {
+      const name = collection.name;
+      await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${collection.id}`,
+        this.authState!
+        // FIXME API method is GET right now
+        // {
+        //   method: "DELETE",
+        // }
+      );
+
+      this.collectionToDelete = undefined;
+      this.getCollections();
+
+      this.notify({
+        message: msg(html`Deleted <strong>${name}</strong> Collection.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't delete Collection at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
 
   private async fetchCollections() {
     this.fetchErrorStatusCode = undefined;
