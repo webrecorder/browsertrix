@@ -76,7 +76,6 @@ export class Combobox extends LitElement {
       <sl-popup
         placement="bottom-start"
         shift
-        sync="width"
         strategy="fixed"
         ?active=${this.isActive}
         @keydown=${this.onKeydown}
@@ -147,6 +146,16 @@ export class Combobox extends LitElement {
   private async openDropdown() {
     this.isActive = true;
     await this.combobox?.updateComplete;
+
+    // Manually sync dropdown width instead of using `sync="width"`
+    // to get around ResizeObserver loop error
+    if (this.anchor?.length && this.dropdown) {
+      const anchorWidth = this.anchor[0].clientWidth;
+      if (anchorWidth) {
+        this.dropdown.style.width = `${anchorWidth}px`;
+      }
+    }
+
     this.dropdown?.classList.add("animateShow");
     this.dropdown?.classList.remove("hidden");
   }
