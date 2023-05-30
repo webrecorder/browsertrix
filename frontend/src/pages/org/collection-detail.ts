@@ -271,12 +271,11 @@ export class CollectionDetail extends LiteElement {
     try {
       const name = this.collection.name;
       await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${this.collection.id}/delete`,
-        this.authState!
-        // FIXME API method is GET right now
-        // {
-        //   method: "DELETE",
-        // }
+        `/orgs/${this.orgId}/collections/${this.collection.id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        }
       );
 
       this.navTo(`/orgs/${this.orgId}/collections`);
