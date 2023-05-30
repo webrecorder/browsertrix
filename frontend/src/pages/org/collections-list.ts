@@ -248,10 +248,10 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-4"
+            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3"
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
-            <div class="col-span-1 text-xs">${msg("Top Tags")}</div>
+            <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
             <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
             <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
@@ -324,7 +324,7 @@ export class CollectionsList extends LiteElement {
           </div>
           <div class="col-span-1 order-last md:order-none truncate">
             ${col.tags
-              .slice(0, 5)
+              .slice(0, 3)
               .map(
                 (tag) =>
                   html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
