@@ -479,7 +479,7 @@ export class CollectionEditor extends LiteElement {
           >
             ${crawls.length === 1
               ? msg("1 crawl")
-              : msg(`${this.numberFormatter.format(crawls.length)} crawls`)}
+              : msg(str`${this.numberFormatter.format(crawls.length)} crawls`)}
           </div>
           <div class="col-span-1 border-l flex items-center justify-center">
             <btrix-button
