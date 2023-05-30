@@ -24,18 +24,17 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "name";
+type SortField = "modified" | "name";
 type SortDirection = "asc" | "desc";
 const INITIAL_PAGE_SIZE = 10;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  // TODO enable when API is enabled
-  // modified: {
-  //   label: msg("Last Updated"),
-  //   defaultDirection: "desc",
-  // },
+  modified: {
+    label: msg("Last Updated"),
+    defaultDirection: "desc",
+  },
   name: {
     label: msg("Name"),
     defaultDirection: "asc",
@@ -62,8 +61,8 @@ export class CollectionsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "name",
-    direction: sortableFields["name"].defaultDirection!,
+    field: "modified",
+    direction: sortableFields["modified"].defaultDirection!,
   };
 
   @state()
