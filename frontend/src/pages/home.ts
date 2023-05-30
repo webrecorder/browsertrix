@@ -155,6 +155,7 @@ export class Home extends LiteElement {
               .defaultOrg=${ifDefined(
                 this.userInfo?.orgs.find((org) => org.default === true)
               )}
+              @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
           </section>
         </div>
@@ -313,6 +314,15 @@ export class Home extends LiteElement {
     }
 
     this.isSubmittingNewOrg = false;
+  }
+
+  async onUpdateOrgQuotas(e: CustomEvent) {
+    const org = e.detail as OrgData;
+
+    await this.apiFetch(`/orgs/${org.id}/quotas`, this.authState!, {
+      method: "POST",
+      body: JSON.stringify(org.quotas),
+    });
   }
 
   async checkFormValidity(formEl: HTMLFormElement) {

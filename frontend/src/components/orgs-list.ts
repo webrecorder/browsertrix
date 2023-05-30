@@ -7,6 +7,7 @@ import LiteElement, { html } from "../utils/LiteElement";
 
 import { isAdmin } from "../utils/orgs";
 import { DASHBOARD_ROUTE } from "../routes";
+import { SlInput } from "@shoelace-style/shoelace";
 
 @localized()
 export class OrgsList extends LiteElement {
@@ -22,6 +23,9 @@ export class OrgsList extends LiteElement {
   @property({ type: Boolean })
   skeleton? = false;
 
+  @property({ type: Object })
+  currOrg?: OrgData | null = null;
+
   render() {
     if (this.skeleton) {
       return this.renderSkeleton();
@@ -30,8 +34,61 @@ export class OrgsList extends LiteElement {
     return html`
       <ul class="border rounded-lg overflow-hidden">
         ${this.orgList?.map(this.renderOrg)}
+        ${this.renderOrgQuotas()}
       </ul>
     `;
+  }
+
+  private renderOrgQuotas() {
+    if (!this.currOrg) {
+      return html``;
+    }
+
+    return html`
+    <sl-dialog
+      label=${msg(str`Quotas for: ${this.currOrg.name}`)}
+      ?open=${!!this.currOrg}
+    @sl-request-close=${() => (this.currOrg = null)}
+  >
+  ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
+    return html`
+    <sl-input
+    name=${key}
+    value=${value}
+    type="number"
+    @sl-input="${this.onUpdateQuota}"
+    ><span slot="prefix">${key}</span></sl-input>`;
+  })}
+  <sl-button @click="${this.onSubmitQuotas}" class="mt-2" variant="primary">Update Quotas</sl-button>
+
+  </sl-dialog>
+    `;
+  }
+
+  private onUpdateQuota(e: CustomEvent) {
+    const inputEl = e.target as SlInput;
+    const quotas = this.currOrg?.quotas;
+    if (quotas) {
+      quotas[inputEl.name] = Number(inputEl.value);
+    }
+  }
+
+  private onSubmitQuotas() {
+    if (this.currOrg) {
+      this.dispatchEvent(new CustomEvent("update-quotas", {detail: this.currOrg}));
+    }
+    this.currOrg = null;
+  }
+
+  private showQuotas(org: OrgData) {
+    const stop = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.currOrg = org;
+      return false;
+    };
+
+    return stop;
   }
 
   private renderOrg = (org: OrgData) => {
@@ -52,10 +109,15 @@ export class OrgsList extends LiteElement {
         <div class="font-medium mr-2 transition-colors">
           ${defaultLabel}${org.name}
         </div>
-        <div class="text-xs text-neutral-400">
-          ${memberCount === 1
-            ? msg(`1 member`)
-            : msg(str`${memberCount} members`)}
+        <div class="flex flex-row items-center">
+          <sl-button size="small" class="mr-3" @click="${this.showQuotas(org)}">
+          <sl-icon name="gear" slot="prefix"></sl-icon>
+          </sl-button>
+          <div class="text-xs text-neutral-400">
+            ${memberCount === 1
+              ? msg(`1 member`)
+              : msg(str`${memberCount} members`)}
+          </div>
         </div>
       </li>
     `;

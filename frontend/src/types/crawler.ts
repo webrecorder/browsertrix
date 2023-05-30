@@ -88,7 +88,8 @@ export type Profile = {
 
 export type CrawlState =
   | "starting"
-  | "waiting"
+  | "waiting_capacity"
+  | "waiting_org_limit"
   | "running"
   | "complete"
   | "failed"

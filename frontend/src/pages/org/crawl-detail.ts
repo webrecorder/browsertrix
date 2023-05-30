@@ -90,7 +90,8 @@ export class CrawlDetail extends LiteElement {
     return (
       this.crawl.state === "running" ||
       this.crawl.state === "starting" ||
-      this.crawl.state === "waiting" ||
+      this.crawl.state === "waiting_capacity" ||
+      this.crawl.state === "waiting_org_limit" ||
       this.crawl.state === "stopping"
     );
   }

@@ -35,13 +35,17 @@ from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_mess
 
 RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
 
-RUNNING_AND_STARTING_STATES = ("starting", "waiting", *RUNNING_STATES)
+STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
 
 FAILED_STATES = ("canceled", "failed")
 
 SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
 
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *FAILED_STATES, *SUCCESSFUL_STATES)
+RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
+
+NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
@@ -218,6 +222,9 @@ class CrawlOps:
     async def init_index(self):
         """init index for crawls db collection"""
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
+        await self.crawls.create_index([("oid", pymongo.HASHED)])
+        await self.crawls.create_index([("cid", pymongo.HASHED)])
+        await self.crawls.create_index([("state", pymongo.HASHED)])
 
     async def list_crawls(
         self,
@@ -591,6 +598,22 @@ class CrawlOps:
 
         return True
 
+    async def update_crawl_state(self, crawl_id: str, state: str):
+        """called only when job container is being stopped/canceled"""
+
+        data = {"state": state}
+        # if cancelation, set the finish time here
+        if state == "canceled":
+            data["finished"] = dt_now()
+
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "state": {"$in": RUNNING_AND_STARTING_STATES},
+            },
+            {"$set": data},
+        )
+
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """stop or cancel specified crawl"""
         result = None
@@ -613,6 +636,15 @@ class CrawlOps:
             raise HTTPException(
                 status_code=404, detail=f"crawl_not_found, (details: {exc})"
             )
+
+        # if job no longer running, canceling is considered success,
+        # but graceful stoppage is not possible, so would be a failure
+        if result.get("error") == "Not Found":
+            if not graceful:
+                await self.update_crawl_state(crawl_id, "canceled")
+                crawl = await self.get_crawl_raw(crawl_id, org)
+                await self.crawl_configs.stats_recompute_remove_crawl(crawl["cid"], 0)
+                return {"success": True}
 
         # return whatever detail may be included in the response
         raise HTTPException(status_code=400, detail=result)
@@ -880,16 +912,25 @@ async def add_new_crawl(
 
 
 # ============================================================================
-async def update_crawl_state_if_changed(crawls, crawl_id, state, **kwargs):
+async def update_crawl_state_if_allowed(
+    crawls, crawl_id, state, allowed_from, **kwargs
+):
     """update crawl state and other properties in db if state has changed"""
     kwargs["state"] = state
-    res = await crawls.find_one_and_update(
-        {"_id": crawl_id, "state": {"$ne": state}},
-        {"$set": kwargs},
-        return_document=pymongo.ReturnDocument.AFTER,
-    )
-    print("** UPDATE", crawl_id, state, res is not None)
-    return res
+    query = {"_id": crawl_id}
+    if allowed_from:
+        query["state"] = {"$in": allowed_from}
+
+    return await crawls.find_one_and_update(query, {"$set": kwargs})
+
+
+# ============================================================================
+async def get_crawl_state(crawls, crawl_id):
+    """return current crawl state of a crawl"""
+    res = await crawls.find_one({"_id": crawl_id}, projection=["state", "finished"])
+    if not res:
+        return None, None
+    return res.get("state"), res.get("finished")
 
 
 # ============================================================================

@@ -125,7 +125,12 @@ class CrawlManager(K8sAPI):
         cid = str(crawlconfig.id)
 
         return await self.new_crawl_job(
-            cid, userid, crawlconfig.scale, crawlconfig.crawlTimeout, manual=True
+            cid,
+            userid,
+            crawlconfig.oid,
+            crawlconfig.scale,
+            crawlconfig.crawlTimeout,
+            manual=True,
         )
 
     async def update_crawl_config(self, crawlconfig, update, profile_filename=None):
@@ -275,9 +280,7 @@ class CrawlManager(K8sAPI):
             patch = {"stopping": True}
             return await self._patch_job(crawl_id, patch)
 
-        await self.delete_crawl_job(crawl_id)
-
-        return {"success": True}
+        return await self.delete_crawl_job(crawl_id)
 
     async def delete_crawl_configs_for_org(self, org):
         """Delete all crawl configs for given org"""

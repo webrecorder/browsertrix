@@ -79,6 +79,13 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
+class OrgQuotas(BaseModel):
+    """Organization quotas (settable by superadmin)"""
+
+    maxConcurrentCrawls: Optional[int] = 0
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -91,6 +98,8 @@ class Organization(BaseMongoModel):
     usage: Dict[str, int] = {}
 
     default: bool = False
+
+    quotas: Optional[OrgQuotas] = OrgQuotas()
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -161,6 +170,8 @@ class OrgOut(BaseMongoModel):
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False
+
+    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
@@ -315,6 +326,19 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"storage": storage.dict()}}
         )
 
+    async def update_quotas(self, org: Organization, quotas: OrgQuotas):
+        """update organization quotas"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {
+                "$set": {
+                    "quotas": quotas.dict(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    )
+                }
+            },
+        )
+
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
@@ -361,6 +385,16 @@ async def inc_org_stats(orgs, oid, duration):
     # init org crawl stats
     yymm = datetime.utcnow().strftime("%Y-%m")
     await orgs.find_one_and_update({"_id": oid}, {"$inc": {f"usage.{yymm}": duration}})
+
+
+# ============================================================================
+async def get_max_concurrent_crawls(orgs, oid):
+    """return max allowed concurrent crawls, if any"""
+    org = await orgs.find_one({"_id": oid})
+    if org:
+        org = Organization.from_dict(org)
+        return org.quotas.maxConcurrentCrawls
+    return 0
 
 
 # ============================================================================
@@ -447,9 +481,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
             users={},
             storage=DefaultStorage(name="default", path=storage_path),
         )
-        await ops.add_org(org)
+        if not await ops.add_org(org):
+            return {"added": False, "error": "already_exists"}
 
-        return {"added": True}
+        return {"id": id_, "added": True}
 
     @router.get("", tags=["organizations"])
     async def get_org(
@@ -468,6 +503,19 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
+
+        return {"updated": True}
+
+    @router.post("/quotas", tags=["organizations"])
+    async def update_quotas(
+        quotas: OrgQuotas,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_quotas(org, quotas)
 
         return {"updated": True}
 

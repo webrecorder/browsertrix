@@ -37,12 +37,13 @@ class ScheduledJob(K8sAPI):
         userid = data["USER_ID"]
         scale = int(data.get("INITIAL_SCALE", 0))
         crawl_timeout = int(data.get("CRAWL_TIMEOUT", 0))
+        oid = data["ORG_ID"]
 
         crawlconfig = await get_crawl_config(self.crawlconfigs, uuid.UUID(self.cid))
 
         # k8s create
         crawl_id = await self.new_crawl_job(
-            self.cid, userid, scale, crawl_timeout, manual=False
+            self.cid, userid, oid, scale, crawl_timeout, manual=False
         )
 
         # db create
