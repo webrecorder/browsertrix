@@ -258,7 +258,7 @@ export class CollectionEditor extends LiteElement {
 
   private renderSelectCrawls = () => {
     return html`
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">
             ${msg("Crawls in Collection")}

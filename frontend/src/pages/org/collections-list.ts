@@ -115,7 +115,7 @@ export class CollectionsList extends LiteElement {
 
   private renderEmpty = () => html`
     <div
-      class="grid grid-cols-[max-content] gap-4 justify-center justify-items-center text-center"
+      class="grid grid-cols-[max-content] gap-3 justify-center justify-items-center text-center"
     >
       <figure>
         <div class="w-[27rem] max-w-[100vw] aspect-square">
@@ -159,7 +159,7 @@ export class CollectionsList extends LiteElement {
       ? html`
           <header class="py-2 text-neutral-600 leading-none">
             <div
-              class="grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_2.5rem] gap-4"
+              class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-4"
             >
               <div class="col-span-1 text-xs pl-3">
                 ${msg("Collection Name")}
@@ -196,10 +196,12 @@ export class CollectionsList extends LiteElement {
         }}
       >
         <div
-          class="h-10 grid grid-cols-1 md:grid-cols-[20rem_1fr_16ch_repeat(2,12ch)_2.5rem] gap-4 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
-          <div class="col-span-1 truncate pl-3 font-semibold">${col.name}</div>
-          <div class="col-span-1 truncate">
+          <div class="col-span-1 md:pl-3 truncate font-semibold">
+            ${col.name}
+          </div>
+          <div class="col-span-1 order-last md:order-none truncate">
             ${col.tags
               .slice(0, 5)
               .map(
@@ -231,7 +233,9 @@ export class CollectionsList extends LiteElement {
               ? msg("1 page")
               : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
           </div>
-          <div class="actionsCol col-span-1 flex items-center justify-center">
+          <div
+            class="actionsCol absolute top-0 right-0 md:relative col-span-1 flex items-center justify-center"
+          >
             ${this.isCrawler ? this.renderActions(col) : ""}
           </div>
         </div>
