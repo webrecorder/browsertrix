@@ -1,12 +1,35 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
+import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { APIPaginatedList } from "../../types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import type { Collection } from "../../types/collection";
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
+
+type Collections = APIPaginatedList & {
+  items: Collection[];
+};
+type SortField = "name";
+type SortDirection = "asc" | "desc";
+const INITIAL_PAGE_SIZE = 10;
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  // TODO enable when API is enabled
+  // modified: {
+  //   label: msg("Last Updated"),
+  //   defaultDirection: "desc",
+  // },
+  name: {
+    label: msg("Name"),
+    defaultDirection: "asc",
+  },
+};
 
 @localized()
 export class CollectionsList extends LiteElement {
@@ -20,8 +43,15 @@ export class CollectionsList extends LiteElement {
   isCrawler?: boolean;
 
   @state()
-  private collections?: APIPaginatedList & {
-    items: Collection[];
+  private collections?: Collections;
+
+  @state()
+  private orderBy: {
+    field: SortField;
+    direction: SortDirection;
+  } = {
+    field: "name",
+    direction: sortableFields["name"].defaultDirection!,
   };
 
   @state()
@@ -44,6 +74,8 @@ export class CollectionsList extends LiteElement {
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collections = undefined;
+    }
+    if (changedProperties.has("orgId") || changedProperties.has("orderBy")) {
       this.fetchCollections();
     }
   }
@@ -73,7 +105,18 @@ export class CollectionsList extends LiteElement {
       <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
         this.collections
-          ? when(this.collections.total, this.renderList, this.renderEmpty)
+          ? when(
+              this.collections.total,
+              () => html`
+                <div
+                  class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+                >
+                  ${this.renderControls()}
+                </div>
+                ${this.renderList()}
+              `,
+              this.renderEmpty
+            )
           : this.renderLoading()
       )}
 
@@ -154,27 +197,105 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
-  private renderList = () =>
-    this.collections?.items.length
-      ? html`
-          <header class="py-2 text-neutral-600 leading-none">
-            <div
-              class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-4"
+  private renderControls() {
+    return html`
+      <div class="flex justify-end">
+        <div class="flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mx-2">
+            ${msg("Sort by:")}
+          </div>
+          <div class="grow flex">
+            <sl-select
+              class="flex-1 md:min-w-[9.2rem]"
+              size="small"
+              pill
+              value=${this.orderBy.field}
+              @sl-change=${(e: Event) => {
+                const field = (e.target as HTMLSelectElement)
+                  .value as SortField;
+                this.orderBy = {
+                  field: field,
+                  direction:
+                    sortableFields[field].defaultDirection ||
+                    this.orderBy.direction,
+                };
+              }}
             >
-              <div class="col-span-1 text-xs pl-3">
-                ${msg("Collection Name")}
-              </div>
-              <div class="col-span-1 text-xs">${msg("Top Tags")}</div>
-              <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
-              <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
-              <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
-            </div>
-          </header>
-          <ul class="contents">
-            ${this.collections.items.map(this.renderItem)}
-          </ul>
-        `
-      : html`TODO`;
+              ${Object.entries(sortableFields).map(
+                ([value, { label }]) => html`
+                  <sl-option value=${value}>${label}</sl-option>
+                `
+              )}
+            </sl-select>
+            <sl-icon-button
+              name="arrow-down-up"
+              label=${msg("Reverse sort")}
+              @click=${() => {
+                this.orderBy = {
+                  ...this.orderBy,
+                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                };
+              }}
+            ></sl-icon-button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderList() {
+    if (this.collections?.items.length) {
+      return html`
+        <header class="py-2 text-neutral-600 leading-none">
+          <div
+            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-4"
+          >
+            <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
+            <div class="col-span-1 text-xs">${msg("Top Tags")}</div>
+            <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
+            <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
+            <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
+          </div>
+        </header>
+        <ul class="contents">
+          ${this.collections.items.map(this.renderItem)}
+        </ul>
+
+        ${when(
+          this.collections.total > this.collections.pageSize ||
+            this.collections.page > 1,
+          () => html`
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                page=${this.collections!.page}
+                totalCount=${this.collections!.total}
+                size=${this.collections!.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  await this.fetchCollections({
+                    page: e.detail.page,
+                  });
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        )}
+      `;
+    }
+
+    return html`
+      <div class="border rounded-lg bg-neutral-50 p-4">
+        <p class="text-center">
+          <span class="text-neutral-400"
+            >${msg("No matching Collections found.")}</span
+          >
+        </p>
+      </div>
+    `;
+  }
 
   private renderItem = (col: Collection) =>
     html`<li class="mb-2 last:mb-0">
@@ -310,11 +431,11 @@ export class CollectionsList extends LiteElement {
     }
   }
 
-  private async fetchCollections() {
+  private async fetchCollections(params?: APIPaginationQuery) {
     this.fetchErrorStatusCode = undefined;
 
     try {
-      this.collections = await this.getCollections();
+      this.collections = await this.getCollections(params);
     } catch (e: any) {
       if (e.isApiError) {
         this.fetchErrorStatusCode = e.statusCode;
@@ -328,9 +449,26 @@ export class CollectionsList extends LiteElement {
     }
   }
 
-  private async getCollections(): Promise<APIPaginatedList> {
+  private async getCollections(
+    queryParams?: APIPaginationQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify(
+      {
+        page: queryParams?.page || this.collections?.page || 1,
+        pageSize:
+          queryParams?.pageSize ||
+          this.collections?.pageSize ||
+          INITIAL_PAGE_SIZE,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+
     const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/collections`,
+      `/orgs/${this.orgId}/collections?${query}`,
       this.authState!
     );
 
