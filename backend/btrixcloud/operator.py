@@ -23,7 +23,7 @@ from .utils import (
 from .k8sapi import K8sAPI
 
 from .db import init_db
-from .orgs import inc_org_stats, get_max_parallel_crawls
+from .orgs import inc_org_stats, get_max_concurrent_crawls
 from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import stats_recompute_last
 from .crawls import (
@@ -254,7 +254,30 @@ class BtrixOperator(K8sAPI):
         return {"status": status.dict(exclude_none=True), "children": children}
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
-        """set status state and update db, if changed"""
+        """set status state and update db, if changed
+        if allowed_from passed in, can only transition from allowed_from state,
+        otherwise get current state from db and return
+        the following state transitions are supported:
+
+        from starting to org concurrent crawl limit and back:
+         - starting -> waiting_org_capacity -> starting
+
+        from starting to running:
+         - starting -> running
+
+        from running to complete or partial_complete:
+         - running -> complete
+         - running -> partial_complete
+
+        from starting or running to waiting for capacity (pods pending) and back:
+         - starting -> waiting_capacity
+         - running -> waiting_capacity
+         - waiting_capacity -> running
+
+        from any state to canceled or failed:
+         - <any> -> canceled
+         - <any> -> failed
+        """
         if not allowed_from or status.state in allowed_from:
             res = await update_crawl_state_if_allowed(
                 self.crawls, crawl_id, state=state, allowed_from=allowed_from, **kwargs
@@ -319,7 +342,7 @@ class BtrixOperator(K8sAPI):
     async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
-        max_crawls = await get_max_parallel_crawls(self.orgs, crawl.oid)
+        max_crawls = await get_max_concurrent_crawls(self.orgs, crawl.oid)
         if not max_crawls:
             return True
 

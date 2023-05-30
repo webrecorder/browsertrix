@@ -7,11 +7,11 @@ crawl_id_a = None
 crawl_id_b = None
 
 
-def test_set_parallel_crawl_limit(org_with_quotas, admin_auth_headers):
+def test_set_concurrent_crawl_limit(org_with_quotas, admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
         headers=admin_auth_headers,
-        json={"maxParallelCrawls": 1},
+        json={"maxConcurrentCrawls": 1},
     )
     data = r.json()
     assert data.get("updated") == True

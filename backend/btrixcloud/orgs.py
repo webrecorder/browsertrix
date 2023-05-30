@@ -82,7 +82,7 @@ class S3Storage(BaseModel):
 class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
-    maxParallelCrawls: Optional[int] = 0
+    maxConcurrentCrawls: Optional[int] = 0
 
 
 # ============================================================================
@@ -388,12 +388,12 @@ async def inc_org_stats(orgs, oid, duration):
 
 
 # ============================================================================
-async def get_max_parallel_crawls(orgs, oid):
-    """return max allowed parallel crawls, if any"""
+async def get_max_concurrent_crawls(orgs, oid):
+    """return max allowed concurrent crawls, if any"""
     org = await orgs.find_one({"_id": oid})
     if org:
         org = Organization.from_dict(org)
-        return org.quotas.maxParallelCrawls
+        return org.quotas.maxConcurrentCrawls
     return 0
 
 
