@@ -43,6 +43,29 @@ type SearchResult = {
     value: string;
   };
 };
+type SortField = "lastRun" | "modified" | "created" | "firstSeed";
+type SortDirection = "asc" | "desc";
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  lastRun: {
+    label: msg("Latest Crawl"),
+    defaultDirection: "desc",
+  },
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: "desc",
+  },
+  created: {
+    label: msg("Created At"),
+    defaultDirection: "desc",
+  },
+  firstSeed: {
+    label: msg("Crawl Start URL"),
+    defaultDirection: "asc",
+  },
+};
 const finishedCrawlStates: CrawlState[] = [
   "complete",
   "partial_complete",
@@ -117,7 +140,16 @@ export class CollectionEditor extends LiteElement {
   private activeTab: Tab = TABS[0];
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {};
+  private orderWorkflowsBy: {
+    field: SortField;
+    direction: SortDirection;
+  } = {
+    field: "lastRun",
+    direction: sortableFields["lastRun"].defaultDirection!,
+  };
+
+  @state()
+  private filterWorkflowsBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
   private searchByValue: string = "";
@@ -131,7 +163,7 @@ export class CollectionEditor extends LiteElement {
 
   private get selectedSearchFilterKey() {
     return Object.keys(this.fieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key])
+      Boolean((this.filterWorkflowsBy as any)[key])
     );
   }
 
@@ -165,7 +197,8 @@ export class CollectionEditor extends LiteElement {
     }
     if (
       (changedProperties.has("orgId") && this.orgId) ||
-      changedProperties.has("filterBy")
+      changedProperties.has("filterWorkflowsBy") ||
+      changedProperties.has("orderWorkflowsBy")
     ) {
       this.fetchWorkflows();
     }
@@ -283,7 +316,12 @@ export class CollectionEditor extends LiteElement {
               html`
                 <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
                   ${guard(
-                    [this.searchResultsOpen, this.searchByValue, this.filterBy],
+                    [
+                      this.searchResultsOpen,
+                      this.searchByValue,
+                      this.filterWorkflowsBy,
+                      this.orderWorkflowsBy,
+                    ],
                     this.renderWorkflowListControls
                   )}
                 </div>
@@ -604,8 +642,45 @@ export class CollectionEditor extends LiteElement {
 
   private renderWorkflowListControls = () => {
     return html`
-      <div class="flex flex-wrap items-center md:gap-4 gap-2">
-        <div class="grow">${this.renderSearch()}</div>
+      <div>
+        <div class="mb-2">${this.renderSearch()}</div>
+        <div class="flex items-center">
+          <div class="whitespace-nowrap text-neutral-500 mx-2">
+            ${msg("Sort by:")}
+          </div>
+          <sl-select
+            class="flex-1"
+            size="small"
+            pill
+            value=${this.orderWorkflowsBy.field}
+            @sl-change=${(e: Event) => {
+              const field = (e.target as HTMLSelectElement).value as SortField;
+              this.orderWorkflowsBy = {
+                field: field,
+                direction:
+                  sortableFields[field].defaultDirection ||
+                  this.orderWorkflowsBy.direction,
+              };
+            }}
+          >
+            ${Object.entries(sortableFields).map(
+              ([value, { label }]) => html`
+                <sl-option value=${value}>${label}</sl-option>
+              `
+            )}
+          </sl-select>
+          <sl-icon-button
+            name="arrow-down-up"
+            label=${msg("Reverse sort")}
+            @click=${() => {
+              this.orderWorkflowsBy = {
+                ...this.orderWorkflowsBy,
+                direction:
+                  this.orderWorkflowsBy.direction === "asc" ? "desc" : "asc",
+              };
+            }}
+          ></sl-icon-button>
+        </div>
       </div>
     `;
   };
@@ -624,8 +699,8 @@ export class CollectionEditor extends LiteElement {
           const key = item.dataset["key"] as SearchFields;
           this.searchByValue = item.value;
           await this.updateComplete;
-          this.filterBy = {
-            ...this.filterBy,
+          this.filterWorkflowsBy = {
+            ...this.filterWorkflowsBy,
             [key]: item.value,
           };
         }}
@@ -638,8 +713,8 @@ export class CollectionEditor extends LiteElement {
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name, firstSeed, ...otherFilters } = this.filterBy;
-            this.filterBy = otherFilters;
+            const { name, firstSeed, ...otherFilters } = this.filterWorkflowsBy;
+            this.filterWorkflowsBy = otherFilters;
           }}
           @sl-input=${this.onSearchInput}
         >
@@ -936,8 +1011,8 @@ export class CollectionEditor extends LiteElement {
       const {
         [this.selectedSearchFilterKey as SearchFields]: _,
         ...otherFilters
-      } = this.filterBy;
-      this.filterBy = {
+      } = this.filterWorkflowsBy;
+      this.filterWorkflowsBy = {
         ...otherFilters,
       };
     }
@@ -1003,8 +1078,6 @@ export class CollectionEditor extends LiteElement {
         page: params.page || this.workflows?.page || 1,
         pageSize:
           params.pageSize || this.workflows?.pageSize || WORKFLOW_PAGE_SIZE,
-        sortBy: "lastCrawlTime",
-        sortDirection: -1,
       });
     } catch (e: any) {
       this.notify({
@@ -1016,11 +1089,13 @@ export class CollectionEditor extends LiteElement {
   }
 
   private async getWorkflows(
-    params: APIPaginationQuery & APISortQuery
+    params: APIPaginationQuery
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify({
       ...params,
-      ...this.filterBy,
+      ...this.filterWorkflowsBy,
+      sortBy: this.orderWorkflowsBy.field,
+      sortDirection: this.orderWorkflowsBy.direction === "desc" ? -1 : 1,
     });
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
