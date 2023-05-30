@@ -354,6 +354,30 @@ def test_filter_sort_collections(
     assert items[1]["name"] == SECOND_COLLECTION_NAME
     assert items[1].get("description") is None
 
+    # Test sorting by modified, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=modified",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["modified"] <= items[1]["modified"]
+
+    # Test sorting by modified, descending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=modified&sortDirection=-1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    items = data["items"]
+    assert items[0]["modified"] >= items[1]["modified"]
+
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
