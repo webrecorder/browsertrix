@@ -1,7 +1,11 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
+import Fuse from "fuse.js";
+import debounce from "lodash/fp/debounce";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 
 import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
@@ -12,6 +16,13 @@ import noCollectionsImg from "../../assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList & {
   items: Collection[];
+};
+type SearchFields = "name";
+type SearchResult = {
+  item: {
+    key: SearchFields;
+    value: string;
+  };
 };
 type SortField = "name";
 type SortDirection = "asc" | "desc";
@@ -30,6 +41,7 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
 };
+const MIN_SEARCH_LENGTH = 2;
 
 @localized()
 export class CollectionsList extends LiteElement {
@@ -55,6 +67,15 @@ export class CollectionsList extends LiteElement {
   };
 
   @state()
+  private filterBy: Partial<Record<keyof Collection, any>> = {};
+
+  @state()
+  private searchByValue: string = "";
+
+  @state()
+  private searchResultsOpen = false;
+
+  @state()
   private openDialogName?: "delete";
 
   @state()
@@ -66,6 +87,17 @@ export class CollectionsList extends LiteElement {
   @state()
   private fetchErrorStatusCode?: number;
 
+  // For fuzzy search:
+  private fuse = new Fuse([], {
+    keys: ["value"],
+    shouldSort: false,
+    threshold: 0.2, // stricter; default is 0.6
+  });
+
+  private get hasSearchStr() {
+    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+  }
+
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
@@ -74,8 +106,13 @@ export class CollectionsList extends LiteElement {
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collections = undefined;
+      this.fetchSearchValues();
     }
-    if (changedProperties.has("orgId") || changedProperties.has("orderBy")) {
+    if (
+      changedProperties.has("orgId") ||
+      changedProperties.has("filterBy") ||
+      changedProperties.has("orderBy")
+    ) {
       this.fetchCollections();
     }
   }
@@ -113,7 +150,7 @@ export class CollectionsList extends LiteElement {
                 >
                   ${this.renderControls()}
                 </div>
-                ${this.renderList()}
+                ${guard([this.collections], this.renderList)}
               `,
               this.renderEmpty
             )
@@ -199,8 +236,11 @@ export class CollectionsList extends LiteElement {
 
   private renderControls() {
     return html`
-      <div class="flex justify-end">
-        <div class="flex items-center">
+      <div
+        class="grid grid-cols-1 lg:grid-cols-[minmax(0,100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
+      >
+        <div class="col-span-1">${this.renderSearch()}</div>
+        <div class="col-span-1 flex items-center">
           <div class="whitespace-nowrap text-neutral-500 mx-2">
             ${msg("Sort by:")}
           </div>
@@ -243,7 +283,79 @@ export class CollectionsList extends LiteElement {
     `;
   }
 
-  private renderList() {
+  private renderSearch() {
+    return html`
+      <btrix-combobox
+        ?open=${this.searchResultsOpen}
+        @request-close=${() => {
+          this.searchResultsOpen = false;
+          this.searchByValue = "";
+        }}
+        @sl-select=${async (e: CustomEvent) => {
+          this.searchResultsOpen = false;
+          const item = e.detail.item as SlMenuItem;
+          const key = item.dataset["key"] as SearchFields;
+          this.searchByValue = item.value;
+          await this.updateComplete;
+          this.filterBy = {
+            ...this.filterBy,
+            [key]: item.value,
+          };
+        }}
+      >
+        <sl-input
+          size="small"
+          placeholder=${msg("Search by name")}
+          clearable
+          value=${this.searchByValue}
+          @sl-clear=${() => {
+            this.searchResultsOpen = false;
+            this.onSearchInput.cancel();
+            const { name, ...otherFilters } = this.filterBy;
+            this.filterBy = otherFilters;
+          }}
+          @sl-input=${this.onSearchInput}
+        >
+        </sl-input>
+        ${this.renderSearchResults()}
+      </btrix-combobox>
+    `;
+  }
+
+  private renderSearchResults() {
+    if (!this.hasSearchStr) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+        >
+      `;
+    }
+
+    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
+    if (!searchResults.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled
+          >${msg("No matching crawls found.")}</sl-menu-item
+        >
+      `;
+    }
+
+    return html`
+      ${searchResults.map(
+        ({ item }: SearchResult) => html`
+          <sl-menu-item
+            slot="menu-item"
+            data-key=${item.key}
+            value=${item.value}
+          >
+            ${item.value}
+          </sl-menu-item>
+        `
+      )}
+    `;
+  }
+
+  private renderList = () => {
     if (this.collections?.items.length) {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
@@ -295,7 +407,7 @@ export class CollectionsList extends LiteElement {
         </p>
       </div>
     `;
-  }
+  };
 
   private renderItem = (col: Collection) =>
     html`<li class="mb-2 last:mb-0">
@@ -397,6 +509,21 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
+  private onSearchInput = debounce(150)((e: any) => {
+    this.searchByValue = e.target.value.trim();
+
+    if (this.searchResultsOpen === false && this.hasSearchStr) {
+      this.searchResultsOpen = true;
+    }
+
+    if (!this.searchByValue) {
+      const { name, ...otherFilters } = this.filterBy;
+      this.filterBy = {
+        ...otherFilters,
+      };
+    }
+  }) as any;
+
   private confirmDelete = (collection: Collection) => {
     this.collectionToDelete = collection;
     this.openDialogName = "delete";
@@ -431,6 +558,26 @@ export class CollectionsList extends LiteElement {
     }
   }
 
+  private async fetchSearchValues() {
+    try {
+      const names: string[] = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/names`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem =
+        (key: SearchFields) =>
+        (value: string): SearchResult["item"] => ({
+          key,
+          value,
+        });
+      this.fuse.setCollection([...names.map(toSearchItem("name"))] as any);
+    } catch (e) {
+      console.debug(e);
+    }
+  }
+
   private async fetchCollections(params?: APIPaginationQuery) {
     this.fetchErrorStatusCode = undefined;
 
@@ -454,6 +601,7 @@ export class CollectionsList extends LiteElement {
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify(
       {
+        ...this.filterBy,
         page: queryParams?.page || this.collections?.page || 1,
         pageSize:
           queryParams?.pageSize ||
