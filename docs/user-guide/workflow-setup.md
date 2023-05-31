@@ -42,7 +42,7 @@ You must specify the protocol (likely `http://` or `https://`) as a part of the 
 `Hashtag Links Only`
 :   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection`.
 
-    This scope can be useful for crawling certian web apps that may not use unique URLs for their pages.
+    This scope can be useful for crawling certain web apps that may not use unique URLs for their pages.
 
 `Pages in the Same Directory`
 :   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
