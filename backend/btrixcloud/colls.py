@@ -278,7 +278,7 @@ class CollectionOps:
 
         return all_files
 
-    async def get_collection_name_search_values(self, org: Organization):
+    async def get_collection_search_values(self, org: Organization):
         """Return list of collection names"""
         names = await self.collections.distinct("name", {"oid": org.id})
         # Remove empty strings
