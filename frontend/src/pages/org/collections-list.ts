@@ -325,7 +325,7 @@ export class CollectionsList extends LiteElement {
     if (!this.hasSearchStr) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+          >${msg("Start typing to view collection filters.")}</sl-menu-item
         >
       `;
     }
@@ -334,7 +334,7 @@ export class CollectionsList extends LiteElement {
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("No matching crawls found.")}</sl-menu-item
+          >${msg("No matching collections found.")}</sl-menu-item
         >
       `;
     }
