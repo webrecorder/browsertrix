@@ -278,9 +278,12 @@ class CollectionOps:
 
         return all_files
 
-    async def get_collection_names(self, org: Organization):
+    async def get_collection_name_search_values(self, org: Organization):
         """Return list of collection names"""
-        return await self.collections.distinct("name", {"oid": org.id})
+        names = await self.collections.distinct("name", {"oid": org.id})
+        # Remove empty strings
+        names = [name for name in names if name]
+        return {"names": names}
 
     async def delete_collection(self, coll_id: uuid.UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
@@ -412,11 +415,11 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
         return results
 
-    @app.get("/orgs/{oid}/collections/names", tags=["collections"])
-    async def get_collection_names(
+    @app.get("/orgs/{oid}/collections/search-values", tags=["collections"])
+    async def get_collection_search_values(
         org: Organization = Depends(org_viewer_dep),
     ):
-        return await colls.get_collection_names(org)
+        return await colls.get_collection_search_values(org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}",

@@ -9,3 +9,7 @@ export type Collection = {
   tags: string[];
   resources: string[];
 };
+
+export type CollectionSearchValues = {
+  names: string[];
+}

@@ -11,7 +11,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import type { Collection } from "../../types/collection";
+import type { Collection, CollectionSearchValues } from "../../types/collection";
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList & {
@@ -559,10 +559,11 @@ export class CollectionsList extends LiteElement {
 
   private async fetchSearchValues() {
     try {
-      const names: string[] = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/names`,
+      const searchValues: CollectionSearchValues = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/search-values`,
         this.authState!
       );
+      const names = searchValues.names;
 
       // Update search/filter collection
       const toSearchItem =
