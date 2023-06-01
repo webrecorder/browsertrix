@@ -115,6 +115,36 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         assert crawl["seedCount"] > 0
 
 
+def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_id):
+    # Get endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert "errors" not in data
+
+    # replay.json endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert "errors" not in data
+
+    # List endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    for crawl in crawls:
+        assert "errors" not in crawl
+
+
 def test_download_wacz():
     r = requests.get(HOST_PREFIX + wacz_path)
     assert r.status_code == 200
