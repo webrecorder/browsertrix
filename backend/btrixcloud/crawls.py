@@ -394,6 +394,8 @@ class CrawlOps:
 
             res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
 
+        del res["errors"]
+
         crawl = CrawlOut.from_dict(res)
 
         return await self._resolve_crawl_refs(crawl, org)
