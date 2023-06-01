@@ -231,11 +231,10 @@ def timeout_crawl(admin_auth_headers, default_org_id):
 def error_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
-        "name": "Youtube crawl with errors",
+        "name": "Invalid URL crawl",
         "config": {
             "seeds": [
-                {"url": "https://invalid.webrecorder.net/"},
-                {"url": "https://invalid-2.webrecorder.net/"},
+                {"url": "https://invalid-x.webrecorder.net/"},
             ],
             "limit": 1,
         },
