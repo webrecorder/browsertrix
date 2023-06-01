@@ -280,7 +280,7 @@ class CrawlOps:
             {"$set": {"fileCount": {"$size": "$files"}}},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject"]},
+            {"$unset": ["firstSeedObject", "errors"]},
             {
                 "$lookup": {
                     "from": "crawl_configs",
