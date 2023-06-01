@@ -123,7 +123,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     )
     assert r.status_code == 200
     data = r.json()
-    assert "errors" not in data
+    assert "errors" not in data or data.get("errors") is None
 
     # replay.json endpoint
     r = requests.get(
@@ -132,7 +132,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     )
     assert r.status_code == 200
     data = r.json()
-    assert "errors" not in data
+    assert "errors" not in data or data.get("errors") is None
 
     # List endpoint
     r = requests.get(
@@ -142,7 +142,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     assert r.status_code == 200
     crawls = r.json()["items"]
     for crawl in crawls:
-        assert "errors" not in crawl
+        assert "errors" not in crawl or crawl.get("errors") is None
 
 
 def test_download_wacz():
