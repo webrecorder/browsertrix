@@ -220,6 +220,7 @@ export class CollectionsList extends LiteElement {
               variant="primary"
               @click=${this.navLink}
             >
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("Create Collection")}
             </sl-button>
           </div>
