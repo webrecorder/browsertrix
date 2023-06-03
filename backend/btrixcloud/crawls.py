@@ -280,7 +280,7 @@ class CrawlOps:
             {"$set": {"fileCount": {"$size": "$files"}}},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject"]},
+            {"$unset": ["firstSeedObject", "errors"]},
             {
                 "$lookup": {
                     "from": "crawl_configs",
@@ -393,6 +393,8 @@ class CrawlOps:
             del res["files"]
 
             res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
+
+        del res["errors"]
 
         crawl = CrawlOut.from_dict(res)
 
