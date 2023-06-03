@@ -207,8 +207,9 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderReplay() {
-    const bearer = this.authState!.headers.Authorization.split(" ", 2)[1];
-    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json?auth_bearer=${bearer}`;
+    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
+    const headers  = this.authState?.headers;
+    const config = JSON.stringify({headers});
 
     return html`<section>
       <header class="flex items-center justify-between">
@@ -224,6 +225,7 @@ export class CollectionDetail extends LiteElement {
               <replay-web-page
                 source=${replaySource}
                 replayBase="/replay/"
+                config="${config}"
                 noSandbox="true"
                 noCache="true"
               ></replay-web-page>
