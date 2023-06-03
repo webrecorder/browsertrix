@@ -316,6 +316,7 @@ export class CollectionsList extends LiteElement {
           }}
           @sl-input=${this.onSearchInput}
         >
+        <sl-icon name="search" slot="prefix" aria-hidden="true" library="default"></sl-icon>
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
