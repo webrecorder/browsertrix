@@ -1,0 +1,36 @@
+"""
+Migration 0008 - Precomputing crawl file stats
+"""
+from btrixcloud.crawls import recompute_crawl_file_count_and_size
+from btrixcloud.migrations import BaseMigration
+
+
+MIGRATION_VERSION = "0008"
+
+
+class Migration(BaseMigration):
+    """Migration class."""
+
+    def __init__(self, mdb, migration_version=MIGRATION_VERSION):
+        super().__init__(mdb, migration_version)
+
+    async def migrate_up(self):
+        """Perform migration up.
+
+        Add data on crawl file count and size to database that was previously
+        dynamically generated in the API endpoints.
+        """
+        # pylint: disable=duplicate-code
+        crawls = self.mdb["crawls"]
+
+        crawls_to_update = [res async for res in crawls.find({})]
+        if not crawls_to_update:
+            return
+
+        for crawl in crawls_to_update:
+            crawl_id = crawl["_id"]
+            try:
+                await recompute_crawl_file_count_and_size(crawls, crawl_id)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(f"Unable to update crawl {crawl_id}: {err}", flush=True)
