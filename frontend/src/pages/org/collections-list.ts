@@ -543,7 +543,7 @@ export class CollectionsList extends LiteElement {
       );
 
       this.collectionToDelete = undefined;
-      this.getCollections();
+      this.fetchCollections();
 
       this.notify({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
