@@ -166,7 +166,7 @@ export class CollectionDetail extends LiteElement {
                 ${this.collection?.description
                   ? html`<div
                         class="description max-w-prose overflow-hidden mx-auto py-5 transition-all"
-                        style=${`height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
+                        style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
                       >
                         <btrix-markdown-viewer
                           value=${this.collection!.description}
@@ -196,7 +196,7 @@ export class CollectionDetail extends LiteElement {
             `,
             () => html`<div
               class="border rounded flex items-center justify-center text-3xl"
-              style=${`height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
+              style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
             >
               <sl-spinner></sl-spinner>
             </div>`
@@ -254,9 +254,9 @@ export class CollectionDetail extends LiteElement {
     }
     this.isDescriptionExpanded = !this.isDescriptionExpanded;
     if (this.isDescriptionExpanded) {
-      description.style.height = `${description.scrollHeight}px`;
+      description.style.maxHeight = `${description.scrollHeight}px`;
     } else {
-      description.style.height = `${DESCRIPTION_MAX_HEIGHT_PX}px`;
+      description.style.maxHeight = `${DESCRIPTION_MAX_HEIGHT_PX}px`;
       description.closest("section")?.scrollIntoView({
         behavior: "smooth",
       });
