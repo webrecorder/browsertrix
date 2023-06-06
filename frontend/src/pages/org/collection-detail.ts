@@ -208,8 +208,8 @@ export class CollectionDetail extends LiteElement {
 
   private renderReplay() {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers  = this.authState?.headers;
-    const config = JSON.stringify({headers});
+    const headers = this.authState?.headers;
+    const config = JSON.stringify({ headers });
 
     return html`<section>
       <header class="flex items-center justify-between">

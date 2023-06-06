@@ -11,7 +11,10 @@ import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import type { Collection, CollectionSearchValues } from "../../types/collection";
+import type {
+  Collection,
+  CollectionSearchValues,
+} from "../../types/collection";
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList & {
@@ -141,18 +144,14 @@ export class CollectionsList extends LiteElement {
       <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
         this.collections
-          ? when(
-              this.collections.total,
-              () => html`
-                <div
-                  class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
-                >
-                  ${this.renderControls()}
-                </div>
-                ${guard([this.collections], this.renderList)}
-              `,
-              this.renderEmpty
-            )
+          ? html`
+              <div
+                class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+              >
+                ${this.renderControls()}
+              </div>
+              ${guard([this.collections], this.renderList)}
+            `
           : this.renderLoading()
       )}
 
@@ -316,7 +315,12 @@ export class CollectionsList extends LiteElement {
           }}
           @sl-input=${this.onSearchInput}
         >
-        <sl-icon name="search" slot="prefix" aria-hidden="true" library="default"></sl-icon>
+          <sl-icon
+            name="search"
+            slot="prefix"
+            aria-hidden="true"
+            library="default"
+          ></sl-icon>
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
@@ -400,12 +404,35 @@ export class CollectionsList extends LiteElement {
     }
 
     return html`
-      <div class="border rounded-lg bg-neutral-50 p-4">
+      <div class="border rounded-lg bg-neutral-50 p-4 text-center">
         <p class="text-center">
-          <span class="text-neutral-400"
-            >${msg("No matching Collections found.")}</span
-          >
+          <span class="text-neutral-400">${msg("No Collections Yet.")}</span>
         </p>
+        ${when(
+          this.isCrawler,
+          () => html`
+            <p class="p-4 text-center">
+              ${msg(
+                "Organize your crawls into a Collection to easily replay them together."
+              )}
+            </p>
+            <div>
+              <sl-button
+                href=${`/orgs/${this.orgId}/collections/new`}
+                variant="primary"
+                @click=${this.navLink}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("Create Collection")}
+              </sl-button>
+            </div>
+          `,
+          () => html`
+            <p class="max-w-[18em] text-center">
+              ${msg("Your organization doesn't have any Collections, yet.")}
+            </p>
+          `
+        )}
       </div>
     `;
   };
