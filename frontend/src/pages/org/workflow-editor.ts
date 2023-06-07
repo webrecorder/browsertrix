@@ -101,7 +101,7 @@ type FormState = {
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
-  collections: string[];
+  autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
 };
@@ -172,7 +172,7 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
   tags: [],
-  collections: [],
+  autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
 });
@@ -472,6 +472,11 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialWorkflow.tags?.length) {
       formState.tags = this.initialWorkflow.tags;
     }
+
+    if (this.initialWorkflow.autoAddCollections?.length) {
+      formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
+    }
+
     const secondsToMinutes = (value: any, fallback: number | null) => {
       if (typeof value === "number" && value > 0) return value / 60;
       return fallback;
@@ -499,7 +504,7 @@ export class CrawlConfigEditor extends LiteElement {
       scheduleFrequency: defaultFormState.scheduleFrequency,
       runNow: defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
-      collections: defaultFormState.collections,
+      autoAddCollections: this.initialWorkflow.autoAddCollections,
       jobName: this.initialWorkflow.name || defaultFormState.jobName,
       description: this.initialWorkflow.description,
       browserProfile: this.initialWorkflow.profileid
@@ -1646,13 +1651,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
         html`
           <btrix-collections-add
             .authState=${this.authState}
-            .initialCollections=${this.formState.collections}
+            .initialCollections=${this.formState.autoAddCollections}
             .orgId=${this.orgId}
             .configId=${this.configId}
             @collections-change=${(e: CollectionsChangeEvent) =>
               this.updateFormState(
                 {
-                  collections: e.detail.collections,
+                  autoAddCollections: e.detail.collections,
                 },
                 true
               )}
@@ -2083,7 +2088,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ? this.formState.crawlTimeoutMinutes * 60
         : null,
       tags: this.formState.tags,
-      autoAddCollections: this.formState.collections,
+      autoAddCollections: this.formState.autoAddCollections,
       config: {
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()

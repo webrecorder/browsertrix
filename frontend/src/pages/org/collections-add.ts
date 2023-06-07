@@ -47,7 +47,7 @@ export class CollectionsAdd extends LiteElement {
   authState!: AuthState;
 
   @property({ type: Array })
-  initialCollections?: CollectionList;
+  initialCollections?: string[];
 
   @property({ type: String })
   orgId!: string;
@@ -74,10 +74,11 @@ export class CollectionsAdd extends LiteElement {
   @state()
   private searchResultsOpen = false;
 
-  connectedCallback() {
+  async connectedCallback() {
     if (this.initialCollections) {
-      this.collections = this.initialCollections;
+      this.collectionIds = this.initialCollections;
     }
+    await this.initializeCollectionsFromIds();
     super.connectedCallback();
   }
 
@@ -190,7 +191,6 @@ export class CollectionsAdd extends LiteElement {
           `;
         }
       )}
-
     `;
   }
 
@@ -266,8 +266,22 @@ export class CollectionsAdd extends LiteElement {
     return data;
   }
 
+  private async initializeCollectionsFromIds() {
+    for (let i = 0; i < this.collectionIds?.length; i++) {
+      const collId = this.collectionIds[i];
+      const data: Collection = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${collId}`,
+        this.authState!
+      );
+      if (data) {
+        this.collections.push(data);
+      }
+    }
+  }
+
   private async dispatchChange() {
     await this.updateComplete;
+    console.log(`Dispatching change with collection ids: ${this.collectionIds}`);
     this.dispatchEvent(
       <CollectionsChangeEvent>new CustomEvent("collections-change", {
         detail: { collections: this.collectionIds },
