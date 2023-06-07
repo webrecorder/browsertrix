@@ -89,10 +89,12 @@ export class ConfigDetails extends LiteElement {
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          ><h4>
-            ${this.renderAnchorLink("crawler-settings")}
+          >
+          <h4>
             ${msg("Crawler Settings")}
-          </h4></btrix-section-heading
+          </h4>
+          ${this.renderAnchorLink("crawler-settings")}
+          </btrix-section-heading
         >
         <btrix-desc-list>
           ${when(
@@ -165,10 +167,12 @@ export class ConfigDetails extends LiteElement {
       </section>
       <section id="browser-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          ><h4>
-            ${this.renderAnchorLink("browser-settings")}
+          >
+          <h4>
             ${msg("Browser Settings")}
-          </h4></btrix-section-heading
+          </h4>
+          ${this.renderAnchorLink("browser-settings")}
+          </btrix-section-heading
         >
         <btrix-desc-list>
           ${this.renderSetting(
@@ -199,10 +203,12 @@ export class ConfigDetails extends LiteElement {
       </section>
       <section id="crawl-scheduling" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          ><h4>
-            ${this.renderAnchorLink("crawl-scheduling")}
+          >
+          <h4>
             ${msg("Crawl Scheduling")}
-          </h4></btrix-section-heading
+          </h4>
+          ${this.renderAnchorLink("crawl-scheduling")}
+          </btrix-section-heading
         >
         <btrix-desc-list>
           ${this.renderSetting(
@@ -222,10 +228,13 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
+          >
           <h4>
-            ${this.renderAnchorLink("crawl-metadata")}${msg("Crawl Metadata")}
-          </h4></btrix-section-heading
+            ${msg("Crawl Metadata")}
+          </h4>
+          ${this.renderAnchorLink("crawl-metadata")}
+          </btrix-section-heading
         >
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
@@ -341,12 +350,12 @@ export class ConfigDetails extends LiteElement {
     if (!this.anchorLinks) return;
     const currentUrl = window.location.href;
     return html`
-      <a
-        href=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-        class="text-base hover:text-primary mr-1"
-      >
-        <sl-icon name="link-45deg" class="inline-block align-middle"></sl-icon>
-      </a>
+      <btrix-copy-button 
+        style="font-size: 1rem;"
+        value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
+        name="link-45deg"
+        content=${msg("Copy Link to Section")}
+      ></btrix-copy-button>
     `;
   }
 

@@ -11,6 +11,9 @@ import { LitElement, html, css } from "lit";
 export class SectionHeading extends LitElement {
   static styles = css`
     .heading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       font-size: var(--sl-font-size-medium);
       color: var(--sl-color-neutral-500);
       padding-top: var(--sl-spacing-x-small);
