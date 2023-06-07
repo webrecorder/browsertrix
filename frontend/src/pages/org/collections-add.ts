@@ -2,7 +2,6 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import Fuse from "fuse.js";
 import type { SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
@@ -21,30 +20,8 @@ type SortDirection = "asc" | "desc";
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
 
-type SearchFields = "name";
-type SearchResult = {
-  item: {
-    key: SearchFields;
-    value: string;
-  };
-};
-
 type CollectionSearchResults = APIPaginatedList & {
   items: CollectionList;
-}
-
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
-  _lastUpdated: {
-    label: msg("Last Updated"),
-    defaultDirection: "desc",
-  },
-  _name: {
-    label: msg("Name"),
-    defaultDirection: "asc",
-  },
 };
 
 export type CollectionsChangeEvent = CustomEvent<{
@@ -87,53 +64,21 @@ export class CollectionsAdd extends LiteElement {
   @state()
   private searchByValue: string = "";
 
+  @state()
+  private searchResults: CollectionList = [];
+
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  private get selectedSearchFilterKey() {
-    return Object.keys(this.fieldLabels).find((key) =>
-      Boolean((this.searchByValue as any)[key])
-    );
-  }
-
-  private readonly fieldLabels: Record<SearchFields, string> = {
-    name: msg("Name")
-  };
-
-  @state()
-  private verifiedSearchName: string = "";
-
   @state()
   private searchResultsOpen = false;
-
-  @state()
-  private orderCollectionsBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "_name",
-    direction: sortableFields["_name"].defaultDirection!,
-  };
-
-  // For fuzzy search:
-  private fuse = new Fuse([], {
-    keys: ["value"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
 
   connectedCallback() {
     if (this.initialCollections) {
       this.collections = this.initialCollections;
     }
     super.connectedCallback();
-  }
-
-  protected async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId) {
-      this.fetchSearchValues();
-    }
   }
 
   render() {
@@ -182,12 +127,14 @@ export class CollectionsAdd extends LiteElement {
         @sl-select=${async (e: CustomEvent) => {
           this.searchResultsOpen = false;
           const item = e.detail.item as SlMenuItem;
-          const key = item.dataset["key"] as SearchFields;
-          const coll = await this.fetchCollection(item.value);
-          if (coll && this.collectionIds.indexOf(coll.id) === -1) {
-            this.collections.push(coll);
-            this.collectionIds.push(coll.id);
-            await this.dispatchChange();
+          const collId = item.dataset["key"];
+          if (collId && this.collectionIds.indexOf(collId) === -1) {
+            const coll = this.searchResults.find(collection => collection.id === collId);
+            if (coll) {
+              this.collections.push(coll);
+              this.collectionIds.push(coll.id);
+              await this.dispatchChange();
+            }
           }
           await this.updateComplete;
         }}
@@ -218,9 +165,8 @@ export class CollectionsAdd extends LiteElement {
         >
       `;
     }
-
-    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
-    if (!searchResults.length) {
+    
+    if (!this.searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
           >${msg("No matching Collections found.")}</sl-menu-item
@@ -229,17 +175,22 @@ export class CollectionsAdd extends LiteElement {
     }
 
     return html`
-      ${searchResults.map(
-        ({ item }: SearchResult) => html`
-          <sl-menu-item
-            slot="menu-item"
-            data-key=${item.key}
-            value=${item.value}
-          >
-            ${item.value}
-          </sl-menu-item>
-        `
+      ${this.searchResults.map(
+        (item: Collection) => {
+          return html`
+            <sl-menu-item
+              slot="menu-item"
+              data-key=${item.id}
+            >
+              ${item.name}
+              <span class="float-right font-monostyle text-xs">
+                ${msg(str`${item.crawlCount} Crawls`)}
+              </span>
+            </sl-menu-item>
+          `;
+        }
       )}
+
     `;
   }
 
@@ -261,49 +212,30 @@ export class CollectionsAdd extends LiteElement {
       </li>`;
   }
 
-  private onSearchInput = debounce(200)((e: any) => {
+  private onSearchInput = debounce(200)(async (e: any) => {
     this.searchByValue = e.target.value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
+
+    const data: CollectionSearchResults | undefined = await this.fetchCollectionsByPrefix(this.searchByValue);
+    let searchResults: CollectionList = [];
+    if (data && data.items.length) {
+      searchResults = data.items;
+    }
+    this.searchResults = searchResults;
   }) as any;
 
-  private async fetchSearchValues() {
-    try {
-      const { names } = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/search-values`,
-        this.authState!
-      );
-
-      // Update search/filter collection
-      const toSearchItem =
-        (key: SearchFields) =>
-        (value: string): SearchResult["item"] => ({
-          key,
-          value,
-        });
-      this.fuse.setCollection([
-        ...names.map(toSearchItem("name")),
-      ] as any);
-    } catch (e) {
-      console.debug(e);
-    }
-  }
-
-  private async fetchCollection(name: string) {
-    if (!this.configId) return;
-
+  private async fetchCollectionsByPrefix(namePrefix: string) {
     try {
       const results: CollectionSearchResults = await this.getCollections({
         oid: this.orgId,
-        name: name,
+        namePrefix: namePrefix,
         sortBy: "name",
         pageSize: INITIAL_PAGE_SIZE,
       });
-      if (results?.items) {
-        return results.items[0];
-      }
+      return results
     } catch {
       this.notify({
         message: msg(
@@ -318,7 +250,7 @@ export class CollectionsAdd extends LiteElement {
   private async getCollections(
     params: Partial<{
       oid?: string;
-      name?: string;
+      namePrefix?: string;
     }> &
       APIPaginationQuery &
       APISortQuery
