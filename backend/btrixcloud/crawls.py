@@ -117,6 +117,9 @@ class Crawl(CrawlConfigCore):
 
     collections: Optional[List[UUID4]] = []
 
+    fileSize: int = 0
+    fileCount: int = 0
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -276,8 +279,6 @@ class CrawlOps:
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
-            {"$set": {"fileSize": {"$sum": "$files.size"}}},
-            {"$set": {"fileCount": {"$size": "$files"}}},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors"]},
@@ -944,13 +945,32 @@ async def add_crawl_errors(crawls, crawl_id, errors):
 
 
 # ============================================================================
-async def add_crawl_file(crawls, crawl_id, crawl_file):
+async def add_crawl_file(crawls, crawl_id, crawl_file, size):
     """add new crawl file to crawl"""
     await crawls.find_one_and_update(
         {"_id": crawl_id},
         {
             "$push": {"files": crawl_file.dict()},
+            "$inc": {"fileCount": 1, "fileSize": size},
         },
+    )
+
+
+# ============================================================================
+async def recompute_crawl_file_count_and_size(crawls, crawl_id):
+    """Fully recompute file count and size for given crawl"""
+    file_count = 0
+    size = 0
+
+    crawl_raw = await crawls.find_one({"_id": crawl_id})
+    crawl = Crawl.from_dict(crawl_raw)
+    for file_ in crawl.files:
+        file_count += 1
+        size += file_.size
+
+    await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {"$set": {"fileCount": file_count, "fileSize": size}},
     )
 
 

@@ -520,7 +520,7 @@ class BtrixOperator(K8sAPI):
 
         await redis.incr("filesAddedSize", filecomplete.size)
 
-        await add_crawl_file(self.crawls, crawl.id, crawl_file)
+        await add_crawl_file(self.crawls, crawl.id, crawl_file, filecomplete.size)
 
         return True
 
