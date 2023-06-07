@@ -14,6 +14,7 @@ import "./workflows-list";
 import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
+import "./collections-add";
 import "./collections-list";
 import "./collections-new";
 import "./collection-edit";

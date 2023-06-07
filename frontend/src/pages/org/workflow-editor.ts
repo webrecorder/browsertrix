@@ -40,6 +40,7 @@ import type {
   Tags,
   TagsChangeEvent,
 } from "../../components/tag-input";
+import type { CollectionsChangeEvent } from "./collections-add";
 import type {
   WorkflowParams,
   Profile,
@@ -47,6 +48,7 @@ import type {
   Seed,
   SeedConfig,
 } from "./types";
+import type { CollectionList } from "../../types/collection";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
@@ -99,6 +101,7 @@ type FormState = {
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
+  collections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
 };
@@ -169,6 +172,7 @@ const getDefaultFormState = (): FormState => ({
   jobName: "",
   browserProfile: null,
   tags: [],
+  collections: [],
   description: null,
   autoscrollBehavior: true,
 });
@@ -495,6 +499,7 @@ export class CrawlConfigEditor extends LiteElement {
       scheduleFrequency: defaultFormState.scheduleFrequency,
       runNow: defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
+      collections: defaultFormState.collections,
       jobName: this.initialWorkflow.name || defaultFormState.jobName,
       description: this.initialWorkflow.description,
       browserProfile: this.initialWorkflow.profileid
@@ -1637,6 +1642,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived data.`)
       )}
+      ${this.renderFormCol(
+        html`
+          <btrix-collections-add
+            .authState=${this.authState}
+            .initialCollections=${this.formState.collections}
+            .orgId=${this.orgId}
+            .configId=${this.configId}
+            @collections-change=${(e: CollectionsChangeEvent) =>
+              this.updateFormState(
+                {
+                  collections: e.detail.collections,
+                },
+                true
+              )}
+          ></btrix-collections-add>
+        `
+      )}
+      ${this.renderHelpTextCol(
+        msg(`Automatically add crawls from this workflow to one or more collections
+          as soon as they complete.
+          Individual crawls can be selected from within the collection later.`)
+      )}
     `;
   }
 
@@ -2056,6 +2083,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ? this.formState.crawlTimeoutMinutes * 60
         : null,
       tags: this.formState.tags,
+      autoAddCollections: this.formState.collections,
       config: {
         ...(this.jobType === "seed-crawl"
           ? this.parseSeededConfig()

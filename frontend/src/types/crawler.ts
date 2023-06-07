@@ -44,6 +44,7 @@ export type WorkflowParams = {
   tags: string[];
   crawlTimeout: number | null;
   description: string | null;
+  autoAddCollections: string[];
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -73,6 +74,7 @@ export type Workflow = CrawlConfig & {
   inactive: boolean;
   firstSeed: string;
   isCrawlRunning: boolean | null;
+  autoAddCollections: string[];
 };
 
 export type Profile = {
