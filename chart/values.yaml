@@ -1,19 +1,6 @@
-# Settings
+
+# Crawler Settings
 # =========================================
-name: browsertrix-cloud
-
-# when running in the cloud, set this value to cloud-specific block storage
-# keep empty to use hostPath (eg. on minikube)
-volume_storage_class:
-
-# if set, set the node selector 'nodeType' for deployment pods
-# main_node_type:
-
-# if set, set the node selector 'nodeType' to this crawling pods
-# crawler_node_type:
-
-registration_enabled: "0"
-jwt_token_lifetime_minutes: 1440
 
 # default time to run behaviors on each page (in seconds)
 default_behavior_time_seconds: 300
@@ -38,14 +25,13 @@ crawler_extract_full_text: false
 # if set, each workflow can have a lower limit, but not higher
 max_pages_per_crawl: 0
 
-# if set to "1", allow inviting same user to same org multiple times
-allow_dupe_invites: "0"
+# User Agent Options
+# set to add suffix to default browser User Agent
+# user_agent_suffix:
 
-# number of seconds before pending invites expire - default is 7 days
-invite_expire_seconds: 604800
+# set to override User Agent completely (also overrides user_agent_suffix if both are set)
+# user_agent:
 
-# base url for replayweb.page
-rwp_base_url: "https://replayweb.page/"
 
 # default template for generate wacz files
 # supports following interpolated vars:
@@ -54,6 +40,33 @@ rwp_base_url: "https://replayweb.page/"
 # @hostsuffix - last 14-characters of hostname
 # @id - full crawl id
 default_crawl_filename_template: "@ts-@hostsuffix.wacz"
+
+
+# Cluster Settings
+# =========================================
+name: browsertrix-cloud
+
+# when running in the cloud, set this value to cloud-specific block storage
+# keep empty to use hostPath (eg. on minikube)
+volume_storage_class:
+
+# if set, set the node selector 'nodeType' for deployment pods
+# main_node_type:
+
+# if set, set the node selector 'nodeType' to this crawling pods
+# crawler_node_type:
+
+registration_enabled: "0"
+jwt_token_lifetime_minutes: 1440
+
+# if set to "1", allow inviting same user to same org multiple times
+allow_dupe_invites: "0"
+
+# number of seconds before pending invites expire - default is 7 days
+invite_expire_seconds: 604800
+
+# base url for replayweb.page
+rwp_base_url: "https://replayweb.page/"
 
 superuser:
   # set this to enable a superuser admin
