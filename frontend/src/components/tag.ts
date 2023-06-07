@@ -68,6 +68,10 @@ export class Tag extends SLTag {
         background-color: var(--sl-color-blue-600);
         color: var(--sl-color-neutral-0);
       }
+
+      .tag--small {
+        font-size: var(--sl-font-size-x-small);
+      }
     `,
   ];
 

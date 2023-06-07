@@ -14,6 +14,10 @@ import "./workflows-list";
 import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
+import "./collections-list";
+import "./collections-new";
+import "./collection-edit";
+import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
@@ -30,6 +34,7 @@ export type OrgTab =
   | "workflows"
   | "artifacts"
   | "browser-profiles"
+  | "collections"
   | "settings";
 
 type Params = {
@@ -37,6 +42,7 @@ type Params = {
   browserProfileId?: string;
   browserId?: string;
   artifactId?: string;
+  resourceId?: string;
 };
 
 const defaultTab = "crawls";
@@ -128,6 +134,9 @@ export class Org extends LiteElement {
       case "browser-profiles":
         tabPanelContent = this.renderBrowserProfiles();
         break;
+      case "collections":
+        tabPanelContent = this.renderCollections();
+        break;
       case "settings": {
         if (this.isAdmin) {
           tabPanelContent = this.renderOrgSettings();
@@ -167,6 +176,12 @@ export class Org extends LiteElement {
             tabName: "artifacts",
             label: msg("Finished Crawls"),
             path: "artifacts/crawls",
+          })}
+          ${
+            this.renderNavTab({
+            tabName: "collections",
+            label: msg("Collections"),
+            path: "collections",
           })}
           ${when(this.isCrawler, () =>
             this.renderNavTab({
@@ -317,6 +332,46 @@ export class Org extends LiteElement {
       .orgId=${this.orgId!}
       ?showCreateDialog=${isNewResourceTab}
     ></btrix-browser-profiles-list>`;
+  }
+
+  private renderCollections() {
+    if (this.params.resourceId) {
+      if (this.orgPath.includes(`/edit/${this.params.resourceId}`)) {
+        return html`<div class="lg:px-5">
+          <btrix-collection-edit
+            .authState=${this.authState!}
+            orgId=${this.orgId!}
+            collectionId=${this.params.resourceId}
+            ?isCrawler=${this.isCrawler}
+          ></btrix-collection-edit>
+        </div>`;
+      }
+
+      return html`<div class="lg:px-5">
+        <btrix-collection-detail
+          .authState=${this.authState!}
+          orgId=${this.orgId!}
+          collectionId=${this.params.resourceId}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-collection-detail>
+      </div>`;
+    }
+
+    if (this.orgPath.endsWith("/new")) {
+      return html`<div class="lg:px-5">
+        <btrix-collections-new
+          .authState=${this.authState!}
+          orgId=${this.orgId!}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-collections-new>
+      </div>`;
+    }
+
+    return html`<btrix-collections-list
+      .authState=${this.authState!}
+      orgId=${this.orgId!}
+      ?isCrawler=${this.isCrawler}
+    ></btrix-collections-list>`;
   }
 
   private renderOrgSettings() {

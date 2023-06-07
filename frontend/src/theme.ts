@@ -101,13 +101,19 @@ const theme = css`
   }
 
   /* Add more spacing between label, input and help text */
+  .form-label,
   btrix-tag-input::part(form-control-label),
   sl-input::part(form-control-label),
   sl-textarea::part(form-control-label),
   sl-select::part(form-control-label) {
+    --sl-spacing-3x-small: 0.375rem;
     line-height: 1.4;
-    margin-bottom: 0.375rem;
   }
+  .form-label {
+    display: inline-block;
+    margin-bottom: var(--sl-spacing-3x-small);
+  }
+  .form-help-text,
   btrix-tag-input::part(form-control-help-text),
   sl-input::part(form-control-help-text),
   sl-textarea::part(form-control-help-text),
@@ -116,6 +122,10 @@ const theme = css`
     font-weight: 400;
     /* Enable controlling help text text alignment from parent */
     text-align: var(--help-text-align, left);
+  }
+  .form-help-text {
+    color: var(--sl-input-help-text-color);
+    font-size: var(--sl-input-help-text-font-size-medium);
   }
 
   /* Elevate select and buttons */
@@ -159,7 +169,8 @@ const theme = css`
     color: var(--sl-color-danger-500);
   }
 
-  [data-user-invalid]:not([disabled])::part(form-control-help-text) {
+  [data-user-invalid]:not([disabled])::part(form-control-help-text),
+  [data-user-invalid]:not([disabled]) .form-help-text {
     color: var(--sl-color-danger-500);
   }
 
@@ -225,6 +236,19 @@ const theme = css`
   .font-monostyle {
     font-family: var(--font-monostyle-family);
     font-variation-settings: var(--font-monostyle-variation);
+  }
+
+  .truncate {
+    /* Fix tailwind clipping vertical */
+    overflow: clip visible;
+  }
+
+  .offscreen {
+    position: absolute;
+    left: -9999px;
+    bottom: -9999px;
+    visibility: hidden;
+    clip: rect(0 0 0 0);
   }
 `;
 

@@ -407,11 +407,6 @@ export class CrawlsList extends LiteElement {
             this.filterBy = otherFilters;
           }}
           @sl-input=${this.onSearchInput}
-          @focus=${() => {
-            if (this.hasSearchStr) {
-              this.searchResultsOpen = true;
-            }
-          }}
         >
           ${when(
             this.selectedSearchFilterKey,

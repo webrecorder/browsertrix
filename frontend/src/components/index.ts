@@ -86,6 +86,13 @@ import("./desc-list").then(({ DescListItem, DescList }) => {
   customElements.define("btrix-desc-list-item", DescListItem);
   customElements.define("btrix-desc-list", DescList);
 });
+import("./checkbox-list").then(
+  ({ CheckboxListItem, CheckboxGroupList, CheckboxList }) => {
+    customElements.define("btrix-checkbox-list-item", CheckboxListItem);
+    customElements.define("btrix-checkbox-group-list", CheckboxGroupList);
+    customElements.define("btrix-checkbox-list", CheckboxList);
+  }
+);
 import("./crawl-list").then(({ CrawlListItem, CrawlList }) => {
   customElements.define("btrix-crawl-list-item", CrawlListItem);
   customElements.define("btrix-crawl-list", CrawlList);
@@ -126,6 +133,12 @@ import("./observable").then(({ Observable }) => {
 });
 import("./combobox").then(({ Combobox }) => {
   customElements.define("btrix-combobox", Combobox);
+});
+import("./markdown-editor").then(({ MarkdownEditor }) => {
+  customElements.define("btrix-markdown-editor", MarkdownEditor);
+});
+import("./markdown-viewer").then(({ MarkdownViewer }) => {
+  customElements.define("btrix-markdown-viewer", MarkdownViewer);
 });
 
 customElements.define("btrix-alert", Alert);
