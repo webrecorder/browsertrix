@@ -873,12 +873,10 @@ class CrawlOps:
 
     async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
         """Remove collection id from all crawls it's currently in."""
-        result = await self.crawls.update_many(
+        await self.crawls.update_many(
             {"collections": collection_id},
             {"$pull": {"collections": collection_id}},
         )
-        if result.modified_count < 1:
-            raise HTTPException(status_code=404, detail="crawls_not_found")
 
 
 # ============================================================================
