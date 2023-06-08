@@ -2128,9 +2128,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: additionalSeedUrlList.length
-        ? "page"
-        : this.formState.scopeType,
+      scopeType: this.formState.scopeType,
     };
     return config;
   }
