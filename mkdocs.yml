@@ -15,6 +15,8 @@ theme:
     - navigation.tracking
     - navigation-indexes
     - navigation.footer
+    - content.code.copy
+    - content.action.edit
   palette:
     scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
@@ -54,6 +56,7 @@ nav:
       - develop/docs.md
   - User Guide:
       - user-guide/index.md
+      - user-guide/workflow-setup.md
 
 markdown_extensions:
   - toc:
@@ -71,6 +74,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.details
   - pymdownx.superfences
+  - def_list
+  - attr_list
 
 extra:
   generator: false

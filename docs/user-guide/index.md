@@ -12,10 +12,4 @@ Welcome to Browsertrix Cloud. This Guide will cover various aspects of using Bro
 
 ## Quick Start
 
-Once you've registrated, your account will have an `[Your Name's Archive]` where you can create crawl configs and run crawls!
-
-
-## Creating a Crawl Config
-
-
-*TODO: Additional info coming soon!*
+Once you've registrated, your account will have an `[Your Name's Archive]` where you can create workflows to run crawls!
