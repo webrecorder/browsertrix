@@ -14,9 +14,6 @@ import type {
   APISortQuery,
 } from "../../types/api";
 
-type SortField = "_lastUpdated" | "_name";
-type SortDirection = "asc" | "desc";
-
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
 
@@ -281,7 +278,6 @@ export class CollectionsAdd extends LiteElement {
 
   private async dispatchChange() {
     await this.updateComplete;
-    console.log(`Dispatching change with collection ids: ${this.collectionIds}`);
     this.dispatchEvent(
       <CollectionsChangeEvent>new CustomEvent("collections-change", {
         detail: { collections: this.collectionIds },
