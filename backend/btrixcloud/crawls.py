@@ -220,7 +220,9 @@ class CrawlOps:
 
         self.crawl_configs.set_crawl_ops(self)
 
-        self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
+        self.presign_duration_seconds = (
+            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
+        )
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -463,7 +465,7 @@ class CrawlOps:
             print("no files")
             return
 
-        delta = timedelta(seconds=self.presign_duration)
+        delta = timedelta(seconds=self.presign_duration_seconds)
 
         updates = []
         out_files = []
@@ -475,7 +477,7 @@ class CrawlOps:
             if not presigned_url or now >= file_.expireAt:
                 exp = now + delta
                 presigned_url = await get_presigned_url(
-                    org, file_, self.crawl_manager, self.presign_duration
+                    org, file_, self.crawl_manager, self.presign_duration_seconds
                 )
                 updates.append(
                     (

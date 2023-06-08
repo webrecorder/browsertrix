@@ -571,11 +571,12 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderReplay() {
-    const bearer = this.authState?.headers?.Authorization?.split(" ", 2)[1];
+    //const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
+    const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json`;
 
-    // for now, just use the first file until multi-wacz support is fully implemented
-    const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
-    //const replaySource = this.crawl?.resources?.[0]?.path;
+    const headers = this.authState?.headers;
+
+    const config = JSON.stringify({headers});
 
     const canReplay = replaySource && this.hasFiles;
 
@@ -587,6 +588,7 @@ export class CrawlDetail extends LiteElement {
               <replay-web-page
                 source="${replaySource}"
                 coll="${ifDefined(this.crawl?.id)}"
+                config="${config}"
                 replayBase="/replay/"
                 noSandbox="true"
                 noCache="true"
