@@ -2,7 +2,7 @@ import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlMenuItem, SlIconButton } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -192,21 +192,38 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private renderCollectionItem(collection: Collection) {
-    // TODO: Make X icon functional
-    const crawlCountMessage = msg(str`${collection.crawlCount} Crawls`);
+    // TODO: Clicking on remove button doesn't work - 
+    // TypeError: Cannot read property 'removeCollection' of undefined
     return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
         ${collection.name}
-        <span class="float-right">
-          <span class="text-neutral-500 text-xs font-monostyle">${crawlCountMessage}</span>
-          <sl-icon
-            class="ml-3"
+        <span class="float-right inline-block align-middle">
+          <span class="text-neutral-500 text-xs font-monostyle">
+            ${msg(str`${collection.crawlCount} Crawls`)}
+          </span>
+          <sl-icon-button
+            class="ml-3 align-middle"
             name="x-lg"
-            @click=${() => {
-              // TODO: Implement removal from this.collections and this.collectionIds
-              console.log(`Will remove ${collection.id}`);
-            }}></sl-icon>
+            data-key=${collection.id}
+            @click=${() => this.removeCollection}></sl-icon-button>
         </span>
       </li>`;
+  }
+
+  private removeCollection(event: Event) {
+    const target = event.currentTarget as HTMLElement;
+    const collectionId = target.getAttribute("data-key");
+    if (collectionId) {
+      console.log(collectionId);
+      console.log(`Removing from collections: ${collectionId}`);
+      const collIdIndex = this.collectionIds.indexOf(collectionId);
+      if (collIdIndex > -1) {
+        this.collectionIds.splice(collIdIndex, 1);
+      }
+      const collIndex = this.collections.findIndex(collection => collection.id === collectionId);
+      if (collIndex > -1) {
+        this.collections.splice(collIndex, 1);
+      }
+    }
   }
 
   private onSearchInput = debounce(200)(async (e: any) => {
