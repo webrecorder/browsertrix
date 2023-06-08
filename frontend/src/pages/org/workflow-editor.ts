@@ -103,6 +103,8 @@ type FormState = {
   autoscrollBehavior: boolean;
 };
 
+const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
+
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
   if (window.location.hash) {
@@ -1044,7 +1046,7 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
-        ["prefix", "host", "domain", "custom"].includes(this.formState.scopeType),
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
         () => html`
           ${this.renderFormCol(html`
             <sl-input
@@ -2120,9 +2122,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
-    if (
-      ["prefix", "host", "domain", "custom"].includes(this.formState.scopeType)
-    ) {
+    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
 
