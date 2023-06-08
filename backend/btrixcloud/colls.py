@@ -216,20 +216,11 @@ class CollectionOps:
         if name:
             match_query["name"] = name
 
-        aggregate = [{"$match": match_query}]
+        elif name_prefix:
+            regex_pattern = f"^{name_prefix}"
+            match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
-        if name_prefix:
-            regex_pattern = f"/^{name_prefix}/i"
-            aggregate.extend(
-                [
-                    {
-                        "$regexMatch": {
-                            "input": "$name",
-                            "regex": regex_pattern,
-                        }
-                    }
-                ]
-            )
+        aggregate = [{"$match": match_query}]
 
         if sort_by:
             if sort_by not in ("modified", "name", "description"):
