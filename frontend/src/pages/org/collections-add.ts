@@ -100,7 +100,7 @@ export class CollectionsAdd extends LiteElement {
               ? html`
                   <div class="mb-2">
                     <ul class="contents">
-                      ${this.collections.map(this.renderCollectionItem)}
+                      ${this.collections.map(this.renderCollectionItem, this)}
                     </ul>
                   </div>
                 `
@@ -192,8 +192,6 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private renderCollectionItem(collection: Collection) {
-    // TODO: Clicking on remove button doesn't work - 
-    // TypeError: Cannot read property 'removeCollection' of undefined
     return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
         ${collection.name}
         <span class="float-right inline-block align-middle">
@@ -204,17 +202,15 @@ export class CollectionsAdd extends LiteElement {
             class="ml-3 align-middle"
             name="x-lg"
             data-key=${collection.id}
-            @click=${() => this.removeCollection}></sl-icon-button>
+            @click=${this.removeCollection}></sl-icon-button>
         </span>
       </li>`;
   }
 
-  private removeCollection(event: Event) {
+  private async removeCollection(event: Event) {
     const target = event.currentTarget as HTMLElement;
     const collectionId = target.getAttribute("data-key");
     if (collectionId) {
-      console.log(collectionId);
-      console.log(`Removing from collections: ${collectionId}`);
       const collIdIndex = this.collectionIds.indexOf(collectionId);
       if (collIdIndex > -1) {
         this.collectionIds.splice(collIdIndex, 1);
@@ -224,6 +220,7 @@ export class CollectionsAdd extends LiteElement {
         this.collections.splice(collIndex, 1);
       }
     }
+    await this.requestUpdate();
   }
 
   private onSearchInput = debounce(200)(async (e: any) => {
