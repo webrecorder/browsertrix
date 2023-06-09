@@ -57,6 +57,7 @@ nav:
   - User Guide:
       - user-guide/index.md
       - user-guide/workflow-setup.md
+      - user-guide/org-settings.md
 
 markdown_extensions:
   - toc:
