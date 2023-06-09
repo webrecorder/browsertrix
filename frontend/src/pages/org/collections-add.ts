@@ -237,10 +237,18 @@ export class CollectionsAdd extends LiteElement {
     const data: CollectionSearchResults | undefined = await this.fetchCollectionsByPrefix(this.searchByValue);
     let searchResults: CollectionList = [];
     if (data && data.items.length) {
-      searchResults = data.items;
+      searchResults = this.filterOutSelectedCollections(data.items);
     }
     this.searchResults = searchResults;
   }) as any;
+
+  private filterOutSelectedCollections(results: CollectionList) {
+    return results.filter((result) => {
+      return this.collections.every((coll) => {
+        return coll.id !== result.id;
+      });
+    });
+  }
 
   private async fetchCollectionsByPrefix(namePrefix: string) {
     try {
