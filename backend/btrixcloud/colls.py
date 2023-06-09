@@ -334,8 +334,8 @@ async def update_collection_counts_and_tags(
 async def update_crawl_collections(collections, crawls, crawl_id: str):
     """Update counts and tags for all collections in crawl"""
     crawl = await crawls.find_one({"_id": crawl_id})
-    collections = crawl.get("collections")
-    for collection_id in collections:
+    crawl_collections = crawl.get("collections")
+    for collection_id in crawl_collections:
         await update_collection_counts_and_tags(collections, crawls, collection_id)
 
 
