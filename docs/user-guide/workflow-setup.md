@@ -159,11 +159,11 @@ Set how often a scheduled crawl will run.
 
 ### Day
 
-For crawls scheduled with a `Weekly` _Frequency_, sets the day of the week for which the crawl will run.
+Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
 ### Date
 
-For crawls scheduled with a `Monthly` _Frequency_, sets the date of the month for which the crawl will run.
+Sets the date of the month for which crawls scheduled with a `Monthly` _Frequency_ will run.
 
 ### Start Time
 

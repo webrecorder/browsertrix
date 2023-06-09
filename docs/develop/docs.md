@@ -40,6 +40,8 @@ Webrecorder is a global team but we use American English when writing documentat
 
 In a list of three or more items, the list item proceeding the word "and" should have a comma placed after it clarifying that the final item in the list is not a part of the previous item.
 
+##### Example
+
 | Use                           | Don't use                    |
 | ----------------------------- | ---------------------------- |
 | One, two, three, and four.    | One, two, three and four.    |
@@ -49,13 +51,27 @@ In a list of three or more items, the list item proceeding the word "and" should
 
 Avoid using acronyms when reuse is not frequent enough to warrant space savings. When acronyms must be used, spell the full phrase first and include the acronym in parentheses `()` the first time it is used in each document.  This can be omitted for extremely common acronyms such as "URL" or "HTTP".
 
+##### Example
+
 > When running in a Virtual Machine (VM), use the....
 
 ### Headings
 
 All headings should be set in [title case](https://en.wikipedia.org/wiki/Title_case).
 
+##### Example
+
 > Indiana Jones and the Raiders of the Lost Ark
+
+### Referencing Features and Their Options
+
+Controls with multiple options should have their options referenced as `in-line code blocks`.
+
+Setting names referenced outside of a heading should be Capitalized and set in _italics_.
+
+##### Example
+
+> Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
 ### Markdown Formatting
 
