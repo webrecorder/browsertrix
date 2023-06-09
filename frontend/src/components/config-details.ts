@@ -269,13 +269,10 @@ export class ConfigDetails extends LiteElement {
             msg("Collections"),
             this.collections.length
               ? this.collections.map(
-                  (coll: Collection) => {
-                    return html`<p>${coll.name}
-                      <span class="pl-1 font-monostyle text-xs">
-                        (${msg(str`${coll.crawlCount} Crawls`)})
-                      </span></p>
-                    `;
-                  }
+                  (coll) =>
+                    html`<sl-tag class="mt-1 mr-2" variant="neutral">
+                      ${coll.name} (${msg(str`${coll.crawlCount} Crawls`)})
+                    </sl-tag>`
                 )
               : undefined
           )}
