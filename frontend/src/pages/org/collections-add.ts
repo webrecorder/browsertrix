@@ -177,13 +177,12 @@ export class CollectionsAdd extends LiteElement {
         (item: Collection) => {
           return html`
             <sl-menu-item
-              class="flex"
               slot="menu-item"
               data-key=${item.id}
             >
-              <div class="flex flex-row justify-between items-center">
-                <div class="w-80">${item.name}</div>
-                <div class="ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
+              <div class="flex basis-full items-center">
+                <div class="flex-none w-80">${item.name}</div>
+                <div class="flex-auto ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
                   ${msg(str`${item.crawlCount} Crawls`)}
                 </div>
               </div>
