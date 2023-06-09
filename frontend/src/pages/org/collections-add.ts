@@ -177,13 +177,16 @@ export class CollectionsAdd extends LiteElement {
         (item: Collection) => {
           return html`
             <sl-menu-item
+              class="flex"
               slot="menu-item"
               data-key=${item.id}
             >
-              ${item.name}
-              <span class="float-right font-monostyle text-xs">
-                ${msg(str`${item.crawlCount} Crawls`)}
-              </span>
+              <div class="flex flex-row justify-between items-center">
+                <div class="w-80">${item.name}</div>
+                <div class="ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
+                  ${msg(str`${item.crawlCount} Crawls`)}
+                </div>
+              </div>
             </sl-menu-item>
           `;
         }
@@ -193,17 +196,18 @@ export class CollectionsAdd extends LiteElement {
 
   private renderCollectionItem(collection: Collection) {
     return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
-        ${collection.name}
-        <span class="float-right inline-block align-middle">
-          <span class="text-neutral-500 text-xs font-monostyle">
+        <div class="flex flex-row justify-between items-center">
+          <div class="w-80">${collection.name}</div>
+          <div class="ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
             ${msg(str`${collection.crawlCount} Crawls`)}
-          </span>
+          </div>
           <sl-icon-button
-            class="ml-3 align-middle"
+            class="ml-3"
             name="x-lg"
             data-key=${collection.id}
-            @click=${this.removeCollection}></sl-icon-button>
-        </span>
+            @click=${this.removeCollection}>
+          </sl-icon-button>
+        </dib>
       </li>`;
   }
 
