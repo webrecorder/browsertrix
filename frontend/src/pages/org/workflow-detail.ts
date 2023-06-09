@@ -1146,6 +1146,7 @@ export class WorkflowDetail extends LiteElement {
   private renderSettings() {
     return html`<section class="border rounded-lg py-3 px-5">
       <btrix-config-details
+        .authState=${this.authState!}
         .crawlConfig=${this.workflow}
         anchorLinks
       ></btrix-config-details>

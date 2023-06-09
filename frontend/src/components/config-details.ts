@@ -5,8 +5,10 @@ import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
+import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
+import type { Collection, CollectionList } from "../types/collection";
 import { humanizeSchedule } from "../utils/cron";
 import { RelativeDuration } from "./relative-duration";
 
@@ -14,12 +16,16 @@ import { RelativeDuration } from "./relative-duration";
  * Usage:
  * ```ts
  * <btrix-config-details
+ *   .authState=${this.authState!}
  *   .crawlConfig=${this.crawlConfig}
  * ></btrix-config-details>
  * ```
  */
 @localized()
 export class ConfigDetails extends LiteElement {
+  @property({ type: Object })
+  authState!: AuthState;
+
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -37,6 +43,9 @@ export class ConfigDetails extends LiteElement {
     maxPagesPerCrawl?: number;
   };
 
+  @state()
+  private collections: CollectionList = [];
+
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
     string
@@ -50,9 +59,10 @@ export class ConfigDetails extends LiteElement {
     any: msg("Any"),
   };
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
     this.fetchAPIDefaults();
+    await this.fetchCollections();
   }
 
   render() {
@@ -255,6 +265,20 @@ export class ConfigDetails extends LiteElement {
                     )
                   : undefined
               )}
+          ${this.renderSetting(
+            msg("Collections"),
+            this.collections.length
+              ? this.collections.map(
+                  (coll: Collection) => {
+                    return html`<p>${coll.name}
+                      <span class="pl-1 font-monostyle text-xs">
+                        (${msg(str`${coll.crawlCount} Crawls`)})
+                      </span></p>
+                    `;
+                  }
+                )
+              : undefined
+          )}
         </btrix-desc-list>
       </section>
     `;
@@ -376,6 +400,43 @@ export class ConfigDetails extends LiteElement {
         ${content}
       </btrix-desc-list-item>
     `;
+  }
+
+  private async fetchCollections() {
+    if (this.crawlConfig?.autoAddCollections) {
+      try {
+        await this.getCollections();
+      } catch (e: any) {
+        this.notify({
+          message:
+            e.statusCode === 404
+              ? msg("Collections not found.")
+              : msg("Sorry, couldn't retrieve Collection details at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private async getCollections() {
+    let collections: CollectionList = [];
+    const orgId = this.crawlConfig?.oid;
+
+    if (this.crawlConfig?.autoAddCollections && orgId) {
+      for (let i = 0; i < this.crawlConfig.autoAddCollections.length; i++) {
+        const collectionId = this.crawlConfig.autoAddCollections[i];
+        const data: Collection = await this.apiFetch(
+          `/orgs/${orgId}/collections/${collectionId}`,
+          this.authState!
+        );
+        if (data) {
+          collections.push(data);
+        }
+      }
+    }
+    this.collections = collections;
+    this.requestUpdate();
   }
 
   private async fetchAPIDefaults() {

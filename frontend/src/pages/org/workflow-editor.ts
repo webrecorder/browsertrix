@@ -1707,7 +1707,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           const profileName = this.formState.browserProfile?.name;
 
           return html`<btrix-config-details
-            .crawlConfig=${{ ...crawlConfig, profileName }}
+            .authState=${this.authState!}
+            .crawlConfig=${{ ...crawlConfig, profileName, oid: this.orgId }}
           >
           </btrix-config-details>`;
         })}

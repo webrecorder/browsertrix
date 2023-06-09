@@ -122,4 +122,5 @@ export type Crawl = CrawlConfig & {
   firstSeed: string;
   seedCount: number;
   stopping: boolean;
+  collections: string[];
 };

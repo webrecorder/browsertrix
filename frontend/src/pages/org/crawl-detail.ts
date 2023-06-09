@@ -854,7 +854,8 @@ ${this.crawl?.notes}
     if (!this.crawl?.config) return "";
     return html`
       <btrix-config-details
-        .crawlConfig=${this.crawl}
+        .authState=${this.authState!}
+        .crawlConfig=${{ ...this.crawl, autoAddCollections: this.crawl.collections }}
         hideTags
       ></btrix-config-details>
     `;
