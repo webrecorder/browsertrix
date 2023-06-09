@@ -177,12 +177,13 @@ export class CollectionsAdd extends LiteElement {
         (item: Collection) => {
           return html`
             <sl-menu-item
+              class="w-full"
               slot="menu-item"
               data-key=${item.id}
             >
-              <div class="flex basis-full items-center">
-                <div class="flex-none w-80">${item.name}</div>
-                <div class="flex-auto ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
+              <div class="flex w-full gap-2 items-center">
+                <div class="justify-self-stretch grow truncate">${item.name}</div>
+                <div class="flex-auto text-right text-neutral-500 text-xs font-monostyle">
                   ${msg(str`${item.crawlCount} Crawls`)}
                 </div>
               </div>
@@ -195,13 +196,12 @@ export class CollectionsAdd extends LiteElement {
 
   private renderCollectionItem(collection: Collection) {
     return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
-        <div class="flex flex-row justify-between items-center">
-          <div class="w-80">${collection.name}</div>
-          <div class="ml-3 justify-self-end text-neutral-500 text-xs font-monostyle">
+        <div class="flex flex-row gap-2 justify-between items-center">
+          <div class="justify-self-stretch grow truncate">${collection.name}</div>
+          <div class="text-neutral-500 text-xs text-right font-monostyle">
             ${msg(str`${collection.crawlCount} Crawls`)}
           </div>
           <sl-icon-button
-            class="ml-3"
             name="x-lg"
             data-key=${collection.id}
             @click=${this.removeCollection}>
