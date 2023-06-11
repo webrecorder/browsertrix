@@ -837,7 +837,7 @@ export class WorkflowDetail extends LiteElement {
                         style="--sl-color-neutral-700: var(--danger)"
                         @click=${() => this.deleteCrawl(crawl)}
                       >
-                        <sl-icon name="trash" slot="prefix"></sl-icon>
+                        <sl-icon name="trash3" slot="prefix"></sl-icon>
                         ${msg("Delete Crawl")}
                       </sl-menu-item>
                     </sl-menu>
