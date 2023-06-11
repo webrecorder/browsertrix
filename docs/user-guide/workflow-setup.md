@@ -1,6 +1,6 @@
-# Workflow Setup
+# Crawl Workflow Setup
 
-The first step in creating a new workflow is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
+The first step in creating a new crawl workflow is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
 
 `URL List`{ .badge-blue }
 :   The crawler visits every URL specified in a list, and optionally every URL linked on those pages.
@@ -159,11 +159,11 @@ Set how often a scheduled crawl will run.
 
 ### Day
 
-For crawls scheduled with a `Weekly` _Frequency_, sets the day of the week for which the crawl will run.
+Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
 ### Date
 
-For crawls scheduled with a `Monthly` _Frequency_, sets the date of the month for which the crawl will run.
+Sets the date of the month for which crawls scheduled with a `Monthly` _Frequency_ will run.
 
 ### Start Time
 
