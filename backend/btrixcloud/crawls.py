@@ -117,6 +117,9 @@ class Crawl(CrawlConfigCore):
 
     collections: Optional[List[UUID4]] = []
 
+    fileSize: int = 0
+    fileCount: int = 0
+
 
 # ============================================================================
 class CrawlOut(Crawl):
@@ -217,7 +220,9 @@ class CrawlOps:
 
         self.crawl_configs.set_crawl_ops(self)
 
-        self.presign_duration = int(os.environ.get("PRESIGN_DURATION_SECONDS", 3600))
+        self.presign_duration_seconds = (
+            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
+        )
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -276,8 +281,6 @@ class CrawlOps:
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
-            {"$set": {"fileSize": {"$sum": "$files.size"}}},
-            {"$set": {"fileCount": {"$size": "$files"}}},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors"]},
@@ -462,7 +465,7 @@ class CrawlOps:
             print("no files")
             return
 
-        delta = timedelta(seconds=self.presign_duration)
+        delta = timedelta(seconds=self.presign_duration_seconds)
 
         updates = []
         out_files = []
@@ -474,7 +477,7 @@ class CrawlOps:
             if not presigned_url or now >= file_.expireAt:
                 exp = now + delta
                 presigned_url = await get_presigned_url(
-                    org, file_, self.crawl_manager, self.presign_duration
+                    org, file_, self.crawl_manager, self.presign_duration_seconds
                 )
                 updates.append(
                     (
@@ -872,12 +875,10 @@ class CrawlOps:
 
     async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
         """Remove collection id from all crawls it's currently in."""
-        result = await self.crawls.update_many(
+        await self.crawls.update_many(
             {"collections": collection_id},
             {"$pull": {"collections": collection_id}},
         )
-        if result.modified_count < 1:
-            raise HTTPException(status_code=404, detail="crawls_not_found")
 
 
 # ============================================================================
@@ -944,13 +945,32 @@ async def add_crawl_errors(crawls, crawl_id, errors):
 
 
 # ============================================================================
-async def add_crawl_file(crawls, crawl_id, crawl_file):
+async def add_crawl_file(crawls, crawl_id, crawl_file, size):
     """add new crawl file to crawl"""
     await crawls.find_one_and_update(
         {"_id": crawl_id},
         {
             "$push": {"files": crawl_file.dict()},
+            "$inc": {"fileCount": 1, "fileSize": size},
         },
+    )
+
+
+# ============================================================================
+async def recompute_crawl_file_count_and_size(crawls, crawl_id):
+    """Fully recompute file count and size for given crawl"""
+    file_count = 0
+    size = 0
+
+    crawl_raw = await crawls.find_one({"_id": crawl_id})
+    crawl = Crawl.from_dict(crawl_raw)
+    for file_ in crawl.files:
+        file_count += 1
+        size += file_.size
+
+    await crawls.find_one_and_update(
+        {"_id": crawl_id},
+        {"$set": {"fileCount": file_count, "fileSize": size}},
     )
 
 

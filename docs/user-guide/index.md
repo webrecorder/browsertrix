@@ -1,21 +1,19 @@
 # Getting Started
 
-Welcome to Browsertrix Cloud. This Guide will cover various aspects of using Browsertrix Cloud.
+## Signup
 
+For all signup options the Name field cannot currently be changed later.
 
-## Creating an Account
+### Invite Link
 
-- If you have been given an invite, you can create an account for that email address. Choose a password and name to create a new account.
+If you have been sent an [invite](org-settings#members), enter a password and name to create a new account. Your account will be added to the organization you were invited to by an organization admin.
 
-- If you have been given a registration link, you can enter your email address, password and name to create a new account.
+### Open Registration
 
+If the server has enabled signups and you have been given a registration link, enter your email address, password, and name to create a new account. Your account will be added to the server's default organization.
 
-## Quick Start
+---
 
-Once you've registrated, your account will have an `[Your Name's Archive]` where you can create crawl configs and run crawls!
+## Automated Crawling
 
-
-## Creating a Crawl Config
-
-
-*TODO: Additional info coming soon!*
+A Workflow must be created in order to crawl websites automatically. Workflows can be created on the Crawling page found in the main navigation menu. A detailed list of all available workflow configuration options can be found on the [Crawl Workflow Setup](workflow-setup) page.

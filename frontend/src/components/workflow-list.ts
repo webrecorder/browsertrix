@@ -305,6 +305,15 @@ export class WorkflowListItem extends LitElement {
         </div>
         <div class="desc duration">
           ${this.safeRender((workflow) => {
+            if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
+              return msg(
+                str`Finished in ${RelativeDuration.humanize(
+                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
+                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                  { compact: true }
+                )}`
+              );
+            }
             if (workflow.lastCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
@@ -316,15 +325,6 @@ export class WorkflowListItem extends LitElement {
                 str`Running for ${RelativeDuration.humanize(diff, {
                   compact: true,
                 })}`
-              );
-            }
-            if (workflow.lastCrawlTime) {
-              return msg(
-                str`Finished in ${RelativeDuration.humanize(
-                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
-                  { compact: true }
-                )}`
               );
             }
             return notSpecified;

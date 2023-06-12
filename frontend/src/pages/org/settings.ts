@@ -293,13 +293,13 @@ export class OrgSettings extends LiteElement {
           })
         )}
     >
-      <sl-icon name="trash"></sl-icon>
+      <sl-icon name="trash3"></sl-icon>
     </btrix-button>`;
   }
 
   private renderRemoveInviteButton(invite: Invite) {
     return html`<btrix-button icon @click=${() => this.removeInvite(invite)}>
-      <sl-icon name="trash"></sl-icon>
+      <sl-icon name="trash3"></sl-icon>
     </btrix-button>`;
   }
 

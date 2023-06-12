@@ -432,3 +432,23 @@ def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_i
         headers=crawler_auth_headers,
     )
     assert _second_coll_id not in r.json()["collections"]
+
+    # Make a new empty (no crawls) collection and delete it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "name": "To delete",
+            "description": "Deleting a collection with no crawls should work.",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    coll_id = data["added"]["id"]
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]

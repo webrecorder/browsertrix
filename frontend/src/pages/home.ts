@@ -126,7 +126,7 @@ export class Home extends LiteElement {
             </div>
             <div class="grow-0 mt-2 md:mt-0 text-right">
               <sl-button variant="neutral" type="submit">
-                <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
                 ${msg("Go")}</sl-button
               >
             </div>
@@ -137,12 +137,13 @@ export class Home extends LiteElement {
       <div class="grid grid-cols-5 gap-8">
         <div class="col-span-5 md:col-span-3">
           <section>
-            <header class="flex items-start justify-between">
+            <header class="flex items-start justify-between items-center">
               <h2 class="text-lg font-medium mb-3 mt-2">
                 ${msg("All Organizations")}
               </h2>
               <sl-button
                 variant="primary"
+                size="small"
                 @click=${() => (this.isAddingOrg = true)}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
