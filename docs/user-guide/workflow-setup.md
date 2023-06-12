@@ -124,7 +124,7 @@ The crawl will be gracefully stopped after this set period of time.
 
 ### Crawler Instances
 
-Increasing the amount of crawler instances will speed up crawls by using additional browser windows to capture more pages in parallel. This will also increase the amount of traffic to the website and may have a higher chance of getting rate limited as a result.
+Increasing the amount of crawler instances will speed up crawls by using additional browser windows to capture more pages in parallel. This will also increase the amount of traffic sent to the website and may result in a higher chance of getting rate limited.
 
 ## Browser Settings
 
