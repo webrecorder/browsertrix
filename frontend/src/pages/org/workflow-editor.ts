@@ -430,6 +430,8 @@ export class CrawlConfigEditor extends LiteElement {
           // Unescape regex
           .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
           .join("\n");
+        // if we have additional include URLs, set to "custom" scope here
+        // to indicate 'Custom Page Prefix' option
         formState.scopeType = "custom";
       }
       const additionalSeeds = seeds.slice(1);
@@ -2112,6 +2114,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
+      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix' 
+      // scope on backend to ensure seed URL is also added as part of standard prefix scope
       scopeType: this.formState.scopeType === "custom" ? "prefix" : this.formState.scopeType,
       include:
         this.formState.scopeType === "custom"
