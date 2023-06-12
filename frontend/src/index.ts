@@ -470,13 +470,13 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-between"
+        class="w-full max-w-screen-lg mx-auto p-3 box-border flex flex-col gap-4 md:flex-row justify-between"
       >
         <!-- <div> -->
         <!-- TODO re-enable when translations are added -->
         <!-- <btrix-locale-picker></btrix-locale-picker> -->
         <!-- </div> -->
-        <div class="flex items-center">
+        <div class="flex items-center justify-center">
           <a
             class="text-neutral-400 flex items-center gap-2 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix-cloud"
@@ -490,7 +490,7 @@ export class App extends LiteElement {
             Source Code
           </a>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center justify-center">
           <a
             class="text-neutral-400 flex items-center gap-2 hover:text-primary"
             href="https://docs.browsertrix.cloud"
@@ -504,7 +504,7 @@ export class App extends LiteElement {
             Documentation
           </a>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center justify-center">
           ${this.version
             ? html`
                 <btrix-copy-button
