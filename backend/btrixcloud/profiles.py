@@ -239,7 +239,7 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        return profile
+        return {"added": True, "id": str(profile.id)}
 
     async def update_profile_metadata(
         self, profileid: UUID4, update: ProfileCreateUpdate
@@ -254,7 +254,7 @@ class ProfileOps:
         ):
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return {"success": True}
+        return {"updated": True}
 
     async def list_profiles(
         self,
@@ -446,7 +446,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
 
             await ops.commit_to_profile(browser_commit, metadata, profileid)
 
-        return {"success": True}
+        return {"updated": True}
 
     @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
     async def get_profile(

@@ -582,7 +582,7 @@ class CrawlOps:
         if not result:
             raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
 
-        return {"success": True}
+        return {"updated": True}
 
     async def update_crawl_scale(
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User

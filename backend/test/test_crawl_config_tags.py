@@ -26,10 +26,11 @@ def test_create_new_config_1(admin_auth_headers, default_org_id):
 
     data = r.json()
     assert data["added"]
+    assert data["id"]
     assert data["run_now_job"] == None
 
     global new_cid_1
-    new_cid_1 = data["added"]
+    new_cid_1 = data["id"]
 
 
 def test_get_config_1(admin_auth_headers, default_org_id):
@@ -60,10 +61,11 @@ def test_create_new_config_2(admin_auth_headers, default_org_id):
 
     data = r.json()
     assert data["added"]
+    assert data["id"]
     assert data["run_now_job"] == None
 
     global new_cid_2
-    new_cid_2 = data["added"]
+    new_cid_2 = data["id"]
 
 
 def test_get_config_by_tag_2(admin_auth_headers, default_org_id):

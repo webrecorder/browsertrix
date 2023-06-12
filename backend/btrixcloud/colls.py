@@ -116,7 +116,7 @@ class CollectionOps:
                     self.collections, self.crawls, coll_id
                 )
 
-            return {"added": {"id": coll_id, "name": name}}
+            return {"added": True, "id": coll_id, "name": name}
         except pymongo.errors.DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="collection_name_taken")
@@ -134,7 +134,7 @@ class CollectionOps:
 
         try:
             result = await self.collections.find_one_and_update(
-                {"_id": coll_id},
+                {"_id": coll_id, "oid": org.id},
                 {"$set": query},
                 return_document=pymongo.ReturnDocument.AFTER,
             )
@@ -145,7 +145,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        return await self.get_collection(coll_id, org)
+        return {"updated": True}
 
     async def add_crawls_to_collection(
         self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
@@ -443,11 +443,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             raise HTTPException(status_code=404, detail="collection_not_found")
         return coll
 
-    @app.post(
-        "/orgs/{oid}/collections/{coll_id}/update",
-        tags=["collections"],
-        response_model=CollOut,
-    )
+    @app.patch("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
     async def update_collection(
         coll_id: uuid.UUID,
         update: UpdateColl,

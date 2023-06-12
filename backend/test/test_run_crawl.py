@@ -204,7 +204,7 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["success"]
+    assert data["updated"]
 
     # Verify update was successful
     r = requests.get(

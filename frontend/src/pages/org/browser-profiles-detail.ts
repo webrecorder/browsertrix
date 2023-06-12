@@ -567,7 +567,7 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       );
 
-      if (data.success === true) {
+      if (data.updated === true) {
         this.notify({
           message: msg("Successfully saved browser profile."),
           variant: "success",
@@ -612,7 +612,7 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       );
 
-      if (data.success === true) {
+      if (data.updated === true) {
         this.notify({
           message: msg("Successfully saved browser profile."),
           variant: "success",

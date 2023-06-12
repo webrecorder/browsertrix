@@ -26,7 +26,7 @@ def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_dat
 
     data = r.json()
     global cid
-    cid = data["added"]
+    cid = data["id"]
 
 
 def test_update_name_only(crawler_auth_headers, default_org_id):
@@ -39,7 +39,7 @@ def test_update_name_only(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["success"]
+    assert data["updated"]
     assert data["metadata_changed"] == True
     assert data["settings_changed"] == False
 
@@ -54,7 +54,7 @@ def test_update_desription_only(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["success"]
+    assert data["updated"]
     assert data["metadata_changed"] == True
     assert data["settings_changed"] == False
 
@@ -73,7 +73,7 @@ def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
     data = r.json()
 
     global _coll_id
-    _coll_id = data["added"]["id"]
+    _coll_id = data["id"]
     assert _coll_id
 
     # Update crawl config
@@ -90,7 +90,7 @@ def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["success"]
+    assert data["updated"]
     assert data["metadata_changed"] == True
     assert data["settings_changed"] == False
 

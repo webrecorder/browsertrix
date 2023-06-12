@@ -30,6 +30,7 @@ def test_create_new_config_1(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
+    assert data["id"]
     assert data["run_now_job"] == None
 
 
@@ -59,6 +60,7 @@ def test_create_new_config_2(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
+    assert data["id"]
     assert data["run_now_job"] == None
 
 
@@ -94,6 +96,7 @@ def test_create_new_config_3_duplicates(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
+    assert data["id"]
     assert data["run_now_job"] == None
 
 

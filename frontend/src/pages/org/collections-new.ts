@@ -70,7 +70,7 @@ export class CollectionsNew extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Successfully created "${data.added.name}" Collection.`
+          str`Successfully created "${data.name}" Collection.`
         ),
         variant: "success",
         icon: "check2-circle",

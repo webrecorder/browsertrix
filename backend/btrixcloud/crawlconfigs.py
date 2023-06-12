@@ -422,7 +422,7 @@ class CrawlConfigOps:
 
         if not changed and not metadata_changed:
             return {
-                "success": True,
+                "updated": True,
                 "settings_changed": changed,
                 "metadata_changed": metadata_changed,
             }
@@ -474,7 +474,7 @@ class CrawlConfigOps:
                 )
 
         return {
-            "success": True,
+            "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
         }
@@ -1150,7 +1150,7 @@ def init_crawl_config_api(
         user: User = Depends(user_dep),
     ):
         cid, new_job_name = await ops.add_crawl_config(config, org, user)
-        return {"added": str(cid), "run_now_job": new_job_name}
+        return {"added": True, "id": str(cid), "run_now_job": new_job_name}
 
     @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])
     async def update_crawl_config(
