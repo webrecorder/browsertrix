@@ -470,31 +470,55 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-end"
+        class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-between"
       >
         <div>
+          <!-- TODO re-enable when translations are added -->
+          <!-- <btrix-locale-picker></btrix-locale-picker> -->
+        </div>
+        <div class="flex items-center">
           <a
-            class="text-neutral-400"
+            class="text-neutral-400 flex items-center gap-2 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix-cloud"
             target="_blank"
             rel="noopener"
           >
-            ${this.version
-              ? html`
-                  <span class="inline-block align-middle text-mono text-xs">
-                    ${this.version}
-                  </span>
-                `
-              : ""}
             <sl-icon
               name="github"
-              class="inline-block align-middle ml-1"
+              class="inline-block align-middle text-base"
             ></sl-icon>
+            Source Code
           </a>
         </div>
-        <div>
-          <!-- TODO re-enable when translations are added -->
-          <!-- <btrix-locale-picker></btrix-locale-picker> -->
+        <div class="flex items-center">
+          <a
+            class="text-neutral-400 flex items-center gap-2 hover:text-primary"
+            href="https://docs.browsertrix.cloud"
+            target="_blank"
+            rel="noopener"
+          >
+            <sl-icon
+              name="book-half"
+              class="inline-block align-middle text-base"
+            ></sl-icon>
+            Documentation
+          </a>
+        </div>
+        <div class="flex items-center">
+          ${this.version
+            ? html`
+                <btrix-copy-button
+                  class="text-neutral-400"
+                  .getValue=${() => this.version}
+                  content=${msg("Copy Version Code")}
+                ></btrix-copy-button>
+                <span
+                  class="inline-block align-middle font-monostyle text-xs text-neutral-400"
+                >
+                  ${this.version}
+                </span>
+              `
+            : ""}
         </div>
       </footer>
     `;
