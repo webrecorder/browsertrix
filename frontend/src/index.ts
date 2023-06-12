@@ -472,10 +472,10 @@ export class App extends LiteElement {
       <footer
         class="w-full max-w-screen-lg mx-auto p-1 md:p-3 box-border flex justify-between"
       >
-        <div>
-          <!-- TODO re-enable when translations are added -->
-          <!-- <btrix-locale-picker></btrix-locale-picker> -->
-        </div>
+        <!-- <div> -->
+        <!-- TODO re-enable when translations are added -->
+        <!-- <btrix-locale-picker></btrix-locale-picker> -->
+        <!-- </div> -->
         <div class="flex items-center">
           <a
             class="text-neutral-400 flex items-center gap-2 hover:text-primary"
