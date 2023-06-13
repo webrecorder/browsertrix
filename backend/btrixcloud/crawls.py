@@ -4,17 +4,16 @@
 import asyncio
 import heapq
 import uuid
-import os
 import json
 import re
 import urllib.parse
 
 from typing import Optional, List, Dict, Union
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, UUID4, conint, HttpUrl
+from pydantic import BaseModel, UUID4, conint, HttpUrl, Field
 from redis import asyncio as aioredis, exceptions
 import pymongo
 
@@ -28,9 +27,16 @@ from .crawlconfigs import (
 from .db import BaseMongoModel
 from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import get_presigned_url, delete_crawl_file_object, get_wacz_logs
+from .storages import get_wacz_logs
 from .users import User
 from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_messages
+from .basecrawls import (
+    CrawlFile,
+    CrawlFileOut,
+    BaseCrawl,
+    BaseCrawlOps,
+    DeleteCrawlList,
+)
 
 
 RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
@@ -39,20 +45,13 @@ STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
 
 FAILED_STATES = ("canceled", "failed")
 
-SUCCESSFUL_STATES = ("complete", "partial_complete", "timed_out")
+SUCCESSFUL_STATES = ("complete", "partial_complete")
 
 RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
 
 NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
 
 ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
-
-
-# ============================================================================
-class DeleteCrawlList(BaseModel):
-    """delete crawl list POST body"""
-
-    crawl_ids: List[str]
 
 
 # ============================================================================
@@ -63,62 +62,17 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
-class CrawlFile(BaseModel):
-    """file from a crawl"""
-
-    filename: str
-    hash: str
-    size: int
-    def_storage_name: Optional[str]
-
-    presignedUrl: Optional[str]
-    expireAt: Optional[datetime]
-
-
-# ============================================================================
-class CrawlFileOut(BaseModel):
-    """output for file from a crawl (conformance to Data Resource Spec)"""
-
-    name: str
-    path: str
-    hash: str
-    size: int
-    crawlId: Optional[str]
-
-
-# ============================================================================
-class Crawl(CrawlConfigCore):
+class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
-    id: str
+    type: str = Field("crawl", const=True)
 
-    userid: UUID4
     cid: UUID4
 
     cid_rev: int = 0
 
     # schedule: Optional[str]
     manual: Optional[bool]
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    files: Optional[List[CrawlFile]] = []
-
-    notes: Optional[str]
-
-    errors: Optional[List[str]] = []
-
-    stopping: Optional[bool] = False
-
-    collections: Optional[List[UUID4]] = []
-
-    fileSize: int = 0
-    fileCount: int = 0
 
 
 # ============================================================================
@@ -206,23 +160,18 @@ class UpdateCrawl(BaseModel):
 
 
 # ============================================================================
-class CrawlOps:
+class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
-        self.crawls = mdb["crawls"]
-        self.collections = mdb["collections"]
-        self.crawl_manager = crawl_manager
+        super().__init__(mdb, crawl_manager)
+        self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
 
         self.crawl_configs.set_crawl_ops(self)
-
-        self.presign_duration_seconds = (
-            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
-        )
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -371,20 +320,6 @@ class CrawlOps:
 
         return crawls, total
 
-    async def get_crawl_raw(self, crawlid: str, org: Organization):
-        """Get data for single crawl"""
-
-        query = {"_id": crawlid}
-        if org:
-            query["oid"] = org.id
-
-        res = await self.crawls.find_one(query)
-
-        if not res:
-            raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
-
-        return res
-
     async def get_crawl(self, crawlid: str, org: Organization):
         """Get data for single crawl"""
 
@@ -458,92 +393,19 @@ class CrawlOps:
 
         return crawl
 
-    async def _resolve_signed_urls(
-        self, files, org: Organization, crawl_id: Optional[str] = None
+    async def delete_crawls(
+        self, org: Organization, delete_list: DeleteCrawlList, type_="crawl"
     ):
-        if not files:
-            print("no files")
-            return
-
-        delta = timedelta(seconds=self.presign_duration_seconds)
-
-        updates = []
-        out_files = []
-
-        for file_ in files:
-            presigned_url = file_.presignedUrl
-            now = dt_now()
-
-            if not presigned_url or now >= file_.expireAt:
-                exp = now + delta
-                presigned_url = await get_presigned_url(
-                    org, file_, self.crawl_manager, self.presign_duration_seconds
-                )
-                updates.append(
-                    (
-                        {"files.filename": file_.filename},
-                        {
-                            "$set": {
-                                "files.$.presignedUrl": presigned_url,
-                                "files.$.expireAt": exp,
-                            }
-                        },
-                    )
-                )
-
-            out_files.append(
-                CrawlFileOut(
-                    name=file_.filename,
-                    path=presigned_url,
-                    hash=file_.hash,
-                    size=file_.size,
-                    crawlId=crawl_id,
-                )
-            )
-
-        if updates:
-            asyncio.create_task(self._update_presigned(updates))
-
-        # print("presigned", out_files)
-
-        return out_files
-
-    async def _update_presigned(self, updates):
-        for update in updates:
-            await self.crawls.find_one_and_update(*update)
-
-    async def delete_crawls(self, org: Organization, delete_list: DeleteCrawlList):
         """Delete a list of crawls by id for given org"""
-        cids_to_update = set()
 
-        size = 0
-
-        for crawl_id in delete_list.crawl_ids:
-            size += await self._delete_crawl_files(org, crawl_id)
-            crawl = await self.get_crawl_raw(crawl_id, org)
-            cids_to_update.add(crawl["cid"])
-
-        res = await self.crawls.delete_many(
-            {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
+        count, size, cids_to_update = await super().delete_crawls(
+            org, delete_list, type_
         )
 
         for cid in cids_to_update:
             await self.crawl_configs.stats_recompute_remove_crawl(cid, size)
 
-        return res.deleted_count
-
-    async def _delete_crawl_files(self, org: Organization, crawl_id: str):
-        """Delete files associated with crawl from storage."""
-        crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
-        size = 0
-        for file_ in crawl.files:
-            size += file_.size
-            status_code = await delete_crawl_file_object(org, file_, self.crawl_manager)
-            if status_code != 204:
-                raise HTTPException(status_code=400, detail="file_deletion_error")
-
-        return size
+        return count
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -574,7 +436,7 @@ class CrawlOps:
 
         # update in db
         result = await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "oid": org.id},
+            {"_id": crawl_id, "type": "crawl", "oid": org.id},
             {"$set": query},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -593,7 +455,7 @@ class CrawlOps:
         await self.crawl_configs.update_crawl_config(crawl["cid"], org, user, update)
 
         result = await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "oid": org.id},
+            {"_id": crawl_id, "type": "crawl", "oid": org.id},
             {"$set": {"scale": crawl_scale.scale}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -614,6 +476,7 @@ class CrawlOps:
         await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
+                "type": "crawl",
                 "state": {"$in": RUNNING_AND_STARTING_STATES},
             },
             {"$set": data},
@@ -630,7 +493,7 @@ class CrawlOps:
             if result.get("success"):
                 if graceful:
                     await self.crawls.find_one_and_update(
-                        {"_id": crawl_id, "oid": org.id},
+                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
                         {"$set": {"stopping": True}},
                     )
                 return result
@@ -818,7 +681,9 @@ class CrawlOps:
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
-        crawlraw = await self.crawls.find_one({"_id": crawl_id}, {"cid": True})
+        crawlraw = await self.crawls.find_one(
+            {"_id": crawl_id, "type": "crawl"}, {"cid": True}
+        )
 
         cid = crawlraw.get("cid")
 
@@ -827,7 +692,8 @@ class CrawlOps:
         )
 
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "oid": org.id}, {"$set": {"config": new_config.dict()}}
+            {"_id": crawl_id, "type": "crawl", "oid": org.id},
+            {"$set": {"config": new_config.dict()}},
         )
 
         resp = {"success": True}
@@ -845,40 +711,6 @@ class CrawlOps:
             await restart_c
 
         return resp
-
-    async def add_to_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization
-    ):
-        """Add crawls to collection."""
-        for crawl_id in crawl_ids:
-            crawl_raw = await self.get_crawl_raw(crawl_id, org)
-            crawl_collections = crawl_raw.get("collections")
-            if crawl_collections and crawl_id in crawl_collections:
-                raise HTTPException(
-                    status_code=400, detail="crawl_already_in_collection"
-                )
-
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id},
-                {"$push": {"collections": collection_id}},
-            )
-
-    async def remove_from_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
-    ):
-        """Remove crawls from collection."""
-        for crawl_id in crawl_ids:
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id},
-                {"$pull": {"collections": collection_id}},
-            )
-
-    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
-        """Remove collection id from all crawls it's currently in."""
-        await self.crawls.update_many(
-            {"collections": collection_id},
-            {"$pull": {"collections": collection_id}},
-        )
 
 
 # ============================================================================
@@ -920,7 +752,7 @@ async def update_crawl_state_if_allowed(
 ):
     """update crawl state and other properties in db if state has changed"""
     kwargs["state"] = state
-    query = {"_id": crawl_id}
+    query = {"_id": crawl_id, "type": "crawl"}
     if allowed_from:
         query["state"] = {"$in": allowed_from}
 
