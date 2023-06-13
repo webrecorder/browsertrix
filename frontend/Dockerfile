@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.4
+ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
+
 FROM docker.io/library/node:16 as build_deps
 
 WORKDIR /app
@@ -27,7 +29,7 @@ COPY --link src ./src/
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
 ARG VERSION
-ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
+ARG RWP_BASE_URL
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
