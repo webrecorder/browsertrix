@@ -103,6 +103,8 @@ type FormState = {
   autoscrollBehavior: boolean;
 };
 
+const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
+
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
   if (window.location.hash) {
@@ -422,13 +424,15 @@ export class CrawlConfigEditor extends LiteElement {
         formState.primarySeedUrl = primarySeedConfig.url;
       }
       if (
-        primarySeedConfig.scopeType === "custom" &&
         primarySeedConfig.include?.length
       ) {
         formState.customIncludeUrlList = primarySeedConfig.include
           // Unescape regex
           .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
           .join("\n");
+        // if we have additional include URLs, set to "custom" scope here
+        // to indicate 'Custom Page Prefix' option
+        formState.scopeType = "custom";
       }
       const additionalSeeds = seeds.slice(1);
       if (additionalSeeds.length) {
@@ -1044,7 +1048,7 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`)
       )}
       ${when(
-        ["host", "domain", "custom", "any"].includes(this.formState.scopeType),
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
         () => html`
           ${this.renderFormCol(html`
             <sl-input
@@ -2110,28 +2114,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      scopeType: this.formState.scopeType,
+      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix' 
+      // scope on backend to ensure seed URL is also added as part of standard prefix scope
+      scopeType: this.formState.scopeType === "custom" ? "prefix" : this.formState.scopeType,
       include:
         this.formState.scopeType === "custom"
           ? [
-              `${regexEscape(primarySeedUrl)}\/.*`,
-              ...includeUrlList.map((url) => `${regexEscape(url)}\/.*`),
+              ...includeUrlList.map((url) => regexEscape(url)),
             ]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
-    if (
-      ["host", "domain", "custom", "any"].includes(this.formState.scopeType)
-    ) {
+    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: additionalSeedUrlList.length
-        ? "page"
-        : this.formState.scopeType,
+      scopeType: this.formState.scopeType,
     };
     return config;
   }
