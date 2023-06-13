@@ -186,3 +186,7 @@ Leave optional notes about the workflow's configuration.
 ### Tags
 
 Apply tags to the workflow. Tags applied to the workflow will propigate to every crawl created with it at the time of crawl creation.
+
+### Collection Auto-Add
+
+Search for and specify collections that this crawl workflow should automatically add content to as soon as crawls finish running. Cancelled and Failed crawls will not be automatically added to collections.

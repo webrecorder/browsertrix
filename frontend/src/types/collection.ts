@@ -10,6 +10,8 @@ export type Collection = {
   resources: string[];
 };
 
+export type CollectionList = Collection[];
+
 export type CollectionSearchValues = {
   names: string[];
 }

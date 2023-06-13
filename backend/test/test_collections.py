@@ -298,6 +298,44 @@ def test_filter_sort_collections(
     assert coll["oid"] == default_org_id
     assert coll.get("description") is None
 
+    # Test filtering by name prefix
+    name_prefix = SECOND_COLLECTION_NAME[0:4]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?namePrefix={name_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    items = data["items"]
+    assert len(items) == 1
+
+    coll = items[0]
+    assert coll["id"]
+    assert coll["name"] == SECOND_COLLECTION_NAME
+    assert coll["oid"] == default_org_id
+    assert coll.get("description") is None
+
+    # Test filtering by name prefix (case insensitive)
+    name_prefix = name_prefix.upper()
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?namePrefix={name_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    items = data["items"]
+    assert len(items) == 1
+
+    coll = items[0]
+    assert coll["id"]
+    assert coll["name"] == SECOND_COLLECTION_NAME
+    assert coll["oid"] == default_org_id
+    assert coll.get("description") is None
+
     # Test sorting by name, ascending (default)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections?sortBy=name",

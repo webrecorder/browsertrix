@@ -203,6 +203,7 @@ class CollectionOps:
         sort_by: str = None,
         sort_direction: int = 1,
         name: Optional[str] = None,
+        name_prefix: Optional[str] = None,
     ):
         """List all collections for org"""
         # pylint: disable=too-many-locals
@@ -214,6 +215,10 @@ class CollectionOps:
 
         if name:
             match_query["name"] = name
+
+        elif name_prefix:
+            regex_pattern = f"^{name_prefix}"
+            match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
         aggregate = [{"$match": match_query}]
 
@@ -384,6 +389,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         sortBy: str = None,
         sortDirection: int = 1,
         name: Optional[str] = None,
+        namePrefix: Optional[str] = None,
     ):
         collections, total = await colls.list_collections(
             org.id,
@@ -392,6 +398,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
             sort_by=sortBy,
             sort_direction=sortDirection,
             name=name,
+            name_prefix=namePrefix,
         )
         return paginated_format(collections, total, page, pageSize)
 
