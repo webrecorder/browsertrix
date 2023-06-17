@@ -183,7 +183,7 @@ export class CrawlMetadataEditor extends LiteElement {
         }
       );
 
-      if (!data.success) {
+      if (!data.updated) {
         throw data;
       }
 

@@ -98,7 +98,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
     data = r.json()
 
     global _admin_config_id
-    _admin_config_id = data["added"]
+    _admin_config_id = data["id"]
 
     crawl_id = data["run_now_job"]
     # Wait for it to complete and then return crawl ID
@@ -196,7 +196,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
     data = r.json()
 
     global _crawler_config_id
-    _crawler_config_id = data["added"]
+    _crawler_config_id = data["id"]
 
 
 @pytest.fixture(scope="session")
@@ -217,7 +217,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
     data = r.json()
 
     global _crawler_config_id
-    _crawler_config_id = data["added"]
+    _crawler_config_id = data["id"]
 
     crawl_id = data["run_now_job"]
     # Wait for it to complete and then return crawl ID
@@ -288,7 +288,7 @@ def auto_add_collection_id(crawler_auth_headers, default_org_id):
         json={"name": "Auto Add Collection"},
     )
     assert r.status_code == 200
-    return r.json()["added"]["id"]
+    return r.json()["id"]
 
 
 @pytest.fixture(scope="session")
@@ -311,7 +311,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
     data = r.json()
 
     global _auto_add_config_id
-    _auto_add_config_id = data["added"]
+    _auto_add_config_id = data["id"]
 
     crawl_id = data["run_now_job"]
     # Wait for it to complete and then return crawl ID

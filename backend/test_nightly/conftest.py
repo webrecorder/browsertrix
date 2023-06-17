@@ -123,7 +123,7 @@ def crawl_config_info(admin_auth_headers, default_org_id):
     )
     data = r.json()
 
-    crawl_config_id = data["added"]
+    crawl_config_id = data["id"]
     crawl_id = data["run_now_job"]
     while True:
         r = requests.get(

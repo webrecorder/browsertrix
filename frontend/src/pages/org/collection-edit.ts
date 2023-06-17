@@ -87,18 +87,18 @@ export class CollectionEdit extends LiteElement {
 
     try {
       if (oldCrawlIds && oldCrawlIds) {
-        this.collection = await this.saveCrawlSelection({
+        await this.saveCrawlSelection({
           crawlIds,
           oldCrawlIds,
         });
       } else {
-        this.collection = await this.saveMetadata({ name, description });
+        await this.saveMetadata({ name, description });
       }
 
       this.notify({
         message: msg(
           html`Successfully updated
-            <strong>${this.collection!.name}</strong> Collection.`
+            <strong>${name}</strong> Collection.`
         ),
         variant: "success",
         icon: "check2-circle",
@@ -119,10 +119,10 @@ export class CollectionEdit extends LiteElement {
 
   private saveMetadata(values: { name: string; description: string | null }) {
     return this.apiFetch(
-      `/orgs/${this.orgId}/collections/${this.collectionId}/update`,
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!,
       {
-        method: "POST",
+        method: "PATCH",
         body: JSON.stringify(values),
       }
     );

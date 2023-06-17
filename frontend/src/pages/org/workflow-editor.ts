@@ -2005,7 +2005,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
 
       this.navTo(
-        `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.added}${
+        `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.id}${
           crawlId ? "#watch" : ""
         }`
       );
