@@ -25,8 +25,9 @@ def test_run_two_only_one_concurrent(org_with_quotas, admin_auth_headers):
     global crawl_id_b
     crawl_id_b = run_crawl(org_with_quotas, admin_auth_headers)
 
-    while (
-        get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) in ("starting", "waiting_capacity")
+    while get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) in (
+        "starting",
+        "waiting_capacity",
     ):
         time.sleep(2)
 
