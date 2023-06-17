@@ -423,7 +423,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
         )
         return paginated_format(profiles, total, page, pageSize)
 
-    @router.post("", response_model=Profile)
+    @router.post("")
     async def commit_browser_to_new(
         browser_commit: ProfileCreateUpdate,
         org: Organization = Depends(org_crawl_dep),
