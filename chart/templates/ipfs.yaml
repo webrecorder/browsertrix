@@ -1,0 +1,105 @@
+
+{{- if .Values.ipfs_local }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: local-ipfs
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: local-ipfs
+  serviceName: local-ipfs
+  replicas: {{ .Values.backend_num_replicas }}
+  podManagementPolicy: Parallel
+  volumeClaimTemplates:
+    - metadata:
+        name: data-ipfs
+        annotations:
+          helm.sh/resource-policy: keep
+
+      spec:
+        accessModes:
+          - ReadWriteOnce
+
+        resources:
+          requests:
+            storage: 100Gi
+
+        {{- if .Values.volume_storage_class }}
+        storageClassName: {{ .Values.volume_storage_class }}
+        {{- end }}
+
+  template:
+    metadata:
+      labels:
+        app: local-ipfs
+
+    spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
+      containers:
+        - name: ipfs
+          image: {{ .Values.ipfs_image }}
+
+          imagePullPolicy: {{ .Values.ipfs_pull_policy }}
+          volumeMounts:
+            - name: data-ipfs
+              mountPath: /data/ipfs
+              subPath: data-ipfs
+
+          resources:
+            limits:
+              memory: {{ .Values.ipfs_memory }}
+
+            requests:
+              cpu: {{ .Values.ipfs_cpu }}
+              memory: {{ .Values.ipfs_memory }}
+
+
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-ipfs
+  labels:
+    app: local-ipfs
+
+spec:
+  #type: ClusterIP
+  clusterIP: None
+  selector:
+    app: local-ipfs
+
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: ipfs-gateway
+
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+      name: ipfs-api
+
+    - protocol: TCP
+      port: 4001
+      targetPort: 4001
+      name: ipfs-swarm-tcp
+
+    - protocol: UDP
+      port: 4001
+      targetPort: 4001
+      name: ipfs-swarm-udp
+
+{{- end }}
+
+

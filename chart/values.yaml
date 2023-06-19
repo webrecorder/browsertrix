@@ -86,15 +86,6 @@ superuser:
 default_org: "My Oranization"
 
 
-# IPFS publishing settings
-
-# set URL for API to write to IPFS
-#ipfs_api_url: <url>
-
-# set URL for publicly-accessible gateway to access content uploaded to IPFS
-#ipfs_gateway_url: <url>
-
-
 # API Image
 # =========================================
 backend_image: "docker.io/webrecorder/browsertrix-backend:latest"
@@ -251,6 +242,29 @@ storages:
 # optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
 # may be useful if, for example, the wacz files are public, while profiles should not be
 # shared_storage_profile:
+
+
+# IPFS Access
+# =========================================
+# publishing settings
+
+# set URL for API to write to IPFS
+ipfs_api_url: http://local-ipfs:5001/
+
+# set URL for publicly-accessible gateway to access content uploaded to IPFS
+ipfs_gateway_url: "/ipfs/"
+
+
+# IPFS image (optional)
+# =========================================
+ipfs_local: false
+
+ipfs_image: ipfs/kubo
+
+ipfs_pull_policy: IfNotPresent
+
+ipfs_cpu: "250m"
+ipfs_memory: "700Mi"
 
 
 # Email Options

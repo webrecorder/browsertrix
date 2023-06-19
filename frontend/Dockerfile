@@ -50,6 +50,7 @@ COPY --link --from=build /app/dist /usr/share/nginx/html
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/
 COPY --link ./minio.conf /etc/nginx/includes/
+COPY --link ./ipfs.conf /etc/nginx/includes/
 
 ADD --link ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
 
