@@ -80,6 +80,7 @@ export type CollectionSubmitEvent = CustomEvent<{
   values: {
     name: string;
     description: string | null;
+    isPublic: string | null;
     crawlIds: string[];
     oldCrawlIds?: string[];
   };
@@ -415,6 +416,10 @@ export class CollectionEditor extends LiteElement {
               maxlength=${4000}
             ></btrix-markdown-editor>
           </fieldset>
+          <label>
+            Publicly Accessible
+            <sl-switch name="isPublic" ?checked=${this.metadataValues?.public}></sl-switch>
+          </label>
         </div>
         <footer class="border-t px-6 py-4 flex justify-between">
           ${when(

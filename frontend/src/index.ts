@@ -90,6 +90,9 @@ export class App extends LiteElement {
   @state()
   private selectedOrgId?: string;
 
+  @state()
+  private ipfsGatewayUrl: string | null = null;
+
   async connectedCallback() {
     let authState: AuthState = null;
     try {
@@ -142,6 +145,7 @@ export class App extends LiteElement {
 
     if (settings) {
       this.isRegistrationEnabled = settings.registrationEnabled;
+      this.ipfsGatewayUrl = settings.ipfsGatewayUrl;
     }
 
     this.isAppSettingsLoaded = true;
@@ -187,7 +191,10 @@ export class App extends LiteElement {
     }
   }
 
-  async getAppSettings(): Promise<{ registrationEnabled: boolean } | void> {
+  async getAppSettings(): Promise<{
+    registrationEnabled: boolean;
+    ipfsGatewayUrl: string | null;
+  } | void> {
     const resp = await fetch("/api/settings", {
       headers: { "Content-Type": "application/json" },
     });
@@ -636,6 +643,7 @@ export class App extends LiteElement {
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           orgId=${this.viewState.params.orgId}
+          ipfsGatewayUrl=${this.ipfsGatewayUrl}
           orgPath=${this.viewState.pathname.split(
             this.viewState.params.orgId
           )[1]}

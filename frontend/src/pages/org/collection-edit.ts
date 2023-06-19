@@ -83,7 +83,7 @@ export class CollectionEdit extends LiteElement {
 
   private async onSubmit(e: CollectionSubmitEvent) {
     this.isSubmitting = true;
-    const { name, description, crawlIds, oldCrawlIds } = e.detail.values;
+    const { name, description, isPublic, crawlIds, oldCrawlIds } = e.detail.values;
 
     try {
       if (oldCrawlIds && oldCrawlIds) {
@@ -92,7 +92,7 @@ export class CollectionEdit extends LiteElement {
           oldCrawlIds,
         });
       } else {
-        await this.saveMetadata({ name, description });
+        await this.saveMetadata({ name, description, public: isPublic === "on" });
       }
 
       this.notify({
@@ -117,7 +117,7 @@ export class CollectionEdit extends LiteElement {
     this.isSubmitting = false;
   }
 
-  private saveMetadata(values: { name: string; description: string | null }) {
+  private saveMetadata(values: { name: string; description: string | null, public: boolean }) {
     return this.apiFetch(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!,

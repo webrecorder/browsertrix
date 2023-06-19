@@ -64,6 +64,9 @@ data:
 
   PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes | default 60 }}"
 
+  IPFS_GATEWAY_URL: "{{ .Values.ipfs_gateway_url }}"
+  IPFS_API_URL: "{{ .Values.ipfs_api_url }}"
+
 
 ---
 apiVersion: v1

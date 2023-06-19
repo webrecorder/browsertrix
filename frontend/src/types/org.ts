@@ -12,6 +12,7 @@ export type OrgData = {
   id: string;
   name: string;
   quotas: Record<string, number>;
+  publishedIPFS: string | null;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];

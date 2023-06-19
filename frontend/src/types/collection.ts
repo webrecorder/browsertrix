@@ -8,6 +8,7 @@ export type Collection = {
   pageCount: number;
   tags: string[];
   resources: string[];
+  public: boolean | null;
 };
 
 export type CollectionList = Collection[];

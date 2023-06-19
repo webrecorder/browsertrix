@@ -30,6 +30,8 @@ class Collection(BaseMongoModel):
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
 
+    public: Optional[bool] = False
+
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
@@ -41,6 +43,7 @@ class CollIn(BaseModel):
     name: str = Field(..., min_length=1)
     description: Optional[str]
     crawlIds: Optional[List[str]] = []
+    public: Optional[bool]
 
 
 # ============================================================================
@@ -56,6 +59,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
+    public: Optional[bool]
 
 
 # ============================================================================
@@ -301,6 +305,28 @@ class CollectionOps:
 
         return {"success": True}
 
+    async def get_all_public_colls_files(self, org: Optional[Organization]):
+        """get all colls files"""
+        if not org:
+            return []
+
+        cursor = self.collections.find({"oid": org.id, "public": True})
+        colls = await cursor.to_list(length=10_000)
+
+        colls_out = []
+
+        for coll in colls:
+            resources = await self.get_collection_crawl_resources(coll["_id"], org)
+
+            colls_out.append({"name": coll["name"], "resources": resources})
+
+        return {"name": org.name, "collections": colls_out}
+
+    async def publish_ipfs_public(self, org: Organization):
+        """start publish job!"""
+        publish_job_id = await self.crawl_manager.run_publish_ipfs_job(org.id)
+        return {"publishJobId": publish_job_id}
+
 
 # ============================================================================
 async def update_collection_counts_and_tags(
@@ -370,6 +396,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
+    org_public = orgs.org_public
 
     @app.post("/orgs/{oid}/collections", tags=["collections"])
     async def add_collection(
@@ -428,6 +455,30 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         org: Organization = Depends(org_viewer_dep),
     ):
         return await colls.get_collection_search_values(org)
+
+    @app.get("/orgs/{oid}/collections/allpublic")
+    async def get_all_public_colls_files(
+        org: Optional[Organization] = Depends(org_public),
+    ):
+        return await colls.get_all_public_colls_files(org)
+
+    @app.post("/orgs/{oid}/collections/publish/ipfs")
+    async def publish_public_ipfs(
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await colls.publish_ipfs_public(org)
+
+    @app.get("/orgs/{oid}/collections/publish/ipfs/{jobid}/status")
+    async def get_publish_ipfs_job_status(
+        jobid: str,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        status = await colls.crawl_manager.get_publish_ipfs_job_status(jobid)
+        res = {"status": status}
+        if org.publishedIPFS:
+            res["publishedIPFS"] = org.publishedIPFS
+
+        return res
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}",

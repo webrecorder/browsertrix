@@ -62,6 +62,7 @@ def main():
             os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         ),
         "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
+        "ipfsGatewayUrl": os.environ.get("IPFS_GATEWAY_URL", ""),
     }
 
     invites = init_invites(mdb, email)

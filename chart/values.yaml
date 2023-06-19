@@ -83,7 +83,16 @@ superuser:
   password: PASSW0RD!
 
 # Set name for default organization created with superuser
-default_org: "My Organization"
+default_org: "My Oranization"
+
+
+# IPFS publishing settings
+
+# set URL for API to write to IPFS
+#ipfs_api_url: <url>
+
+# set URL for publicly-accessible gateway to access content uploaded to IPFS
+#ipfs_gateway_url: <url>
 
 
 # API Image

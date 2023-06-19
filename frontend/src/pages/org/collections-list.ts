@@ -56,6 +56,18 @@ export class CollectionsList extends LiteElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
+  @property({ type: String })
+  private ipfsGatewayUrl?: string; 
+
+  @property({ type: String })
+  private publishedIPFS?: string;
+
+  @property({ type: Boolean })
+  private showPublishingPopup = false;
+
+  @state()
+  private publishedIPFSUrl?: string;
+
   @state()
   private collections?: Collections;
 
@@ -117,6 +129,10 @@ export class CollectionsList extends LiteElement {
     ) {
       this.fetchCollections();
     }
+    if (this.ipfsGatewayUrl && this.publishedIPFS &&
+        (changedProperties.has("ipfsGatewayUrl") || changedProperties.has("publishedIPFS"))) {
+      this.publishedIPFSUrl = this.ipfsGatewayUrl + this.publishedIPFS + "/archives";
+    }
   }
 
   render() {
@@ -127,18 +143,33 @@ export class CollectionsList extends LiteElement {
           ${when(
             this.isCrawler,
             () => html`
-              <sl-button
-                href=${`/orgs/${this.orgId}/collections/new`}
-                variant="primary"
-                size="small"
-                @click=${this.navLink}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create Collection")}
-              </sl-button>
+              <div>
+                <sl-button
+                  variant="success"
+                  size="small"
+                  @click=${this.onIpfsPublish}
+                  >
+                  Publish Public to IPFS
+                </sl-button>
+                <sl-button
+                  href=${`/orgs/${this.orgId}/collections/new`}
+                  variant="primary"
+                  size="small"
+                  @click=${this.navLink}
+                >
+                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                  ${msg("Create Collection")}
+                </sl-button>
+              </div>
             `
           )}
         </div>
+        ${when(this.publishedIPFSUrl,
+          () => html`
+            <div class="p-2 rounded-lg border border-green-500 mb-2">
+              <a class="text-success hover:border-neutral-100 hover:text-neutral-900" target="_blank" href="${this.publishedIPFSUrl}">View Published</a>
+            </div>
+          `)}
       </header>
 
       <link rel="preload" as="image" href=${noCollectionsImg} />
@@ -154,6 +185,8 @@ export class CollectionsList extends LiteElement {
             `
           : this.renderLoading()
       )}
+
+      ${this.renderShowPublishing()}
 
       <btrix-dialog
         label=${msg("Delete Collection?")}
@@ -190,6 +223,17 @@ export class CollectionsList extends LiteElement {
   >
     <sl-spinner></sl-spinner>
   </div>`;
+
+  private renderShowPublishing = () => html`
+    <sl-dialog
+    label=${msg(str`Publishing to IPFS...`)}
+    ?open=${this.showPublishingPopup}
+    @sl-request-close=${() => (this.showPublishingPopup = false)}
+  >
+  <div class="text-center">
+    <sl-spinner style="font-size: 50px; --track-width: 4px;"></sl-spinner>
+  </div>
+  </sl-dialog>`;
 
   private renderEmpty = () => html`
     <div
@@ -365,10 +409,11 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3"
+            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_100px_100px_repeat(2,10ch)_2.5rem] gap-3"
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
+            <div class="col-span-1 text-xs">${msg("Is Public")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
             <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
             <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
@@ -457,7 +502,7 @@ export class CollectionsList extends LiteElement {
         }}
       >
         <div
-          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-5 md:grid-cols-[repeat(2,1fr)_100px_100px_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
           <div class="col-span-1 md:pl-3 truncate font-semibold">
             ${col.name}
@@ -470,6 +515,7 @@ export class CollectionsList extends LiteElement {
                   html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
               )}
           </div>
+          <div class="col-span-1 text-xs">${col.public ? "Yes" : "No"}</div>
           <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
             <sl-format-date
               date=${`${col.modified}Z`}
@@ -650,6 +696,36 @@ export class CollectionsList extends LiteElement {
     );
 
     return data;
+  }
+
+  private async onIpfsPublish() {
+    const res = await this.apiFetch(
+      `/orgs/${this.orgId}/collections/publish/ipfs`,
+      this.authState!, {method: "POST"}
+    );
+
+    const id = res.publishJobId;
+
+    if (!id) {
+      return;
+    }
+
+    this.showPublishingPopup = true;
+
+    while (true) {
+      const res = await this.apiFetch(`/orgs/${this.orgId}/collections/publish/ipfs/${id}/status`,
+      this.authState!);
+      if (res.status === "done" && res.publishedIPFS) {
+        this.publishedIPFS = res.publishedIPFS;
+        break;
+      }
+      if (res.status === "error") {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+
+    this.showPublishingPopup = false;
   }
 }
 customElements.define("btrix-collections-list", CollectionsList);

@@ -425,3 +425,39 @@ class CrawlManager(K8sAPI):
         await self.core_api.patch_namespaced_config_map(
             name=config_map.metadata.name, namespace=self.namespace, body=config_map
         )
+
+    async def run_publish_ipfs_job(self, oid):
+        """run IPFS public job using template"""
+
+        oid = str(oid)
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+        job_id = f"publish-ipfs-{oid[:12]}-{ts_now}"
+        params = {
+            "id": job_id,
+            "oid": oid,
+            "ipfs_api_url": os.environ.get("IPFS_API_URL", ""),
+        }
+
+        data = self.templates.env.get_template("publish_to_ipfs_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data, self.cron_namespace)
+
+        return job_id
+
+    async def get_publish_ipfs_job_status(self, job_id):
+        """get status of ipfs publish job by id"""
+        try:
+            job = await self.batch_api.read_namespaced_job(
+                name=job_id, namespace=self.cron_namespace
+            )
+            if job.status.succeeded:
+                return "done"
+
+            return "running"
+        # pylint: disable=broad-except
+        except Exception as exc:
+            # if job is gone, consider as "done"
+            print(exc)
+            return "done"

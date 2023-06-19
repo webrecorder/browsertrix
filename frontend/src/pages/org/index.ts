@@ -76,6 +76,9 @@ export class Org extends LiteElement {
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
 
+  @property({ type: String })
+  private ipfsGatewayUrl: string | null = null;
+
   @state()
   private org?: OrgData | null;
 
@@ -379,6 +382,8 @@ export class Org extends LiteElement {
     return html`<btrix-collections-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
+      ipfsGatewayUrl=${this.ipfsGatewayUrl}
+      publishedIPFS=${this.org?.publishedIPFS}
       ?isCrawler=${this.isCrawler}
     ></btrix-collections-list>`;
   }
