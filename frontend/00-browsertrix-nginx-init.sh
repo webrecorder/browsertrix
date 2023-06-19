@@ -12,6 +12,11 @@ else
   sed -i "s/\$LOCAL_BUCKET/$LOCAL_BUCKET/g" /etc/nginx/includes/minio.conf
 fi
 
+if [ -z "$LOCAL_IPFS_HOST" ]; then
+  echo "no local ipfs, clearing out ipfs route"
+  echo "" > /etc/nginx/includes/ipfs.conf
+fi
+
 mkdir -p /etc/nginx/resolvers/
 echo resolver $(awk 'BEGIN{ORS=" "} $1=="nameserver" {print $2}' /etc/resolv.conf) valid=10s ipv6=off";" > /etc/nginx/resolvers/resolvers.conf
 

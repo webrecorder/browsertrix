@@ -55,6 +55,11 @@ spec:
               value: "{{ .Values.minio_local_bucket_name }}"
             {{- end }}
 
+            {{- if .Values.ipfs_local }}
+            - name: LOCAL_IPFS_HOST
+              value: "local-ipfs"
+            {{- end }}
+
           resources:
             limits:
               cpu: {{ .Values.frontend_limits_cpu }}
