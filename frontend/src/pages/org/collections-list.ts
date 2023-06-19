@@ -166,8 +166,11 @@ export class CollectionsList extends LiteElement {
         </div>
         ${when(this.publishedIPFSUrl,
           () => html`
-            <div class="p-2 rounded-lg border border-green-500 mb-2">
-              <a class="text-success hover:border-neutral-100 hover:text-neutral-900" target="_blank" href="${this.publishedIPFSUrl}">View Published</a>
+            <div class="text-success p-2 mb-2">
+              <a class="hover:border-neutral-100 hover:text-neutral-900" target="_blank"
+              href="${this.publishedIPFSUrl}">
+              <sl-icon class="align-middle" name="layout-text-sidebar-reverse"></sl-icon>
+              View Published</a>
             </div>
           `)}
       </header>
