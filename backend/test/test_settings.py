@@ -13,7 +13,7 @@ def test_settings():
         "registrationEnabled": False,
         "jwtTokenLifetime": 86400,
         "defaultBehaviorTimeSeconds": 300,
-        "ipfsGatewayUrl": "",
+        "ipfsGatewayUrl": "/ipfs/",
         "maxPagesPerCrawl": 4,
         "defaultPageLoadTimeSeconds": 120,
     }
