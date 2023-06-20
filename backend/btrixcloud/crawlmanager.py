@@ -436,6 +436,9 @@ class CrawlManager(K8sAPI):
             "id": job_id,
             "oid": oid,
             "ipfs_api_url": os.environ.get("IPFS_API_URL", ""),
+            "publish_ipfs_image": os.environ.get("PUBLISH_IPFS_IMAGE", ""),
+            "publish_ipfs_pull_policy": os.environ.get("PUBLISH_IPFS_PULL_POLICY", ""),
+            "replay_root_cid": os.environ.get("IPFS_REPLAY_ROOT_CID", ""),
         }
 
         data = self.templates.env.get_template("publish_to_ipfs_job.yaml").render(

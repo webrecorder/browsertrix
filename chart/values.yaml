@@ -255,6 +255,11 @@ ipfs_api_url: http://local-ipfs:5001/
 ipfs_gateway_url: "/ipfs/"
 
 
+# docker image for publish job
+publish_ipfs_image: "webrecorder/browsertrix-publish-ipfs:latest"
+publish_ipfs_pull_policy: "Always"
+
+
 # IPFS image (optional)
 # =========================================
 ipfs_local: false

@@ -318,9 +318,18 @@ class CollectionOps:
         for coll in colls:
             resources = await self.get_collection_crawl_resources(coll["_id"], org)
 
-            colls_out.append({"name": coll["name"], "resources": resources})
+            colls_out.append(
+                {
+                    "name": coll["name"],
+                    "description": coll.get("description", ""),
+                    "resources": resources,
+                }
+            )
 
-        return {"name": org.name, "collections": colls_out}
+        return {
+            "name": org.name,
+            "collections": colls_out,
+        }
 
     async def publish_ipfs_public(self, org: Organization):
         """start publish job!"""

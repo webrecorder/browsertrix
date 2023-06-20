@@ -66,6 +66,9 @@ data:
 
   IPFS_GATEWAY_URL: "{{ .Values.ipfs_gateway_url }}"
   IPFS_API_URL: "{{ .Values.ipfs_api_url }}"
+  PUBLISH_IPFS_IMAGE: "{{ .Values.publish_ipfs_image }}"
+  PUBLISH_IPFS_PULL_POLICY: "{{ .Values.publish_ipfs_pull_policy }}"
+  IPFS_REPLAY_ROOT_CID: "{{ .Values.ipfs_replay_root_cid }}"
 
 
 ---
