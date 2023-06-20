@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ id }}"
+  labels:
+    btrix.org: "{{ oid }}"
+
+spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: publish-to-ipfs
+          image: "{{ publish_ipfs_image }}"
+          imagePullPolicy: "{{ publish_ipfs_pull_policy }}"
+          env:
+            - name: ORG_ID
+              value: "{{ oid }}"
+
+            - name: DOWNLOAD_ORIGIN
+              value: "http://browsertrix-cloud-frontend"
+
+            - name: KUBO_URL
+              value: "{{ ipfs_api_url }}"
+
+            - name: REPLAY_ROOT_CID
+              value: "{{ replay_root_cid }}"
+
+          envFrom:
+            - secretRef:
+                name: mongo-auth
