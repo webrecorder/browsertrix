@@ -59,12 +59,13 @@ export class CollectionsNew extends LiteElement {
     console.log("submit", e.detail.values);
 
     try {
+      const { name, description, crawlIds, isPublic } = e.detail.values;
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/collections`,
         this.authState!,
         {
           method: "POST",
-          body: JSON.stringify(e.detail.values),
+          body: JSON.stringify({name, description, crawlIds, public: isPublic === "on"}),
         }
       );
 
