@@ -96,20 +96,19 @@ class CollectionOps:
     async def add_collection(
         self,
         oid: uuid.UUID,
-        name: str,
-        crawl_ids: Optional[List[str]],
-        description: str = None,
+        collin: CollIn,
     ):
         """Add new collection"""
-        crawl_ids = crawl_ids if crawl_ids else []
+        crawl_ids = collin.crawl_ids if collin.crawl_ids else []
         coll_id = uuid.uuid4()
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         coll = Collection(
             id=coll_id,
             oid=oid,
-            name=name,
-            description=description,
+            name=collin.name,
+            description=collin.description,
+            public=collin.public,
             modified=modified,
         )
         try:
@@ -121,7 +120,7 @@ class CollectionOps:
                     self.collections, self.crawls, coll_id
                 )
 
-            return {"added": True, "id": coll_id, "name": name}
+            return {"added": True, "id": coll_id, "name": coll.name}
         except pymongo.errors.DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="collection_name_taken")
@@ -411,9 +410,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     async def add_collection(
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.add_collection(
-            org.id, new_coll.name, new_coll.crawlIds, new_coll.description
-        )
+        return await colls.add_collection(org.id, new_coll)
 
     @app.get(
         "/orgs/{oid}/collections",
