@@ -131,7 +131,7 @@ export class CollectionsList extends LiteElement {
     }
     if (this.ipfsGatewayUrl && this.publishedIPFS &&
         (changedProperties.has("ipfsGatewayUrl") || changedProperties.has("publishedIPFS"))) {
-      this.publishedIPFSUrl = this.ipfsGatewayUrl + this.publishedIPFS + "/archives";
+      this.publishedIPFSUrl = this.ipfsGatewayUrl + this.publishedIPFS + "/";
     }
   }
 
