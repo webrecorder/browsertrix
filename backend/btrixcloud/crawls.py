@@ -73,6 +73,9 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
         await self.crawls.create_index([("state", pymongo.HASHED)])
+        await self.crawls.create_index(
+            [("oid", pymongo.HASHED), ("type", pymongo.ASCENDING)]
+        )
 
     async def list_crawls(
         self,

@@ -156,6 +156,7 @@ async def drop_indexes(mdb):
 
 
 # ============================================================================
+# pylint: disable=too-many-arguments
 async def create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops):
     """Create database indexes."""
     print("Creating database indexes", flush=True)

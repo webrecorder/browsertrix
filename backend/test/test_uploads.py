@@ -9,7 +9,6 @@ upload_id = None
 upload_id_2 = None
 upload_dl_path = None
 
-
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -351,8 +350,11 @@ def test_list_all_crawls(admin_auth_headers, default_org_id):
     uploads = [item for item in items if item["type"] == "upload"]
     assert len(uploads) > 0
 
+    manual_archives = [item for item in items if item["type"] == "manual"]
+    assert len(manual_archives) > 0
+
     for item in items:
-        assert item["type"] in ("crawl", "upload")
+        assert item["type"] in ("crawl", "upload", "manual")
 
         if item["type"] == "crawl":
             assert item["firstSeed"]

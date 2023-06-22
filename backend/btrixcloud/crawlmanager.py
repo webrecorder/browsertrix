@@ -17,6 +17,8 @@ from .utils import dt_now, to_k8s_date
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
+    # pylint: disable=too-many-public-methods
+
     def __init__(self):
         super().__init__()
         self.job_image = os.environ["JOB_IMAGE"]
@@ -68,6 +70,44 @@ class CrawlManager(K8sAPI):
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return browserid
+
+    # pylint: disable=too-many-arguments
+    async def run_manual_archiving_browser(
+        self, userid, oid, url, storage=None, storage_name=None
+    ):
+        """run browser for manual archiving session"""
+        # if default storage, use name and path + manual-archives/
+        if storage:
+            storage_name = storage.name
+            storage_path = storage.path + "manual-archives/"
+        # otherwise, use storage name and existing path from secret
+        else:
+            storage_path = ""
+
+        await self.check_storage(storage_name)
+
+        browserid = f"mbr-{secrets.token_hex(5)}"
+
+        params = {
+            "id": browserid,
+            "userid": str(userid),
+            "oid": str(oid),
+            "storage_name": storage_name,
+            "storage_path": storage_path or "",
+            "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
+            "url": url,
+            "vnc_password": secrets.token_hex(16),
+            "started": to_k8s_date(dt_now()),
+            "expire_time": to_k8s_date(dt_now() + timedelta(minutes=30)),
+        }
+
+        data = self.templates.env.get_template("manual_archiving_job.yaml").render(
+            params
+        )
 
         await self.create_from_yaml(data)
 
@@ -239,15 +279,28 @@ class CrawlManager(K8sAPI):
         return self._default_storages[name]
 
     async def get_profile_browser_metadata(self, browserid):
-        """get browser profile labels"""
-        try:
-            browser = await self.get_profile_browser(browserid)
+        """get profile browser metadata labels"""
+        return await self._get_browser_metadata(
+            plural="profilejobs", name=f"profilejob-{browserid}"
+        )
 
-        # pylint: disable=bare-except
-        except:
-            return {}
+    async def get_manual_archiving_browser_metadata(self, browserid):
+        """get manual archiving browser metadata labels"""
+        return await self._get_browser_metadata(
+            plural="manualarchivingjobs", name=f"manualarchivingjob-{browserid}"
+        )
 
-        return browser["metadata"]["labels"]
+    async def delete_profile_browser(self, browserid):
+        """delete profile browser"""
+        return await self.delete_browser(
+            plural="profilejobs", name=f"profilejob-{browserid}"
+        )
+
+    async def delete_manual_archiving_browser(self, browserid):
+        """delete profile browser"""
+        return await self.delete_browser(
+            plural="manualarchivingjobs", name=f"manualarchivingjob-{browserid}"
+        )
 
     async def get_configmap(self, cid):
         """get configmap by id"""
@@ -257,10 +310,11 @@ class CrawlManager(K8sAPI):
 
     async def ping_profile_browser(self, browserid):
         """return ping profile browser"""
-        expire_at = dt_now() + timedelta(seconds=30)
-        await self._patch_job(
-            browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
-        )
+        await self._ping_browser(browserid, "profilejobs")
+
+    async def ping_manual_archiving_browser(self, browserid):
+        """return ping manual archiving browser"""
+        await self._ping_browser(browserid, "manualarchivingjobs")
 
     async def rollover_restart_crawl(self, crawl_id, oid):
         """Rolling restart of crawl by updating forceRestart field"""
@@ -329,6 +383,22 @@ class CrawlManager(K8sAPI):
             raise Exception(f"Storage {storage_name} not found")
 
         return None
+
+    async def _get_browser_metadata(self, plural, name):
+        """get browser labels"""
+        try:
+            browser = await self.get_browser(plural, name)
+
+        # pylint: disable=bare-except
+        except:
+            return {}
+
+        return browser["metadata"]["labels"]
+
+    async def _ping_browser(self, browserid, plural):
+        """return ping browser"""
+        expire_at = dt_now() + timedelta(seconds=30)
+        await self._patch_job(browserid, {"expireTime": to_k8s_date(expire_at)}, plural)
 
     async def _delete_crawl_configs(self, label):
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""

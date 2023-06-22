@@ -25,6 +25,7 @@ from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
+from .manual_archives import init_manual_archives_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler
@@ -121,6 +122,16 @@ def main():
     )
 
     init_uploads_api(
+        app,
+        mdb,
+        user_manager,
+        crawl_manager,
+        crawl_config_ops,
+        org_ops,
+        current_active_user,
+    )
+
+    init_manual_archives_api(
         app,
         mdb,
         user_manager,

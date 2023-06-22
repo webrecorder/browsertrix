@@ -33,6 +33,8 @@ BROWSER_EXPIRE = 300
 class ProfileOps:
     """Profile management"""
 
+    # pylint: disable=duplicate-code
+
     def __init__(self, mdb, crawl_manager):
         self.profiles = mdb["profiles"]
 
@@ -333,7 +335,7 @@ class ProfileOps:
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments,duplicate-code
 def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
     """init profile ops system"""
     ops = ProfileOps(mdb, crawl_manager)

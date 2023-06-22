@@ -45,6 +45,7 @@ class K8sAPI:
         # custom resource's client API
         self.add_custom_resource("CrawlJob", "crawljobs")
         self.add_custom_resource("ProfileJob", "profilejobs")
+        self.add_custom_resource("ManualArchivingJob", "manualarchivingjobs")
 
     def add_custom_resource(self, name, plural):
         """add custom resource"""
@@ -143,15 +144,15 @@ class K8sAPI:
         except ApiException as api_exc:
             return {"error": str(api_exc.reason)}
 
-    async def delete_profile_browser(self, browserid):
-        """delete custom crawljob object"""
+    async def delete_browser(self, plural, name):
+        """delete profile or manual archiving browser"""
         try:
             await self.custom_api.delete_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
-                plural="profilejobs",
-                name=f"profilejob-{browserid}",
+                plural=plural,
+                name=name,
                 grace_period_seconds=0,
                 propagation_policy="Foreground",
             )
@@ -160,14 +161,14 @@ class K8sAPI:
         except ApiException:
             return False
 
-    async def get_profile_browser(self, browserid):
-        """get profile browser"""
+    async def get_browser(self, plural, name):
+        """get profile or manual archiving browser"""
         return await self.custom_api.get_namespaced_custom_object(
             group="btrix.cloud",
             version="v1",
             namespace=self.namespace,
-            plural="profilejobs",
-            name=f"profilejob-{browserid}",
+            plural=plural,
+            name=name,
         )
 
     async def _patch_job(self, crawl_id, body, pluraltype="crawljobs"):

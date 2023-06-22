@@ -329,3 +329,27 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
 @pytest.fixture(scope="session")
 def auto_add_config_id(auto_add_crawl_id):
     return _auto_add_config_id
+
+
+@pytest.fixture(scope="session")
+def manual_browser_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/manual-archives/browser",
+        headers=crawler_auth_headers,
+        json={"url": "https://specs.webrecorder.net"},
+    )
+    assert r.status_code == 200
+
+    return r.json()["browserid"]
+
+
+@pytest.fixture(scope="session")
+def manual_browser_2_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/manual-archives/browser",
+        headers=crawler_auth_headers,
+        json={"url": "https://specs.webrecorder.net"},
+    )
+    assert r.status_code == 200
+
+    return r.json()["browserid"]

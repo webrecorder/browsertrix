@@ -335,7 +335,7 @@ class BaseCrawlOps:
         org: Optional[Organization] = None,
         userid: uuid.UUID = None,
         name: str = None,
-        description: str = None,
+        notes: str = None,
         collection_id: str = None,
         states: Optional[List[str]] = None,
         cls_type: Union[CrawlOut, CrawlOutWithResources] = CrawlOut,
@@ -377,8 +377,8 @@ class BaseCrawlOps:
         if name:
             aggregate.extend([{"$match": {"name": name}}])
 
-        if description:
-            aggregate.extend([{"$match": {"description": description}}])
+        if notes:
+            aggregate.extend([{"$match": {"notes": notes}}])
 
         if collection_id:
             aggregate.extend([{"$match": {"collections": {"$in": [collection_id]}}}])
@@ -474,7 +474,7 @@ def init_base_crawls_api(
         userid: Optional[UUID4] = None,
         name: Optional[str] = None,
         state: Optional[str] = None,
-        description: Optional[str] = None,
+        notes: Optional[str] = None,
         collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
@@ -484,7 +484,7 @@ def init_base_crawls_api(
             org,
             userid=userid,
             name=name,
-            description=description,
+            notes=notes,
             collection_id=collectionId,
             states=states,
             page_size=pageSize,

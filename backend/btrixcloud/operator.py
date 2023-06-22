@@ -128,7 +128,9 @@ class BtrixOperator(K8sAPI):
         browserid = spec.get("id")
 
         if dt_now() >= expire_time:
-            asyncio.create_task(self.delete_profile_browser(browserid))
+            asyncio.create_task(
+                self.delete_browser("profilejobs", f"profilejob-{browserid}")
+            )
             return {"status": {}, "children": []}
 
         params = {}
@@ -143,6 +145,35 @@ class BtrixOperator(K8sAPI):
         params["vnc_password"] = spec.get("vncPassword")
 
         children = self.load_from_yaml("profilebrowser.yaml", params)
+
+        return {"status": {}, "children": children}
+
+    async def sync_manual_archiving_browsers(self, data: MCSyncData):
+        """sync manual archiving browsers"""
+        spec = data.parent.get("spec", {})
+
+        expire_time = from_k8s_date(spec.get("expireTime"))
+        browserid = spec.get("id")
+
+        if dt_now() >= expire_time:
+            asyncio.create_task(
+                self.delete_browser(
+                    "manualarchivingjobs", f"manualarchivingjob-{browserid}"
+                )
+            )
+            return {"status": {}, "children": []}
+
+        params = {}
+        params.update(self.shared_params)
+        params["id"] = browserid
+        params["userid"] = spec.get("userid", "")
+
+        params["storage_name"] = spec.get("storageName", "")
+        params["storage_path"] = spec.get("storagePath", "")
+        params["url"] = spec.get("startUrl", "about:blank")
+        params["vnc_password"] = spec.get("vncPassword")
+
+        children = self.load_from_yaml("manualbrowser.yaml", params)
 
         return {"status": {}, "children": children}
 
@@ -723,6 +754,10 @@ def init_operator_webhook(app):
     @app.post("/op/profilebrowsers/sync")
     async def mc_sync_profile_browsers(data: MCSyncData):
         return await oper.sync_profile_browsers(data)
+
+    @app.post("/op/manualbrowsers/sync")
+    async def mc_sync_manual_archiving_browsers(data: MCSyncData):
+        return await oper.sync_manual_archiving_browsers(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

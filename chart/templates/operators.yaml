@@ -75,3 +75,34 @@ spec:
           name: {{ .Values.name }}-backend
           port: {{ .Values.opPort }}
         path: /op/profilebrowsers/sync
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: manualarchivingjobs-operator
+spec:
+  generateSelector: false
+  resyncPeriodSeconds: 30
+  parentResource:
+    apiVersion: btrix.cloud/v1
+    resource: manualarchivingjobs
+  childResources:
+  - apiVersion: apps/v1
+    resource: statefulsets
+    updateStrategy:
+      method: InPlace
+ 
+  - apiVersion: v1
+    resource: services
+    updateStrategy:
+      method: OnDelete
+ 
+  hooks:
+    sync:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/manualbrowsers/sync

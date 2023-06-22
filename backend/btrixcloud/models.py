@@ -829,3 +829,27 @@ class UserDB(User, fastapi_users_models.BaseUserDB):
     """
 
     invites: Dict[str, InvitePending] = {}
+
+
+# ============================================================================
+
+### MANUAL ARCHIVES ###
+
+
+# ============================================================================
+class ManualArchive(BaseCrawl):
+    """Store state of a finished manual archiving session"""
+
+    type: str = Field("manual", const=True)
+
+    name: str
+
+
+# ============================================================================
+class SessionCreateUpdate(BaseModel):
+    """Manual archiving session metadata for committing current browser to BaseCrawl"""
+
+    browserid: Optional[str]
+    name: str
+    notes: Optional[str] = ""
+    wacz_filename_base: Optional[str] = None

@@ -1,0 +1,29 @@
+apiVersion: btrix.cloud/v1
+kind: ManualArchivingJob
+metadata:
+  name: manualarchivingjob-{{ id }}
+  labels:
+    manualbrowser: "{{ id }}"
+    role: "job"
+    btrix.profile: "1"
+    btrix.org: {{ oid }}
+    btrix.user: {{ userid }}
+
+spec:
+  selector:
+    matchLabels:
+      manualbrowser: "{{ id }}"
+
+  id: "{{ id }}"
+  userid: "{{ userid }}"
+  oid: "{{ oid }}"
+
+  storageName: "{{ storage_name }}"
+  storagePath: "{{ storage_path }}"
+  startUrl: "{{ url }}"
+  vncPassword: "{{ vnc_password }}"
+  started: "{{ started }}"
+
+  {% if expire_time %}
+  expireTime: "{{ expire_time }}"
+  {% endif %}
