@@ -530,9 +530,16 @@ export class CollectionsList extends LiteElement {
               )}
           </div>
           <div class="col-span-1 text-xs">
-            ${col.public
-              ? html`<span class="text-success">Yes</span>`
-              : html`<span class="text-neutral-400">No</span>`}
+            <sl-switch
+              ?checked=${col.public}
+              size="small"
+              @click=${(e: any) => {
+                e.stopPropagation();
+              }}
+              @sl-change=${(e: any) => {
+                this.saveMetadata(col.id, { public: e.target.checked });
+              }}
+            ></sl-switch>
           </div>
           <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
             <sl-format-date
@@ -747,6 +754,20 @@ export class CollectionsList extends LiteElement {
     }
 
     this.showPublishingPopup = false;
+  }
+
+  private saveMetadata(
+    collectionId: string,
+    values: { name?: string; description?: string | null; public?: boolean }
+  ) {
+    return this.apiFetch(
+      `/orgs/${this.orgId}/collections/${collectionId}`,
+      this.authState!,
+      {
+        method: "PATCH",
+        body: JSON.stringify(values),
+      }
+    );
   }
 }
 customElements.define("btrix-collections-list", CollectionsList);
