@@ -57,7 +57,7 @@ export class CollectionsList extends LiteElement {
   isCrawler?: boolean;
 
   @property({ type: String })
-  private ipfsGatewayUrl?: string; 
+  private ipfsGatewayUrl?: string;
 
   @property({ type: String })
   private publishedIPFS?: string;
@@ -129,8 +129,12 @@ export class CollectionsList extends LiteElement {
     ) {
       this.fetchCollections();
     }
-    if (this.ipfsGatewayUrl && this.publishedIPFS &&
-        (changedProperties.has("ipfsGatewayUrl") || changedProperties.has("publishedIPFS"))) {
+    if (
+      this.ipfsGatewayUrl &&
+      this.publishedIPFS &&
+      (changedProperties.has("ipfsGatewayUrl") ||
+        changedProperties.has("publishedIPFS"))
+    ) {
       this.publishedIPFSUrl = this.ipfsGatewayUrl + this.publishedIPFS + "/";
     }
   }
@@ -148,8 +152,8 @@ export class CollectionsList extends LiteElement {
                   variant="success"
                   size="small"
                   @click=${this.onIpfsPublish}
-                  >
-                  Publish Public to IPFS
+                >
+                  Publish to IPFS
                 </sl-button>
                 <sl-button
                   href=${`/orgs/${this.orgId}/collections/new`}
@@ -164,15 +168,24 @@ export class CollectionsList extends LiteElement {
             `
           )}
         </div>
-        ${when(this.publishedIPFSUrl,
+        ${when(
+          this.publishedIPFSUrl,
           () => html`
             <div class="text-success p-2 mb-2">
-              <a class="hover:border-neutral-100 hover:text-neutral-900" target="_blank"
-              href="${this.publishedIPFSUrl}">
-              <sl-icon class="align-middle" name="layout-text-sidebar-reverse"></sl-icon>
-              View Published</a>
+              <a
+                class="hover:border-neutral-100 hover:text-neutral-900"
+                target="_blank"
+                href="${this.publishedIPFSUrl}"
+              >
+                <sl-icon
+                  class="align-middle"
+                  name="layout-text-sidebar-reverse"
+                ></sl-icon>
+                View Published on IPFS</a
+              >
             </div>
-          `)}
+          `
+        )}
       </header>
 
       <link rel="preload" as="image" href=${noCollectionsImg} />
@@ -188,7 +201,6 @@ export class CollectionsList extends LiteElement {
             `
           : this.renderLoading()
       )}
-
       ${this.renderShowPublishing()}
 
       <btrix-dialog
@@ -227,15 +239,14 @@ export class CollectionsList extends LiteElement {
     <sl-spinner></sl-spinner>
   </div>`;
 
-  private renderShowPublishing = () => html`
-    <sl-dialog
+  private renderShowPublishing = () => html` <sl-dialog
     label=${msg(str`Publishing to IPFS...`)}
     ?open=${this.showPublishingPopup}
     @sl-request-close=${() => (this.showPublishingPopup = false)}
   >
-  <div class="text-center">
-    <sl-spinner style="font-size: 50px; --track-width: 4px;"></sl-spinner>
-  </div>
+    <div class="text-center">
+      <sl-spinner style="font-size: 50px; --track-width: 4px;"></sl-spinner>
+    </div>
   </sl-dialog>`;
 
   private renderEmpty = () => html`
@@ -416,7 +427,7 @@ export class CollectionsList extends LiteElement {
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
-            <div class="col-span-1 text-xs">${msg("Is Public")}</div>
+            <div class="col-span-1 text-xs">${msg("Publishable?")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
             <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
             <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
@@ -518,7 +529,11 @@ export class CollectionsList extends LiteElement {
                   html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
               )}
           </div>
-          <div class="col-span-1 text-xs">${col.public ? "Yes" : "No"}</div>
+          <div class="col-span-1 text-xs">
+            ${col.public
+              ? html`<span class="text-success">Yes</span>`
+              : html`<span class="text-neutral-400">No</span>`}
+          </div>
           <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
             <sl-format-date
               date=${`${col.modified}Z`}
@@ -704,7 +719,8 @@ export class CollectionsList extends LiteElement {
   private async onIpfsPublish() {
     const res = await this.apiFetch(
       `/orgs/${this.orgId}/collections/publish/ipfs`,
-      this.authState!, {method: "POST"}
+      this.authState!,
+      { method: "POST" }
     );
 
     const id = res.publishJobId;
@@ -716,8 +732,10 @@ export class CollectionsList extends LiteElement {
     this.showPublishingPopup = true;
 
     while (true) {
-      const res = await this.apiFetch(`/orgs/${this.orgId}/collections/publish/ipfs/${id}/status`,
-      this.authState!);
+      const res = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/publish/ipfs/${id}/status`,
+        this.authState!
+      );
       if (res.status === "done" && res.publishedIPFS) {
         this.publishedIPFS = res.publishedIPFS;
         break;
