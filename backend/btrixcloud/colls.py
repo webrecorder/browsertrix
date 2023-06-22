@@ -99,7 +99,7 @@ class CollectionOps:
         collin: CollIn,
     ):
         """Add new collection"""
-        crawl_ids = collin.crawl_ids if collin.crawl_ids else []
+        crawl_ids = collin.crawlIds if collin.crawlIds else []
         coll_id = uuid.uuid4()
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
