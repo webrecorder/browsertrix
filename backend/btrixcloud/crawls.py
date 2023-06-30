@@ -29,7 +29,7 @@ from .orgs import Organization, MAX_CRAWL_SCALE
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
 from .users import User
-from .utils import dt_now, ts_now, get_redis_crawl_stats, parse_jsonl_error_messages
+from .utils import dt_now, get_redis_crawl_stats, parse_jsonl_error_messages
 from .basecrawls import (
     CrawlFile,
     CrawlFileOut,
@@ -73,6 +73,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     # schedule: Optional[str]
     manual: Optional[bool]
+
+    stopping: Optional[bool] = False
 
 
 # ============================================================================
@@ -718,7 +720,7 @@ async def add_new_crawl(
     crawls, crawl_id: str, crawlconfig: CrawlConfig, userid: UUID4, manual=True
 ):
     """initialize new crawl"""
-    started = ts_now()
+    started = dt_now()
 
     crawl = Crawl(
         id=crawl_id,
@@ -740,7 +742,7 @@ async def add_new_crawl(
 
     try:
         result = await crawls.insert_one(crawl.to_dict())
-        return {"id": str(result.inserted_id), "started": started}
+        return {"id": str(result.inserted_id), "started": str(started)}
     except pymongo.errors.DuplicateKeyError:
         # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
         return False

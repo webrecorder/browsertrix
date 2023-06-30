@@ -45,6 +45,7 @@ class BaseCrawl(BaseMongoModel):
     id: str
 
     userid: UUID4
+    oid: UUID4
 
     started: datetime
     finished: Optional[datetime]
@@ -58,8 +59,6 @@ class BaseCrawl(BaseMongoModel):
     notes: Optional[str]
 
     errors: Optional[List[str]] = []
-
-    stopping: Optional[bool] = False
 
     collections: Optional[List[UUID4]] = []
 
