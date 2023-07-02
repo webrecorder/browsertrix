@@ -151,7 +151,7 @@ async def do_upload_multipart(
         upload_id = mup_resp["UploadId"]
 
         parts = []
-        part_number = 0
+        part_number = 1
 
         while True:
             chunk = await get_next_chunk(file_, min_size)
