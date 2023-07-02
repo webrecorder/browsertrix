@@ -12,13 +12,13 @@ from fastapi import Depends, UploadFile, File
 # from fastapi import HTTPException
 from pydantic import Field
 
-# from starlette.requests import Request
+from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
 from .basecrawls import BaseCrawl, BaseCrawlOps, CrawlFile
 from .users import User
 from .orgs import Organization
-from .storages import do_upload
+from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
 
 
@@ -38,24 +38,62 @@ class UploadOps(BaseCrawlOps):
     """upload ops"""
 
     # pylint: disable=too-many-arguments, too-many-locals
-    async def upload_waczs(
+    async def upload_stream(
+        self,
+        stream,
+        name: str,
+        desc: Optional[str],
+        org: Organization,
+        user: User,
+    ):
+        """Upload streaming file, length unknown"""
+
+        id_ = uuid.uuid4()
+        file_prep = FilePreparer(f"uploads/{id_}/", name)
+
+        async def stream_iter():
+            """iterate over each chunk and compute and digest + total size"""
+            async for chunk in stream:
+                file_prep.add_chunk(chunk)
+                yield chunk
+
+        await do_upload_multipart(
+            org,
+            file_prep.upload_name,
+            stream_iter(),
+            10000000,
+            self.crawl_manager,
+        )
+
+        files = [file_prep.get_crawl_file()]
+
+        return await self._create_upload(files, name, desc, id_, org, user)
+
+    # pylint: disable=too-many-arguments, too-many-locals
+    async def upload_formdata(
         self,
         uploads: List[UploadFile],
         name: Optional[str],
         desc: Optional[str],
         org: Organization,
         user: User,
-        crawl_manager,
     ):
         """handle uploading content to uploads subdir + request subdir"""
         id_ = uuid.uuid4()
         files = []
 
         for upload in uploads:
-            file_reader = CrawlFileReader(upload, f"uploads/{id_}/")
-            await do_upload(org, file_reader.upload_name, file_reader, crawl_manager)
-            files.append(file_reader.get_crawl_file())
+            file_prep = FilePreparer(f"uploads/{id_}/", upload.filename)
+            file_reader = UploadFileReader(upload, file_prep)
 
+            await do_upload_single(
+                org, file_reader.file_prep.upload_name, file_reader, self.crawl_manager
+            )
+            files.append(file_reader.file_prep.get_crawl_file())
+
+        return await self._create_upload(files, name, desc, id_, org, user)
+
+    async def _create_upload(self, files, name, desc, id_, org, user):
         now = dt_now()
         ts_now = now.strftime("%Y%m%d%H%M%S")
         crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
@@ -76,28 +114,34 @@ class UploadOps(BaseCrawlOps):
             finished=now,
         )
 
-        print(uploaded)
         result = await self.crawls.insert_one(uploaded.to_dict())
+        print(uploaded)
 
         return {"id": str(result.inserted_id), "added": True}
 
 
 # ============================================================================
-class CrawlFileReader(BufferedReader):
-    """Compute digest on file upload"""
+class FilePreparer:
+    """wrapper to compute digest / name for streaming upload"""
 
-    def __init__(self, upload, prefix):
-        super().__init__(upload.file._file)
+    def __init__(self, prefix, filename):
         self.upload_size = 0
         self.upload_hasher = hashlib.sha256()
-        self.upload_name = prefix + self.prepare_filename(upload.filename)
+        self.upload_name = prefix + self.prepare_filename(filename)
 
-    def read(self, size, *args):
-        """read and digest file chunk"""
-        buf = super().read(size, *args)
-        self.upload_size += len(buf)
-        self.upload_hasher.update(buf)
-        return buf
+    def add_chunk(self, chunk):
+        """add chunk for file"""
+        self.upload_size += len(chunk)
+        self.upload_hasher.update(chunk)
+
+    def get_crawl_file(self, def_storage_name="default"):
+        """get crawl file"""
+        return CrawlFile(
+            filename=self.upload_name,
+            hash=self.upload_hasher.hexdigest(),
+            size=self.upload_size,
+            def_storage_name=def_storage_name,
+        )
 
     def prepare_filename(self, filename):
         """prepare filename by sanitizing and adding extra string
@@ -108,14 +152,20 @@ class CrawlFileReader(BufferedReader):
         parts[0] += "-" + randstr.decode("utf-8")
         return ".".join(parts)
 
-    def get_crawl_file(self, def_storage_name="default"):
-        """get crawl file"""
-        return CrawlFile(
-            filename=self.upload_name,
-            hash=self.upload_hasher.hexdigest(),
-            size=self.upload_size,
-            def_storage_name=def_storage_name,
-        )
+
+# ============================================================================
+class UploadFileReader(BufferedReader):
+    """Compute digest on file upload"""
+
+    def __init__(self, upload, file_prep):
+        super().__init__(upload.file._file)
+        self.file_prep = file_prep
+
+    def read(self, size, *args):
+        """read and digest file chunk"""
+        chunk = super().read(size, *args)
+        self.file_prep.add_chunk(chunk)
+        return chunk
 
 
 # ============================================================================
@@ -128,12 +178,22 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
     org_crawl_dep = orgs.org_crawl_dep
 
     # pylint: disable=too-many-arguments
-    @app.put("/orgs/{oid}/uploads/wacz", tags=["uploads"])
-    async def upload_waczs(
+    @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
+    async def upload_formdata(
         uploads: List[UploadFile] = File(...),
         name: Optional[str] = "",
         desc: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.upload_waczs(uploads, name, desc, org, user, crawl_manager)
+        return await ops.upload_formdata(uploads, name, desc, org, user)
+
+    @app.put("/orgs/{oid}/uploads/stream", tags=["uploads"])
+    async def upload_stream(
+        request: Request,
+        name: str,
+        desc: Optional[str] = "",
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        return await ops.upload_stream(request.stream(), name, desc, org, user)
