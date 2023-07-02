@@ -136,7 +136,6 @@ async def do_upload_multipart(
             if total >= min_size:
                 break
 
-        print(f"len: {total}")
         if len(bufs) == 1:
             return bufs[0]
         return b"".join(bufs)
@@ -153,32 +152,47 @@ async def do_upload_multipart(
         parts = []
         part_number = 1
 
-        while True:
-            chunk = await get_next_chunk(file_, min_size)
+        try:
+            while True:
+                chunk = await get_next_chunk(file_, min_size)
 
-            resp = await client.upload_part(
+                resp = await client.upload_part(
+                    Bucket=bucket,
+                    Body=chunk,
+                    UploadId=upload_id,
+                    PartNumber=part_number,
+                    Key=key,
+                )
+
+                print(f"part added: {part_number} {len(chunk)} {upload_id}", flush=True)
+
+                parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
+
+                part_number += 1
+
+                if len(chunk) < min_size:
+                    break
+
+            await client.complete_multipart_upload(
                 Bucket=bucket,
-                Body=chunk,
-                UploadId=upload_id,
-                PartNumber=part_number,
                 Key=key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
             )
 
-            parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
+            print(f"Multipart upload succeeded: {upload_id}")
 
-            part_number += 1
+            return True
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            await client.abort_multipart_upload(
+                Bucket=bucket, Key=key, UploadId=upload_id
+            )
 
-            if len(chunk) < min_size:
-                break
+            print(exc)
+            print(f"Multipart upload failed: {upload_id}")
 
-        final_resp = await client.complete_multipart_upload(
-            Bucket=bucket,
-            Key=key,
-            UploadId=upload_id,
-            MultipartUpload={"Parts": parts},
-        )
-
-        return final_resp
+            return False
 
 
 # ============================================================================

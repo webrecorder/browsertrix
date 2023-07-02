@@ -9,7 +9,7 @@ from io import BufferedReader
 from typing import Optional, List
 from fastapi import Depends, UploadFile, File
 
-# from fastapi import HTTPException
+from fastapi import HTTPException
 from pydantic import Field
 
 from starlette.requests import Request
@@ -20,6 +20,9 @@ from .users import User
 from .orgs import Organization
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
+
+
+MIN_UPLOAD_PART_SIZE = 10000000
 
 
 # ============================================================================
@@ -49,7 +52,8 @@ class UploadOps(BaseCrawlOps):
         """Upload streaming file, length unknown"""
 
         id_ = uuid.uuid4()
-        file_prep = FilePreparer(f"uploads/{id_}/", name)
+        prefix = f"{org.id}/uploads/{id_}/"
+        file_prep = FilePreparer(prefix, name)
 
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
@@ -57,13 +61,16 @@ class UploadOps(BaseCrawlOps):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        await do_upload_multipart(
+        print("Stream Upload Start", flush=True)
+
+        if not await do_upload_multipart(
             org,
             file_prep.upload_name,
             stream_iter(),
-            10000000,
+            MIN_UPLOAD_PART_SIZE,
             self.crawl_manager,
-        )
+        ):
+            raise HTTPException(status_code=400, detail="upload_failed")
 
         files = [file_prep.get_crawl_file()]
 
@@ -81,9 +88,10 @@ class UploadOps(BaseCrawlOps):
         """handle uploading content to uploads subdir + request subdir"""
         id_ = uuid.uuid4()
         files = []
+        prefix = f"{org.id}/uploads/{id_}/"
 
         for upload in uploads:
-            file_prep = FilePreparer(f"uploads/{id_}/", upload.filename)
+            file_prep = FilePreparer(prefix, upload.filename)
             file_reader = UploadFileReader(upload, file_prep)
 
             await do_upload_single(
