@@ -160,7 +160,7 @@ class UploadOps(BaseCrawlOps):
 
         oid = org.id if org else None
 
-        query = {}
+        query = {"type": "upload"}
         if oid:
             query["oid"] = oid
 
