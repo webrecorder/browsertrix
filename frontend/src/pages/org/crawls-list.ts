@@ -244,17 +244,23 @@ export class CrawlsList extends LiteElement {
     }
 
     const hasCrawlItems = this.crawls.items.length;
-    const listTypes: { listType: DataListType; label: string }[] = [
+    const listTypes: {
+      listType: DataListType;
+      label: string;
+      icon?: string;
+    }[] = [
       {
         listType: "all",
         label: msg("All"),
       },
       {
         listType: "finished-crawls",
+        icon: "gear-wide-connected",
         label: msg("Finished Crawls"),
       },
       {
         listType: "uploads",
+        icon: "upload",
         label: msg("Uploads"),
       },
     ];
@@ -263,6 +269,7 @@ export class CrawlsList extends LiteElement {
     if (this.isAdminView) {
       listTypes.push({
         listType: "running-crawls",
+        icon: "gear-wide",
         label: msg("Running Crawls"),
       });
     }
@@ -274,7 +281,7 @@ export class CrawlsList extends LiteElement {
             <h1 class="text-xl font-semibold h-8">${msg("Archive Data")}</h1>
           </div>
           <div class="flex gap-2 mb-3">
-            ${listTypes.map(({ label, listType }) => {
+            ${listTypes.map(({ label, listType, icon }) => {
               const isSelected = listType === this.dataListType;
               return html` <btrix-button
                 variant=${isSelected ? "primary" : "neutral"}
@@ -282,8 +289,10 @@ export class CrawlsList extends LiteElement {
                 aria-selected="${isSelected}"
                 href=${`${this.crawlsBaseUrl}?dataListType=${listType}`}
                 @click=${this.navLink}
-                >${label}</btrix-button
-              >`;
+              >
+                ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
+                <span>${label}</span>
+              </btrix-button>`;
             })}
           </div>
           <div

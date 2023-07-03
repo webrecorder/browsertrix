@@ -52,6 +52,7 @@ export class Button extends LitElement {
     .button {
       all: unset;
       display: flex;
+      gap: var(--sl-spacing-x-small);
       align-items: center;
       justify-content: center;
       border-radius: var(--sl-border-radius-small);
