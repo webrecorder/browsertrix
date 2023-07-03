@@ -533,23 +533,23 @@
   resolved "https://registry.npmjs.org/@shoelace-style/animations/-/animations-1.1.0.tgz"
   integrity sha512-Be+cahtZyI2dPKRm8EZSx3YJQ+jLvEcn3xzRP7tM4tqBnvd/eW/64Xh0iOf0t2w5P8iJKfdBbpVNE9naCaOf2g==
 
-"@shoelace-style/localize@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.1.0.tgz#69eae2f6f6f3176af81578396aa237add9df5309"
-  integrity sha512-evGxn5wIQh1/Ks1RbZm7rY4DxPKAUnXKTixZNgnYV/N2V8Bbbvsi+S14gNa42SQNUJK5WooNtlar2B8cehEwZQ==
+"@shoelace-style/localize@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.1.1.tgz#f5b96e35a9a8709aa46d1aaa2359069c0db71534"
+  integrity sha512-NkM/hj3Js6yXCU9WxhsyxRUdyqUUUl/BSvIluUMptQteUWGOJaoyP1iMbOMqO544DYMzBfnoCw66ZHkGuTdKgA==
 
-"@shoelace-style/shoelace@^2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.4.0.tgz#98def9a5a90d5a59d450c1172a81d0386dbd6f2c"
-  integrity sha512-R5YEKs3XpttlOuKyBNDfYMcFqY1ZPfL//7aSKYrMNz7rHQWb23QKlAvYtwhMxRNAF3dNr4aGmyPsvPPXOHZYqQ==
+"@shoelace-style/shoelace@^2.5.1":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/shoelace/-/shoelace-2.5.2.tgz#7d606b09042cfac2a5ac29ecb9ededba091bbc3d"
+  integrity sha512-pUvhI0bUEHzfQOdmj9AsDGspissJWnemhkaxpZCvi1i5MKi1eX73uzmPqziQTLvKUS/e8weSVKLNzqgN8tZDpw==
   dependencies:
     "@ctrl/tinycolor" "^3.5.0"
     "@floating-ui/dom" "^1.2.1"
     "@lit-labs/react" "^1.1.1"
     "@shoelace-style/animations" "^1.1.0"
-    "@shoelace-style/localize" "^3.1.0"
+    "@shoelace-style/localize" "^3.1.1"
     composed-offset-position "^0.0.4"
-    lit "^2.6.1"
+    lit "^2.7.5"
     qr-creator "^1.0.0"
 
 "@sindresorhus/is@^4.0.0":
@@ -4419,15 +4419,6 @@ lit@^2.0.0, lit@^2.3.0, lit@^2.6.0:
     "@lit/reactive-element" "^1.6.0"
     lit-element "^3.2.0"
     lit-html "^2.6.0"
-
-lit@^2.6.1:
-  version "2.7.4"
-  resolved "https://registry.yarnpkg.com/lit/-/lit-2.7.4.tgz#ca63d27fda178dbffae0faf2c882b9910e40842c"
-  integrity sha512-cgD7xrZoYr21mbrkZIuIrj98YTMw/snJPg52deWVV4A8icLyNHI3bF70xsJeAgwTuiq5Kkd+ZR8gybSJDCPB7g==
-  dependencies:
-    "@lit/reactive-element" "^1.6.0"
-    lit-element "^3.3.0"
-    lit-html "^2.7.0"
 
 lit@^2.7.5:
   version "2.7.5"
