@@ -69,6 +69,13 @@ class BaseCrawl(BaseMongoModel):
 
 
 # ============================================================================
+class BaseCrawlOut(ListCrawlOut):
+    """Base crawl output model"""
+
+    type: Optional[str]
+
+
+# ============================================================================
 class DeleteCrawlList(BaseModel):
     """delete crawl list POST body"""
 
@@ -317,7 +324,7 @@ class BaseCrawlOps:
                 res["resources"] = await self._resolve_signed_urls(
                     files, org, res.get("_id")
                 )
-            crawl = ListCrawlOut.from_dict(res)
+            crawl = BaseCrawlOut.from_dict(res)
             crawls.append(crawl)
 
         return crawls, total
