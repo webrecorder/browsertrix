@@ -68,8 +68,10 @@ class BaseCrawl(BaseMongoModel):
 
 
 # ============================================================================
-class BaseCrawlOut(BaseModel):
+class BaseCrawlOut(BaseMongoModel):
     """Base crawl output model"""
+
+    # pylint: disable=duplicate-code
 
     type: Optional[str]
 

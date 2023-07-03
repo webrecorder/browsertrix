@@ -95,6 +95,8 @@ class CrawlOut(Crawl):
 class ListCrawlOut(BaseMongoModel):
     """Crawl output model for list view"""
 
+    # pylint: disable=duplicate-code
+
     id: str
 
     userid: UUID4
