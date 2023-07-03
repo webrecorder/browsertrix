@@ -223,7 +223,7 @@ class UploadOps(BaseCrawlOps):
                 files = [CrawlFile(**data) for data in res["files"]]
                 del res["files"]
                 res["resources"] = await self._resolve_signed_urls(
-                    files, org, upload.id
+                    files, org, res.get("_id")
                 )
             upload = UploadedCrawlOut.from_dict(res)
             uploads.append(upload)

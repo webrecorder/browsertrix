@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 
 from pydantic import BaseModel, UUID4
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
@@ -88,7 +88,7 @@ class DeleteCrawlList(BaseModel):
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
-    # pylint: disable=duplicate-code
+    # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
     def __init__(self, mdb, crawl_manager):
         self.crawls = mdb["crawls"]
@@ -324,7 +324,7 @@ class BaseCrawlOps:
                 files = [CrawlFile(**data) for data in res["files"]]
                 del res["files"]
                 res["resources"] = await self._resolve_signed_urls(
-                    files, org, upload.id
+                    files, org, res.get("_id")
                 )
             crawl = BaseCrawlOut.from_dict(res)
             crawls.append(crawl)
@@ -344,7 +344,7 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(app, mdb, crawl_manager, orgs, user_dep):
+def init_base_crawls_api(app, mdb, crawl_manager, orgs):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code
 
@@ -357,7 +357,7 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs, user_dep):
         "/orgs/{oid}/all-crawls", tags=["crawls"], response_model=PaginatedResponseModel
     )
     async def list_crawls_all_types(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         userid: Optional[UUID4] = None,

@@ -90,7 +90,7 @@ def main():
 
     init_uploads_api(app, mdb, crawl_manager, org_ops, current_active_user)
 
-    init_base_crawls_api(app, mdb, crawl_manager, org_ops, current_active_user)
+    init_base_crawls_api(app, mdb, crawl_manager, org_ops)
 
     profiles = init_profiles_api(mdb, crawl_manager, org_ops, current_active_user)
 
