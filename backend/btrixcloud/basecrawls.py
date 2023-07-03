@@ -8,7 +8,6 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException, Depends
-from .crawls import ListCrawlOut
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
@@ -69,10 +68,44 @@ class BaseCrawl(BaseMongoModel):
 
 
 # ============================================================================
-class BaseCrawlOut(ListCrawlOut):
+class BaseCrawlOut(BaseModel):
     """Base crawl output model"""
 
     type: Optional[str]
+
+    id: str
+
+    userid: UUID4
+    userName: Optional[str]
+
+    oid: UUID4
+    cid: UUID4
+    name: Optional[str]
+    description: Optional[str]
+
+    manual: Optional[bool]
+
+    started: datetime
+    finished: Optional[datetime]
+
+    state: str
+
+    stats: Optional[Dict[str, int]]
+
+    fileSize: int = 0
+    fileCount: int = 0
+
+    tags: Optional[List[str]] = []
+
+    notes: Optional[str]
+
+    firstSeed: Optional[str]
+    seedCount: Optional[int] = 0
+    errors: Optional[List[str]]
+
+    stopping: Optional[bool] = False
+
+    collections: Optional[List[UUID4]] = []
 
 
 # ============================================================================
