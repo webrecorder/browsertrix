@@ -208,7 +208,7 @@ class CrawlOps(BaseCrawlOps):
 
         oid = org.id if org else None
 
-        query = {}
+        query = {"type": "crawl"}
         if oid:
             query["oid"] = oid
 
