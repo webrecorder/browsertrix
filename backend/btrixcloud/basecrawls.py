@@ -346,7 +346,7 @@ class BaseCrawlOps:
 # ============================================================================
 def init_base_crawls_api(app, mdb, crawl_manager, orgs):
     """base crawls api"""
-    # pylint: disable=invalid-name, duplicate-code
+    # pylint: disable=invalid-name, duplicate-code, too-many-arguments
 
     ops = BaseCrawlOps(mdb, crawl_manager)
 
