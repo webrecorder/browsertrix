@@ -27,3 +27,4 @@ custom-elements.json
 /test-results/
 /playwright-report/
 /playwright/.cache/
+webpack-stats.json

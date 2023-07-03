@@ -63,6 +63,7 @@
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
+    "build:analyze": "webpack --mode=development --profile --json=webpack-stats.json && webpack-bundle-analyzer webpack-stats.json",
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "serve": "node scripts/serve.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
@@ -85,6 +86,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "sinon": "^12.0.1",
+    "webpack-bundle-analyzer": "^4.9.0",
     "webpack-dev-server": "^4.3.0"
   },
   "eslintConfig": {

@@ -26,6 +26,12 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
+console.log("litElementVersions app", (window as any).litElementVersions);
+console.log(
+  "reactiveElementVersions app",
+  (window as any).reactiveElementVersions
+);
+console.log("litHtmlVersions app", (window as any).litHtmlVersions);
 
 type DialogContent = {
   label?: TemplateResult | string;
