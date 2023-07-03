@@ -25,7 +25,7 @@ class Migration(BaseMigration):
         Additionally update the configmap for crawl configs with scale > 1
         or crawlTimeout > 0.
         """
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, duplicate-code
         crawl_configs = self.mdb["crawl_configs"]
         crawl_manager = CrawlManager()
 

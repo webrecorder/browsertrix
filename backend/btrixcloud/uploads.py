@@ -10,15 +10,21 @@ from typing import Optional, List
 from fastapi import Depends, UploadFile, File
 
 from fastapi import HTTPException
-from pydantic import Field
+from pydantic import Field, UUID4
 
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
-from .basecrawls import BaseCrawl, BaseCrawlOps, CrawlFile, CrawlFileOut
+from .basecrawls import (
+    BaseCrawl,
+    BaseCrawlOps,
+    CrawlFile,
+    CrawlFileOut,
+    DeleteCrawlList,
+)
 from .users import User
 from .orgs import Organization
-from .pagination import PaginatedResponseModel, paginated_format
+from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
 
@@ -49,7 +55,7 @@ class UploadedCrawlOut(UploadedCrawl):
 class UploadOps(BaseCrawlOps):
     """upload ops"""
 
-    # pylint: disable=too-many-arguments, too-many-locals
+    # pylint: disable=too-many-arguments, too-many-locals, duplicate-code
     async def upload_stream(
         self,
         stream,
@@ -224,6 +230,19 @@ class UploadOps(BaseCrawlOps):
 
         return uploads, total
 
+    async def delete_uploads(
+        self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
+    ):
+        """Delete uploaded crawls"""
+        deleted_count, _, _ = await self.delete_crawls(
+            org, delete_list.crawl_ids, "upload"
+        )
+
+        if deleted_count < 1:
+            raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
+
+        return {"success": True}
+
 
 # ============================================================================
 class FilePreparer:
@@ -276,6 +295,8 @@ class UploadFileReader(BufferedReader):
 # ============================================================================
 def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
     """uploads api"""
+    # pylint: disable=invalid-name
+
     # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
     ops = UploadOps(mdb, crawl_manager)
 
@@ -327,3 +348,10 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
             sort_direction=sortDirection,
         )
         return paginated_format(uploads, total, page, pageSize)
+
+    @app.post("/orgs/{oid}/delete", tags=["uploads"])
+    async def delete_uploads(
+        delete_list: DeleteCrawlList,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.delete_uploads(delete_list, org)
