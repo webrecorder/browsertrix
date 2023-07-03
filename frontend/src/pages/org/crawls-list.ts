@@ -32,6 +32,11 @@ type SearchResult = {
 };
 type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
+export type DataListType =
+  | "all"
+  | "finished-crawls"
+  | "running-crawls"
+  | "uploads";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 30;
@@ -100,6 +105,9 @@ export class CrawlsList extends LiteElement {
   // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
+
+  @property({ type: String })
+  dataListType: DataListType = "all";
 
   /**
    * Fetch & refetch data when needed,
@@ -236,14 +244,47 @@ export class CrawlsList extends LiteElement {
     }
 
     const hasCrawlItems = this.crawls.items.length;
+    const listTypes: { listType: DataListType; label: string }[] = [
+      {
+        listType: "all",
+        label: msg("All"),
+      },
+      {
+        listType: "finished-crawls",
+        label: msg("Finished Crawls"),
+      },
+      {
+        listType: "uploads",
+        label: msg("Uploads"),
+      },
+    ];
+
+    // TODO only running crawls
+    if (this.isAdminView) {
+      listTypes.push({
+        listType: "running-crawls",
+        label: msg("Running Crawls"),
+      });
+    }
 
     return html`
       <main>
         <header class="contents">
-          <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">
-              ${this.isAdminView ? msg("Running Crawls") : msg("Archive Data")}
-            </h1>
+          <div class="flex w-full pb-3 mb-3 border-b">
+            <h1 class="text-xl font-semibold h-8">${msg("Archive Data")}</h1>
+          </div>
+          <div class="flex gap-2 mb-3">
+            ${listTypes.map(({ label, listType }) => {
+              const isSelected = listType === this.dataListType;
+              return html` <btrix-button
+                variant=${isSelected ? "primary" : "neutral"}
+                ?raised=${isSelected}
+                aria-selected="${isSelected}"
+                href=${`${this.crawlsBaseUrl}?dataListType=${listType}`}
+                @click=${this.navLink}
+                >${label}</btrix-button
+              >`;
+            })}
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"

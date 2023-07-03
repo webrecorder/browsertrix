@@ -1,6 +1,7 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
@@ -29,6 +30,7 @@ import type {
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
+import type { DataListType } from "./crawls-list";
 
 export type OrgTab =
   | "crawls"
@@ -44,6 +46,7 @@ type Params = {
   browserId?: string;
   artifactId?: string;
   resourceId?: string;
+  dataListType?: DataListType;
 };
 
 const defaultTab = "crawls";
@@ -252,6 +255,7 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
+      dataListType=${ifDefined(this.params.dataListType)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
     ></btrix-crawls-list>`;
   }
