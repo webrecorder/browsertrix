@@ -300,7 +300,7 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
     # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
     ops = UploadOps(mdb, crawl_manager)
 
-    # org_viewer_dep = orgs.org_viewer_dep
+    org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
 
     # pylint: disable=too-many-arguments
@@ -328,7 +328,7 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
         "/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponseModel
     )
     async def list_uploads(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         userid: Optional[UUID4] = None,
