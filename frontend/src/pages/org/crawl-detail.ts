@@ -239,7 +239,7 @@ export class CrawlDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${isWorkflowArtifact
               ? msg("Back to Crawl Workflow")
-              : msg("Back to Finished Crawls")}</span
+              : msg("Back to Archive Data")}</span
           >
         </a>
       </div>
@@ -576,7 +576,7 @@ export class CrawlDetail extends LiteElement {
 
     const headers = this.authState?.headers;
 
-    const config = JSON.stringify({headers});
+    const config = JSON.stringify({ headers });
 
     const canReplay = replaySource && this.hasFiles;
 
@@ -676,7 +676,8 @@ export class CrawlDetail extends LiteElement {
                 <sl-format-bytes
                   value=${this.crawl.stats.size}
                   display="narrow"
-                ></sl-format-bytes><span>,</span>
+                ></sl-format-bytes
+                ><span>,</span>
                 <span
                   class="font-mono tracking-tighter${this.isActive
                     ? " text-purple-600"
@@ -834,7 +835,9 @@ ${this.crawl?.notes}
 
     if (!this.logs.total) {
       return html`<div class="border rounded-lg p-4">
-        <p class="text-sm text-neutral-400">${msg("No error logs to display.")}</p>
+        <p class="text-sm text-neutral-400">
+          ${msg("No error logs to display.")}
+        </p>
       </div>`;
     }
 
@@ -857,7 +860,10 @@ ${this.crawl?.notes}
     return html`
       <btrix-config-details
         .authState=${this.authState!}
-        .crawlConfig=${{ ...this.crawl, autoAddCollections: this.crawl.collections }}
+        .crawlConfig=${{
+          ...this.crawl,
+          autoAddCollections: this.crawl.collections,
+        }}
         hideTags
       ></btrix-config-details>
     `;

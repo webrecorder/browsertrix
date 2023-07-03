@@ -242,9 +242,7 @@ export class CrawlsList extends LiteElement {
         <header class="contents">
           <div class="flex w-full h-8 mb-4">
             <h1 class="text-xl font-semibold">
-              ${this.isAdminView
-                ? msg("Running Crawls")
-                : msg("Finished Crawls")}
+              ${this.isAdminView ? msg("Running Crawls") : msg("Archive Data")}
             </h1>
           </div>
           <div
@@ -301,7 +299,7 @@ export class CrawlsList extends LiteElement {
             max-options-visible="1"
             placeholder=${this.isAdminView
               ? msg("All Active Crawls")
-              : msg("Finished Crawls")}
+              : msg("Archive Data")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;

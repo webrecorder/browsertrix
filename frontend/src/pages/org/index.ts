@@ -175,11 +175,10 @@ export class Org extends LiteElement {
           })}
           ${this.renderNavTab({
             tabName: "artifacts",
-            label: msg("Finished Crawls"),
+            label: msg("Archive Data"),
             path: "artifacts/crawls",
           })}
-          ${
-            this.renderNavTab({
+          ${this.renderNavTab({
             tabName: "collections",
             label: msg("Collections"),
             path: "collections",
