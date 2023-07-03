@@ -8,6 +8,7 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException, Depends
+from .crawls import ListCrawlOut
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
@@ -65,16 +66,6 @@ class BaseCrawl(BaseMongoModel):
 
     fileSize: int = 0
     fileCount: int = 0
-
-
-# ============================================================================
-class BaseCrawlOut(BaseCrawl):
-    """Output model for all crawl types"""
-
-    userName: Optional[str]
-    resources: Optional[List[CrawlFileOut]] = []
-    name: Optional[str]
-    description: Optional[str]
 
 
 # ============================================================================
@@ -326,7 +317,7 @@ class BaseCrawlOps:
                 res["resources"] = await self._resolve_signed_urls(
                     files, org, res.get("_id")
                 )
-            crawl = BaseCrawlOut.from_dict(res)
+            crawl = ListCrawlOut.from_dict(res)
             crawls.append(crawl)
 
         return crawls, total
