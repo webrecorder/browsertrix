@@ -10,6 +10,7 @@ from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 from .db import BaseMongoModel
 from .orgs import Organization
+from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now
 
@@ -67,6 +68,16 @@ class BaseCrawl(BaseMongoModel):
 
 
 # ============================================================================
+class BaseCrawlOut(BaseCrawl):
+    """Output model for all crawl types"""
+
+    userName: Optional[str]
+    resources: Optional[List[CrawlFileOut]] = []
+    name: Optional[str]
+    description: Optional[str]
+
+
+# ============================================================================
 class DeleteCrawlList(BaseModel):
     """delete crawl list POST body"""
 
@@ -76,6 +87,8 @@ class DeleteCrawlList(BaseModel):
 # ============================================================================
 class BaseCrawlOps:
     """operations that apply to all crawls"""
+
+    # pylint: disable=duplicate-code
 
     def __init__(self, mdb, crawl_manager):
         self.crawls = mdb["crawls"]
@@ -229,3 +242,145 @@ class BaseCrawlOps:
             {"collections": collection_id},
             {"$pull": {"collections": collection_id}},
         )
+
+    async def list_crawls_all_types(
+        self,
+        org: Optional[Organization] = None,
+        userid: uuid.UUID = None,
+        name: str = None,
+        description: str = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: str = None,
+        sort_direction: int = -1,
+    ):
+        """List crawls of all types from the db"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page * page_size
+
+        oid = org.id if org else None
+
+        query = {}
+        if oid:
+            query["oid"] = oid
+
+        if userid:
+            query["userid"] = userid
+
+        aggregate = [{"$match": query}]
+
+        if name:
+            aggregate.extend([{"$match": {"name": name}}])
+
+        if description:
+            aggregate.extend([{"$match": {"description": description}}])
+
+        if sort_by:
+            if sort_by not in ("started", "finished"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "userid",
+                        "foreignField": "id",
+                        "as": "userName",
+                    },
+                },
+                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.crawls.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        crawls = []
+        for res in items:
+            if res.get("files"):
+                files = [CrawlFile(**data) for data in res["files"]]
+                del res["files"]
+                res["resources"] = await self._resolve_signed_urls(
+                    files, org, upload.id
+                )
+            crawl = BaseCrawlOut.from_dict(res)
+            crawls.append(crawl)
+
+        return crawls, total
+
+    async def delete_crawls_all_types(
+        self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
+    ):
+        """Delete uploaded crawls"""
+        deleted_count, _, _ = await self.delete_crawls(org, delete_list.crawl_ids)
+
+        if deleted_count < 1:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        return {"success": True}
+
+
+# ============================================================================
+def init_base_crawls_api(app, mdb, crawl_manager, orgs, user_dep):
+    """base crawls api"""
+    # pylint: disable=invalid-name, duplicate-code
+
+    ops = BaseCrawlOps(mdb, crawl_manager)
+
+    org_viewer_dep = orgs.org_viewer_dep
+    org_crawl_dep = orgs.org_crawl_dep
+
+    @app.get(
+        "/orgs/{oid}/all-crawls", tags=["crawls"], response_model=PaginatedResponseModel
+    )
+    async def list_crawls_all_types(
+        org: Organization = Depends(org_crawl_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        userid: Optional[UUID4] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        sortBy: Optional[str] = "finished",
+        sortDirection: Optional[int] = -1,
+    ):
+        crawls, total = await ops.list_crawls_all_types(
+            org,
+            userid=userid,
+            name=name,
+            description=description,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(crawls, total, page, pageSize)
+
+    @app.post("/orgs/{oid}/all-crawls/delete", tags=["crawls"])
+    async def delete_crawls_all_types(
+        delete_list: DeleteCrawlList,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.delete_crawls_all_types(delete_list, org)
