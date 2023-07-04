@@ -42,7 +42,8 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
         if res["id"] == upload_id:
             found = res
 
-    assert res["name"] == "test.wacz"
+    assert found
+    assert found["name"] == "test.wacz"
     assert "files" not in found
     assert "resources" not in found
 
@@ -94,7 +95,7 @@ def test_upload_form(admin_auth_headers, default_org_id):
     ]
 
     r = requests.put(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata?name=test2.wacz",
         headers=admin_auth_headers,
         files=files,
     )
@@ -121,7 +122,8 @@ def test_list_form_upload(admin_auth_headers, default_org_id):
         if res["id"] == upload_id_2:
             found = res
 
-    assert res["name"] == "test.wacz"
+    assert found
+    assert found["name"] == "test2.wacz"
 
     assert "files" not in res
     assert "resources" not in res
