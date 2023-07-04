@@ -394,7 +394,7 @@ class BaseCrawlOps:
         self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
     ):
         """Delete uploaded crawls"""
-        deleted_count, _, _ = await self.delete_crawls(org, delete_list.crawl_ids)
+        deleted_count, _, _ = await self.delete_crawls(org, delete_list)
 
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
