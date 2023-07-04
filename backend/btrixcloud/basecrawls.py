@@ -293,6 +293,7 @@ class BaseCrawlOps:
         name: str = None,
         description: str = None,
         collection_id: str = None,
+        states: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
@@ -315,6 +316,10 @@ class BaseCrawlOps:
 
         if userid:
             query["userid"] = userid
+
+        if states:
+            # validated_states = [value for value in state if value in ALL_CRAWL_STATES]
+            query["state"] = {"$in": states}
 
         aggregate = [{"$match": query}]
 
