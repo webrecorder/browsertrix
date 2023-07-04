@@ -160,13 +160,6 @@ class UploadOps(BaseCrawlOps):
 
         return {"deleted": True}
 
-    async def get_upload_crawl(self, crawlid: str, org: Organization):
-        """return single upload crawl with resources resolved"""
-        res = await self.get_crawl_raw(crawlid=crawlid, type_="upload", org=org)
-        files = [CrawlFile(**data) for data in res["files"]]
-        res["resources"] = await self._resolve_signed_urls(files, org, res["_id"])
-        return UploadedCrawlOutWithResources.from_dict(res)
-
 
 # ============================================================================
 class FilePreparer:
@@ -281,7 +274,8 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
         response_model=UploadedCrawlOutWithResources,
     )
     async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
-        return await ops.get_upload_crawl(crawlid, org)
+        res = await ops.get_resource_resolved_raw_crawl(crawlid, org, "upload")
+        return UploadedCrawlOutWithResources.from_dict(res)
 
     @app.post("/orgs/{oid}/delete", tags=["uploads"])
     async def delete_uploads(

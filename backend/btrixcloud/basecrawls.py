@@ -154,6 +154,15 @@ class BaseCrawlOps:
 
         return res
 
+    async def get_resource_resolved_raw_crawl(
+        self, crawlid: str, org: Organization, type_=None
+    ):
+        """return single base crawl with resources resolved"""
+        res = await self.get_crawl_raw(crawlid=crawlid, type_=type_, org=org)
+        files = [CrawlFile(**data) for data in res["files"]]
+        res["resources"] = await self._resolve_signed_urls(files, org, res["_id"])
+        return res
+
     async def delete_crawls(
         self, org: Organization, delete_list: DeleteCrawlList, type_=None
     ):
@@ -420,6 +429,15 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
             sort_direction=sortDirection,
         )
         return paginated_format(crawls, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawlid}",
+        tags=["all-crawls"],
+        response_model=BaseCrawlOutWithResources,
+    )
+    async def get_base_crawl(crawlid: str, org: Organization = Depends(org_crawl_dep)):
+        res = await ops.get_resource_resolved_raw_crawl(crawlid, org)
+        return BaseCrawlOutWithResources.from_dict(res)
 
     @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
     async def delete_crawls_all_types(

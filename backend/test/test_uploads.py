@@ -67,6 +67,12 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     assert len(actual) == len(expected)
     assert actual == expected
 
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
 
 def test_delete_stream_upload(admin_auth_headers, default_org_id):
     r = requests.post(
@@ -131,6 +137,12 @@ def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
 
     assert "files" not in result
     assert len(result["resources"]) == 3
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id_2}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
 
 
 def test_delete_form_upload(admin_auth_headers, default_org_id):
