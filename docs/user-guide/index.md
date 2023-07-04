@@ -2,7 +2,7 @@
 
 ## Signup
 
-For all signup options the Name field cannot currently be changed later.
+!!! warning "For all signup options the Name field cannot currently be changed later."
 
 ### Invite Link
 
