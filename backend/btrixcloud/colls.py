@@ -273,7 +273,7 @@ class CollectionOps:
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
-            state=SUCCESSFUL_STATES,
+            states=SUCCESSFUL_STATES,
             page_size=10_000,
             cls_type=BaseCrawlOutWithResources,
         )
