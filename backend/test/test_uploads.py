@@ -181,9 +181,52 @@ def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
     assert r.status_code == 200
 
 
-def test_delete_form_upload(admin_auth_headers, default_org_id):
+def test_list_all_crawls(admin_auth_headers, default_org_id):
+    """Test that /all-crawls lists crawls and uploads before deleting uploads"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    items = data["items"]
+
+    assert len(items) == data["total"]
+
+    crawls = [item for item in items if item["type"] == "crawl"]
+    assert len(crawls) > 0
+
+    uploads = [item for item in items if item["type"] == "upload"]
+    assert len(uploads) > 0
+
+    for item in items:
+        assert item["type"] in ("crawl", "upload")
+        assert item["id"]
+        assert item["userid"]
+        assert item["oid"] == default_org_id
+        assert item["started"]
+        assert item["finished"]
+        assert item["state"]
+
+
+def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):
+    """Test that /all-crawls lists crawls and uploads before deleting uploads"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id_2}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["name"] == "test2.wacz"
+
+    assert "files" not in data
+    assert data["resources"]
+
+
+def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [upload_id_2]},
     )
