@@ -17,6 +17,7 @@ from pathvalidate import sanitize_filename
 
 from .basecrawls import (
     BaseCrawl,
+    BaseCrawlOut,
     BaseCrawlOps,
     CrawlFile,
     CrawlFileOut,
@@ -44,10 +45,16 @@ class UploadedCrawl(BaseCrawl):
 
 
 # ============================================================================
-class UploadedCrawlOut(UploadedCrawl):
+class UploadedCrawlOut(BaseCrawlOut):
     """Output model for Crawl Uploads"""
 
     userName: Optional[str]
+
+
+# ============================================================================
+class UploadedCrawlOutWithResources(UploadedCrawlOut):
+    """Output model for Crawl Uploads with all file resources"""
+
     resources: Optional[List[CrawlFileOut]] = []
 
 
@@ -142,94 +149,6 @@ class UploadOps(BaseCrawlOps):
 
         return {"id": str(result.inserted_id), "added": True}
 
-    async def list_uploads(
-        self,
-        org: Optional[Organization] = None,
-        userid: uuid.UUID = None,
-        name: str = None,
-        description: str = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
-        sort_by: str = None,
-        sort_direction: int = -1,
-    ):
-        """List all uploads from the db"""
-        # Zero-index page for query
-        page = page - 1
-        skip = page * page_size
-
-        oid = org.id if org else None
-
-        query = {"type": "upload"}
-        if oid:
-            query["oid"] = oid
-
-        if userid:
-            query["userid"] = userid
-
-        aggregate = [{"$match": query}]
-
-        if name:
-            aggregate.extend([{"$match": {"name": name}}])
-
-        if description:
-            aggregate.extend([{"$match": {"description": description}}])
-
-        if sort_by:
-            if sort_by not in ("finished"):
-                raise HTTPException(status_code=400, detail="invalid_sort_by")
-            if sort_direction not in (1, -1):
-                raise HTTPException(status_code=400, detail="invalid_sort_direction")
-
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
-
-        aggregate.extend(
-            [
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "userid",
-                        "foreignField": "id",
-                        "as": "userName",
-                    },
-                },
-                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
-                {
-                    "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                },
-            ]
-        )
-
-        # Get total
-        cursor = self.crawls.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        items = result["items"]
-
-        try:
-            total = int(result["total"][0]["count"])
-        except (IndexError, ValueError):
-            total = 0
-
-        uploads = []
-        for res in items:
-            if res.get("files"):
-                files = [CrawlFile(**data) for data in res["files"]]
-                del res["files"]
-                res["resources"] = await self._resolve_signed_urls(
-                    files, org, res.get("_id")
-                )
-            upload = UploadedCrawlOut.from_dict(res)
-            uploads.append(upload)
-
-        return uploads, total
-
     async def delete_uploads(
         self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
     ):
@@ -240,6 +159,13 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
 
         return {"deleted": True}
+
+    async def get_upload_crawl(self, crawlid: str, org: Organization):
+        """return single upload crawl with resources resolved"""
+        res = await self.get_crawl_raw(crawlid=crawlid, type_="upload", org=org)
+        files = [CrawlFile(**data) for data in res["files"]]
+        res["resources"] = await self._resolve_signed_urls(files, org, res["_id"])
+        return UploadedCrawlOutWithResources.from_dict(res)
 
 
 # ============================================================================
@@ -335,7 +261,7 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
-        uploads, total = await ops.list_uploads(
+        uploads, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
             name=name,
@@ -344,8 +270,18 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            type_="upload",
+            cls_type=UploadedCrawlOut,
         )
         return paginated_format(uploads, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/uploads/{crawlid}",
+        tags=["uploads"],
+        response_model=UploadedCrawlOutWithResources,
+    )
+    async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
+        return await ops.get_upload_crawl(crawlid, org)
 
     @app.post("/orgs/{oid}/delete", tags=["uploads"])
     async def delete_uploads(

@@ -78,14 +78,12 @@ class BaseCrawlOut(BaseMongoModel):
     id: str
 
     userid: UUID4
+    oid: UUID4
+
     userName: Optional[str]
 
-    oid: UUID4
-    cid: UUID4
     name: Optional[str]
     description: Optional[str]
-
-    manual: Optional[bool]
 
     started: datetime
     finished: Optional[datetime]
@@ -101,13 +99,16 @@ class BaseCrawlOut(BaseMongoModel):
 
     notes: Optional[str]
 
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
     errors: Optional[List[str]]
 
-    stopping: Optional[bool] = False
-
     collections: Optional[List[UUID4]] = []
+
+
+# ============================================================================
+class BaseCrawlOutWithResources(BaseCrawlOut):
+    """includes resources"""
+
+    resources: Optional[List[CrawlFileOut]] = []
 
 
 # ============================================================================
@@ -189,7 +190,7 @@ class BaseCrawlOps:
         return size
 
     async def _resolve_signed_urls(
-        self, files, org: Organization, crawl_id: Optional[str] = None
+        self, files: List[CrawlFile], org: Organization, crawl_id: Optional[str] = None
     ):
         if not files:
             print("no files")
@@ -276,7 +277,7 @@ class BaseCrawlOps:
             {"$pull": {"collections": collection_id}},
         )
 
-    async def list_crawls_all_types(
+    async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
         userid: uuid.UUID = None,
@@ -286,6 +287,8 @@ class BaseCrawlOps:
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = -1,
+        cls_type: type[BaseCrawlOut] = BaseCrawlOut,
+        type_=None,
     ):
         """List crawls of all types from the db"""
         # Zero-index page for query
@@ -295,6 +298,8 @@ class BaseCrawlOps:
         oid = org.id if org else None
 
         query = {}
+        if type_:
+            query["type"] = type_
         if oid:
             query["oid"] = oid
 
@@ -353,13 +358,16 @@ class BaseCrawlOps:
 
         crawls = []
         for res in items:
+            files = None
             if res.get("files"):
                 files = [CrawlFile(**data) for data in res["files"]]
                 del res["files"]
-                res["resources"] = await self._resolve_signed_urls(
-                    files, org, res.get("_id")
-                )
-            crawl = BaseCrawlOut.from_dict(res)
+
+            crawl = cls_type.from_dict(res)
+            if hasattr(crawl, "resources"):
+                # pylint: disable=attribute-defined-outside-init
+                crawl.resources = await self._resolve_signed_urls(files, org, crawl.id)
+
             crawls.append(crawl)
 
         return crawls, total
@@ -387,9 +395,11 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
     org_crawl_dep = orgs.org_crawl_dep
 
     @app.get(
-        "/orgs/{oid}/all-crawls", tags=["crawls"], response_model=PaginatedResponseModel
+        "/orgs/{oid}/all-crawls",
+        tags=["all-crawls"],
+        response_model=PaginatedResponseModel,
     )
-    async def list_crawls_all_types(
+    async def list_all_base_crawls(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -399,7 +409,7 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
-        crawls, total = await ops.list_crawls_all_types(
+        crawls, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
             name=name,
@@ -411,7 +421,7 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
         )
         return paginated_format(crawls, total, page, pageSize)
 
-    @app.post("/orgs/{oid}/all-crawls/delete", tags=["crawls"])
+    @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
     async def delete_crawls_all_types(
         delete_list: DeleteCrawlList,
         org: Organization = Depends(org_crawl_dep),

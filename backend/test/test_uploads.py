@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from .conftest import API_PREFIX
 
 upload_id = None
+upload_id_2 = None
 upload_dl_path = None
 
 
@@ -42,12 +43,20 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
             found = res
 
     assert res["name"] == "test.wacz"
+    assert "files" not in found
+    assert "resources" not in found
 
-    global upload_dl_path
-    upload_dl_path = found["resources"][0]["path"]
 
+def test_get_stream_upload(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+    assert "files" not in result
+    upload_dl_path = result["resources"][0]["path"]
 
-def test_verify_stream_upload():
     dl_path = urljoin(API_PREFIX, upload_dl_path)
     wacz_resp = requests.get(dl_path)
     actual = wacz_resp.content
@@ -108,7 +117,20 @@ def test_list_form_upload(admin_auth_headers, default_org_id):
 
     assert res["name"] == "test.wacz"
 
-    assert len(found["resources"]) == 3
+    assert "files" not in res
+    assert "resources" not in res
+
+
+def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+
+    assert "files" not in result
+    assert len(result["resources"]) == 3
 
 
 def test_delete_form_upload(admin_auth_headers, default_org_id):
