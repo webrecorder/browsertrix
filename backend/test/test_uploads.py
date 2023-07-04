@@ -10,6 +10,7 @@ upload_dl_path = None
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 def test_upload_stream(admin_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "example.wacz"), "rb") as fh:
         r = requests.put(
@@ -25,7 +26,7 @@ def test_upload_stream(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
 
 
-def test_list_uploads(admin_auth_headers, default_org_id):
+def test_list_stream_upload(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads",
         headers=admin_auth_headers,
@@ -34,14 +35,19 @@ def test_list_uploads(admin_auth_headers, default_org_id):
 
     assert len(results["items"]) > 0
 
-    assert results["items"][0]["id"] == upload_id
+    found = None
 
-    assert results["items"][0]["name"] == "test.wacz"
+    for res in results["items"]:
+        if res["id"] == upload_id:
+            found = res
+
+    assert res["name"] == "test.wacz"
 
     global upload_dl_path
-    upload_dl_path = results["items"][0]["resources"][0]["path"]
+    upload_dl_path = found["resources"][0]["path"]
 
-def test_verify_upload():
+
+def test_verify_stream_upload():
     dl_path = urljoin(API_PREFIX, upload_dl_path)
     wacz_resp = requests.get(dl_path)
     actual = wacz_resp.content
@@ -52,14 +58,79 @@ def test_verify_upload():
     assert len(actual) == len(expected)
     assert actual == expected
 
-def test_delete_uploads(admin_auth_headers, default_org_id):
+
+def test_delete_stream_upload(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/delete",
         headers=admin_auth_headers,
-        json={"crawl_ids": [upload_id]}
-        #json=[upload_id]
+        json={"crawl_ids": [upload_id]},
     )
     assert r.json()["deleted"] == True
+
+
+def test_upload_form(admin_auth_headers, default_org_id):
+    with open("test.wacz", "rb") as fh:
+        data = fh.read()
+
+    files = [
+        ("uploads", ("test.wacz", data, "application/octet-stream")),
+        ("uploads", ("test-2.wacz", data, "application/octet-stream")),
+        ("uploads", ("test.wacz", data, "application/octet-stream")),
+    ]
+
+    r = requests.put(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata",
+        headers=admin_auth_headers,
+        files=files,
+    )
+
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    global upload_id_2
+    upload_id_2 = r.json()["id"]
+
+
+def test_list_form_upload(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    results = r.json()
+
+    assert len(results["items"]) > 0
+
+    found = None
+
+    for res in results["items"]:
+        if res["id"] == upload_id_2:
+            found = res
+
+    assert res["name"] == "test.wacz"
+
+    assert len(found["resources"]) == 3
+
+
+def test_delete_form_upload(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/delete",
+        headers=admin_auth_headers,
+        json={"crawl_ids": [upload_id_2]},
+    )
+    assert r.json()["deleted"] == True
+
+
+def test_ensure_deleted(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    results = r.json()
+
+    for res in results["items"]:
+        if res["id"] in (upload_id_2, upload_id):
+            assert False
+
 
 def read_in_chunks(fh, blocksize=1024):
     """Lazy function (generator) to read a file piece by piece.
@@ -69,4 +140,3 @@ def read_in_chunks(fh, blocksize=1024):
         if not data:
             break
         yield data
-
