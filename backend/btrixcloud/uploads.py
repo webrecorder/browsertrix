@@ -62,7 +62,7 @@ class UploadedCrawlOutWithResources(UploadedCrawlOut):
 class UploadOps(BaseCrawlOps):
     """upload ops"""
 
-    # pylint: disable=too-many-arguments, too-many-locals, duplicate-code
+    # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
         self,
         stream,
@@ -70,10 +70,18 @@ class UploadOps(BaseCrawlOps):
         desc: Optional[str],
         org: Organization,
         user: User,
+        replaceId: Optional[str],
     ):
         """Upload streaming file, length unknown"""
 
-        id_ = uuid.uuid4()
+        prev_upload = None
+        if replaceId:
+            prev_upload = await self.get_crawl_raw(replaceId, org, "upload")
+            if not prev_upload:
+                replaceId = None
+
+        id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
+
         prefix = f"{org.id}/uploads/{id_}/"
         file_prep = FilePreparer(prefix, name)
 
@@ -95,6 +103,13 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=400, detail="upload_failed")
 
         files = [file_prep.get_crawl_file()]
+
+        if prev_upload:
+            try:
+                await self._delete_crawl_files(prev_upload, org)
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                print("replace file deletion failed", exc)
 
         return await self._create_upload(files, name, desc, id_, org, user)
 
@@ -125,8 +140,9 @@ class UploadOps(BaseCrawlOps):
 
     async def _create_upload(self, files, name, desc, id_, org, user):
         now = dt_now()
-        ts_now = now.strftime("%Y%m%d%H%M%S")
-        crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
+        # ts_now = now.strftime("%Y%m%d%H%M%S")
+        # crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
+        crawl_id = str(id_)
 
         file_size = sum(file_.size for file_ in files)
 
@@ -144,10 +160,12 @@ class UploadOps(BaseCrawlOps):
             finished=now,
         )
 
-        result = await self.crawls.insert_one(uploaded.to_dict())
-        print(uploaded)
-
-        return {"id": str(result.inserted_id), "added": True}
+        # result = await self.crawls.insert_one(uploaded.to_dict())
+        # return {"id": str(result.inserted_id), "added": True}
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
+        )
+        return {"id": crawl_id, "added": True}
 
     async def delete_uploads(
         self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
@@ -236,10 +254,13 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
         request: Request,
         name: str,
         desc: Optional[str] = "",
+        replaceId: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.upload_stream(request.stream(), name, desc, org, user)
+        return await ops.upload_stream(
+            request.stream(), name, desc, org, user, replaceId
+        )
 
     @app.get(
         "/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponseModel

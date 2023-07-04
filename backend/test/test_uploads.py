@@ -13,7 +13,7 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_upload_stream(admin_auth_headers, default_org_id):
-    with open(os.path.join(curr_dir, "example.wacz"), "rb") as fh:
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
             f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test.wacz",
             headers=admin_auth_headers,
@@ -62,7 +62,7 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     wacz_resp = requests.get(dl_path)
     actual = wacz_resp.content
 
-    with open(os.path.join(curr_dir, "example.wacz"), "rb") as fh:
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         expected = fh.read()
 
     assert len(actual) == len(expected)
@@ -75,6 +75,40 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     assert r.status_code == 200
 
 
+def test_replace_upload(admin_auth_headers, default_org_id):
+    with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test.wacz&replaceId={upload_id}",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    assert upload_id == r.json()["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+
+    # only one file, previous file removed
+    assert len(result["resources"]) == 1
+
+    dl_path = urljoin(API_PREFIX, result["resources"][0]["path"])
+    wacz_resp = requests.get(dl_path)
+    actual = wacz_resp.content
+
+    with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
+        expected = fh.read()
+
+    assert len(actual) == len(expected)
+    assert actual == expected
+
+
 def test_delete_stream_upload(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/delete",
@@ -85,7 +119,7 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
 
 
 def test_upload_form(admin_auth_headers, default_org_id):
-    with open(os.path.join(curr_dir, "example.wacz"), "rb") as fh:
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         data = fh.read()
 
     files = [

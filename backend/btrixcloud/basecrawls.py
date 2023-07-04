@@ -172,10 +172,10 @@ class BaseCrawlOps:
         size = 0
 
         for crawl_id in delete_list.crawl_ids:
-            size += await self._delete_crawl_files(org, crawl_id)
-            art = await self.get_crawl_raw(crawl_id, org)
-            if art.get("cid"):
-                cids_to_update.add(art.get("cid"))
+            crawl = await self.get_crawl_raw(crawl_id, org)
+            size += await self._delete_crawl_files(crawl, org)
+            if crawl.get("cid"):
+                cids_to_update.add(crawl.get("cid"))
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         if type_:
@@ -185,10 +185,9 @@ class BaseCrawlOps:
 
         return res.deleted_count, size, cids_to_update
 
-    async def _delete_crawl_files(self, org: Organization, crawl_id: str):
+    async def _delete_crawl_files(self, crawl, org: Organization):
         """Delete files associated with crawl from storage."""
-        art_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = BaseCrawl.from_dict(art_raw)
+        crawl = BaseCrawl.from_dict(crawl)
         size = 0
         for file_ in crawl.files:
             size += file_.size
@@ -286,12 +285,14 @@ class BaseCrawlOps:
             {"$pull": {"collections": collection_id}},
         )
 
+    # pylint: disable=too-many-branches
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
         userid: uuid.UUID = None,
         name: str = None,
         description: str = None,
+        collection_id: str = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
@@ -322,6 +323,9 @@ class BaseCrawlOps:
 
         if description:
             aggregate.extend([{"$match": {"description": description}}])
+
+        if collection_id:
+            aggregate.extend([{"$match": {"collections": {"$in": [collection_id]}}}])
 
         if sort_by:
             if sort_by not in ("started", "finished"):
