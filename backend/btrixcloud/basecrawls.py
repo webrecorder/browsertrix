@@ -399,7 +399,7 @@ class BaseCrawlOps:
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
-        return {"success": True}
+        return {"deleted": True}
 
 
 # ============================================================================
