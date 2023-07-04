@@ -84,7 +84,7 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
 
 
 def test_upload_form(admin_auth_headers, default_org_id):
-    with open("test.wacz", "rb") as fh:
+    with open(os.path.join(curr_dir, "example.wacz"), "rb") as fh:
         data = fh.read()
 
     files = [
