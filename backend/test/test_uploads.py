@@ -76,6 +76,12 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
 
 
 def test_replace_upload(admin_auth_headers, default_org_id):
+    actual_id = do_upload_replace(admin_auth_headers, default_org_id, upload_id)
+
+    assert upload_id == actual_id
+
+
+def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
         r = requests.put(
             f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test.wacz&replaceId={upload_id}",
@@ -85,11 +91,10 @@ def test_replace_upload(admin_auth_headers, default_org_id):
 
     assert r.status_code == 200
     assert r.json()["added"]
-
-    assert upload_id == r.json()["id"]
+    actual_id = r.json()["id"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{actual_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -108,6 +113,8 @@ def test_replace_upload(admin_auth_headers, default_org_id):
     assert len(actual) == len(expected)
     assert actual == expected
 
+    return actual_id
+
 
 def test_delete_stream_upload(admin_auth_headers, default_org_id):
     r = requests.post(
@@ -117,6 +124,25 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
     )
     assert r.json()["deleted"] == True
 
+
+def test_replace_upload_non_existent(admin_auth_headers, default_org_id):
+    global upload_id
+
+    # same replacement, but now to a non-existent upload
+    actual_id = do_upload_replace(admin_auth_headers, default_org_id, upload_id)
+
+    # new upload_id created
+    assert actual_id != upload_id
+
+    upload_id = actual_id
+
+def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+        headers=admin_auth_headers,
+        json={"crawl_ids": [upload_id]},
+    )
+    assert r.json()["deleted"] == True
 
 def test_upload_form(admin_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:

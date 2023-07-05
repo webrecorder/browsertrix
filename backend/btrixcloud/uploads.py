@@ -76,8 +76,10 @@ class UploadOps(BaseCrawlOps):
 
         prev_upload = None
         if replaceId:
-            prev_upload = await self.get_crawl_raw(replaceId, org, "upload")
-            if not prev_upload:
+            try:
+                prev_upload = await self.get_crawl_raw(replaceId, org, "upload")
+            except HTTPException:
+                # not found
                 replaceId = None
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
