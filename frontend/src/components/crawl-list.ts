@@ -512,11 +512,11 @@ export class CrawlList extends LitElement {
   render() {
     return html` <div class="listHeader row">
         <div class="col">
-          <slot name="idCol">${msg("Workflow")}</slot>
+          <slot name="idCol">${msg("Name")}</slot>
         </div>
         <div class="col">${msg("Finished")}</div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Started By")}</div>
+        <div class="col">${msg("Created By")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>

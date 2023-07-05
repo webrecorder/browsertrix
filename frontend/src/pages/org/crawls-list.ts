@@ -579,14 +579,19 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
         `
       )}
+      ${when(
+        crawl.type !== "upload",
+        () => html`
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
+          >
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+            ${msg("Go to Workflow")}
+          </sl-menu-item>
+        `
+      )}
 
-      <sl-menu-item
-        @click=${() =>
-          this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
-      >
-        <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-        ${msg("Go to Workflow")}
-      </sl-menu-item>
       <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
         <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
         ${msg("Copy Workflow ID")}
