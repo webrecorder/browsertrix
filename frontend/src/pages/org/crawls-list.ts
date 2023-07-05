@@ -611,7 +611,7 @@ export class CrawlsList extends LiteElement {
             @click=${() => this.deleteCrawl(crawl)}
           >
             <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Delete Crawl")}
+            ${crawl.type === "upload" ? msg("Delete Upload") : msg("Delete Crawl")}
           </sl-menu-item>
         `
       )}
@@ -863,17 +863,36 @@ export class CrawlsList extends LiteElement {
   }
 
   private async deleteCrawl(crawl: Crawl) {
+    const typeName = crawl.type === "upload" ? "upload" : "crawl";
+
     if (
       !window.confirm(
-        msg(str`Are you sure you want to delete crawl of ${crawl.name}?`)
+        msg(str`Are you sure you want to delete ${typeName} of ${crawl.name}?`)
       )
     ) {
       return;
     }
+    
+    let apiPath;
+
+    switch (this.dataListType) {
+      case "all":
+        apiPath = "all-crawls";
+        break;
+
+      case "finished-crawls":
+      case "running-crawls":
+        apiPath = "crawls";
+        break;
+
+      case "uploads":
+        apiPath = "uploads";
+        break;
+    }
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawls/delete`,
+        `/orgs/${crawl.oid}/${apiPath}/delete`,
         this.authState!,
         {
           method: "POST",
@@ -889,7 +908,7 @@ export class CrawlsList extends LiteElement {
         items: items.filter((c) => c.id !== crawl.id),
       };
       this.notify({
-        message: msg(`Successfully deleted crawl`),
+        message: msg(`Successfully deleted ${typeName}`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -898,7 +917,7 @@ export class CrawlsList extends LiteElement {
       this.notify({
         message:
           (e.isApiError && e.message) ||
-          msg("Sorry, couldn't run crawl at this time."),
+          msg(`Sorry, couldn't run ${typeName} at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
       });
