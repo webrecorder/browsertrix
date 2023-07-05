@@ -428,7 +428,7 @@ export class WorkflowDetail extends LiteElement {
           this.getWorkflowPromise?.then(
             () => html`
               ${when(this.activePanel === "watch", () =>
-                this.lastCrawlId
+                this.workflow?.isCrawlRunning
                   ? html` <div class="border rounded-lg py-2 mb-5 h-14">
                         ${this.renderCurrentCrawl()}
                       </div>
