@@ -358,20 +358,23 @@ export class CrawlDetail extends LiteElement {
             icon: "folder-fill",
             label: msg("Files"),
           })}
-          ${when(this.crawlType === "crawl", () =>
-            renderNavItem({
-              section: "logs",
-              iconLibrary: "default",
-              icon: "terminal-fill",
-              label: msg("Error Logs"),
-            })
+          ${when(
+            this.crawlType === "crawl",
+            () => html`
+              ${renderNavItem({
+                section: "logs",
+                iconLibrary: "default",
+                icon: "terminal-fill",
+                label: msg("Error Logs"),
+              })}
+              ${renderNavItem({
+                section: "config",
+                iconLibrary: "default",
+                icon: "file-code-fill",
+                label: msg("Config"),
+              })}
+            `
           )}
-          ${renderNavItem({
-            section: "config",
-            iconLibrary: "default",
-            icon: "file-code-fill",
-            label: msg("Config"),
-          })}
         </ul>
       </nav>
     `;
