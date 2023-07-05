@@ -664,7 +664,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <div class="border-t border-b py-5">
-        <p class="text-center text-neutral-500">${msg("No crawls yet.")}</p>
+        <p class="text-center text-neutral-500">${this.dataListType === "uploads" ? msg("No uploads yet.") : msg("No crawls yet.")}</p>
       </div>
     `;
   }
@@ -908,7 +908,7 @@ export class CrawlsList extends LiteElement {
         items: items.filter((c) => c.id !== crawl.id),
       };
       this.notify({
-        message: msg(`Successfully deleted ${typeName}`),
+        message: msg(str`Successfully deleted ${typeName}`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -917,7 +917,7 @@ export class CrawlsList extends LiteElement {
       this.notify({
         message:
           (e.isApiError && e.message) ||
-          msg(`Sorry, couldn't run ${typeName} at this time.`),
+          msg(str`Sorry, couldn't run ${typeName} at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
       });
