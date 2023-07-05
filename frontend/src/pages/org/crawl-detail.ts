@@ -460,15 +460,14 @@ export class CrawlDetail extends LiteElement {
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
                 ${msg("Go to Workflow")}
               </sl-menu-item>
+              <sl-menu-item
+                @click=${() => CopyButton.copyToClipboard(this.crawl!.cid)}
+              >
+                <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+                ${msg("Copy Workflow ID")}
+              </sl-menu-item>
             `
           )}
-
-          <sl-menu-item
-            @click=${() => CopyButton.copyToClipboard(this.crawl!.cid)}
-          >
-            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-            ${msg("Copy Workflow ID")}
-          </sl-menu-item>
           <sl-menu-item
             @click=${() =>
               CopyButton.copyToClipboard(this.crawl!.tags.join(", "))}

@@ -580,7 +580,7 @@ export class CrawlsList extends LiteElement {
         `
       )}
       ${when(
-        crawl.type !== "upload",
+        crawl.type === "crawl",
         () => html`
           <sl-menu-item
             @click=${() =>
@@ -589,17 +589,16 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Workflow")}
           </sl-menu-item>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.id)}>
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Crawl ID")}
+          </sl-menu-item>
         `
       )}
-
-      <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
-        <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-        ${msg("Copy Workflow ID")}
-      </sl-menu-item>
-      <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.id)}>
-        <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-        ${msg("Copy Crawl ID")}
-      </sl-menu-item>
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(crawl.tags.join(", "))}
         ?disabled=${!crawl.tags.length}
