@@ -250,6 +250,7 @@ export class CrawlListItem extends LitElement {
               <btrix-crawl-status
                 state=${workflow.state}
                 hideLabel
+                ?isUpload=${workflow.type === "upload"}
               ></btrix-crawl-status>
               <slot name="id">${this.renderName(workflow)}</slot>
             `
