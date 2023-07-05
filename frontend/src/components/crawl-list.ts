@@ -318,6 +318,10 @@ export class CrawlListItem extends LitElement {
           </div>`;
         })}
         ${this.safeRender((crawl) => {
+          if (crawl.type === "upload") {
+            // TODO add back once API supports page count
+            return;
+          }
           if (crawl.finished) {
             const pagesComplete = +(crawl.stats?.done || 0);
             return html`

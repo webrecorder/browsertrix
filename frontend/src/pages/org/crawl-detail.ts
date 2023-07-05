@@ -686,26 +686,30 @@ export class CrawlDetail extends LiteElement {
             : html`<sl-skeleton class="h-5"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
-          ${this.crawl?.stats
-            ? html`
-                <sl-format-bytes
-                  value=${+this.crawl.stats.size}
-                  display="narrow"
-                ></sl-format-bytes
-                ><span>,</span>
-                <span
-                  class="font-mono tracking-tighter${this.isActive
-                    ? " text-purple-600"
-                    : ""}"
-                >
-                  ${this.numberFormatter.format(+this.crawl.stats.done)}
-                  <span class="text-0-400">/</span>
-                  ${this.numberFormatter.format(+this.crawl.stats.found)}
-                </span>
-                <span> pages</span>
-              `
-            : this.crawl
-            ? html` <span class="text-0-400">${msg("Unknown")}</span> `
+          ${this.crawl
+            ? html`${this.crawl.fileSize
+                ? html`<sl-format-bytes
+                      value=${this.crawl.fileSize || 0}
+                      display="narrow"
+                    ></sl-format-bytes
+                    >${this.crawl.stats
+                      ? html`<span>,</span
+                          ><span
+                            class="font-mono tracking-tighter${this.isActive
+                              ? " text-purple-600"
+                              : ""}"
+                          >
+                            ${this.numberFormatter.format(
+                              +this.crawl.stats.done
+                            )}
+                            <span class="text-0-400">/</span>
+                            ${this.numberFormatter.format(
+                              +this.crawl.stats.found
+                            )}
+                          </span>
+                          <span> pages</span>`
+                      : ""}`
+                : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-5"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Initiator")}>
