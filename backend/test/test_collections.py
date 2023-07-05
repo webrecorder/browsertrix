@@ -1,4 +1,5 @@
 import requests
+import os
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
