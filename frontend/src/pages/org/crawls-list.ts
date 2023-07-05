@@ -611,7 +611,9 @@ export class CrawlsList extends LiteElement {
             @click=${() => this.deleteCrawl(crawl)}
           >
             <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${crawl.type === "upload" ? msg("Delete Upload") : msg("Delete Crawl")}
+            ${crawl.type === "upload"
+              ? msg("Delete Upload")
+              : msg("Delete Crawl")}
           </sl-menu-item>
         `
       )}
@@ -664,7 +666,11 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <div class="border-t border-b py-5">
-        <p class="text-center text-neutral-500">${this.dataListType === "uploads" ? msg("No uploads yet.") : msg("No crawls yet.")}</p>
+        <p class="text-center text-neutral-500">
+          ${this.dataListType === "uploads"
+            ? msg("No uploads yet.")
+            : msg("No crawls yet.")}
+        </p>
       </div>
     `;
   }
@@ -863,7 +869,8 @@ export class CrawlsList extends LiteElement {
   }
 
   private async deleteCrawl(crawl: Crawl) {
-    const typeName = crawl.type === "upload" ? "upload" : "crawl";
+    // TODO check if this makes translating entire string difficult:
+    const typeName = crawl.type === "upload" ? msg("upload") : msg("crawl");
 
     if (
       !window.confirm(
@@ -872,7 +879,7 @@ export class CrawlsList extends LiteElement {
     ) {
       return;
     }
-    
+
     let apiPath;
 
     switch (this.dataListType) {
