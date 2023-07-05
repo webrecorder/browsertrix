@@ -90,6 +90,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   userId!: string;
 
+  @property({ type: String })
+  orgId?: string;
+
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -115,9 +118,6 @@ export class CrawlsList extends LiteElement {
    **/
   @property({ type: Boolean })
   shouldFetch?: boolean;
-
-  @state()
-  private crawlStates: CrawlState[] = finishedCrawlStates;
 
   @state()
   private crawls?: Crawls;
@@ -181,9 +181,6 @@ export class CrawlsList extends LiteElement {
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAdminView") && this.isAdminView === true) {
-      // TODO better handling of using same crawls-list
-      // component between superadmin view and regular view
-      this.crawlStates = activeCrawlStates;
       this.orderBy = {
         field: "started",
         direction: sortableFields["started"].defaultDirection!,
@@ -195,11 +192,19 @@ export class CrawlsList extends LiteElement {
       changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
-      changedProperties.has("orderBy")
+      changedProperties.has("orderBy") ||
+      changedProperties.has("dataListType")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
           throw new Error("Crawls base URL not defined");
+        }
+        if (changedProperties.has("dataListType")) {
+          this.filterBy = {};
+          this.orderBy = {
+            field: "finished",
+            direction: sortableFields["finished"].defaultDirection!,
+          };
         }
 
         this.fetchCrawls({
@@ -250,27 +255,27 @@ export class CrawlsList extends LiteElement {
       icon?: string;
     }[] = [
       {
-        listType: "all",
-        label: msg("All"),
-      },
-      {
         listType: "finished-crawls",
         icon: "gear-wide-connected",
         label: msg("Finished Crawls"),
       },
-      {
-        listType: "uploads",
-        icon: "upload",
-        label: msg("Uploads"),
-      },
     ];
 
-    // TODO only running crawls
     if (this.isAdminView) {
-      listTypes.push({
+      listTypes.unshift({
         listType: "running-crawls",
         icon: "gear-wide",
         label: msg("Running Crawls"),
+      });
+    } else {
+      listTypes.unshift({
+        listType: "all",
+        label: msg("All"),
+      });
+      listTypes.push({
+        listType: "uploads",
+        icon: "upload",
+        label: msg("Uploads"),
       });
     }
 
@@ -349,7 +354,7 @@ export class CrawlsList extends LiteElement {
             max-options-visible="1"
             placeholder=${this.isAdminView
               ? msg("All Active Crawls")
-              : msg("Archive Data")}
+              : msg("Finished Crawls")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -359,7 +364,10 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${this.crawlStates.map(this.renderStatusMenuItem)}
+            ${(this.dataListType === "running-crawls"
+              ? activeCrawlStates
+              : finishedCrawlStates
+            ).map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -687,7 +695,29 @@ export class CrawlsList extends LiteElement {
 
     this.cancelInProgressGetCrawls();
     try {
-      const crawls = await this.getCrawls(params);
+      let crawls = this.crawls;
+      switch (this.dataListType) {
+        case "all":
+          crawls = await this.getAllCrawls(params);
+          break;
+        case "finished-crawls":
+          crawls = await this.getCrawls({
+            ...params,
+            state: this.filterBy.state || finishedCrawlStates,
+          });
+          break;
+        case "running-crawls":
+          crawls = await this.getCrawls({
+            ...params,
+            state: this.filterBy.state || activeCrawlStates,
+          });
+          break;
+        case "uploads":
+          crawls = await this.getUploads(params);
+          break;
+        default:
+          break;
+      }
 
       this.crawls = crawls;
     } catch (e: any) {
@@ -710,12 +740,13 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
-    const state = this.filterBy.state || this.crawlStates;
+  private async getCrawls(
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+  ): Promise<Crawls> {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        state,
+        state: queryParams?.state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
@@ -731,6 +762,68 @@ export class CrawlsList extends LiteElement {
     this.getCrawlsController = new AbortController();
     const data = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}?${query}`,
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
+    );
+
+    this.getCrawlsController = null;
+
+    return data;
+  }
+
+  private async getAllCrawls(
+    queryParams?: APIPaginationQuery
+  ): Promise<Crawls> {
+    const query = queryString.stringify(
+      {
+        name: this.filterBy.name,
+        page: queryParams?.page || this.crawls?.page || 1,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+
+    this.getCrawlsController = new AbortController();
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/all-crawls?${query}`,
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
+    );
+
+    this.getCrawlsController = null;
+
+    return data;
+  }
+
+  private async getUploads(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const query = queryString.stringify(
+      {
+        name: this.filterBy.name,
+        page: queryParams?.page || this.crawls?.page || 1,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+
+    this.getCrawlsController = new AbortController();
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/uploads?${query}`,
       this.authState!,
       {
         signal: this.getCrawlsController.signal,

@@ -252,6 +252,7 @@ export class Org extends LiteElement {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
+      orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
