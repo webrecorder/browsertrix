@@ -257,7 +257,7 @@ export class CrawlsList extends LiteElement {
       {
         listType: "finished-crawls",
         icon: "gear-wide-connected",
-        label: msg("Finished Crawls"),
+        label: msg("Crawls"),
       },
     ];
 
@@ -283,7 +283,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full pb-3 mb-3 border-b">
-            <h1 class="text-xl font-semibold h-8">${msg("Archive Data")}</h1>
+            <h1 class="text-xl font-semibold h-8">${msg("Web Archives")}</h1>
           </div>
           <div class="flex gap-2 mb-3">
             ${listTypes.map(({ label, listType, icon }) => {

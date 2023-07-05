@@ -239,7 +239,7 @@ export class CrawlDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${isWorkflowArtifact
               ? msg("Back to Crawl Workflow")
-              : msg("Back to Archive Data")}</span
+              : msg("Back to Web Archives")}</span
           >
         </a>
       </div>
