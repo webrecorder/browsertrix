@@ -3,6 +3,7 @@ import os
 from urllib.parse import urljoin
 
 from .conftest import API_PREFIX
+from .utils import read_in_chunks
 
 upload_id = None
 upload_id_2 = None
@@ -75,6 +76,44 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     assert r.status_code == 200
 
 
+def test_get_upload_replay_json(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data
+    assert data["id"] == upload_id
+    assert data["name"] == "test.wacz"
+    assert data["resources"]
+    assert data["resources"][0]["path"]
+    assert data["resources"][0]["size"]
+    assert data["resources"][0]["hash"]
+    assert "files" not in data
+    assert "errors" not in data or data.get("errors") is None
+
+
+def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/uploads/{upload_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data
+    assert data["id"] == upload_id
+    assert data["name"] == "test.wacz"
+    assert data["resources"]
+    assert data["resources"][0]["path"]
+    assert data["resources"][0]["size"]
+    assert data["resources"][0]["hash"]
+    assert "files" not in data
+    assert "errors" not in data or data.get("errors") is None
+
+
 def test_replace_upload(admin_auth_headers, default_org_id):
     actual_id = do_upload_replace(admin_auth_headers, default_org_id, upload_id)
 
@@ -136,6 +175,7 @@ def test_replace_upload_non_existent(admin_auth_headers, default_org_id):
 
     upload_id = actual_id
 
+
 def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
@@ -143,6 +183,7 @@ def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
         json={"crawl_ids": [upload_id]},
     )
     assert r.json()["deleted"] == True
+
 
 def test_upload_form(admin_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
@@ -250,6 +291,46 @@ def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):
     assert data["resources"]
 
 
+def test_get_upload_replay_json_from_all_crawls(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id_2}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data
+    assert data["id"] == upload_id_2
+    assert data["name"] == "test2.wacz"
+    assert data["resources"]
+    assert data["resources"][0]["path"]
+    assert data["resources"][0]["size"]
+    assert data["resources"][0]["hash"]
+    assert "files" not in data
+    assert "errors" not in data or data.get("errors") is None
+
+
+def test_get_upload_replay_json_admin_from_all_crawls(
+    admin_auth_headers, default_org_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/all-crawls/{upload_id_2}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data
+    assert data["id"] == upload_id_2
+    assert data["name"] == "test2.wacz"
+    assert data["resources"]
+    assert data["resources"][0]["path"]
+    assert data["resources"][0]["size"]
+    assert data["resources"][0]["hash"]
+    assert "files" not in data
+    assert "errors" not in data or data.get("errors") is None
+
+
 def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
@@ -269,13 +350,3 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
     for res in results["items"]:
         if res["id"] in (upload_id_2, upload_id):
             assert False
-
-
-def read_in_chunks(fh, blocksize=1024):
-    """Lazy function (generator) to read a file piece by piece.
-    Default chunk size: 1k."""
-    while True:
-        data = fh.read(blocksize)
-        if not data:
-            break
-        yield data

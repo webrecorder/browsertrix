@@ -169,7 +169,7 @@ class CrawlOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
-        super().__init__(mdb, crawl_manager)
+        super().__init__(mdb, users, crawl_manager)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -324,6 +324,7 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls, total
 
+    # pylint: disable=arguments-differ
     async def get_crawl(self, crawlid: str, org: Organization):
         """Get data for single crawl"""
 

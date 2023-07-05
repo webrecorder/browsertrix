@@ -18,9 +18,9 @@ from pathvalidate import sanitize_filename
 from .basecrawls import (
     BaseCrawl,
     BaseCrawlOut,
+    BaseCrawlOutWithResources,
     BaseCrawlOps,
     CrawlFile,
-    CrawlFileOut,
     DeleteCrawlList,
 )
 from .users import User
@@ -48,14 +48,10 @@ class UploadedCrawl(BaseCrawl):
 class UploadedCrawlOut(BaseCrawlOut):
     """Output model for Crawl Uploads"""
 
-    userName: Optional[str]
-
 
 # ============================================================================
-class UploadedCrawlOutWithResources(UploadedCrawlOut):
+class UploadedCrawlOutWithResources(BaseCrawlOutWithResources):
     """Output model for Crawl Uploads with all file resources"""
-
-    resources: Optional[List[CrawlFileOut]] = []
 
 
 # ============================================================================
@@ -231,12 +227,12 @@ class UploadFileReader(BufferedReader):
 
 
 # ============================================================================
-def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
+def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
     """uploads api"""
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, too-many-arguments, too-many-locals
 
     # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
-    ops = UploadOps(mdb, crawl_manager)
+    ops = UploadOps(mdb, users, crawl_manager)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
@@ -300,6 +296,25 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
     async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
         res = await ops.get_resource_resolved_raw_crawl(crawlid, org, "upload")
         return UploadedCrawlOutWithResources.from_dict(res)
+
+    @app.get(
+        "/orgs/all/uploads/{crawl_id}/replay.json",
+        tags=["all-crawls"],
+        response_model=BaseCrawlOutWithResources,
+    )
+    async def get_upload_replay_admin(crawl_id, user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_crawl(crawl_id, None, "upload")
+
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/replay.json",
+        tags=["all-crawls"],
+        response_model=BaseCrawlOutWithResources,
+    )
+    async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_crawl(crawl_id, org, "upload")
 
     @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
     async def delete_uploads(

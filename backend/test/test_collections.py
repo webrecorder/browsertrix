@@ -1,6 +1,7 @@
 import requests
 
 from .conftest import API_PREFIX
+from .utils import read_in_chunks
 
 COLLECTION_NAME = "Test collection"
 UPDATED_NAME = "Updated tést cöllection"
@@ -9,7 +10,7 @@ DESCRIPTION = "Test description"
 
 _coll_id = None
 _second_coll_id = None
-
+upload_id = None
 modified = None
 
 
@@ -263,6 +264,42 @@ def test_get_collection_replay(
         assert resource["size"]
 
 
+def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test-upload.wacz",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    global upload_id
+    upload_id = r.json()["id"]
+
+    # Add upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [upload_id]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 3
+    assert data["pageCount"] > 0
+    assert data["modified"]
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+
+    # Verify it was added
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id in r.json()["collections"]
+
+
 def test_list_collections(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
@@ -281,7 +318,7 @@ def test_list_collections(
     assert first_coll["name"] == UPDATED_NAME
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
-    assert first_coll["crawlCount"] == 2
+    assert first_coll["crawlCount"] == 3
     assert first_coll["pageCount"] > 0
     assert first_coll["modified"]
     assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
@@ -295,6 +332,29 @@ def test_list_collections(
     assert second_coll["pageCount"] > 0
     assert second_coll["modified"]
     assert second_coll["tags"] == ["wr-test-2"]
+
+
+def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
+    # Remove upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove",
+        json={"crawlIds": [upload_id]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] == 0
+    assert data["modified"] >= modified
+    assert data.get("tags") == ["wr-test-2", "wr-test-1"]
+
+    # Verify it was removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collections"]
 
 
 def test_filter_sort_collections(

@@ -12,6 +12,7 @@ from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
+from .users import User
 from .utils import dt_now
 
 
@@ -124,9 +125,10 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
-    def __init__(self, mdb, crawl_manager):
+    def __init__(self, mdb, users, crawl_manager):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
+        self.user_manager = users
 
         self.presign_duration_seconds = (
             int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
@@ -153,6 +155,34 @@ class BaseCrawlOps:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
 
         return res
+
+    async def get_crawl(
+        self,
+        crawlid: str,
+        org: Optional[Organization] = None,
+        type_: Optional[str] = None,
+    ):
+        """Get data for single base crawl"""
+
+        res = await self.get_crawl_raw(crawlid, org, type_)
+
+        if res.get("files"):
+            files = [CrawlFile(**data) for data in res["files"]]
+
+            del res["files"]
+
+            res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
+
+        del res["errors"]
+
+        crawl = BaseCrawlOutWithResources.from_dict(res)
+
+        user = await self.user_manager.get(crawl.userid)
+        if user:
+            # pylint: disable=invalid-name
+            crawl.userName = user.name
+
+        return crawl
 
     async def get_resource_resolved_raw_crawl(
         self, crawlid: str, org: Organization, type_=None
@@ -403,11 +433,11 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(app, mdb, crawl_manager, orgs):
+def init_base_crawls_api(app, mdb, users, crawl_manager, orgs, user_dep):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments
 
-    ops = BaseCrawlOps(mdb, crawl_manager)
+    ops = BaseCrawlOps(mdb, users, crawl_manager)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
@@ -450,6 +480,25 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
     async def get_base_crawl(crawlid: str, org: Organization = Depends(org_crawl_dep)):
         res = await ops.get_resource_resolved_raw_crawl(crawlid, org)
         return BaseCrawlOutWithResources.from_dict(res)
+
+    @app.get(
+        "/orgs/all/all-crawls/{crawl_id}/replay.json",
+        tags=["all-crawls"],
+        response_model=BaseCrawlOutWithResources,
+    )
+    async def get_base_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_crawl(crawl_id, None)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
+        tags=["all-crawls"],
+        response_model=BaseCrawlOutWithResources,
+    )
+    async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_crawl(crawl_id, org)
 
     @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
     async def delete_crawls_all_types(
