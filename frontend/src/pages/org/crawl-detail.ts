@@ -358,12 +358,14 @@ export class CrawlDetail extends LiteElement {
             icon: "folder-fill",
             label: msg("Files"),
           })}
-          ${renderNavItem({
-            section: "logs",
-            iconLibrary: "default",
-            icon: "terminal-fill",
-            label: msg("Error Logs"),
-          })}
+          ${when(this.crawlType === "crawl", () =>
+            renderNavItem({
+              section: "logs",
+              iconLibrary: "default",
+              icon: "terminal-fill",
+              label: msg("Error Logs"),
+            })
+          )}
           ${renderNavItem({
             section: "config",
             iconLibrary: "default",
@@ -909,6 +911,9 @@ ${this.crawl?.notes}
   private async fetchCrawlLogs(
     params: Partial<APIPaginatedList> = {}
   ): Promise<void> {
+    if (this.crawlType !== "crawl") {
+      return;
+    }
     try {
       this.logs = await this.getCrawlLogs(params);
     } catch {
