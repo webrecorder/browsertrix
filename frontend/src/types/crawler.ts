@@ -123,5 +123,5 @@ export type Crawl = CrawlConfig & {
   seedCount: number;
   stopping: boolean;
   collections: string[];
-  type: string;
+  type?: "crawl" | "upload" | null;
 };

@@ -28,6 +28,7 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { isActive } from "../utils/crawler";
+import type { DataListType } from "../pages/org/crawls-list";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -221,12 +222,14 @@ export class CrawlListItem extends LitElement {
 
   renderRow() {
     const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
+    const dataListType: DataListType =
+      this.crawl?.type === "upload" ? "uploads" : "all";
     return html`<a
       class="item row"
       role="button"
       href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
         this.crawl?.id
-      }${hash}`}
+      }?dataListType=${dataListType}${hash}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -448,7 +451,8 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-      .listHeader, .list {
+      .listHeader,
+      .list {
         margin-left: var(--row-offset);
         margin-right: var(--row-offset);
       }
@@ -464,7 +468,7 @@ export class CrawlList extends LitElement {
       }
 
       .row {
-        display none;
+        display: none;
         font-size: var(--sl-font-size-x-small);
         color: var(--sl-color-neutral-600);
       }

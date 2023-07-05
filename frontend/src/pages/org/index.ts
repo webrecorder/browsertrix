@@ -242,9 +242,11 @@ export class Org extends LiteElement {
     if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
+        orgId=${this.orgId}
         crawlId=${this.params.crawlOrWorkflowId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
+        crawlType=${this.params.dataListType === "uploads" ? "upload" : "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }

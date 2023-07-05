@@ -49,8 +49,14 @@ export class CrawlDetail extends LiteElement {
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
+  @property({ type: String })
+  crawlType: Crawl["type"] = null;
+
   @property({ type: Boolean })
   showOrgLink = false;
+
+  @property({ type: String })
+  orgId!: string;
 
   @property({ type: String })
   crawlId!: string;
@@ -309,11 +315,7 @@ export class CrawlDetail extends LiteElement {
       const isActive = section === this.sectionName;
       const baseUrl = window.location.pathname.split("#")[0];
       return html`
-        <li
-          class="relative grow"
-          role="menuitem"
-          aria-selected=${isActive.toString()}
-        >
+        <li class="relative grow" role="menuitem" aria-selected="${isActive}">
           <a
             class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
               ? "text-blue-600 bg-blue-100 shadow-sm"
@@ -674,7 +676,7 @@ export class CrawlDetail extends LiteElement {
           ${this.crawl?.stats
             ? html`
                 <sl-format-bytes
-                  value=${this.crawl.stats.size}
+                  value=${+this.crawl.stats.size}
                   display="narrow"
                 ></sl-format-bytes
                 ><span>,</span>
@@ -885,12 +887,13 @@ ${this.crawl?.notes}
   }
 
   private async getCrawl(): Promise<Crawl> {
-    const data: Crawl = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
-        this.crawlId
-      }/replay.json`,
-      this.authState!
-    );
+    const apiPath =
+      this.crawlType === "upload"
+        ? `/orgs/${this.orgId}/uploads/${this.crawlId}`
+        : `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
+            this.crawlId
+          }/replay.json`;
+    const data: Crawl = await this.apiFetch(apiPath, this.authState!);
 
     return data;
   }
