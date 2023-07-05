@@ -100,6 +100,7 @@ class UploadOps(BaseCrawlOps):
             MIN_UPLOAD_PART_SIZE,
             self.crawl_manager,
         ):
+            print("Stream Upload Failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
 
         files = [file_prep.get_crawl_file()]

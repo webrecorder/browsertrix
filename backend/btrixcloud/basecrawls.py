@@ -423,15 +423,18 @@ def init_base_crawls_api(app, mdb, crawl_manager, orgs):
         page: int = 1,
         userid: Optional[UUID4] = None,
         name: Optional[str] = None,
+        state: Optional[str] = None,
         description: Optional[str] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
+        states = state.split(",") if state else None
         crawls, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
             name=name,
             description=description,
+            states=states,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
