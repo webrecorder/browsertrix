@@ -111,7 +111,7 @@ def test_replace_upload(admin_auth_headers, default_org_id):
 
 def test_delete_stream_upload(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [upload_id]},
     )

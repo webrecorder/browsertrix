@@ -299,7 +299,7 @@ def init_uploads_api(app, mdb, crawl_manager, orgs, user_dep):
         res = await ops.get_resource_resolved_raw_crawl(crawlid, org, "upload")
         return UploadedCrawlOutWithResources.from_dict(res)
 
-    @app.post("/orgs/{oid}/delete", tags=["uploads"])
+    @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
     async def delete_uploads(
         delete_list: DeleteCrawlList,
         org: Organization = Depends(org_crawl_dep),
