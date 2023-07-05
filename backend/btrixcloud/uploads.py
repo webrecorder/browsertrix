@@ -41,8 +41,6 @@ class UploadedCrawl(BaseCrawl):
 
     name: str
 
-    description: str = ""
-
 
 # ============================================================================
 class UploadedCrawlOut(BaseCrawlOut):
@@ -62,8 +60,9 @@ class UploadOps(BaseCrawlOps):
     async def upload_stream(
         self,
         stream,
-        name: str,
-        desc: Optional[str],
+        filename: str,
+        name: Optional[str],
+        notes: Optional[str],
         org: Organization,
         user: User,
         replaceId: Optional[str],
@@ -81,7 +80,7 @@ class UploadOps(BaseCrawlOps):
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
         prefix = f"{org.id}/uploads/{id_}/"
-        file_prep = FilePreparer(prefix, name)
+        file_prep = FilePreparer(prefix, filename)
 
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
@@ -110,14 +109,14 @@ class UploadOps(BaseCrawlOps):
             except Exception as exc:
                 print("replace file deletion failed", exc)
 
-        return await self._create_upload(files, name, desc, id_, org, user)
+        return await self._create_upload(files, name, notes, id_, org, user)
 
     # pylint: disable=too-many-arguments, too-many-locals
     async def upload_formdata(
         self,
         uploads: List[UploadFile],
         name: Optional[str],
-        desc: Optional[str],
+        notes: Optional[str],
         org: Organization,
         user: User,
     ):
@@ -135,9 +134,9 @@ class UploadOps(BaseCrawlOps):
             )
             files.append(file_reader.file_prep.get_crawl_file())
 
-        return await self._create_upload(files, name, desc, id_, org, user)
+        return await self._create_upload(files, name, notes, id_, org, user)
 
-    async def _create_upload(self, files, name, desc, id_, org, user):
+    async def _create_upload(self, files, name, notes, id_, org, user):
         now = dt_now()
         # ts_now = now.strftime("%Y%m%d%H%M%S")
         # crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
@@ -148,7 +147,7 @@ class UploadOps(BaseCrawlOps):
         uploaded = UploadedCrawl(
             id=crawl_id,
             name=name or "New Upload @ " + str(now),
-            description=desc,
+            notes=notes,
             userid=user.id,
             oid=org.id,
             files=files,
@@ -227,7 +226,7 @@ class UploadFileReader(BufferedReader):
 
 
 # ============================================================================
-# pylint: disable=invalid-name,too-many-arguments,too-many-locals
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name
 def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
     """uploads api"""
 
@@ -237,28 +236,28 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
 
-    # pylint: disable=too-many-arguments
     @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
     async def upload_formdata(
         uploads: List[UploadFile] = File(...),
         name: Optional[str] = "",
-        desc: Optional[str] = "",
+        notes: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.upload_formdata(uploads, name, desc, org, user)
+        return await ops.upload_formdata(uploads, name, notes, org, user)
 
     @app.put("/orgs/{oid}/uploads/stream", tags=["uploads"])
     async def upload_stream(
         request: Request,
-        name: str,
-        desc: Optional[str] = "",
+        filename: str,
+        name: Optional[str] = "",
+        notes: Optional[str] = "",
         replaceId: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
         return await ops.upload_stream(
-            request.stream(), name, desc, org, user, replaceId
+            request.stream(), filename, name, notes, org, user, replaceId
         )
 
     @app.get(

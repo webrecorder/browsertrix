@@ -16,7 +16,7 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 def test_upload_stream(admin_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test.wacz",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload&notes=Testing%0AData",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -44,7 +44,8 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
             found = res
 
     assert found
-    assert found["name"] == "test.wacz"
+    assert found["name"] == "My Upload"
+    assert found["notes"] == "Testing\nData"
     assert "files" not in found
     assert "resources" not in found
 
@@ -58,6 +59,8 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     result = r.json()
     assert "files" not in result
     upload_dl_path = result["resources"][0]["path"]
+    assert "test-" in result["resources"][0]["name"]
+    assert result["resources"][0]["name"].endswith(".wacz")
 
     dl_path = urljoin(API_PREFIX, upload_dl_path)
     wacz_resp = requests.get(dl_path)
@@ -86,7 +89,7 @@ def test_get_upload_replay_json(admin_auth_headers, default_org_id):
 
     assert data
     assert data["id"] == upload_id
-    assert data["name"] == "test.wacz"
+    assert data["name"] == "My Upload"
     assert data["resources"]
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
@@ -105,7 +108,7 @@ def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
 
     assert data
     assert data["id"] == upload_id
-    assert data["name"] == "test.wacz"
+    assert data["name"] == "My Upload"
     assert data["resources"]
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
@@ -123,7 +126,7 @@ def test_replace_upload(admin_auth_headers, default_org_id):
 def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test.wacz&replaceId={upload_id}",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&replaceId={upload_id}",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
