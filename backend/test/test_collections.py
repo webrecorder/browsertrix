@@ -14,6 +14,8 @@ _second_coll_id = None
 upload_id = None
 modified = None
 
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+
 
 def test_create_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
