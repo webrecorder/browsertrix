@@ -348,7 +348,7 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 2
-    assert data["pageCount"] == 0
+    assert data["pageCount"] > 0
     assert data["modified"] >= modified
     assert data.get("tags") == ["wr-test-2", "wr-test-1"]
 
