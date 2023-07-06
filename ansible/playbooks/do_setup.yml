@@ -209,6 +209,16 @@
       register: do_registry_result
       when: use_do_registry
       failed_when: do_registry_result.stdout_lines | length < 2
+      ignore_errors: true
+
+    - name: d_ocean | registry | create registry endpoint
+      ansible.builtin.command: doctl registry create {{ registry_name }} --region {{ droplet_region }}
+      when: do_registry_result.stdout_lines | length < 2
+
+    - name: d_ocean | registry | update registry endpoint
+      ansible.builtin.command: doctl registry get --format Endpoint
+      register: do_registry_result
+      failed_when: do_registry_result.stdout_lines | length < 2
 
     - name: d_ocean | registry | store registry endpoint
       ansible.builtin.set_fact:
