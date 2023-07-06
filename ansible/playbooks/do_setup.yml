@@ -215,6 +215,10 @@
         registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
       when: use_do_registry
 
+    - name: d_ocean | registry | configure kubectl
+      ansible.builtin.shell: doctl k8s cluster kubeconfig save {{ my_cluster.data.id }}
+      when: configure_kubectl
+
     - name: d_ocean | registry | add to new k8s cluster
       ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
       when: use_do_registry

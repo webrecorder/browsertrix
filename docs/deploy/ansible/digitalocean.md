@@ -21,7 +21,7 @@ git clone https://github.com/webrecorder/browsertrix-cloud.git
 cd browsertrix-cloud
 ```
 
-2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml) and modify them or pass them as extra variables as shown below. 
+2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml) and modify them or pass them as extra variables as shown below. If you haven't configured `kubectl`, please enable the `configure_kube` option 
 
 3. Run the playbook:
 ```zsh
