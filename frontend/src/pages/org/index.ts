@@ -6,6 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
+import type { Crawl } from "../../types/crawler";
 import type { OrgData } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -30,7 +31,6 @@ import type {
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
-import type { DataListType } from "./crawls-list";
 
 export type OrgTab =
   | "crawls"
@@ -46,7 +46,7 @@ type Params = {
   browserId?: string;
   artifactId?: string;
   resourceId?: string;
-  dataListType?: DataListType;
+  artifactType?: Crawl["type"];
 };
 
 const defaultTab = "crawls";
@@ -246,7 +246,7 @@ export class Org extends LiteElement {
         crawlId=${this.params.crawlOrWorkflowId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
-        crawlType=${this.params.dataListType === "uploads" ? "upload" : "crawl"}
+        artifactType=${this.params.artifactType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }
@@ -258,7 +258,7 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
-      dataListType=${ifDefined(this.params.dataListType)}
+      artifactType=${ifDefined(this.params.artifactType || undefined)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
     ></btrix-crawls-list>`;
   }

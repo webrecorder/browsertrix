@@ -54,6 +54,7 @@ export class Crawls extends LiteElement {
       .authState=${this.authState}
       crawlsBaseUrl=${ROUTES.crawls}
       crawlsAPIBaseUrl="/orgs/all/crawls"
+      artifactType="crawl"
       isCrawler
       isAdminView
       shouldFetch

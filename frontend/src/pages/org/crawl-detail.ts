@@ -50,7 +50,7 @@ export class CrawlDetail extends LiteElement {
   crawlsAPIBaseUrl?: string;
 
   @property({ type: String })
-  crawlType: Crawl["type"] = null;
+  artifactType: Crawl["type"] = null;
 
   @property({ type: Boolean })
   showOrgLink = false;
@@ -359,7 +359,7 @@ export class CrawlDetail extends LiteElement {
             label: msg("Files"),
           })}
           ${when(
-            this.crawlType === "crawl",
+            this.artifactType === "crawl",
             () => html`
               ${renderNavItem({
                 section: "logs",
@@ -447,7 +447,7 @@ export class CrawlDetail extends LiteElement {
             `
           )}
           ${when(
-            this.crawlType === "crawl",
+            this.artifactType === "crawl",
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -904,7 +904,7 @@ ${this.crawl?.notes}
 
   private async getCrawl(): Promise<Crawl> {
     const apiPath =
-      this.crawlType === "upload"
+      this.artifactType === "upload"
         ? `/orgs/${this.orgId}/uploads/${this.crawlId}`
         : `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
             this.crawlId
@@ -917,7 +917,7 @@ ${this.crawl?.notes}
   private async fetchCrawlLogs(
     params: Partial<APIPaginatedList> = {}
   ): Promise<void> {
-    if (this.crawlType !== "crawl") {
+    if (this.artifactType !== "crawl") {
       return;
     }
     try {

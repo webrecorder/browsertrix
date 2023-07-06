@@ -28,7 +28,6 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { isActive } from "../utils/crawler";
-import type { DataListType } from "../pages/org/crawls-list";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -222,14 +221,13 @@ export class CrawlListItem extends LitElement {
 
   renderRow() {
     const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
-    const dataListType: DataListType =
-      this.crawl?.type === "upload" ? "uploads" : "all";
+    const artifactType = this.crawl?.type || "crawl";
     return html`<a
       class="item row"
       role="button"
       href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
         this.crawl?.id
-      }?dataListType=${dataListType}${hash}`}
+      }?artifactType=${artifactType}${hash}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;

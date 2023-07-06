@@ -32,11 +32,6 @@ type SearchResult = {
 };
 type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
-export type DataListType =
-  | "all"
-  | "finished-crawls"
-  | "running-crawls"
-  | "uploads";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 30;
@@ -110,7 +105,7 @@ export class CrawlsList extends LiteElement {
   crawlsAPIBaseUrl?: string;
 
   @property({ type: String })
-  dataListType: DataListType = "all";
+  artifactType: Crawl["type"] = null;
 
   /**
    * Fetch & refetch data when needed,
@@ -193,13 +188,13 @@ export class CrawlsList extends LiteElement {
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy") ||
-      changedProperties.has("dataListType")
+      changedProperties.has("artifactType")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
           throw new Error("Crawls base URL not defined");
         }
-        if (changedProperties.has("dataListType")) {
+        if (changedProperties.has("artifactType")) {
           this.filterBy = {};
           this.orderBy = {
             field: "finished",
@@ -250,12 +245,12 @@ export class CrawlsList extends LiteElement {
 
     const hasCrawlItems = this.crawls.items.length;
     const listTypes: {
-      listType: DataListType;
+      artifactType: Crawl["type"];
       label: string;
       icon?: string;
     }[] = [
       {
-        listType: "finished-crawls",
+        artifactType: "crawl",
         icon: "gear-wide-connected",
         label: msg("Crawls"),
       },
@@ -263,17 +258,17 @@ export class CrawlsList extends LiteElement {
 
     if (this.isAdminView) {
       listTypes.unshift({
-        listType: "running-crawls",
+        artifactType: "crawl",
         icon: "gear-wide",
         label: msg("Running Crawls"),
       });
     } else {
       listTypes.unshift({
-        listType: "all",
+        artifactType: null,
         label: msg("All"),
       });
       listTypes.push({
-        listType: "uploads",
+        artifactType: "upload",
         icon: "upload",
         label: msg("Uploads"),
       });
@@ -286,13 +281,15 @@ export class CrawlsList extends LiteElement {
             <h1 class="text-xl font-semibold h-8">${msg("Web Archives")}</h1>
           </div>
           <div class="flex gap-2 mb-3">
-            ${listTypes.map(({ label, listType, icon }) => {
-              const isSelected = listType === this.dataListType;
+            ${listTypes.map(({ label, artifactType, icon }) => {
+              const isSelected = artifactType === this.artifactType;
               return html` <btrix-button
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`${this.crawlsBaseUrl}?dataListType=${listType}`}
+                href=${`${this.crawlsBaseUrl}?artifactType=${
+                  artifactType || ""
+                }`}
                 @click=${this.navLink}
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
@@ -354,7 +351,7 @@ export class CrawlsList extends LiteElement {
             max-options-visible="1"
             placeholder=${this.isAdminView
               ? msg("All Active Crawls")
-              : msg("Finished Crawls")}
+              : msg("Finished")}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -364,10 +361,9 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${(this.dataListType === "running-crawls"
-              ? activeCrawlStates
-              : finishedCrawlStates
-            ).map(this.renderStatusMenuItem)}
+            ${(this.isAdminView ? activeCrawlStates : finishedCrawlStates).map(
+              this.renderStatusMenuItem
+            )}
           </sl-select>
         </div>
 
@@ -671,7 +667,7 @@ export class CrawlsList extends LiteElement {
     return html`
       <div class="border-t border-b py-5">
         <p class="text-center text-neutral-500">
-          ${this.dataListType === "uploads"
+          ${this.artifactType === "upload"
             ? msg("No uploads yet.")
             : msg("No crawls yet.")}
         </p>
@@ -706,26 +702,25 @@ export class CrawlsList extends LiteElement {
     this.cancelInProgressGetCrawls();
     try {
       let crawls = this.crawls;
-      switch (this.dataListType) {
-        case "all":
-          crawls = await this.getAllCrawls(params);
-          break;
-        case "finished-crawls":
+      switch (this.artifactType) {
+        case "crawl":
           crawls = await this.getCrawls({
             ...params,
             state: this.filterBy.state || finishedCrawlStates,
           });
           break;
-        case "running-crawls":
-          crawls = await this.getCrawls({
-            ...params,
-            state: this.filterBy.state || activeCrawlStates,
-          });
-          break;
-        case "uploads":
+        // case "crawl":
+        //   crawls = await this.getCrawls({
+        //     ...params,
+        //     state: this.filterBy.state || activeCrawlStates,
+        //   });
+        //   break;
+        case "upload":
           crawls = await this.getUploads(params);
           break;
         default:
+          crawls = await this.getAllCrawls(params);
+          break;
           break;
       }
 
@@ -886,18 +881,15 @@ export class CrawlsList extends LiteElement {
 
     let apiPath;
 
-    switch (this.dataListType) {
-      case "all":
-        apiPath = "all-crawls";
-        break;
-
-      case "finished-crawls":
-      case "running-crawls":
+    switch (this.artifactType) {
+      case "crawl":
         apiPath = "crawls";
         break;
-
-      case "uploads":
+      case "upload":
         apiPath = "uploads";
+        break;
+      default:
+        apiPath = "all-crawls";
         break;
     }
 
