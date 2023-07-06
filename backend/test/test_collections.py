@@ -271,7 +271,7 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
             f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test-upload.wacz",
-            headers=admin_auth_headers,
+            headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
 
