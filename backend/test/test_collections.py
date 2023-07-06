@@ -270,7 +270,7 @@ def test_get_collection_replay(
 def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?name=test-upload.wacz",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test-upload.wacz",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
