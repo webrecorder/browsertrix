@@ -318,7 +318,7 @@ async def update_collection_counts_and_tags(
             continue
         crawl_count += 1
         if crawl.get("stats"):
-            page_count += crawl.get("stats").get("done", 0)
+            page_count += crawl.get("stats", {}).get("done", 0)
         if crawl.get("tags"):
             tags.extend(crawl.get("tags"))
 
