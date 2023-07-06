@@ -51,7 +51,7 @@ class Seed(BaseModel):
     """Crawl seed"""
 
     url: HttpUrl
-    scopeType: Optional[ScopeType] = ScopeType.PREFIX
+    scopeType: Optional[ScopeType]
 
     include: Union[str, List[str], None]
     exclude: Union[str, List[str], None]
