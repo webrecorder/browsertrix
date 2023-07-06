@@ -333,6 +333,19 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderControls() {
+    let viewPlaceholder = "";
+    let viewOptions = [];
+    if (this.isAdminView) {
+      viewPlaceholder = msg("All Active Crawls");
+      viewOptions = activeCrawlStates;
+    } else {
+      viewOptions = finishedCrawlStates;
+      if (this.artifactType === "upload") {
+        viewPlaceholder = msg("All Uploaded");
+      } else {
+        viewPlaceholder = msg("All Finished");
+      }
+    }
     return html`
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
@@ -349,9 +362,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-options-visible="1"
-            placeholder=${this.isAdminView
-              ? msg("All Active Crawls")
-              : msg("Finished")}
+            placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -361,9 +372,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${(this.isAdminView ? activeCrawlStates : finishedCrawlStates).map(
-              this.renderStatusMenuItem
-            )}
+            ${viewOptions.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -520,7 +529,10 @@ export class CrawlsList extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}>
+      <btrix-crawl-list
+        baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}
+        artifactType=${ifDefined(this.artifactType || undefined)}
+      >
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 
@@ -783,6 +795,7 @@ export class CrawlsList extends LiteElement {
   ): Promise<Crawls> {
     const query = queryString.stringify(
       {
+        state: this.filterBy.state || null,
         name: this.filterBy.name,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:

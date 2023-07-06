@@ -509,6 +509,9 @@ export class CrawlList extends LitElement {
   @property({ type: String, noAccessor: true })
   baseUrl?: string;
 
+  @property({ type: String })
+  artifactType: Crawl["type"] = null;
+
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
@@ -517,7 +520,9 @@ export class CrawlList extends LitElement {
         <div class="col">
           <slot name="idCol">${msg("Name")}</slot>
         </div>
-        <div class="col">${msg("Finished")}</div>
+        <div class="col">
+          ${this.artifactType === "upload" ? msg("Uploaded") : msg("Finished")}
+        </div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Created By")}</div>
         <div class="col action">
