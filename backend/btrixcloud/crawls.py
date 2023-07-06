@@ -179,6 +179,21 @@ class CrawlOps(BaseCrawlOps):
 
     async def init_index(self):
         """init index for crawls db collection"""
+        await self.crawls.create_index([("type", pymongo.HASHED)])
+
+        await self.crawls.create_index(
+            [("type", pymongo.HASHED), ("finished", pymongo.DESCENDING)]
+        )
+        await self.crawls.create_index(
+            [("type", pymongo.HASHED), ("oid", pymongo.DESCENDING)]
+        )
+        await self.crawls.create_index(
+            [("type", pymongo.HASHED), ("cid", pymongo.DESCENDING)]
+        )
+        await self.crawls.create_index(
+            [("type", pymongo.HASHED), ("state", pymongo.DESCENDING)]
+        )
+
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
