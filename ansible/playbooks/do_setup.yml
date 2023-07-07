@@ -36,20 +36,21 @@
       poll: 60
       register: db_create
       when: "db_check.stdout | from_json | json_query(name_query) | length < 1"
+      changed_when: true
       vars:
-        name_query: '[?name==`{{db_name}}`]'
+        name_query: '[?name==`{{ db_name }}`]'
 
     - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
-        db_url:  "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') }}" 
+        db_url: "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') }}"
       vars:
-        name_query: '[?name==`{{db_name}}`]'
+        name_query: '[?name==`{{ db_name }}`]'
 
     - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
-        db_uuid: "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id')}}"
+        db_uuid: "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
       vars:
-        name_query: '[?name==`{{db_name}}`]'
+        name_query: '[?name==`{{ db_name }}`]'
 
   # Storage (Space)
   # ===========================================
@@ -70,7 +71,7 @@
         bucket_endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/{{ db_space_result.data.space.name }}/{{ bucket_path }}/"
 
     - name: d_ocean | space | set bucket cors
-      community.aws.aws_s3_cors:
+      community.aws.s3_cors:
         name: "{{ bucket_name }}"
         aws_access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
         aws_secret_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
@@ -98,11 +99,11 @@
       failed_when: false
       register: cluster_check
 
-    - name: d_ocean | k8s | create a kubernetes cluster in {{ droplet_region }}
+    - name: d_ocean | k8s | create a  kubernetes cluster in {{ droplet_region }}
       # skip_ansible_lint
       ansible.builtin.command: >-
         doctl kubernetes cluster create {{ k8s_name }} --1-clicks ingress-nginx,cert-manager --node-pool
-        "{{ node_pools | select('match','name=*') | list |join(',') }}"
+        "{{ node_pools | select('match', 'name=*') | list | join(',') }}"
         --region={{ droplet_region }}
 
       async: 1800
@@ -119,9 +120,9 @@
     - name: d_ocean | k8s | create a admin node pool in the cluster {{ k8s_name }}
       # skip_ansible_lint
       ansible.builtin.command: >-
-        doctl kubernetes cluster node-pool create {{ k8s_name }} 
-          --name {{ admin_node_pool.name }}   --size {{ admin_node_pool.size }} 
-          --label {{ admin_node_pool.label }} --count {{ admin_node_pool.count }} 
+        doctl kubernetes cluster node-pool create {{ k8s_name }}
+          --name {{ admin_node_pool.name }}   --size {{ admin_node_pool.size }}
+          --label {{ admin_node_pool.label }} --count {{ admin_node_pool.count }}
 
       async: 1800
       poll: 60
@@ -171,10 +172,12 @@
     - name: d_ocean | db | get db firewall list
       ansible.builtin.command: doctl db firewalls list {{ db_uuid }} -o json
       register: db_firewalls
+      changed_when: true
 
     - name: d_ocean | db | configure firewall for mongoDB
       ansible.builtin.command: doctl db firewalls append {{ db_uuid }} --rule k8s:{{ my_cluster.data.id }}
       when: "db_firewalls.stdout == []"
+      changed_when: true # if it runs, it's changed
 
   # DNS
   # ===========================================
@@ -200,20 +203,29 @@
 
   # Signing + DNS
   # ===========================================
-    - name: d_coean | signing | set signing domain + authtoken
+    - name: d_ocean | signing | set signing domain + authtoken
       ansible.builtin.set_fact:
         full_signing_domain: "{{ signing_host }}.{{ full_domain }}"
         signing_subdomain: "{{ signing_host + '.' + subdomain if subdomain else signing_host }}"
         signing_authtoken: "{{ 99999999 | random | to_uuid }}"
 
       when: enable_signing
+      changed_when: true
+
+    - name: d_ocean | signing | check signing record exists
+      ansible.builtin.command: doctl compute domain records ls {{ domain }} -o json
+      register: check_domain
+      changed_when: true
 
     - name: d_ocean | signing | register the dns for signing subdomain
       ansible.builtin.command: >-
           doctl compute domain records create --record-type A --record-name "{{ signing_subdomain }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
       register: signing_dns_result
-      when: enable_signing
+      when: "check_domain.stdout | from_json | json_query(name_query) | length < 1"
+      changed_when: true # if it ran, it changed
+      vars:
+        name_query: '[?name==`{{ signing_subdomain }}`]'
 
 
   # Registry
@@ -222,20 +234,24 @@
       ansible.builtin.command: doctl registry get --format Endpoint
       register: do_registry_result
       when: use_do_registry
+      changed_when: true
       failed_when: do_registry_result.stdout_lines | length < 2
 
     - name: d_ocean | registry | store registry endpoint
       ansible.builtin.set_fact:
         registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
       when: use_do_registry
+      changed_when: true
 
     - name: d_ocean | registry | configure kubectl
-      ansible.builtin.shell: doctl k8s cluster kubeconfig save {{ my_cluster.data.id }}
+      ansible.builtin.command: doctl k8s cluster kubeconfig save {{ my_cluster.data.id }}
       when: configure_kubectl
+      changed_when: true
 
     - name: d_ocean | registry | add to new k8s cluster
       ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
       when: use_do_registry
+      changed_when: true
 
   # Addons
   # ===========================================
