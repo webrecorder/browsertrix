@@ -200,6 +200,7 @@ export class CrawlsList extends LiteElement {
             field: "finished",
             direction: sortableFields["finished"].defaultDirection!,
           };
+          this.crawls = undefined;
         }
 
         this.fetchCrawls({
@@ -235,15 +236,6 @@ export class CrawlsList extends LiteElement {
   }
 
   render() {
-    if (!this.crawls) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-3xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
-    const hasCrawlItems = this.crawls.items.length;
     const listTypes: {
       artifactType: Crawl["type"];
       label: string;
@@ -303,29 +295,45 @@ export class CrawlsList extends LiteElement {
             ${this.renderControls()}
           </div>
         </header>
-        <section>
-          ${hasCrawlItems ? this.renderCrawlList() : this.renderEmptyState()}
-        </section>
 
         ${when(
-          hasCrawlItems || this.crawls.page > 1,
-          () => html`
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                page=${this.crawls!.page}
-                totalCount=${this.crawls!.total}
-                size=${this.crawls!.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  await this.fetchCrawls({
-                    page: e.detail.page,
-                  });
+          this.crawls,
+          () => {
+            const { items, page, total, pageSize } = this.crawls!;
+            const hasCrawlItems = items.length;
+            return html`
+              <section>
+                ${hasCrawlItems
+                  ? this.renderCrawlList()
+                  : this.renderEmptyState()}
+              </section>
+              ${when(
+                hasCrawlItems || page > 1,
+                () => html`
+                  <footer class="mt-6 flex justify-center">
+                    <btrix-pagination
+                      page=${page}
+                      totalCount=${total}
+                      size=${pageSize}
+                      @page-change=${async (e: PageChangeEvent) => {
+                        await this.fetchCrawls({
+                          page: e.detail.page,
+                        });
 
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
+                        // Scroll to top of list
+                        // TODO once deep-linking is implemented, scroll to top of pushstate
+                        this.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    ></btrix-pagination>
+                  </footer>
+                `
+              )}
+            `;
+          },
+          () => html`
+            <div class="w-full flex items-center justify-center my-12 text-2xl">
+              <sl-spinner></sl-spinner>
+            </div>
           `
         )}
       </main>
@@ -795,7 +803,7 @@ export class CrawlsList extends LiteElement {
   ): Promise<Crawls> {
     const query = queryString.stringify(
       {
-        state: this.filterBy.state || null,
+        state: this.filterBy.state || finishedCrawlStates,
         name: this.filterBy.name,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
