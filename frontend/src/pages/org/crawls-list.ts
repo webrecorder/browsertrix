@@ -579,7 +579,7 @@ export class CrawlsList extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/artifacts/crawl/${crawl.id}`)}
+                  this.navTo(`/orgs/${crawl.oid}/artifacts/${crawl.type === "upload" ? "upload" : "crawl"}/${crawl.id}`)}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>
