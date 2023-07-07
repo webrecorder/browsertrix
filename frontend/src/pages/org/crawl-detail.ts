@@ -513,77 +513,6 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  // renders the info bar, currently disabled
-  private renderSummary() {
-    return html`
-      <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-xs text-0-600">${msg("Status")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  <btrix-crawl-status
-                    state=${this.crawl.state}
-                  ></btrix-crawl-status>
-                `
-              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-xs text-0-600">${msg("Pages Crawled")}</dt>
-          <dd>
-            ${this.crawl?.stats
-              ? html`
-                  <span
-                    class="font-mono tracking-tighter${this.isActive
-                      ? " text-purple-600"
-                      : ""}"
-                  >
-                    ${this.numberFormatter.format(+this.crawl.stats.done)}
-                    <span class="text-0-400">/</span>
-                    ${this.numberFormatter.format(+this.crawl.stats.found)}
-                  </span>
-                `
-              : this.crawl
-              ? html` <span class="text-0-400">${msg("Unknown")}</span> `
-              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-xs text-0-600">${msg("Run Duration")}</dt>
-          <dd>
-            ${this.crawl
-              ? html`
-                  ${this.crawl.finished
-                    ? html`${RelativeDuration.humanize(
-                        new Date(`${this.crawl.finished}Z`).valueOf() -
-                          new Date(`${this.crawl.started}Z`).valueOf()
-                      )}`
-                    : html`
-                        <span class="text-purple-600">
-                          <btrix-relative-duration
-                            value=${`${this.crawl.started}Z`}
-                            unitCount="3"
-                            tickSeconds="1"
-                          ></btrix-relative-duration>
-                        </span>
-                      `}
-                `
-              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-          </dd>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <dt class="text-xs text-0-600">${msg("Crawler Instances")}</dt>
-          <dd>
-            ${this.crawl
-              ? this.crawl?.scale
-              : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-          </dd>
-        </div>
-      </dl>
-    `;
-  }
-
   private renderReplay() {
     //const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
     const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json`;
@@ -628,62 +557,80 @@ export class CrawlDetail extends LiteElement {
             ? html`
                 <btrix-crawl-status
                   state=${this.crawl.state}
+                  ?isUpload=${this.crawl.type === "upload"}
                 ></btrix-crawl-status>
               `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Start Time")}>
-          ${this.crawl
+        ${when(this.crawl, () =>
+          this.crawl!.type === "upload"
             ? html`
-                <sl-format-date
-                  date=${`${this.crawl.started}Z` /** Z for UTC */}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="numeric"
-                  minute="numeric"
-                  time-zone-name="short"
-                ></sl-format-date>
+                <btrix-desc-list-item label=${msg("Uploaded")}>
+                  <sl-format-date
+                    date=${`${this.crawl!.finished}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                </btrix-desc-list-item>
               `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Finish Time")}>
-          ${this.crawl
-            ? html`
-                ${this.crawl.finished
-                  ? html`<sl-format-date
-                      date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                      time-zone-name="short"
-                    ></sl-format-date>`
-                  : html`<span class="text-0-400">${msg("Pending")}</span>`}
+            : html`
+                <btrix-desc-list-item label=${msg("Start Time")}>
+                  <sl-format-date
+                    date=${`${this.crawl!.started}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                </btrix-desc-list-item>
+                <btrix-desc-list-item label=${msg("Finish Time")}>
+                  ${this.crawl!.finished
+                    ? html`<sl-format-date
+                        date=${`${this.crawl!.finished}Z` /** Z for UTC */}
+                        month="2-digit"
+                        day="2-digit"
+                        year="2-digit"
+                        hour="numeric"
+                        minute="numeric"
+                        time-zone-name="short"
+                      ></sl-format-date>`
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
+                </btrix-desc-list-item>
+                <btrix-desc-list-item label=${msg("Duration")}>
+                  ${this.crawl!.finished
+                    ? html`${RelativeDuration.humanize(
+                        new Date(`${this.crawl!.finished}Z`).valueOf() -
+                          new Date(`${this.crawl!.started}Z`).valueOf()
+                      )}`
+                    : html`
+                        <span class="text-purple-600">
+                          <btrix-relative-duration
+                            value=${`${this.crawl!.started}Z`}
+                            unitCount="3"
+                            tickSeconds="1"
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
+                </btrix-desc-list-item>
+                <btrix-desc-list-item label=${msg("Initiator")}>
+                  ${this.crawl!.manual
+                    ? msg(
+                        html`Manual start by
+                          <span
+                            >${this.crawl!.userName || this.crawl!.userid}</span
+                          >`
+                      )
+                    : msg(html`Scheduled start`)}
+                </btrix-desc-list-item>
               `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Duration")}>
-          ${this.crawl
-            ? html`
-                ${this.crawl.finished
-                  ? html`${RelativeDuration.humanize(
-                      new Date(`${this.crawl.finished}Z`).valueOf() -
-                        new Date(`${this.crawl.started}Z`).valueOf()
-                    )}`
-                  : html`
-                      <span class="text-purple-600">
-                        <btrix-relative-duration
-                          value=${`${this.crawl.started}Z`}
-                          unitCount="3"
-                          tickSeconds="1"
-                        ></btrix-relative-duration>
-                      </span>
-                    `}
-              `
-            : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-        </btrix-desc-list-item>
+        )}
+
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.crawl
             ? html`${this.crawl.fileSize
@@ -710,20 +657,6 @@ export class CrawlDetail extends LiteElement {
                       : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-5"></sl-skeleton>`}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Initiator")}>
-          ${this.crawl
-            ? html`
-                ${this.crawl.manual
-                  ? msg(
-                      html`Manual start by
-                        <span
-                          >${this.crawl?.userName || this.crawl?.userid}</span
-                        >`
-                    )
-                  : msg(html`Scheduled start`)}
-              `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Crawl ID")}>
           ${this.crawl
