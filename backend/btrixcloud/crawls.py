@@ -35,6 +35,7 @@ from .basecrawls import (
     CrawlFileOut,
     BaseCrawl,
     BaseCrawlOps,
+    UpdateCrawl,
     DeleteCrawlList,
 )
 
@@ -153,14 +154,6 @@ class CrawlCompleteIn(BaseModel):
     hash: str
 
     completed: Optional[bool] = True
-
-
-# ============================================================================
-class UpdateCrawl(BaseModel):
-    """Update crawl"""
-
-    tags: Optional[List[str]] = []
-    notes: Optional[str]
 
 
 # ============================================================================
@@ -446,25 +439,6 @@ class CrawlOps(BaseCrawlOps):
             new_crawl["id"],
             new_crawl["started"],
         )
-
-    async def update_crawl(self, crawl_id: str, org: Organization, update: UpdateCrawl):
-        """Update existing crawl (tags and notes only for now)"""
-        query = update.dict(exclude_unset=True)
-
-        if len(query) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
-        # update in db
-        result = await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": query},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-
-        if not result:
-            raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
-
-        return {"updated": True}
 
     async def update_crawl_scale(
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
@@ -1024,7 +998,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     async def update_crawl_api(
         update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
-        return await ops.update_crawl(crawl_id, org, update)
+        return await ops.update_crawl(crawl_id, org, update, "crawl")
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/scale",

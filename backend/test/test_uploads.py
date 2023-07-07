@@ -126,7 +126,7 @@ def test_replace_upload(admin_auth_headers, default_org_id):
 def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&replaceId={upload_id}",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload%20Updated&replaceId={upload_id}",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -156,6 +156,42 @@ def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     assert actual == expected
 
     return actual_id
+
+
+def test_update_upload_metadata(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["name"] == "My Upload Updated"
+    assert not data["tags"]
+    assert not data["notes"]
+
+    # Submit patch request to update name, tags, and notes
+    UPDATED_NAME = "New Upload Name"
+    UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
+    UPDATED_NOTES = "Lorem ipsum test note."
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+        json={"tags": UPDATED_TAGS, "notes": UPDATED_NOTES, "name": UPDATED_NAME},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["updated"]
+
+    # Verify update was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+    assert data["notes"] == UPDATED_NOTES
+    assert data["name"] == UPDATED_NAME
 
 
 def test_delete_stream_upload(admin_auth_headers, default_org_id):

@@ -113,6 +113,14 @@ class BaseCrawlOutWithResources(BaseCrawlOut):
 
 
 # ============================================================================
+class UpdateCrawl(BaseModel):
+    """Update crawl"""
+
+    tags: Optional[List[str]] = []
+    notes: Optional[str]
+
+
+# ============================================================================
 class DeleteCrawlList(BaseModel):
     """delete crawl list POST body"""
 
@@ -192,6 +200,29 @@ class BaseCrawlOps:
         files = [CrawlFile(**data) for data in res["files"]]
         res["resources"] = await self._resolve_signed_urls(files, org, res["_id"])
         return res
+
+    async def update_crawl(
+        self, crawl_id: str, org: Organization, update: UpdateCrawl, type_=None
+    ):
+        """Update existing crawl (tags and notes only for now)"""
+        update_values = update.dict(exclude_unset=True)
+        if len(update_values) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
+        query = {"_id": crawl_id, "oid": org.id}
+        if type_:
+            query["type"] = type_
+
+        # update in db
+        result = await self.crawls.find_one_and_update(
+            query,
+            {"$set": update_values},
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        return {"updated": True}
 
     async def delete_crawls(
         self, org: Organization, delete_list: DeleteCrawlList, type_=None

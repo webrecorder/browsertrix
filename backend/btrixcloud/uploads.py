@@ -21,6 +21,7 @@ from .basecrawls import (
     BaseCrawlOutWithResources,
     BaseCrawlOps,
     CrawlFile,
+    UpdateCrawl,
     DeleteCrawlList,
 )
 from .users import User
@@ -50,6 +51,13 @@ class UploadedCrawlOut(BaseCrawlOut):
 # ============================================================================
 class UploadedCrawlOutWithResources(BaseCrawlOutWithResources):
     """Output model for Crawl Uploads with all file resources"""
+
+
+# ============================================================================
+class UpdateUpload(UpdateCrawl):
+    """Update modal that also includes name"""
+
+    name: Optional[str]
 
 
 # ============================================================================
@@ -298,7 +306,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
 
     @app.get(
         "/orgs/all/uploads/{crawl_id}/replay.json",
-        tags=["all-crawls"],
+        tags=["uploads"],
         response_model=BaseCrawlOutWithResources,
     )
     async def get_upload_replay_admin(crawl_id, user: User = Depends(user_dep)):
@@ -309,11 +317,17 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
 
     @app.get(
         "/orgs/{oid}/uploads/{crawl_id}/replay.json",
-        tags=["all-crawls"],
+        tags=["uploads"],
         response_model=BaseCrawlOutWithResources,
     )
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "upload")
+
+    @app.patch("/orgs/{oid}/uploads/{crawl_id}", tags=["uploads"])
+    async def update_uploads_api(
+        update: UpdateUpload, crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await ops.update_crawl(crawl_id, org, update, "upload")
 
     @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
     async def delete_uploads(
