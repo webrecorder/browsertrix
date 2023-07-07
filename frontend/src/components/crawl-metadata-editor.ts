@@ -36,10 +36,16 @@ export class CrawlMetadataEditor extends LiteElement {
   open = false;
 
   @state()
+  private canEditName = false;
+
+  @state()
   private isSubmittingUpdate: boolean = false;
 
   @state()
   private isDialogVisible: boolean = false;
+
+  @state()
+  private includeName: boolean = false;
 
   @state()
   private tagOptions: Tags = [];
@@ -60,6 +66,7 @@ export class CrawlMetadataEditor extends LiteElement {
       this.fetchTags();
     }
     if (changedProperties.has("crawl") && this.crawl) {
+      this.includeName = this.crawl.type === "upload";
       this.tagsToSave = this.crawl.tags || [];
     }
   }
@@ -88,6 +95,15 @@ export class CrawlMetadataEditor extends LiteElement {
         @submit=${this.onSubmitMetadata}
         @reset=${this.requestClose}
       >
+      ${this.includeName ? html`
+        <div class="mb-3">
+          <sl-input
+            label="Name"
+            name="name"
+            value="${this.crawl.name}">
+          </sl-input>
+        </div>
+      ` : ``}
         <sl-textarea
           class="mb-3 with-max-help-text"
           name="crawlNotes"
@@ -156,9 +172,9 @@ export class CrawlMetadataEditor extends LiteElement {
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
-    const { crawlNotes } = serialize(formEl);
+    const { crawlNotes, name } = serialize(formEl);
 
-    if (
+    if ((!this.includeName || name === this.crawl.name ) &&
       crawlNotes === (this.crawl!.notes ?? "") &&
       JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
     ) {
@@ -170,7 +186,9 @@ export class CrawlMetadataEditor extends LiteElement {
     const params = {
       tags: this.tagsToSave,
       notes: crawlNotes,
+      name,
     };
+
     this.isSubmittingUpdate = true;
 
     try {
