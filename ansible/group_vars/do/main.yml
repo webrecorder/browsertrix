@@ -2,7 +2,7 @@
 project_name: "default"
 
 main_node_size: "s-1vcpu-2gb"
-crawl_node_size: "c-4"
+crawl_node_size: "s-1vcpu-2gb"
 droplet_region: "sfo3"
 
 node_pools:
