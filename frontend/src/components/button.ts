@@ -1,4 +1,7 @@
-import { LitElement, html, css } from "lit";
+/* eslint-disable lit/binding-positions */
+/* eslint-disable lit/no-invalid-html */
+import { LitElement, css } from "lit";
+import { html, literal } from "lit/static-html.js";
 import { property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -20,6 +23,9 @@ export class Button extends LitElement {
 
   @property({ type: String })
   label?: string;
+
+  @property({ type: String })
+  href?: string;
 
   @property({ type: Boolean })
   raised = false;
@@ -43,9 +49,10 @@ export class Button extends LitElement {
       font-size: 1rem;
     }
 
-    button {
+    .button {
       all: unset;
       display: flex;
+      gap: var(--sl-spacing-x-small);
       align-items: center;
       justify-content: center;
       border-radius: var(--sl-border-radius-small);
@@ -58,16 +65,21 @@ export class Button extends LitElement {
         transform 0.15s;
     }
 
-    button[disabled] {
+    .button[disabled] {
       cursor: not-allowed;
       background-color: var(--sl-color-neutral-100) !important;
       color: var(--sl-color-neutral-300) !important;
     }
 
-    button.icon {
+    .button.icon {
       min-width: 1.5rem;
       min-height: 1.5rem;
       padding: 0 var(--sl-spacing-2x-small);
+    }
+
+    .button:not(.icon) {
+      height: var(--sl-input-height-small);
+      padding: 0 var(--sl-spacing-x-small);
     }
 
     .raised {
@@ -98,7 +110,7 @@ export class Button extends LitElement {
     }
 
     .neutral {
-      color: var(--sl-color-neutral-500);
+      color: var(--sl-color-neutral-600);
     }
 
     .neutral:hover {
@@ -107,9 +119,11 @@ export class Button extends LitElement {
   `;
 
   render() {
-    return html`<button
-      type="submit"
+    const tag = this.href ? literal`a` : literal`button`;
+    return html`<${tag}
+      type=${this.type === "submit" ? "submit" : "button"}
       class=${classMap({
+        button: true,
         [this.variant]: true,
         icon: this.icon,
         raised: this.raised,
@@ -119,7 +133,7 @@ export class Button extends LitElement {
       @click=${this.handleClick}
     >
       ${this.loading ? html`<sl-spinner></sl-spinner>` : html`<slot></slot>`}
-    </button>`;
+    </${tag}>`;
   }
 
   private handleClick(e: MouseEvent) {
