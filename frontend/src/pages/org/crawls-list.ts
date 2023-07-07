@@ -42,12 +42,12 @@ const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  started: {
-    label: msg("Date Started"),
-    defaultDirection: "desc",
-  },
   finished: {
     label: msg("Date Finished"),
+    defaultDirection: "desc",
+  },
+  started: {
+    label: msg("Date Started"),
     defaultDirection: "desc",
   },
   firstSeed: {
@@ -388,40 +388,7 @@ export class CrawlsList extends LiteElement {
           <div class="whitespace-nowrap text-neutral-500 mx-2">
             ${msg("Sort by:")}
           </div>
-          <div class="grow flex">
-            <sl-select
-              class="flex-1 md:w-[9.2rem]"
-              size="small"
-              pill
-              value=${this.orderBy.field}
-              @sl-change=${(e: Event) => {
-                const field = (e.target as HTMLSelectElement)
-                  .value as SortField;
-                this.orderBy = {
-                  field: field,
-                  direction:
-                    sortableFields[field].defaultDirection ||
-                    this.orderBy.direction,
-                };
-              }}
-            >
-              ${Object.entries(sortableFields).map(
-                ([value, { label }]) => html`
-                  <sl-option value=${value}>${label}</sl-option>
-                `
-              )}
-            </sl-select>
-            <sl-icon-button
-              name="arrow-down-up"
-              label=${msg("Reverse sort")}
-              @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-                };
-              }}
-            ></sl-icon-button>
-          </div>
+          <div class="grow flex">${this.renderSortControl()}</div>
         </div>
       </div>
 
@@ -439,6 +406,54 @@ export class CrawlsList extends LiteElement {
             </label>
           </div>`
         : ""}
+    `;
+  }
+
+  private renderSortControl() {
+    let options: any;
+    if (this.artifactType === "upload") {
+      options = html`
+        <sl-option value="finished">${msg("Date Uploaded")}</sl-option>
+      `;
+    } else if (this.artifactType === "crawl") {
+      options = Object.entries(sortableFields).map(
+        ([value, { label }]) => html`
+          <sl-option value=${value}>${label}</sl-option>
+        `
+      );
+    } else {
+      options = html`
+        <sl-option value="finished">${sortableFields.finished.label}</sl-option>
+        <sl-option value="started">${sortableFields.started.label}</sl-option>
+      `;
+    }
+    return html`
+      <sl-select
+        class="flex-1 md:w-[10rem]"
+        size="small"
+        pill
+        value=${this.orderBy.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy = {
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection || this.orderBy.direction,
+          };
+        }}
+      >
+        ${options}
+      </sl-select>
+      <sl-icon-button
+        name="arrow-down-up"
+        label=${msg("Reverse sort")}
+        @click=${() => {
+          this.orderBy = {
+            ...this.orderBy,
+            direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+          };
+        }}
+      ></sl-icon-button>
     `;
   }
 
@@ -464,9 +479,7 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg(
-            "Filter by Workflow Name, Crawl Start URL, or Workflow ID"
-          )}
+          placeholder=${msg("Filter by Name, Crawl Start URL, or Workflow ID")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
