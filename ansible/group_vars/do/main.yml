@@ -26,7 +26,7 @@ bucket_path: "crawls"
 domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
-configure_kube: false
+configure_kubectl: false
 use_do_registry: true
 image_tag: "latest"
 
