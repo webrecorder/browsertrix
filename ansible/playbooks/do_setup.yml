@@ -25,7 +25,7 @@
   # MongoDB
   # ===========================================
     - name: d_ocean | db | test for existing mongodb
-      ansible.builtin.command: doctl db list
+      ansible.builtin.command: doctl db list -o json
       changed_when: false
       failed_when: false
       register: db_check
@@ -34,18 +34,22 @@
       ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 6 --output json
       async: 1800
       poll: 60
-      register: db_create_result
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+      register: db_create
+      when: "db_check.stdout | from_json | json_query(name_query) | length < 1"
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
     - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
-        db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+        db_url:  "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') }}" 
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
     - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
-        db_uuid: db_create_result.stdout | from_json | json_query('[0].id')
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+        db_uuid: "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id')}}"
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
   # Storage (Space)
   # ===========================================
