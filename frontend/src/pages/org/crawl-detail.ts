@@ -990,7 +990,9 @@ ${this.crawl?.notes}
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/crawls/delete`,
+        `/orgs/${this.crawl!.oid}/${
+          this.crawl!.type === "crawl" ? "crawls" : "uploads"
+        }/delete`,
         this.authState!,
         {
           method: "POST",

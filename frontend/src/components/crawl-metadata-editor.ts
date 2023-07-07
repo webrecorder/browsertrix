@@ -175,7 +175,9 @@ export class CrawlMetadataEditor extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawl.id}`,
+        `/orgs/${this.crawl!.oid}/${
+          this.crawl!.type === "crawl" ? "crawls" : "uploads"
+        }/${this.crawl.id}`,
         this.authState!,
         {
           method: "PATCH",
