@@ -781,7 +781,7 @@ export class WorkflowDetail extends LiteElement {
               pill
               multiple
               max-options-visible="1"
-              placeholder=${msg("Web Archives")}
+              placeholder=${msg("Archived Data")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
                 await this.updateComplete;

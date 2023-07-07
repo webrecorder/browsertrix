@@ -130,7 +130,7 @@ export class CrawlStatus extends LitElement {
           slot="prefix"
           style="color: var(--success)"
         ></sl-icon>`;
-        label = msg("Complete");
+        label = isUpload ? msg("Uploaded") : msg("Complete");
         break;
       }
 
