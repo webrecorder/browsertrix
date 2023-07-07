@@ -235,7 +235,7 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${this.crawlsBaseUrl}
+          href="${this.crawlsBaseUrl}?artifactType=${this.crawl?.type}"
           @click=${this.navLink}
         >
           <sl-icon
@@ -245,7 +245,9 @@ export class CrawlDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${isWorkflowArtifact
               ? msg("Back to Crawl Workflow")
-              : msg("Back to Archived Data")}</span
+              : (this.crawl?.type === "upload" ?
+                 msg("Back to All Uploads") : msg("Back to All Crawls"))
+              }</span
           >
         </a>
       </div>
