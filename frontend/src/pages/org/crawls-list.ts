@@ -270,7 +270,7 @@ export class CrawlsList extends LiteElement {
       <main>
         <header class="contents">
           <div class="flex w-full pb-3 mb-3 border-b">
-            <h1 class="text-xl font-semibold h-8">${msg("Archived Data")}</h1>
+            <h1 class="text-xl font-semibold h-8">${msg("All Archived Data")}</h1>
           </div>
           <div class="flex gap-2 mb-3">
             ${listTypes.map(({ label, artifactType, icon }) => {
@@ -579,7 +579,7 @@ export class CrawlsList extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/artifacts/crawl/${crawl.id}`)}
+                  this.navTo(`/orgs/${crawl.oid}/artifacts/${crawl.type === "upload" ? "upload" : "crawl"}/${crawl.id}`)}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>

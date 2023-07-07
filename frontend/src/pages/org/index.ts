@@ -178,7 +178,7 @@ export class Org extends LiteElement {
           })}
           ${this.renderNavTab({
             tabName: "artifacts",
-            label: msg("Archived Data"),
+            label: msg("All Archived Data"),
             path: "artifacts/crawls",
           })}
           ${this.renderNavTab({
@@ -239,6 +239,8 @@ export class Org extends LiteElement {
     const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
     const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
+    const artifactType = this.orgPath.includes("/artifacts/upload") ? "upload" : "crawl";
+
     if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
@@ -246,7 +248,7 @@ export class Org extends LiteElement {
         crawlId=${this.params.crawlOrWorkflowId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
-        artifactType=${this.params.artifactType || "crawl"}
+        artifactType=${artifactType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }

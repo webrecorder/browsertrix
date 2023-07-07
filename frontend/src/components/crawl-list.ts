@@ -226,9 +226,9 @@ export class CrawlListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${
+      href="${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${
         this.crawl?.id
-      }?artifactType=${artifactType}${hash}`}
+      }"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
