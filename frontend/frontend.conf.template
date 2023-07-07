@@ -21,6 +21,8 @@ server {
 
     error_page 500 501 502 503 504 /50x.html;
 
+    client_max_body_size 0;
+
     merge_slashes off;
     location = /50x.html {
         root /usr/share/nginx/html;
