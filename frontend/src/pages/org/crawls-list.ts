@@ -622,7 +622,7 @@ export class CrawlsList extends LiteElement {
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => this.deleteCrawl(crawl)}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${crawl.type === "upload"
               ? msg("Delete Upload")
               : msg("Delete Crawl")}
