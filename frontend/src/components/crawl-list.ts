@@ -278,7 +278,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
         ${this.safeRender((crawl) =>
-          crawl.finished
+          crawl.finished && crawl.type === "crawl"
             ? html`<div class="desc truncate">
                 ${msg(
                   str`in ${RelativeDuration.humanize(
@@ -524,7 +524,11 @@ export class CrawlList extends LitElement {
           ${this.artifactType === "upload" ? msg("Uploaded") : msg("Finished")}
         </div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Created By")}</div>
+        <div class="col">
+          ${this.artifactType === "upload"
+            ? msg("Uploaded By")
+            : msg("Started By")}
+        </div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>
