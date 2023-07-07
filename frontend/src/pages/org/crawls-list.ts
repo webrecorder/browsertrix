@@ -34,7 +34,7 @@ type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const INITIAL_PAGE_SIZE = 30;
+const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
