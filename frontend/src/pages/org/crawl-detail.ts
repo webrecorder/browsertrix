@@ -514,14 +514,16 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderReplay() {
-    //const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json?auth_bearer=${bearer}`;
-    const replaySource = `/api/orgs/${this.crawl?.oid}/crawls/${this.crawlId}/replay.json`;
+    if (!this.crawl) return;
+    const replaySource = `/api/orgs/${this.crawl.oid}/${
+      this.crawl.type === "upload" ? "uploads" : "crawls"
+    }/${this.crawlId}/replay.json`;
 
     const headers = this.authState?.headers;
 
     const config = JSON.stringify({ headers });
 
-    const canReplay = replaySource && this.hasFiles;
+    const canReplay = this.hasFiles;
 
     return html`
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
@@ -838,7 +840,7 @@ ${this.crawl?.notes}
   private async getCrawl(): Promise<Crawl> {
     const apiPath =
       this.artifactType === "upload"
-        ? `/orgs/${this.orgId}/uploads/${this.crawlId}`
+        ? `/orgs/${this.orgId}/uploads/${this.crawlId}/replay.json`
         : `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
             this.crawlId
           }/replay.json`;
