@@ -9,3 +9,5 @@ redis>=4.2.0rc1
 pyyaml
 jinja2
 humanize
+python-multipart
+pathvalidate

@@ -29,6 +29,7 @@ domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
 use_do_registry: false
+configure_kube: false
 image_tag: "latest"
 
 enable_signing: true

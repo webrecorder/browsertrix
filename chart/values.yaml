@@ -42,6 +42,12 @@ max_pages_per_crawl: 0
 default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 
 
+# advanced: additional args to be passed to the crawler
+# this is mostly for testing of new/experimental crawler flags
+# standard crawler options are covered with other options above
+crawler_extra_args: ""
+
+
 # Cluster Settings
 # =========================================
 name: browsertrix-cloud

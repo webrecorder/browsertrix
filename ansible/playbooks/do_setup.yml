@@ -25,7 +25,7 @@
   # MongoDB
   # ===========================================
     - name: d_ocean | db | test for existing mongodb
-      ansible.builtin.command: doctl db list
+      ansible.builtin.command: doctl db list -o json
       changed_when: false
       failed_when: false
       register: db_check
@@ -34,18 +34,22 @@
       ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 6 --output json
       async: 1800
       poll: 60
-      register: db_create_result
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+      register: db_create
+      when: "db_check.stdout | from_json | json_query(name_query) | length < 1"
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
     - name: d_ocean | db | set db url
       ansible.builtin.set_fact:
-        db_url: "{{ db_create_result.stdout | from_json | json_query('[0].private_connection.uri') }}"
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+        db_url:  "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') }}" 
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
     - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
-        db_uuid: db_create_result.stdout | from_json | json_query('[0].id')
-      when: "db_check.stdout.find(' ' + db_name + ' ') == -1"
+        db_uuid: "{{ db_create.stdout if db_create.changed == false else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id')}}"
+      vars:
+        name_query: '[?name==`{{db_name}}`]'
 
   # Storage (Space)
   # ===========================================
@@ -162,6 +166,16 @@
       ansible.builtin.set_fact:
         lb_id: "{{ lb_id_result.stdout | from_json | json_query('load_balancers[0].id') }}"
 
+  # FIREWALL
+  # ===========================================
+    - name: d_ocean | db | get db firewall list
+      ansible.builtin.command: doctl db firewalls list {{ db_uuid }} -o json
+      register: db_firewalls
+
+    - name: d_ocean | db | configure firewall for mongoDB
+      ansible.builtin.command: doctl db firewalls append {{ db_uuid }} --rule k8s:{{ my_cluster.data.id }}
+      when: "db_firewalls.stdout == []"
+
   # DNS
   # ===========================================
     - name: d_ocean | dns | grab loadbalancer ip using doctl
@@ -224,6 +238,10 @@
       ansible.builtin.set_fact:
         registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
       when: use_do_registry
+
+    - name: d_ocean | registry | configure kubectl
+      ansible.builtin.shell: doctl k8s cluster kubeconfig save {{ my_cluster.data.id }}
+      when: configure_kubectl
 
     - name: d_ocean | registry | add to new k8s cluster
       ansible.builtin.shell: set -o pipefail && doctl registry kubernetes-manifest | kubectl apply -f -
