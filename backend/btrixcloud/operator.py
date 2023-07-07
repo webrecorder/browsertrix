@@ -629,6 +629,9 @@ class BtrixOperator(K8sAPI):
             state, status, crawl_id, allowed_from=allowed_from, **kwargs
         ):
             print("already finished, ignoring mark_finished")
+            if not status.finished:
+                status.finished = to_k8s_date(finished)
+
             return status
 
         status.finished = to_k8s_date(finished)
