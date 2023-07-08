@@ -10,7 +10,7 @@ crawl_id = None
 
 def get_crawl(org_id, auth_headers, crawl_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
         headers=auth_headers,
     )
     assert r.status_code == 200
