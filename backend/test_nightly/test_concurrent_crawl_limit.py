@@ -99,10 +99,9 @@ def run_crawl(org_id, headers):
 
 
 def get_crawl_status(org_id, crawl_id, headers):
-    while True:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
-            headers=headers,
-        )
-        data = r.json()
-        return data["state"]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
+        headers=headers,
+    )
+    data = r.json()
+    return data["state"]
