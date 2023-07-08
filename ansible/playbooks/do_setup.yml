@@ -40,17 +40,33 @@
       vars:
         name_query: '[?name==`{{ db_name }}`]'
 
-    - name: d_ocean | db | set db url
+    - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
-        db_url: "{{ db_create.stdout if db_create.changed == true else db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') }}"
+        db_uuid: "{{ db_create.stdout if db_create.changed == true else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id')}}"
+
       vars:
         name_query: '[?name==`{{ db_name }}`]'
 
-    - name: d_ocean | db | set db id
+    - name: d_ocean | db | reset db user password
+      ansible.builtin.command: doctl databases user reset {{ db_uuid }} doadmin -o json
+      register: db_user
+      when: db_create.changed == false 
+
+    - name: d_ocean | db | set db config
       ansible.builtin.set_fact:
         db_uuid: "{{ db_create.stdout if db_create.changed == true else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
+
       vars:
         name_query: '[?name==`{{ db_name }}`]'
+
+    - name: d_ocean | db | set db config 
+      ansible.builtin.set_fact:
+        db_url: "{{ db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') | replace(old, new)}}" 
+      when: db_create.changed == false 
+      vars:
+        name_query: '[?name==`{{ db_name }}`]'
+        old: ":@"
+        new: ":{{ db_user.stdout | from_json | json_query('[0].password') }}@"
 
   # Storage (Space)
   # ===========================================
