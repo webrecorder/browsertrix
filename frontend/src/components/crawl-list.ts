@@ -222,12 +222,13 @@ export class CrawlListItem extends LitElement {
   renderRow() {
     const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
     const artifactType = this.crawl?.type || "crawl";
+    const typePath = this.crawl?.type === "upload" ? "upload" : "crawl";
     return html`<a
       class="item row"
       role="button"
-      href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
+      href="${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${
         this.crawl?.id
-      }?artifactType=${artifactType}${hash}`}
+      }"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;

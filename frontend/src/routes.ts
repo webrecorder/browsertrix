@@ -18,6 +18,7 @@ export const ROUTES = {
     "(/edit/:resourceId)",
     "(/crawls)",
     "(/crawl/:crawlOrWorkflowId)",
+    "(/upload/:crawlOrWorkflowId)",
     "(/artifact/:artifactId)",
     "(/profile(/:browserProfileId)(/browser/:browserId))",
     "(/members)",
