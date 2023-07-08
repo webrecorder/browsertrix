@@ -10,7 +10,7 @@ crawl_id = None
 
 def get_crawl(org_id, auth_headers, crawl_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}",
         headers=auth_headers,
     )
     assert r.status_code == 200
@@ -49,6 +49,7 @@ def test_cancel_crawl(default_org_id, crawler_auth_headers):
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     while data["state"] in ("running", "waiting_capacity"):
+        time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] == "canceled"
@@ -88,6 +89,7 @@ def test_start_crawl_and_stop_immediately(
     assert r.json()["lastCrawlStopping"] == True
 
     while data["state"] in ("starting", "running", "waiting_capacity"):
+        time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] in ("canceled", "partial_complete")
@@ -148,6 +150,7 @@ def test_stop_crawl_partial(
     assert r.json()["lastCrawlStopping"] == True
 
     while data["state"] == "running":
+        time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
     assert data["state"] in ("partial_complete", "complete")
