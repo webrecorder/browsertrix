@@ -13,6 +13,7 @@ import groupBy from "lodash/fp/groupBy";
 import keyBy from "lodash/fp/keyBy";
 import orderBy from "lodash/fp/orderBy";
 import flow from "lodash/fp/flow";
+import uniqBy from "lodash/fp/uniqBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -214,6 +215,7 @@ export class CollectionEditor extends LiteElement {
     }
     if (changedProperties.has("collectionId") && this.collectionId) {
       this.fetchCollectionCrawls();
+      this.fetchCollectionUploads();
     }
   }
 
@@ -462,6 +464,7 @@ export class CollectionEditor extends LiteElement {
             this.collectionId,
             () => html`
               <sl-button
+                class="ml-auto"
                 size="small"
                 variant="primary"
                 ?disabled=${this.isSubmitting ||
@@ -545,7 +548,7 @@ export class CollectionEditor extends LiteElement {
     }
 
     const crawlsInCollection =
-      this.collectionCrawls?.filter((crawl) => crawl.type === "crawl") || [];
+      this.collectionCrawls?.filter((crawl) => crawl.type !== "upload") || [];
 
     if (!crawlsInCollection.length) {
       return html`
@@ -588,8 +591,9 @@ export class CollectionEditor extends LiteElement {
       return this.renderLoading();
     }
 
-    const uploadsInCollection =
-      this.collectionCrawls?.filter((crawl) => crawl.type === "upload") || [];
+    const uploadsInCollection = (this.collectionCrawls?.filter(
+      (crawl) => crawl.type === "upload"
+    ) || []) as Upload[];
 
     if (!uploadsInCollection.length) {
       return html`
@@ -604,9 +608,9 @@ export class CollectionEditor extends LiteElement {
     }
 
     return html`
-      <btrix-checkbox-group-list>
-        ${uploadsInCollection.map((crawl) => this.renderCrawl(crawl))}
-      </btrix-checkbox-group-list>
+      <btrix-checkbox-list>
+        ${uploadsInCollection.map(this.renderUpload)}
+      </btrix-checkbox-list>
     `;
   };
 
@@ -764,6 +768,37 @@ export class CollectionEditor extends LiteElement {
       </btrix-checkbox-list-item>
     `;
   }
+
+  private renderUpload = (crawl: Upload) => {
+    return html`
+      <btrix-checkbox-list-item
+        id=${crawl.id}
+        name="crawlIds"
+        value=${crawl.id}
+        ?checked=${this.selectedCrawls[crawl.id]}
+        @on-change=${(e: CheckboxChangeEvent) => {
+          if (e.detail.checked) {
+            this.selectedCrawls = mergeDeep(this.selectedCrawls, {
+              [crawl.id]: crawl,
+            });
+          } else {
+            this.selectedCrawls = omit([crawl.id])(this.selectedCrawls) as any;
+          }
+        }}
+      >
+        <div class="flex items-center">
+          <div class="flex-1">${crawl.name}</div>
+          <div class="w-14">
+            <sl-format-bytes
+              class="text-neutral-500 text-xs font-monostyle"
+              value=${crawl.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </div>
+        </div>
+      </btrix-checkbox-list-item>
+    `;
+  };
 
   private renderWorkflowListControls = () => {
     return html`
@@ -1020,7 +1055,41 @@ export class CollectionEditor extends LiteElement {
       </div>`;
     }
 
-    return html` ${this.uploads.items.map((item) => item.id)} `;
+    return html`
+      <btrix-checkbox-list>
+        ${this.uploads.items.map(this.renderUploadItem)}
+      </btrix-checkbox-list>
+    `;
+  };
+
+  private renderUploadItem = (crawl: Upload) => {
+    return html`
+      <btrix-checkbox-list-item
+        ?checked=${this.selectedCrawls[crawl.id]}
+        @on-change=${(e: CheckboxChangeEvent) => {
+          if (e.detail.checked) {
+            this.collectionCrawls = uniqBy("id")([
+              ...(this.collectionCrawls || []),
+              ...[crawl],
+            ] as any) as any;
+            this.selectCrawls([crawl]);
+          } else {
+            this.deselectCrawls([crawl]);
+          }
+        }}
+      >
+        <div class="flex items-center">
+          <div class="flex-1">${crawl.name}</div>
+          <div class="w-14">
+            <sl-format-bytes
+              class="text-neutral-500 text-xs font-monostyle"
+              value=${crawl.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </div>
+        </div>
+      </btrix-checkbox-list-item>
+    `;
   };
 
   private renderCrawlCount(workflow: Workflow) {
@@ -1082,9 +1151,9 @@ export class CollectionEditor extends LiteElement {
     </div>
   `;
 
-  private selectCrawls(crawls: Crawl[]) {
+  private selectCrawls(crawls: (Crawl | Upload)[]) {
     const allCrawls = crawls.reduce(
-      (acc: any, crawl: Crawl) => ({
+      (acc: any, crawl: Crawl | Upload) => ({
         ...acc,
         [crawl.id]: crawl,
       }),
@@ -1093,7 +1162,7 @@ export class CollectionEditor extends LiteElement {
     this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
   }
 
-  private deselectCrawls(crawls: Crawl[]) {
+  private deselectCrawls(crawls: (Crawl | Upload)[]) {
     this.selectedCrawls = omit(crawls.map(({ id }) => id))(
       this.selectedCrawls
     ) as any;
@@ -1265,9 +1334,15 @@ export class CollectionEditor extends LiteElement {
   }
 
   private async getUploads(
-    params: APIPaginationQuery
+    params: Partial<{
+      collectionId?: string;
+      state: CrawlState[];
+    }> &
+      APIPaginationQuery &
+      APISortQuery
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify({
+      state: "complete",
       ...params,
     });
     const data: APIPaginatedList = await this.apiFetch(
@@ -1312,6 +1387,39 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
+  private async fetchCollectionUploads() {
+    if (!this.collectionId) return;
+
+    try {
+      const { items: crawls } = await this.getUploads({
+        collectionId: this.collectionId,
+        pageSize: WORKFLOW_CRAWL_LIMIT,
+      });
+      this.selectedCrawls = mergeDeep(
+        this.selectedCrawls,
+        crawls.reduce(
+          (acc, crawl) => ({
+            ...acc,
+            [crawl.id]: crawl,
+          }),
+          {}
+        )
+      );
+      // TODO remove omit once API removes errors
+      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
+      // Store crawl IDs to compare later
+      this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve Crawls in Collection at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async fetchWorkflowCrawls(workflowId: string): Promise<Crawl[]> {
     this.workflowIsLoading = mergeDeep(this.workflowIsLoading, {
       [workflowId]: true,
@@ -1328,11 +1436,10 @@ export class CollectionEditor extends LiteElement {
       });
       // TODO remove omit once API removes errors
       const crawls = items.map(omit("errors")) as Crawl[];
-      this.collectionCrawls = flow(
-        keyBy("id"),
-        (res) => mergeDeep(keyBy("id")(this.collectionCrawls), res),
-        Object.values
-      )(crawls) as any;
+      this.collectionCrawls = uniqBy("id")([
+        ...(this.collectionCrawls || []),
+        ...crawls,
+      ] as any) as any;
 
       workflowCrawls = crawls;
     } catch {
