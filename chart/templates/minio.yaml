@@ -94,12 +94,15 @@ spec:
   selector:
     app: local-minio
 
+  type: NodePort
+
   ports:
     - protocol: TCP
       port: 9000
       name: minio
 
     - protocol: TCP
+      nodePort: 30901
       port: 9001
       name: minio-console
 

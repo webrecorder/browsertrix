@@ -3,19 +3,25 @@ Collections API
 """
 from collections import Counter
 from datetime import datetime
-import uuid
 from typing import Optional, List
+import uuid
+import asyncio
+import json
+import traceback
 
 import pymongo
 from fastapi import Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel, UUID4, Field
+from stream_zip import stream_zip, NO_COMPRESSION_64
 
 from .basecrawls import BaseCrawlOutWithResources
-from .crawls import CrawlFileOut, SUCCESSFUL_STATES
+from .crawls import CrawlFileOut, SUCCESSFUL_STATES, CrawlFile
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .storages import get_sync_client, get_public_policy, delete_crawl_file_object
 
 
 # ============================================================================
@@ -33,6 +39,8 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
+    published: Optional[bool] = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -48,6 +56,7 @@ class CollOut(Collection):
     """Collection output model with annotations."""
 
     resources: Optional[List[CrawlFileOut]] = []
+    publishedUrl: Optional[str] = ""
 
 
 # ============================================================================
@@ -56,6 +65,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
+    published: Optional[bool]
 
 
 # ============================================================================
@@ -194,7 +204,11 @@ class CollectionOps:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
             )
-        return CollOut.from_dict(result)
+        result = CollOut.from_dict(result)
+        if result.published:
+            result.publishedUrl = "/data/" + self.get_published_path(coll_id, org)
+
+        return result
 
     async def list_collections(
         self,
@@ -300,6 +314,171 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         return {"success": True}
+
+    async def download_collection(self, coll_id: uuid.UUID, org: Organization):
+        """Download all WACZs in collection as streaming nested WACZ"""
+        coll = await self.get_collection(coll_id, org, resources=True)
+
+        s3_client_x = await get_sync_client(org, self.crawl_manager)
+
+        loop = asyncio.get_event_loop()
+
+        resp = await loop.run_in_executor(
+            None, self.sync_dl, coll.resources, s3_client_x
+        )
+
+        headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
+
+    def get_published_path(self, coll_id: uuid.UUID, org: Organization):
+        """return canonical path for collection wacz"""
+        return f"{org.id}/public/{coll_id}.wacz"
+
+    async def publish_collection(self, coll_id: uuid.UUID, org: Organization):
+        """Publish streaming WACZ file to publicly accessible bucket"""
+        coll = await self.get_collection(coll_id, org, resources=True)
+
+        s3_client_x = await get_sync_client(org, self.crawl_manager, use_full=True)
+
+        path = self.get_published_path(coll_id, org)
+
+        loop = asyncio.get_event_loop()
+
+        await loop.run_in_executor(
+            None, self.sync_publish, coll.resources, s3_client_x, path
+        )
+
+        await self.update_collection(coll_id, org, UpdateColl(published=True))
+
+        return {"published": True, "url": "/data/" + path}
+
+    async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
+        """unpublish collection, removing it from public access"""
+        coll = await self.get_collection(coll_id, org, resources=False)
+        if not coll.published:
+            return {"published": False}
+
+        crawl_file = CrawlFile(
+            filename=self.get_published_path(coll_id, org),
+            def_storage_name="default",
+            size=0,
+            hash="",
+        )
+
+        await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
+
+        await self.update_collection(coll_id, org, UpdateColl(published=False))
+
+        return {"published": False}
+
+    def sync_publish(self, all_files, s3_data, path):
+        """publish collection to public s3 path"""
+        try:
+            client, bucket, key, endpoint_url = s3_data
+
+            path = key + path
+
+            wacz_stream = self.sync_dl(all_files, s3_data)
+            wacz_stream = to_file_like_obj(wacz_stream)
+
+            def print_bytes(num):
+                print(f"uploaded: {num}")
+
+            client.upload_fileobj(
+                Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=print_bytes
+            )
+
+            print("Published To: " + endpoint_url + path, flush=True)
+
+            bucket_path = bucket + "/" + key if key else bucket
+
+            client.put_bucket_policy(
+                Bucket=bucket, Policy=json.dumps(get_public_policy(bucket_path))
+            )
+
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+
+        return path
+
+    def sync_dl(self, all_files, s3_data):
+        """generate streaming zip as sync"""
+        client, bucket, key, _ = s3_data
+
+        for file_ in all_files:
+            file_.path = file_.name
+
+        datapackage = {
+            "profile": "multi-wacz-package",
+            "resources": [file_.dict() for file_ in all_files],
+        }
+        datapackage = json.dumps(datapackage).encode("utf-8")
+
+        def get_file(name):
+            response = client.get_object(Bucket=bucket, Key=key + name)
+            return response["Body"].iter_chunks()
+
+        def member_files():
+            modified_at = datetime.now()
+            perms = 0o600
+            for file_ in all_files:
+                yield (
+                    file_.name,
+                    modified_at,
+                    perms,
+                    NO_COMPRESSION_64,
+                    get_file(file_.name),
+                )
+
+            yield (
+                "datapackage.json",
+                modified_at,
+                perms,
+                NO_COMPRESSION_64,
+                (datapackage,),
+            )
+
+        return stream_zip(member_files())
+
+
+# ============================================================================
+def to_file_like_obj(iterable):
+    """iter to file like obj"""
+    chunk = b""
+    offset = 0
+    # pylint: disable=invalid-name
+    it = iter(iterable)
+
+    def up_to_iter(size):
+        nonlocal chunk, offset
+
+        while size:
+            if offset == len(chunk):
+                try:
+                    chunk = next(it)
+                except StopIteration:
+                    break
+                else:
+                    offset = 0
+            to_yield = min(size, len(chunk) - offset)
+            offset = offset + to_yield
+            size -= to_yield
+            yield chunk[offset - to_yield : offset]
+
+    # pylint: disable=too-few-public-methods
+    class FileLikeObj:
+        """file-like obj wrapper for upload"""
+
+        def read(self, size=-1):
+            """read interface for file-like obj"""
+            return b"".join(
+                up_to_iter(float("inf") if size is None or size < 0 else size)
+            )
+
+    return FileLikeObj()
 
 
 # ============================================================================
@@ -493,5 +672,23 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.delete_collection(coll_id, org)
+
+    @app.get("/orgs/{oid}/collections/{coll_id}/download", tags=["collections"])
+    async def download_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await colls.download_collection(coll_id, org)
+
+    @app.post("/orgs/{oid}/collections/{coll_id}/publish", tags=["collections"])
+    async def publish_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await colls.publish_collection(coll_id, org)
+
+    @app.post("/orgs/{oid}/collections/{coll_id}/unpublish", tags=["collections"])
+    async def unpublish_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await colls.unpublish_collection(coll_id, org)
 
     return colls
