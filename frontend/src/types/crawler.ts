@@ -125,3 +125,5 @@ export type Crawl = CrawlConfig & {
   collections: string[];
   type?: "crawl" | "upload" | null;
 };
+
+export type Upload = Crawl & { type: "upload" };

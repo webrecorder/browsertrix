@@ -32,7 +32,7 @@ import type {
   APISortQuery,
 } from "../../types/api";
 import type { Collection } from "../../types/collection";
-import type { Crawl, CrawlState, Workflow } from "../../types/crawler";
+import type { Crawl, CrawlState, Upload, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
 const TABS = ["crawls", "uploads", "metadata"] as const;
@@ -133,6 +133,11 @@ export class CollectionEditor extends LiteElement {
   } = {};
 
   @state()
+  private uploads?: APIPaginatedList & {
+    items: Upload[];
+  };
+
+  @state()
   private selectedCrawls: {
     [crawlId: string]: Crawl;
   } = {};
@@ -204,7 +209,9 @@ export class CollectionEditor extends LiteElement {
     ) {
       this.fetchWorkflows();
     }
-
+    if (changedProperties.has("orgId") && this.orgId) {
+      this.fetchUploads();
+    }
     if (changedProperties.has("collectionId") && this.collectionId) {
       this.fetchCollectionCrawls();
     }
@@ -403,9 +410,41 @@ export class CollectionEditor extends LiteElement {
           <h4 class="text-base font-semibold mb-3">
             ${msg("Uploads in Collection")}
           </h4>
+          <div class="border rounded-lg py-2 flex-1">
+            ${guard(
+              [this.collectionCrawls, this.selectedCrawls],
+              this.renderCollectionUploadList
+            )}
+          </div>
         </section>
         <section class="col-span-1 flex flex-col">
           <h4 class="text-base font-semibold mb-3">${msg("All Uploads")}</h4>
+          <div class="flex-1">
+            ${guard(
+              [this.isCrawler, this.uploads, this.selectedCrawls],
+              this.renderUploadList
+            )}
+          </div>
+          <footer class="mt-4 flex justify-center">
+            ${when(
+              this.uploads?.total,
+              () => html`
+                <btrix-pagination
+                  page=${this.uploads!.page}
+                  totalCount=${this.uploads!.total}
+                  size=${this.uploads!.pageSize}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchUploads({
+                      page: e.detail.page,
+                    });
+
+                    // Scroll to top of list
+                    this.scrollIntoView({ behavior: "smooth" });
+                  }}
+                ></btrix-pagination>
+              `
+            )}
+          </footer>
         </section>
         <footer
           class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
@@ -505,7 +544,10 @@ export class CollectionEditor extends LiteElement {
       return this.renderLoading();
     }
 
-    if (!this.collectionCrawls?.length) {
+    const crawlsInCollection =
+      this.collectionCrawls?.filter((crawl) => crawl.type === "crawl") || [];
+
+    if (!crawlsInCollection.length) {
       return html`
         <div
           class="flex flex-col items-center justify-center text-center p-4 my-12"
@@ -525,7 +567,7 @@ export class CollectionEditor extends LiteElement {
         </div>
       `;
     }
-    const groupedByWorkflow = groupBy("cid")(this.collectionCrawls) as any;
+    const groupedByWorkflow = groupBy("cid")(crawlsInCollection) as any;
 
     return html`
       <btrix-checkbox-list>
@@ -538,6 +580,33 @@ export class CollectionEditor extends LiteElement {
           )
         )}
       </btrix-checkbox-list>
+    `;
+  };
+
+  private renderCollectionUploadList = () => {
+    if (this.collectionId && !this.collectionCrawls) {
+      return this.renderLoading();
+    }
+
+    const uploadsInCollection =
+      this.collectionCrawls?.filter((crawl) => crawl.type === "upload") || [];
+
+    if (!uploadsInCollection.length) {
+      return html`
+        <div
+          class="flex flex-col items-center justify-center text-center p-4 my-12"
+        >
+          <span class="text-base font-semibold text-primary"
+            >${msg("No uploads in this Collection, yet")}</span
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      <btrix-checkbox-group-list>
+        ${uploadsInCollection.map((crawl) => this.renderCrawl(crawl))}
+      </btrix-checkbox-group-list>
     `;
   };
 
@@ -936,6 +1005,24 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
+  private renderUploadList = () => {
+    if (!this.uploads) {
+      return this.renderLoading();
+    }
+
+    if (!this.uploads.total) {
+      return html`<div
+        class="flex flex-col items-center justify-center text-center p-4 my-12"
+      >
+        <p class="text-neutral-400 text-center max-w-[24em]">
+          ${msg("Your organization doesn't have any uploaded Archive Data.")}
+        </p>
+      </div>`;
+    }
+
+    return html` ${this.uploads.items.map((item) => item.id)} `;
+  };
+
   private renderCrawlCount(workflow: Workflow) {
     const count = Math.min(WORKFLOW_CRAWL_LIMIT, workflow.crawlSuccessfulCount);
     let message = "";
@@ -1155,6 +1242,36 @@ export class CollectionEditor extends LiteElement {
     });
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async fetchUploads(params: APIPaginationQuery = {}) {
+    try {
+      this.uploads = await this.getUploads({
+        page: params.page || this.uploads?.page || 1,
+        pageSize:
+          params.pageSize || this.uploads?.pageSize || WORKFLOW_PAGE_SIZE,
+      });
+    } catch (e: any) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve uploads at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getUploads(
+    params: APIPaginationQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify({
+      ...params,
+    });
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/uploads?${query}`,
       this.authState!
     );
 
