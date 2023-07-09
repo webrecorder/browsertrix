@@ -126,4 +126,15 @@ export type Crawl = CrawlConfig & {
   type?: "crawl" | "upload" | null;
 };
 
-export type Upload = Crawl & { type: "upload" };
+export type Upload = Omit<
+  Crawl,
+  | "cid"
+  | "stats"
+  | "schedule"
+  | "manual"
+  | "stopping"
+  | "firstSeed"
+  | "seedCount"
+> & {
+  type: "upload";
+};
