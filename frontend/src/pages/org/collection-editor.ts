@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { ref } from "lit/directives/ref.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
@@ -34,7 +35,7 @@ import type { Collection } from "../../types/collection";
 import type { Crawl, CrawlState, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
-const TABS = ["crawls", "metadata"] as const;
+const TABS = ["crawls", "uploads", "metadata"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
@@ -188,6 +189,7 @@ export class CollectionEditor extends LiteElement {
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
+    uploads: msg("Select Uploads"),
     metadata: msg("Metadata"),
   };
 
@@ -243,6 +245,9 @@ export class CollectionEditor extends LiteElement {
 
         <btrix-tab-panel name="collectionForm-crawls">
           ${this.renderSelectCrawls()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="collectionForm-uploads">
+          ${this.renderSelectUploads()}
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-metadata">
           ${guard(
@@ -380,6 +385,57 @@ export class CollectionEditor extends LiteElement {
               </sl-button>
             `,
             () => html`
+              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Select Uploads")}
+              </sl-button>
+            `
+          )}
+        </footer>
+      </section>
+    `;
+  };
+
+  private renderSelectUploads = () => {
+    return html`
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">
+            ${msg("Uploads in Collection")}
+          </h4>
+        </section>
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">${msg("All Uploads")}</h4>
+        </section>
+        <footer
+          class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
+        >
+          ${when(
+            !this.collectionId,
+            () => html`
+              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Select Crawls")}
+              </sl-button>
+            `
+          )}
+          ${when(
+            this.collectionId,
+            () => html`
+              <sl-button
+                size="small"
+                variant="primary"
+                ?disabled=${this.isSubmitting ||
+                Object.values(this.workflowIsLoading).some(
+                  (isLoading) => isLoading === true
+                )}
+                ?loading=${this.isSubmitting}
+                @click=${this.submitCrawlSelectionChanges}
+              >
+                ${msg("Save Upload Selection")}
+              </sl-button>
+            `,
+            () => html`
               <sl-button size="small" @click=${() => this.goToTab("metadata")}>
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                 ${msg("Enter Metadata")}
@@ -401,7 +457,7 @@ export class CollectionEditor extends LiteElement {
             label=${msg("Name")}
             placeholder=${msg("My Collection")}
             autocomplete="off"
-            value=${this.metadataValues?.name}
+            value=${ifDefined(this.metadataValues?.name)}
             required
             help-text=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
@@ -411,7 +467,7 @@ export class CollectionEditor extends LiteElement {
             <label class="form-label">${msg("Description")}</label>
             <btrix-markdown-editor
               name="description"
-              initialValue=${this.metadataValues?.description}
+              initialValue=${this.metadataValues?.description || ""}
               maxlength=${4000}
             ></btrix-markdown-editor>
           </fieldset>
@@ -420,9 +476,9 @@ export class CollectionEditor extends LiteElement {
           ${when(
             !this.collectionId,
             () => html`
-              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
+              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Select Crawls")}
+                ${msg("Select Uploads")}
               </sl-button>
             `
           )}
@@ -869,7 +925,7 @@ export class CollectionEditor extends LiteElement {
       <div class="col-span-1 py-3">
         <div class="text-neutral-700 truncate h-6">
           <sl-format-bytes
-            value=${workflow.totalSize}
+            value=${workflow.totalSize === null ? 0 : +workflow.totalSize}
             display="narrow"
           ></sl-format-bytes>
         </div>
