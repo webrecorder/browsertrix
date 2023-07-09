@@ -466,6 +466,8 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
+    published: Optional[bool] = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -481,6 +483,7 @@ class CollOut(Collection):
     """Collection output model with annotations."""
 
     resources: Optional[List[CrawlFileOut]] = []
+    publishedUrl: Optional[str] = ""
 
 
 # ============================================================================
@@ -489,6 +492,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
+    published: Optional[bool]
 
 
 # ============================================================================

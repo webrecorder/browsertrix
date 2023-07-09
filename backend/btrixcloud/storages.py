@@ -6,7 +6,10 @@ from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, HTTPException
-from aiobotocore.session import get_session
+
+import aiobotocore.session
+import botocore.session
+import boto3
 
 from .models import Organization, DefaultStorage, S3Storage, User
 from .zip import get_zip_file, extract_and_parse_log_file
@@ -65,7 +68,7 @@ async def get_s3_client(storage, use_access=False):
 
     endpoint_url = parts.scheme + "://" + parts.netloc
 
-    session = get_session()
+    session = aiobotocore.session.get_session()
 
     async with session.create_client(
         "s3",
@@ -75,6 +78,48 @@ async def get_s3_client(storage, use_access=False):
         aws_secret_access_key=storage.secret_key,
     ) as client:
         yield client, bucket, key
+
+
+# ============================================================================
+def get_sync_s3_client(storage, use_access=False, use_full=False):
+    """context manager for s3 client"""
+    endpoint_url = (
+        storage.endpoint_url if not use_access else storage.access_endpoint_url
+    )
+    if not endpoint_url.endswith("/"):
+        endpoint_url += "/"
+
+    parts = urlsplit(endpoint_url)
+    bucket, key = parts.path[1:].split("/", 1)
+
+    endpoint_url = parts.scheme + "://" + parts.netloc
+
+    if use_full:
+        client = boto3.client(
+            "s3",
+            region_name=storage.region,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=storage.access_key,
+            aws_secret_access_key=storage.secret_key,
+        )
+    else:
+        session = botocore.session.get_session()
+
+        client = session.create_client(
+            "s3",
+            region_name=storage.region,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=storage.access_key,
+            aws_secret_access_key=storage.secret_key,
+        )
+
+    public_endpoint = (
+        storage.access_endpoint_url if use_access else storage.endpoint_url
+    )
+    if not public_endpoint.endswith("/"):
+        public_endpoint += "/"
+
+    return client, bucket, key, public_endpoint
 
 
 # ============================================================================
@@ -106,6 +151,38 @@ async def do_upload_single(org, filename, data, crawl_manager, storage_name="def
         key += filename
 
         return await client.put_object(Bucket=bucket, Key=key, Body=data)
+
+
+# ============================================================================
+async def get_client(org, crawl_manager, storage_name="default"):
+    """get async client"""
+    s3storage = None
+
+    if org.storage.type == "s3":
+        s3storage = org.storage
+    else:
+        s3storage = await crawl_manager.get_default_storage(storage_name)
+
+    if not s3storage:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    return get_s3_client(s3storage)
+
+
+# ============================================================================
+async def get_sync_client(org, crawl_manager, storage_name="default", use_full=False):
+    """get sync client"""
+    s3storage = None
+
+    if org.storage.type == "s3":
+        s3storage = org.storage
+    else:
+        s3storage = await crawl_manager.get_default_storage(storage_name)
+
+    if not s3storage:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    return get_sync_s3_client(s3storage, use_full=use_full)
 
 
 # ============================================================================
@@ -289,3 +366,19 @@ async def get_wacz_logs(org, crawlfile, crawl_manager):
             combined_log_lines.extend(parsed_log_lines)
 
         return combined_log_lines
+
+
+def get_public_policy(bucket_path):
+    """return public policy for /public paths"""
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": ["s3:GetObject"],
+                "Effect": "Allow",
+                "Principal": {"AWS": ["*"]},
+                "Resource": [f"arn:aws:s3:::{bucket_path}/*/public/*"],
+                "Sid": "",
+            }
+        ],
+    }
