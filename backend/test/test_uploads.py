@@ -134,7 +134,6 @@ def test_collection_uploads(admin_auth_headers, default_org_id):
             "name": "My Test Coll",
         },
     )
-    print(r.json())
     assert r.status_code == 200
     data = r.json()
     coll_id = data["id"]
@@ -143,6 +142,17 @@ def test_collection_uploads(admin_auth_headers, default_org_id):
     # Test uploads filtered by collection
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads?collectionId={coll_id}",
+        headers=admin_auth_headers,
+    )
+
+    results = r.json()
+
+    assert len(results["items"]) == 1
+    assert results["items"][0]["id"] == upload_id
+
+    # Test all crawls filtered by collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={coll_id}",
         headers=admin_auth_headers,
     )
 
