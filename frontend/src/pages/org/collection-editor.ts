@@ -214,8 +214,7 @@ export class CollectionEditor extends LiteElement {
       this.fetchUploads();
     }
     if (changedProperties.has("collectionId") && this.collectionId) {
-      this.fetchCollectionCrawls();
-      this.fetchCollectionUploads();
+      this.fetchCollectionCrawlsAndUploads();
     }
   }
 
@@ -1333,6 +1332,26 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
+  private async getCrawlsAndUploads(
+    params: Partial<{
+      collectionId?: string;
+      state: CrawlState[];
+    }> &
+      APIPaginationQuery &
+      APISortQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify({
+      state: "complete",
+      ...params,
+    });
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/all-crawls?${query}`,
+      this.authState!
+    );
+
+    return data;
+  }
+
   private async getUploads(
     params: Partial<{
       collectionId?: string;
@@ -1353,46 +1372,13 @@ export class CollectionEditor extends LiteElement {
     return data;
   }
 
-  private async fetchCollectionCrawls() {
+  private async fetchCollectionCrawlsAndUploads() {
     if (!this.collectionId) return;
 
     try {
-      const { items: crawls } = await this.getCrawls({
+      const { items: crawls } = await this.getCrawlsAndUploads({
         collectionId: this.collectionId,
         sortBy: "finished",
-        pageSize: WORKFLOW_CRAWL_LIMIT,
-      });
-      this.selectedCrawls = mergeDeep(
-        this.selectedCrawls,
-        crawls.reduce(
-          (acc, crawl) => ({
-            ...acc,
-            [crawl.id]: crawl,
-          }),
-          {}
-        )
-      );
-      // TODO remove omit once API removes errors
-      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
-      // Store crawl IDs to compare later
-      this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
-    } catch {
-      this.notify({
-        message: msg(
-          "Sorry, couldn't retrieve Crawls in Collection at this time."
-        ),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async fetchCollectionUploads() {
-    if (!this.collectionId) return;
-
-    try {
-      const { items: crawls } = await this.getUploads({
-        collectionId: this.collectionId,
         pageSize: WORKFLOW_CRAWL_LIMIT,
       });
       this.selectedCrawls = mergeDeep(
