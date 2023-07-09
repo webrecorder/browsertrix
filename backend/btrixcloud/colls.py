@@ -8,6 +8,7 @@ from typing import Optional, List
 
 import pymongo
 from fastapi import Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from .basecrawls import SUCCESSFUL_STATES
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -20,6 +21,9 @@ from .models import (
     CrawlOutWithResources,
     Organization,
     PaginatedResponse,
+)
+from .storages import (
+    download_streaming_wacz,
 )
 
 
@@ -259,6 +263,17 @@ class CollectionOps:
 
         return {"success": True}
 
+    async def download_collection(self, coll_id: uuid.UUID, org: Organization):
+        """Download all WACZs in collection as streaming nested WACZ"""
+        coll = await self.get_collection(coll_id, org, resources=True)
+
+        resp = await download_streaming_wacz(org, self.crawl_manager, coll.resources)
+
+        headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
+
 
 # ============================================================================
 async def update_collection_counts_and_tags(
@@ -457,5 +472,11 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.delete_collection(coll_id, org)
+
+    @app.get("/orgs/{oid}/collections/{coll_id}/download", tags=["collections"])
+    async def download_collection(
+        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await colls.download_collection(coll_id, org)
 
     return colls

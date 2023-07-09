@@ -504,6 +504,8 @@ export class CollectionsList extends LiteElement {
     </li>`;
 
   private renderActions = (col: Collection) => {
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
     return html`
       <sl-dropdown distance="4">
         <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
@@ -517,6 +519,19 @@ export class CollectionsList extends LiteElement {
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}
           </sl-menu-item>
+          <!-- Shoelace doesn't allow "href" on menu items,
+          see https://github.com/shoelace-style/shoelace/issues/1351 -->
+          <a
+            href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
+            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            @click=${(e: MouseEvent) => {
+              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+            }}
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Collection")}
+          </a>
+          <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => this.confirmDelete(col)}

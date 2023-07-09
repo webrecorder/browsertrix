@@ -14,4 +14,4 @@ export type CollectionList = Collection[];
 
 export type CollectionSearchValues = {
   names: string[];
-}
+};
