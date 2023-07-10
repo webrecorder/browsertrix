@@ -76,6 +76,7 @@ type FormState = {
   primarySeedUrl: string;
   urlList: string;
   includeLinkedPages: boolean;
+  useSitemap: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number | null;
   behaviorTimeoutSeconds: number | null;
@@ -149,6 +150,7 @@ const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
+  useSitemap: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
   behaviorTimeoutSeconds: null,
@@ -442,6 +444,7 @@ export class CrawlConfigEditor extends LiteElement {
       if (additionalSeeds.length) {
         formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
       }
+      formState.useSitemap = seedsConfig.useSitemap;
     } else {
       // Treat "custom" like URL list
       formState.urlList = mapSeedToUrl(seeds).join("\n");
@@ -518,6 +521,7 @@ export class CrawlConfigEditor extends LiteElement {
       exclusions: seedsConfig.exclude,
       includeLinkedPages:
         Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
+      useSitemap: seedsConfig.useSitemap ?? true,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
       autoscrollBehavior: this.initialWorkflow.config.behaviors
@@ -1113,6 +1117,18 @@ https://example.net`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away outside of
         Start URL Scope.`),
+        false
+      )}
+      ${this.renderFormCol(html`
+        <sl-checkbox
+          name="useSitemap"
+          ?checked=${this.formState.useSitemap}
+        >
+          ${msg("Use Sitemap")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`),
         false
       )}
       <div class="col-span-5">
@@ -2118,7 +2134,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseUrlListConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType" | "extraHops"
+    "seeds" | "scopeType" | "extraHops" | "useSitemap"
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
@@ -2127,6 +2143,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }),
       scopeType: "page" as FormState["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
+      useSitemap: false,
     };
 
     return config;
@@ -2134,7 +2151,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType"
+    "seeds" | "scopeType" | "useSitemap"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -2167,6 +2184,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: this.formState.scopeType,
+      useSitemap: this.formState.useSitemap,
     };
     return config;
   }
