@@ -365,13 +365,13 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3"
+            class="hidden md:grid md:grid-cols-[1fr_16ch_repeat(3,10ch)_2.5rem] gap-3"
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
-            <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
             <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
-            <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
+            <div class="col-span-1 text-xs">${msg("Total Pages")}</div>
+            <div class="col-span-2 text-xs">${msg("Public View")}</div>
           </div>
         </header>
         <ul class="contents">
@@ -457,18 +457,10 @@ export class CollectionsList extends LiteElement {
         }}
       >
         <div
-          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[1fr_16ch_repeat(3,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
           <div class="col-span-1 md:pl-3 truncate font-semibold">
             ${col.name}
-          </div>
-          <div class="col-span-1 order-last md:order-none truncate">
-            ${col.tags
-              .slice(0, 3)
-              .map(
-                (tag) =>
-                  html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
-              )}
           </div>
           <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
             <sl-format-date
@@ -493,6 +485,33 @@ export class CollectionsList extends LiteElement {
             ${col.pageCount === 1
               ? msg("1 page")
               : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
+          </div>
+          <div
+            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          >
+            ${col.publishedUrl
+              ? html`
+                  <a
+                    class="text-primary hover:text-indigo-500"
+                    href="https://replayweb.page?source=${new URL(
+                      col.publishedUrl
+                    ).href}"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    @click=${(e: MouseEvent) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="link-45deg"
+                    ></sl-icon>
+                    <span class="inline-block align-middle"
+                      >${msg("View")}</span
+                    >
+                  </a>
+                `
+              : html`<span role="presentation">--</span>`}
           </div>
           <div
             class="actionsCol absolute top-0 right-0 md:relative col-span-1 flex items-center justify-center"
