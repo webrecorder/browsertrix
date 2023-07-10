@@ -120,7 +120,7 @@ def get_sync_s3_client(storage, use_access=False, use_full=False):
     if not public_endpoint.endswith("/"):
         public_endpoint += "/"
 
-    return client, bucket, key, public_endpoint
+    return client, bucket, key
 
 
 # ============================================================================
