@@ -1332,26 +1332,6 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
-  private async getCrawlsAndUploads(
-    params: Partial<{
-      collectionId?: string;
-      state: CrawlState[];
-    }> &
-      APIPaginationQuery &
-      APISortQuery
-  ): Promise<APIPaginatedList> {
-    const query = queryString.stringify({
-      state: "complete",
-      ...params,
-    });
-    const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/all-crawls?${query}`,
-      this.authState!
-    );
-
-    return data;
-  }
-
   private async getUploads(
     params: Partial<{
       collectionId?: string;
@@ -1376,14 +1356,27 @@ export class CollectionEditor extends LiteElement {
     if (!this.collectionId) return;
 
     try {
-      const { items: crawls } = await this.getCrawlsAndUploads({
-        collectionId: this.collectionId,
-        sortBy: "finished",
-        pageSize: WORKFLOW_CRAWL_LIMIT,
-      });
+      const [crawlsRes, uploadsRes] = await Promise.allSettled([
+        this.getCrawls({
+          collectionId: this.collectionId,
+          sortBy: "finished",
+          pageSize: WORKFLOW_CRAWL_LIMIT,
+        }),
+        this.getUploads({
+          collectionId: this.collectionId,
+          sortBy: "finished",
+          pageSize: WORKFLOW_CRAWL_LIMIT,
+        }),
+      ]);
+      const crawls =
+        crawlsRes.status === "fulfilled" ? crawlsRes.value.items : [];
+      const uploads =
+        uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
+      const crawlsAndUploads = [...crawls, ...uploads];
+
       this.selectedCrawls = mergeDeep(
         this.selectedCrawls,
-        crawls.reduce(
+        crawlsAndUploads.reduce(
           (acc, crawl) => ({
             ...acc,
             [crawl.id]: crawl,
@@ -1391,8 +1384,9 @@ export class CollectionEditor extends LiteElement {
           {}
         )
       );
+
       // TODO remove omit once API removes errors
-      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
+      this.collectionCrawls = crawlsAndUploads.map(omit("errors")) as Crawl[];
       // Store crawl IDs to compare later
       this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
     } catch {
