@@ -92,6 +92,7 @@ def get_sync_s3_client(storage, use_access=False, use_full=False):
     parts = urlsplit(endpoint_url)
     bucket, key = parts.path[1:].split("/", 1)
 
+    public_endpoint_url = endpoint_url
     endpoint_url = parts.scheme + "://" + parts.netloc
 
     if use_full:
@@ -113,13 +114,7 @@ def get_sync_s3_client(storage, use_access=False, use_full=False):
             aws_secret_access_key=storage.secret_key,
         )
 
-    public_endpoint = (
-        storage.access_endpoint_url if use_access else storage.endpoint_url
-    )
-    if not public_endpoint.endswith("/"):
-        public_endpoint += "/"
-
-    return client, bucket, key
+    return client, bucket, key, public_endpoint_url
 
 
 # ============================================================================
