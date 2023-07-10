@@ -61,14 +61,19 @@ export class CollectionDetail extends LiteElement {
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
         <div>
-          ${when(this.collection?.publishedUrl, () => html`
-            <sl-button size="small" class="p-2 mb-2"
-            @click=${() => this.showPublishedInfo = true}
-            >
-            <sl-icon name="code-slash"></sl-icon>
-            View Embed Code
-            </sl-button>
-          `)}
+          ${when(
+            this.collection?.publishedUrl,
+            () => html`
+              <sl-button
+                size="small"
+                class="p-2 mb-2"
+                @click=${() => (this.showPublishedInfo = true)}
+              >
+                <sl-icon name="code-slash"></sl-icon>
+                View Embed Code
+              </sl-button>
+            `
+          )}
           ${when(this.isCrawler, this.renderActions)}
         </div>
       </header>
@@ -105,8 +110,7 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${when(this.showPublishedInfo, this.renderPublishedInfo)}
-      `;
+      ${when(this.showPublishedInfo, this.renderPublishedInfo)} `;
   }
 
   private renderPublishedInfo = () => {
@@ -114,7 +118,8 @@ export class CollectionDetail extends LiteElement {
       return;
     }
 
-    const fullUrl = new URL(this.collection?.publishedUrl, window.location.href).href;
+    const fullUrl = new URL(this.collection?.publishedUrl, window.location.href)
+      .href;
 
     return html`
   <sl-dialog
@@ -133,7 +138,7 @@ export class CollectionDetail extends LiteElement {
         </code></p>
         <p>See <a class="text-primary" href="https://replayweb.page/docs/embedding"> our embedding guide for more details.</a></p>
       </p>
-  </sl-dialog>`
+  </sl-dialog>`;
   };
 
   private renderHeader = () => html`
@@ -152,45 +157,56 @@ export class CollectionDetail extends LiteElement {
   `;
 
   private renderActions = () => {
+    // FIXME replace auth token post-workshop
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
     return html`
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.publishedUrl ? html`
-            <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${this.onPublish}
-            >
-              <sl-icon name="journal-plus" slot="prefix"></sl-icon>
-              ${msg("Publish Collection")}
-            </sl-menu-item>
-            
-            ` : html`
-            <sl-menu-item
-              style="--sl-color-neutral-700: var(--success)"
-            >
-            <sl-icon name="box-arrow-up-left" slot="prefix"></sl-icon>
-            <a target="_blank" slot="prefix" href="https://replayweb.page?source=${new URL(this.collection?.publishedUrl || "", window.location.href).href}">
-            Go to Public View
-            </a>
-            </sl-menu-item>
-            <sl-menu-item
-            style="--sl-color-neutral-700: var(--warning)"
-            @click=${this.onUnpublish}
-            >
-              <sl-icon name="journal-x" slot="prefix"></sl-icon>
-              ${msg("Unpublish Collection")}
-            </sl-menu-item>
-            `}
+          ${!this.collection?.publishedUrl
+            ? html`
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${this.onPublish}
+                >
+                  <sl-icon name="journal-plus" slot="prefix"></sl-icon>
+                  ${msg("Publish Collection")}
+                </sl-menu-item>
+              `
+            : html`
+                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
+                  <sl-icon name="box-arrow-up-left" slot="prefix"></sl-icon>
+                  <a
+                    target="_blank"
+                    slot="prefix"
+                    href="https://replayweb.page?source=${new URL(
+                      this.collection?.publishedUrl || "",
+                      window.location.href
+                    ).href}"
+                  >
+                    Go to Public View
+                  </a>
+                </sl-menu-item>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${this.onUnpublish}
+                >
+                  <sl-icon name="journal-x" slot="prefix"></sl-icon>
+                  ${msg("Unpublish Collection")}
+                </sl-menu-item>
+              `}
           <sl-divider></sl-divider>
-          <sl-menu-item
-          @click=${this.onDownload}
+          <!-- Shoelace doesn't allow "href" on menu items,
+              see https://github.com/shoelace-style/shoelace/issues/1351 -->
+          <a
+            href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
+            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
-          </sl-menu-item>
+          </a>
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
@@ -393,24 +409,6 @@ export class CollectionDetail extends LiteElement {
     return data;
   }
 
-  private async onDownload() {
-    const resp = await fetch(
-      `/api/orgs/${this.orgId}/collections/${this.collectionId}/download`,
-      {
-        headers: {...this.authState!.headers}
-      }
-    );
-    const blob = await resp.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.setAttribute("display", "none");
-    a.href = objectUrl;
-    a.setAttribute("download", this.collection?.name + ".wacz");
-    a.click();
-    window.URL.revokeObjectURL(objectUrl);
-  }
-
   private async onPublish() {
     const data = await this.apiFetch(
       `/orgs/${this.orgId}/collections/${this.collectionId}/publish`,
@@ -421,7 +419,7 @@ export class CollectionDetail extends LiteElement {
     );
     const { published, url } = data;
     if (this.collection && url && published) {
-      this.collection = {...this.collection, publishedUrl: url};
+      this.collection = { ...this.collection, publishedUrl: url };
     }
   }
 
@@ -434,7 +432,7 @@ export class CollectionDetail extends LiteElement {
       }
     );
     if (this.collection && data?.published === false) {
-      this.collection = {...this.collection, publishedUrl: undefined};
+      this.collection = { ...this.collection, publishedUrl: undefined };
     }
   }
 }
