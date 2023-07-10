@@ -303,7 +303,7 @@ class CollectionOps:
             coll_id, org, UpdateColl(publishedUrl=published_url)
         )
 
-        return {"published": True, "url": "/data/" + path}
+        return {"published": True, "url": published_url}
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
         """unpublish collection, removing it from public access"""
