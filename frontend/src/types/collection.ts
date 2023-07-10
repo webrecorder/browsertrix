@@ -9,6 +9,7 @@ export type Collection = {
   tags: string[];
   resources: string[];
   publishedUrl?: string;
+  published?: boolean;
 };
 
 export type CollectionList = Collection[];

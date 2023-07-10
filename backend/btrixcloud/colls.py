@@ -40,6 +40,7 @@ class Collection(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     publishedUrl: Optional[str] = ""
+    published: Optional[bool] = False
 
 
 # ============================================================================
@@ -65,6 +66,7 @@ class UpdateColl(BaseModel):
     name: Optional[str]
     description: Optional[str]
     publishedUrl: Optional[str]
+    published: Optional[bool]
 
 
 # ============================================================================
@@ -331,25 +333,36 @@ class CollectionOps:
         """Publish streaming WACZ file to publicly accessible bucket"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
+        path = f"{org.id}/public/{coll_id}.wacz"
+
         client, bucket, key, endpoint_url = await get_sync_client(
             org, self.crawl_manager, use_full=True
         )
 
-        path = f"{org.id}/public/{coll_id}.wacz"
-
         published_url = endpoint_url + path
-
-        loop = asyncio.get_event_loop()
-
-        await loop.run_in_executor(
-            None, self.sync_publish, coll.resources, client, bucket, key, path
-        )
 
         await self.update_collection(
             coll_id, org, UpdateColl(publishedUrl=published_url)
         )
 
-        return {"published": True, "url": published_url}
+        loop = asyncio.get_event_loop()
+
+        asyncio.create_task(
+            self.finish_publication_task(loop, coll, org, path, client, bucket, key)
+        )
+
+        return {"url": published_url}
+
+    async def finish_publication_task(
+        self, loop, coll: CollOut, org: Organization, path: str, client, bucket, key
+    ):
+        """Task to run in background to finish publishing and update model"""
+        print("Started publication finish task", flush=True)
+        await loop.run_in_executor(
+            None, self.sync_publish, coll.resources, client, bucket, key, path
+        )
+
+        await self.update_collection(coll.id, org, UpdateColl(published=True))
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
         """unpublish collection, removing it from public access"""
@@ -366,7 +379,9 @@ class CollectionOps:
 
         await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
 
-        await self.update_collection(coll_id, org, UpdateColl(publishedUrl=""))
+        await self.update_collection(
+            coll_id, org, UpdateColl(publishedUrl="", published=False)
+        )
 
         return {"published": False}
 

@@ -10,6 +10,8 @@ import type { IntersectEvent } from "../../components/observable";
 
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
 
+const POLL_INTERVAL_SECONDS = 10;
+
 @localized()
 export class CollectionDetail extends LiteElement {
   @property({ type: Object })
@@ -39,6 +41,9 @@ export class CollectionDetail extends LiteElement {
   @state()
   private showPublishedInfo = false;
 
+  @state()
+  private isLoading = false;
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
@@ -60,8 +65,14 @@ export class CollectionDetail extends LiteElement {
         >
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
+        ${when(this.isLoading, () => html`
+          <div class="flex justify-center mr-2 p-2">
+            <div class="mr-1">${msg(str`Publishing in progress`)}</div>
+            <sl-spinner></sl-spinner>
+          </div>
+        `)}
         <div>
-          ${when(this.collection?.publishedUrl, () => html`
+          ${when(this.collection?.published, () => html`
             <sl-button size="small" class="p-2 mb-2"
             @click=${() => this.showPublishedInfo = true}
             >
@@ -97,6 +108,7 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
+            ?disabled=${!this.isLoading}
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -110,7 +122,7 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderPublishedInfo = () => {
-    if (!this.collection?.publishedUrl) {
+    if (!this.collection?.published || !this.collection?.publishedUrl) {
       return;
     }
 
@@ -158,9 +170,10 @@ export class CollectionDetail extends LiteElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.publishedUrl ? html`
+          ${!this.collection?.published ? html`
             <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
+            ?disabled=${this.isLoading}
             @click=${this.onPublish}
             >
               <sl-icon name="journal-plus" slot="prefix"></sl-icon>
@@ -419,10 +432,42 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    const { published, url } = data;
-    if (this.collection && url && published) {
-      this.collection = {...this.collection, publishedUrl: url};
+    const { url, published } = data;
+    if (this.collection && url) {
+      this.collection = {...this.collection, publishedUrl: url, published: published};
     }
+    if (!this.collection?.published) {
+      this.isLoading = true;
+      await this.waitForCollectionPublished();
+    }
+  }
+
+  private async waitForCollectionPublished() {
+    try {
+      const data: Collection = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        this.authState!
+      );
+      if (data.published === true) {
+        this.isLoading = false;
+        this.collection = data;
+        return;
+      }
+    } catch (e: any) {
+      this.notify({
+        message:
+          e.statusCode === 404
+            ? msg("Collection not found.")
+            : msg("Sorry, couldn't retrieve Collection at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    // Restart timer for next poll
+    window.setTimeout(async () => {
+      await this.waitForCollectionPublished();
+    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   private async onUnpublish() {
@@ -434,7 +479,7 @@ export class CollectionDetail extends LiteElement {
       }
     );
     if (this.collection && data?.published === false) {
-      this.collection = {...this.collection, publishedUrl: undefined};
+      this.collection = {...this.collection, publishedUrl: undefined, published: false};
     }
   }
 }
