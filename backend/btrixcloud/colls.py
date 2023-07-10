@@ -157,7 +157,7 @@ class CollectionOps:
                 coll_id, org
             )
         result = CollOut.from_dict(result)
-        if result.published:
+        if result and result.published:
             result.publishedUrl = "/data/" + self.get_published_path(coll_id, org)
 
         return result
@@ -330,6 +330,10 @@ class CollectionOps:
         try:
             client, bucket, key, endpoint_url = s3_data
 
+            print("endpoint_url", endpoint_url)
+            print("key", key)
+            print("path", path)
+
             path = key + path
 
             wacz_stream = self.sync_dl(all_files, s3_data)
@@ -345,6 +349,7 @@ class CollectionOps:
             print("Published To: " + endpoint_url + path, flush=True)
 
             bucket_path = bucket + "/" + key if key else bucket
+            print("Bucket Path", bucket_path)
 
             client.put_bucket_policy(
                 Bucket=bucket, Policy=json.dumps(get_public_policy(bucket_path))
