@@ -432,14 +432,8 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    const { url } = data;
-    if (this.collection && url) {
-      this.collection = {...this.collection, publishedUrl: url};
-    }
-    if (!this.collection?.publishedUrl) {
-      this.isLoading = true;
-      await this.waitForCollectionPublished();
-    }
+    this.isLoading = true;
+    await this.waitForCollectionPublished();
   }
 
   private async waitForCollectionPublished() {
