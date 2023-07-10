@@ -95,10 +95,10 @@ export class CollectionEdit extends LiteElement {
         await this.saveMetadata({ name, description });
       }
 
+      this.navTo(`/orgs/${this.orgId}/collections/view/${this.collectionId}`);
       this.notify({
         message: msg(
-          html`Successfully updated
-            <strong>${name}</strong> Collection.`
+          html`Successfully updated <strong>${name}</strong> Collection.`
         ),
         variant: "success",
         icon: "check2-circle",
