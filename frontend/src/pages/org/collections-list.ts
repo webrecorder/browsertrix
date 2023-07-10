@@ -540,6 +540,7 @@ export class CollectionsList extends LiteElement {
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => this.confirmDelete(col)}
+            ?disabled=${Boolean(col.publishedUrl)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
