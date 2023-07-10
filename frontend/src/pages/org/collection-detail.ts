@@ -245,6 +245,9 @@ export class CollectionDetail extends LiteElement {
           <a
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            @click=${(e: MouseEvent) => {
+              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+            }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
