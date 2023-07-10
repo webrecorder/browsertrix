@@ -39,7 +39,7 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    published: Optional[bool] = False
+    publishedUrl: Optional[str] = ""
 
 
 # ============================================================================
@@ -56,7 +56,6 @@ class CollOut(Collection):
     """Collection output model with annotations."""
 
     resources: Optional[List[CrawlFileOut]] = []
-    publishedUrl: Optional[str] = ""
 
 
 # ============================================================================
@@ -65,7 +64,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
-    published: Optional[bool]
+    publishedUrl: Optional[str]
 
 
 # ============================================================================
@@ -204,12 +203,7 @@ class CollectionOps:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
             )
-        result = CollOut.from_dict(result)
-        if result and result.published:
-            # pylint: disable=invalid-name
-            result.publishedUrl = "/data/" + self.get_published_path(coll_id, org)
-
-        return result
+        return CollOut.from_dict(result)
 
     async def list_collections(
         self,
@@ -320,12 +314,12 @@ class CollectionOps:
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        s3_client_x = await get_sync_client(org, self.crawl_manager)
+        client, bucket, key, _ = await get_sync_client(org, self.crawl_manager)
 
         loop = asyncio.get_event_loop()
 
         resp = await loop.run_in_executor(
-            None, self.sync_dl, coll.resources, s3_client_x
+            None, self.sync_dl, coll.resources, client, bucket, key
         )
 
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
@@ -333,36 +327,38 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
-    def get_published_path(self, coll_id: uuid.UUID, org: Organization):
-        """return canonical path for collection wacz"""
-        return f"{org.id}/public/{coll_id}.wacz"
-
     async def publish_collection(self, coll_id: uuid.UUID, org: Organization):
         """Publish streaming WACZ file to publicly accessible bucket"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        s3_client_x = await get_sync_client(org, self.crawl_manager, use_full=True)
+        client, bucket, key, endpoint_url = await get_sync_client(
+            org, self.crawl_manager, use_full=True
+        )
 
-        path = self.get_published_path(coll_id, org)
+        path = f"{org.id}/public/{coll_id}.wacz"
+
+        published_url = endpoint_url + path
 
         loop = asyncio.get_event_loop()
 
         await loop.run_in_executor(
-            None, self.sync_publish, coll.resources, s3_client_x, path
+            None, self.sync_publish, coll.resources, client, bucket, key, path
         )
 
-        await self.update_collection(coll_id, org, UpdateColl(published=True))
+        await self.update_collection(
+            coll_id, org, UpdateColl(publishedUrl=published_url)
+        )
 
         return {"published": True, "url": "/data/" + path}
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
         """unpublish collection, removing it from public access"""
         coll = await self.get_collection(coll_id, org, resources=False)
-        if not coll.published:
+        if not coll.publishedUrl:
             return {"published": False}
 
         crawl_file = CrawlFile(
-            filename=self.get_published_path(coll_id, org),
+            filename=coll.publishedUrl,
             def_storage_name="default",
             size=0,
             hash="",
@@ -370,18 +366,16 @@ class CollectionOps:
 
         await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
 
-        await self.update_collection(coll_id, org, UpdateColl(published=False))
+        await self.update_collection(coll_id, org, UpdateColl(publishedUrl=""))
 
         return {"published": False}
 
-    def sync_publish(self, all_files, s3_data, path):
+    def sync_publish(self, all_files, client, bucket, key, path):
         """publish collection to public s3 path"""
         try:
-            client, bucket, key = s3_data
-
             path = key + path
 
-            wacz_stream = self.sync_dl(all_files, s3_data)
+            wacz_stream = self.sync_dl(all_files, client, bucket, key)
             wacz_stream = to_file_like_obj(wacz_stream)
 
             def print_bytes(num):
@@ -405,12 +399,8 @@ class CollectionOps:
         except Exception:
             traceback.print_exc()
 
-        return path
-
-    def sync_dl(self, all_files, s3_data):
+    def sync_dl(self, all_files, client, bucket, key):
         """generate streaming zip as sync"""
-        client, bucket, key = s3_data
-
         for file_ in all_files:
             file_.path = file_.name
 
