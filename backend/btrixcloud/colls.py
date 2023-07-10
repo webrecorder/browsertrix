@@ -158,6 +158,7 @@ class CollectionOps:
             )
         result = CollOut.from_dict(result)
         if result and result.published:
+            # pylint: disable=invalid-name
             result.publishedUrl = "/data/" + self.get_published_path(coll_id, org)
 
         return result
@@ -328,11 +329,7 @@ class CollectionOps:
     def sync_publish(self, all_files, s3_data, path):
         """publish collection to public s3 path"""
         try:
-            client, bucket, key, endpoint_url = s3_data
-
-            print("endpoint_url", endpoint_url)
-            print("key", key)
-            print("path", path)
+            client, bucket, key = s3_data
 
             path = key + path
 
@@ -346,14 +343,15 @@ class CollectionOps:
                 Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=print_bytes
             )
 
-            print("Published To: " + endpoint_url + path, flush=True)
+            print("Published To: " + path, flush=True)
 
-            bucket_path = bucket + "/" + key if key else bucket
-            print("Bucket Path", bucket_path)
+            bucket_path = bucket + "/" + key.rstrip("/") if key else bucket
 
-            client.put_bucket_policy(
-                Bucket=bucket, Policy=json.dumps(get_public_policy(bucket_path))
-            )
+            policy = json.dumps(get_public_policy(bucket_path))
+
+            print("Policy: " + policy)
+
+            client.put_bucket_policy(Bucket=bucket, Policy=policy)
 
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -363,7 +361,7 @@ class CollectionOps:
 
     def sync_dl(self, all_files, s3_data):
         """generate streaming zip as sync"""
-        client, bucket, key, _ = s3_data
+        client, bucket, key = s3_data
 
         for file_ in all_files:
             file_.path = file_.name
