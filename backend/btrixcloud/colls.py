@@ -357,7 +357,6 @@ class CollectionOps:
         self, loop, coll: CollOut, org: Organization, path: str, client, bucket, key
     ):
         """Task to run in background to finish publishing and update model"""
-        print("Started publication finish task", flush=True)
         await loop.run_in_executor(
             None, self.sync_publish, coll.resources, client, bucket, key, path
         )
