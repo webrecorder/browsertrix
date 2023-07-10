@@ -131,7 +131,7 @@ export class CollectionDetail extends LiteElement {
       <div class="text-left">
         <p class="mb-5">
           ${msg(
-            html`Embed this collection in other site using these
+            html`Embed this collection in another site using these
               <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
           )}
         </p>
