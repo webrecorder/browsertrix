@@ -1356,18 +1356,22 @@ export class CollectionEditor extends LiteElement {
     if (!this.collectionId) return;
 
     try {
-      const { items: crawls } = await this.getCrawls({
-        collectionId: this.collectionId,
-        sortBy: "finished",
-        pageSize: WORKFLOW_CRAWL_LIMIT,
-      });
-
-      const { items: uploads } = await this.getUploads({
-        collectionId: this.collectionId,
-        sortBy: "finished",
-        pageSize: WORKFLOW_CRAWL_LIMIT,
-      });
-
+      const [crawlsRes, uploadsRes] = await Promise.allSettled([
+        this.getCrawls({
+          collectionId: this.collectionId,
+          sortBy: "finished",
+          pageSize: WORKFLOW_CRAWL_LIMIT,
+        }),
+        this.getUploads({
+          collectionId: this.collectionId,
+          sortBy: "finished",
+          pageSize: WORKFLOW_CRAWL_LIMIT,
+        }),
+      ]);
+      const crawls =
+        crawlsRes.status === "fulfilled" ? crawlsRes.value.items : [];
+      const uploads =
+        uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
       const crawlsAndUploads = [...crawls, ...uploads];
 
       this.selectedCrawls = mergeDeep(
