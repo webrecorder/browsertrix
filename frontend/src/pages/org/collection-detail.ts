@@ -66,7 +66,7 @@ export class CollectionDetail extends LiteElement {
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
         ${when(this.isLoading, () => html`
-          <div class="flex justify-center mr-2 p-2">
+          <div class="flex items-center justify-center mr-2 p-2">
             <div class="mr-1">${msg(str`Publishing in progress`)}</div>
             <sl-spinner></sl-spinner>
           </div>
