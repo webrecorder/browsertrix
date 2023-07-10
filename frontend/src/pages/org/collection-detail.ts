@@ -442,7 +442,7 @@ export class CollectionDetail extends LiteElement {
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
         this.authState!
       );
-      if (data.publishedUrl.length > 0) {
+      if (data.publishedUrl?.length > 0) {
         this.isLoading = false;
         this.collection = data;
         return;
