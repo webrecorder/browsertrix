@@ -40,7 +40,7 @@ class Collection(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     publishedUrl: Optional[str] = ""
-    published: Optional[bool] = False
+    # published: Optional[bool] = False
 
 
 # ============================================================================
@@ -341,27 +341,35 @@ class CollectionOps:
 
         published_url = endpoint_url + path
 
-        await self.update_collection(
-            coll_id, org, UpdateColl(publishedUrl=published_url)
-        )
-
         loop = asyncio.get_event_loop()
 
         asyncio.create_task(
-            self.finish_publication_task(loop, coll, org, path, client, bucket, key)
+            self.finish_publication_task(
+                loop, coll, org, path, published_url, client, bucket, key
+            )
         )
 
-        return {"url": published_url}
+        return {"publishing": True}
 
     async def finish_publication_task(
-        self, loop, coll: CollOut, org: Organization, path: str, client, bucket, key
+        self,
+        loop,
+        coll: CollOut,
+        org: Organization,
+        path: str,
+        published_url: str,
+        client,
+        bucket,
+        key,
     ):
         """Task to run in background to finish publishing and update model"""
         await loop.run_in_executor(
             None, self.sync_publish, coll.resources, client, bucket, key, path
         )
 
-        await self.update_collection(coll.id, org, UpdateColl(published=True))
+        await self.update_collection(
+            coll_id, org, UpdateColl(publishedUrl=published_url)
+        )
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
         """unpublish collection, removing it from public access"""

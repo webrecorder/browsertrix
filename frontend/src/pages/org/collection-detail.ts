@@ -72,7 +72,7 @@ export class CollectionDetail extends LiteElement {
           </div>
         `)}
         <div>
-          ${when(this.collection?.published, () => html`
+          ${when(this.collection?.publishedUrl, () => html`
             <sl-button size="small" class="p-2 mb-2"
             @click=${() => this.showPublishedInfo = true}
             >
@@ -122,7 +122,7 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderPublishedInfo = () => {
-    if (!this.collection?.published || !this.collection?.publishedUrl) {
+    if (!this.collection?.publishedUrl) {
       return;
     }
 
@@ -170,7 +170,7 @@ export class CollectionDetail extends LiteElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.published ? html`
+          ${!this.collection?.publishedUrl ? html`
             <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
             ?disabled=${this.isLoading}
@@ -432,11 +432,11 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    const { url, published } = data;
+    const { url } = data;
     if (this.collection && url) {
-      this.collection = {...this.collection, publishedUrl: url, published: published};
+      this.collection = {...this.collection, publishedUrl: url};
     }
-    if (!this.collection?.published) {
+    if (!this.collection?.publishedUrl) {
       this.isLoading = true;
       await this.waitForCollectionPublished();
     }
@@ -448,7 +448,7 @@ export class CollectionDetail extends LiteElement {
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
         this.authState!
       );
-      if (data.published === true) {
+      if (data.publishedUrl.length > 0) {
         this.isLoading = false;
         this.collection = data;
         return;
@@ -479,7 +479,7 @@ export class CollectionDetail extends LiteElement {
       }
     );
     if (this.collection && data?.published === false) {
-      this.collection = {...this.collection, publishedUrl: undefined, published: false};
+      this.collection = {...this.collection, publishedUrl: undefined};
     }
   }
 }
