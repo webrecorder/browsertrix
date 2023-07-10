@@ -368,7 +368,7 @@ class CollectionOps:
         )
 
         await self.update_collection(
-            coll_id, org, UpdateColl(publishedUrl=published_url)
+            coll.id, org, UpdateColl(publishedUrl=published_url)
         )
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
