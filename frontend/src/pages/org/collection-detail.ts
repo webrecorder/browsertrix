@@ -110,7 +110,7 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${when(this.showPublishedInfo, this.renderPublishedInfo)} `;
+      ${this.renderPublishedInfo()}`;
   }
 
   private renderPublishedInfo = () => {
@@ -120,25 +120,67 @@ export class CollectionDetail extends LiteElement {
 
     const fullUrl = new URL(this.collection?.publishedUrl, window.location.href)
       .href;
+    const embedCode = `<replay-web-page src="${fullUrl}"></replay-web-page>`;
+    const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html`
-  <sl-dialog
-     label=${msg(str`${this.collection?.name} Embedding Info`)}
-     ?open=${this.showPublishedInfo}
-     @sl-request-close=${() => (this.showPublishedInfo = false)}
-  >
-      <p class="text-left">
-        Embed this published collection in other site using the following embed code and ReplayWeb.page:
-        <p class="py-4"><code class="bg-slate-100 py-0 my-8">
-        &lt;replay-web-page src="${fullUrl}"&gt;&lt;/replay-web-page&gt;
-        </code></p>
-        <p class="py-4">Add the following to ./replay/sw.js</p>
-        <p><code class="bg-slate-100 py-0 my-8">
-        importScripts("https://replayweb.page/sw.js");
-        </code></p>
-        <p>See <a class="text-primary" href="https://replayweb.page/docs/embedding"> our embedding guide for more details.</a></p>
-      </p>
-  </sl-dialog>`;
+    return html` <btrix-dialog
+      label=${msg(str`Embed Code for “${this.collection?.name}”`)}
+      ?open=${this.showPublishedInfo}
+      @sl-request-close=${() => (this.showPublishedInfo = false)}
+    >
+      <div class="text-left">
+        <p class="mb-5">
+          ${msg(
+            html`Embed this collection in other site using these
+              <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
+          )}
+        </p>
+        <p class="mb-3">
+          ${msg(html`Add the following embed code to your HTML page:`)}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${embedCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => embedCode}
+              content=${msg("Copy Embed Code")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p class="mb-3">
+          ${msg(
+            html`Add the following JavaScript to
+              <code class="text-[0.9em]">./replay/sw.js</code>:`
+          )}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${importCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => importCode}
+              content=${msg("Copy JS")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p>
+          ${msg(
+            html`See
+              <a
+                class="text-primary"
+                href="https://replayweb.page/docs/embedding"
+                target="_blank"
+              >
+                our embedding guide</a
+              >
+              for more details.`
+          )}
+        </p>
+      </div>
+    </btrix-dialog>`;
   };
 
   private renderHeader = () => html`
