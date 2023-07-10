@@ -125,3 +125,16 @@ export type Crawl = CrawlConfig & {
   collections: string[];
   type?: "crawl" | "upload" | null;
 };
+
+export type Upload = Omit<
+  Crawl,
+  | "cid"
+  | "stats"
+  | "schedule"
+  | "manual"
+  | "stopping"
+  | "firstSeed"
+  | "seedCount"
+> & {
+  type: "upload";
+};

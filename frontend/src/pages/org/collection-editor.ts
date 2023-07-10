@@ -4,6 +4,7 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { ref } from "lit/directives/ref.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
@@ -12,6 +13,7 @@ import groupBy from "lodash/fp/groupBy";
 import keyBy from "lodash/fp/keyBy";
 import orderBy from "lodash/fp/orderBy";
 import flow from "lodash/fp/flow";
+import uniqBy from "lodash/fp/uniqBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -31,10 +33,10 @@ import type {
   APISortQuery,
 } from "../../types/api";
 import type { Collection } from "../../types/collection";
-import type { Crawl, CrawlState, Workflow } from "../../types/crawler";
+import type { Crawl, CrawlState, Upload, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
-const TABS = ["crawls", "metadata"] as const;
+const TABS = ["crawls", "uploads", "metadata"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
@@ -132,6 +134,11 @@ export class CollectionEditor extends LiteElement {
   } = {};
 
   @state()
+  private uploads?: APIPaginatedList & {
+    items: Upload[];
+  };
+
+  @state()
   private selectedCrawls: {
     [crawlId: string]: Crawl;
   } = {};
@@ -188,6 +195,7 @@ export class CollectionEditor extends LiteElement {
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
+    uploads: msg("Select Uploads"),
     metadata: msg("Metadata"),
   };
 
@@ -202,9 +210,11 @@ export class CollectionEditor extends LiteElement {
     ) {
       this.fetchWorkflows();
     }
-
+    if (changedProperties.has("orgId") && this.orgId) {
+      this.fetchUploads();
+    }
     if (changedProperties.has("collectionId") && this.collectionId) {
-      this.fetchCollectionCrawls();
+      this.fetchCollectionCrawlsAndUploads();
     }
   }
 
@@ -243,6 +253,9 @@ export class CollectionEditor extends LiteElement {
 
         <btrix-tab-panel name="collectionForm-crawls">
           ${this.renderSelectCrawls()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="collectionForm-uploads">
+          ${this.renderSelectUploads()}
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-metadata">
           ${guard(
@@ -380,6 +393,90 @@ export class CollectionEditor extends LiteElement {
               </sl-button>
             `,
             () => html`
+              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Select Uploads")}
+              </sl-button>
+            `
+          )}
+        </footer>
+      </section>
+    `;
+  };
+
+  private renderSelectUploads = () => {
+    return html`
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">
+            ${msg("Uploads in Collection")}
+          </h4>
+          <div class="border rounded-lg py-2 flex-1">
+            ${guard(
+              [this.collectionCrawls, this.selectedCrawls],
+              this.renderCollectionUploadList
+            )}
+          </div>
+        </section>
+        <section class="col-span-1 flex flex-col">
+          <h4 class="text-base font-semibold mb-3">${msg("All Uploads")}</h4>
+          <div class="flex-1">
+            ${guard(
+              [this.isCrawler, this.uploads, this.selectedCrawls],
+              this.renderUploadList
+            )}
+          </div>
+          <footer class="mt-4 flex justify-center">
+            ${when(
+              this.uploads?.total,
+              () => html`
+                <btrix-pagination
+                  page=${this.uploads!.page}
+                  totalCount=${this.uploads!.total}
+                  size=${this.uploads!.pageSize}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchUploads({
+                      page: e.detail.page,
+                    });
+
+                    // Scroll to top of list
+                    this.scrollIntoView({ behavior: "smooth" });
+                  }}
+                ></btrix-pagination>
+              `
+            )}
+          </footer>
+        </section>
+        <footer
+          class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
+        >
+          ${when(
+            !this.collectionId,
+            () => html`
+              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Select Crawls")}
+              </sl-button>
+            `
+          )}
+          ${when(
+            this.collectionId,
+            () => html`
+              <sl-button
+                class="ml-auto"
+                size="small"
+                variant="primary"
+                ?disabled=${this.isSubmitting ||
+                Object.values(this.workflowIsLoading).some(
+                  (isLoading) => isLoading === true
+                )}
+                ?loading=${this.isSubmitting}
+                @click=${this.submitCrawlSelectionChanges}
+              >
+                ${msg("Save Upload Selection")}
+              </sl-button>
+            `,
+            () => html`
               <sl-button size="small" @click=${() => this.goToTab("metadata")}>
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                 ${msg("Enter Metadata")}
@@ -401,7 +498,7 @@ export class CollectionEditor extends LiteElement {
             label=${msg("Name")}
             placeholder=${msg("My Collection")}
             autocomplete="off"
-            value=${this.metadataValues?.name}
+            value=${ifDefined(this.metadataValues?.name)}
             required
             help-text=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
@@ -411,7 +508,7 @@ export class CollectionEditor extends LiteElement {
             <label class="form-label">${msg("Description")}</label>
             <btrix-markdown-editor
               name="description"
-              initialValue=${this.metadataValues?.description}
+              initialValue=${this.metadataValues?.description || ""}
               maxlength=${4000}
             ></btrix-markdown-editor>
           </fieldset>
@@ -420,9 +517,9 @@ export class CollectionEditor extends LiteElement {
           ${when(
             !this.collectionId,
             () => html`
-              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
+              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Select Crawls")}
+                ${msg("Select Uploads")}
               </sl-button>
             `
           )}
@@ -449,7 +546,10 @@ export class CollectionEditor extends LiteElement {
       return this.renderLoading();
     }
 
-    if (!this.collectionCrawls?.length) {
+    const crawlsInCollection =
+      this.collectionCrawls?.filter((crawl) => crawl.type !== "upload") || [];
+
+    if (!crawlsInCollection.length) {
       return html`
         <div
           class="flex flex-col items-center justify-center text-center p-4 my-12"
@@ -469,7 +569,7 @@ export class CollectionEditor extends LiteElement {
         </div>
       `;
     }
-    const groupedByWorkflow = groupBy("cid")(this.collectionCrawls) as any;
+    const groupedByWorkflow = groupBy("cid")(crawlsInCollection) as any;
 
     return html`
       <btrix-checkbox-list>
@@ -481,6 +581,34 @@ export class CollectionEditor extends LiteElement {
             ) as any
           )
         )}
+      </btrix-checkbox-list>
+    `;
+  };
+
+  private renderCollectionUploadList = () => {
+    if (this.collectionId && !this.collectionCrawls) {
+      return this.renderLoading();
+    }
+
+    const uploadsInCollection = (this.collectionCrawls?.filter(
+      (crawl) => crawl.type === "upload"
+    ) || []) as Upload[];
+
+    if (!uploadsInCollection.length) {
+      return html`
+        <div
+          class="flex flex-col items-center justify-center text-center p-4 my-12"
+        >
+          <span class="text-base font-semibold text-primary"
+            >${msg("No uploads in this Collection, yet")}</span
+          >
+        </div>
+      `;
+    }
+
+    return html`
+      <btrix-checkbox-list>
+        ${uploadsInCollection.map(this.renderUpload)}
       </btrix-checkbox-list>
     `;
   };
@@ -639,6 +767,37 @@ export class CollectionEditor extends LiteElement {
       </btrix-checkbox-list-item>
     `;
   }
+
+  private renderUpload = (crawl: Upload) => {
+    return html`
+      <btrix-checkbox-list-item
+        id=${crawl.id}
+        name="crawlIds"
+        value=${crawl.id}
+        ?checked=${this.selectedCrawls[crawl.id]}
+        @on-change=${(e: CheckboxChangeEvent) => {
+          if (e.detail.checked) {
+            this.selectedCrawls = mergeDeep(this.selectedCrawls, {
+              [crawl.id]: crawl,
+            });
+          } else {
+            this.selectedCrawls = omit([crawl.id])(this.selectedCrawls) as any;
+          }
+        }}
+      >
+        <div class="flex items-center">
+          <div class="flex-1">${crawl.name}</div>
+          <div class="w-14">
+            <sl-format-bytes
+              class="text-neutral-500 text-xs font-monostyle"
+              value=${crawl.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </div>
+        </div>
+      </btrix-checkbox-list-item>
+    `;
+  };
 
   private renderWorkflowListControls = () => {
     return html`
@@ -869,7 +1028,7 @@ export class CollectionEditor extends LiteElement {
       <div class="col-span-1 py-3">
         <div class="text-neutral-700 truncate h-6">
           <sl-format-bytes
-            value=${workflow.totalSize}
+            value=${workflow.totalSize === null ? 0 : +workflow.totalSize}
             display="narrow"
           ></sl-format-bytes>
         </div>
@@ -879,6 +1038,58 @@ export class CollectionEditor extends LiteElement {
       </div>
     `;
   }
+
+  private renderUploadList = () => {
+    if (!this.uploads) {
+      return this.renderLoading();
+    }
+
+    if (!this.uploads.total) {
+      return html`<div
+        class="flex flex-col items-center justify-center text-center p-4 my-12"
+      >
+        <p class="text-neutral-400 text-center max-w-[24em]">
+          ${msg("Your organization doesn't have any uploaded Archive Data.")}
+        </p>
+      </div>`;
+    }
+
+    return html`
+      <btrix-checkbox-list>
+        ${this.uploads.items.map(this.renderUploadItem)}
+      </btrix-checkbox-list>
+    `;
+  };
+
+  private renderUploadItem = (crawl: Upload) => {
+    return html`
+      <btrix-checkbox-list-item
+        ?checked=${this.selectedCrawls[crawl.id]}
+        @on-change=${(e: CheckboxChangeEvent) => {
+          if (e.detail.checked) {
+            this.collectionCrawls = uniqBy("id")([
+              ...(this.collectionCrawls || []),
+              ...[crawl],
+            ] as any) as any;
+            this.selectCrawls([crawl]);
+          } else {
+            this.deselectCrawls([crawl]);
+          }
+        }}
+      >
+        <div class="flex items-center">
+          <div class="flex-1">${crawl.name}</div>
+          <div class="w-14">
+            <sl-format-bytes
+              class="text-neutral-500 text-xs font-monostyle"
+              value=${crawl.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </div>
+        </div>
+      </btrix-checkbox-list-item>
+    `;
+  };
 
   private renderCrawlCount(workflow: Workflow) {
     const count = Math.min(WORKFLOW_CRAWL_LIMIT, workflow.crawlSuccessfulCount);
@@ -939,9 +1150,9 @@ export class CollectionEditor extends LiteElement {
     </div>
   `;
 
-  private selectCrawls(crawls: Crawl[]) {
+  private selectCrawls(crawls: (Crawl | Upload)[]) {
     const allCrawls = crawls.reduce(
-      (acc: any, crawl: Crawl) => ({
+      (acc: any, crawl: Crawl | Upload) => ({
         ...acc,
         [crawl.id]: crawl,
       }),
@@ -950,7 +1161,7 @@ export class CollectionEditor extends LiteElement {
     this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
   }
 
-  private deselectCrawls(crawls: Crawl[]) {
+  private deselectCrawls(crawls: (Crawl | Upload)[]) {
     this.selectedCrawls = omit(crawls.map(({ id }) => id))(
       this.selectedCrawls
     ) as any;
@@ -1105,11 +1316,67 @@ export class CollectionEditor extends LiteElement {
     return data;
   }
 
-  private async fetchCollectionCrawls() {
+  private async fetchUploads(params: APIPaginationQuery = {}) {
+    try {
+      this.uploads = await this.getUploads({
+        page: params.page || this.uploads?.page || 1,
+        pageSize:
+          params.pageSize || this.uploads?.pageSize || WORKFLOW_PAGE_SIZE,
+      });
+    } catch (e: any) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve uploads at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getCrawlsAndUploads(
+    params: Partial<{
+      collectionId?: string;
+      state: CrawlState[];
+    }> &
+      APIPaginationQuery &
+      APISortQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify({
+      state: "complete",
+      ...params,
+    });
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/all-crawls?${query}`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async getUploads(
+    params: Partial<{
+      collectionId?: string;
+      state: CrawlState[];
+    }> &
+      APIPaginationQuery &
+      APISortQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify({
+      state: "complete",
+      ...params,
+    });
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/uploads?${query}`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async fetchCollectionCrawlsAndUploads() {
     if (!this.collectionId) return;
 
     try {
-      const { items: crawls } = await this.getCrawls({
+      const { items: crawls } = await this.getCrawlsAndUploads({
         collectionId: this.collectionId,
         sortBy: "finished",
         pageSize: WORKFLOW_CRAWL_LIMIT,
@@ -1155,11 +1422,10 @@ export class CollectionEditor extends LiteElement {
       });
       // TODO remove omit once API removes errors
       const crawls = items.map(omit("errors")) as Crawl[];
-      this.collectionCrawls = flow(
-        keyBy("id"),
-        (res) => mergeDeep(keyBy("id")(this.collectionCrawls), res),
-        Object.values
-      )(crawls) as any;
+      this.collectionCrawls = uniqBy("id")([
+        ...(this.collectionCrawls || []),
+        ...crawls,
+      ] as any) as any;
 
       workflowCrawls = crawls;
     } catch {
