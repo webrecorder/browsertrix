@@ -438,8 +438,8 @@ export class CollectionsList extends LiteElement {
   };
 
   private renderItem = (col: Collection) =>
-    html`<li class="group mb-2 last:mb-0">
-      <div class="block border rounded leading-none group-hover:bg-neutral-50">
+    html`<li class="mb-2 last:mb-0">
+      <div class="block border rounded leading-none">
         <div
           class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[1fr_16ch_repeat(3,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
@@ -532,9 +532,6 @@ export class CollectionsList extends LiteElement {
           <a
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
-            @click=${(e: MouseEvent) => {
-              console.log("click?");
-            }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
