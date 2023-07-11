@@ -51,14 +51,14 @@ class Seed(BaseModel):
     """Crawl seed"""
 
     url: HttpUrl
-    scopeType: Optional[ScopeType] = ScopeType.PREFIX
+    scopeType: Optional[ScopeType]
 
     include: Union[str, List[str], None]
     exclude: Union[str, List[str], None]
     sitemap: Union[bool, HttpUrl, None]
     allowHash: Optional[bool]
     depth: Optional[int]
-    extraHops: Optional[int] = 0
+    extraHops: Optional[int]
 
 
 # ============================================================================

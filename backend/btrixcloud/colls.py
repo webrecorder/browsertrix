@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException
 
 from pydantic import BaseModel, UUID4, Field
 
+from .basecrawls import BaseCrawlOutWithResources
 from .crawls import CrawlFileOut, SUCCESSFUL_STATES
 from .db import BaseMongoModel
 from .orgs import Organization
@@ -270,11 +271,11 @@ class CollectionOps:
 
         all_files = []
 
-        crawls, _ = await self.crawl_ops.list_crawls(
+        crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
-            state=SUCCESSFUL_STATES,
+            states=SUCCESSFUL_STATES,
             page_size=10_000,
-            resources=True,
+            cls_type=BaseCrawlOutWithResources,
         )
 
         for crawl in crawls:
@@ -317,7 +318,7 @@ async def update_collection_counts_and_tags(
             continue
         crawl_count += 1
         if crawl.get("stats"):
-            page_count += crawl.get("stats").get("done", 0)
+            page_count += crawl.get("stats", {}).get("done", 0)
         if crawl.get("tags"):
             tags.extend(crawl.get("tags"))
 

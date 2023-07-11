@@ -221,12 +221,14 @@ export class CrawlListItem extends LitElement {
 
   renderRow() {
     const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
+    const artifactType = this.crawl?.type || "crawl";
+    const typePath = this.crawl?.type === "upload" ? "upload" : "crawl";
     return html`<a
       class="item row"
       role="button"
-      href=${`${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/crawl`}/${
+      href="${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${
         this.crawl?.id
-      }${hash}`}
+      }"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -247,6 +249,7 @@ export class CrawlListItem extends LitElement {
               <btrix-crawl-status
                 state=${workflow.state}
                 hideLabel
+                ?isUpload=${workflow.type === "upload"}
               ></btrix-crawl-status>
               <slot name="id">${this.renderName(workflow)}</slot>
             `
@@ -276,7 +279,7 @@ export class CrawlListItem extends LitElement {
           )}
         </div>
         ${this.safeRender((crawl) =>
-          crawl.finished
+          crawl.finished && crawl.type === "crawl"
             ? html`<div class="desc truncate">
                 ${msg(
                   str`in ${RelativeDuration.humanize(
@@ -315,6 +318,10 @@ export class CrawlListItem extends LitElement {
           </div>`;
         })}
         ${this.safeRender((crawl) => {
+          if (crawl.type === "upload") {
+            // TODO add back once API supports page count
+            return;
+          }
           if (crawl.finished) {
             const pagesComplete = +(crawl.stats?.done || 0);
             return html`
@@ -448,7 +455,8 @@ export class CrawlList extends LitElement {
     columnCss,
     hostVars,
     css`
-      .listHeader, .list {
+      .listHeader,
+      .list {
         margin-left: var(--row-offset);
         margin-right: var(--row-offset);
       }
@@ -464,7 +472,7 @@ export class CrawlList extends LitElement {
       }
 
       .row {
-        display none;
+        display: none;
         font-size: var(--sl-font-size-x-small);
         color: var(--sl-color-neutral-600);
       }
@@ -502,17 +510,26 @@ export class CrawlList extends LitElement {
   @property({ type: String, noAccessor: true })
   baseUrl?: string;
 
+  @property({ type: String })
+  artifactType: Crawl["type"] = null;
+
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
   render() {
     return html` <div class="listHeader row">
         <div class="col">
-          <slot name="idCol">${msg("Workflow")}</slot>
+          <slot name="idCol">${msg("Name")}</slot>
         </div>
-        <div class="col">${msg("Finished")}</div>
+        <div class="col">
+          ${this.artifactType === "upload" ? msg("Uploaded") : msg("Finished")}
+        </div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">${msg("Started By")}</div>
+        <div class="col">
+          ${this.artifactType === "upload"
+            ? msg("Uploaded By")
+            : msg("Started By")}
+        </div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>

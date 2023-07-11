@@ -71,7 +71,7 @@ export class TagInput extends LitElement {
       }
 
       sl-popup::part(popup) {
-        z-index: 2;
+        z-index: 3;
       }
 
       .shake {

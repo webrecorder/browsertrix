@@ -1236,82 +1236,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.helpText = helpText;
     };
     return html`
-      ${this.renderSectionHeading(msg("Limit Per Page"))}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageLoadTimeoutSeconds"
-          type="number"
-          inputmode="numeric"
-          label=${msg("Page Load Timeout")}
-          placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
-            ? msg(
-                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`
-              )
-            : "Default: Unlimited"}
-          value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
-          min="0"
-          @sl-input=${onInputMinMax}
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`
-        )
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="behaviorTimeoutSeconds"
-          type="number"
-          inputmode="numeric"
-          label=${msg("Behavior Timeout")}
-          placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
-            ? msg(
-                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`
-              )
-            : msg("Unlimited")}
-          value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
-          min="0"
-          @sl-input=${onInputMinMax}
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`Limits how long behaviors can run on each page.`)
-      )}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="autoscrollBehavior"
-        ?checked=${this.formState.autoscrollBehavior}
-      >
-        ${msg("Auto-Scroll Behavior")}
-      </sl-checkbox>`)}
-      ${this.renderHelpTextCol(
-        msg(
-          `When enabled the browser will automatically scroll to the end of the page.`
-        ),
-        false
-      )}
-      ${this.renderFormCol(html`
-        <sl-input
-          name="pageExtraDelaySeconds"
-          type="number"
-          inputmode="numeric"
-          label=${msg("Delay Before Next Page")}
-          placeholder=${"Default: 0"}
-          value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
-          min="0"
-        >
-          <span slot="suffix">${msg("seconds")}</span>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
-        )
-      )}
-      ${this.renderSectionHeading(msg("Limit Per Crawl"))}
+      ${this.renderSectionHeading(msg("Per-Crawl Limits"))}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1391,6 +1316,81 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderHelpTextCol(
         msg(`Increasing parallel crawler instances can speed up crawls, but may
         increase the chances of getting rate limited.`)
+      )}
+      ${this.renderSectionHeading(msg("Per-Page Limits"))}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageLoadTimeoutSeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Page Load Timeout")}
+          placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`
+              )
+            : "Default: Unlimited"}
+          value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
+          min="0"
+          @sl-input=${onInputMinMax}
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`
+        )
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="behaviorTimeoutSeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Behavior Timeout")}
+          placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
+            ? msg(
+                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`
+              )
+            : msg("Unlimited")}
+          value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
+          min="0"
+          @sl-input=${onInputMinMax}
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Limits how long behaviors can run on each page.`)
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="autoscrollBehavior"
+        ?checked=${this.formState.autoscrollBehavior}
+      >
+        ${msg("Auto-Scroll Behavior")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `When enabled the browser will automatically scroll to the end of the page.`
+        ),
+        false
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="pageExtraDelaySeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Delay Before Next Page")}
+          placeholder=${"Default: 0"}
+          value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
+        )
       )}
     `;
   }

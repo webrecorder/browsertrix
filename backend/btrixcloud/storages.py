@@ -91,6 +91,111 @@ async def verify_storage_upload(storage, filename):
 
 
 # ============================================================================
+async def do_upload_single(org, filename, data, crawl_manager, storage_name="default"):
+    """do upload to specified key"""
+    s3storage = None
+
+    if org.storage.type == "s3":
+        s3storage = org.storage
+    else:
+        s3storage = await crawl_manager.get_default_storage(storage_name)
+
+    if not s3storage:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    async with get_s3_client(s3storage) as (client, bucket, key):
+        key += filename
+
+        return await client.put_object(Bucket=bucket, Key=key, Body=data)
+
+
+# ============================================================================
+# pylint: disable=too-many-arguments,too-many-locals
+async def do_upload_multipart(
+    org, filename, file_, min_size, crawl_manager, storage_name="default"
+):
+    """do upload to specified key using multipart chunking"""
+    s3storage = None
+
+    if org.storage.type == "s3":
+        s3storage = org.storage
+    else:
+        s3storage = await crawl_manager.get_default_storage(storage_name)
+
+    if not s3storage:
+        raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+    async def get_next_chunk(file_, min_size):
+        total = 0
+        bufs = []
+
+        async for chunk in file_:
+            bufs.append(chunk)
+            total += len(chunk)
+
+            if total >= min_size:
+                break
+
+        if len(bufs) == 1:
+            return bufs[0]
+        return b"".join(bufs)
+
+    async with get_s3_client(s3storage) as (client, bucket, key):
+        key += filename
+
+        mup_resp = await client.create_multipart_upload(
+            ACL="bucket-owner-full-control", Bucket=bucket, Key=key
+        )
+
+        upload_id = mup_resp["UploadId"]
+
+        parts = []
+        part_number = 1
+
+        try:
+            while True:
+                chunk = await get_next_chunk(file_, min_size)
+
+                resp = await client.upload_part(
+                    Bucket=bucket,
+                    Body=chunk,
+                    UploadId=upload_id,
+                    PartNumber=part_number,
+                    Key=key,
+                )
+
+                print(f"part added: {part_number} {len(chunk)} {upload_id}", flush=True)
+
+                parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
+
+                part_number += 1
+
+                if len(chunk) < min_size:
+                    break
+
+            await client.complete_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+
+            print(f"Multipart upload succeeded: {upload_id}")
+
+            return True
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            await client.abort_multipart_upload(
+                Bucket=bucket, Key=key, UploadId=upload_id
+            )
+
+            print(exc)
+            print(f"Multipart upload failed: {upload_id}")
+
+            return False
+
+
+# ============================================================================
 async def get_presigned_url(org, crawlfile, crawl_manager, duration=3600):
     """generate pre-signed url for crawl file"""
     if crawlfile.def_storage_name:

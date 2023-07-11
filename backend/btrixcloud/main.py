@@ -20,9 +20,11 @@ from .orgs import init_orgs_api
 from .profiles import init_profiles_api
 
 from .storages import init_storages_api
+from .uploads import init_uploads_api
 from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
+from .basecrawls import init_base_crawls_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler
@@ -85,6 +87,14 @@ def main():
     crawl_manager = CrawlManager()
 
     init_storages_api(org_ops, crawl_manager, current_active_user)
+
+    init_uploads_api(
+        app, mdb, user_manager, crawl_manager, org_ops, current_active_user
+    )
+
+    init_base_crawls_api(
+        app, mdb, user_manager, crawl_manager, org_ops, current_active_user
+    )
 
     profiles = init_profiles_api(mdb, crawl_manager, org_ops, current_active_user)
 

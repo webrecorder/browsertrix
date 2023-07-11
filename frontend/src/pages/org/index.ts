@@ -1,10 +1,12 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
+import type { Crawl } from "../../types/crawler";
 import type { OrgData } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -44,6 +46,7 @@ type Params = {
   browserId?: string;
   artifactId?: string;
   resourceId?: string;
+  artifactType?: Crawl["type"];
 };
 
 const defaultTab = "crawls";
@@ -175,11 +178,10 @@ export class Org extends LiteElement {
           })}
           ${this.renderNavTab({
             tabName: "artifacts",
-            label: msg("Finished Crawls"),
+            label: msg("All Archived Data"),
             path: "artifacts/crawls",
           })}
-          ${
-            this.renderNavTab({
+          ${this.renderNavTab({
             tabName: "collections",
             label: msg("Collections"),
             path: "collections",
@@ -237,12 +239,16 @@ export class Org extends LiteElement {
     const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
     const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
+    const artifactType = this.orgPath.includes("/artifacts/upload") ? "upload" : "crawl";
+
     if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
+        orgId=${this.orgId}
         crawlId=${this.params.crawlOrWorkflowId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
+        artifactType=${artifactType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }
@@ -250,9 +256,11 @@ export class Org extends LiteElement {
     return html`<btrix-crawls-list
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
+      orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
+      artifactType=${ifDefined(this.params.artifactType || undefined)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
     ></btrix-crawls-list>`;
   }

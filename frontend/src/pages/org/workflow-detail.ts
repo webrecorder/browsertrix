@@ -428,7 +428,7 @@ export class WorkflowDetail extends LiteElement {
           this.getWorkflowPromise?.then(
             () => html`
               ${when(this.activePanel === "watch", () =>
-                this.lastCrawlId
+                this.workflow?.isCrawlRunning
                   ? html` <div class="border rounded-lg py-2 mb-5 h-14">
                         ${this.renderCurrentCrawl()}
                       </div>
@@ -781,7 +781,7 @@ export class WorkflowDetail extends LiteElement {
               pill
               multiple
               max-options-visible="1"
-              placeholder=${msg("Finished Crawls")}
+              placeholder=${msg("All Crawls")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
                 await this.updateComplete;
@@ -926,11 +926,15 @@ export class WorkflowDetail extends LiteElement {
         break;
 
       case "waiting_capacity":
-        waitingMsg = msg("Crawl waiting for available resources before it can start...");
+        waitingMsg = msg(
+          "Crawl waiting for available resources before it can start..."
+        );
         break;
 
       case "waiting_org_limit":
-        waitingMsg = msg("Crawl waiting for others to finish, concurrent limit per Organization reached...");
+        waitingMsg = msg(
+          "Crawl waiting for others to finish, concurrent limit per Organization reached..."
+        );
         break;
     }
 
