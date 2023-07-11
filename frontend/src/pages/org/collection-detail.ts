@@ -432,8 +432,9 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    if (this.collection) {
-      this.collection.publishing = true;
+    const { publishing } = data;
+    if (this.collection && publishing) {
+      this.collection = {...this.collection, publishing: publishing};
     }
     await this.waitForCollectionPublished();
   }
