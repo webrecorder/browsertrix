@@ -61,14 +61,19 @@ export class CollectionDetail extends LiteElement {
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
         <div>
-          ${when(this.collection?.publishedUrl, () => html`
-            <sl-button size="small" class="p-2 mb-2"
-            @click=${() => this.showPublishedInfo = true}
-            >
-            <sl-icon name="code-slash"></sl-icon>
-            View Embed Code
-            </sl-button>
-          `)}
+          ${when(
+            this.collection?.publishedUrl,
+            () => html`
+              <sl-button
+                size="small"
+                class="p-2 mb-2"
+                @click=${() => (this.showPublishedInfo = true)}
+              >
+                <sl-icon name="code-slash"></sl-icon>
+                View Embed Code
+              </sl-button>
+            `
+          )}
           ${when(this.isCrawler, this.renderActions)}
         </div>
       </header>
@@ -105,8 +110,7 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${when(this.showPublishedInfo, this.renderPublishedInfo)}
-      `;
+      ${this.renderPublishedInfo()}`;
   }
 
   private renderPublishedInfo = () => {
@@ -114,26 +118,69 @@ export class CollectionDetail extends LiteElement {
       return;
     }
 
-    const fullUrl = new URL(this.collection?.publishedUrl, window.location.href).href;
+    const fullUrl = new URL(this.collection?.publishedUrl, window.location.href)
+      .href;
+    const embedCode = `<replay-web-page source="${fullUrl}"></replay-web-page>`;
+    const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html`
-  <sl-dialog
-     label=${msg(str`${this.collection?.name} Embedding Info`)}
-     ?open=${this.showPublishedInfo}
-     @sl-request-close=${() => (this.showPublishedInfo = false)}
-  >
-      <p class="text-left">
-        Embed this published collection in other site using the following embed code and ReplayWeb.page:
-        <p class="py-4"><code class="bg-slate-100 py-0 my-8">
-        &lt;replay-web-page src="${fullUrl}"&gt;&lt;/replay-web-page&gt;
-        </code></p>
-        <p class="py-4">Add the following to ./replay/sw.js</p>
-        <p><code class="bg-slate-100 py-0 my-8">
-        importScripts("https://replayweb.page/sw.js");
-        </code></p>
-        <p>See <a class="text-primary" href="https://replayweb.page/docs/embedding"> our embedding guide for more details.</a></p>
-      </p>
-  </sl-dialog>`
+    return html` <btrix-dialog
+      label=${msg(str`Embed Code for “${this.collection?.name}”`)}
+      ?open=${this.showPublishedInfo}
+      @sl-request-close=${() => (this.showPublishedInfo = false)}
+    >
+      <div class="text-left">
+        <p class="mb-5">
+          ${msg(
+            html`Embed this collection in another site using these
+              <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
+          )}
+        </p>
+        <p class="mb-3">
+          ${msg(html`Add the following embed code to your HTML page:`)}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${embedCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => embedCode}
+              content=${msg("Copy Embed Code")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p class="mb-3">
+          ${msg(
+            html`Add the following JavaScript to
+              <code class="text-[0.9em]">./replay/sw.js</code>:`
+          )}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${importCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => importCode}
+              content=${msg("Copy JS")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p>
+          ${msg(
+            html`See
+              <a
+                class="text-primary"
+                href="https://replayweb.page/docs/embedding"
+                target="_blank"
+              >
+                our embedding guide</a
+              >
+              for more details.`
+          )}
+        </p>
+      </div>
+    </btrix-dialog>`;
   };
 
   private renderHeader = () => html`
@@ -152,45 +199,59 @@ export class CollectionDetail extends LiteElement {
   `;
 
   private renderActions = () => {
+    // FIXME replace auth token post-workshop
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
     return html`
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.publishedUrl ? html`
-            <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${this.onPublish}
-            >
-              <sl-icon name="journal-plus" slot="prefix"></sl-icon>
-              ${msg("Publish Collection")}
-            </sl-menu-item>
-            
-            ` : html`
-            <sl-menu-item
-              style="--sl-color-neutral-700: var(--success)"
-            >
-            <sl-icon name="box-arrow-up-left" slot="prefix"></sl-icon>
-            <a target="_blank" slot="prefix" href="https://replayweb.page?source=${new URL(this.collection?.publishedUrl || "", window.location.href).href}">
-            Go to Public View
-            </a>
-            </sl-menu-item>
-            <sl-menu-item
-            style="--sl-color-neutral-700: var(--warning)"
-            @click=${this.onUnpublish}
-            >
-              <sl-icon name="journal-x" slot="prefix"></sl-icon>
-              ${msg("Unpublish Collection")}
-            </sl-menu-item>
-            `}
+          ${!this.collection?.publishedUrl
+            ? html`
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${this.onPublish}
+                >
+                  <sl-icon name="journal-plus" slot="prefix"></sl-icon>
+                  ${msg("Publish Collection")}
+                </sl-menu-item>
+              `
+            : html`
+                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
+                  <sl-icon name="box-arrow-up-left" slot="prefix"></sl-icon>
+                  <a
+                    target="_blank"
+                    slot="prefix"
+                    href="https://replayweb.page?source=${new URL(
+                      this.collection?.publishedUrl || "",
+                      window.location.href
+                    ).href}"
+                  >
+                    Go to Public View
+                  </a>
+                </sl-menu-item>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${this.onUnpublish}
+                >
+                  <sl-icon name="journal-x" slot="prefix"></sl-icon>
+                  ${msg("Unpublish Collection")}
+                </sl-menu-item>
+              `}
           <sl-divider></sl-divider>
-          <sl-menu-item
-          @click=${this.onDownload}
+          <!-- Shoelace doesn't allow "href" on menu items,
+              see https://github.com/shoelace-style/shoelace/issues/1351 -->
+          <a
+            href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
+            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            @click=${(e: MouseEvent) => {
+              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+            }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
-          </sl-menu-item>
+          </a>
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
@@ -393,24 +454,6 @@ export class CollectionDetail extends LiteElement {
     return data;
   }
 
-  private async onDownload() {
-    const resp = await fetch(
-      `/api/orgs/${this.orgId}/collections/${this.collectionId}/download`,
-      {
-        headers: {...this.authState!.headers}
-      }
-    );
-    const blob = await resp.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.setAttribute("display", "none");
-    a.href = objectUrl;
-    a.setAttribute("download", this.collection?.name + ".wacz");
-    a.click();
-    window.URL.revokeObjectURL(objectUrl);
-  }
-
   private async onPublish() {
     const data = await this.apiFetch(
       `/orgs/${this.orgId}/collections/${this.collectionId}/publish`,
@@ -421,7 +464,7 @@ export class CollectionDetail extends LiteElement {
     );
     const { published, url } = data;
     if (this.collection && url && published) {
-      this.collection = {...this.collection, publishedUrl: url};
+      this.collection = { ...this.collection, publishedUrl: url };
     }
   }
 
@@ -434,7 +477,7 @@ export class CollectionDetail extends LiteElement {
       }
     );
     if (this.collection && data?.published === false) {
-      this.collection = {...this.collection, publishedUrl: undefined};
+      this.collection = { ...this.collection, publishedUrl: undefined };
     }
   }
 }
