@@ -120,7 +120,7 @@ export class CollectionDetail extends LiteElement {
 
     const fullUrl = new URL(this.collection?.publishedUrl, window.location.href)
       .href;
-    const embedCode = `<replay-web-page src="${fullUrl}"></replay-web-page>`;
+    const embedCode = `<replay-web-page source="${fullUrl}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html` <btrix-dialog
