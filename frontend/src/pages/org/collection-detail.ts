@@ -46,7 +46,7 @@ export class CollectionDetail extends LiteElement {
       this.collection = undefined;
       this.fetchCollection();
     }
-    if (this.collection && this.collection.publishing) {
+    if (this.collection && (this.collection.publishing === true || !this.collection.publishedUrl)) {
       await this.waitForCollectionPublished();
     }
   }
@@ -65,7 +65,7 @@ export class CollectionDetail extends LiteElement {
         >
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
-        ${when(this.collection?.publishing, () => html`
+        ${when(this.collection?.publishing && !this.collection?.publishedUrl, () => html`
           <div class="flex items-center justify-center mr-2 p-2">
             <div class="mr-1">${msg(str`Publishing in progress`)}</div>
             <sl-spinner></sl-spinner>
@@ -108,7 +108,7 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
-            ?disabled=${this.collection?.publishing}
+            ?disabled=${this.collection?.publishing === true}
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -173,7 +173,7 @@ export class CollectionDetail extends LiteElement {
           ${!this.collection?.publishedUrl ? html`
             <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.collection?.publishing}
+            ?disabled=${this.collection?.publishing && !this.collection?.publishedUrl}
             @click=${this.onPublish}
             >
               <sl-icon name="journal-plus" slot="prefix"></sl-icon>
@@ -445,7 +445,7 @@ export class CollectionDetail extends LiteElement {
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
         this.authState!
       );
-      if (data.publishedUrl && data.publishedUrl?.length > 0) {
+      if (!data.publishing && data.publishedUrl && data.publishedUrl?.length > 0) {
         this.collection = data;
         return;
       }
