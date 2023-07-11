@@ -40,7 +40,7 @@ class Collection(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     publishedUrl: Optional[str] = ""
-    publishing: Optional[str] = False
+    publishing: Optional[bool] = False
     # published: Optional[bool] = False
 
 
