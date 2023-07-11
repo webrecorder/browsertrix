@@ -455,12 +455,14 @@ class CollectionOps:
             wacz_stream = self.sync_dl(all_files, client, bucket, key)
             wacz_stream = to_file_like_obj(wacz_stream)
 
-            GB = 1024 ** 3
-            config = TransferConfig(multipart_threshold=5*GB)
+            config = TransferConfig(multipart_threshold=5 * 1024**3)
 
             client.upload_fileobj(
-                Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=counter.update
-                Config=config
+                Fileobj=wacz_stream,
+                Bucket=bucket,
+                Key=path,
+                Callback=counter.update,
+                Config=config,
             )
 
             print("Published To: " + path, flush=True)
@@ -522,6 +524,7 @@ class CollectionOps:
 
 
 # ============================================================================
+# pylint: disable=too-few-public-methods
 class UploadCounter:
     """UploadCounter"""
 
