@@ -354,7 +354,7 @@ export class ConfigDetails extends LiteElement {
         Boolean(primarySeedConfig.extraHops ?? seedsConfig.extraHops)
       )}
       ${this.renderSetting(
-        msg("Use Sitemap"),
+        msg("Check For Sitemap"),
         Boolean(seedsConfig.useSitemap)
       )}
       ${this.renderSetting(

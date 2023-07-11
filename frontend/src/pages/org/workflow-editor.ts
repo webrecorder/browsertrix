@@ -1124,7 +1124,7 @@ https://example.net`}
           name="useSitemap"
           ?checked=${this.formState.useSitemap}
         >
-          ${msg("Use Sitemap")}
+          ${msg("Check For Sitemap")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
