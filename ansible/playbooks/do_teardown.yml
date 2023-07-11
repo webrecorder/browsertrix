@@ -121,8 +121,6 @@
 
   # DNS
   # ===========================================
-    - name: d_ocean | dns | does dns exist? 
-      ansible.builtin.command: doctl compute domain {{ domain }} -o json
     - name: d_ocean | dns | gather facts about dns
       ansible.builtin.command: doctl compute domain records list {{ domain }} -o json --format ID,Name --no-header
       register: domain_info
