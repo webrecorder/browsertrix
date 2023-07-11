@@ -498,7 +498,7 @@ class CollectionOps:
 
         def get_file(name):
             response = client.get_object(Bucket=bucket, Key=key + name)
-            return response["Body"].iter_chunks(chunk_size=256*1024)
+            return response["Body"].iter_chunks(chunk_size=256 * 1024)
 
         def member_files():
             modified_at = datetime.now()
@@ -583,9 +583,7 @@ def to_file_like_obj(iterable):
             """read interface for file-like obj"""
             print("size read", size, flush=True)
 
-            return b"".join(
-                up_to_iter(size)
-            )
+            return b"".join(up_to_iter(size))
 
     return FileLikeObj()
 
