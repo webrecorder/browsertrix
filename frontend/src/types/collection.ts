@@ -10,7 +10,7 @@ export type Collection = {
   resources: string[];
   publishedUrl?: string;
   publishing?: boolean;
-  //published?: boolean;
+  pPercent?: number;
 };
 
 export type CollectionList = Collection[];

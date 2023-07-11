@@ -46,6 +46,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-label/menu-label"
 );
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/progress-bar/progress-bar.js"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time"
 );
 import(

@@ -8,6 +8,8 @@ import uuid
 import asyncio
 import json
 import traceback
+import queue
+import time
 
 import pymongo
 from fastapi import Depends, HTTPException
@@ -15,6 +17,8 @@ from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel, UUID4, Field
 from stream_zip import stream_zip, NO_COMPRESSION_64
+
+from boto3.s3.transfer import TransferConfig
 
 from .basecrawls import BaseCrawlOutWithResources
 from .crawls import CrawlFileOut, SUCCESSFUL_STATES, CrawlFile
@@ -42,6 +46,8 @@ class Collection(BaseMongoModel):
     publishedUrl: Optional[str] = ""
     publishing: Optional[bool] = False
 
+    pPercent: Optional[int] = 0
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -65,8 +71,11 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
+
     publishedUrl: Optional[str]
     publishing: Optional[bool]
+
+    pPercent: Optional[int]
 
 
 # ============================================================================
@@ -339,25 +348,49 @@ class CollectionOps:
             org, self.crawl_manager, use_full=True
         )
 
-        await self.update_collection(
-            coll.id, org, UpdateColl(publishedUrl="", publishing=True)
-        )
-
         total_size = 0
         for file_ in coll.resources:
             total_size += file_.size
+
+        await self.update_collection(
+            coll.id,
+            org,
+            UpdateColl(publishedUrl="", publishing=True),
+        )
 
         published_url = endpoint_url + path
 
         loop = asyncio.get_event_loop()
 
+        msgq = queue.Queue()
+
+        asyncio.create_task(self.process_q(msgq, coll_id, org, total_size))
+
         asyncio.create_task(
             self.finish_publication_task(
-                loop, coll, org, path, published_url, client, bucket, key, total_size
+                loop, coll, org, path, published_url, client, bucket, key, msgq
             )
         )
 
         return {"publishing": True}
+
+    async def process_q(self, msgq, coll_id, org, total_size):
+        """update upload size in db"""
+        while True:
+            try:
+                new_value = msgq.get_nowait()
+                if new_value == -1:
+                    print("all done!")
+                    break
+
+                print("progress", new_value, total_size, flush=True)
+
+                percent = 100 * new_value / total_size
+
+                await self.update_collection(coll_id, org, UpdateColl(pPercent=percent))
+
+            except queue.Empty:
+                await asyncio.sleep(3)
 
     async def finish_publication_task(
         self,
@@ -369,7 +402,7 @@ class CollectionOps:
         client,
         bucket,
         key,
-        total_size,
+        msgq,
     ):
         """Task to run in background to finish publishing and update model"""
         if not await loop.run_in_executor(
@@ -380,13 +413,15 @@ class CollectionOps:
             bucket,
             key,
             path,
-            total_size,
+            msgq,
         ):
             # publishing failed
             published_url = None
 
         await self.update_collection(
-            coll.id, org, UpdateColl(publishedUrl=published_url, publishing=False)
+            coll.id,
+            org,
+            UpdateColl(publishedUrl=published_url, publishing=False, pPercent=0),
         )
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
@@ -410,18 +445,22 @@ class CollectionOps:
 
         return {"published": False}
 
-    def sync_publish(self, all_files, client, bucket, key, path, total_size):
+    def sync_publish(self, all_files, client, bucket, key, path, msgq):
         """publish collection to public s3 path"""
 
-        counter = UploadCounter(total_size)
+        counter = UploadCounter(msgq)
         try:
             path = key + path
 
             wacz_stream = self.sync_dl(all_files, client, bucket, key)
             wacz_stream = to_file_like_obj(wacz_stream)
 
+            GB = 1024 ** 3
+            config = TransferConfig(multipart_threshold=5*GB)
+
             client.upload_fileobj(
                 Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=counter.update
+                Config=config
             )
 
             print("Published To: " + path, flush=True)
@@ -433,6 +472,10 @@ class CollectionOps:
             print("Policy: " + policy)
 
             client.put_bucket_policy(Bucket=bucket, Policy=policy)
+
+            # indicate we're done with this q
+            msgq.put(-1)
+
             return True
 
         # pylint: disable=broad-exception-caught
@@ -482,14 +525,18 @@ class CollectionOps:
 class UploadCounter:
     """UploadCounter"""
 
-    def __init__(self, total):
+    def __init__(self, msgq):
         self.counter = 0
-        self.total = total
+        self.msgq = msgq
+        self.last_update = 0
 
     def update(self, num):
         """upload callback"""
         self.counter += num
-        print(f"{self.counter} / {self.total}")
+        update_time = time.time()
+        if (update_time - self.last_update) > 1:
+            self.last_update = update_time
+            self.msgq.put(self.counter)
 
 
 # ============================================================================

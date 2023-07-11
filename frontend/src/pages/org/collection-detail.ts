@@ -41,6 +41,9 @@ export class CollectionDetail extends LiteElement {
   @state()
   private showPublishedInfo = false;
 
+  @state()
+  private pPercent = 0;
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
@@ -67,7 +70,10 @@ export class CollectionDetail extends LiteElement {
         </h2>
         ${when(this.collection?.publishing && !this.collection?.publishedUrl, () => html`
           <div class="flex items-center justify-center mr-2 p-2">
-            <div class="mr-1">${msg(str`Publishing in progress`)}</div>
+            <div class="flex flex-col mr-1">
+              <span>${msg(str`Publishing in progress`)}</span>
+              <sl-progress-bar value="${this.pPercent}" style="--height: 6px;"></sl-progress-bar>
+            </div>
             <sl-spinner></sl-spinner>
           </div>
         `)}
@@ -222,7 +228,6 @@ export class CollectionDetail extends LiteElement {
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
-                  ?disabled=${this.collection?.publishing && !this.collection?.publishedUrl}
                   @click=${this.onPublish}
                 >
                   <sl-icon name="journal-plus" slot="prefix"></sl-icon>
@@ -490,6 +495,7 @@ export class CollectionDetail extends LiteElement {
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
         this.authState!
       );
+      this.pPercent = Number(data.pPercent);
       if (!data.publishing && data.publishedUrl && data.publishedUrl?.length > 0) {
         this.collection = data;
         return;
