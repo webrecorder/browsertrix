@@ -108,7 +108,6 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
-            ?disabled=${this.collection?.publishing === true}
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -216,6 +215,7 @@ export class CollectionDetail extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
+            ?disabled=${this.collection?.publishing === true}
             @click=${this.confirmDelete}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
