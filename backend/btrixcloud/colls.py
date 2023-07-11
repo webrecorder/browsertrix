@@ -393,7 +393,7 @@ class CollectionOps:
         await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
 
         await self.update_collection(
-            coll_id, org, UpdateColl(publishedUrl="", published=False)
+            coll_id, org, UpdateColl(publishedUrl="", published=False, publishing=False)
         )
 
         return {"published": False}
