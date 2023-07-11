@@ -102,8 +102,8 @@ backend_workers: 2
 backend_requests_cpu: "10m"
 backend_limits_cpu: "768m"
 
-backend_requests_memory: "100Mi"
-backend_limits_memory: "512Mi"
+backend_requests_memory: "1024Mi"
+backend_limits_memory: "1024Mi"
 
 # port for operator service
 opPort: 8756

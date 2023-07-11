@@ -41,7 +41,6 @@ class Collection(BaseMongoModel):
 
     publishedUrl: Optional[str] = ""
     publishing: Optional[bool] = False
-    # published: Optional[bool] = False
 
 
 # ============================================================================
@@ -68,7 +67,6 @@ class UpdateColl(BaseModel):
     description: Optional[str]
     publishedUrl: Optional[str]
     publishing: Optional[bool]
-    # published: Optional[bool]
 
 
 # ============================================================================
@@ -345,13 +343,17 @@ class CollectionOps:
             coll.id, org, UpdateColl(publishedUrl="", publishing=True)
         )
 
+        total_size = 0
+        for file_ in coll.resources:
+            total_size += file_.size
+
         published_url = endpoint_url + path
 
         loop = asyncio.get_event_loop()
 
         asyncio.create_task(
             self.finish_publication_task(
-                loop, coll, org, path, published_url, client, bucket, key
+                loop, coll, org, path, published_url, client, bucket, key, total_size
             )
         )
 
@@ -367,11 +369,21 @@ class CollectionOps:
         client,
         bucket,
         key,
+        total_size,
     ):
         """Task to run in background to finish publishing and update model"""
-        await loop.run_in_executor(
-            None, self.sync_publish, coll.resources, client, bucket, key, path
-        )
+        if not await loop.run_in_executor(
+            None,
+            self.sync_publish,
+            coll.resources,
+            client,
+            bucket,
+            key,
+            path,
+            total_size,
+        ):
+            # publishing failed
+            published_url = None
 
         await self.update_collection(
             coll.id, org, UpdateColl(publishedUrl=published_url, publishing=False)
@@ -398,19 +410,18 @@ class CollectionOps:
 
         return {"published": False}
 
-    def sync_publish(self, all_files, client, bucket, key, path):
+    def sync_publish(self, all_files, client, bucket, key, path, total_size):
         """publish collection to public s3 path"""
+
+        counter = UploadCounter(total_size)
         try:
             path = key + path
 
             wacz_stream = self.sync_dl(all_files, client, bucket, key)
             wacz_stream = to_file_like_obj(wacz_stream)
 
-            def print_bytes(num):
-                print(f"uploaded: {num}")
-
             client.upload_fileobj(
-                Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=print_bytes
+                Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=counter.update
             )
 
             print("Published To: " + path, flush=True)
@@ -422,10 +433,12 @@ class CollectionOps:
             print("Policy: " + policy)
 
             client.put_bucket_policy(Bucket=bucket, Policy=policy)
+            return True
 
         # pylint: disable=broad-exception-caught
         except Exception:
             traceback.print_exc()
+            return False
 
     def sync_dl(self, all_files, client, bucket, key):
         """generate streaming zip as sync"""
@@ -463,6 +476,20 @@ class CollectionOps:
             )
 
         return stream_zip(member_files())
+
+
+# ============================================================================
+class UploadCounter:
+    """UploadCounter"""
+
+    def __init__(self, total):
+        self.counter = 0
+        self.total = total
+
+    def update(self, num):
+        """upload callback"""
+        self.counter += num
+        print(f"{self.counter} / {self.total}")
 
 
 # ============================================================================
