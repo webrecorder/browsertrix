@@ -341,7 +341,9 @@ class CollectionOps:
             org, self.crawl_manager, use_full=True
         )
 
-        await self.update_collection(coll.id, org, UpdateColl(publishing=True))
+        await self.update_collection(
+            coll.id, org, UpdateColl(publishedUrl="", publishing=True)
+        )
 
         published_url = endpoint_url + path
 
