@@ -455,7 +455,7 @@ class CollectionOps:
             wacz_stream = self.sync_dl(all_files, client, bucket, key)
             wacz_stream = to_file_like_obj(wacz_stream)
 
-            config = TransferConfig(multipart_threshold=5 * 1024**3)
+            config = TransferConfig(multipart_threshold=5 * 1024**2)
 
             client.upload_fileobj(
                 Fileobj=wacz_stream,
@@ -498,7 +498,7 @@ class CollectionOps:
 
         def get_file(name):
             response = client.get_object(Bucket=bucket, Key=key + name)
-            return response["Body"].iter_chunks()
+            return response["Body"].iter_chunks(chunk_size=256*1024)
 
         def member_files():
             modified_at = datetime.now()
@@ -553,6 +553,15 @@ def to_file_like_obj(iterable):
     def up_to_iter(size):
         nonlocal chunk, offset
 
+        if not size or size < 0:
+            try:
+                chunk = next(it)
+                yield chunk
+            except StopIteration:
+                pass
+
+            return
+
         while size:
             if offset == len(chunk):
                 try:
@@ -572,8 +581,10 @@ def to_file_like_obj(iterable):
 
         def read(self, size=-1):
             """read interface for file-like obj"""
+            print("size read", size, flush=True)
+
             return b"".join(
-                up_to_iter(float("inf") if size is None or size < 0 else size)
+                up_to_iter(size)
             )
 
     return FileLikeObj()
