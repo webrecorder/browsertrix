@@ -82,7 +82,7 @@ This can be useful for capturing links on a page that lead outside the website t
 
 `Seeded Crawl`{ .badge-orange }
 
-When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present
+When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
