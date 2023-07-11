@@ -40,6 +40,7 @@ class Collection(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     publishedUrl: Optional[str] = ""
+    publishing: Optional[str] = False
     # published: Optional[bool] = False
 
 
@@ -66,7 +67,8 @@ class UpdateColl(BaseModel):
     name: Optional[str]
     description: Optional[str]
     publishedUrl: Optional[str]
-    published: Optional[bool]
+    publishing: Optional[bool]
+    # published: Optional[bool]
 
 
 # ============================================================================
@@ -339,6 +341,8 @@ class CollectionOps:
             org, self.crawl_manager, use_full=True
         )
 
+        await self.update_collection(coll.id, org, UpdateColl(publishing=True))
+
         published_url = endpoint_url + path
 
         loop = asyncio.get_event_loop()
@@ -368,7 +372,7 @@ class CollectionOps:
         )
 
         await self.update_collection(
-            coll.id, org, UpdateColl(publishedUrl=published_url)
+            coll.id, org, UpdateColl(publishedUrl=published_url, publishing=False)
         )
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):

@@ -41,13 +41,13 @@ export class CollectionDetail extends LiteElement {
   @state()
   private showPublishedInfo = false;
 
-  @state()
-  private isLoading = false;
-
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
       this.fetchCollection();
+    }
+    if (this.collection && this.collection.publishing) {
+      await this.waitForCollectionPublished();
     }
   }
 
@@ -65,7 +65,7 @@ export class CollectionDetail extends LiteElement {
         >
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
-        ${when(this.isLoading, () => html`
+        ${when(this.collection?.publishing, () => html`
           <div class="flex items-center justify-center mr-2 p-2">
             <div class="mr-1">${msg(str`Publishing in progress`)}</div>
             <sl-spinner></sl-spinner>
@@ -108,7 +108,7 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             variant="primary"
-            ?disabled=${!this.isLoading}
+            ?disabled=${this.collection?.publishing}
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -173,7 +173,7 @@ export class CollectionDetail extends LiteElement {
           ${!this.collection?.publishedUrl ? html`
             <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.isLoading}
+            ?disabled=${this.collection?.publishing}
             @click=${this.onPublish}
             >
               <sl-icon name="journal-plus" slot="prefix"></sl-icon>
@@ -432,7 +432,9 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    this.isLoading = true;
+    if (this.collection) {
+      this.collection.publishing = true;
+    }
     await this.waitForCollectionPublished();
   }
 
@@ -443,7 +445,6 @@ export class CollectionDetail extends LiteElement {
         this.authState!
       );
       if (data.publishedUrl && data.publishedUrl?.length > 0) {
-        this.isLoading = false;
         this.collection = data;
         return;
       }
