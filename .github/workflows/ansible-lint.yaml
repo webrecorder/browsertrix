@@ -1,0 +1,35 @@
+name: ansible-lint
+on: 
+  push:
+    branches:
+      - ansible-*
+  pull-request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # needed for progressive mode to work
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          cd ansible/
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --skip-lock
+
+      - name: Lint
+        run: |
+          cd ansible
+          pipenv run ansible-lint -c ./lint-cfg.yml ./playbooks/
