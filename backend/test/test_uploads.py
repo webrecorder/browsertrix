@@ -315,7 +315,6 @@ def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
     assert r.json()["deleted"] == True
 
 
-
 def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}",
@@ -354,6 +353,12 @@ def test_list_all_crawls(admin_auth_headers, default_org_id):
 
     for item in items:
         assert item["type"] in ("crawl", "upload")
+
+        if item["type"] == "crawl":
+            assert item["firstSeed"]
+            assert item["seedCount"]
+            assert item.get("name") or item.get("name") == ""
+
         assert item["id"]
         assert item["userid"]
         assert item["oid"] == default_org_id
