@@ -7,7 +7,6 @@ from typing import Optional, List
 import uuid
 import asyncio
 import json
-import traceback
 import queue
 import time
 
@@ -355,7 +354,7 @@ class CollectionOps:
         await self.update_collection(
             coll.id,
             org,
-            UpdateColl(publishedUrl="", publishing=True),
+            UpdateColl(publishedUrl="", publishing=True, pPercent=0),
         )
 
         published_url = endpoint_url + path
@@ -380,10 +379,7 @@ class CollectionOps:
             try:
                 new_value = msgq.get_nowait()
                 if new_value == -1:
-                    print("all done!")
                     break
-
-                print("progress", new_value, total_size, flush=True)
 
                 percent = 100 * new_value / total_size
 
@@ -465,12 +461,9 @@ class CollectionOps:
                 Config=config,
             )
 
-            print("Published To: " + path, flush=True)
-
             bucket_path = bucket + "/" + key.rstrip("/") if key else bucket
 
             policy = json.dumps(get_public_policy(bucket_path))
-
             print("Policy: " + policy)
 
             client.put_bucket_policy(Bucket=bucket, Policy=policy)
@@ -482,7 +475,6 @@ class CollectionOps:
 
         # pylint: disable=broad-exception-caught
         except Exception:
-            traceback.print_exc()
             return False
 
     def sync_dl(self, all_files, client, bucket, key):
@@ -496,9 +488,11 @@ class CollectionOps:
         }
         datapackage = json.dumps(datapackage).encode("utf-8")
 
+        CHUNK_SIZE = 1024 * 256
+
         def get_file(name):
             response = client.get_object(Bucket=bucket, Key=key + name)
-            return response["Body"].iter_chunks(chunk_size=256 * 1024)
+            return response["Body"].iter_chunks(chunk_size=CHUNK_SIZE)
 
         def member_files():
             modified_at = datetime.now()
@@ -520,7 +514,7 @@ class CollectionOps:
                 (datapackage,),
             )
 
-        return stream_zip(member_files())
+        return stream_zip(member_files(), chunk_size=CHUNK_SIZE)
 
 
 # ============================================================================
@@ -553,6 +547,7 @@ def to_file_like_obj(iterable):
     def up_to_iter(size):
         nonlocal chunk, offset
 
+        # if no size, yield exactly one chunk
         if not size or size < 0:
             try:
                 chunk = next(it)
@@ -581,8 +576,6 @@ def to_file_like_obj(iterable):
 
         def read(self, size=-1):
             """read interface for file-like obj"""
-            print("size read", size, flush=True)
-
             return b"".join(up_to_iter(size))
 
     return FileLikeObj()
