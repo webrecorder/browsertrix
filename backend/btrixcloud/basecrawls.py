@@ -8,12 +8,14 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel, UUID4
 from fastapi import HTTPException, Depends
+from redis import asyncio as aioredis, exceptions
+
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .users import User
-from .utils import dt_now
+from .utils import dt_now, get_redis_crawl_stats
 
 
 # ============================================================================
@@ -104,6 +106,14 @@ class BaseCrawlOut(BaseMongoModel):
 
     collections: Optional[List[UUID4]] = []
 
+    # automated crawl fields
+    cid: Optional[UUID4]
+    name: Optional[str]
+    description: Optional[str]
+    firstSeed: Optional[str]
+    seedCount: Optional[int]
+    profileName: Optional[str]
+
 
 # ============================================================================
 class BaseCrawlOutWithResources(BaseCrawlOut):
@@ -133,8 +143,9 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
-    def __init__(self, mdb, users, crawl_manager):
+    def __init__(self, mdb, users, crawl_configs, crawl_manager):
         self.crawls = mdb["crawls"]
+        self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
 
@@ -184,6 +195,9 @@ class BaseCrawlOps:
         del res["errors"]
 
         crawl = BaseCrawlOutWithResources.from_dict(res)
+
+        if crawl.type == "crawl":
+            crawl = await self._resolve_automated_crawl_refs(crawl, org)
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -258,6 +272,57 @@ class BaseCrawlOps:
 
         return size
 
+    async def _resolve_automated_crawl_refs(
+        self,
+        crawl: BaseCrawlOut,
+        org: Optional[Organization],
+        add_first_seed: bool = True,
+    ):
+        """Resolve running crawl data"""
+        # pylint: disable=too-many-branches
+        config = await self.crawl_configs.get_crawl_config(
+            crawl.cid, org, active_only=False
+        )
+
+        if config:
+            if not crawl.name:
+                crawl.name = config.name
+
+            if not crawl.description:
+                crawl.description = config.description
+
+            if config.config.seeds:
+                if add_first_seed:
+                    first_seed = config.config.seeds[0]
+                    crawl.firstSeed = first_seed.url
+                crawl.seedCount = len(config.config.seeds)
+
+        if hasattr(crawl, "profileid") and crawl.profileid:
+            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
+                crawl.profileid, org
+            )
+
+        user = await self.user_manager.get(crawl.userid)
+        if user:
+            crawl.userName = user.name
+
+        # if running, get stats directly from redis
+        # more responsive, saves db update in operator
+        if crawl.state in (
+            "running",
+            "pending-wait",
+            "generate-wacz",
+            "uploading-wacz",
+        ):
+            try:
+                redis = await self.get_redis(crawl.id)
+                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+            # redis not available, ignore
+            except exceptions.ConnectionError:
+                pass
+
+        return crawl
+
     async def _resolve_signed_urls(
         self, files: List[CrawlFile], org: Organization, crawl_id: Optional[str] = None
     ):
@@ -311,6 +376,14 @@ class BaseCrawlOps:
     async def _update_presigned(self, updates):
         for update in updates:
             await self.crawls.find_one_and_update(*update)
+
+    async def get_redis(self, crawl_id):
+        """get redis url for crawl id"""
+        redis_url = self.crawl_manager.get_redis_url(crawl_id)
+
+        return await aioredis.from_url(
+            redis_url, encoding="utf-8", decode_responses=True
+        )
 
     async def add_to_collection(
         self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization
@@ -447,6 +520,9 @@ class BaseCrawlOps:
                 # pylint: disable=attribute-defined-outside-init
                 crawl.resources = await self._resolve_signed_urls(files, org, crawl.id)
 
+            if crawl.type == "crawl":
+                crawl = await self._resolve_automated_crawl_refs(crawl, org)
+
             crawls.append(crawl)
 
         return crawls, total
@@ -464,11 +540,13 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(app, mdb, users, crawl_manager, orgs, user_dep):
+def init_base_crawls_api(
+    app, mdb, users, crawl_manager, crawl_config_ops, orgs, user_dep
+):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments
 
-    ops = BaseCrawlOps(mdb, users, crawl_manager)
+    ops = BaseCrawlOps(mdb, users, crawl_config_ops, crawl_manager)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

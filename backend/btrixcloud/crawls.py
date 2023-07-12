@@ -13,12 +13,11 @@ from datetime import datetime
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, UUID4, conint, HttpUrl, Field
-from redis import asyncio as aioredis, exceptions
+from pydantic import BaseModel, UUID4, conint, Field
+from redis import asyncio as exceptions
 import pymongo
 
 from .crawlconfigs import (
-    Seed,
     CrawlConfigCore,
     CrawlConfig,
     UpdateCrawlConfig,
@@ -162,7 +161,7 @@ class CrawlOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
-        super().__init__(mdb, users, crawl_manager)
+        super().__init__(mdb, users, crawl_configs, crawl_manager)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -374,10 +373,7 @@ class CrawlOps(BaseCrawlOps):
             if config.config.seeds:
                 if add_first_seed:
                     first_seed = config.config.seeds[0]
-                    if isinstance(first_seed, HttpUrl):
-                        crawl.firstSeed = first_seed
-                    elif isinstance(first_seed, Seed):
-                        crawl.firstSeed = first_seed.url
+                    crawl.firstSeed = first_seed.url
                 crawl.seedCount = len(config.config.seeds)
 
         if hasattr(crawl, "profileid") and crawl.profileid:
@@ -662,14 +658,6 @@ class CrawlOps(BaseCrawlOps):
 
         parsed_errors = parse_jsonl_error_messages(errors)
         return parsed_errors, total
-
-    async def get_redis(self, crawl_id):
-        """get redis url for crawl id"""
-        redis_url = self.crawl_manager.get_redis_url(crawl_id)
-
-        return await aioredis.from_url(
-            redis_url, encoding="utf-8", decode_responses=True
-        )
 
     async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
         """add new exclusion to config or remove exclusion from config

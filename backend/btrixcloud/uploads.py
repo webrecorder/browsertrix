@@ -235,11 +235,11 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
+def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_dep):
     """uploads api"""
 
     # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
-    ops = UploadOps(mdb, users, crawl_manager)
+    ops = UploadOps(mdb, users, crawl_configs, crawl_manager)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
