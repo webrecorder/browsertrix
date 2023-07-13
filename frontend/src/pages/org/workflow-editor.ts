@@ -150,7 +150,7 @@ const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
-  useSitemap: false,
+  useSitemap: true,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
   behaviorTimeoutSeconds: null,
@@ -521,7 +521,7 @@ export class CrawlConfigEditor extends LiteElement {
       exclusions: seedsConfig.exclude,
       includeLinkedPages:
         Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
-      useSitemap: seedsConfig.useSitemap ?? true,
+      useSitemap: defaultFormState.useSitemap,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
       autoscrollBehavior: this.initialWorkflow.config.behaviors
