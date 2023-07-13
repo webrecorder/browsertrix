@@ -9,6 +9,8 @@ export type Collection = {
   tags: string[];
   resources: string[];
   publishedUrl?: string;
+  publishing?: boolean;
+  pPercent?: number;
 };
 
 export type CollectionList = Collection[];

@@ -467,6 +467,9 @@ class Collection(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     publishedUrl: Optional[str] = ""
+    publishing: Optional[bool] = False
+
+    pPercent: Optional[int] = 0
 
 
 # ============================================================================
@@ -491,7 +494,11 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
-    publishedUrl: Optional[str] = ""
+
+    publishedUrl: Optional[str]
+    publishing: Optional[bool]
+
+    pPercent: Optional[int]
 
 
 # ============================================================================

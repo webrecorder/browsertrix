@@ -483,7 +483,7 @@ export class CollectionsList extends LiteElement {
                   <a
                     class="text-primary hover:text-indigo-500"
                     href="https://replayweb.page?source=${new URL(
-                      col.publishedUrl
+                      col.publishedUrl, window.location.href
                     ).href}"
                     target="_blank"
                     rel="noopener noreferrer nofollow"

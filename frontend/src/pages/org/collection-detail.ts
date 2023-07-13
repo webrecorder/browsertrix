@@ -10,6 +10,8 @@ import type { IntersectEvent } from "../../components/observable";
 
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
 
+const POLL_INTERVAL_SECONDS = 10;
+
 @localized()
 export class CollectionDetail extends LiteElement {
   @property({ type: Object })
@@ -39,10 +41,16 @@ export class CollectionDetail extends LiteElement {
   @state()
   private showPublishedInfo = false;
 
+  @state()
+  private pPercent = 0;
+
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
       this.fetchCollection();
+    }
+    if (this.collection && (this.collection.publishing === true || !this.collection.publishedUrl)) {
+      await this.waitForCollectionPublished();
     }
   }
 
@@ -60,6 +68,15 @@ export class CollectionDetail extends LiteElement {
         >
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
+        ${when(this.collection?.publishing && !this.collection?.publishedUrl, () => html`
+          <div class="flex items-center justify-center mr-2 p-2">
+            <div class="flex flex-col mr-1">
+              <span>${msg(str`Publishing in progress`)}</span>
+              <sl-progress-bar value="${this.pPercent}" style="--height: 6px;"></sl-progress-bar>
+            </div>
+            <sl-spinner></sl-spinner>
+          </div>
+        `)}
         <div>
           ${when(
             this.collection?.publishedUrl,
@@ -201,13 +218,17 @@ export class CollectionDetail extends LiteElement {
   private renderActions = () => {
     // FIXME replace auth token post-workshop
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
+    const fullUrl = this.collection?.publishedUrl ? new URL(this.collection?.publishedUrl, window.location.href)
+    .href : "";
+
     return html`
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.publishedUrl
+          ${!fullUrl
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
@@ -223,10 +244,7 @@ export class CollectionDetail extends LiteElement {
                   <a
                     target="_blank"
                     slot="prefix"
-                    href="https://replayweb.page?source=${new URL(
-                      this.collection?.publishedUrl || "",
-                      window.location.href
-                    ).href}"
+                    href="https://replayweb.page?source=${fullUrl}"
                   >
                     Go to Public View
                   </a>
@@ -264,6 +282,7 @@ export class CollectionDetail extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
+            ?disabled=${this.collection?.publishing === true}
             @click=${this.confirmDelete}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
@@ -462,10 +481,41 @@ export class CollectionDetail extends LiteElement {
         method: "POST",
       }
     );
-    const { published, url } = data;
-    if (this.collection && url && published) {
-      this.collection = { ...this.collection, publishedUrl: url };
+
+    const { publishing } = data;
+    if (this.collection && publishing) {
+      this.collection = {...this.collection, publishing: publishing};
     }
+
+    await this.waitForCollectionPublished();
+  }
+
+  private async waitForCollectionPublished() {
+    try {
+      const data: Collection = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        this.authState!
+      );
+      this.pPercent = Number(data.pPercent);
+      if (!data.publishing && data.publishedUrl && data.publishedUrl?.length > 0) {
+        this.collection = data;
+        return;
+      }
+    } catch (e: any) {
+      this.notify({
+        message:
+          e.statusCode === 404
+            ? msg("Collection not found.")
+            : msg("Sorry, couldn't retrieve Collection at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    // Restart timer for next poll
+    window.setTimeout(async () => {
+      await this.waitForCollectionPublished();
+    }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
   private async onUnpublish() {

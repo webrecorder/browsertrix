@@ -5,9 +5,6 @@ from collections import Counter
 from datetime import datetime
 from typing import Optional, List
 import uuid
-import asyncio
-import json
-import traceback
 
 import pymongo
 from fastapi import Depends, HTTPException
@@ -25,7 +22,11 @@ from .models import (
     Organization,
     PaginatedResponse,
 )
-from .storages import get_sync_client, get_public_policy, delete_crawl_file_object
+from .storages import (
+    download_streaming_wacz,
+    upload_streaming_wacz,
+    delete_file,
+)
 
 
 # ============================================================================
@@ -268,42 +269,40 @@ class CollectionOps:
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        client, bucket, key, _ = await get_sync_client(org, self.crawl_manager)
-
-        loop = asyncio.get_event_loop()
-
-        resp = await loop.run_in_executor(
-            None, self.sync_dl, coll.resources, client, bucket, key
-        )
+        resp = await download_streaming_wacz(org, self.crawl_manager, coll.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
+    def get_public_wacz_path(self, coll: Collection, org: Organization):
+        """return public WACZ path for a collection"""
+        return f"{org.id}/public/{coll.id}.wacz"
+
     async def publish_collection(self, coll_id: uuid.UUID, org: Organization):
         """Publish streaming WACZ file to publicly accessible bucket"""
+
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        client, bucket, key, endpoint_url = await get_sync_client(
-            org, self.crawl_manager, use_full=True
+        async def update_published_callback(published_url="", percent=0):
+            print("Publishing", coll.name, published_url, percent, flush=True)
+            if percent:
+                update = UpdateColl(pPercent=percent, publishing=True)
+            else:
+                update = UpdateColl(
+                    publishedUrl=published_url, publishing=not published_url, pPercent=0
+                )
+
+            await self.update_collection(coll_id, org, update)
+
+        return await upload_streaming_wacz(
+            self.get_public_wacz_path(coll, org),
+            org,
+            self.crawl_manager,
+            coll.resources,
+            update_published_callback,
         )
-
-        path = f"{org.id}/public/{coll_id}.wacz"
-
-        published_url = endpoint_url + path
-
-        loop = asyncio.get_event_loop()
-
-        await loop.run_in_executor(
-            None, self.sync_publish, coll.resources, client, bucket, key, path
-        )
-
-        await self.update_collection(
-            coll_id, org, UpdateColl(publishedUrl=published_url)
-        )
-
-        return {"published": True, "url": published_url}
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
         """unpublish collection, removing it from public access"""
@@ -311,121 +310,23 @@ class CollectionOps:
         if not coll.publishedUrl:
             return {"published": False}
 
-        crawl_file = CrawlFile(
-            filename=coll.publishedUrl,
-            def_storage_name="default",
-            size=0,
-            hash="",
+        deleted = False
+
+        try:
+            deleted = await delete_file(
+                org, self.get_public_wacz_path(coll, org), self.crawl_manager
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="delete_failed") from exc
+
+        if not deleted:
+            return {"published": True, "error": "not_deleted"}
+
+        await self.update_collection(
+            coll_id, org, UpdateColl(publishedUrl="", publishing=False, pPercent=0)
         )
 
-        await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
-
-        await self.update_collection(coll_id, org, UpdateColl(publishedUrl=""))
-
         return {"published": False}
-
-    def sync_publish(self, all_files, client, bucket, key, path):
-        """publish collection to public s3 path"""
-        try:
-            path = key + path
-
-            wacz_stream = self.sync_dl(all_files, client, bucket, key)
-            wacz_stream = to_file_like_obj(wacz_stream)
-
-            def print_bytes(num):
-                print(f"uploaded: {num}")
-
-            client.upload_fileobj(
-                Fileobj=wacz_stream, Bucket=bucket, Key=path, Callback=print_bytes
-            )
-
-            print("Published To: " + path, flush=True)
-
-            bucket_path = bucket + "/" + key.rstrip("/") if key else bucket
-
-            policy = json.dumps(get_public_policy(bucket_path))
-
-            print("Policy: " + policy)
-
-            client.put_bucket_policy(Bucket=bucket, Policy=policy)
-
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            traceback.print_exc()
-
-    def sync_dl(self, all_files, client, bucket, key):
-        """generate streaming zip as sync"""
-        for file_ in all_files:
-            file_.path = file_.name
-
-        datapackage = {
-            "profile": "multi-wacz-package",
-            "resources": [file_.dict() for file_ in all_files],
-        }
-        datapackage = json.dumps(datapackage).encode("utf-8")
-
-        def get_file(name):
-            response = client.get_object(Bucket=bucket, Key=key + name)
-            return response["Body"].iter_chunks()
-
-        def member_files():
-            modified_at = datetime.now()
-            perms = 0o600
-            for file_ in all_files:
-                yield (
-                    file_.name,
-                    modified_at,
-                    perms,
-                    NO_COMPRESSION_64,
-                    get_file(file_.name),
-                )
-
-            yield (
-                "datapackage.json",
-                modified_at,
-                perms,
-                NO_COMPRESSION_64,
-                (datapackage,),
-            )
-
-        return stream_zip(member_files())
-
-
-# ============================================================================
-def to_file_like_obj(iterable):
-    """iter to file like obj"""
-    chunk = b""
-    offset = 0
-    # pylint: disable=invalid-name
-    it = iter(iterable)
-
-    def up_to_iter(size):
-        nonlocal chunk, offset
-
-        while size:
-            if offset == len(chunk):
-                try:
-                    chunk = next(it)
-                except StopIteration:
-                    break
-                else:
-                    offset = 0
-            to_yield = min(size, len(chunk) - offset)
-            offset = offset + to_yield
-            size -= to_yield
-            yield chunk[offset - to_yield : offset]
-
-    # pylint: disable=too-few-public-methods
-    class FileLikeObj:
-        """file-like obj wrapper for upload"""
-
-        def read(self, size=-1):
-            """read interface for file-like obj"""
-            return b"".join(
-                up_to_iter(float("inf") if size is None or size < 0 else size)
-            )
-
-    return FileLikeObj()
 
 
 # ============================================================================
