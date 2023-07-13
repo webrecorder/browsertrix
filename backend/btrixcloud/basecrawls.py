@@ -252,8 +252,7 @@ class BaseCrawlOps:
         size = 0
         for file_ in crawl.files:
             size += file_.size
-            status_code = await delete_crawl_file_object(org, file_, self.crawl_manager)
-            if status_code != 204:
+            if not await delete_crawl_file_object(org, file_, self.crawl_manager):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
         return size
