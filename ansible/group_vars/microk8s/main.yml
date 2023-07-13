@@ -35,3 +35,5 @@ superuser_password: "{{ browsertrix_superuser_password | default('PASSW0RD!') }}
 browsertrix_default_org: "{{ default_org | default('My Organization') }}"
 
 mongo_password: "{{ browsertrix_mongo_password | default('PASSWORD!') }}"
+
+enable_signing: true
