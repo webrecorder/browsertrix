@@ -5,26 +5,23 @@ from collections import Counter
 from datetime import datetime
 from typing import Optional, List
 import uuid
-import asyncio
-import json
-import queue
-import time
 
 import pymongo
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel, UUID4, Field
-from stream_zip import stream_zip, NO_COMPRESSION_64
-
-from boto3.s3.transfer import TransferConfig
 
 from .basecrawls import BaseCrawlOutWithResources
-from .crawls import CrawlFileOut, SUCCESSFUL_STATES, CrawlFile
+from .crawls import CrawlFileOut, SUCCESSFUL_STATES
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import get_sync_client, get_public_policy, delete_crawl_file_object
+from .storages import (
+    download_streaming_wacz,
+    upload_streaming_wacz,
+    delete_file,
+)
 
 
 # ============================================================================
@@ -324,100 +321,39 @@ class CollectionOps:
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        client, bucket, key, _ = await get_sync_client(org, self.crawl_manager)
-
-        loop = asyncio.get_event_loop()
-
-        resp = await loop.run_in_executor(
-            None, self.sync_dl, coll.resources, client, bucket, key
-        )
+        resp = await download_streaming_wacz(org, self.crawl_manager, coll.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
+    def get_public_wacz_path(self, coll: Collection, org: Organization):
+        """return public WACZ path for a collection"""
+        return f"{org.id}/public/{coll.id}.wacz"
+
     async def publish_collection(self, coll_id: uuid.UUID, org: Organization):
         """Publish streaming WACZ file to publicly accessible bucket"""
+
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        path = f"{org.id}/public/{coll_id}.wacz"
+        async def update_published_callback(published_url="", percent=0):
+            print("Publishing", coll.name, published_url, percent, flush=True)
+            if percent:
+                update = UpdateColl(pPercent=percent, publishing=True)
+            else:
+                update = UpdateColl(
+                    publishedUrl=published_url, publishing=not published_url, pPercent=0
+                )
 
-        client, bucket, key, endpoint_url = await get_sync_client(
-            org, self.crawl_manager, use_full=True
-        )
+            await self.update_collection(coll_id, org, update)
 
-        total_size = 0
-        for file_ in coll.resources:
-            total_size += file_.size
-
-        await self.update_collection(
-            coll.id,
+        return await upload_streaming_wacz(
+            self.get_public_wacz_path(coll, org),
             org,
-            UpdateColl(publishedUrl="", publishing=True, pPercent=0),
-        )
-
-        published_url = endpoint_url + path
-
-        loop = asyncio.get_event_loop()
-
-        msgq = queue.Queue()
-
-        asyncio.create_task(self.process_q(msgq, coll_id, org, total_size))
-
-        asyncio.create_task(
-            self.finish_publication_task(
-                loop, coll, org, path, published_url, client, bucket, key, msgq
-            )
-        )
-
-        return {"publishing": True}
-
-    async def process_q(self, msgq, coll_id, org, total_size):
-        """update upload size in db"""
-        while True:
-            try:
-                new_value = msgq.get_nowait()
-                if new_value == -1:
-                    break
-
-                percent = 100 * new_value / total_size
-
-                await self.update_collection(coll_id, org, UpdateColl(pPercent=percent))
-
-            except queue.Empty:
-                await asyncio.sleep(3)
-
-    async def finish_publication_task(
-        self,
-        loop,
-        coll: CollOut,
-        org: Organization,
-        path: str,
-        published_url: str,
-        client,
-        bucket,
-        key,
-        msgq,
-    ):
-        """Task to run in background to finish publishing and update model"""
-        if not await loop.run_in_executor(
-            None,
-            self.sync_publish,
+            self.crawl_manager,
             coll.resources,
-            client,
-            bucket,
-            key,
-            path,
-            msgq,
-        ):
-            # publishing failed
-            published_url = None
-
-        await self.update_collection(
-            coll.id,
-            org,
-            UpdateColl(publishedUrl=published_url, publishing=False, pPercent=0),
+            update_published_callback,
         )
 
     async def unpublish_collection(self, coll_id: uuid.UUID, org: Organization):
@@ -426,159 +362,23 @@ class CollectionOps:
         if not coll.publishedUrl:
             return {"published": False}
 
-        crawl_file = CrawlFile(
-            filename=coll.publishedUrl,
-            def_storage_name="default",
-            size=0,
-            hash="",
-        )
+        deleted = False
 
-        await delete_crawl_file_object(org, crawl_file, self.crawl_manager)
+        try:
+            deleted = await delete_file(
+                org, self.get_public_wacz_path(coll, org), self.crawl_manager
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="delete_failed") from exc
+
+        if not deleted:
+            return {"published": True, "error": "not_deleted"}
 
         await self.update_collection(
-            coll_id, org, UpdateColl(publishedUrl="", published=False, publishing=False)
+            coll_id, org, UpdateColl(publishedUrl="", publishing=False, pPercent=0)
         )
 
         return {"published": False}
-
-    def sync_publish(self, all_files, client, bucket, key, path, msgq):
-        """publish collection to public s3 path"""
-
-        counter = UploadCounter(msgq)
-        try:
-            path = key + path
-
-            wacz_stream = self.sync_dl(all_files, client, bucket, key)
-            wacz_stream = to_file_like_obj(wacz_stream)
-
-            config = TransferConfig(multipart_threshold=5 * 1024**2)
-
-            client.upload_fileobj(
-                Fileobj=wacz_stream,
-                Bucket=bucket,
-                Key=path,
-                Callback=counter.update,
-                Config=config,
-            )
-
-            bucket_path = bucket + "/" + key.rstrip("/") if key else bucket
-
-            policy = json.dumps(get_public_policy(bucket_path))
-            print("Policy: " + policy)
-
-            client.put_bucket_policy(Bucket=bucket, Policy=policy)
-
-            # indicate we're done with this q
-            msgq.put(-1)
-
-            return True
-
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            return False
-
-    def sync_dl(self, all_files, client, bucket, key):
-        """generate streaming zip as sync"""
-        for file_ in all_files:
-            file_.path = file_.name
-
-        datapackage = {
-            "profile": "multi-wacz-package",
-            "resources": [file_.dict() for file_ in all_files],
-        }
-        datapackage = json.dumps(datapackage).encode("utf-8")
-
-        CHUNK_SIZE = 1024 * 256
-
-        def get_file(name):
-            response = client.get_object(Bucket=bucket, Key=key + name)
-            return response["Body"].iter_chunks(chunk_size=CHUNK_SIZE)
-
-        def member_files():
-            modified_at = datetime.now()
-            perms = 0o600
-            for file_ in all_files:
-                yield (
-                    file_.name,
-                    modified_at,
-                    perms,
-                    NO_COMPRESSION_64,
-                    get_file(file_.name),
-                )
-
-            yield (
-                "datapackage.json",
-                modified_at,
-                perms,
-                NO_COMPRESSION_64,
-                (datapackage,),
-            )
-
-        return stream_zip(member_files(), chunk_size=CHUNK_SIZE)
-
-
-# ============================================================================
-# pylint: disable=too-few-public-methods
-class UploadCounter:
-    """UploadCounter"""
-
-    def __init__(self, msgq):
-        self.counter = 0
-        self.msgq = msgq
-        self.last_update = 0
-
-    def update(self, num):
-        """upload callback"""
-        self.counter += num
-        update_time = time.time()
-        if (update_time - self.last_update) > 1:
-            self.last_update = update_time
-            self.msgq.put(self.counter)
-
-
-# ============================================================================
-def to_file_like_obj(iterable):
-    """iter to file like obj"""
-    chunk = b""
-    offset = 0
-    # pylint: disable=invalid-name
-    it = iter(iterable)
-
-    def up_to_iter(size):
-        nonlocal chunk, offset
-
-        # if no size, yield exactly one chunk
-        if not size or size < 0:
-            try:
-                chunk = next(it)
-                yield chunk
-            except StopIteration:
-                pass
-
-            return
-
-        while size:
-            if offset == len(chunk):
-                try:
-                    chunk = next(it)
-                except StopIteration:
-                    break
-                else:
-                    offset = 0
-            to_yield = min(size, len(chunk) - offset)
-            offset = offset + to_yield
-            size -= to_yield
-            yield chunk[offset - to_yield : offset]
-
-    # pylint: disable=too-few-public-methods
-    class FileLikeObj:
-        """file-like obj wrapper for upload"""
-
-        def read(self, size=-1):
-            """read interface for file-like obj"""
-            return b"".join(up_to_iter(size))
-
-    return FileLikeObj()
 
 
 # ============================================================================
