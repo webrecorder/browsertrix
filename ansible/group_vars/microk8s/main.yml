@@ -36,4 +36,7 @@ browsertrix_default_org: "{{ default_org | default('My Organization') }}"
 
 mongo_password: "{{ browsertrix_mongo_password | default('PASSWORD!') }}"
 
-enable_signing: true
+enable_signing: false
+cert_email: "dev@browsertrix.cloud"
+signing_domain: 
+signing_authtoken:
