@@ -30,6 +30,13 @@ cd browsertrix-cloud
 ```zsh
 ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -e your_user="your_vps_admin_user"
 ```
+You may optionally also pass in:
+- `browsertrix_superuser_email`
+- `browsertrix_superuser_password`
+- `browsertrix_mongo_password`
+- `default_org`
+
+If left empty they will be configured with the defaults
 
 #### Upgrading
 

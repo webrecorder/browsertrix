@@ -28,3 +28,10 @@ microk8s_plugins:
   registry: true         # Private image registry exposed on localhost:32000
   storage: true          # Storage class; allocates storage from host
   cert-manager: true     # Cert manager
+
+# Configuration for Containers
+superuser_email: "{{ browsertrix_superuser_email | default('admin@example.com') }}"
+superuser_password: "{{ browsertrix_superuser_password | default('PASSW0RD!') }}"
+browsertrix_default_org: "{{ default_org | default('My Organization') }}"
+
+mongo_password: "{{ browsertrix_mongo_password | default('PASSWORD!') }}"

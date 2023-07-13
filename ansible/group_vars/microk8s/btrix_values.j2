@@ -2,7 +2,13 @@ ingress_class: "public"
 
 mongo_auth:
   username: root
-  password: example
+  password: "{{ mongo_password | default('PASSWORD!') }}"
+
+superuser:
+  email: "{{ superuser_email }}"
+  password: "{{ superuser_password }}"
+
+default_org: "{{ browsertrix_default_org }}"
 
 ingress:
   host: "{{ domain }}"
