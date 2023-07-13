@@ -19,7 +19,6 @@ from boto3.s3.transfer import TransferConfig
 
 
 import aiobotocore.session
-import botocore.session
 import boto3
 
 from .orgs import Organization, DefaultStorage, S3Storage
@@ -96,38 +95,29 @@ async def get_s3_client(storage, use_access=False):
 
 
 # ============================================================================
-def get_sync_s3_client(storage, use_access=False, use_full=False):
+def get_sync_s3_client(storage, use_access=False):
     """context manager for s3 client"""
-    endpoint_url = (
-        storage.endpoint_url if not use_access else storage.access_endpoint_url
-    )
+    endpoint_url = storage.endpoint_url
+
     if not endpoint_url.endswith("/"):
         endpoint_url += "/"
 
     parts = urlsplit(endpoint_url)
     bucket, key = parts.path[1:].split("/", 1)
 
-    public_endpoint_url = endpoint_url
     endpoint_url = parts.scheme + "://" + parts.netloc
 
-    if use_full:
-        client = boto3.client(
-            "s3",
-            region_name=storage.region,
-            endpoint_url=endpoint_url,
-            aws_access_key_id=storage.access_key,
-            aws_secret_access_key=storage.secret_key,
-        )
-    else:
-        session = botocore.session.get_session()
+    client = boto3.client(
+        "s3",
+        region_name=storage.region,
+        endpoint_url=endpoint_url,
+        aws_access_key_id=storage.access_key,
+        aws_secret_access_key=storage.secret_key,
+    )
 
-        client = session.create_client(
-            "s3",
-            region_name=storage.region,
-            endpoint_url=endpoint_url,
-            aws_access_key_id=storage.access_key,
-            aws_secret_access_key=storage.secret_key,
-        )
+    public_endpoint_url = (
+        storage.endpoint_url if not use_access else storage.access_endpoint_url
+    )
 
     return client, bucket, key, public_endpoint_url
 
@@ -180,7 +170,7 @@ async def get_client(org, crawl_manager, storage_name="default"):
 
 
 # ============================================================================
-async def get_sync_client(org, crawl_manager, storage_name="default", use_full=False):
+async def get_sync_client(org, crawl_manager, storage_name="default", use_access=False):
     """get sync client"""
     s3storage = None
 
@@ -192,7 +182,7 @@ async def get_sync_client(org, crawl_manager, storage_name="default", use_full=F
     if not s3storage:
         raise TypeError("No Default Storage Found, Invalid Storage Type")
 
-    return get_sync_s3_client(s3storage, use_full=use_full)
+    return get_sync_s3_client(s3storage, use_access=use_access)
 
 
 # ============================================================================
@@ -462,7 +452,7 @@ async def upload_streaming_wacz(
     """perform a streaming upload of a wacz file for the specified collection"""
 
     client, bucket, key, endpoint_url = await get_sync_client(
-        org, crawl_manager, use_full=True
+        org, crawl_manager, use_access=True
     )
 
     # set published url to empty / publishing

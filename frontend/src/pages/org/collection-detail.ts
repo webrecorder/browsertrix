@@ -218,13 +218,17 @@ export class CollectionDetail extends LiteElement {
   private renderActions = () => {
     // FIXME replace auth token post-workshop
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
+    const fullUrl = this.collection?.publishedUrl ? new URL(this.collection?.publishedUrl, window.location.href)
+    .href : "";
+
     return html`
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          ${!this.collection?.publishedUrl
+          ${!fullUrl
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
@@ -240,10 +244,7 @@ export class CollectionDetail extends LiteElement {
                   <a
                     target="_blank"
                     slot="prefix"
-                    href="https://replayweb.page?source=${new URL(
-                      this.collection?.publishedUrl || "",
-                      window.location.href
-                    ).href}"
+                    href="https://replayweb.page?source=${fullUrl}"
                   >
                     Go to Public View
                   </a>
