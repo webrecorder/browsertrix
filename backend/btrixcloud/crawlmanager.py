@@ -105,7 +105,7 @@ class CrawlManager(K8sAPI):
             STORAGE_NAME=storage_name,
             PROFILE_FILENAME=profile_filename,
             INITIAL_SCALE=str(crawlconfig.scale),
-            CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout)
+            CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0)
             # REV=str(crawlconfig.rev),
         )
 

@@ -29,6 +29,8 @@ class ScheduledJob(K8sAPI):
 
     async def run(self):
         """run crawl!"""
+        register_exit_handler()
+
         config_map = await self.core_api.read_namespaced_config_map(
             name=f"crawl-config-{self.cid}", namespace=self.namespace
         )
@@ -36,7 +38,12 @@ class ScheduledJob(K8sAPI):
 
         userid = data["USER_ID"]
         scale = int(data.get("INITIAL_SCALE", 0))
-        crawl_timeout = int(data.get("CRAWL_TIMEOUT", 0))
+        try:
+            crawl_timeout = int(data.get("CRAWL_TIMEOUT", 0))
+        # pylint: disable=bare-except
+        except:
+            crawl_timeout = 0
+
         oid = data["ORG_ID"]
 
         crawlconfig = await get_crawl_config(self.crawlconfigs, uuid.UUID(self.cid))
@@ -71,5 +78,4 @@ def main():
 
 
 if __name__ == "__main__":
-    register_exit_handler()
     main()
