@@ -12,6 +12,8 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { maxLengthValidator } from "../utils/form";
 import type { FileRemoveEvent } from "./file-list";
 
+const ABORT_REASON_USER_CANCEL = "user-canceled";
+
 /**
  * Usage:
  * ```ts
@@ -60,15 +62,19 @@ export class FileUploader extends LiteElement {
 
   private validateDescriptionMax = maxLengthValidator(500);
 
+  // Use to cancel requests
+  private uploadController: AbortController | null = null;
+
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
       this.fetchTags();
-    }
-  }
 
-  firstUpdated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("open") && this.open) {
-      this.isDialogVisible = true;
+      if (changedProperties.get("open") === undefined) {
+        this.isDialogVisible = true;
+      }
+    }
+    if (changedProperties.has("isDialogVisible") && !this.isDialogVisible) {
+      this.resetForm();
     }
   }
 
@@ -208,6 +214,7 @@ export class FileUploader extends LiteElement {
   }
 
   private handleRemoveFile = (e: FileRemoveEvent) => {
+    this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.file);
     if (idx === -1) return;
     this.fileList = [
@@ -216,7 +223,21 @@ export class FileUploader extends LiteElement {
     ];
   };
 
+  private cancelUpload() {
+    if (this.uploadController) {
+      this.uploadController.abort(ABORT_REASON_USER_CANCEL);
+      this.uploadController = null;
+    }
+  }
+
+  private resetForm() {
+    this.fileList = [];
+    this.tagsToSave = [];
+    this.isSubmittingUpdate = false;
+  }
+
   private requestClose() {
+    this.cancelUpload();
     this.dispatchEvent(new CustomEvent("request-close"));
   }
 
@@ -260,14 +281,17 @@ export class FileUploader extends LiteElement {
         // TODO tags with API support
         // tags: this.tagsToSave
       });
+      this.uploadController = new AbortController();
       const data: { id: string; added: boolean } = await this.apiFetch(
         `/orgs/${this.orgId}/uploads/stream?${query}`,
         this.authState!,
         {
           method: "PUT",
           body: file?.stream(),
+          signal: this.uploadController.signal,
         }
       );
+      this.uploadController = null;
 
       if (data.id && data.added) {
         this.dispatchEvent(new CustomEvent("uploaded"));
@@ -280,12 +304,16 @@ export class FileUploader extends LiteElement {
       } else {
         throw data;
       }
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't upload file at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (err: any) {
+      if (err === ABORT_REASON_USER_CANCEL) {
+        console.debug("Fetch crawls aborted to user cancel");
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't upload file at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     this.isSubmittingUpdate = false;
