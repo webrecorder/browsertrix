@@ -34,7 +34,7 @@ type SortField = "started" | "finished" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const INITIAL_PAGE_SIZE = 30;
+const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -42,12 +42,12 @@ const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  started: {
-    label: msg("Date Started"),
-    defaultDirection: "desc",
-  },
   finished: {
     label: msg("Date Finished"),
+    defaultDirection: "desc",
+  },
+  started: {
+    label: msg("Date Started"),
     defaultDirection: "desc",
   },
   firstSeed: {
@@ -85,6 +85,9 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   userId!: string;
 
+  @property({ type: String })
+  orgId?: string;
+
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -101,15 +104,15 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   crawlsAPIBaseUrl?: string;
 
+  @property({ type: String })
+  artifactType: Crawl["type"] = null;
+
   /**
    * Fetch & refetch data when needed,
    * e.g. when component is visible
    **/
   @property({ type: Boolean })
   shouldFetch?: boolean;
-
-  @state()
-  private crawlStates: CrawlState[] = finishedCrawlStates;
 
   @state()
   private crawls?: Crawls;
@@ -173,9 +176,6 @@ export class CrawlsList extends LiteElement {
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAdminView") && this.isAdminView === true) {
-      // TODO better handling of using same crawls-list
-      // component between superadmin view and regular view
-      this.crawlStates = activeCrawlStates;
       this.orderBy = {
         field: "started",
         direction: sortableFields["started"].defaultDirection!,
@@ -187,11 +187,20 @@ export class CrawlsList extends LiteElement {
       changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
-      changedProperties.has("orderBy")
+      changedProperties.has("orderBy") ||
+      changedProperties.has("artifactType")
     ) {
       if (this.shouldFetch) {
         if (!this.crawlsBaseUrl) {
           throw new Error("Crawls base URL not defined");
+        }
+        if (changedProperties.has("artifactType")) {
+          this.filterBy = {};
+          this.orderBy = {
+            field: "finished",
+            direction: sortableFields["finished"].defaultDirection!,
+          };
+          this.crawls = undefined;
         }
 
         this.fetchCrawls({
@@ -227,25 +236,58 @@ export class CrawlsList extends LiteElement {
   }
 
   render() {
-    if (!this.crawls) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-3xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
+    const listTypes: {
+      artifactType: Crawl["type"];
+      label: string;
+      icon?: string;
+    }[] = [
+      {
+        artifactType: "crawl",
+        icon: "gear-wide-connected",
+        label: msg("Crawls"),
+      },
+    ];
 
-    const hasCrawlItems = this.crawls.items.length;
+    if (this.isAdminView) {
+      listTypes.unshift({
+        artifactType: "crawl",
+        icon: "gear-wide",
+        label: msg("Running Crawls"),
+      });
+    } else {
+      listTypes.unshift({
+        artifactType: null,
+        label: msg("All"),
+      });
+      listTypes.push({
+        artifactType: "upload",
+        icon: "upload",
+        label: msg("Uploads"),
+      });
+    }
 
     return html`
       <main>
         <header class="contents">
-          <div class="flex w-full h-8 mb-4">
-            <h1 class="text-xl font-semibold">
-              ${this.isAdminView
-                ? msg("Running Crawls")
-                : msg("Finished Crawls")}
-            </h1>
+          <div class="flex w-full pb-3 mb-3 border-b">
+            <h1 class="text-xl font-semibold h-8">${msg("All Archived Data")}</h1>
+          </div>
+          <div class="flex gap-2 mb-3">
+            ${listTypes.map(({ label, artifactType, icon }) => {
+              const isSelected = artifactType === this.artifactType;
+              return html` <btrix-button
+                variant=${isSelected ? "primary" : "neutral"}
+                ?raised=${isSelected}
+                aria-selected="${isSelected}"
+                href=${`${this.crawlsBaseUrl}?artifactType=${
+                  artifactType || ""
+                }`}
+                @click=${this.navLink}
+              >
+                ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
+                <span>${label}</span>
+              </btrix-button>`;
+            })}
           </div>
           <div
             class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
@@ -253,29 +295,45 @@ export class CrawlsList extends LiteElement {
             ${this.renderControls()}
           </div>
         </header>
-        <section>
-          ${hasCrawlItems ? this.renderCrawlList() : this.renderEmptyState()}
-        </section>
 
         ${when(
-          hasCrawlItems || this.crawls.page > 1,
-          () => html`
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                page=${this.crawls!.page}
-                totalCount=${this.crawls!.total}
-                size=${this.crawls!.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  await this.fetchCrawls({
-                    page: e.detail.page,
-                  });
+          this.crawls,
+          () => {
+            const { items, page, total, pageSize } = this.crawls!;
+            const hasCrawlItems = items.length;
+            return html`
+              <section>
+                ${hasCrawlItems
+                  ? this.renderCrawlList()
+                  : this.renderEmptyState()}
+              </section>
+              ${when(
+                hasCrawlItems || page > 1,
+                () => html`
+                  <footer class="mt-6 flex justify-center">
+                    <btrix-pagination
+                      page=${page}
+                      totalCount=${total}
+                      size=${pageSize}
+                      @page-change=${async (e: PageChangeEvent) => {
+                        await this.fetchCrawls({
+                          page: e.detail.page,
+                        });
 
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
+                        // Scroll to top of list
+                        // TODO once deep-linking is implemented, scroll to top of pushstate
+                        this.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    ></btrix-pagination>
+                  </footer>
+                `
+              )}
+            `;
+          },
+          () => html`
+            <div class="w-full flex items-center justify-center my-12 text-2xl">
+              <sl-spinner></sl-spinner>
+            </div>
           `
         )}
       </main>
@@ -283,6 +341,19 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderControls() {
+    let viewPlaceholder = "";
+    let viewOptions = [];
+    if (this.isAdminView) {
+      viewPlaceholder = msg("All Active Crawls");
+      viewOptions = activeCrawlStates;
+    } else {
+      viewOptions = finishedCrawlStates;
+      if (this.artifactType === "upload") {
+        viewPlaceholder = msg("All Uploaded");
+      } else {
+        viewPlaceholder = msg("All Finished");
+      }
+    }
     return html`
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
@@ -299,9 +370,7 @@ export class CrawlsList extends LiteElement {
             pill
             multiple
             max-options-visible="1"
-            placeholder=${this.isAdminView
-              ? msg("All Active Crawls")
-              : msg("Finished Crawls")}
+            placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
@@ -311,7 +380,7 @@ export class CrawlsList extends LiteElement {
               };
             }}
           >
-            ${this.crawlStates.map(this.renderStatusMenuItem)}
+            ${viewOptions.map(this.renderStatusMenuItem)}
           </sl-select>
         </div>
 
@@ -319,40 +388,7 @@ export class CrawlsList extends LiteElement {
           <div class="whitespace-nowrap text-neutral-500 mx-2">
             ${msg("Sort by:")}
           </div>
-          <div class="grow flex">
-            <sl-select
-              class="flex-1 md:w-[9.2rem]"
-              size="small"
-              pill
-              value=${this.orderBy.field}
-              @sl-change=${(e: Event) => {
-                const field = (e.target as HTMLSelectElement)
-                  .value as SortField;
-                this.orderBy = {
-                  field: field,
-                  direction:
-                    sortableFields[field].defaultDirection ||
-                    this.orderBy.direction,
-                };
-              }}
-            >
-              ${Object.entries(sortableFields).map(
-                ([value, { label }]) => html`
-                  <sl-option value=${value}>${label}</sl-option>
-                `
-              )}
-            </sl-select>
-            <sl-icon-button
-              name="arrow-down-up"
-              label=${msg("Reverse sort")}
-              @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-                };
-              }}
-            ></sl-icon-button>
-          </div>
+          <div class="grow flex">${this.renderSortControl()}</div>
         </div>
       </div>
 
@@ -370,6 +406,54 @@ export class CrawlsList extends LiteElement {
             </label>
           </div>`
         : ""}
+    `;
+  }
+
+  private renderSortControl() {
+    let options: any;
+    if (this.artifactType === "upload") {
+      options = html`
+        <sl-option value="finished">${msg("Date Uploaded")}</sl-option>
+      `;
+    } else if (this.artifactType === "crawl") {
+      options = Object.entries(sortableFields).map(
+        ([value, { label }]) => html`
+          <sl-option value=${value}>${label}</sl-option>
+        `
+      );
+    } else {
+      options = html`
+        <sl-option value="finished">${sortableFields.finished.label}</sl-option>
+        <sl-option value="started">${sortableFields.started.label}</sl-option>
+      `;
+    }
+    return html`
+      <sl-select
+        class="flex-1 md:w-[10rem]"
+        size="small"
+        pill
+        value=${this.orderBy.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy = {
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection || this.orderBy.direction,
+          };
+        }}
+      >
+        ${options}
+      </sl-select>
+      <sl-icon-button
+        name="arrow-down-up"
+        label=${msg("Reverse sort")}
+        @click=${() => {
+          this.orderBy = {
+            ...this.orderBy,
+            direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+          };
+        }}
+      ></sl-icon-button>
     `;
   }
 
@@ -395,9 +479,7 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg(
-            "Filter by Workflow Name, Crawl Start URL, or Workflow ID"
-          )}
+          placeholder=${msg("Filter by Name, Crawl Start URL, or Workflow ID")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
@@ -468,7 +550,10 @@ export class CrawlsList extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}>
+      <btrix-crawl-list
+        baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}
+        artifactType=${ifDefined(this.artifactType || undefined)}
+      >
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
 
@@ -494,7 +579,7 @@ export class CrawlsList extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/artifacts/crawl/${crawl.id}`)}
+                  this.navTo(`/orgs/${crawl.oid}/artifacts/${crawl.type === "upload" ? "upload" : "crawl"}/${crawl.id}`)}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>
@@ -523,22 +608,26 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
         `
       )}
-
-      <sl-menu-item
-        @click=${() =>
-          this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
-      >
-        <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-        ${msg("Go to Workflow")}
-      </sl-menu-item>
-      <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
-        <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-        ${msg("Copy Workflow ID")}
-      </sl-menu-item>
-      <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.id)}>
-        <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-        ${msg("Copy Crawl ID")}
-      </sl-menu-item>
+      ${when(
+        crawl.type === "crawl",
+        () => html`
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(`/orgs/${crawl.oid}/workflows/crawl/${crawl.cid}`)}
+          >
+            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+            ${msg("Go to Workflow")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.cid)}>
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => CopyButton.copyToClipboard(crawl.id)}>
+            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+            ${msg("Copy Crawl ID")}
+          </sl-menu-item>
+        `
+      )}
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(crawl.tags.join(", "))}
         ?disabled=${!crawl.tags.length}
@@ -554,8 +643,10 @@ export class CrawlsList extends LiteElement {
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => this.deleteCrawl(crawl)}
           >
-            <sl-icon name="trash" slot="prefix"></sl-icon>
-            ${msg("Delete Crawl")}
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
+            ${crawl.type === "upload"
+              ? msg("Delete Upload")
+              : msg("Delete Crawl")}
           </sl-menu-item>
         `
       )}
@@ -608,7 +699,11 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <div class="border-t border-b py-5">
-        <p class="text-center text-neutral-500">${msg("No crawls yet.")}</p>
+        <p class="text-center text-neutral-500">
+          ${this.artifactType === "upload"
+            ? msg("No uploads yet.")
+            : msg("No crawls yet.")}
+        </p>
       </div>
     `;
   }
@@ -639,7 +734,28 @@ export class CrawlsList extends LiteElement {
 
     this.cancelInProgressGetCrawls();
     try {
-      const crawls = await this.getCrawls(params);
+      let crawls = this.crawls;
+      switch (this.artifactType) {
+        case "crawl":
+          crawls = await this.getCrawls({
+            ...params,
+            state: this.filterBy.state || finishedCrawlStates,
+          });
+          break;
+        // case "crawl":
+        //   crawls = await this.getCrawls({
+        //     ...params,
+        //     state: this.filterBy.state || activeCrawlStates,
+        //   });
+        //   break;
+        case "upload":
+          crawls = await this.getUploads(params);
+          break;
+        default:
+          crawls = await this.getAllCrawls(params);
+          break;
+          break;
+      }
 
       this.crawls = crawls;
     } catch (e: any) {
@@ -662,12 +778,13 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async getCrawls(queryParams?: APIPaginationQuery): Promise<Crawls> {
-    const state = this.filterBy.state || this.crawlStates;
+  private async getCrawls(
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+  ): Promise<Crawls> {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        state,
+        state: queryParams?.state,
         page: queryParams?.page || this.crawls?.page || 1,
         pageSize:
           queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
@@ -683,6 +800,69 @@ export class CrawlsList extends LiteElement {
     this.getCrawlsController = new AbortController();
     const data = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}?${query}`,
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
+    );
+
+    this.getCrawlsController = null;
+
+    return data;
+  }
+
+  private async getAllCrawls(
+    queryParams?: APIPaginationQuery
+  ): Promise<Crawls> {
+    const query = queryString.stringify(
+      {
+        state: this.filterBy.state || finishedCrawlStates,
+        name: this.filterBy.name,
+        page: queryParams?.page || this.crawls?.page || 1,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+
+    this.getCrawlsController = new AbortController();
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/all-crawls?${query}`,
+      this.authState!,
+      {
+        signal: this.getCrawlsController.signal,
+      }
+    );
+
+    this.getCrawlsController = null;
+
+    return data;
+  }
+
+  private async getUploads(queryParams?: APIPaginationQuery): Promise<Crawls> {
+    const query = queryString.stringify(
+      {
+        name: this.filterBy.name,
+        page: queryParams?.page || this.crawls?.page || 1,
+        pageSize:
+          queryParams?.pageSize || this.crawls?.pageSize || INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+
+    this.getCrawlsController = new AbortController();
+    const data = await this.apiFetch(
+      `/orgs/${this.orgId}/uploads?${query}`,
       this.authState!,
       {
         signal: this.getCrawlsController.signal,
@@ -722,17 +902,34 @@ export class CrawlsList extends LiteElement {
   }
 
   private async deleteCrawl(crawl: Crawl) {
+    // TODO check if this makes translating entire string difficult:
+    const typeName = crawl.type === "upload" ? msg("upload") : msg("crawl");
+
     if (
       !window.confirm(
-        msg(str`Are you sure you want to delete crawl of ${crawl.name}?`)
+        msg(str`Are you sure you want to delete ${typeName} of ${crawl.name}?`)
       )
     ) {
       return;
     }
 
+    let apiPath;
+
+    switch (this.artifactType) {
+      case "crawl":
+        apiPath = "crawls";
+        break;
+      case "upload":
+        apiPath = "uploads";
+        break;
+      default:
+        apiPath = "all-crawls";
+        break;
+    }
+
     try {
       const data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawls/delete`,
+        `/orgs/${crawl.oid}/${apiPath}/delete`,
         this.authState!,
         {
           method: "POST",
@@ -748,7 +945,7 @@ export class CrawlsList extends LiteElement {
         items: items.filter((c) => c.id !== crawl.id),
       };
       this.notify({
-        message: msg(`Successfully deleted crawl`),
+        message: msg(str`Successfully deleted ${typeName}`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -757,7 +954,7 @@ export class CrawlsList extends LiteElement {
       this.notify({
         message:
           (e.isApiError && e.message) ||
-          msg("Sorry, couldn't run crawl at this time."),
+          msg(str`Sorry, couldn't run ${typeName} at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
       });

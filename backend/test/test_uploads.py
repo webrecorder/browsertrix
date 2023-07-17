@@ -79,6 +79,97 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     assert r.status_code == 200
 
 
+def test_upload_form(admin_auth_headers, default_org_id):
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
+        data = fh.read()
+
+    files = [
+        ("uploads", ("test.wacz", data, "application/octet-stream")),
+        ("uploads", ("test-2.wacz", data, "application/octet-stream")),
+        ("uploads", ("test.wacz", data, "application/octet-stream")),
+    ]
+
+    r = requests.put(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata?name=test2.wacz",
+        headers=admin_auth_headers,
+        files=files,
+    )
+
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    global upload_id_2
+    upload_id_2 = r.json()["id"]
+
+
+def test_list_uploads(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    results = r.json()
+
+    assert len(results["items"]) > 1
+
+    found = None
+
+    for res in results["items"]:
+        if res["id"] == upload_id_2:
+            found = res
+
+    assert found
+    assert found["name"] == "test2.wacz"
+
+    assert "files" not in res
+    assert "resources" not in res
+
+
+def test_collection_uploads(admin_auth_headers, default_org_id):
+    # Create collection with one upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={
+            "crawlIds": [upload_id],
+            "name": "My Test Coll",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    coll_id = data["id"]
+    assert data["added"]
+
+    # Test uploads filtered by collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads?collectionId={coll_id}",
+        headers=admin_auth_headers,
+    )
+
+    results = r.json()
+
+    assert len(results["items"]) == 1
+    assert results["items"][0]["id"] == upload_id
+
+    # Test all crawls filtered by collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={coll_id}",
+        headers=admin_auth_headers,
+    )
+
+    results = r.json()
+
+    assert len(results["items"]) == 1
+    assert results["items"][0]["id"] == upload_id
+
+    # Delete Collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+
 def test_get_upload_replay_json(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
@@ -223,50 +314,6 @@ def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
     )
     assert r.json()["deleted"] == True
 
-
-def test_upload_form(admin_auth_headers, default_org_id):
-    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
-        data = fh.read()
-
-    files = [
-        ("uploads", ("test.wacz", data, "application/octet-stream")),
-        ("uploads", ("test-2.wacz", data, "application/octet-stream")),
-        ("uploads", ("test.wacz", data, "application/octet-stream")),
-    ]
-
-    r = requests.put(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata?name=test2.wacz",
-        headers=admin_auth_headers,
-        files=files,
-    )
-
-    assert r.status_code == 200
-    assert r.json()["added"]
-
-    global upload_id_2
-    upload_id_2 = r.json()["id"]
-
-
-def test_list_form_upload(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
-        headers=admin_auth_headers,
-    )
-    results = r.json()
-
-    assert len(results["items"]) > 0
-
-    found = None
-
-    for res in results["items"]:
-        if res["id"] == upload_id_2:
-            found = res
-
-    assert found
-    assert found["name"] == "test2.wacz"
-
-    assert "files" not in res
-    assert "resources" not in res
 
 
 def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):

@@ -278,6 +278,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
         userid: Optional[UUID4] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
@@ -288,6 +289,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
             description=description,
             page_size=pageSize,
             page=page,
+            collection_id=collectionId,
             sort_by=sortBy,
             sort_direction=sortDirection,
             type_="upload",

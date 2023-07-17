@@ -28,8 +28,9 @@ registry_name: "{{ project_name }}"
 domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
-use_do_registry: false
-configure_kube: false
+
+configure_kubectl: false
+use_do_registry: true
 image_tag: "latest"
 
 enable_signing: true

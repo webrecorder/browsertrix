@@ -16,6 +16,9 @@ export class CrawlStatus extends LitElement {
   hideLabel = false;
 
   @property({ type: Boolean })
+  isUpload = false;
+
+  @property({ type: Boolean })
   stopping = false;
 
   static styles = [
@@ -54,7 +57,10 @@ export class CrawlStatus extends LitElement {
 
   // TODO look into customizing sl-select multi-select
   // instead of separate utility function?
-  static getContent(state?: CrawlState): {
+  static getContent(
+    state?: CrawlState,
+    isUpload?: boolean
+  ): {
     icon: TemplateResult;
     label: string;
   } {
@@ -87,7 +93,10 @@ export class CrawlStatus extends LitElement {
           slot="prefix"
           style="color: var(--sl-color-purple-600)"
         ></sl-icon>`;
-        label = state === "waiting_capacity" ? msg("Waiting (At Capacity)") : msg("Waiting (Crawl Limit)");
+        label =
+          state === "waiting_capacity"
+            ? msg("Waiting (At Capacity)")
+            : msg("Waiting (Crawl Limit)");
         break;
       }
 
@@ -117,17 +126,17 @@ export class CrawlStatus extends LitElement {
 
       case "complete": {
         icon = html`<sl-icon
-          name="check-circle"
+          name=${isUpload ? "upload" : "check-circle"}
           slot="prefix"
           style="color: var(--success)"
         ></sl-icon>`;
-        label = msg("Complete");
+        label = isUpload ? msg("Uploaded") : msg("Complete");
         break;
       }
 
       case "failed": {
         icon = html`<sl-icon
-          name="exclamation-triangle"
+          name=${isUpload ? "upload" : "exclamation-triangle"}
           slot="prefix"
           style="color: var(--danger)"
         ></sl-icon>`;
@@ -177,8 +186,9 @@ export class CrawlStatus extends LitElement {
   }
 
   render() {
-    const state = this.stopping && this.state === "running" ? "stopping" : this.state;
-    const { icon, label } = CrawlStatus.getContent(state);
+    const state =
+      this.stopping && this.state === "running" ? "stopping" : this.state;
+    const { icon, label } = CrawlStatus.getContent(state, this.isUpload);
     if (this.hideLabel) {
       return html`<div class="icon-only">
         <sl-tooltip content=${label}

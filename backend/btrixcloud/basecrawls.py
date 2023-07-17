@@ -486,6 +486,7 @@ def init_base_crawls_api(app, mdb, users, crawl_manager, orgs, user_dep):
         name: Optional[str] = None,
         state: Optional[str] = None,
         description: Optional[str] = None,
+        collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
@@ -495,6 +496,7 @@ def init_base_crawls_api(app, mdb, users, crawl_manager, orgs, user_dep):
             userid=userid,
             name=name,
             description=description,
+            collection_id=collectionId,
             states=states,
             page_size=pageSize,
             page=page,
