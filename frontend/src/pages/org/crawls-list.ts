@@ -145,7 +145,7 @@ export class CrawlsList extends LiteElement {
   private isEditingCrawl = false;
 
   @state()
-  private isUploading = true;
+  private isUploadingArchive = false;
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
@@ -281,7 +281,7 @@ export class CrawlsList extends LiteElement {
               () => html`
                 <sl-button
                   size="small"
-                  @click=${() => (this.isUploading = true)}
+                  @click=${() => (this.isUploadingArchive = true)}
                 >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                   ${msg("Upload Archive")}
@@ -360,15 +360,17 @@ export class CrawlsList extends LiteElement {
           <btrix-file-uploader
             orgId=${this.orgId!}
             .authState=${this.authState}
-            ?open=${this.isUploading}
-            @request-close=${() => (this.isUploading = false)}
+            ?open=${this.isUploadingArchive}
+            @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
               if (this.artifactType === "upload") {
                 this.fetchCrawls({
                   page: 1,
                 });
               } else {
-                // this.navTo
+                this.navTo(
+                  `/orgs/${this.orgId}/artifacts/crawls?artifactType=upload`
+                );
               }
             }}
           ></btrix-file-uploader>
