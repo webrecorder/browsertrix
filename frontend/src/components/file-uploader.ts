@@ -193,6 +193,17 @@ export class FileUploader extends LiteElement {
         @tags-change=${(e: TagsChangeEvent) =>
           (this.tagsToSave = e.detail.tags)}
       ></btrix-tag-input>
+      <div class="mt-3">
+        <btrix-collections-add
+          .authState=${this.authState}
+          .initialCollections=${[]}
+          .orgId=${this.orgId}
+          .configId=${"temp"}
+          label=${msg("Add to Collection")}
+          @collections-change=${(e: any) => console.log(e.detail.collections)}
+        >
+        </btrix-collections-add>
+      </div>
     `;
   }
 

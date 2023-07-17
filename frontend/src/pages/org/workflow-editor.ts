@@ -427,9 +427,7 @@ export class CrawlConfigEditor extends LiteElement {
         primarySeedConfig = seeds[0];
         formState.primarySeedUrl = primarySeedConfig.url;
       }
-      if (
-        primarySeedConfig.include?.length
-      ) {
+      if (primarySeedConfig.include?.length) {
         formState.customIncludeUrlList = primarySeedConfig.include
           // Unescape regex
           .map((url) => url.replace(/(\\|\/\.\*)/g, ""))
@@ -1658,6 +1656,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             .initialCollections=${this.formState.autoAddCollections}
             .orgId=${this.orgId}
             .configId=${this.configId}
+            emptyText=${msg("Search for a Collection to auto-add crawls")}
             @collections-change=${(e: CollectionsChangeEvent) =>
               this.updateFormState(
                 {
@@ -2148,14 +2147,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix' 
+      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix'
       // scope on backend to ensure seed URL is also added as part of standard prefix scope
-      scopeType: this.formState.scopeType === "custom" ? "prefix" : this.formState.scopeType,
+      scopeType:
+        this.formState.scopeType === "custom"
+          ? "prefix"
+          : this.formState.scopeType,
       include:
         this.formState.scopeType === "custom"
-          ? [
-              ...includeUrlList.map((url) => regexEscape(url)),
-            ]
+          ? [...includeUrlList.map((url) => regexEscape(url))]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
