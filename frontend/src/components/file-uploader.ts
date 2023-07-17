@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import type { SlButton } from "@shoelace-style/shoelace";
+import { snakeCase } from "lodash/fp";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
@@ -174,7 +175,7 @@ export class FileUploader extends LiteElement {
     const { helpText, validate } = this.validateDescriptionMax;
     return html`
       <div class="mb-3">
-        <sl-input label="Name" name="name"> </sl-input>
+        <sl-input label="Name" name="name" required></sl-input>
       </div>
       <sl-textarea
         class="mb-3 with-max-help-text"
@@ -240,8 +241,7 @@ export class FileUploader extends LiteElement {
 
     try {
       const file = this.fileList[0];
-      // TODO replace temporary name with API support
-      const filename = file?.name || "temp";
+      const filename = file?.name || snakeCase(name as string);
       const query = queryString.stringify({
         filename,
         name,
