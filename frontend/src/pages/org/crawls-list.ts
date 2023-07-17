@@ -279,7 +279,10 @@ export class CrawlsList extends LiteElement {
             ${when(
               this.isCrawler,
               () => html`
-                <sl-button size="small" @click=${console.log}>
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isUploading = true)}
+                >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                   ${msg("Upload Archive")}
                 </sl-button>
@@ -359,9 +362,15 @@ export class CrawlsList extends LiteElement {
             .authState=${this.authState}
             ?open=${this.isUploading}
             @request-close=${() => (this.isUploading = false)}
-            @updated=${
-              /* TODO fetch current page or single crawl */ this.fetchCrawls
-            }
+            @uploaded=${() => {
+              if (this.artifactType === "upload") {
+                this.fetchCrawls({
+                  page: 1,
+                });
+              } else {
+                // this.navTo
+              }
+            }}
           ></btrix-file-uploader>
         `
       )}

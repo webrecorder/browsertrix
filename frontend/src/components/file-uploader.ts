@@ -265,10 +265,10 @@ export class FileUploader extends LiteElement {
           variant: "success",
           icon: "check2-circle",
         });
+        this.requestClose();
       } else {
         throw data;
       }
-      this.requestClose();
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't upload file at this time."),
