@@ -40,7 +40,7 @@ import type {
   Tags,
   TagsChangeEvent,
 } from "../../components/tag-input";
-import type { CollectionsChangeEvent } from "./collections-add";
+import type { CollectionsChangeEvent } from "../../components/collections-add";
 import type {
   WorkflowParams,
   Profile,
