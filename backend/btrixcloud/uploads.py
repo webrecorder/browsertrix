@@ -4,6 +4,7 @@ import uuid
 import hashlib
 import os
 import base64
+from urllib.parse import unquote
 
 from io import BufferedReader
 from typing import Optional, List
@@ -46,6 +47,8 @@ class UploadOps(BaseCrawlOps):
         filename: str,
         name: Optional[str],
         notes: Optional[str],
+        collections: Optional[List[UUID4]],
+        tags: Optional[List[str]],
         org: Organization,
         user: User,
         replaceId: Optional[str],
@@ -92,7 +95,9 @@ class UploadOps(BaseCrawlOps):
             except Exception as exc:
                 print("replace file deletion failed", exc)
 
-        return await self._create_upload(files, name, notes, id_, org, user)
+        return await self._create_upload(
+            files, name, notes, collections, tags, id_, org, user
+        )
 
     # pylint: disable=too-many-arguments, too-many-locals
     async def upload_formdata(
@@ -100,6 +105,8 @@ class UploadOps(BaseCrawlOps):
         uploads: List[UploadFile],
         name: Optional[str],
         notes: Optional[str],
+        collections: Optional[List[UUID4]],
+        tags: Optional[List[str]],
         org: Organization,
         user: User,
     ):
@@ -117,9 +124,13 @@ class UploadOps(BaseCrawlOps):
             )
             files.append(file_reader.file_prep.get_crawl_file())
 
-        return await self._create_upload(files, name, notes, id_, org, user)
+        return await self._create_upload(
+            files, name, notes, collections, tags, id_, org, user
+        )
 
-    async def _create_upload(self, files, name, notes, id_, org, user):
+    async def _create_upload(
+        self, files, name, notes, collections, tags, id_, org, user
+    ):
         now = dt_now()
         # ts_now = now.strftime("%Y%m%d%H%M%S")
         # crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
@@ -127,10 +138,16 @@ class UploadOps(BaseCrawlOps):
 
         file_size = sum(file_.size for file_ in files)
 
+        collection_uuids = []
+        for coll in collections:
+            collection_uuids.append(uuid.UUID(coll))
+
         uploaded = UploadedCrawl(
             id=crawl_id,
             name=name or "New Upload @ " + str(now),
             notes=notes,
+            collections=collection_uuids,
+            tags=tags,
             userid=user.id,
             oid=org.id,
             files=files,
@@ -224,10 +241,24 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         uploads: List[UploadFile] = File(...),
         name: Optional[str] = "",
         notes: Optional[str] = "",
+        collections: Optional[str] = "",
+        tags: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.upload_formdata(uploads, name, notes, org, user)
+        name = unquote(name)
+        notes = unquote(notes)
+        colls_list = []
+        if collections:
+            colls_list = unquote(collections).split(",")
+
+        tags_list = []
+        if tags:
+            tags_list = unquote(tags).split(",")
+
+        return await ops.upload_formdata(
+            uploads, name, notes, colls_list, tags_list, org, user
+        )
 
     @app.put("/orgs/{oid}/uploads/stream", tags=["uploads"])
     async def upload_stream(
@@ -235,12 +266,32 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         filename: str,
         name: Optional[str] = "",
         notes: Optional[str] = "",
+        collections: Optional[str] = "",
+        tags: Optional[str] = "",
         replaceId: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
+        name = unquote(name)
+        notes = unquote(notes)
+        colls_list = []
+        if collections:
+            colls_list = unquote(collections).split(",")
+
+        tags_list = []
+        if tags:
+            tags_list = unquote(tags).split(",")
+
         return await ops.upload_stream(
-            request.stream(), filename, name, notes, org, user, replaceId
+            request.stream(),
+            filename,
+            name,
+            notes,
+            colls_list,
+            tags_list,
+            org,
+            user,
+            replaceId,
         )
 
     @app.get("/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponse)

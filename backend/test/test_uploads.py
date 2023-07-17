@@ -13,10 +13,10 @@ upload_dl_path = None
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-def test_upload_stream(admin_auth_headers, default_org_id):
+def test_upload_stream(admin_auth_headers, default_org_id, uploads_collection_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload&notes=Testing%0AData",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload&notes=Testing%0AData&collections={uploads_collection_id}&tags=one%2Ctwo",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -28,7 +28,7 @@ def test_upload_stream(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
 
 
-def test_list_stream_upload(admin_auth_headers, default_org_id):
+def test_list_stream_upload(admin_auth_headers, default_org_id, uploads_collection_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads",
         headers=admin_auth_headers,
@@ -46,17 +46,20 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
     assert found
     assert found["name"] == "My Upload"
     assert found["notes"] == "Testing\nData"
+    assert found["collections"] == [uploads_collection_id]
+    assert sorted(found["tags"]) == ["one", "two"]
     assert "files" not in found
     assert "resources" not in found
 
 
-def test_get_stream_upload(admin_auth_headers, default_org_id):
+def test_get_stream_upload(admin_auth_headers, default_org_id, uploads_collection_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     result = r.json()
+    assert uploads_collection_id in result["collections"]
     assert "files" not in result
     upload_dl_path = result["resources"][0]["path"]
     assert "test-" in result["resources"][0]["name"]
@@ -79,7 +82,7 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     assert r.status_code == 200
 
 
-def test_upload_form(admin_auth_headers, default_org_id):
+def test_upload_form(admin_auth_headers, default_org_id, uploads_collection_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         data = fh.read()
 
@@ -90,7 +93,7 @@ def test_upload_form(admin_auth_headers, default_org_id):
     ]
 
     r = requests.put(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata?name=test2.wacz",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata?name=test2.wacz&collections={uploads_collection_id}&tags=three%2Cfour",
         headers=admin_auth_headers,
         files=files,
     )
@@ -102,7 +105,7 @@ def test_upload_form(admin_auth_headers, default_org_id):
     upload_id_2 = r.json()["id"]
 
 
-def test_list_uploads(admin_auth_headers, default_org_id):
+def test_list_uploads(admin_auth_headers, default_org_id, uploads_collection_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads",
         headers=admin_auth_headers,
@@ -119,58 +122,42 @@ def test_list_uploads(admin_auth_headers, default_org_id):
 
     assert found
     assert found["name"] == "test2.wacz"
+    assert found["collections"] == [uploads_collection_id]
+    assert sorted(found["tags"]) == ["four", "three"]
 
     assert "files" not in res
     assert "resources" not in res
 
 
-def test_collection_uploads(admin_auth_headers, default_org_id):
-    # Create collection with one upload
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections",
-        headers=admin_auth_headers,
-        json={
-            "crawlIds": [upload_id],
-            "name": "My Test Coll",
-        },
-    )
-    assert r.status_code == 200
-    data = r.json()
-    coll_id = data["id"]
-    assert data["added"]
-
+def test_collection_uploads(admin_auth_headers, default_org_id, uploads_collection_id):
     # Test uploads filtered by collection
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads?collectionId={coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads?collectionId={uploads_collection_id}",
         headers=admin_auth_headers,
     )
 
     results = r.json()
 
-    assert len(results["items"]) == 1
-    assert results["items"][0]["id"] == upload_id
+    assert len(results["items"]) == 2
+    assert results["items"][0]["id"] in (upload_id, upload_id_2)
+    assert results["items"][1]["id"] in (upload_id, upload_id_2)
 
     # Test all crawls filtered by collection
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={uploads_collection_id}",
         headers=admin_auth_headers,
     )
 
     results = r.json()
 
-    assert len(results["items"]) == 1
-    assert results["items"][0]["id"] == upload_id
-
-    # Delete Collection
-    r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    assert r.json()["success"]
+    assert len(results["items"]) == 2
+    assert results["items"][0]["id"] in (upload_id, upload_id_2)
+    assert results["items"][1]["id"] in (upload_id, upload_id_2)
 
 
-def test_get_upload_replay_json(admin_auth_headers, default_org_id):
+def test_get_upload_replay_json(
+    admin_auth_headers, default_org_id, uploads_collection_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
@@ -181,6 +168,8 @@ def test_get_upload_replay_json(admin_auth_headers, default_org_id):
     assert data
     assert data["id"] == upload_id
     assert data["name"] == "My Upload"
+    assert data["collections"] == [uploads_collection_id]
+    assert sorted(data["tags"]) == ["one", "two"]
     assert data["resources"]
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
@@ -189,7 +178,9 @@ def test_get_upload_replay_json(admin_auth_headers, default_org_id):
     assert "files" not in data
 
 
-def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
+def test_get_upload_replay_json_admin(
+    admin_auth_headers, default_org_id, uploads_collection_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/all/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
@@ -200,6 +191,8 @@ def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
     assert data
     assert data["id"] == upload_id
     assert data["name"] == "My Upload"
+    assert data["collections"] == [uploads_collection_id]
+    assert sorted(data["tags"]) == ["one", "two"]
     assert data["resources"]
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
@@ -208,16 +201,20 @@ def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
     assert "files" not in data
 
 
-def test_replace_upload(admin_auth_headers, default_org_id):
-    actual_id = do_upload_replace(admin_auth_headers, default_org_id, upload_id)
+def test_replace_upload(admin_auth_headers, default_org_id, uploads_collection_id):
+    actual_id = do_upload_replace(
+        admin_auth_headers, default_org_id, upload_id, uploads_collection_id
+    )
 
     assert upload_id == actual_id
 
 
-def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
+def do_upload_replace(
+    admin_auth_headers, default_org_id, upload_id, uploads_collection_id
+):
     with open(os.path.join(curr_dir, "data", "example-2.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload%20Updated&replaceId={upload_id}",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload%20Updated&replaceId={upload_id}&collections={uploads_collection_id}",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -294,25 +291,20 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
     assert r.json()["deleted"] == True
 
 
-def test_replace_upload_non_existent(admin_auth_headers, default_org_id):
+def test_replace_upload_non_existent(
+    admin_auth_headers, default_org_id, uploads_collection_id
+):
     global upload_id
 
     # same replacement, but now to a non-existent upload
-    actual_id = do_upload_replace(admin_auth_headers, default_org_id, upload_id)
+    actual_id = do_upload_replace(
+        admin_auth_headers, default_org_id, upload_id, uploads_collection_id
+    )
 
     # new upload_id created
     assert actual_id != upload_id
 
     upload_id = actual_id
-
-
-def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": [upload_id]},
-    )
-    assert r.json()["deleted"] == True
 
 
 def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
@@ -439,5 +431,5 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
     results = r.json()
 
     for res in results["items"]:
-        if res["id"] in (upload_id_2, upload_id):
+        if res["id"] == upload_id:
             assert False

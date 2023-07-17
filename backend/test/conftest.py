@@ -329,3 +329,14 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
 @pytest.fixture(scope="session")
 def auto_add_config_id(auto_add_crawl_id):
     return _auto_add_config_id
+
+
+@pytest.fixture(scope="session")
+def uploads_collection_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={"name": "Upload test collection"},
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
