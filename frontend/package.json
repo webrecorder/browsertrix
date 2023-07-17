@@ -117,8 +117,11 @@
     "useTabs": false
   },
   "lint-staged": {
-    "src/**/*.{ts,js}": "eslint --fix --quiet",
-    "src/*.{ts,js,html,css,json}": "prettier --write"
+    "*.{ts,js}": [
+      "prettier --write",
+      "eslint --fix --quiet"
+    ],
+    "*.{html,css,json}": "prettier --write"
   },
   "husky": {
     "hooks": {
