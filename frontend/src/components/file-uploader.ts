@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
@@ -46,6 +46,9 @@ export class FileUploader extends LiteElement {
   @state()
   private tagsToSave: Tags = [];
 
+  @query("#fileInput")
+  private fileInput?: HTMLInputElement;
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     shouldSort: false,
@@ -75,8 +78,20 @@ export class FileUploader extends LiteElement {
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @sl-request-close=${this.requestClose}
       >
-        ${this.isDialogVisible ? this.renderForm() : ""}
+        ${this.isDialogVisible ? html` ${this.renderFileInput()} ` : ""}
       </btrix-dialog>
+    `;
+  }
+
+  private renderFileInput() {
+    return html`
+      <input
+        id="fileInput"
+        type="file"
+        accept=".wacz"
+        @change=${(e: Event) =>
+          this.upload(((e.target as HTMLInputElement).files as FileList)[0])}
+      />
     `;
   }
 
@@ -150,12 +165,35 @@ export class FileUploader extends LiteElement {
     }
   }
 
+  private async upload(file: File) {
+    try {
+      const data: { id: string; added: boolean } = await this.apiFetch(
+        `/orgs/${this.orgId}/uploads/stream?filename=testing`,
+        this.authState!,
+        {
+          method: "PUT",
+          body: file.stream(),
+        }
+      );
+
+      if (data.id && data.added) {
+        //
+      } else {
+        throw data;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
     const { name, description } = serialize(formEl);
+
+    console.log(this.fileInput);
 
     console.log("TODO", name, description, this.tagsToSave);
 
