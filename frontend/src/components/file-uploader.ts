@@ -1,13 +1,15 @@
-import { state, property, query } from "lit/decorators.js";
+import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
+import queryString from "query-string";
+import type { SlButton } from "@shoelace-style/shoelace";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { maxLengthValidator } from "../utils/form";
-import { PropertyValueMap } from "lit";
+import type { FileRemoveEvent } from "./file-list";
 
 /**
  * Usage:
@@ -46,8 +48,8 @@ export class FileUploader extends LiteElement {
   @state()
   private tagsToSave: Tags = [];
 
-  @query("#fileInput")
-  private fileInput?: HTMLInputElement;
+  @state()
+  private fileList: File[] = [];
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -77,52 +79,38 @@ export class FileUploader extends LiteElement {
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @sl-request-close=${this.requestClose}
+        style="--width:60rem"
       >
-        ${this.isDialogVisible ? html` ${this.renderFileInput()} ` : ""}
+        ${this.isDialogVisible ? this.renderForm() : ""}
       </btrix-dialog>
     `;
   }
 
-  private renderFileInput() {
-    return html`
-      <input
-        id="fileInput"
-        type="file"
-        accept=".wacz"
-        @change=${(e: Event) =>
-          this.upload(((e.target as HTMLInputElement).files as FileList)[0])}
-      />
-    `;
-  }
-
   private renderForm() {
-    const { helpText, validate } = this.validateDescriptionMax;
     return html`
       <form
         id="fileUploadForm"
         @submit=${this.onSubmit}
         @reset=${this.requestClose}
       >
-        <div class="mb-3">
-          <sl-input label="Name" name="name"> </sl-input>
+        <div class="grid md:grid-cols-2 gap-5">
+          <section class="col-span-1 flex flex-col gap-3">
+            <h4 class="flex-0 text-lg leading-none font-semibold">
+              ${msg("File")}
+            </h4>
+            <main class="flex-1 border rounded p-3">${this.renderFiles()}</main>
+          </section>
+          <section class="col-span-1 flex flex-col gap-3">
+            <h4 class="flex-0 text-lg leading-none font-semibold">
+              ${msg("Metadata")}
+            </h4>
+            <main class="flex-1 border rounded py-3 px-4">
+              ${this.renderMetadata()}
+            </main>
+          </section>
         </div>
-        <sl-textarea
-          class="mb-3 with-max-help-text"
-          name="description"
-          label=${msg("Description")}
-          rows="3"
-          autocomplete="off"
-          resize="auto"
-          help-text=${helpText}
-          @sl-input=${validate}
-        ></sl-textarea>
-        <btrix-tag-input
-          .tagOptions=${this.tagOptions}
-          @tag-input=${this.onTagInput}
-          @tags-change=${(e: TagsChangeEvent) =>
-            (this.tagsToSave = e.detail.tags)}
-        ></btrix-tag-input>
       </form>
+
       <div slot="footer" class="flex justify-between">
         <sl-button form="fileUploadForm" type="reset" size="small"
           >${msg("Cancel")}</sl-button
@@ -133,12 +121,88 @@ export class FileUploader extends LiteElement {
           type="submit"
           size="small"
           ?loading=${this.isSubmittingUpdate}
-          ?disabled=${this.isSubmittingUpdate}
-          >${msg("Upload")}</sl-button
+          ?disabled=${!this.fileList.length || this.isSubmittingUpdate}
+          >${msg("Upload Archive")}</sl-button
         >
       </div>
     `;
   }
+
+  private renderFiles() {
+    if (!this.fileList.length) {
+      return html`
+        <div class="h-full flex flex-col gap-3 items-center justify-center">
+          <label>
+            <input
+              class="sr-only"
+              type="file"
+              accept=".wacz"
+              @change=${(e: Event) => {
+                const files = (e.target as HTMLInputElement).files as FileList;
+                if (files?.length) {
+                  this.fileList = Array.from(files);
+                }
+              }}
+            />
+            <sl-button
+              variant="primary"
+              @click=${(e: MouseEvent) =>
+                (e.target as SlButton).parentElement?.click()}
+              >${msg("Browse Files")}</sl-button
+            >
+          </label>
+          <p class="text-xs text-neutral-500">
+            ${msg("Select a .wacz file to upload")}
+          </p>
+        </div>
+      `;
+    }
+
+    return html`
+      <btrix-file-list>
+        ${Array.from(this.fileList).map(
+          (file) => html`<btrix-file-list-item
+            .file=${file}
+            @on-remove=${this.handleRemoveFile}
+          ></btrix-file-list-item>`
+        )}
+      </btrix-file-list>
+    `;
+  }
+
+  private renderMetadata() {
+    const { helpText, validate } = this.validateDescriptionMax;
+    return html`
+      <div class="mb-3">
+        <sl-input label="Name" name="name"> </sl-input>
+      </div>
+      <sl-textarea
+        class="mb-3 with-max-help-text"
+        name="description"
+        label=${msg("Description")}
+        rows="3"
+        autocomplete="off"
+        resize="auto"
+        help-text=${helpText}
+        @sl-input=${validate}
+      ></sl-textarea>
+      <btrix-tag-input
+        .tagOptions=${this.tagOptions}
+        @tag-input=${this.onTagInput}
+        @tags-change=${(e: TagsChangeEvent) =>
+          (this.tagsToSave = e.detail.tags)}
+      ></btrix-tag-input>
+    `;
+  }
+
+  private handleRemoveFile = (e: FileRemoveEvent) => {
+    const idx = this.fileList.indexOf(e.detail.file);
+    if (idx === -1) return;
+    this.fileList = [
+      ...this.fileList.slice(0, idx),
+      ...this.fileList.slice(idx + 1),
+    ];
+  };
 
   private requestClose() {
     this.dispatchEvent(new CustomEvent("request-close"));
@@ -165,27 +229,6 @@ export class FileUploader extends LiteElement {
     }
   }
 
-  private async upload(file: File) {
-    try {
-      const data: { id: string; added: boolean } = await this.apiFetch(
-        `/orgs/${this.orgId}/uploads/stream?filename=testing`,
-        this.authState!,
-        {
-          method: "PUT",
-          body: file.stream(),
-        }
-      );
-
-      if (data.id && data.added) {
-        //
-      } else {
-        throw data;
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
 
@@ -193,26 +236,45 @@ export class FileUploader extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
     const { name, description } = serialize(formEl);
 
-    console.log(this.fileInput);
-
-    console.log("TODO", name, description, this.tagsToSave);
-
     this.isSubmittingUpdate = true;
 
     try {
-      // this.dispatchEvent(new CustomEvent("uploaded"));
-      // this.notify({
-      //   message: msg("Successfully uploaded file."),
-      //   variant: "success",
-      //   icon: "check2-circle",
-      // });
+      const file = this.fileList[0];
+      // TODO replace temporary name with API support
+      const filename = file?.name || "temp";
+      const query = queryString.stringify({
+        filename,
+        name,
+        notes: description,
+        // TODO tags with API support
+        // tags: this.tagsToSave
+      });
+      const data: { id: string; added: boolean } = await this.apiFetch(
+        `/orgs/${this.orgId}/uploads/stream?${query}`,
+        this.authState!,
+        {
+          method: "PUT",
+          body: file?.stream(),
+        }
+      );
+
+      if (data.id && data.added) {
+        this.dispatchEvent(new CustomEvent("uploaded"));
+        this.notify({
+          message: msg("Successfully uploaded file."),
+          variant: "success",
+          icon: "check2-circle",
+        });
+      } else {
+        throw data;
+      }
       this.requestClose();
     } catch (e) {
-      // this.notify({
-      //   message: msg("Sorry, couldn't upload file at this time."),
-      //   variant: "danger",
-      //   icon: "exclamation-octagon",
-      // });
+      this.notify({
+        message: msg("Sorry, couldn't upload file at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
 
     this.isSubmittingUpdate = false;
