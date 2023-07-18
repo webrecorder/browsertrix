@@ -24,6 +24,7 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats, get_max_concurrent_crawls
+from .basecrawls import NON_RUNNING_STATES, SUCCESSFUL_STATES
 from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import stats_recompute_last
 from .crawls import (
@@ -33,8 +34,6 @@ from .crawls import (
     update_crawl_state_if_allowed,
     get_crawl_state,
     add_crawl_errors,
-    NON_RUNNING_STATES,
-    SUCCESSFUL_STATES,
 )
 
 

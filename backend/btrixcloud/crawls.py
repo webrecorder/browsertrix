@@ -36,22 +36,9 @@ from .basecrawls import (
     BaseCrawlOps,
     UpdateCrawl,
     DeleteCrawlList,
+    RUNNING_AND_STARTING_STATES,
+    ALL_CRAWL_STATES,
 )
-
-
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
-
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
@@ -349,58 +336,6 @@ class CrawlOps(BaseCrawlOps):
         crawl = CrawlOut.from_dict(res)
 
         return await self._resolve_crawl_refs(crawl, org)
-
-    async def _resolve_crawl_refs(
-        self,
-        crawl: Union[CrawlOut, ListCrawlOut],
-        org: Optional[Organization],
-        add_first_seed: bool = True,
-        resources: bool = False,
-    ):
-        """Resolve running crawl data"""
-        # pylint: disable=too-many-branches
-        config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org, active_only=False
-        )
-
-        if config:
-            if not crawl.name:
-                crawl.name = config.name
-
-            if not crawl.description:
-                crawl.description = config.description
-
-            if config.config.seeds:
-                if add_first_seed:
-                    first_seed = config.config.seeds[0]
-                    crawl.firstSeed = first_seed.url
-                crawl.seedCount = len(config.config.seeds)
-
-        if hasattr(crawl, "profileid") and crawl.profileid:
-            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
-                crawl.profileid, org
-            )
-
-        user = await self.user_manager.get(crawl.userid)
-        if user:
-            crawl.userName = user.name
-
-        # if running, get stats directly from redis
-        # more responsive, saves db update in operator
-        if crawl.state in RUNNING_STATES:
-            try:
-                redis = await self.get_redis(crawl.id)
-                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
-            # redis not available, ignore
-            except exceptions.ConnectionError:
-                pass
-
-        if resources and crawl.state in SUCCESSFUL_STATES:
-            crawl.resources = await self._resolve_signed_urls(
-                crawl.files, org, crawl.id
-            )
-
-        return crawl
 
     async def delete_crawls(
         self, org: Organization, delete_list: DeleteCrawlList, type_="crawl"

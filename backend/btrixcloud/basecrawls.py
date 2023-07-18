@@ -18,6 +18,21 @@ from .users import User
 from .utils import dt_now, get_redis_crawl_stats
 
 
+RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+
+STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
+
+FAILED_STATES = ("canceled", "failed")
+
+SUCCESSFUL_STATES = ("complete", "partial_complete")
+
+RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
+
+NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
+
+
 # ============================================================================
 class CrawlFile(BaseModel):
     """file from a crawl"""
@@ -197,7 +212,7 @@ class BaseCrawlOps:
         crawl = BaseCrawlOutWithResources.from_dict(res)
 
         if crawl.type == "crawl":
-            crawl = await self._resolve_automated_crawl_refs(crawl, org)
+            crawl = await self._resolve_crawl_refs(crawl, org)
 
         user = await self.user_manager.get(crawl.userid)
         if user:
@@ -272,11 +287,12 @@ class BaseCrawlOps:
 
         return size
 
-    async def _resolve_automated_crawl_refs(
+    async def _resolve_crawl_refs(
         self,
-        crawl: BaseCrawlOut,
+        crawl: Union[CrawlOut, ListCrawlOut],
         org: Optional[Organization],
         add_first_seed: bool = True,
+        resources: bool = False,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
@@ -308,18 +324,18 @@ class BaseCrawlOps:
 
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
-        if crawl.state in (
-            "running",
-            "pending-wait",
-            "generate-wacz",
-            "uploading-wacz",
-        ):
+        if crawl.state in RUNNING_STATES:
             try:
                 redis = await self.get_redis(crawl.id)
                 crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
             # redis not available, ignore
             except exceptions.ConnectionError:
                 pass
+
+        if resources and crawl.state in SUCCESSFUL_STATES:
+            crawl.resources = await self._resolve_signed_urls(
+                crawl.files, org, crawl.id
+            )
 
         return crawl
 
