@@ -28,13 +28,12 @@ from .basecrawls import NON_RUNNING_STATES, SUCCESSFUL_STATES
 from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import stats_recompute_last
 from .crawls import (
-    CrawlFile,
-    CrawlCompleteIn,
     add_crawl_file,
     update_crawl_state_if_allowed,
     get_crawl_state,
     add_crawl_errors,
 )
+from .models import CrawlFile, CrawlCompleteIn
 
 
 STS = "StatefulSet.apps/v1"

@@ -11,10 +11,11 @@ from fastapi import Depends, HTTPException
 
 from pydantic import BaseModel, UUID4, Field
 
-from .basecrawls import BaseCrawlOutWithResources, CrawlFileOut, SUCCESSFUL_STATES
+from .basecrawls import SUCCESSFUL_STATES
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .models import BaseCrawlOutWithResources, CrawlFileOut
 
 
 # ============================================================================

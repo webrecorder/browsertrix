@@ -8,138 +8,34 @@ import json
 import re
 import urllib.parse
 
-from typing import Optional, List, Dict, Union
-from datetime import datetime
+from typing import Optional, List
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, UUID4, conint, Field
+from pydantic import UUID4
 from redis import asyncio as exceptions
 import pymongo
 
-from .crawlconfigs import (
-    CrawlConfigCore,
-    CrawlConfig,
-    UpdateCrawlConfig,
-    set_config_current_crawl_info,
-)
-from .db import BaseMongoModel
-from .orgs import Organization, MAX_CRAWL_SCALE
+from .crawlconfigs import set_config_current_crawl_info
+from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
 from .users import User
-from .utils import dt_now, get_redis_crawl_stats, parse_jsonl_error_messages
-from .basecrawls import (
+from .utils import dt_now, parse_jsonl_error_messages
+from .basecrawls import BaseCrawlOps
+from .models import (
     CrawlFile,
-    CrawlFileOut,
-    BaseCrawl,
-    BaseCrawlOps,
     UpdateCrawl,
     DeleteCrawlList,
-    RUNNING_AND_STARTING_STATES,
-    ALL_CRAWL_STATES,
+    CrawlConfig,
+    UpdateCrawlConfig,
+    CrawlScale,
+    Crawl,
+    CrawlOut,
+    ListCrawlOut,
+    ListCrawlOutWithResources,
 )
-
-
-# ============================================================================
-class CrawlScale(BaseModel):
-    """scale the crawl to N parallel containers"""
-
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
-
-
-# ============================================================================
-class Crawl(BaseCrawl, CrawlConfigCore):
-    """Store State of a Crawl (Finished or Running)"""
-
-    type: str = Field("crawl", const=True)
-
-    cid: UUID4
-
-    cid_rev: int = 0
-
-    # schedule: Optional[str]
-    manual: Optional[bool]
-
-    stopping: Optional[bool] = False
-
-
-# ============================================================================
-class CrawlOut(Crawl):
-    """Output for single crawl, with additional fields"""
-
-    userName: Optional[str]
-    name: Optional[str]
-    description: Optional[str]
-    profileName: Optional[str]
-    resources: Optional[List[CrawlFileOut]] = []
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-
-# ============================================================================
-class ListCrawlOut(BaseMongoModel):
-    """Crawl output model for list view"""
-
-    # pylint: disable=duplicate-code
-
-    id: str
-
-    userid: UUID4
-    userName: Optional[str]
-
-    oid: UUID4
-    cid: UUID4
-    name: Optional[str]
-    description: Optional[str]
-
-    manual: Optional[bool]
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    fileSize: int = 0
-    fileCount: int = 0
-
-    tags: Optional[List[str]] = []
-
-    notes: Optional[str]
-
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-    stopping: Optional[bool] = False
-
-    collections: Optional[List[UUID4]] = []
-
-
-# ============================================================================
-class ListCrawlOutWithResources(ListCrawlOut):
-    """Crawl output model used internally with files and resources."""
-
-    files: Optional[List[CrawlFile]] = []
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class CrawlCompleteIn(BaseModel):
-    """Completed Crawl Webhook POST message"""
-
-    id: str
-
-    user: str
-
-    filename: str
-    size: int
-    hash: str
-
-    completed: Optional[bool] = True
+from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
 
 # ============================================================================

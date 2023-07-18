@@ -3,7 +3,7 @@ Crawl Config API handling
 """
 
 from typing import List, Union, Optional
-from enum import Enum
+
 import uuid
 import asyncio
 import re
@@ -12,240 +12,23 @@ from datetime import datetime
 import urllib.parse
 
 import pymongo
-from pydantic import BaseModel, UUID4, conint, HttpUrl
+from pydantic import UUID4
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .users import User
-from .orgs import Organization, MAX_CRAWL_SCALE
+from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-
-from .db import BaseMongoModel
-
-# pylint: disable=too-many-lines
-
-
-# ============================================================================
-class JobType(str, Enum):
-    """Job Types"""
-
-    URL_LIST = "url-list"
-    SEED_CRAWL = "seed-crawl"
-    CUSTOM = "custom"
+from .models import (
+    CrawlConfigIn,
+    ConfigRevision,
+    CrawlConfig,
+    CrawlConfigOut,
+    CrawlConfigIdNameOut,
+    UpdateCrawlConfig,
+)
 
 
 # ============================================================================
-class ScopeType(str, Enum):
-    """Crawl scope type"""
-
-    PAGE = "page"
-    PAGE_SPA = "page-spa"
-    PREFIX = "prefix"
-    HOST = "host"
-    DOMAIN = "domain"
-    ANY = "any"
-    CUSTOM = "custom"
-
-
-# ============================================================================
-class Seed(BaseModel):
-    """Crawl seed"""
-
-    url: HttpUrl
-    scopeType: Optional[ScopeType]
-
-    include: Union[str, List[str], None]
-    exclude: Union[str, List[str], None]
-    sitemap: Union[bool, HttpUrl, None]
-    allowHash: Optional[bool]
-    depth: Optional[int]
-    extraHops: Optional[int]
-
-
-# ============================================================================
-class RawCrawlConfig(BaseModel):
-    """Base Crawl Config"""
-
-    seeds: List[Seed]
-
-    scopeType: Optional[ScopeType] = ScopeType.PREFIX
-
-    include: Union[str, List[str], None] = None
-    exclude: Union[str, List[str], None] = None
-
-    depth: Optional[int] = -1
-    limit: Optional[int] = 0
-    extraHops: Optional[int] = 0
-
-    lang: Optional[str]
-    blockAds: Optional[bool] = False
-
-    behaviorTimeout: Optional[int]
-    pageLoadTimeout: Optional[int]
-    pageExtraDelay: Optional[int] = 0
-
-    workers: Optional[int]
-
-    headless: Optional[bool]
-
-    generateWACZ: Optional[bool]
-    combineWARC: Optional[bool]
-
-    useSitemap: Optional[bool] = False
-
-    logging: Optional[str]
-    behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
-
-
-# ============================================================================
-class CrawlConfigIn(BaseModel):
-    """CrawlConfig input model, submitted via API"""
-
-    schedule: Optional[str] = ""
-    runNow: Optional[bool] = False
-
-    config: RawCrawlConfig
-
-    name: str
-
-    description: Optional[str]
-
-    jobType: Optional[JobType] = JobType.CUSTOM
-
-    profileid: Optional[str]
-
-    autoAddCollections: Optional[List[UUID4]] = []
-    tags: Optional[List[str]] = []
-
-    crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
-
-    crawlFilenameTemplate: Optional[str]
-
-
-# ============================================================================
-class ConfigRevision(BaseMongoModel):
-    """Crawl Config Revision"""
-
-    cid: UUID4
-
-    schedule: Optional[str] = ""
-
-    config: RawCrawlConfig
-
-    profileid: Optional[UUID4]
-
-    crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
-
-    modified: datetime
-    modifiedBy: Optional[UUID4]
-
-    rev: int = 0
-
-
-# ============================================================================
-class CrawlConfigCore(BaseMongoModel):
-    """Core data shared between crawls and crawlconfigs"""
-
-    schedule: Optional[str] = ""
-
-    jobType: Optional[JobType] = JobType.CUSTOM
-    config: RawCrawlConfig
-
-    tags: Optional[List[str]] = []
-
-    crawlTimeout: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
-
-    oid: UUID4
-
-    profileid: Optional[UUID4]
-
-
-# ============================================================================
-class CrawlConfig(CrawlConfigCore):
-    """Schedulable config"""
-
-    name: Optional[str]
-    description: Optional[str]
-
-    created: datetime
-    createdBy: Optional[UUID4]
-
-    modified: Optional[datetime]
-    modifiedBy: Optional[UUID4]
-
-    autoAddCollections: Optional[List[UUID4]] = []
-
-    inactive: Optional[bool] = False
-
-    rev: int = 0
-
-    crawlAttemptCount: Optional[int] = 0
-    crawlCount: Optional[int] = 0
-    crawlSuccessfulCount: Optional[int] = 0
-
-    totalSize: Optional[int] = 0
-
-    lastCrawlId: Optional[str]
-    lastCrawlStartTime: Optional[datetime]
-    lastStartedBy: Optional[UUID4]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-    lastCrawlSize: Optional[int]
-
-    lastRun: Optional[datetime]
-
-    isCrawlRunning: Optional[bool] = False
-
-    def get_raw_config(self):
-        """serialize config for browsertrix-crawler"""
-        return self.config.dict(exclude_unset=True, exclude_none=True)
-
-
-# ============================================================================
-class CrawlConfigOut(CrawlConfig):
-    """Crawl Config Output"""
-
-    lastCrawlStopping: Optional[bool] = False
-
-    profileName: Optional[str]
-
-    createdByName: Optional[str]
-    modifiedByName: Optional[str]
-    lastStartedByName: Optional[str]
-
-    firstSeed: Optional[str]
-
-
-# ============================================================================
-class CrawlConfigIdNameOut(BaseMongoModel):
-    """Crawl Config id and name output only"""
-
-    name: str
-
-
-# ============================================================================
-class UpdateCrawlConfig(BaseModel):
-    """Update crawl config name, crawl schedule, or tags"""
-
-    # metadata: not revision tracked
-    name: Optional[str]
-    tags: Optional[List[str]]
-    description: Optional[str]
-    autoAddCollections: Optional[List[UUID4]]
-
-    # crawl data: revision tracked
-    schedule: Optional[str]
-    profileid: Optional[str]
-    crawlTimeout: Optional[int]
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
-    crawlFilenameTemplate: Optional[str]
-    config: Optional[RawCrawlConfig]
-
-
-# ============================================================================
-# pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-public-methods
 class CrawlConfigOps:
     """Crawl Config Operations"""
 

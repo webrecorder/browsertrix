@@ -3,14 +3,24 @@
 import asyncio
 import uuid
 import os
-from datetime import datetime, timedelta
-from typing import Optional, Dict, List
+from datetime import timedelta
+from typing import Optional, List, Union
 
-from pydantic import BaseModel, UUID4
+from pydantic import UUID4
 from fastapi import HTTPException, Depends
 from redis import asyncio as aioredis, exceptions
 
-from .db import BaseMongoModel
+from .models import (
+    CrawlFile,
+    CrawlFileOut,
+    BaseCrawl,
+    BaseCrawlOut,
+    BaseCrawlOutWithResources,
+    UpdateCrawl,
+    DeleteCrawlList,
+    CrawlOut,
+    ListCrawlOut,
+)
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
@@ -31,125 +41,6 @@ RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
 NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
 
 ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
-
-
-# ============================================================================
-class CrawlFile(BaseModel):
-    """file from a crawl"""
-
-    filename: str
-    hash: str
-    size: int
-    def_storage_name: Optional[str]
-
-    presignedUrl: Optional[str]
-    expireAt: Optional[datetime]
-
-
-# ============================================================================
-class CrawlFileOut(BaseModel):
-    """output for file from a crawl (conformance to Data Resource Spec)"""
-
-    name: str
-    path: str
-    hash: str
-    size: int
-    crawlId: Optional[str]
-
-
-# ============================================================================
-class BaseCrawl(BaseMongoModel):
-    """Base Crawl object (representing crawls, uploads and manual sessions)"""
-
-    id: str
-
-    userid: UUID4
-    oid: UUID4
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    files: Optional[List[CrawlFile]] = []
-
-    notes: Optional[str]
-
-    errors: Optional[List[str]] = []
-
-    collections: Optional[List[UUID4]] = []
-
-    fileSize: int = 0
-    fileCount: int = 0
-
-
-# ============================================================================
-class BaseCrawlOut(BaseMongoModel):
-    """Base crawl output model"""
-
-    # pylint: disable=duplicate-code
-
-    type: Optional[str]
-
-    id: str
-
-    userid: UUID4
-    oid: UUID4
-
-    userName: Optional[str]
-
-    name: Optional[str]
-    description: Optional[str]
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    fileSize: int = 0
-    fileCount: int = 0
-
-    tags: Optional[List[str]] = []
-
-    notes: Optional[str]
-
-    errors: Optional[List[str]]
-
-    collections: Optional[List[UUID4]] = []
-
-    # automated crawl fields
-    cid: Optional[UUID4]
-    name: Optional[str]
-    description: Optional[str]
-    firstSeed: Optional[str]
-    seedCount: Optional[int]
-    profileName: Optional[str]
-
-
-# ============================================================================
-class BaseCrawlOutWithResources(BaseCrawlOut):
-    """includes resources"""
-
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class UpdateCrawl(BaseModel):
-    """Update crawl"""
-
-    tags: Optional[List[str]] = []
-    notes: Optional[str]
-
-
-# ============================================================================
-class DeleteCrawlList(BaseModel):
-    """delete crawl list POST body"""
-
-    crawl_ids: List[str]
 
 
 # ============================================================================
@@ -197,7 +88,6 @@ class BaseCrawlOps:
         type_: Optional[str] = None,
     ):
         """Get data for single base crawl"""
-
         res = await self.get_crawl_raw(crawlid, org, type_)
 
         if res.get("files"):
@@ -289,7 +179,7 @@ class BaseCrawlOps:
 
     async def _resolve_crawl_refs(
         self,
-        crawl: Union[CrawlOut, ListCrawlOut],
+        crawl: Union[CrawlOut, ListCrawlOut, BaseCrawlOut],
         org: Optional[Organization],
         add_first_seed: bool = True,
         resources: bool = False,
@@ -537,7 +427,7 @@ class BaseCrawlOps:
                 crawl.resources = await self._resolve_signed_urls(files, org, crawl.id)
 
             if crawl.type == "crawl":
-                crawl = await self._resolve_automated_crawl_refs(crawl, org)
+                crawl = await self._resolve_crawl_refs(crawl, org)
 
             crawls.append(crawl)
 

@@ -16,7 +16,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import User
 
 from .db import BaseMongoModel
-from .crawlconfigs import CrawlConfigIdNameOut
+from .models import CrawlConfigIdNameOut
 
 
 BROWSER_EXPIRE = 300

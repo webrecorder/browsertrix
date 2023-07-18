@@ -15,11 +15,11 @@ from pydantic import Field, UUID4
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
-from .basecrawls import (
+from .basecrawls import BaseCrawlOps
+from .models import (
     BaseCrawl,
     BaseCrawlOut,
     BaseCrawlOutWithResources,
-    BaseCrawlOps,
     CrawlFile,
     UpdateCrawl,
     DeleteCrawlList,
