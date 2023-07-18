@@ -21,8 +21,6 @@ export class FileListItem extends LitElement {
     css`
       .item {
         display: flex;
-        gap: var(--sl-spacing-x-small);
-        align-items: center;
         box-sizing: border-box;
         overflow: hidden;
         border-top: var(--item-border-top, 0);
@@ -31,20 +29,25 @@ export class FileListItem extends LitElement {
         border-bottom: var(--item-border-bottom, 0);
         border-radius: var(--item-border-radius, 0);
         box-shadow: var(--item-box-shadow, none);
-        height: 2.5rem;
-        padding: var(--sl-spacing-x-small);
-        white-space: nowrap;
+        padding: var(--sl-spacing-3x-small);
         color: var(--sl-color-neutral-700);
       }
 
-      .name {
+      .details {
         flex: 1 1 0%;
         min-width: 0;
+        padding: var(--sl-spacing-2x-small);
+      }
+
+      .name {
+        word-break: break-all;
       }
 
       .size {
         font-size: var(--sl-font-size-x-small);
-        color: var(--sl-color-neutral-400);
+        font-family: var(--font-monostyle-family);
+        font-variation-settings: var(--font-monostyle-variation);
+        color: var(--sl-color-neutral-500);
       }
     `,
   ];
@@ -55,11 +58,13 @@ export class FileListItem extends LitElement {
   render() {
     if (!this.file) return;
     return html`<div class="item">
-      <div class="name truncate">${this.file.name}</div>
-      <div class="size">
-        <sl-format-bytes value=${this.file.size}></sl-format-bytes>
+      <div class="details">
+        <div class="name">${this.file.name}</div>
+        <div class="size">
+          <sl-format-bytes value=${this.file.size}></sl-format-bytes>
+        </div>
       </div>
-      <div class="trash">
+      <div class="actions">
         <sl-icon-button name="trash3" @click=${this.onRemove}></sl-icon-button>
       </div>
     </div>`;

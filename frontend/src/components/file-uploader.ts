@@ -86,7 +86,7 @@ export class FileUploader extends LiteElement {
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @sl-request-close=${this.requestClose}
-        style="--width:60rem"
+        style="--width: 60rem;"
       >
         ${this.isDialogVisible ? this.renderForm() : ""}
       </btrix-dialog>
@@ -100,10 +100,10 @@ export class FileUploader extends LiteElement {
         @submit=${this.onSubmit}
         @reset=${this.requestClose}
       >
-        <div class="grid md:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <section class="col-span-1 flex flex-col gap-3">
             <h4 class="flex-0 text-lg leading-none font-semibold">
-              ${msg("File")}
+              ${msg("File to upload")}
             </h4>
             <main class="flex-1 border rounded p-3">${this.renderFiles()}</main>
           </section>
@@ -138,7 +138,7 @@ export class FileUploader extends LiteElement {
   private renderFiles() {
     if (!this.fileList.length) {
       return html`
-        <div class="h-full flex flex-col gap-3 items-center justify-center">
+        <div class="h-full flex flex-col gap-3 items-center justify-center p-5">
           <label>
             <input
               class="sr-only"
@@ -199,7 +199,7 @@ export class FileUploader extends LiteElement {
         @tags-change=${(e: TagsChangeEvent) =>
           (this.tagsToSave = e.detail.tags)}
       ></btrix-tag-input>
-      <div class="mt-3">
+      <div class="mt-4">
         <btrix-collections-add
           .authState=${this.authState}
           .initialCollections=${[]}
