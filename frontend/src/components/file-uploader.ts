@@ -290,9 +290,8 @@ export class FileUploader extends LiteElement {
             "Content-Type": "application/octet-stream",
           },
           method: "PUT",
-          body: file?.stream(),
+          body: file,
           signal: this.uploadController.signal,
-          duplex: "half", // Chrome support
         }
       );
       this.uploadController = null;
@@ -309,6 +308,7 @@ export class FileUploader extends LiteElement {
         throw data;
       }
     } catch (err: any) {
+      console.log("err:", err);
       if (err === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {

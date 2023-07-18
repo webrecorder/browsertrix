@@ -17,8 +17,6 @@ module.exports = [
       open: true,
       compress: true,
       hot: true,
-      https: true,
-      http2: true,
       static: [
         {
           directory: shoelaceAssetsSrcPath,
