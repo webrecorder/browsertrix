@@ -110,6 +110,7 @@ export default class LiteElement extends LitElement {
       headers?: any;
       body?: any;
       signal?: AbortSignal;
+      duplex?: string;
     }
   ) {
     const { headers, ...opts } = options || {};

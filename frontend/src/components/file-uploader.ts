@@ -286,9 +286,13 @@ export class FileUploader extends LiteElement {
         `/orgs/${this.orgId}/uploads/stream?${query}`,
         this.authState!,
         {
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
           method: "PUT",
           body: file?.stream(),
           signal: this.uploadController.signal,
+          duplex: "half", // Chrome support
         }
       );
       this.uploadController = null;
@@ -308,6 +312,7 @@ export class FileUploader extends LiteElement {
       if (err === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {
+        console.debug(err);
         this.notify({
           message: msg("Sorry, couldn't upload file at this time."),
           variant: "danger",
