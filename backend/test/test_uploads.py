@@ -46,7 +46,7 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
     assert found
     assert found["name"] == "My Upload"
     assert found["notes"] == "Testing\nData"
-    assert "files" not in found
+    assert "files" not in found or found["files"] == []
     assert "resources" not in found
 
 
@@ -57,7 +57,7 @@ def test_get_stream_upload(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     result = r.json()
-    assert "files" not in result
+    assert "files" not in result or result["files"] == []
     upload_dl_path = result["resources"][0]["path"]
     assert "test-" in result["resources"][0]["name"]
     assert result["resources"][0]["name"].endswith(".wacz")
@@ -120,8 +120,8 @@ def test_list_uploads(admin_auth_headers, default_org_id):
     assert found
     assert found["name"] == "test2.wacz"
 
-    assert "files" not in res
-    assert "resources" not in res
+    assert "files" not in found or found["files"] == []
+    assert "resources" not in found
 
 
 def test_collection_uploads(admin_auth_headers, default_org_id):
@@ -185,8 +185,8 @@ def test_get_upload_replay_json(admin_auth_headers, default_org_id):
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
+    assert "files" not in data or data.get("files") == []
+    assert "errors" not in data or data.get("errors") in (None, [])
 
 
 def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
@@ -204,8 +204,8 @@ def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
+    assert "files" not in data or data.get("files") == []
+    assert "errors" not in data or data.get("errors") in (None, [])
 
 
 def test_replace_upload(admin_auth_headers, default_org_id):
@@ -227,7 +227,7 @@ def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     actual_id = r.json()["id"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{actual_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{actual_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -317,13 +317,13 @@ def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
 
 def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     result = r.json()
 
-    assert "files" not in result
+    assert "files" not in result or result["files"] == []
     assert len(result["resources"]) == 3
 
     r = requests.get(
@@ -378,7 +378,7 @@ def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):
 
     assert data["name"] == "test2.wacz"
 
-    assert "files" not in data
+    assert "files" not in data or data["files"] == []
     assert data["resources"]
 
 
@@ -397,8 +397,8 @@ def test_get_upload_replay_json_from_all_crawls(admin_auth_headers, default_org_
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
+    assert "files" not in data or data.get("files") == []
+    assert "errors" not in data or data.get("errors") in (None, [])
 
 
 def test_get_upload_replay_json_admin_from_all_crawls(
@@ -418,8 +418,8 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
+    assert "files" not in data or data.get("files") == []
+    assert "errors" not in data or data.get("errors") in (None, [])
 
 
 def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):

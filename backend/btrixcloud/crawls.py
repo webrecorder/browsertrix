@@ -32,8 +32,7 @@ from .models import (
     CrawlScale,
     Crawl,
     CrawlOut,
-    ListCrawlOut,
-    ListCrawlOutWithResources,
+    CrawlOutWithResources,
 )
 from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
@@ -200,9 +199,9 @@ class CrawlOps(BaseCrawlOps):
         except (IndexError, ValueError):
             total = 0
 
-        cls = ListCrawlOut
+        cls = CrawlOut
         if resources:
-            cls = ListCrawlOutWithResources
+            cls = CrawlOutWithResources
 
         crawls = []
         for result in items:
@@ -229,7 +228,7 @@ class CrawlOps(BaseCrawlOps):
 
         del res["errors"]
 
-        crawl = CrawlOut.from_dict(res)
+        crawl = CrawlOutWithResources.from_dict(res)
 
         return await self._resolve_crawl_refs(crawl, org)
 
@@ -770,7 +769,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
-        response_model=CrawlOut,
+        response_model=CrawlOutWithResources,
     )
     async def get_crawl_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -781,7 +780,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
-        response_model=CrawlOut,
+        response_model=CrawlOutWithResources,
     )
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org)
@@ -789,7 +788,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/all/crawls/{crawl_id}",
         tags=["crawls"],
-        response_model=ListCrawlOut,
+        response_model=CrawlOut,
     )
     async def list_single_crawl_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -804,7 +803,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}",
         tags=["crawls"],
-        response_model=ListCrawlOut,
+        response_model=CrawlOut,
     )
     async def list_single_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         crawls, _ = await ops.list_crawls(org, crawl_id=crawl_id)

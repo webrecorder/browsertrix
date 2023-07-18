@@ -15,7 +15,7 @@ from .basecrawls import SUCCESSFUL_STATES
 from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .models import BaseCrawlOutWithResources, CrawlFileOut
+from .models import CrawlOutWithResources, CrawlFileOut
 
 
 # ============================================================================
@@ -275,7 +275,7 @@ class CollectionOps:
             collection_id=coll_id,
             states=SUCCESSFUL_STATES,
             page_size=10_000,
-            cls_type=BaseCrawlOutWithResources,
+            cls_type=CrawlOutWithResources,
         )
 
         for crawl in crawls:

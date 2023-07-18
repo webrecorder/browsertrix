@@ -10,19 +10,19 @@ from typing import Optional, List
 from fastapi import Depends, UploadFile, File
 
 from fastapi import HTTPException
-from pydantic import Field, UUID4
+from pydantic import UUID4
 
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
 from .basecrawls import BaseCrawlOps
 from .models import (
-    BaseCrawl,
-    BaseCrawlOut,
-    BaseCrawlOutWithResources,
+    CrawlOut,
+    CrawlOutWithResources,
     CrawlFile,
-    UpdateCrawl,
     DeleteCrawlList,
+    UploadedCrawl,
+    UpdateUpload,
 )
 from .users import User
 from .orgs import Organization
@@ -32,32 +32,6 @@ from .utils import dt_now
 
 
 MIN_UPLOAD_PART_SIZE = 10000000
-
-
-# ============================================================================
-class UploadedCrawl(BaseCrawl):
-    """Store State of a Crawl Upload"""
-
-    type: str = Field("upload", const=True)
-
-    name: str
-
-
-# ============================================================================
-class UploadedCrawlOut(BaseCrawlOut):
-    """Output model for Crawl Uploads"""
-
-
-# ============================================================================
-class UploadedCrawlOutWithResources(BaseCrawlOutWithResources):
-    """Output model for Crawl Uploads with all file resources"""
-
-
-# ============================================================================
-class UpdateUpload(UpdateCrawl):
-    """Update modal that also includes name"""
-
-    name: Optional[str]
 
 
 # ============================================================================
@@ -293,23 +267,21 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
             sort_by=sortBy,
             sort_direction=sortDirection,
             type_="upload",
-            cls_type=UploadedCrawlOut,
         )
         return paginated_format(uploads, total, page, pageSize)
 
     @app.get(
         "/orgs/{oid}/uploads/{crawlid}",
         tags=["uploads"],
-        response_model=UploadedCrawlOutWithResources,
+        response_model=CrawlOut,
     )
     async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
-        res = await ops.get_resource_resolved_raw_crawl(crawlid, org, "upload")
-        return UploadedCrawlOutWithResources.from_dict(res)
+        return await ops.get_crawl(crawlid, org, "upload")
 
     @app.get(
         "/orgs/all/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_upload_replay_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -320,7 +292,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
     @app.get(
         "/orgs/{oid}/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "upload")

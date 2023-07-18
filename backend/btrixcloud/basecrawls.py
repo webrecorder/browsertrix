@@ -14,12 +14,10 @@ from .models import (
     CrawlFile,
     CrawlFileOut,
     BaseCrawl,
-    BaseCrawlOut,
-    BaseCrawlOutWithResources,
+    CrawlOut,
+    CrawlOutWithResources,
     UpdateCrawl,
     DeleteCrawlList,
-    CrawlOut,
-    ListCrawlOut,
 )
 from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
@@ -86,20 +84,24 @@ class BaseCrawlOps:
         crawlid: str,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        cls_type: Union[CrawlOut, CrawlOutWithResources] = CrawlOutWithResources,
     ):
         """Get data for single base crawl"""
         res = await self.get_crawl_raw(crawlid, org, type_)
 
-        if res.get("files"):
-            files = [CrawlFile(**data) for data in res["files"]]
+        resources = False
+        if cls_type == CrawlOutWithResources:
+            resources = True
 
-            del res["files"]
+        if resources and res.get("files"):
+            files = [CrawlFile(**data) for data in res["files"]]
 
             res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
 
+        del res["files"]
         del res["errors"]
 
-        crawl = BaseCrawlOutWithResources.from_dict(res)
+        crawl = cls_type.from_dict(res)
 
         if crawl.type == "crawl":
             crawl = await self._resolve_crawl_refs(crawl, org)
@@ -179,7 +181,7 @@ class BaseCrawlOps:
 
     async def _resolve_crawl_refs(
         self,
-        crawl: Union[CrawlOut, ListCrawlOut, BaseCrawlOut],
+        crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
         add_first_seed: bool = True,
         resources: bool = False,
@@ -334,11 +336,11 @@ class BaseCrawlOps:
         description: str = None,
         collection_id: str = None,
         states: Optional[List[str]] = None,
+        cls_type: Union[CrawlOut, CrawlOutWithResources] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = None,
         sort_direction: int = -1,
-        cls_type: type[BaseCrawlOut] = BaseCrawlOut,
         type_=None,
     ):
         """List crawls of all types from the db"""
@@ -347,6 +349,10 @@ class BaseCrawlOps:
         skip = page * page_size
 
         oid = org.id if org else None
+
+        resources = False
+        if cls_type == CrawlOutWithResources:
+            resources = True
 
         query = {}
         if type_:
@@ -361,7 +367,10 @@ class BaseCrawlOps:
             # validated_states = [value for value in state if value in ALL_CRAWL_STATES]
             query["state"] = {"$in": states}
 
-        aggregate = [{"$match": query}]
+        aggregate = [{"$match": query}, {"$unset": "errors"}]
+
+        if not resources:
+            aggregate.extend([{"$unset": ["files"]}])
 
         if name:
             aggregate.extend([{"$match": {"name": name}}])
@@ -416,18 +425,10 @@ class BaseCrawlOps:
 
         crawls = []
         for res in items:
-            files = None
-            if res.get("files"):
-                files = [CrawlFile(**data) for data in res["files"]]
-                del res["files"]
-
             crawl = cls_type.from_dict(res)
-            if hasattr(crawl, "resources"):
-                # pylint: disable=attribute-defined-outside-init
-                crawl.resources = await self._resolve_signed_urls(files, org, crawl.id)
 
-            if crawl.type == "crawl":
-                crawl = await self._resolve_crawl_refs(crawl, org)
+            if resources or crawl.type == "crawl":
+                crawl = await self._resolve_crawl_refs(crawl, org, resources=resources)
 
             crawls.append(crawl)
 
@@ -490,18 +491,17 @@ def init_base_crawls_api(
         return paginated_format(crawls, total, page, pageSize)
 
     @app.get(
-        "/orgs/{oid}/all-crawls/{crawlid}",
+        "/orgs/{oid}/all-crawls/{crawl_id}",
         tags=["all-crawls"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
-    async def get_base_crawl(crawlid: str, org: Organization = Depends(org_crawl_dep)):
-        res = await ops.get_resource_resolved_raw_crawl(crawlid, org)
-        return BaseCrawlOutWithResources.from_dict(res)
+    async def get_base_crawl(crawl_id: str, org: Organization = Depends(org_crawl_dep)):
+        return await ops.get_crawl(crawl_id, org)
 
     @app.get(
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_base_crawl_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -512,7 +512,7 @@ def init_base_crawls_api(
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org)

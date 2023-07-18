@@ -16,7 +16,7 @@ from .orgs import MAX_CRAWL_SCALE
 
 # ============================================================================
 
-### CONFIGS ###
+### CRAWL CONFIGS ###
 
 
 # ============================================================================
@@ -297,8 +297,8 @@ class BaseCrawl(BaseMongoModel):
 
 
 # ============================================================================
-class BaseCrawlOut(BaseMongoModel):
-    """Base crawl output model"""
+class CrawlOut(BaseMongoModel):
+    """Crawl output model, shared across all crawl types"""
 
     # pylint: disable=duplicate-code
 
@@ -339,12 +339,16 @@ class BaseCrawlOut(BaseMongoModel):
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
+    stopping: Optional[bool]
+    manual: Optional[bool]
+    cid_rev: Optional[int]
 
 
 # ============================================================================
-class BaseCrawlOutWithResources(BaseCrawlOut):
-    """includes resources"""
+class CrawlOutWithResources(CrawlOut):
+    """Crawl output model including resources"""
 
+    files: Optional[List[CrawlFile]] = []
     resources: Optional[List[CrawlFileOut]] = []
 
 
@@ -365,7 +369,7 @@ class DeleteCrawlList(BaseModel):
 
 # ============================================================================
 
-### CRAWLS ###
+### AUTOMATED CRAWLS ###
 
 
 # ============================================================================
@@ -392,69 +396,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
 
 # ============================================================================
-class CrawlOut(Crawl):
-    """Output for single crawl, with additional fields"""
-
-    userName: Optional[str]
-    name: Optional[str]
-    description: Optional[str]
-    profileName: Optional[str]
-    resources: Optional[List[CrawlFileOut]] = []
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-
-# ============================================================================
-class ListCrawlOut(BaseMongoModel):
-    """Crawl output model for list view"""
-
-    # pylint: disable=duplicate-code
-
-    id: str
-
-    userid: UUID4
-    userName: Optional[str]
-
-    oid: UUID4
-    cid: UUID4
-    name: Optional[str]
-    description: Optional[str]
-
-    manual: Optional[bool]
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    fileSize: int = 0
-    fileCount: int = 0
-
-    tags: Optional[List[str]] = []
-
-    notes: Optional[str]
-
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-    stopping: Optional[bool] = False
-
-    collections: Optional[List[UUID4]] = []
-
-
-# ============================================================================
-class ListCrawlOutWithResources(ListCrawlOut):
-    """Crawl output model used internally with files and resources."""
-
-    files: Optional[List[CrawlFile]] = []
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
 class CrawlCompleteIn(BaseModel):
     """Completed Crawl Webhook POST message"""
 
@@ -467,3 +408,24 @@ class CrawlCompleteIn(BaseModel):
     hash: str
 
     completed: Optional[bool] = True
+
+
+# ============================================================================
+
+### UPLOADED CRAWLS ###
+
+
+# ============================================================================
+class UploadedCrawl(BaseCrawl):
+    """Store State of a Crawl Upload"""
+
+    type: str = Field("upload", const=True)
+
+    name: str
+
+
+# ============================================================================
+class UpdateUpload(UpdateCrawl):
+    """Update modal that also includes name"""
+
+    name: Optional[str]
