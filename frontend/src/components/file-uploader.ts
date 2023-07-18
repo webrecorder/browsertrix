@@ -1,10 +1,10 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import type { SlButton } from "@shoelace-style/shoelace";
-import { snakeCase } from "lodash/fp";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
@@ -21,6 +21,10 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileName: string;
   fileSize: number;
 }>;
+type UploadMetadata = {
+  name?: string;
+  description?: string;
+};
 
 const ABORT_REASON_USER_CANCEL = "user-canceled";
 
@@ -51,10 +55,13 @@ export class FileUploader extends LiteElement {
   open = false;
 
   @state()
-  private isSubmittingUpdate: boolean = false;
+  private isUploading: boolean = false;
 
   @state()
   private isDialogVisible: boolean = false;
+
+  @state()
+  private isConfirmingCancel: boolean = false;
 
   @state()
   private tagOptions: Tags = [];
@@ -96,10 +103,12 @@ export class FileUploader extends LiteElement {
         ?open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
-        @sl-request-close=${this.requestClose}
+        @sl-request-close=${this.onCancel}
         style="--width: 60rem;"
       >
-        ${this.isDialogVisible ? this.renderForm() : ""}
+        ${when(this.isDialogVisible, () =>
+          this.isUploading ? this.renderUploading() : this.renderForm()
+        )}
       </btrix-dialog>
     `;
   }
@@ -109,12 +118,12 @@ export class FileUploader extends LiteElement {
       <form
         id="fileUploadForm"
         @submit=${this.onSubmit}
-        @reset=${this.requestClose}
+        @reset=${this.onCancel}
       >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <section class="col-span-1 flex flex-col gap-3">
             <h4 class="flex-0 text-lg leading-none font-semibold">
-              ${msg("File to upload")}
+              ${msg("File to Upload")}
             </h4>
             <main class="flex-1 border rounded p-3">${this.renderFiles()}</main>
           </section>
@@ -128,7 +137,6 @@ export class FileUploader extends LiteElement {
           </section>
         </div>
       </form>
-
       <div slot="footer" class="flex justify-between">
         <sl-button form="fileUploadForm" type="reset" size="small"
           >${msg("Cancel")}</sl-button
@@ -138,8 +146,8 @@ export class FileUploader extends LiteElement {
           variant="primary"
           type="submit"
           size="small"
-          ?loading=${this.isSubmittingUpdate}
-          ?disabled=${!this.fileList.length || this.isSubmittingUpdate}
+          ?loading=${this.isUploading}
+          ?disabled=${!this.fileList.length || this.isUploading}
           >${msg("Upload Archive")}</sl-button
         >
       </div>
@@ -224,6 +232,64 @@ export class FileUploader extends LiteElement {
     `;
   }
 
+  private renderUploading() {
+    if (this.isConfirmingCancel) {
+      return html`
+        <div class="p-5 flex flex-col gap-3">
+          <p>${msg("Cancel this upload?")}</p>
+          <div>
+            <btrix-file-list>
+              ${Array.from(this.fileList).map(
+                (file) => html`<btrix-file-list-item
+                  .file=${file}
+                  progressIndeterminate
+                  @on-remove=${this.handleRemoveFile}
+                ></btrix-file-list-item>`
+              )}
+            </btrix-file-list>
+          </div>
+          <div class="flex gap-3">
+            <sl-button
+              size="small"
+              @click=${() => (this.isConfirmingCancel = false)}
+            >
+              ${msg("No")}
+            </sl-button>
+            <sl-button size="small" @click=${() => this.requestClose()}>
+              ${msg("Yes")}
+            </sl-button>
+          </div>
+        </div>
+      `;
+    }
+    return html`
+      <section class="flex flex-col gap-3">
+        <h4 class="flex-0 text-lg leading-none font-semibold">
+          ${msg("Uploading File")}
+        </h4>
+        <p class="text-neutral-500">
+          ${msg("Keep this window open until your upload finishes.")}
+        </p>
+        <main class="flex-1 overflow-auto">
+          <btrix-file-list>
+            ${Array.from(this.fileList).map(
+              (file) => html`<btrix-file-list-item
+                .file=${file}
+                progressIndeterminate
+                @on-remove=${this.handleRemoveFile}
+              ></btrix-file-list-item>`
+            )}
+          </btrix-file-list>
+        </main>
+      </section>
+      <div slot="footer" class="flex justify-between">
+        <sl-button size="small" @click=${() => this.onCancel()}>
+          ${msg("Cancel")}
+        </sl-button>
+      </div>
+    `;
+  }
+
   private handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.file);
@@ -244,7 +310,15 @@ export class FileUploader extends LiteElement {
   private resetForm() {
     this.fileList = [];
     this.tagsToSave = [];
-    this.isSubmittingUpdate = false;
+    this.isUploading = false;
+  }
+
+  private onCancel() {
+    if (this.isUploading) {
+      this.isConfirmingCancel = true;
+    } else {
+      this.requestClose();
+    }
   }
 
   private requestClose() {
@@ -280,12 +354,17 @@ export class FileUploader extends LiteElement {
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
-    const { name, description } = serialize(formEl);
 
     const file = this.fileList[0];
     if (!file) return;
 
-    this.isSubmittingUpdate = true;
+    this.isUploading = true;
+    await this.upload(file, serialize(formEl) as UploadMetadata);
+    this.isUploading = false;
+  }
+
+  private async upload(file: File, metadata: UploadMetadata) {
+    const { name, description } = metadata;
     this.dispatchEvent(
       <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
         detail: {
@@ -327,12 +406,12 @@ export class FileUploader extends LiteElement {
             },
           })
         );
+        this.onCancel();
         this.notify({
-          message: msg("Successfully uploaded file."),
+          message: msg(str`Successfully uploaded "${file.name}".`),
           variant: "success",
           icon: "check2-circle",
         });
-        this.requestClose();
       } else {
         throw data;
       }
@@ -348,8 +427,6 @@ export class FileUploader extends LiteElement {
         });
       }
     }
-
-    this.isSubmittingUpdate = false;
   }
 
   private async checkFormValidity(formEl: HTMLFormElement) {

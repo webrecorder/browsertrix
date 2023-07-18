@@ -20,8 +20,6 @@ export class FileListItem extends LitElement {
     truncate,
     css`
       .item {
-        display: flex;
-        box-sizing: border-box;
         overflow: hidden;
         border-top: var(--item-border-top, 0);
         border-left: var(--item-border-left, 0);
@@ -29,14 +27,17 @@ export class FileListItem extends LitElement {
         border-bottom: var(--item-border-bottom, 0);
         border-radius: var(--item-border-radius, 0);
         box-shadow: var(--item-box-shadow, none);
-        padding: var(--sl-spacing-3x-small);
         color: var(--sl-color-neutral-700);
+      }
+
+      .file {
+        display: flex;
       }
 
       .details {
         flex: 1 1 0%;
         min-width: 0;
-        padding: var(--sl-spacing-2x-small);
+        padding: var(--sl-spacing-x-small);
       }
 
       .name {
@@ -49,24 +50,54 @@ export class FileListItem extends LitElement {
         font-variation-settings: var(--font-monostyle-variation);
         color: var(--sl-color-neutral-500);
       }
+
+      .actions {
+        padding: var(--sl-spacing-3x-small);
+      }
+
+      .progress {
+        padding: 0 var(--sl-spacing-x-small) var(--sl-spacing-x-small);
+      }
     `,
   ];
 
   @property({ type: File })
   file?: File | null = null;
 
+  @property({ type: Number })
+  progressValue?: number;
+
+  @property({ type: Boolean })
+  progressIndeterminate?: boolean;
+
   render() {
     if (!this.file) return;
     return html`<div class="item">
-      <div class="details">
-        <div class="name">${this.file.name}</div>
-        <div class="size">
-          <sl-format-bytes value=${this.file.size}></sl-format-bytes>
+      <div class="file">
+        <div class="details">
+          <div class="name">${this.file.name}</div>
+          <div class="size">
+            <sl-format-bytes value=${this.file.size}></sl-format-bytes>
+          </div>
+        </div>
+        <div class="actions">
+          ${this.progressValue || this.progressIndeterminate
+            ? ""
+            : html`<sl-icon-button
+                name="trash3"
+                @click=${this.onRemove}
+              ></sl-icon-button>`}
         </div>
       </div>
-      <div class="actions">
-        <sl-icon-button name="trash3" @click=${this.onRemove}></sl-icon-button>
-      </div>
+      ${this.progressValue || this.progressIndeterminate
+        ? html`<div class="progress">
+            <sl-progress-bar
+              value=${this.progressValue || 0}
+              ?indeterminate=${this.progressIndeterminate}
+              style="--height: 0.25rem;"
+            ></sl-progress-bar>
+          </div>`
+        : ""}
     </div>`;
   }
 
