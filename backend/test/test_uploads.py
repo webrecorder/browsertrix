@@ -291,6 +291,18 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
     assert r.json()["deleted"] == True
 
 
+def test_ensure_deleted(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    results = r.json()
+
+    for res in results["items"]:
+        if res["id"] == upload_id:
+            assert False
+
+
 def test_replace_upload_non_existent(
     admin_auth_headers, default_org_id, uploads_collection_id
 ):
@@ -421,15 +433,3 @@ def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
         json={"crawl_ids": [upload_id_2]},
     )
     assert r.json()["deleted"] == True
-
-
-def test_ensure_deleted(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
-        headers=admin_auth_headers,
-    )
-    results = r.json()
-
-    for res in results["items"]:
-        if res["id"] == upload_id:
-            assert False
