@@ -12,6 +12,16 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { maxLengthValidator } from "../utils/form";
 import type { FileRemoveEvent } from "./file-list";
 
+export type FileUploaderRequestCloseEvent = CustomEvent<{}>;
+export type FileUploaderUploadStartEvent = CustomEvent<{
+  fileName: string;
+  fileSize: number;
+}>;
+export type FileUploaderUploadedEvent = CustomEvent<{
+  fileName: string;
+  fileSize: number;
+}>;
+
 const ABORT_REASON_USER_CANCEL = "user-canceled";
 
 /**
@@ -26,6 +36,7 @@ const ABORT_REASON_USER_CANCEL = "user-canceled";
  * ```
  *
  * @event request-close
+ * @event upload-start
  * @event uploaded
  */
 @localized()
@@ -238,7 +249,9 @@ export class FileUploader extends LiteElement {
 
   private requestClose() {
     this.cancelUpload();
-    this.dispatchEvent(new CustomEvent("request-close"));
+    this.dispatchEvent(
+      <FileUploaderRequestCloseEvent>new CustomEvent("request-close")
+    );
   }
 
   private onTagInput = (e: TagInputEvent) => {
@@ -269,13 +282,22 @@ export class FileUploader extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
     const { name, description } = serialize(formEl);
 
+    const file = this.fileList[0];
+    if (!file) return;
+
     this.isSubmittingUpdate = true;
+    this.dispatchEvent(
+      <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
+        detail: {
+          fileName: file.name,
+          fileSize: file.size,
+        },
+      })
+    );
 
     try {
-      const file = this.fileList[0];
-      const filename = file?.name || snakeCase(name as string);
       const query = queryString.stringify({
-        filename,
+        filename: file.name,
         name,
         notes: description,
         // TODO tags with API support
@@ -297,7 +319,14 @@ export class FileUploader extends LiteElement {
       this.uploadController = null;
 
       if (data.id && data.added) {
-        this.dispatchEvent(new CustomEvent("uploaded"));
+        this.dispatchEvent(
+          <FileUploaderUploadedEvent>new CustomEvent("uploaded", {
+            detail: {
+              fileName: file.name,
+              fileSize: file.size,
+            },
+          })
+        );
         this.notify({
           message: msg("Successfully uploaded file."),
           variant: "success",
@@ -308,8 +337,7 @@ export class FileUploader extends LiteElement {
         throw data;
       }
     } catch (err: any) {
-      console.log("err:", err);
-      if (err === ABORT_REASON_USER_CANCEL) {
+      if ((err.message || err) === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {
         console.debug(err);
@@ -324,7 +352,7 @@ export class FileUploader extends LiteElement {
     this.isSubmittingUpdate = false;
   }
 
-  async checkFormValidity(formEl: HTMLFormElement) {
+  private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
   }
