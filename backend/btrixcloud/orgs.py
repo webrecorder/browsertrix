@@ -26,7 +26,6 @@ from .models import (
     InviteToOrgRequest,
     UserRole,
     User,
-    MAX_CRAWL_SCALE,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
