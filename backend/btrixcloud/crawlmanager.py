@@ -8,10 +8,8 @@ import base64
 
 from datetime import timedelta
 
-from .orgs import S3Storage
-
 from .k8sapi import K8sAPI
-
+from .models import S3Storage
 from .utils import dt_now, to_k8s_date
 
 

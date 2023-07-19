@@ -10,7 +10,6 @@ import pymongo
 from fastapi import Depends, HTTPException
 
 from .basecrawls import SUCCESSFUL_STATES
-from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     Collection,
@@ -19,6 +18,7 @@ from .models import (
     UpdateColl,
     AddRemoveCrawlList,
     CrawlOutWithResources,
+    Organization,
 )
 
 

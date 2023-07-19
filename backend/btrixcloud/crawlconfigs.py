@@ -16,7 +16,6 @@ from pydantic import UUID4
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .users import User
-from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     CrawlConfigIn,
@@ -25,6 +24,7 @@ from .models import (
     CrawlConfigOut,
     CrawlConfigIdNameOut,
     UpdateCrawlConfig,
+    Organization,
 )
 
 

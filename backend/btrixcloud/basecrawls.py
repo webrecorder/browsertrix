@@ -18,8 +18,8 @@ from .models import (
     CrawlOutWithResources,
     UpdateCrawl,
     DeleteCrawlList,
+    Organization,
 )
-from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .users import User

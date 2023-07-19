@@ -17,7 +17,6 @@ from redis import asyncio as exceptions
 import pymongo
 
 from .crawlconfigs import set_config_current_crawl_info
-from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
 from .users import User
@@ -33,6 +32,7 @@ from .models import (
     Crawl,
     CrawlOut,
     CrawlOutWithResources,
+    Organization,
 )
 from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 

@@ -23,9 +23,9 @@ from .models import (
     DeleteCrawlList,
     UploadedCrawl,
     UpdateUpload,
+    Organization,
 )
 from .users import User
-from .orgs import Organization
 from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
