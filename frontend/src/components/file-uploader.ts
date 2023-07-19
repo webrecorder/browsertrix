@@ -92,7 +92,7 @@ export class FileUploader extends LiteElement {
   private validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
-  private uploadController: XMLHttpRequest | null = null;
+  private uploadRequest: XMLHttpRequest | null = null;
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
@@ -337,7 +337,7 @@ export class FileUploader extends LiteElement {
   };
 
   private cancelUpload() {
-    this.uploadController?.abort();
+    this.uploadRequest?.abort();
     this.onUploadProgress.cancel();
   }
 
@@ -417,7 +417,7 @@ export class FileUploader extends LiteElement {
         `orgs/${this.orgId}/uploads/stream?${query}`,
         file
       );
-      this.uploadController = null;
+      this.uploadRequest = null;
 
       if (data.id && data.added) {
         this.dispatchEvent(
@@ -492,7 +492,7 @@ export class FileUploader extends LiteElement {
 
       xhr.send(file);
 
-      this.uploadController = xhr;
+      this.uploadRequest = xhr;
     });
   }
 
