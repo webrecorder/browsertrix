@@ -25,7 +25,15 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import MongoDBUserDatabase
 
-from .models import User, UserCreateIn, UserCreate, UserUpdate, UserDB, UserRole
+from .models import (
+    User,
+    UserCreateIn,
+    UserCreate,
+    UserUpdate,
+    UserDB,
+    UserRole,
+    PaginatedResponse,
+)
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
@@ -414,7 +422,7 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
-    @users_router.get("/invites", tags=["invites"])
+    @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
     async def get_pending_invites(
         user: User = Depends(current_active_user),
         pageSize: int = DEFAULT_PAGE_SIZE,

@@ -26,6 +26,7 @@ from .models import (
     InviteToOrgRequest,
     UserRole,
     User,
+    PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -310,7 +311,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     ops.org_crawl_dep = org_crawl_dep
     ops.org_owner_dep = org_owner_dep
 
-    @app.get("/orgs", tags=["organizations"])
+    @app.get("/orgs", tags=["organizations"], response_model=PaginatedResponse)
     async def get_orgs(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,

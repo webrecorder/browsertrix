@@ -19,6 +19,7 @@ from .models import (
     AddRemoveCrawlList,
     CrawlOutWithResources,
     Organization,
+    PaginatedResponse,
 )
 
 
@@ -339,6 +340,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections",
         tags=["collections"],
+        response_model=PaginatedResponse,
     )
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),

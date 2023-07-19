@@ -22,6 +22,7 @@ from .models import (
     ProfileCreateUpdate,
     Organization,
     User,
+    PaginatedResponse,
 )
 
 
@@ -355,7 +356,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
         await browser_get_metadata(browserid, org)
         return browserid
 
-    @router.get("")
+    @router.get("", response_model=PaginatedResponse)
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID4] = None,

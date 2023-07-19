@@ -25,6 +25,7 @@ from .models import (
     UpdateCrawlConfig,
     Organization,
     User,
+    PaginatedResponse,
 )
 
 
@@ -858,7 +859,7 @@ def init_crawl_config_api(
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.get("")
+    @router.get("", response_model=PaginatedResponse)
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,

@@ -33,6 +33,7 @@ from .models import (
     CrawlOutWithResources,
     Organization,
     User,
+    PaginatedResponse,
 )
 from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
@@ -677,7 +678,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         )
         return paginated_format(crawls, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"])
+    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=PaginatedResponse)
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
