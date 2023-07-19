@@ -437,7 +437,14 @@ export class FileUploader extends LiteElement {
         );
         this.requestClose();
         this.notify({
-          message: msg(str`Successfully uploaded "${name}".`),
+          message: msg(html`Successfully uploaded
+            <strong>${name}</strong>.<br />
+            <a
+              class="underline hover:no-underline"
+              href="/orgs/${this.orgId}/artifacts/upload/${data.id}"
+              @click="${this.navLink.bind(this)}"
+              >View Archive</a
+            > `),
           variant: "success",
           icon: "check2-circle",
         });

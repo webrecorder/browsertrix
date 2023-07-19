@@ -363,14 +363,10 @@ export class CrawlsList extends LiteElement {
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
-              if (this.artifactType === "upload") {
+              if (this.artifactType !== "crawl") {
                 this.fetchCrawls({
                   page: 1,
                 });
-              } else {
-                this.navTo(
-                  `/orgs/${this.orgId}/artifacts/crawls?artifactType=upload`
-                );
               }
             }}
           ></btrix-file-uploader>
