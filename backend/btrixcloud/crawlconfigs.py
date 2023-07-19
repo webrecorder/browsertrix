@@ -15,7 +15,6 @@ import pymongo
 from pydantic import UUID4
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from .users import User
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     CrawlConfigIn,
@@ -25,6 +24,7 @@ from .models import (
     CrawlConfigIdNameOut,
     UpdateCrawlConfig,
     Organization,
+    User,
 )
 
 

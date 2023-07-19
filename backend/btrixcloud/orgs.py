@@ -12,8 +12,6 @@ from typing import Union
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .users import User
-
 from .models import (
     Organization,
     DefaultStorage,
@@ -27,8 +25,8 @@ from .models import (
     InvitePending,
     InviteToOrgRequest,
     UserRole,
+    User,
 )
-
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 # crawl scale for constraint

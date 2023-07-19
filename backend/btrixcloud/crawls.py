@@ -19,7 +19,6 @@ import pymongo
 from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
-from .users import User
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
@@ -33,6 +32,7 @@ from .models import (
     CrawlOut,
     CrawlOutWithResources,
     Organization,
+    User,
 )
 from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 

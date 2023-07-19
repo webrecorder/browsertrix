@@ -25,8 +25,8 @@ from .models import (
     UpdateUpload,
     Organization,
     PaginatedResponse,
+    User,
 )
-from .users import User
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now

@@ -20,10 +20,10 @@ from .models import (
     DeleteCrawlList,
     Organization,
     PaginatedResponse,
+    User,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
-from .users import User
 from .utils import dt_now, get_redis_crawl_stats
 
 

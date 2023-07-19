@@ -6,7 +6,8 @@ from datetime import datetime
 from enum import Enum, IntEnum
 
 from typing import Optional, List, Dict, Union, Literal, Any
-from pydantic import BaseModel, UUID4, conint, Field, HttpUrl
+from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, EmailStr
+from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
 from .orgs import MAX_CRAWL_SCALE
@@ -758,3 +759,68 @@ class ProfileCreateUpdate(BaseModel):
     browserid: Optional[str]
     name: str
     description: Optional[str] = ""
+
+
+# ============================================================================
+
+### USERS ###
+
+
+# ============================================================================
+class User(fastapi_users_models.BaseUser):
+    """
+    Base User Model
+    """
+
+    name: Optional[str] = ""
+
+
+# ============================================================================
+# use custom model as model.BaseUserCreate includes is_* field
+class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
+    """
+    User Creation Model exposed to API
+    """
+
+    email: EmailStr
+    password: str
+
+    name: Optional[str] = ""
+
+    inviteToken: Optional[UUID4]
+
+    newOrg: bool
+    newOrgName: Optional[str] = ""
+
+
+# ============================================================================
+class UserCreate(fastapi_users_models.BaseUserCreate):
+    """
+    User Creation Model
+    """
+
+    name: Optional[str] = ""
+
+    inviteToken: Optional[UUID4]
+
+    newOrg: bool
+    newOrgName: Optional[str] = ""
+
+
+# ============================================================================
+class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
+    """
+    User Update Model
+    """
+
+    password: Optional[str]
+    email: Optional[EmailStr]
+
+
+# ============================================================================
+class UserDB(User, fastapi_users_models.BaseUserDB):
+    """
+    User in DB Model
+    """
+
+    invites: Dict[str, InvitePending] = {}

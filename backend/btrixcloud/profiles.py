@@ -12,8 +12,6 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .users import User
-
 from .models import (
     Profile,
     ProfileWithCrawlConfigs,
@@ -23,6 +21,7 @@ from .models import (
     BrowserId,
     ProfileCreateUpdate,
     Organization,
+    User,
 )
 
 
