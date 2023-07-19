@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, queryAsync } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -75,6 +75,9 @@ export class FileUploader extends LiteElement {
   @state()
   private fileList: File[] = [];
 
+  @queryAsync("#fileUploadForm")
+  private form!: Promise<HTMLFormElement>;
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     shouldSort: false,
@@ -140,18 +143,32 @@ export class FileUploader extends LiteElement {
             </main>
           </section>
         </div>
+        <input class="invisible h-0 w-0" type="submit" />
       </form>
       <div slot="footer" class="flex justify-between">
-        <sl-button form="fileUploadForm" type="reset" size="small"
+        <sl-button
+          size="small"
+          @click=${async () => {
+            // Using reset method instead of type="reset" fixes
+            // incorrect getRootNode in Chrome
+            (await this.form).reset();
+          }}
           >${msg("Cancel")}</sl-button
         >
         <sl-button
-          form="fileUploadForm"
           variant="primary"
-          type="submit"
           size="small"
           ?loading=${this.isUploading}
           ?disabled=${!this.fileList.length || this.isUploading}
+          @click=${async () => {
+            // Using submit method instead of type="submit" fixes
+            // incorrect getRootNode in Chrome
+            const form = await this.form;
+            const submitInput = form.querySelector(
+              'input[type="submit"]'
+            ) as HTMLInputElement;
+            form.requestSubmit(submitInput);
+          }}
           >${msg("Upload File")}</sl-button
         >
       </div>
@@ -363,6 +380,8 @@ export class FileUploader extends LiteElement {
 
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
+
+    await this.updateComplete;
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
