@@ -26,11 +26,10 @@ from .models import (
     InviteToOrgRequest,
     UserRole,
     User,
+    MAX_CRAWL_SCALE,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
-# crawl scale for constraint
-MAX_CRAWL_SCALE = 3
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 

@@ -10,12 +10,12 @@ from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, EmailStr
 from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
-from .orgs import MAX_CRAWL_SCALE
+
+# crawl scale for constraint
+MAX_CRAWL_SCALE = 3
 
 
 # pylint: disable=invalid-name
-
-
 # ============================================================================
 
 ### MAIN USER MODEL ###
