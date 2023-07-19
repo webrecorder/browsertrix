@@ -691,3 +691,70 @@ class PaginatedResponse(BaseModel):
     total: int
     page: int
     pageSize: int
+
+
+# ============================================================================
+
+### PROFILES ###
+
+
+# ============================================================================
+class ProfileFile(BaseModel):
+    """file from a crawl"""
+
+    filename: str
+    hash: str
+    size: int
+
+
+# ============================================================================
+class Profile(BaseMongoModel):
+    """Browser profile"""
+
+    name: str
+    description: Optional[str] = ""
+
+    userid: UUID4
+    oid: UUID4
+
+    origins: List[str]
+    resource: Optional[ProfileFile]
+
+    created: Optional[datetime]
+
+
+# ============================================================================
+class ProfileWithCrawlConfigs(Profile):
+    """Profile with list of crawlconfigs using this profile"""
+
+    crawlconfigs: List[CrawlConfigIdNameOut] = []
+
+
+# ============================================================================
+class UrlIn(BaseModel):
+    """Request to set url"""
+
+    url: HttpUrl
+
+
+# ============================================================================
+class ProfileLaunchBrowserIn(UrlIn):
+    """Request to launch new browser for creating profile"""
+
+    profileId: Optional[UUID4]
+
+
+# ============================================================================
+class BrowserId(BaseModel):
+    """Profile id on newly created profile"""
+
+    browserid: str
+
+
+# ============================================================================
+class ProfileCreateUpdate(BaseModel):
+    """Profile metadata for committing current browser to profile"""
+
+    browserid: Optional[str]
+    name: str
+    description: Optional[str] = ""
