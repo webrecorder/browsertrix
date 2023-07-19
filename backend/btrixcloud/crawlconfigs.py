@@ -33,6 +33,8 @@ from .models import (
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+
     def __init__(self, dbclient, mdb, user_manager, org_ops, crawl_manager, profiles):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
