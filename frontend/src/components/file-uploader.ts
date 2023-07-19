@@ -419,7 +419,7 @@ export class FileUploader extends LiteElement {
         );
         this.requestClose();
         this.notify({
-          message: msg(str`Successfully uploaded "${file.name}".`),
+          message: msg(str`Successfully uploaded "${name}".`),
           variant: "success",
           icon: "check2-circle",
         });

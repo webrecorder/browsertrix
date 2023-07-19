@@ -145,7 +145,7 @@ export class CrawlsList extends LiteElement {
   private isEditingCrawl = false;
 
   @state()
-  private isUploadingArchive = true;
+  private isUploadingArchive = false;
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
