@@ -1,7 +1,6 @@
 """ Invite system management """
 
 from datetime import datetime
-from enum import IntEnum
 from typing import Optional
 import os
 import urllib.parse
@@ -9,55 +8,10 @@ import time
 import uuid
 
 from pymongo.errors import AutoReconnect
-from pydantic import BaseModel, UUID4
 from fastapi import HTTPException
 
-from .db import BaseMongoModel
 from .pagination import DEFAULT_PAGE_SIZE
-
-
-# ============================================================================
-class UserRole(IntEnum):
-    """User role"""
-
-    VIEWER = 10
-    CRAWLER = 20
-    OWNER = 40
-    SUPERADMIN = 100
-
-
-# ============================================================================
-class InvitePending(BaseMongoModel):
-    """An invite for a new user, with an email and invite token as id"""
-
-    created: datetime
-    inviterEmail: str
-    oid: Optional[UUID4]
-    role: Optional[UserRole] = UserRole.VIEWER
-    email: Optional[str]
-
-
-# ============================================================================
-class InviteRequest(BaseModel):
-    """Request to invite another user"""
-
-    email: str
-
-
-# ============================================================================
-class InviteToOrgRequest(InviteRequest):
-    """Request to invite another user to an organization"""
-
-    role: UserRole
-
-
-# ============================================================================
-class AddToOrgRequest(InviteRequest):
-    """Request to add a new user to an organization directly"""
-
-    role: UserRole
-    password: str
-    name: str
+from .models import UserRole, InvitePending, InviteRequest
 
 
 # ============================================================================

@@ -17,7 +17,7 @@ from .db import BaseMongoModel
 
 from .users import User
 
-from .invites import (
+from .models import (
     AddToOrgRequest,
     InvitePending,
     InviteRequest,

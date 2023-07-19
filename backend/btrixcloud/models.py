@@ -3,7 +3,7 @@ Crawl-related models and types
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum
 
 from typing import Optional, List, Dict, Union
 from pydantic import BaseModel, UUID4, conint, Field, HttpUrl
@@ -481,3 +481,52 @@ class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
     crawlIds: Optional[List[str]] = []
+
+
+# ============================================================================
+
+### INVITES ###
+
+
+# ============================================================================
+class UserRole(IntEnum):
+    """User role"""
+
+    VIEWER = 10
+    CRAWLER = 20
+    OWNER = 40
+    SUPERADMIN = 100
+
+
+# ============================================================================
+class InvitePending(BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
+
+    created: datetime
+    inviterEmail: str
+    oid: Optional[UUID4]
+    role: Optional[UserRole] = UserRole.VIEWER
+    email: Optional[str]
+
+
+# ============================================================================
+class InviteRequest(BaseModel):
+    """Request to invite another user"""
+
+    email: str
+
+
+# ============================================================================
+class InviteToOrgRequest(InviteRequest):
+    """Request to invite another user to an organization"""
+
+    role: UserRole
+
+
+# ============================================================================
+class AddToOrgRequest(InviteRequest):
+    """Request to add a new user to an organization directly"""
+
+    role: UserRole
+    password: str
+    name: str
