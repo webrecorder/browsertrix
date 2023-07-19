@@ -75,6 +75,9 @@ export class FileUploader extends LiteElement {
   @state()
   private fileList: File[] = [];
 
+  @state()
+  private progress: number = 0;
+
   @queryAsync("#fileUploadForm")
   private form!: Promise<HTMLFormElement>;
 
@@ -87,7 +90,7 @@ export class FileUploader extends LiteElement {
   private validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
-  private uploadController: AbortController | null = null;
+  private uploadController: XMLHttpRequest | null = null;
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
@@ -266,7 +269,7 @@ export class FileUploader extends LiteElement {
               ${Array.from(this.fileList).map(
                 (file) => html`<btrix-file-list-item
                   .file=${file}
-                  progressIndeterminate
+                  progressValue=${this.progress}
                   @on-remove=${this.handleRemoveFile}
                 ></btrix-file-list-item>`
               )}
@@ -306,7 +309,7 @@ export class FileUploader extends LiteElement {
             ${Array.from(this.fileList).map(
               (file) => html`<btrix-file-list-item
                 .file=${file}
-                progressIndeterminate
+                progressValue=${this.progress}
                 @on-remove=${this.handleRemoveFile}
               ></btrix-file-list-item>`
             )}
@@ -332,7 +335,7 @@ export class FileUploader extends LiteElement {
   };
 
   private cancelUpload() {
-    this.uploadController?.abort(ABORT_REASON_USER_CANCEL);
+    this.uploadController?.abort();
   }
 
   private resetState() {
@@ -388,12 +391,6 @@ export class FileUploader extends LiteElement {
     if (!file) return;
 
     this.isUploading = true;
-    await this.upload(file, serialize(formEl) as UploadMetadata);
-    this.isUploading = false;
-  }
-
-  private async upload(file: File, metadata: UploadMetadata) {
-    const { name, description } = metadata;
     this.dispatchEvent(
       <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
         detail: {
@@ -403,7 +400,7 @@ export class FileUploader extends LiteElement {
       })
     );
 
-    this.uploadController = new AbortController();
+    const { name, description } = serialize(formEl);
     try {
       const query = queryString.stringify({
         filename: file.name,
@@ -412,17 +409,9 @@ export class FileUploader extends LiteElement {
         collections: this.collectionIds,
         tags: this.tagsToSave,
       });
-      const data: { id: string; added: boolean } = await this.apiFetch(
-        `/orgs/${this.orgId}/uploads/stream?${query}`,
-        this.authState!,
-        {
-          headers: {
-            "Content-Type": "application/octet-stream",
-          },
-          method: "PUT",
-          body: file,
-          signal: this.uploadController.signal,
-        }
+      const data = await this.upload(
+        `orgs/${this.orgId}/uploads/stream?${query}`,
+        file
       );
       this.uploadController = null;
 
@@ -452,8 +441,7 @@ export class FileUploader extends LiteElement {
         throw data;
       }
     } catch (err: any) {
-      const reason = this.uploadController?.signal.reason;
-      if (reason === ABORT_REASON_USER_CANCEL) {
+      if (err === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {
         console.debug(err);
@@ -464,6 +452,46 @@ export class FileUploader extends LiteElement {
         });
       }
     }
+    this.isUploading = false;
+  }
+
+  // Use XHR to get upload progress
+  private upload(
+    url: string,
+    file: File
+  ): Promise<{ id: string; added: boolean }> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.open("PUT", `/api/${url}`);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      Object.entries(this.authState!.headers).forEach(([k, v]) => {
+        xhr.setRequestHeader(k, v);
+      });
+      xhr.addEventListener("load", () => {
+        if (xhr.status === 200) {
+          resolve(JSON.parse(xhr.response));
+        }
+      });
+      xhr.addEventListener("error", () => {
+        // TODO new APIError
+        reject({
+          message: xhr.statusText,
+          status: xhr.status,
+        });
+      });
+      xhr.addEventListener("abort", () => {
+        reject(ABORT_REASON_USER_CANCEL);
+      });
+      xhr.upload.addEventListener("progress", (e) => {
+        // TODO throttle?
+        this.progress = (e.loaded / e.total) * 100;
+      });
+
+      xhr.send(file);
+
+      this.uploadController = xhr;
+    });
   }
 
   private async checkFormValidity(formEl: HTMLFormElement) {

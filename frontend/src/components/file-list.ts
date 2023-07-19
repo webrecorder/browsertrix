@@ -77,7 +77,12 @@ export class FileListItem extends LitElement {
         <div class="details">
           <div class="name">${this.file.name}</div>
           <div class="size">
-            <sl-format-bytes value=${this.file.size}></sl-format-bytes>
+            ${this.progressValue !== undefined
+              ? html`<sl-format-bytes
+                    value=${(this.progressValue / 100) * this.file.size}
+                  ></sl-format-bytes>
+                  / `
+              : ""}<sl-format-bytes value=${this.file.size}></sl-format-bytes>
           </div>
         </div>
         <div class="actions">
