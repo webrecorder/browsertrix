@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 DEFAULT_PAGE_SIZE = 1_000
 
+
 # ============================================================================
 def paginated_format(
     items: Optional[List[Any]],
