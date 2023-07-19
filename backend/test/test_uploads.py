@@ -52,7 +52,7 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
 
 def test_get_stream_upload(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
