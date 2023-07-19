@@ -346,6 +346,7 @@ export class FileUploader extends LiteElement {
     this.tagsToSave = [];
     this.isUploading = false;
     this.isConfirmingCancel = false;
+    this.progress = 0;
   }
 
   private tryRequestClose(e?: CustomEvent) {
