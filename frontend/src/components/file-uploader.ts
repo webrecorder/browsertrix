@@ -64,6 +64,9 @@ export class FileUploader extends LiteElement {
   private isConfirmingCancel: boolean = false;
 
   @state()
+  private collectionIds: string[] = [];
+
+  @state()
   private tagOptions: Tags = [];
 
   @state()
@@ -222,11 +225,12 @@ export class FileUploader extends LiteElement {
       <div class="mt-4">
         <btrix-collections-add
           .authState=${this.authState}
-          .initialCollections=${[]}
+          .initialCollections=${this.collectionIds}
           .orgId=${this.orgId}
           .configId=${"temp"}
           label=${msg("Add to Collection")}
-          @collections-change=${(e: any) => console.log(e.detail.collections)}
+          @collections-change=${(e: CustomEvent) =>
+            (this.collectionIds = e.detail.collections)}
         >
         </btrix-collections-add>
       </div>
@@ -390,8 +394,8 @@ export class FileUploader extends LiteElement {
         filename: file.name,
         name,
         notes: description,
-        // TODO tags with API support
-        // tags: this.tagsToSave
+        collections: this.collectionIds,
+        tags: this.tagsToSave,
       });
       this.uploadController = new AbortController();
       const data: { id: string; added: boolean } = await this.apiFetch(
