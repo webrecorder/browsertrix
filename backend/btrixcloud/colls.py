@@ -9,60 +9,17 @@ from typing import Optional, List
 import pymongo
 from fastapi import Depends, HTTPException
 
-from pydantic import BaseModel, UUID4, Field
-
 from .basecrawls import SUCCESSFUL_STATES
-from .db import BaseMongoModel
 from .orgs import Organization
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .models import CrawlOutWithResources, CrawlFileOut
-
-
-# ============================================================================
-class Collection(BaseMongoModel):
-    """Org collection structure"""
-
-    name: str = Field(..., min_length=1)
-    oid: UUID4
-    description: Optional[str]
-    modified: Optional[datetime]
-
-    crawlCount: Optional[int] = 0
-    pageCount: Optional[int] = 0
-
-    # Sorted by count, descending
-    tags: Optional[List[str]] = []
-
-
-# ============================================================================
-class CollIn(BaseModel):
-    """Collection Passed in By User"""
-
-    name: str = Field(..., min_length=1)
-    description: Optional[str]
-    crawlIds: Optional[List[str]] = []
-
-
-# ============================================================================
-class CollOut(Collection):
-    """Collection output model with annotations."""
-
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class UpdateColl(BaseModel):
-    """Update collection"""
-
-    name: Optional[str]
-    description: Optional[str]
-
-
-# ============================================================================
-class AddRemoveCrawlList(BaseModel):
-    """Update crawl config name, crawl schedule, or tags"""
-
-    crawlIds: Optional[List[str]] = []
+from .models import (
+    Collection,
+    CollIn,
+    CollOut,
+    UpdateColl,
+    AddRemoveCrawlList,
+    CrawlOutWithResources,
+)
 
 
 # ============================================================================

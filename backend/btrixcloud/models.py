@@ -429,3 +429,55 @@ class UpdateUpload(UpdateCrawl):
     """Update modal that also includes name"""
 
     name: Optional[str]
+
+
+# ============================================================================
+
+### COLLECTIONS ###
+
+
+# ============================================================================
+class Collection(BaseMongoModel):
+    """Org collection structure"""
+
+    name: str = Field(..., min_length=1)
+    oid: UUID4
+    description: Optional[str]
+    modified: Optional[datetime]
+
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+
+    # Sorted by count, descending
+    tags: Optional[List[str]] = []
+
+
+# ============================================================================
+class CollIn(BaseModel):
+    """Collection Passed in By User"""
+
+    name: str = Field(..., min_length=1)
+    description: Optional[str]
+    crawlIds: Optional[List[str]] = []
+
+
+# ============================================================================
+class CollOut(Collection):
+    """Collection output model with annotations."""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
+class UpdateColl(BaseModel):
+    """Update collection"""
+
+    name: Optional[str]
+    description: Optional[str]
+
+
+# ============================================================================
+class AddRemoveCrawlList(BaseModel):
+    """Collections to add or remove from collection"""
+
+    crawlIds: Optional[List[str]] = []
