@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - ansible-*
-  pull-request:
+  pull_request:
     branches:
       - main
 
