@@ -676,3 +676,18 @@ class OrgOut(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
+
+
+# ============================================================================
+
+### PAGINATION ###
+
+
+# ============================================================================
+class PaginatedResponse(BaseModel):
+    """Paginated response model"""
+
+    items: List[Any]
+    total: int
+    page: int
+    pageSize: int

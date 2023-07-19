@@ -19,8 +19,9 @@ from .models import (
     UpdateCrawl,
     DeleteCrawlList,
     Organization,
+    PaginatedResponse,
 )
-from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
+from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .users import User
 from .utils import dt_now, get_redis_crawl_stats
@@ -461,7 +462,7 @@ def init_base_crawls_api(
     @app.get(
         "/orgs/{oid}/all-crawls",
         tags=["all-crawls"],
-        response_model=PaginatedResponseModel,
+        response_model=PaginatedResponse,
     )
     async def list_all_base_crawls(
         org: Organization = Depends(org_viewer_dep),

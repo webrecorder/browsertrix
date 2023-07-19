@@ -24,9 +24,10 @@ from .models import (
     UploadedCrawl,
     UpdateUpload,
     Organization,
+    PaginatedResponse,
 )
 from .users import User
-from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
+from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
 
@@ -242,9 +243,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
             request.stream(), filename, name, notes, org, user, replaceId
         )
 
-    @app.get(
-        "/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponseModel
-    )
+    @app.get("/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponse)
     async def list_uploads(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
