@@ -102,18 +102,18 @@ spec:
               memory: {{ .Values.mongo_requests_memory }}
 
           # should work with 6.0.x with longer timeout
-          # readinessProbe:
-          #   timeoutSeconds: 20
-          #   periodSeconds: 40
-          #   initialDelaySeconds: 5
-          #   successThreshold: 1
-          #   failureThreshold: 5
-          #   exec:
-          #     command:
-          #       - mongosh
-          #       - --eval
-          #       - db.adminCommand('ping')
-          #       - --quiet
+          readinessProbe:
+            timeoutSeconds: 20
+            periodSeconds: 40
+            initialDelaySeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - db.adminCommand('ping')
+                - --quiet
 
 ---
 apiVersion: v1
