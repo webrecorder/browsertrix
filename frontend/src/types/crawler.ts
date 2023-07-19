@@ -29,6 +29,7 @@ export type SeedConfig = Pick<
   pageExtraDelay: number | null;
   behaviors?: string | null;
   extraHops?: number | null;
+  useSitemap: boolean;
   depth?: number | null;
 };
 

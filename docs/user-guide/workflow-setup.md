@@ -74,9 +74,17 @@ This can be useful for crawling websites that span multiple domains such as `exa
 
 `Seeded Crawl`{ .badge-orange }
 
-When Enabled, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
+When enabled, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
 
 This can be useful for capturing links on a page that lead outside the website that is being crawled but should still be included in the archive for context.
+
+### Check For Sitemap
+
+`Seeded Crawl`{ .badge-orange }
+
+When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if found. It will not crawl pages found in the sitemap that do not meet the crawl's scope settings or limits.
+
+This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
 ### Exclusions
 

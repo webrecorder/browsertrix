@@ -23,6 +23,7 @@ const defaultValue = {
     behaviorTimeout: null,
     pageLoadTimeout: null,
     pageExtraDelay: null,
+    useSitemap: false,
   },
   tags: [],
   crawlTimeout: null,

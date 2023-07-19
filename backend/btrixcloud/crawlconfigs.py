@@ -90,6 +90,8 @@ class RawCrawlConfig(BaseModel):
     generateWACZ: Optional[bool]
     combineWARC: Optional[bool]
 
+    useSitemap: Optional[bool] = False
+
     logging: Optional[str]
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
