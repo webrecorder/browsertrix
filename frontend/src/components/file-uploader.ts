@@ -315,10 +315,7 @@ export class FileUploader extends LiteElement {
   };
 
   private cancelUpload() {
-    if (this.uploadController) {
-      this.uploadController.abort(ABORT_REASON_USER_CANCEL);
-      this.uploadController = null;
-    }
+    this.uploadController?.abort(ABORT_REASON_USER_CANCEL);
   }
 
   private resetState() {
@@ -389,6 +386,7 @@ export class FileUploader extends LiteElement {
       })
     );
 
+    this.uploadController = new AbortController();
     try {
       const query = queryString.stringify({
         filename: file.name,
@@ -397,7 +395,6 @@ export class FileUploader extends LiteElement {
         collections: this.collectionIds,
         tags: this.tagsToSave,
       });
-      this.uploadController = new AbortController();
       const data: { id: string; added: boolean } = await this.apiFetch(
         `/orgs/${this.orgId}/uploads/stream?${query}`,
         this.authState!,
@@ -431,7 +428,8 @@ export class FileUploader extends LiteElement {
         throw data;
       }
     } catch (err: any) {
-      if ((err.message || err) === ABORT_REASON_USER_CANCEL) {
+      const reason = this.uploadController?.signal.reason;
+      if (reason === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {
         console.debug(err);
