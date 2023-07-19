@@ -4,11 +4,13 @@ import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 import queryString from "query-string";
+import throttle from "lodash/fp/throttle";
 import type { SlButton } from "@shoelace-style/shoelace";
 
 import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
+import { APIError } from "../utils/api";
 import { maxLengthValidator } from "../utils/form";
 import type { FileRemoveEvent } from "./file-list";
 
@@ -336,6 +338,7 @@ export class FileUploader extends LiteElement {
 
   private cancelUpload() {
     this.uploadController?.abort();
+    this.onUploadProgress.cancel();
   }
 
   private resetState() {
@@ -474,25 +477,27 @@ export class FileUploader extends LiteElement {
         }
       });
       xhr.addEventListener("error", () => {
-        // TODO new APIError
-        reject({
-          message: xhr.statusText,
-          status: xhr.status,
-        });
+        reject(
+          new APIError({
+            message: xhr.statusText,
+            status: xhr.status,
+          })
+        );
       });
       xhr.addEventListener("abort", () => {
         reject(ABORT_REASON_USER_CANCEL);
       });
-      xhr.upload.addEventListener("progress", (e) => {
-        // TODO throttle?
-        this.progress = (e.loaded / e.total) * 100;
-      });
+      xhr.upload.addEventListener("progress", this.onUploadProgress);
 
       xhr.send(file);
 
       this.uploadController = xhr;
     });
   }
+
+  private onUploadProgress = throttle(100)((e: ProgressEvent) => {
+    this.progress = (e.loaded / e.total) * 100;
+  });
 
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
