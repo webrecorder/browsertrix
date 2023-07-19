@@ -381,8 +381,6 @@ export class FileUploader extends LiteElement {
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
 
-    await this.updateComplete;
-
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
