@@ -20,10 +20,6 @@ crawler_logging_opts: "stats,behaviors,debug"
 # to enable, set to a value other than 'false'
 crawler_extract_full_text: false
 
-# use sitemap
-# to enable as override for all seeded crawls, set value to true
-crawler_use_sitemap: true
-
 # max pages per crawl
 # set to non-zero value to enforce global max pages per crawl limit
 # if set, each workflow can have a lower limit, but not higher
