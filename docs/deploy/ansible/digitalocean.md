@@ -13,7 +13,7 @@ To run this ansible playbook, you need to:
 * `doctl` command line client configured (run `doctl auth init`)
 * Create a [DigitalOcean Spaces](https://docs.digitalocean.com/reference/api/spaces-api/) API Key which will also need to be set in your terminal sessions environment variables, which should be set as `DO_AWS_ACCESS_KEY` and `DO_AWS_SECRET_KEY`
 * Configure a DNS A Record and CNAME record.
-* Install Ansible on your local machine (the control machine).
+* Have a working python and pip configuration through your OS Package Manager
 
 #### Install
 
@@ -23,9 +23,17 @@ git clone https://github.com/webrecorder/browsertrix-cloud.git
 cd browsertrix-cloud
 ```
 
-2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml) and modify them or pass them as extra variables as shown below. If you haven't configured `kubectl`, please enable the `configure_kube` option 
+2. Install the Dependencies through pipenv
+```zsh
+cd ansible
+pip install pipenv
+pipenv install
+pipenv shell
+```
 
-3. Run the playbook:
+3. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/do/main.yml) and modify them or pass them as extra variables as shown below. If you haven't configured `kubectl`, please enable the `configure_kube` option 
+
+4. Run the playbook:
 ```zsh
 ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain="yourdomain.com"
 ```
@@ -37,4 +45,12 @@ ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superu
 2. Run the playbook:
 ```zsh
 ansible-playbook playbooks/do_setup.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain_name="yourdomain.com" -t helm_upgrade
+```
+
+### Uninstall
+
+You can tear down your deployment through ansible as well. By default ansible will dump all the databases into your DO space. You can configure an option to disable this feature. 
+
+```zsh
+ansible-playbook playbooks/do_teardown.yml -e project_name="your-project" -e superuser_email="you@yourdomain.com" -e domain="yourdomain.com"
 ```
