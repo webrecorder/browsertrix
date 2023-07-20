@@ -255,24 +255,32 @@
       failed_when: do_registry_result.stdout_lines | length < 2
       ignore_errors: true
 
+    - name: d_ocean | registry | store original registry endpoint
+      ansible.builtin.set_fact:
+        registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
+      when: use_do_registry and (do_registry_result.stdout_lines | length >= 2)
+      changed_when: true
+
     - name: d_ocean | registry | create registry endpoint
       ansible.builtin.command: doctl registry create {{ registry_name }} --region {{ droplet_region }}
-      when: do_registry_result.stdout_lines | length < 2
+      when: use_do_registry and (do_registry_result.stdout_lines | length < 2)
+      changed_when: true
 
     - name: d_ocean | registry | update registry endpoint
       ansible.builtin.command: doctl registry get --format Endpoint
       register: do_registry_result
-      failed_when: do_registry_result.stdout_lines | length < 2
+      when: use_do_registry and (do_registry_result.stdout_lines | length < 2)
+      changed_when: true
 
     - name: d_ocean | registry | store registry endpoint
       ansible.builtin.set_fact:
         registry_endpoint: "{{ do_registry_result.stdout_lines[1] }}"
-      when: use_do_registry
+      when: use_do_registry and (not do_registry_result.skipped)
       changed_when: true
 
     - name: d_ocean | registry | configure kubectl
       ansible.builtin.command: doctl k8s cluster kubeconfig save {{ my_cluster.data.id }}
-      when: configure_kubectl
+      when: configure_kubectl and use_do_registry
       changed_when: true
 
     - name: d_ocean | registry | add to new k8s cluster
