@@ -9,60 +9,18 @@ from typing import Optional, List
 import pymongo
 from fastapi import Depends, HTTPException
 
-from pydantic import BaseModel, UUID4, Field
-
-from .basecrawls import BaseCrawlOutWithResources
-from .crawls import CrawlFileOut, SUCCESSFUL_STATES
-from .db import BaseMongoModel
-from .orgs import Organization
+from .basecrawls import SUCCESSFUL_STATES
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-
-
-# ============================================================================
-class Collection(BaseMongoModel):
-    """Org collection structure"""
-
-    name: str = Field(..., min_length=1)
-    oid: UUID4
-    description: Optional[str]
-    modified: Optional[datetime]
-
-    crawlCount: Optional[int] = 0
-    pageCount: Optional[int] = 0
-
-    # Sorted by count, descending
-    tags: Optional[List[str]] = []
-
-
-# ============================================================================
-class CollIn(BaseModel):
-    """Collection Passed in By User"""
-
-    name: str = Field(..., min_length=1)
-    description: Optional[str]
-    crawlIds: Optional[List[str]] = []
-
-
-# ============================================================================
-class CollOut(Collection):
-    """Collection output model with annotations."""
-
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class UpdateColl(BaseModel):
-    """Update collection"""
-
-    name: Optional[str]
-    description: Optional[str]
-
-
-# ============================================================================
-class AddRemoveCrawlList(BaseModel):
-    """Update crawl config name, crawl schedule, or tags"""
-
-    crawlIds: Optional[List[str]] = []
+from .models import (
+    Collection,
+    CollIn,
+    CollOut,
+    UpdateColl,
+    AddRemoveCrawlList,
+    CrawlOutWithResources,
+    Organization,
+    PaginatedResponse,
+)
 
 
 # ============================================================================
@@ -275,7 +233,7 @@ class CollectionOps:
             collection_id=coll_id,
             states=SUCCESSFUL_STATES,
             page_size=10_000,
-            cls_type=BaseCrawlOutWithResources,
+            cls_type=CrawlOutWithResources,
         )
 
         for crawl in crawls:
@@ -382,6 +340,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
     @app.get(
         "/orgs/{oid}/collections",
         tags=["collections"],
+        response_model=PaginatedResponse,
     )
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),

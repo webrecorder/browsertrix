@@ -1,7 +1,7 @@
 """
 Migration 0005 - Updating scheduled cron jobs after Operator changes
 """
-from btrixcloud.crawlconfigs import CrawlConfig, UpdateCrawlConfig
+from btrixcloud.models import CrawlConfig, UpdateCrawlConfig
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 

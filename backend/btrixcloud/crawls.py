@@ -8,152 +8,34 @@ import json
 import re
 import urllib.parse
 
-from typing import Optional, List, Dict, Union
-from datetime import datetime
+from typing import Optional, List
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, UUID4, conint, HttpUrl, Field
-from redis import asyncio as aioredis, exceptions
+from pydantic import UUID4
+from redis import asyncio as exceptions
 import pymongo
 
-from .crawlconfigs import (
-    Seed,
-    CrawlConfigCore,
-    CrawlConfig,
-    UpdateCrawlConfig,
-    set_config_current_crawl_info,
-)
-from .db import BaseMongoModel
-from .orgs import Organization, MAX_CRAWL_SCALE
+from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
-from .users import User
-from .utils import dt_now, get_redis_crawl_stats, parse_jsonl_error_messages
-from .basecrawls import (
+from .utils import dt_now, parse_jsonl_error_messages
+from .basecrawls import BaseCrawlOps
+from .models import (
     CrawlFile,
-    CrawlFileOut,
-    BaseCrawl,
-    BaseCrawlOps,
     UpdateCrawl,
     DeleteCrawlList,
+    CrawlConfig,
+    UpdateCrawlConfig,
+    CrawlScale,
+    Crawl,
+    CrawlOut,
+    CrawlOutWithResources,
+    Organization,
+    User,
+    PaginatedResponse,
 )
-
-
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
-
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
-
-
-# ============================================================================
-class CrawlScale(BaseModel):
-    """scale the crawl to N parallel containers"""
-
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
-
-
-# ============================================================================
-class Crawl(BaseCrawl, CrawlConfigCore):
-    """Store State of a Crawl (Finished or Running)"""
-
-    type: str = Field("crawl", const=True)
-
-    cid: UUID4
-
-    cid_rev: int = 0
-
-    # schedule: Optional[str]
-    manual: Optional[bool]
-
-    stopping: Optional[bool] = False
-
-
-# ============================================================================
-class CrawlOut(Crawl):
-    """Output for single crawl, with additional fields"""
-
-    userName: Optional[str]
-    name: Optional[str]
-    description: Optional[str]
-    profileName: Optional[str]
-    resources: Optional[List[CrawlFileOut]] = []
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-
-# ============================================================================
-class ListCrawlOut(BaseMongoModel):
-    """Crawl output model for list view"""
-
-    # pylint: disable=duplicate-code
-
-    id: str
-
-    userid: UUID4
-    userName: Optional[str]
-
-    oid: UUID4
-    cid: UUID4
-    name: Optional[str]
-    description: Optional[str]
-
-    manual: Optional[bool]
-
-    started: datetime
-    finished: Optional[datetime]
-
-    state: str
-
-    stats: Optional[Dict[str, int]]
-
-    fileSize: int = 0
-    fileCount: int = 0
-
-    tags: Optional[List[str]] = []
-
-    notes: Optional[str]
-
-    firstSeed: Optional[str]
-    seedCount: Optional[int] = 0
-    errors: Optional[List[str]]
-
-    stopping: Optional[bool] = False
-
-    collections: Optional[List[UUID4]] = []
-
-
-# ============================================================================
-class ListCrawlOutWithResources(ListCrawlOut):
-    """Crawl output model used internally with files and resources."""
-
-    files: Optional[List[CrawlFile]] = []
-    resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class CrawlCompleteIn(BaseModel):
-    """Completed Crawl Webhook POST message"""
-
-    id: str
-
-    user: str
-
-    filename: str
-    size: int
-    hash: str
-
-    completed: Optional[bool] = True
+from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
 
 # ============================================================================
@@ -162,7 +44,7 @@ class CrawlOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs):
-        super().__init__(mdb, users, crawl_manager)
+        super().__init__(mdb, users, crawl_configs, crawl_manager)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -318,15 +200,16 @@ class CrawlOps(BaseCrawlOps):
         except (IndexError, ValueError):
             total = 0
 
-        cls = ListCrawlOut
+        cls = CrawlOut
         if resources:
-            cls = ListCrawlOutWithResources
+            cls = CrawlOutWithResources
 
         crawls = []
         for result in items:
             crawl = cls.from_dict(result)
+            files = result.get("files") if resources else None
             crawl = await self._resolve_crawl_refs(
-                crawl, org, add_first_seed=False, resources=resources
+                crawl, org, add_first_seed=False, files=files
             )
             crawls.append(crawl)
 
@@ -347,64 +230,9 @@ class CrawlOps(BaseCrawlOps):
 
         del res["errors"]
 
-        crawl = CrawlOut.from_dict(res)
+        crawl = CrawlOutWithResources.from_dict(res)
 
         return await self._resolve_crawl_refs(crawl, org)
-
-    async def _resolve_crawl_refs(
-        self,
-        crawl: Union[CrawlOut, ListCrawlOut],
-        org: Optional[Organization],
-        add_first_seed: bool = True,
-        resources: bool = False,
-    ):
-        """Resolve running crawl data"""
-        # pylint: disable=too-many-branches
-        config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org, active_only=False
-        )
-
-        if config:
-            if not crawl.name:
-                crawl.name = config.name
-
-            if not crawl.description:
-                crawl.description = config.description
-
-            if config.config.seeds:
-                if add_first_seed:
-                    first_seed = config.config.seeds[0]
-                    if isinstance(first_seed, HttpUrl):
-                        crawl.firstSeed = first_seed
-                    elif isinstance(first_seed, Seed):
-                        crawl.firstSeed = first_seed.url
-                crawl.seedCount = len(config.config.seeds)
-
-        if hasattr(crawl, "profileid") and crawl.profileid:
-            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
-                crawl.profileid, org
-            )
-
-        user = await self.user_manager.get(crawl.userid)
-        if user:
-            crawl.userName = user.name
-
-        # if running, get stats directly from redis
-        # more responsive, saves db update in operator
-        if crawl.state in RUNNING_STATES:
-            try:
-                redis = await self.get_redis(crawl.id)
-                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
-            # redis not available, ignore
-            except exceptions.ConnectionError:
-                pass
-
-        if resources and crawl.state in SUCCESSFUL_STATES:
-            crawl.resources = await self._resolve_signed_urls(
-                crawl.files, org, crawl.id
-            )
-
-        return crawl
 
     async def delete_crawls(
         self, org: Organization, delete_list: DeleteCrawlList, type_="crawl"
@@ -663,14 +491,6 @@ class CrawlOps(BaseCrawlOps):
         parsed_errors = parse_jsonl_error_messages(errors)
         return parsed_errors, total
 
-    async def get_redis(self, crawl_id):
-        """get redis url for crawl id"""
-        redis_url = self.crawl_manager.get_redis_url(crawl_id)
-
-        return await aioredis.from_url(
-            redis_url, encoding="utf-8", decode_responses=True
-        )
-
     async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
@@ -859,7 +679,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         )
         return paginated_format(crawls, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"])
+    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=PaginatedResponse)
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -951,7 +771,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
-        response_model=CrawlOut,
+        response_model=CrawlOutWithResources,
     )
     async def get_crawl_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -962,7 +782,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
-        response_model=CrawlOut,
+        response_model=CrawlOutWithResources,
     )
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org)
@@ -970,7 +790,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/all/crawls/{crawl_id}",
         tags=["crawls"],
-        response_model=ListCrawlOut,
+        response_model=CrawlOut,
     )
     async def list_single_crawl_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -985,7 +805,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}",
         tags=["crawls"],
-        response_model=ListCrawlOut,
+        response_model=CrawlOut,
     )
     async def list_single_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         crawls, _ = await ops.list_crawls(org, crawl_id=crawl_id)

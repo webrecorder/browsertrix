@@ -7,171 +7,31 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Dict, Union, Literal, Optional, Any
+from typing import Union
 
-from pydantic import BaseModel, UUID4
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .db import BaseMongoModel
-
-from .users import User
-
-from .invites import (
+from .models import (
+    Organization,
+    DefaultStorage,
+    S3Storage,
+    OrgQuotas,
+    RenameOrg,
+    UpdateRole,
+    RemovePendingInvite,
+    RemoveFromOrg,
     AddToOrgRequest,
     InvitePending,
-    InviteRequest,
     InviteToOrgRequest,
     UserRole,
+    User,
+    PaginatedResponse,
 )
-
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
-# crawl scale for constraint
-MAX_CRAWL_SCALE = 3
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
-
-
-# ============================================================================
-class UpdateRole(InviteToOrgRequest):
-    """Update existing role for user"""
-
-
-# ============================================================================
-class RemoveFromOrg(InviteRequest):
-    """Remove this user from org"""
-
-
-# ============================================================================
-class RemovePendingInvite(InviteRequest):
-    """Delete pending invite to org by email"""
-
-
-# ============================================================================
-class RenameOrg(BaseModel):
-    """Request to invite another user"""
-
-    name: str
-
-
-# ============================================================================
-class DefaultStorage(BaseModel):
-    """Storage reference"""
-
-    type: Literal["default"] = "default"
-    name: str
-    path: str = ""
-
-
-# ============================================================================
-class S3Storage(BaseModel):
-    """S3 Storage Model"""
-
-    type: Literal["s3"] = "s3"
-
-    endpoint_url: str
-    access_key: str
-    secret_key: str
-    access_endpoint_url: Optional[str]
-    region: Optional[str] = ""
-    use_access_for_presign: Optional[bool] = True
-
-
-# ============================================================================
-class OrgQuotas(BaseModel):
-    """Organization quotas (settable by superadmin)"""
-
-    maxConcurrentCrawls: Optional[int] = 0
-
-
-# ============================================================================
-class Organization(BaseMongoModel):
-    """Organization Base Model"""
-
-    name: str
-
-    users: Dict[str, UserRole]
-
-    storage: Union[S3Storage, DefaultStorage]
-
-    usage: Dict[str, int] = {}
-
-    default: bool = False
-
-    quotas: Optional[OrgQuotas] = OrgQuotas()
-
-    def is_owner(self, user):
-        """Check if user is owner"""
-        return self._is_auth(user, UserRole.OWNER)
-
-    def is_crawler(self, user):
-        """Check if user can crawl (write)"""
-        return self._is_auth(user, UserRole.CRAWLER)
-
-    def is_viewer(self, user):
-        """Check if user can view (read)"""
-        return self._is_auth(user, UserRole.VIEWER)
-
-    def _is_auth(self, user, value):
-        """Check if user has at least specified permission level"""
-        if user.is_superuser:
-            return True
-
-        res = self.users.get(str(user.id))
-        if not res:
-            return False
-
-        return res >= value
-
-    async def serialize_for_user(self, user: User, user_manager):
-        """Serialize result based on current user access"""
-
-        exclude = {"storage"}
-
-        if not self.is_owner(user):
-            exclude.add("users")
-
-        if not self.is_crawler(user):
-            exclude.add("usage")
-
-        result = self.to_dict(
-            exclude_unset=True,
-            exclude_defaults=True,
-            exclude_none=True,
-            exclude=exclude,
-        )
-
-        if self.is_owner(user):
-            keys = list(result["users"].keys())
-            user_list = await user_manager.get_user_names_by_ids(keys)
-
-            for org_user in user_list:
-                id_ = str(org_user["id"])
-                role = result["users"].get(id_)
-                if not role:
-                    continue
-
-                result["users"][id_] = {
-                    "role": role,
-                    "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
-                }
-
-        return OrgOut.from_dict(result)
-
-
-# ============================================================================
-class OrgOut(BaseMongoModel):
-    """Organization API output model"""
-
-    id: UUID4
-    name: str
-    users: Optional[Dict[str, Any]]
-    usage: Optional[Dict[str, int]]
-    default: bool = False
-
-    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
@@ -451,7 +311,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     ops.org_crawl_dep = org_crawl_dep
     ops.org_owner_dep = org_owner_dep
 
-    @app.get("/orgs", tags=["organizations"])
+    @app.get("/orgs", tags=["organizations"], response_model=PaginatedResponse)
     async def get_orgs(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,

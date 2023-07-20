@@ -3,8 +3,7 @@ Migration 0004 - Ensuring all config.seeds are Seeds not HttpUrls
 """
 from pydantic import HttpUrl
 
-from btrixcloud.crawlconfigs import CrawlConfig, ScopeType, Seed
-from btrixcloud.crawls import Crawl
+from btrixcloud.models import Crawl, CrawlConfig, ScopeType, Seed
 from btrixcloud.migrations import BaseMigration
 
 

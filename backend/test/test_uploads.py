@@ -52,7 +52,7 @@ def test_list_stream_upload(admin_auth_headers, default_org_id):
 
 def test_get_stream_upload(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -185,8 +185,8 @@ def test_get_upload_replay_json(admin_auth_headers, default_org_id):
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
+    assert data["errors"] == None
     assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
 
 
 def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
@@ -204,8 +204,8 @@ def test_get_upload_replay_json_admin(admin_auth_headers, default_org_id):
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
+    assert data["errors"] == None
     assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
 
 
 def test_replace_upload(admin_auth_headers, default_org_id):
@@ -227,7 +227,7 @@ def do_upload_replace(admin_auth_headers, default_org_id, upload_id):
     actual_id = r.json()["id"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{actual_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{actual_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -315,10 +315,9 @@ def test_delete_stream_upload_2(admin_auth_headers, default_org_id):
     assert r.json()["deleted"] == True
 
 
-
 def test_verify_from_upload_resource_count(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -354,6 +353,12 @@ def test_list_all_crawls(admin_auth_headers, default_org_id):
 
     for item in items:
         assert item["type"] in ("crawl", "upload")
+
+        if item["type"] == "crawl":
+            assert item["firstSeed"]
+            assert item["seedCount"]
+            assert item.get("name") or item.get("name") == ""
+
         assert item["id"]
         assert item["userid"]
         assert item["oid"] == default_org_id
@@ -392,8 +397,8 @@ def test_get_upload_replay_json_from_all_crawls(admin_auth_headers, default_org_
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
+    assert data["errors"] == None
     assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
 
 
 def test_get_upload_replay_json_admin_from_all_crawls(
@@ -413,8 +418,8 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
+    assert data["errors"] == None
     assert "files" not in data
-    assert "errors" not in data or data.get("errors") is None
 
 
 def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):

@@ -88,14 +88,6 @@ def main():
 
     init_storages_api(org_ops, crawl_manager, current_active_user)
 
-    init_uploads_api(
-        app, mdb, user_manager, crawl_manager, org_ops, current_active_user
-    )
-
-    init_base_crawls_api(
-        app, mdb, user_manager, crawl_manager, org_ops, current_active_user
-    )
-
     profiles = init_profiles_api(mdb, crawl_manager, org_ops, current_active_user)
 
     crawl_config_ops = init_crawl_config_api(
@@ -108,7 +100,27 @@ def main():
         profiles,
     )
 
+    init_base_crawls_api(
+        app,
+        mdb,
+        user_manager,
+        crawl_manager,
+        crawl_config_ops,
+        org_ops,
+        current_active_user,
+    )
+
     crawls = init_crawls_api(
+        app,
+        mdb,
+        user_manager,
+        crawl_manager,
+        crawl_config_ops,
+        org_ops,
+        current_active_user,
+    )
+
+    init_uploads_api(
         app,
         mdb,
         user_manager,

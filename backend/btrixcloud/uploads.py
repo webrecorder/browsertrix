@@ -10,54 +10,29 @@ from typing import Optional, List
 from fastapi import Depends, UploadFile, File
 
 from fastapi import HTTPException
-from pydantic import Field, UUID4
+from pydantic import UUID4
 
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
-from .basecrawls import (
-    BaseCrawl,
-    BaseCrawlOut,
-    BaseCrawlOutWithResources,
-    BaseCrawlOps,
+from .basecrawls import BaseCrawlOps
+from .models import (
+    CrawlOut,
+    CrawlOutWithResources,
     CrawlFile,
-    UpdateCrawl,
     DeleteCrawlList,
+    UploadedCrawl,
+    UpdateUpload,
+    Organization,
+    PaginatedResponse,
+    User,
 )
-from .users import User
-from .orgs import Organization
-from .pagination import PaginatedResponseModel, paginated_format, DEFAULT_PAGE_SIZE
+from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
 
 
 MIN_UPLOAD_PART_SIZE = 10000000
-
-
-# ============================================================================
-class UploadedCrawl(BaseCrawl):
-    """Store State of a Crawl Upload"""
-
-    type: str = Field("upload", const=True)
-
-    name: str
-
-
-# ============================================================================
-class UploadedCrawlOut(BaseCrawlOut):
-    """Output model for Crawl Uploads"""
-
-
-# ============================================================================
-class UploadedCrawlOutWithResources(BaseCrawlOutWithResources):
-    """Output model for Crawl Uploads with all file resources"""
-
-
-# ============================================================================
-class UpdateUpload(UpdateCrawl):
-    """Update modal that also includes name"""
-
-    name: Optional[str]
 
 
 # ============================================================================
@@ -235,11 +210,11 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
+def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_dep):
     """uploads api"""
 
     # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
-    ops = UploadOps(mdb, users, crawl_manager)
+    ops = UploadOps(mdb, users, crawl_configs, crawl_manager)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep
@@ -268,9 +243,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
             request.stream(), filename, name, notes, org, user, replaceId
         )
 
-    @app.get(
-        "/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponseModel
-    )
+    @app.get("/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponse)
     async def list_uploads(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -293,23 +266,21 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
             sort_by=sortBy,
             sort_direction=sortDirection,
             type_="upload",
-            cls_type=UploadedCrawlOut,
         )
         return paginated_format(uploads, total, page, pageSize)
 
     @app.get(
         "/orgs/{oid}/uploads/{crawlid}",
         tags=["uploads"],
-        response_model=UploadedCrawlOutWithResources,
+        response_model=CrawlOut,
     )
     async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
-        res = await ops.get_resource_resolved_raw_crawl(crawlid, org, "upload")
-        return UploadedCrawlOutWithResources.from_dict(res)
+        return await ops.get_crawl(crawlid, org, "upload")
 
     @app.get(
         "/orgs/all/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_upload_replay_admin(crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -320,7 +291,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, orgs, user_dep):
     @app.get(
         "/orgs/{oid}/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
-        response_model=BaseCrawlOutWithResources,
+        response_model=CrawlOutWithResources,
     )
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "upload")

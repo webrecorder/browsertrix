@@ -3,8 +3,7 @@ Migration 0003 - Mutable crawl configs and crawl revision history
 """
 from datetime import datetime
 
-from btrixcloud.crawlconfigs import CrawlConfig
-from btrixcloud.crawls import Crawl
+from btrixcloud.models import Crawl, CrawlConfig
 from btrixcloud.migrations import BaseMigration, MigrationError
 
 

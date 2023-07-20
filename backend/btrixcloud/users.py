@@ -6,9 +6,9 @@ import os
 import uuid
 import asyncio
 
-from typing import Dict, Optional
+from typing import Optional
 
-from pydantic import EmailStr, UUID4
+from pydantic import UUID4
 import passlib.pwd
 
 from fastapi import Request, Response, HTTPException, Depends, WebSocket
@@ -16,7 +16,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from pymongo.errors import DuplicateKeyError
 
-from fastapi_users import FastAPIUsers, models, BaseUserManager
+from fastapi_users import FastAPIUsers, BaseUserManager
 from fastapi_users.manager import UserAlreadyExists
 from fastapi_users.authentication import (
     AuthenticationBackend,
@@ -25,7 +25,15 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import MongoDBUserDatabase
 
-from .invites import InvitePending, UserRole
+from .models import (
+    User,
+    UserCreateIn,
+    UserCreate,
+    UserUpdate,
+    UserDB,
+    UserRole,
+    PaginatedResponse,
+)
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
@@ -33,66 +41,6 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
-
-
-# ============================================================================
-class User(models.BaseUser):
-    """
-    Base User Model
-    """
-
-    name: Optional[str] = ""
-
-
-# ============================================================================
-# use custom model as model.BaseUserCreate includes is_* field
-class UserCreateIn(models.CreateUpdateDictModel):
-    """
-    User Creation Model exposed to API
-    """
-
-    email: EmailStr
-    password: str
-
-    name: Optional[str] = ""
-
-    inviteToken: Optional[UUID4]
-
-    newOrg: bool
-    newOrgName: Optional[str] = ""
-
-
-# ============================================================================
-class UserCreate(models.BaseUserCreate):
-    """
-    User Creation Model
-    """
-
-    name: Optional[str] = ""
-
-    inviteToken: Optional[UUID4]
-
-    newOrg: bool
-    newOrgName: Optional[str] = ""
-
-
-# ============================================================================
-class UserUpdate(User, models.CreateUpdateDictModel):
-    """
-    User Update Model
-    """
-
-    password: Optional[str]
-    email: Optional[EmailStr]
-
-
-# ============================================================================
-class UserDB(User, models.BaseUserDB):
-    """
-    User in DB Model
-    """
-
-    invites: Dict[str, InvitePending] = {}
 
 
 # ============================================================================
@@ -360,6 +308,7 @@ class BearerOrQueryTransport(BearerTransport):
 
     scheme: OA2BearerOrQuery
 
+    # pylint: disable=invalid-name
     def __init__(self, tokenUrl: str):
         # pylint: disable=super-init-not-called
         self.scheme = OA2BearerOrQuery(tokenUrl, auto_error=False)
@@ -473,7 +422,7 @@ def init_users_api(app, user_manager):
 
         return await user_manager.format_invite(invite)
 
-    @users_router.get("/invites", tags=["invites"])
+    @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
     async def get_pending_invites(
         user: User = Depends(current_active_user),
         pageSize: int = DEFAULT_PAGE_SIZE,
