@@ -80,6 +80,12 @@ class BaseCrawlOps:
 
         return res
 
+    async def _files_to_resources(self, files, org, crawlid):
+        if files:
+            crawl_files = [CrawlFile(**data) for data in files]
+
+            return await self._resolve_signed_urls(crawl_files, org, crawlid)
+
     async def get_crawl(
         self,
         crawlid: str,
@@ -90,14 +96,8 @@ class BaseCrawlOps:
         """Get data for single base crawl"""
         res = await self.get_crawl_raw(crawlid, org, type_)
 
-        resources = False
         if cls_type == CrawlOutWithResources:
-            resources = True
-
-        if resources and res.get("files"):
-            files = [CrawlFile(**data) for data in res["files"]]
-
-            res["resources"] = await self._resolve_signed_urls(files, org, crawlid)
+            res["resources"] = await self._files_to_resources(res.get("files"), org, crawlid)
 
         del res["files"]
         del res["errors"]
@@ -119,8 +119,9 @@ class BaseCrawlOps:
     ):
         """return single base crawl with resources resolved"""
         res = await self.get_crawl_raw(crawlid=crawlid, type_=type_, org=org)
-        files = [CrawlFile(**data) for data in res["files"]]
-        res["resources"] = await self._resolve_signed_urls(files, org, res["_id"])
+        res["resources"] = await self._files_to_resources(
+            res.get("files"), org, res["_id"]
+        )
         return res
 
     async def update_crawl(
@@ -185,7 +186,7 @@ class BaseCrawlOps:
         crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
         add_first_seed: bool = True,
-        resources: bool = False,
+        files: Optional[list[dict]] = None,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
@@ -225,10 +226,8 @@ class BaseCrawlOps:
             except exceptions.ConnectionError:
                 pass
 
-        if resources and crawl.state in SUCCESSFUL_STATES:
-            crawl.resources = await self._resolve_signed_urls(
-                crawl.files, org, crawl.id
-            )
+        if files and crawl.state in SUCCESSFUL_STATES:
+            crawl.resources = await self._files_to_resources(files, org, crawl.id)
 
         return crawl
 
@@ -429,7 +428,9 @@ class BaseCrawlOps:
             crawl = cls_type.from_dict(res)
 
             if resources or crawl.type == "crawl":
-                crawl = await self._resolve_crawl_refs(crawl, org, resources=resources)
+                # pass files only if we want to include resolved resources
+                files = res.get("files") if resources else None
+                crawl = await self._resolve_crawl_refs(crawl, org, files=files)
 
             crawls.append(crawl)
 

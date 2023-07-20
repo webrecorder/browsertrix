@@ -207,8 +207,9 @@ class CrawlOps(BaseCrawlOps):
         crawls = []
         for result in items:
             crawl = cls.from_dict(result)
+            files = result.get("files") if resources else None
             crawl = await self._resolve_crawl_refs(
-                crawl, org, add_first_seed=False, resources=resources
+                crawl, org, add_first_seed=False, files=files
             )
             crawls.append(crawl)
 

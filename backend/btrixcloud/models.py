@@ -364,7 +364,6 @@ class CrawlOut(BaseMongoModel):
 class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
-    files: Optional[List[CrawlFile]] = []
     resources: Optional[List[CrawlFileOut]] = []
 
 
