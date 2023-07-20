@@ -351,7 +351,6 @@ class CrawlOut(BaseMongoModel):
     # automated crawl fields
     cid: Optional[UUID4]
     name: Optional[str]
-    description: Optional[str]
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]

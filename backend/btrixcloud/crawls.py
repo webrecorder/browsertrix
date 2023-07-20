@@ -84,7 +84,7 @@ class CrawlOps(BaseCrawlOps):
         state: Optional[List[str]] = None,
         first_seed: str = None,
         name: str = None,
-        description: str = None,
+        notes: str = None,
         collection_id: uuid.UUID = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -136,11 +136,6 @@ class CrawlOps(BaseCrawlOps):
                 },
             },
             {"$set": {"name": {"$arrayElemAt": ["$crawlConfig.name", 0]}}},
-            {
-                "$set": {
-                    "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
-                }
-            },
         ]
 
         if not resources:
@@ -149,8 +144,8 @@ class CrawlOps(BaseCrawlOps):
         if name:
             aggregate.extend([{"$match": {"name": name}}])
 
-        if description:
-            aggregate.extend([{"$match": {"description": description}}])
+        if notes:
+            aggregate.extend([{"$match": {"notes": notes}}])
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
@@ -641,7 +636,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
-        description: Optional[str] = None,
+        notes: Optional[str] = None,
         collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
@@ -659,8 +654,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if name:
             name = urllib.parse.unquote(name)
 
-        if description:
-            description = urllib.parse.unquote(description)
+        if notes:
+            notes = urllib.parse.unquote(notes)
 
         crawls, total = await ops.list_crawls(
             None,
@@ -670,7 +665,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             state=state,
             first_seed=firstSeed,
             name=name,
-            description=description,
+            notes=notes,
             collection_id=collectionId,
             page_size=pageSize,
             page=page,
@@ -689,7 +684,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
-        description: Optional[str] = None,
+        notes: Optional[str] = None,
         collectionId: Optional[UUID4] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
@@ -704,8 +699,8 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
         if name:
             name = urllib.parse.unquote(name)
 
-        if description:
-            description = urllib.parse.unquote(description)
+        if notes:
+            notes = urllib.parse.unquote(notes)
 
         crawls, total = await ops.list_crawls(
             org,
@@ -715,7 +710,7 @@ def init_crawls_api(app, mdb, users, crawl_manager, crawl_config_ops, orgs, user
             state=state,
             first_seed=firstSeed,
             name=name,
-            description=description,
+            notes=notes,
             collection_id=collectionId,
             page_size=pageSize,
             page=page,

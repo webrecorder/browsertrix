@@ -161,18 +161,27 @@ def test_get_crawls_by_name(crawler_auth_headers, default_org_id, crawler_crawl_
         assert crawl["name"] == name
 
 
-def test_get_crawls_by_description(
-    crawler_auth_headers, default_org_id, crawler_crawl_id
-):
-    description = "crawler test crawl"
-    encoded_description = urllib.parse.quote(description)
+def test_get_crawls_by_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    notes = "Sample note"
+    encoded_notes = urllib.parse.quote(note)
+
+    # Add note to crawl
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        headers=crawler_auth_headers,
+        json={"notes": notes},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Test filtering by note
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?description={encoded_description}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?notes={encoded_notes}",
         headers=crawler_auth_headers,
     )
     assert r.json()["total"] >= 1
     for crawl in r.json()["items"]:
-        assert crawl["description"] == description
+        assert crawl["notes"] == notes
 
 
 def test_get_crawls_by_collection_id(
