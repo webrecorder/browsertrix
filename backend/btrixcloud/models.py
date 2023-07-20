@@ -462,6 +462,7 @@ class Collection(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
 
     # Sorted by count, descending
     tags: Optional[List[str]] = []
