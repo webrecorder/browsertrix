@@ -71,6 +71,7 @@ def test_navigate_manual_browser(
     assert r.json()["url"] == "https://webrecorder.net"
 
 
+# TODO: This won't pass until /createManualArchiveJS is implemented in crawler
 def test_commit_manual_browser_to_crawl(
     crawler_auth_headers, default_org_id, manual_browser_id
 ):
