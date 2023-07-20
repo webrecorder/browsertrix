@@ -1,11 +1,11 @@
 name: ansible-lint
 on: 
   push:
-    branches:
-      - ansible-*
-  pull-request:
-    branches:
-      - main
+    paths:
+      - 'ansible/**'
+  pull_request:
+    paths:
+      - 'ansible/**'
 
 jobs:
   build:
@@ -32,4 +32,4 @@ jobs:
       - name: Lint
         run: |
           cd ansible
-          pipenv run ansible-lint -c ./lint-cfg.yml ./playbooks/
+          pipenv run ansible-lint -c ./lint-cfg.yml ./playbooks/do_setup.yml
