@@ -97,7 +97,9 @@ class BaseCrawlOps:
         res = await self.get_crawl_raw(crawlid, org, type_)
 
         if cls_type == CrawlOutWithResources:
-            res["resources"] = await self._files_to_resources(res.get("files"), org, crawlid)
+            res["resources"] = await self._files_to_resources(
+                res.get("files"), org, crawlid
+            )
 
         del res["files"]
         del res["errors"]
