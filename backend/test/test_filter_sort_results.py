@@ -163,7 +163,7 @@ def test_get_crawls_by_name(crawler_auth_headers, default_org_id, crawler_crawl_
 
 def test_get_crawls_by_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
     notes = "Sample note"
-    encoded_notes = urllib.parse.quote(note)
+    encoded_notes = urllib.parse.quote(notes)
 
     # Add note to crawl
     r = requests.patch(
