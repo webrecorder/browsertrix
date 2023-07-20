@@ -437,6 +437,7 @@ class UploadedCrawl(BaseCrawl):
     type: str = Field("upload", const=True)
 
     name: str
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================
