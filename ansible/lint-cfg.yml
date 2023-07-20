@@ -54,6 +54,7 @@ skip_list:
   - skip_this_tag
   - name[casing]
   - yaml[line-length]
+  - fqcn[canonical] # we're using community.aws.aws_s3_cors instead of community.aws.s3_cors, but using the other package made everything break 
 
 # Ansible-lint does not automatically load rules that have the 'opt-in' tag.
 # You must enable opt-in rules by listing each rule 'id' below.

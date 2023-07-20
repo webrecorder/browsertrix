@@ -1,11 +1,11 @@
 name: ansible-lint
 on: 
   push:
-    branches:
-      - ansible-*
+    paths:
+      - 'ansible/**'
   pull_request:
-    branches:
-      - main
+    paths:
+      - 'ansible/**'
 
 jobs:
   build:

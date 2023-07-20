@@ -42,27 +42,26 @@
 
     - name: d_ocean | db | set db id
       ansible.builtin.set_fact:
-        db_uuid: "{{ db_create.stdout if db_create.changed == true else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id')}}"
-
+        db_uuid: "{{ db_create.stdout if db_create.changed else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
       vars:
         name_query: '[?name==`{{ db_name }}`]'
 
     - name: d_ocean | db | reset db user password
       ansible.builtin.command: doctl databases user reset {{ db_uuid }} doadmin -o json
       register: db_user
-      when: db_create.changed == false 
+      when: not db_create.changed
+      changed_when: true
 
     - name: d_ocean | db | set db config
       ansible.builtin.set_fact:
-        db_uuid: "{{ db_create.stdout if db_create.changed == true else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
-
+        db_uuid: "{{ db_create.stdout if db_create.changed else db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
       vars:
         name_query: '[?name==`{{ db_name }}`]'
 
-    - name: d_ocean | db | set db config 
+    - name: d_ocean | db | set db config
       ansible.builtin.set_fact:
-        db_url: "{{ db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') | replace(old, new)}}" 
-      when: db_create.changed == false 
+        db_url: "{{ db_check.stdout | from_json | json_query(name_query) | json_query('[0].private_connection.uri') | replace(old, new) }}"
+      when: not db_create.changed
       vars:
         name_query: '[?name==`{{ db_name }}`]'
         old: ":@"
@@ -87,7 +86,6 @@
         bucket_endpoint_url: "{{ db_space_result.data.space.endpoint_url }}/{{ db_space_result.data.space.name }}/{{ bucket_path }}/"
 
     - name: d_ocean | space | set bucket cors
-      # skip_ansible_lint
       community.aws.aws_s3_cors:
         name: "{{ bucket_name }}"
         aws_access_key: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
@@ -277,6 +275,7 @@
           ../../chart/admin/logging/scripts/eck_install.sh
       register: addons_init
       when: enable_admin_addons
+      changed_when: true
 
   # Helm Output + Deploy
   # ===========================================
