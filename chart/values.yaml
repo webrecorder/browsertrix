@@ -202,6 +202,10 @@ crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
 
+# optional: use socks5 proxy for crawler and profilebrowser
+# crawler_socks_proxy_host: 192.0.2.1
+# crawler_socks_proxy_port: 9050
+
 # time to wait for graceful stop
 grace_period: 1000
 
