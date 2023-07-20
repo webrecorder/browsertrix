@@ -22,7 +22,7 @@ def key_finder(d: dict, key: str = "password", top_level = None) -> Generator:
                 yield from key_finder(v, key, k) # Pass the top level name into the recursive descent
             else:
                 yield from key_finder(v, key, top_level) # name isn't the top level key
-        if key in k:
+        if key in str(k): # Sometimes yaml gets parsed with key True
             if top_level is None:
                 yield k, v # Key is already top level
             else:
