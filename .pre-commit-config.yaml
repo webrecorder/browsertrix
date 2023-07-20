@@ -19,3 +19,10 @@ repos:
       language: system
       entry: frontend/.husky/pre-commit
       pass_filenames: false
+- repo: local
+  hooks:
+    - id: password-check
+      name: password-check
+      language: system
+      types: [yaml]
+      entry: python3 scripts/check_passwords.py
