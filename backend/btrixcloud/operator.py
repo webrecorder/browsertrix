@@ -508,6 +508,16 @@ class BtrixOperator(K8sAPI):
                 if pod["status"]["phase"] == "Running":
                     return True
 
+                # consider 'ContainerCreating' as running
+                if pod["status"]["phase"] == "Pending":
+                    if (
+                        pod["status"]["containerStatuses"][0]["state"]["waiting"][
+                            "reason"
+                        ]
+                        == "ContainerCreating"
+                    ):
+                        return True
+
                 print("non-running pod status", pod["status"], flush=True)
 
         # pylint: disable=bare-except
