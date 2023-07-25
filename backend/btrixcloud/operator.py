@@ -95,7 +95,9 @@ class CrawlStatus(BaseModel):
     filesAddedSize: int = 0
     finished: Optional[str] = None
     stopping: bool = False
-    # forceRestart: Optional[str]
+
+    # don't include in status, use by metacontroller
+    resyncAfter: Optional[int] = None
 
 
 # ============================================================================
@@ -232,7 +234,9 @@ class BtrixOperator(K8sAPI):
         params["force_restart"] = spec.get("forceRestart")
 
         params["redis_url"] = redis_url
-        params["redis_scale"] = 1 if status.state != "waiting_capacity" else 0
+        params["redis_scale"] = (
+            1 if status.state not in ("starting", "waiting_capacity") else 0
+        )
 
         children = self.load_from_yaml("crawler.yaml", params)
         children.extend(self.load_from_yaml("redis.yaml", params))
@@ -250,7 +254,11 @@ class BtrixOperator(K8sAPI):
                 "spec"
             ]["volumeClaimTemplates"]
 
-        return {"status": status.dict(exclude_none=True), "children": children}
+        return {
+            "status": status.dict(exclude_none=True, exclude={"resyncAfter": True}),
+            "children": children,
+            "resyncAfterSeconds": status.resyncAfter,
+        }
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed
@@ -417,7 +425,7 @@ class BtrixOperator(K8sAPI):
     def _done_response(self, status, finalized=False):
         """done response for removing crawl"""
         return {
-            "status": status.dict(exclude_none=True),
+            "status": status.dict(exclude_none=True, exclude={"resyncAfter": True}),
             "children": [],
             "finalized": finalized,
         }
@@ -461,6 +469,8 @@ class BtrixOperator(K8sAPI):
                 allowed_from=["starting", "running"],
             )
 
+            # resync after 3 seconds
+            status.resyncAfter = 3
             return status
 
         # set state to running (if not already)
@@ -470,6 +480,8 @@ class BtrixOperator(K8sAPI):
 
         redis = await self._get_redis(redis_url)
         if not redis:
+            # resync after 3 seconds, until redis is inited
+            status.resyncAfter = 3
             return status
 
         # if not prev_start_time:
@@ -505,15 +517,15 @@ class BtrixOperator(K8sAPI):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
-                if pod["status"]["phase"] == "Running":
+                status = pod["status"]
+                if status["phase"] == "Running":
                     return True
 
                 # consider 'ContainerCreating' as running
-                if pod["status"]["phase"] == "Pending":
+                if status["phase"] == "Pending":
                     if (
-                        pod["status"]["containerStatuses"][0]["state"]["waiting"][
-                            "reason"
-                        ]
+                        "containerStatuses" in status
+                        and status["containerStatuses"][0]["state"]["waiting"]["reason"]
                         == "ContainerCreating"
                     ):
                         return True
