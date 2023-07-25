@@ -18,7 +18,7 @@ spec:
       role: redis
 
   serviceName: redis-{{ id }}
-  replicas: 1
+  replicas: {{ redis_scale }}
   podManagementPolicy: Parallel
 
   # not yet supported

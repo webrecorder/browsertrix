@@ -232,6 +232,7 @@ class BtrixOperator(K8sAPI):
         params["force_restart"] = spec.get("forceRestart")
 
         params["redis_url"] = redis_url
+        params["redis_scale"] = 1 if status.state != "waiting_capacity" else 0
 
         children = self.load_from_yaml("crawler.yaml", params)
         children.extend(self.load_from_yaml("redis.yaml", params))
@@ -450,6 +451,23 @@ class BtrixOperator(K8sAPI):
 
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
+        # check if at least one pod started running
+        # otherwise, mark as 'waiting_capacity' and return
+        if not await self.check_if_pods_running(pods):
+            await self.set_state(
+                "waiting_capacity",
+                status,
+                crawl.id,
+                allowed_from=["starting", "running"],
+            )
+
+            return status
+
+        # set state to running (if not already)
+        await self.set_state(
+            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
+        )
+
         redis = await self._get_redis(redis_url)
         if not redis:
             return status
@@ -475,7 +493,7 @@ class BtrixOperator(K8sAPI):
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status, pods)
+            return await self.update_crawl_state(redis, crawl, status)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -489,6 +507,9 @@ class BtrixOperator(K8sAPI):
             for pod in pods.values():
                 if pod["status"]["phase"] == "Running":
                     return True
+
+                print("non-running pod status", pod["status"], flush=True)
+
         # pylint: disable=bare-except
         except:
             # assume no valid pod found
@@ -523,7 +544,7 @@ class BtrixOperator(K8sAPI):
         return True
 
     # pylint: disable=too-many-branches
-    async def update_crawl_state(self, redis, crawl, status, pods):
+    async def update_crawl_state(self, redis, crawl, status):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
         stats = await get_redis_crawl_stats(redis, crawl.id)
@@ -541,23 +562,6 @@ class BtrixOperator(K8sAPI):
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
-
-        # check if at least one pod started running
-        # otherwise, mark as 'waiting' and return
-        if not await self.check_if_pods_running(pods):
-            await self.set_state(
-                "waiting_capacity",
-                status,
-                crawl.id,
-                allowed_from=["starting", "running"],
-            )
-
-            return status
-
-        # set state to running (if not already)
-        await self.set_state(
-            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
-        )
 
         # update status
         status.pagesDone = stats["done"]
