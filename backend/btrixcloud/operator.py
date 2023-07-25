@@ -2,6 +2,7 @@
 
 import asyncio
 import traceback
+import os
 from typing import Optional
 
 from datetime import datetime
@@ -97,7 +98,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
 
     # don't include in status, use by metacontroller
-    resyncAfter: Optional[int] = None
+    resync_after: Optional[int] = None
 
 
 # ============================================================================
@@ -118,6 +119,8 @@ class BtrixOperator(K8sAPI):
         self.orgs = mdb["organizations"]
 
         self.done_key = "crawls-done"
+
+        self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
@@ -255,9 +258,9 @@ class BtrixOperator(K8sAPI):
             ]["volumeClaimTemplates"]
 
         return {
-            "status": status.dict(exclude_none=True, exclude={"resyncAfter": True}),
+            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
             "children": children,
-            "resyncAfterSeconds": status.resyncAfter,
+            "resyncAfterSeconds": status.resync_after,
         }
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
@@ -297,7 +300,7 @@ class BtrixOperator(K8sAPI):
             # get actual crawl state
             new_state, finished = await get_crawl_state(self.crawls, crawl_id)
             if new_state:
-                status.state = state
+                status.state = new_state
             if finished:
                 status.finished = to_k8s_date(finished)
 
@@ -425,7 +428,7 @@ class BtrixOperator(K8sAPI):
     def _done_response(self, status, finalized=False):
         """done response for removing crawl"""
         return {
-            "status": status.dict(exclude_none=True, exclude={"resyncAfter": True}),
+            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
             "children": [],
             "finalized": finalized,
         }
@@ -469,23 +472,23 @@ class BtrixOperator(K8sAPI):
                 allowed_from=["starting", "running"],
             )
 
-            # resync after 3 seconds
-            status.resyncAfter = 3
+            # resync after N seconds
+            status.resync_after = self.fast_retry_secs
             return status
 
         # set state to running (if not already)
-        await self.set_state(
+        if await self.set_state(
             "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
-        )
+        ):
+            # if just started running, no redis yet, so just retry
+            status.resync_after = self.fast_retry_secs
+            return status
 
         redis = await self._get_redis(redis_url)
         if not redis:
-            # resync after 3 seconds, until redis is inited
-            status.resyncAfter = 3
+            # resync after N seconds, until redis is inited
+            status.resync_after = self.fast_retry_secs
             return status
-
-        # if not prev_start_time:
-        #    await redis.set("start_time", str(self.started))
 
         try:
             file_done = await redis.lpop(self.done_key)
@@ -530,7 +533,7 @@ class BtrixOperator(K8sAPI):
                     ):
                         return True
 
-                print("non-running pod status", pod["status"], flush=True)
+                # print("non-running pod status", pod["status"], flush=True)
 
         # pylint: disable=bare-except
         except:

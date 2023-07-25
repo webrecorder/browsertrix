@@ -64,6 +64,8 @@ data:
 
   PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes | default 60 }}"
 
+  FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
+
 
 ---
 apiVersion: v1
