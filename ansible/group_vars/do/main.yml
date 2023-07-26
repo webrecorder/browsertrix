@@ -30,7 +30,7 @@ subdomain: "{{ project_name }}"
 
 
 configure_kubectl: false
-use_do_registry: true
+use_do_registry: false
 image_tag: "latest"
 
 enable_signing: true
