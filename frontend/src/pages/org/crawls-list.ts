@@ -781,12 +781,6 @@ export class CrawlsList extends LiteElement {
             state: this.filterBy.state || finishedCrawlStates,
           });
           break;
-        // case "crawl":
-        //   crawls = await this.getCrawls({
-        //     ...params,
-        //     state: this.filterBy.state || activeCrawlStates,
-        //   });
-        //   break;
         case "upload":
           crawls = await this.getUploads(params);
           break;
