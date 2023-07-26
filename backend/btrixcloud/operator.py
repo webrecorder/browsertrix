@@ -304,6 +304,9 @@ class BtrixOperator(K8sAPI):
             if finished:
                 status.finished = to_k8s_date(finished)
 
+            if new_state != state:
+                print(f"state mismatch, actual state {new_state}, requested {state}")
+
         if status.state != state:
             print(
                 f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed"
