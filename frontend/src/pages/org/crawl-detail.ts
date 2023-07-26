@@ -245,9 +245,9 @@ export class CrawlDetail extends LiteElement {
           <span class="inline-block align-middle"
             >${isWorkflowArtifact
               ? msg("Back to Crawl Workflow")
-              : (this.crawl?.type === "upload" ?
-                 msg("Back to All Uploads") : msg("Back to All Crawls"))
-              }</span
+              : this.crawl?.type === "upload"
+              ? msg("Back to All Uploads")
+              : msg("Back to All Crawls")}</span
           >
         </a>
       </div>
@@ -701,14 +701,14 @@ export class CrawlDetail extends LiteElement {
     const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
     return html`
       <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Notes")}>
+        <btrix-desc-list-item label=${msg("Description")}>
           ${when(
             this.crawl,
             () =>
               when(
-                this.crawl!.notes?.length,
+                this.crawl!.description?.length,
                 () => html`<pre class="whitespace-pre-line font-sans">
-${this.crawl?.notes}
+${this.crawl?.description}
                 </pre
                 >`,
                 () => noneText

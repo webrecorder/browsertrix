@@ -409,7 +409,7 @@ export class FileUploader extends LiteElement {
       const query = queryString.stringify({
         filename: file.name,
         name,
-        notes: description,
+        description: description,
         collections: this.collectionIds,
         tags: this.tagsToSave,
       });
