@@ -439,28 +439,17 @@ export class CollectionsList extends LiteElement {
 
   private renderItem = (col: Collection) =>
     html`<li class="mb-2 last:mb-0">
-      <a
-        href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
-        class="block border rounded shadow-sm leading-none hover:bg-neutral-50"
-        @click=${(e: MouseEvent) => {
-          if (
-            (
-              (e.currentTarget as HTMLElement)?.querySelector(
-                ".actionsCol"
-              ) as HTMLElement
-            ).contains(e.target as HTMLElement)
-          ) {
-            e.preventDefault();
-          } else {
-            this.navLink(e);
-          }
-        }}
-      >
+      <div class="block border rounded leading-none">
         <div
           class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
           <div class="col-span-1 md:pl-3 truncate font-semibold">
-            ${col.name}
+            <a
+              href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
+              class="block text-primary hover:text-indigo-500"
+            >
+              ${col.name}
+            </a>
           </div>
           <div class="col-span-1 order-last md:order-none truncate">
             ${col.tags
@@ -500,10 +489,12 @@ export class CollectionsList extends LiteElement {
             ${this.isCrawler ? this.renderActions(col) : ""}
           </div>
         </div>
-      </a>
+      </div>
     </li>`;
 
   private renderActions = (col: Collection) => {
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
     return html`
       <sl-dropdown distance="4">
         <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
@@ -517,6 +508,21 @@ export class CollectionsList extends LiteElement {
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <!-- Shoelace doesn't allow "href" on menu items,
+              see https://github.com/shoelace-style/shoelace/issues/1351 -->
+          <a
+            href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
+            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            download
+            @click=${(e: MouseEvent) => {
+              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+            }}
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Collection")}
+          </a>
+          <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => this.confirmDelete(col)}

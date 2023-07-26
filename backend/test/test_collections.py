@@ -1,6 +1,9 @@
 import requests
 import os
 
+from zipfile import ZipFile, ZIP_STORED
+from tempfile import TemporaryFile
+
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
@@ -308,6 +311,28 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert _coll_id in r.json()["collections"]
+
+
+def test_download_streaming_collection(crawler_auth_headers, default_org_id):
+    # Add upload
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/download",
+            headers=crawler_auth_headers,
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) == 4
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
 
 
 def test_list_collections(

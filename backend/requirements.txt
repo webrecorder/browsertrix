@@ -11,3 +11,5 @@ jinja2
 humanize
 python-multipart
 pathvalidate
+https://github.com/ikreymer/stream-zip/archive/refs/heads/stream-uncompress.zip
+boto3
