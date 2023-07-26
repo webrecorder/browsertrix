@@ -1,0 +1,160 @@
+---
+- name: teardown browsertrix cloud on digital ocean
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../group_vars/do/main.yml
+    - ../group_vars/do/teardown.yml
+
+  tasks:
+
+  # Init
+  # ===========================================
+    - name: d_ocean | init | set full domain
+      ansible.builtin.set_fact:
+        full_domain: "{{ subdomain + '.' + domain if subdomain else domain }}"
+
+    - name: d_ocean | init | install s3cmd and mongodump
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - mongodump
+        - s3cmd
+
+  # MongoDB
+  # ===========================================
+    - name: d_ocean | db | test for existing mongodb
+      ansible.builtin.command: doctl db list -o json
+      changed_when: false
+      failed_when: false
+      register: db_check
+
+    - name: d_ocean | db | does db exist
+      ansible.builtin.set_fact:
+        db_exists: "{{ db_check.stdout | from_json | json_query(name_query) | length >= 1 }}"
+      vars:
+        name_query: '[?name==`{{ db_name }}`]'
+
+    - name: d_ocean | db | set db id
+      ansible.builtin.set_fact:
+        db_uuid: "{{ db_check.stdout | from_json | json_query(name_query) | json_query('[0].id') }}"
+      vars:
+        name_query: '[?name==`{{ db_name }}`]'
+
+    - name: d_ocean | db | reset db user password
+      ansible.builtin.command: doctl databases user reset {{ db_uuid }} doadmin -o json
+      register: db_user
+      when: db_exists
+      changed_when: true
+
+    - name: Sleep 10 seconds to wait for admin password to change
+      ansible.builtin.wait_for:
+        timeout: 10
+      when: db_exists
+
+    - name: d_ocean | db | set db config
+      ansible.builtin.set_fact:
+        db_url: "{{ db_check.stdout | from_json | json_query(name_query) | json_query('[0].connection.uri') | replace(old, new) }}"
+      vars:
+        name_query: '[?name==`{{ db_name }}`]'
+        old: ":@"
+        new: ":{{ db_user.stdout | from_json | json_query('[0].password') }}@"
+      when: db_exists
+
+    - name: d_ocean | db | dump db
+      ansible.builtin.command: mongodump --uri={{ db_url }} --archive=mongobackup.gz --gzip
+      when: create_backup and db_exists
+      changed_when: true
+
+    - name: d_ocean | db | upload mongo to spaces
+      ansible.builtin.command: s3cmd put ./mongobackup.gz s3://{{ bucket_name }}/{{ bucket_path }} --host={{ droplet_region }}.digitaloceanspaces.com --access_key "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}" --secret_key "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
+      when: create_backup and db_exists
+      changed_when: true
+
+    - name: d_ocean | db | destroy mongodb database
+      ansible.builtin.command: doctl databases delete {{ item }} --force
+      loop: "{{ db_check.stdout | from_json | json_query(name_query) }}"
+      vars:
+        name_query: '[?name==`{{ db_name }}`]'
+      when: db_exists
+      changed_when: true
+
+  # Storage (Space)
+  # ===========================================
+    - name: d_ocean | space | destroy storage spaces
+      community.digitalocean.digital_ocean_spaces:
+        name: "{{ bucket_name }}"
+        state: absent
+        oauth_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
+        aws_access_key_id: "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}"
+        aws_secret_access_key: "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
+        region: "{{ droplet_region }}"
+      when: delete_space
+
+  # K8S
+  # ===========================================
+    - name: d_ocean | k8s | test for existing k8s cluster
+      ansible.builtin.command: doctl k8s cluster list -o json
+      changed_when: false
+      failed_when: false
+      register: cluster_check
+
+    - name: d_ocean | k8s | does k8s cluster exist?
+      ansible.builtin.set_fact:
+        k8s_exists: "{{ cluster_check.stdout | from_json | json_query(name_query) | length >= 1 }}"
+      vars:
+        name_query: '[?name==`{{ k8s_name }}`]'
+
+    - name: d_ocean | k8s | Get information about our cluster
+      community.digitalocean.digital_ocean_kubernetes_info:
+        oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
+        name: "{{ k8s_name }}"
+        return_kubeconfig: true
+      register: my_cluster
+      when: k8s_exists
+
+    - name: d_ocean | registry | remove kubectl config
+      ansible.builtin.command: doctl k8s cluster kubeconfig remove {{ my_cluster.data.id }}
+      when: configure_kubectl and k8s_exists
+      changed_when: true
+
+    - name: d_ocean | k8s | destroy a kubernetes cluster named {{ k8s_name }}
+      ansible.builtin.command: doctl kubernetes cluster delete {{ k8s_name }} -f --dangerous
+      when: k8s_exists
+      changed_when: true
+
+  # DNS
+  # ===========================================
+    - name: d_ocean | dns | gather facts about dns
+      ansible.builtin.command: doctl compute domain records list {{ domain }} -o json --format ID,Name --no-header
+      register: domain_info
+      changed_when: true
+
+    - name: d_ocean | dns | remove the dns for browsertrix cloud
+      ansible.builtin.command: "doctl compute domain records rm {{ domain }} {{ item }} -f"
+      loop: "{{ domain_info.stdout | from_json | json_query(name_query) }}"
+      vars:
+        name_query: '[?name.contains(@,`{{ subdomain }}`)].id'
+      changed_when: true
+      register: remove_dns
+
+  # Registry
+  # ===========================================
+    - name: d_ocean | registry | remove registry
+      ansible.builtin.command: doctl registry delete -f
+      when: use_do_registry
+      changed_when: true
+
+  # Packages
+  # ===========================================
+    - name: d_ocean | uninstall | remove installed applications
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - mongodump
+        - s3cmd
+        - doctl
+        - helm
