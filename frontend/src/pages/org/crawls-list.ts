@@ -556,6 +556,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <btrix-crawl-list
+        baseUrl=""
         artifactType=${ifDefined(this.artifactType || undefined)}
       >
         ${this.crawls.items.map(this.renderCrawlItem)}
