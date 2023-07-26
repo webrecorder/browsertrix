@@ -469,7 +469,7 @@ class BtrixOperator(K8sAPI):
         """sync crawl state for running crawl"""
         # check if at least one pod started running
         if not await self.check_if_pods_running(pods):
-            if self.should_mark_waiting(crawl):
+            if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
                     "waiting_capacity",
                     status,
@@ -548,13 +548,13 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    def should_mark_waiting(self, crawl):
+    def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
-        if crawl.status == "running":
+        if state == "running":
             return True
 
-        if crawl.status == "starting":
-            started = from_k8s_date(crawl.started)
+        if state == "starting":
+            started = from_k8s_date(started)
             return (datetime.utcnow() - started).total_seconds() > STARTING_TIME_SECS
 
         return False
