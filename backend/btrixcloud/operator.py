@@ -548,7 +548,7 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def should_mark_waiting(self, crawl):
+    def should_mark_waiting(self, crawl):
         """Should the crawl be marked as waiting for capacity?"""
         if crawl.status == "running":
             return True
