@@ -59,7 +59,7 @@ export class CrawlMetadataEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateCrawlNotesMax = maxLengthValidator(500);
+  private validateCrawlDescriptionMax = maxLengthValidator(500);
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open") && this.open) {
@@ -88,27 +88,26 @@ export class CrawlMetadataEditor extends LiteElement {
   private renderEditMetadata() {
     if (!this.crawl) return;
 
-    const { helpText, validate } = this.validateCrawlNotesMax;
+    const { helpText, validate } = this.validateCrawlDescriptionMax;
     return html`
       <form
         id="crawlDetailsForm"
         @submit=${this.onSubmitMetadata}
         @reset=${this.requestClose}
       >
-      ${this.includeName ? html`
-        <div class="mb-3">
-          <sl-input
-            label="Name"
-            name="name"
-            value="${this.crawl.name}">
-          </sl-input>
-        </div>
-      ` : ``}
+        ${this.includeName
+          ? html`
+              <div class="mb-3">
+                <sl-input label="Name" name="name" value="${this.crawl.name}">
+                </sl-input>
+              </div>
+            `
+          : ``}
         <sl-textarea
           class="mb-3 with-max-help-text"
-          name="crawlNotes"
-          label=${msg("Notes")}
-          value=${this.crawl.notes || ""}
+          name="crawlDescription"
+          label=${msg("Description")}
+          value=${this.crawl.description || ""}
           rows="3"
           autocomplete="off"
           resize="auto"
@@ -172,10 +171,11 @@ export class CrawlMetadataEditor extends LiteElement {
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
-    const { crawlNotes, name } = serialize(formEl);
+    const { crawlDescription, name } = serialize(formEl);
 
-    if ((!this.includeName || name === this.crawl.name ) &&
-      crawlNotes === (this.crawl!.notes ?? "") &&
+    if (
+      (!this.includeName || name === this.crawl.name) &&
+      crawlDescription === (this.crawl!.description ?? "") &&
       JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
     ) {
       // No changes have been made
@@ -185,7 +185,7 @@ export class CrawlMetadataEditor extends LiteElement {
 
     const params = {
       tags: this.tagsToSave,
-      notes: crawlNotes,
+      description: crawlDescription,
       name,
     };
 

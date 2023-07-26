@@ -165,14 +165,23 @@ def test_get_crawls_by_description(
     crawler_auth_headers, default_org_id, crawler_crawl_id
 ):
     description = "crawler test crawl"
+
+    # Give crawl a description
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        headers=crawler_auth_headers,
+        json={"description": description},
+    )
+    assert r.status_code == 200
+
     encoded_description = urllib.parse.quote(description)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?description={encoded_description}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["total"] >= 1
-    for crawl in r.json()["items"]:
-        assert crawl["description"] == description
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["description"] == description
 
 
 def test_get_crawls_by_collection_id(

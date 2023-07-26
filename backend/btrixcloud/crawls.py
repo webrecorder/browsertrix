@@ -136,11 +136,6 @@ class CrawlOps(BaseCrawlOps):
                 },
             },
             {"$set": {"name": {"$arrayElemAt": ["$crawlConfig.name", 0]}}},
-            {
-                "$set": {
-                    "description": {"$arrayElemAt": ["$crawlConfig.description", 0]}
-                }
-            },
         ]
 
         if not resources:

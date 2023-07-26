@@ -81,7 +81,6 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     data = r.json()
     assert data["fileSize"] == wacz_size
     assert data["fileCount"] == 1
-    assert data["description"] == "Admin Test Crawl description"
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -188,19 +187,14 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
-    # Add exception handling for old crawls without notes field
-    try:
-        assert not data["notes"]
-    except KeyError:
-        pass
 
-    # Submit patch request to update tags and notes
+    # Submit patch request to update tags and description
     UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
-    UPDATED_NOTES = "Lorem ipsum test note."
+    UPDATED_DESC = "Lorem ipsum test note."
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
-        json={"tags": UPDATED_TAGS, "notes": UPDATED_NOTES},
+        json={"tags": UPDATED_TAGS, "description": UPDATED_DESC},
     )
     assert r.status_code == 200
     data = r.json()
@@ -214,13 +208,13 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
-    assert data["notes"] == UPDATED_NOTES
+    assert data["description"] == UPDATED_DESC
 
     # Verify deleting works as well
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
-        json={"tags": [], "notes": None},
+        json={"tags": [], "description": None},
     )
     assert r.status_code == 200
 
@@ -231,7 +225,7 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 200
     data = r.json()
     assert data["tags"] == []
-    assert not data["notes"]
+    assert not data["description"]
 
 
 def test_delete_crawls_crawler(
