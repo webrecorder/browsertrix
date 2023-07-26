@@ -45,6 +45,9 @@ CJS = "CrawlJob.btrix.cloud/v1"
 
 DEFAULT_TTL = 30
 
+# time in seconds before a crawl is deemed 'waiting' instead of 'starting'
+STARTING_TIME_SECS = 60
+
 
 # ============================================================================
 class DeleteCrawlException(Exception):
@@ -96,6 +99,7 @@ class CrawlStatus(BaseModel):
     filesAddedSize: int = 0
     finished: Optional[str] = None
     stopping: bool = False
+    initRedis: bool = False
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
@@ -237,9 +241,7 @@ class BtrixOperator(K8sAPI):
         params["force_restart"] = spec.get("forceRestart")
 
         params["redis_url"] = redis_url
-        params["redis_scale"] = (
-            1 if status.state not in ("starting", "waiting_capacity") else 0
-        )
+        params["redis_scale"] = 1 if status.initRedis else 0
 
         children = self.load_from_yaml("crawler.yaml", params)
         children.extend(self.load_from_yaml("redis.yaml", params))
@@ -466,32 +468,33 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one pod started running
-        # otherwise, mark as 'waiting_capacity' and return
         if not await self.check_if_pods_running(pods):
-            await self.set_state(
-                "waiting_capacity",
-                status,
-                crawl.id,
-                allowed_from=["starting", "running"],
-            )
+            if self.should_mark_waiting(crawl):
+                await self.set_state(
+                    "waiting_capacity",
+                    status,
+                    crawl.id,
+                    allowed_from=["starting", "running"],
+                )
+
+            status.initRedis = False
 
             # resync after N seconds
             status.resync_after = self.fast_retry_secs
             return status
 
-        # set state to running (if not already)
-        if await self.set_state(
-            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
-        ):
-            # if just started running, no redis yet, so just retry
-            status.resync_after = self.fast_retry_secs
-            return status
+        status.initRedis = True
 
         redis = await self._get_redis(redis_url)
         if not redis:
             # resync after N seconds, until redis is inited
             status.resync_after = self.fast_retry_secs
             return status
+
+        # set state to running (if not already)
+        await self.set_state(
+            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
+        )
 
         try:
             file_done = await redis.lpop(self.done_key)
@@ -542,6 +545,17 @@ class BtrixOperator(K8sAPI):
         except:
             # assume no valid pod found
             pass
+
+        return False
+
+    async def should_mark_waiting(self, crawl):
+        """Should the crawl be marked as waiting for capacity?"""
+        if crawl.status == "running":
+            return True
+
+        if crawl.status == "starting":
+            started = from_k8s_date(crawl.started)
+            return (datetime.utcnow() - started).total_seconds() > STARTING_TIME_SECS
 
         return False
 
