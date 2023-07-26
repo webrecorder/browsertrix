@@ -181,7 +181,7 @@ def test_get_crawls_by_description(
     )
     data = r.json()
     assert data["total"] == 1
-    assert data["items"][0][description] == description
+    assert data["items"][0]["description"] == description
 
 
 def test_get_crawls_by_collection_id(
