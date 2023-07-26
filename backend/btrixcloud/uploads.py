@@ -46,7 +46,7 @@ class UploadOps(BaseCrawlOps):
         stream,
         filename: str,
         name: Optional[str],
-        notes: Optional[str],
+        description: Optional[str],
         collections: Optional[List[UUID4]],
         tags: Optional[List[str]],
         org: Organization,
@@ -96,7 +96,7 @@ class UploadOps(BaseCrawlOps):
                 print("replace file deletion failed", exc)
 
         return await self._create_upload(
-            files, name, notes, collections, tags, id_, org, user
+            files, name, description, collections, tags, id_, org, user
         )
 
     # pylint: disable=too-many-arguments, too-many-locals
@@ -104,7 +104,7 @@ class UploadOps(BaseCrawlOps):
         self,
         uploads: List[UploadFile],
         name: Optional[str],
-        notes: Optional[str],
+        description: Optional[str],
         collections: Optional[List[UUID4]],
         tags: Optional[List[str]],
         org: Organization,
@@ -125,11 +125,11 @@ class UploadOps(BaseCrawlOps):
             files.append(file_reader.file_prep.get_crawl_file())
 
         return await self._create_upload(
-            files, name, notes, collections, tags, id_, org, user
+            files, name, description, collections, tags, id_, org, user
         )
 
     async def _create_upload(
-        self, files, name, notes, collections, tags, id_, org, user
+        self, files, name, description, collections, tags, id_, org, user
     ):
         now = dt_now()
         # ts_now = now.strftime("%Y%m%d%H%M%S")
@@ -145,7 +145,7 @@ class UploadOps(BaseCrawlOps):
         uploaded = UploadedCrawl(
             id=crawl_id,
             name=name or "New Upload @ " + str(now),
-            notes=notes,
+            description=description,
             collections=collection_uuids,
             tags=tags,
             userid=user.id,
@@ -240,14 +240,14 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
     async def upload_formdata(
         uploads: List[UploadFile] = File(...),
         name: Optional[str] = "",
-        notes: Optional[str] = "",
+        description: Optional[str] = "",
         collections: Optional[str] = "",
         tags: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
         name = unquote(name)
-        notes = unquote(notes)
+        description = unquote(description)
         colls_list = []
         if collections:
             colls_list = unquote(collections).split(",")
@@ -257,7 +257,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
             tags_list = unquote(tags).split(",")
 
         return await ops.upload_formdata(
-            uploads, name, notes, colls_list, tags_list, org, user
+            uploads, name, description, colls_list, tags_list, org, user
         )
 
     @app.put("/orgs/{oid}/uploads/stream", tags=["uploads"])
@@ -265,7 +265,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         request: Request,
         filename: str,
         name: Optional[str] = "",
-        notes: Optional[str] = "",
+        description: Optional[str] = "",
         collections: Optional[str] = "",
         tags: Optional[str] = "",
         replaceId: Optional[str] = "",
@@ -273,7 +273,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         user: User = Depends(user_dep),
     ):
         name = unquote(name)
-        notes = unquote(notes)
+        description = unquote(description)
         colls_list = []
         if collections:
             colls_list = unquote(collections).split(",")
@@ -286,7 +286,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
             request.stream(),
             filename,
             name,
-            notes,
+            description,
             colls_list,
             tags_list,
             org,
