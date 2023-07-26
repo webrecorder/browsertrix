@@ -69,7 +69,7 @@
       changed_when: true
 
     - name: d_ocean | db | upload mongo to spaces
-      ansible.builtin.command: s3cmd put ./mongobackup.gz s3://{{ db_name }} --host={{ droplet_region }}.digitaloceanspaces.com --access_key "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}" --secret_key "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
+      ansible.builtin.command: s3cmd put ./mongobackup.gz s3://{{ bucket_name }}/{{ bucket_path }} --host={{ droplet_region }}.digitaloceanspaces.com --access_key "{{ lookup('env', 'DO_AWS_ACCESS_KEY') }}" --secret_key "{{ lookup('env', 'DO_AWS_SECRET_KEY') }}"
       when: create_backup and db_exists
       changed_when: true
 
