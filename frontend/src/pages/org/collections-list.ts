@@ -519,8 +519,9 @@ export class CollectionsList extends LiteElement {
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
           <!-- Shoelace doesn't allow "href" on menu items,
-          see https://github.com/shoelace-style/shoelace/issues/1351 -->
+              see https://github.com/shoelace-style/shoelace/issues/1351 -->
           <a
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
