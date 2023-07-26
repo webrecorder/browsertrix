@@ -298,14 +298,14 @@ class BtrixOperator(K8sAPI):
                 return True
 
             # get actual crawl state
-            new_state, finished = await get_crawl_state(self.crawls, crawl_id)
-            if new_state:
-                status.state = new_state
+            actual_state, finished = await get_crawl_state(self.crawls, crawl_id)
+            if actual_state:
+                status.state = actual_state
             if finished:
                 status.finished = to_k8s_date(finished)
 
-            if new_state != state:
-                print(f"state mismatch, actual state {new_state}, requested {state}")
+            if actual_state != state:
+                print(f"state mismatch, actual state {actual_state}, requested {state}")
 
         if status.state != state:
             print(
