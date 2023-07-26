@@ -144,6 +144,9 @@ export class CrawlsList extends LiteElement {
   @state()
   private isEditingCrawl = false;
 
+  @state()
+  private isUploadingArchive = false;
+
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
@@ -269,8 +272,22 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="flex w-full pb-3 mb-3 border-b">
-            <h1 class="text-xl font-semibold h-8">${msg("All Archived Data")}</h1>
+          <div class="flex justify-between w-full pb-4 mb-3 border-b">
+            <h1 class="text-xl font-semibold h-8">
+              ${msg("All Archived Data")}
+            </h1>
+            ${when(
+              this.isCrawler,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isUploadingArchive = true)}
+                >
+                  <sl-icon slot="prefix" name="upload"></sl-icon>
+                  ${msg("Upload Archive")}
+                </sl-button>
+              `
+            )}
           </div>
           <div class="flex gap-2 mb-3">
             ${listTypes.map(({ label, artifactType, icon }) => {
@@ -337,6 +354,24 @@ export class CrawlsList extends LiteElement {
           `
         )}
       </main>
+      ${when(
+        this.isCrawler && this.orgId,
+        () => html`
+          <btrix-file-uploader
+            orgId=${this.orgId!}
+            .authState=${this.authState}
+            ?open=${this.isUploadingArchive}
+            @request-close=${() => (this.isUploadingArchive = false)}
+            @uploaded=${() => {
+              if (this.artifactType !== "crawl") {
+                this.fetchCrawls({
+                  page: 1,
+                });
+              }
+            }}
+          ></btrix-file-uploader>
+        `
+      )}
     `;
   }
 
@@ -579,7 +614,11 @@ export class CrawlsList extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(`/orgs/${crawl.oid}/artifacts/${crawl.type === "upload" ? "upload" : "crawl"}/${crawl.id}`)}
+                  this.navTo(
+                    `/orgs/${crawl.oid}/artifacts/${
+                      crawl.type === "upload" ? "upload" : "crawl"
+                    }/${crawl.id}`
+                  )}
               >
                 ${msg("View Crawl Details")}
               </sl-menu-item>

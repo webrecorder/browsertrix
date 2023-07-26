@@ -188,7 +188,7 @@ class CollectionOps:
         aggregate = [{"$match": match_query}]
 
         if sort_by:
-            if sort_by not in ("modified", "name", "description"):
+            if sort_by not in ("modified", "name", "description", "totalSize"):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
@@ -336,6 +336,7 @@ async def update_collection_counts_and_tags(
     """Set current crawl info in config when crawl begins"""
     crawl_count = 0
     page_count = 0
+    total_size = 0
     tags = []
 
     cursor = crawls.find({"collections": collection_id})
@@ -344,6 +345,9 @@ async def update_collection_counts_and_tags(
         if crawl["state"] not in SUCCESSFUL_STATES:
             continue
         crawl_count += 1
+        files = crawl.get("files", [])
+        for file in files:
+            total_size += file.get("size", 0)
         if crawl.get("stats"):
             page_count += crawl.get("stats", {}).get("done", 0)
         if crawl.get("tags"):
@@ -357,6 +361,7 @@ async def update_collection_counts_and_tags(
             "$set": {
                 "crawlCount": crawl_count,
                 "pageCount": page_count,
+                "totalSize": total_size,
                 "tags": sorted_tags,
             }
         },

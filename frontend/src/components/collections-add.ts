@@ -5,14 +5,14 @@ import debounce from "lodash/fp/debounce";
 import type { SlMenuItem, SlIconButton } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import type { AuthState } from "../../utils/AuthService";
-import type { Collection, CollectionList } from "../../types/collection";
-import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "../utils/AuthService";
+import type { Collection, CollectionList } from "../types/collection";
+import LiteElement, { html } from "../utils/LiteElement";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
-} from "../../types/api";
+} from "../types/api";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -52,6 +52,13 @@ export class CollectionsAdd extends LiteElement {
   @property({ type: String })
   configId!: string;
 
+  @property({ type: String })
+  label?: string;
+
+  /* Text to show on collection empty state */
+  @property({ type: String })
+  emptyText?: string;
+
   @state()
   private collections: CollectionList = [];
 
@@ -80,38 +87,32 @@ export class CollectionsAdd extends LiteElement {
   }
 
   render() {
-    return html`
-      <div class="form-control form-control--has-label">
-        <label
-          class="form-control__label"
-          part="form-control-label"
-          for="input"
-        >
-          <slot name="label">${msg("Collection Auto-Add")}</slot>
-        </label>
-        <div class="mb-2 mt-2 p-2 bg-neutral-50 border rounded-lg">
-          ${this.renderSearch()}
-        </div>
+    return html`<div>
+      <label class="form-label">
+        ${this.label || msg("Collection Auto-Add")}
+      </label>
+      <div class="mb-2 p-2 bg-neutral-50 border rounded-lg">
+        ${this.renderSearch()}
+      </div>
 
-        ${when(
-          this.collections,
-          () =>
-            this.collections.length
-              ? html`
-                  <div class="mb-2">
-                    <ul class="contents">
-                      ${this.collections.map(this.renderCollectionItem, this)}
-                    </ul>
-                  </div>
-                `
-              : html`
-                  <div class="mb-2">
-                    <p class="text-center text-0-500">
-                      ${msg("Search for a Collection to auto-add crawls")}
-                    </p>
-                  </div>
-                `)}
-      </div>`;
+      ${when(this.collections, () =>
+        this.collections.length
+          ? html`
+              <div class="mb-2">
+                <ul class="contents">
+                  ${this.collections.map(this.renderCollectionItem, this)}
+                </ul>
+              </div>
+            `
+          : this.emptyText
+          ? html`
+              <div class="mb-2">
+                <p class="text-center text-0-500">${this.emptyText}</p>
+              </div>
+            `
+          : ""
+      )}
+    </div>`;
   }
 
   private renderSearch() {
@@ -127,7 +128,9 @@ export class CollectionsAdd extends LiteElement {
           const item = e.detail.item as SlMenuItem;
           const collId = item.dataset["key"];
           if (collId && this.collectionIds.indexOf(collId) === -1) {
-            const coll = this.searchResults.find(collection => collection.id === collId);
+            const coll = this.searchResults.find(
+              (collection) => collection.id === collId
+            );
             if (coll) {
               this.collections.push(coll);
               this.collectionIds.push(coll.id);
@@ -163,7 +166,7 @@ export class CollectionsAdd extends LiteElement {
         >
       `;
     }
-    
+
     if (!this.searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
@@ -173,31 +176,29 @@ export class CollectionsAdd extends LiteElement {
     }
 
     return html`
-      ${this.searchResults.map(
-        (item: Collection) => {
-          return html`
-            <sl-menu-item
-              class="w-full"
-              slot="menu-item"
-              data-key=${item.id}
-            >
-              <div class="flex w-full gap-2 items-center">
-                <div class="justify-self-stretch grow truncate">${item.name}</div>
-                <div class="flex-auto text-right text-neutral-500 text-xs font-monostyle">
-                  ${msg(str`${item.crawlCount} Crawls`)}
-                </div>
+      ${this.searchResults.map((item: Collection) => {
+        return html`
+          <sl-menu-item class="w-full" slot="menu-item" data-key=${item.id}>
+            <div class="flex w-full gap-2 items-center">
+              <div class="justify-self-stretch grow truncate">${item.name}</div>
+              <div
+                class="flex-auto text-right text-neutral-500 text-xs font-monostyle"
+              >
+                ${msg(str`${item.crawlCount} Crawls`)}
               </div>
-            </sl-menu-item>
-          `;
-        }
-      )}
+            </div>
+          </sl-menu-item>
+        `;
+      })}
     `;
   }
 
   private renderCollectionItem(collection: Collection) {
     return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
         <div class="flex flex-row gap-2 justify-between items-center">
-          <div class="justify-self-stretch grow truncate">${collection.name}</div>
+          <div class="justify-self-stretch grow truncate">${
+            collection.name
+          }</div>
           <div class="text-neutral-500 text-xs text-right font-monostyle">
             ${msg(str`${collection.crawlCount} Crawls`)}
           </div>
@@ -218,7 +219,9 @@ export class CollectionsAdd extends LiteElement {
       if (collIdIndex > -1) {
         this.collectionIds.splice(collIdIndex, 1);
       }
-      const collIndex = this.collections.findIndex(collection => collection.id === collectionId);
+      const collIndex = this.collections.findIndex(
+        (collection) => collection.id === collectionId
+      );
       if (collIndex > -1) {
         this.collections.splice(collIndex, 1);
       }
@@ -233,7 +236,8 @@ export class CollectionsAdd extends LiteElement {
       this.searchResultsOpen = true;
     }
 
-    const data: CollectionSearchResults | undefined = await this.fetchCollectionsByPrefix(this.searchByValue);
+    const data: CollectionSearchResults | undefined =
+      await this.fetchCollectionsByPrefix(this.searchByValue);
     let searchResults: CollectionList = [];
     if (data && data.items.length) {
       searchResults = this.filterOutSelectedCollections(data.items);
@@ -257,12 +261,10 @@ export class CollectionsAdd extends LiteElement {
         sortBy: "name",
         pageSize: INITIAL_PAGE_SIZE,
       });
-      return results
+      return results;
     } catch {
       this.notify({
-        message: msg(
-          "Sorry, couldn't retrieve Collections at this time."
-        ),
+        message: msg("Sorry, couldn't retrieve Collections at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -310,4 +312,3 @@ export class CollectionsAdd extends LiteElement {
     );
   }
 }
-customElements.define("btrix-collections-add", CollectionsAdd);
