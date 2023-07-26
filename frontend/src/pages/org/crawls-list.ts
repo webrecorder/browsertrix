@@ -91,11 +91,6 @@ export class CrawlsList extends LiteElement {
   @property({ type: Boolean })
   isCrawler!: boolean;
 
-  // TODO better handling of using same crawls-list
-  // component between superadmin view and regular view
-  @property({ type: Boolean })
-  isAdminView = false;
-
   // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
   crawlsBaseUrl!: string;
@@ -178,12 +173,6 @@ export class CrawlsList extends LiteElement {
   }
 
   protected willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("isAdminView") && this.isAdminView === true) {
-      this.orderBy = {
-        field: "started",
-        direction: sortableFields["started"].defaultDirection!,
-      };
-    }
     if (
       changedProperties.has("shouldFetch") ||
       changedProperties.get("crawlsBaseUrl") ||
@@ -226,10 +215,7 @@ export class CrawlsList extends LiteElement {
       changedProperties.has("crawlsBaseUrl") ||
       changedProperties.has("crawlsAPIBaseUrl")
     ) {
-      // TODO add back when API supports `orgs/all/crawlconfigs`
-      if (!this.isAdminView) {
-        this.fetchConfigSearchValues();
-      }
+      this.fetchConfigSearchValues();
     }
   }
 
@@ -245,29 +231,20 @@ export class CrawlsList extends LiteElement {
       icon?: string;
     }[] = [
       {
+        artifactType: null,
+        label: msg("All"),
+      },
+      {
         artifactType: "crawl",
         icon: "gear-wide-connected",
         label: msg("Crawls"),
       },
-    ];
-
-    if (this.isAdminView) {
-      listTypes.unshift({
-        artifactType: "crawl",
-        icon: "gear-wide",
-        label: msg("Running Crawls"),
-      });
-    } else {
-      listTypes.unshift({
-        artifactType: null,
-        label: msg("All"),
-      });
-      listTypes.push({
+      {
         artifactType: "upload",
         icon: "upload",
         label: msg("Uploads"),
-      });
-    }
+      },
+    ];
 
     return html`
       <main>
@@ -376,25 +353,18 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderControls() {
-    let viewPlaceholder = "";
-    let viewOptions = [];
-    if (this.isAdminView) {
-      viewPlaceholder = msg("All Active Crawls");
-      viewOptions = activeCrawlStates;
-    } else {
-      viewOptions = finishedCrawlStates;
-      if (this.artifactType === "upload") {
-        viewPlaceholder = msg("All Uploaded");
-      } else {
-        viewPlaceholder = msg("All Finished");
-      }
-    }
+    const viewPlaceholder =
+      this.artifactType === "upload"
+        ? msg("All Uploaded")
+        : msg("All Finished");
+    const viewOptions = finishedCrawlStates;
+
     return html`
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          ${when(!this.isAdminView, () => this.renderSearch())}
+          ${this.renderSearch()}
         </div>
         <div class="flex items-center">
           <div class="text-neutral-500 mx-2">${msg("View:")}</div>
@@ -586,7 +556,6 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <btrix-crawl-list
-        baseUrl=${this.isAdminView ? "/crawls/crawl" : ""}
         artifactType=${ifDefined(this.artifactType || undefined)}
       >
         ${this.crawls.items.map(this.renderCrawlItem)}
