@@ -4,7 +4,7 @@ import yaml
 import sys
 
 
-ALLOWED_PASSWORDS = ["PassW0rd!", "password", "PASSWORD@", "PASSW0RD!"]
+ALLOWED_PASSWORDS = ["PassW0rd!", "password", "PASSWORD@", "PASSW0RD!", "PASSWORD!"]
 
 def key_finder(d: dict, key: str = "password", top_level = None) -> Generator:
     """This recursive function yields all the keys in {d} that _contains_ the string {key}
