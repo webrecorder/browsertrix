@@ -78,6 +78,10 @@ spec:
             - name: VNC_PASS
               value: {{ vnc_password }}
 
+          {% if crawler_socks_proxy_host %}
+            - name: CHROME_FLAGS
+              value: "--proxy-server=socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port | default('9050') }}"
+          {% endif %}
 ---
 apiVersion: v1
 kind: Service

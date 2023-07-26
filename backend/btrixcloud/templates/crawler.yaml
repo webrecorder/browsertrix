@@ -138,6 +138,15 @@ spec:
             - name: STORE_USER
               value: "{{ userid }}"
 
+        {% if crawler_socks_proxy_host %}
+            - name: SOCKS_HOST
+              value: "{{ crawler_socks_proxy_host }}"
+          {% if crawler_socks_proxy_port %}
+            - name: SOCKS_PORT
+              value: "{{ crawler_socks_proxy_port }}"
+          {% endif %}
+        {% endif %}
+
           resources:
             limits:
               cpu: {{ crawler_limits_cpu }}
@@ -166,7 +175,7 @@ metadata:
   labels:
     crawl: {{ id }}
     role: crawler
- 
+
 spec:
   clusterIP: None
   selector:
