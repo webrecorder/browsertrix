@@ -177,7 +177,7 @@ redis_limits_memory: "64Mi"
 # =========================================
 
 crawler_image: "webrecorder/browsertrix-crawler:latest"
-crawler_pull_policy: "IfNotPresent"
+crawler_pull_policy: "Always"
 
 crawler_namespace: "crawlers"
 
