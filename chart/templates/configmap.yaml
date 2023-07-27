@@ -119,6 +119,9 @@ data:
 
     crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
 
+    crawler_socks_proxy_host: "{{ .Values.crawler_socks_proxy_host }}"
+    crawler_socks_proxy_port: "{{ .Values.crawler_socks_proxy_port }}"
+
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 

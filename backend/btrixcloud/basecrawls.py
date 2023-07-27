@@ -199,9 +199,6 @@ class BaseCrawlOps:
             if not crawl.name:
                 crawl.name = config.name
 
-            if not crawl.description:
-                crawl.description = config.description
-
             if config.config.seeds:
                 if add_first_seed:
                     first_seed = config.config.seeds[0]

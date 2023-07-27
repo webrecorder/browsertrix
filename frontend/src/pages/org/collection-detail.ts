@@ -49,7 +49,10 @@ export class CollectionDetail extends LiteElement {
       this.collection = undefined;
       this.fetchCollection();
     }
-    if (this.collection && (this.collection.publishing === true || !this.collection.publishedUrl)) {
+    if (
+      this.collection &&
+      (this.collection.publishing === true || !this.collection.publishedUrl)
+    ) {
       await this.waitForCollectionPublished();
     }
   }
@@ -68,15 +71,21 @@ export class CollectionDetail extends LiteElement {
         >
           ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
         </h2>
-        ${when(this.collection?.publishing && !this.collection?.publishedUrl, () => html`
-          <div class="flex items-center justify-center mr-2 p-2">
-            <div class="flex flex-col mr-1">
-              <span>${msg(str`Publishing in progress`)}</span>
-              <sl-progress-bar value="${this.pPercent}" style="--height: 6px;"></sl-progress-bar>
+        ${when(
+          this.collection?.publishing && !this.collection?.publishedUrl,
+          () => html`
+            <div class="flex items-center justify-center mr-2 p-2">
+              <div class="flex flex-col mr-1">
+                <span>${msg(str`Publishing in progress`)}</span>
+                <sl-progress-bar
+                  value="${this.pPercent}"
+                  style="--height: 6px;"
+                ></sl-progress-bar>
+              </div>
+              <sl-spinner></sl-spinner>
             </div>
-            <sl-spinner></sl-spinner>
-          </div>
-        `)}
+          `
+        )}
         <div>
           ${when(
             this.collection?.publishedUrl,
@@ -216,11 +225,11 @@ export class CollectionDetail extends LiteElement {
   `;
 
   private renderActions = () => {
-    // FIXME replace auth token post-workshop
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
-    const fullUrl = this.collection?.publishedUrl ? new URL(this.collection?.publishedUrl, window.location.href)
-    .href : "";
+    const fullUrl = this.collection?.publishedUrl
+      ? new URL(this.collection?.publishedUrl, window.location.href).href
+      : "";
 
     return html`
       <sl-dropdown distance="4">
@@ -280,6 +289,20 @@ export class CollectionDetail extends LiteElement {
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <!-- Shoelace doesn't allow "href" on menu items,
+              see https://github.com/shoelace-style/shoelace/issues/1351 -->
+          <a
+            href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
+            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            @click=${(e: MouseEvent) => {
+              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+            }}
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Collection")}
+          </a>
+          <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             ?disabled=${this.collection?.publishing === true}
@@ -484,7 +507,7 @@ export class CollectionDetail extends LiteElement {
 
     const { publishing } = data;
     if (this.collection && publishing) {
-      this.collection = {...this.collection, publishing: publishing};
+      this.collection = { ...this.collection, publishing: publishing };
     }
 
     await this.waitForCollectionPublished();
@@ -497,7 +520,11 @@ export class CollectionDetail extends LiteElement {
         this.authState!
       );
       this.pPercent = Number(data.pPercent);
-      if (!data.publishing && data.publishedUrl && data.publishedUrl?.length > 0) {
+      if (
+        !data.publishing &&
+        data.publishedUrl &&
+        data.publishedUrl?.length > 0
+      ) {
         this.collection = data;
         return;
       }

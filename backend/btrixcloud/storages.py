@@ -17,7 +17,6 @@ from stream_zip import stream_zip, NO_COMPRESSION_64
 
 from boto3.s3.transfer import TransferConfig
 
-
 import aiobotocore.session
 import boto3
 

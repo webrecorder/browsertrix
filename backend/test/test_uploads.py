@@ -16,7 +16,7 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 def test_upload_stream(admin_auth_headers, default_org_id, uploads_collection_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload&notes=Testing%0AData&collections={uploads_collection_id}&tags=one%2Ctwo",
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20Upload&description=Testing%0AData&collections={uploads_collection_id}&tags=one%2Ctwo",
             headers=admin_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -45,7 +45,7 @@ def test_list_stream_upload(admin_auth_headers, default_org_id, uploads_collecti
 
     assert found
     assert found["name"] == "My Upload"
-    assert found["notes"] == "Testing\nData"
+    assert found["description"] == "Testing\nData"
     assert found["collections"] == [uploads_collection_id]
     assert sorted(found["tags"]) == ["one", "two"]
     assert "files" not in found
@@ -255,16 +255,16 @@ def test_update_upload_metadata(admin_auth_headers, default_org_id):
     data = r.json()
     assert data["name"] == "My Upload Updated"
     assert not data["tags"]
-    assert not data["notes"]
+    assert not data["description"]
 
-    # Submit patch request to update name, tags, and notes
+    # Submit patch request to update name, tags, and description
     UPDATED_NAME = "New Upload Name"
     UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
-    UPDATED_NOTES = "Lorem ipsum test note."
+    UPDATED_DESC = "Lorem ipsum test note."
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
         headers=admin_auth_headers,
-        json={"tags": UPDATED_TAGS, "notes": UPDATED_NOTES, "name": UPDATED_NAME},
+        json={"tags": UPDATED_TAGS, "description": UPDATED_DESC, "name": UPDATED_NAME},
     )
     assert r.status_code == 200
     data = r.json()
@@ -278,7 +278,7 @@ def test_update_upload_metadata(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
-    assert data["notes"] == UPDATED_NOTES
+    assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
 
 

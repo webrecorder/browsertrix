@@ -23,11 +23,14 @@ k8s_name: "{{ project_name }}"
 bucket_name: "{{ project_name }}"
 bucket_path: "crawls"
 
+registry_name: "{{ project_name }}"
+
 domain: "browsertrix.cloud"
 subdomain: "{{ project_name }}"
 
+
 configure_kubectl: false
-use_do_registry: true
+use_do_registry: false
 image_tag: "latest"
 
 enable_signing: true

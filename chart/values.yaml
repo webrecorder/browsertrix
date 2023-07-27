@@ -91,7 +91,7 @@ default_org: "My Organization"
 backend_image: "docker.io/webrecorder/browsertrix-backend:latest"
 backend_pull_policy: "Always"
 
-backend_password_secret: "c9085f33ecce4347aa1d69339e16c499"
+backend_password_secret: "PASSWORD!"
 
 # number of backend pods
 backend_num_replicas: 1
@@ -207,6 +207,10 @@ crawler_session_size_limit_bytes: "10000000000"
 crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
+
+# optional: use socks5 proxy for crawler and profilebrowser
+# crawler_socks_proxy_host: 192.0.2.1
+# crawler_socks_proxy_port: 9050
 
 # time to wait for graceful stop
 grace_period: 1000

@@ -302,7 +302,7 @@ class BaseCrawl(BaseMongoModel):
 
     files: Optional[List[CrawlFile]] = []
 
-    notes: Optional[str]
+    description: Optional[str]
 
     errors: Optional[List[str]] = []
 
@@ -342,8 +342,6 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    notes: Optional[str]
-
     errors: Optional[List[str]]
 
     collections: Optional[List[UUID4]] = []
@@ -351,7 +349,6 @@ class CrawlOut(BaseMongoModel):
     # automated crawl fields
     cid: Optional[UUID4]
     name: Optional[str]
-    description: Optional[str]
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
@@ -372,7 +369,7 @@ class UpdateCrawl(BaseModel):
     """Update crawl"""
 
     tags: Optional[List[str]] = []
-    notes: Optional[str]
+    description: Optional[str]
 
 
 # ============================================================================
