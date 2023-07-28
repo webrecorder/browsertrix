@@ -181,8 +181,12 @@ crawl_retries: 1000
 
 crawler_browser_instances: 2
 
-crawler_cpu_per_browser: 600
+# note: the following values are multipled by 'crawler_browser_instances' to get final value
 
+# this value is an integer in 'm' (millicpu) units, multiplied by 'crawler_browser_instances'
+crawler_cpu_per_browser: 650
+
+# this value is an integer in 'Mi' (Megabyte) units, multiplied by 'crawler_browser_instances'
 crawler_memory_per_browser: 768
 
 # minimum size allocated to each crawler
