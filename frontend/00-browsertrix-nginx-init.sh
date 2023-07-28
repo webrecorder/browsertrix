@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # remove old config
 rm /etc/nginx/conf.d/default.conf
