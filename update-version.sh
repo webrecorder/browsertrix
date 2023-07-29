@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 version=`cat version.txt`
 jq ".version=\"$version\"" ./frontend/package.json > ./tmp-package.json
