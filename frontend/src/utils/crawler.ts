@@ -4,6 +4,9 @@ export const activeCrawlStates: CrawlState[] = [
   "waiting_org_limit",
   "waiting_capacity",
   "running",
+  "generate-wacz",
+  "uploading-wacz",
+  "pending-wait",
   "stopping",
 ];
 export const inactiveCrawlStates: CrawlState[] = [
