@@ -520,7 +520,7 @@ export class CrawlList extends LitElement {
         <div class="col">
           <slot name="idCol">${msg("Name")}</slot>
         </div>
-        <div class="col">${msg("Created At")}</div>
+        <div class="col">${msg("Date Created")}</div>
         <div class="col">${msg("Size")}</div>
         <div class="col">${msg("Created By")}</div>
         <div class="col action">
