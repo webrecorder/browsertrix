@@ -370,7 +370,7 @@ export class CollectionsList extends LiteElement {
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
-            <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
+            <div class="col-span-1 text-xs">${msg("Web Captures")}</div>
             <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
           </div>
         </header>
@@ -474,8 +474,10 @@ export class CollectionsList extends LiteElement {
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
           >
             ${col.crawlCount === 1
-              ? msg("1 crawl")
-              : msg(str`${this.numberFormatter.format(col.crawlCount)} crawls`)}
+              ? msg("1 capture")
+              : msg(
+                  str`${this.numberFormatter.format(col.crawlCount)} captures`
+                )}
           </div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
