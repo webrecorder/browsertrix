@@ -20,22 +20,14 @@ import type { PageChangeEvent } from "../../components/pagination";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
 const TABS = ["replay", "web-captures"] as const;
 export type Tab = (typeof TABS)[number];
-type SortField = "started" | "firstSeed" | "fileSize";
+type SortField = "finished";
 type SortDirection = "asc" | "desc";
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  started: {
-    label: msg("Date Started"),
-    defaultDirection: "desc",
-  },
-  firstSeed: {
-    label: msg("Crawl Start URL"),
-    defaultDirection: "desc",
-  },
-  fileSize: {
-    label: msg("File Size"),
+  finished: {
+    label: msg("Date Finished"),
     defaultDirection: "desc",
   },
 };
@@ -75,8 +67,8 @@ export class CollectionDetail extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "started",
-    direction: sortableFields["started"].defaultDirection!,
+    field: "finished",
+    direction: sortableFields["finished"].defaultDirection!,
   };
 
   @state()
