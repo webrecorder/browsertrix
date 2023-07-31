@@ -7,7 +7,6 @@ import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { inactiveCrawlStates } from "../../utils/crawler";
 import type { Collection } from "../../types/collection";
 import type {
   APIPaginatedList,
@@ -17,21 +16,10 @@ import type {
 import type { Crawl, CrawlState, Upload } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
+const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
 const TABS = ["replay", "web-captures"] as const;
 export type Tab = (typeof TABS)[number];
-type SortField = "finished";
-type SortDirection = "asc" | "desc";
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
-  finished: {
-    label: msg("Date Finished"),
-    defaultDirection: "desc",
-  },
-};
-const ABORT_REASON_THROTTLE = "throttled";
 
 @localized()
 export class CollectionDetail extends LiteElement {
@@ -61,20 +49,6 @@ export class CollectionDetail extends LiteElement {
 
   @state()
   private isDescriptionExpanded = false;
-
-  @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "finished",
-    direction: sortableFields["finished"].defaultDirection!,
-  };
-
-  @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {
-    state: inactiveCrawlStates,
-  };
 
   // Use to cancel requests
   private getWebCapturesController: AbortController | null = null;
