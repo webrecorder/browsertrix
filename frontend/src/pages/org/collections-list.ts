@@ -27,7 +27,7 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "modified" | "name";
+type SortField = "modified" | "name" | "totalSize";
 type SortDirection = "asc" | "desc";
 const INITIAL_PAGE_SIZE = 10;
 const sortableFields: Record<
@@ -41,6 +41,10 @@ const sortableFields: Record<
   name: {
     label: msg("Name"),
     defaultDirection: "asc",
+  },
+  totalSize: {
+    label: msg("Size"),
+    defaultDirection: "desc",
   },
 };
 const MIN_SEARCH_LENGTH = 2;
@@ -370,9 +374,9 @@ export class CollectionsList extends LiteElement {
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
-            <div class="col-span-1 text-xs">${msg("Total Size")}</div>
-            <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
-            <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
+            <div class="col-span-1 text-xs">${msg("Size")}</div>
+            <div class="col-span-1 text-xs">${msg("Crawls")}</div>
+            <div class="col-span-2 text-xs">${msg("Pages")}</div>
           </div>
         </header>
         <ul class="contents">
