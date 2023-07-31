@@ -51,7 +51,7 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex justify-between items-end pb-3 border-b">
+      <header class="md:flex justify-between items-end pb-3 mb-3 border-b">
         <h2
           class="flex-1 min-w-0 text-xl font-semibold leading-10 truncate mr-2"
         >
@@ -59,6 +59,7 @@ export class CollectionDetail extends LiteElement {
         </h2>
         ${when(this.isCrawler, this.renderActions)}
       </header>
+      ${this.renderTabs()}
       <div class="my-7">${this.renderDescription()}</div>
       ${when(
         this.collection?.resources.length,
@@ -108,6 +109,32 @@ export class CollectionDetail extends LiteElement {
       </a>
     </nav>
   `;
+
+  private renderTabs = () => {
+    const isReplay = false;
+    return html`
+      <nav class="flex gap-2 mb-3">
+        <btrix-button
+          variant=${isReplay ? "primary" : "neutral"}
+          ?raised=${isReplay}
+          aria-selected="${isReplay}"
+          @click=${this.navLink}
+        >
+          <sl-icon name="link-replay" library="app"></sl-icon>
+          <span>${msg("Replay")}</span>
+        </btrix-button>
+        <btrix-button
+          variant=${isReplay ? "neutral" : "primary"}
+          ?raised=${!isReplay}
+          aria-selected="${!isReplay}"
+          @click=${this.navLink}
+        >
+          <sl-icon name="list-ul"></sl-icon>
+          <span>${msg("Selected Web Captures")}</span>
+        </btrix-button>
+      </nav>
+    `;
+  };
 
   private renderActions = () => {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];

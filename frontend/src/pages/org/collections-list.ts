@@ -447,6 +447,7 @@ export class CollectionsList extends LiteElement {
             <a
               href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
               class="block text-primary hover:text-indigo-500"
+              @click=${this.navLink}
             >
               ${col.name}
             </a>
