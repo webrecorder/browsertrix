@@ -116,15 +116,16 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex justify-between items-end pb-3 mb-3 border-b">
-        <h2
-          class="flex-1 min-w-0 text-xl font-semibold leading-10 truncate mr-2"
+      <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+        <h1
+          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
         >
-          ${this.collection?.name || html`<sl-skeleton></sl-skeleton>`}
-        </h2>
+          ${this.collection?.name ||
+          html`<sl-skeleton class="w-96"></sl-skeleton>`}
+        </h1>
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      <div class="mb-5">${this.renderTabs()}</div>
+      <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
         this.resourceTab,
@@ -165,7 +166,7 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderHeader = () => html`
-    <nav class="mb-5">
+    <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
         href=${`/orgs/${this.orgId}/collections`}
@@ -252,9 +253,9 @@ export class CollectionDetail extends LiteElement {
     return html`
       <section>
         <header class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
+          <h2 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
             ${msg("Description")}
-          </h3>
+          </h2>
           ${when(
             this.isCrawler,
             () =>

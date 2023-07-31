@@ -261,8 +261,6 @@ export class CrawlDetail extends LiteElement {
 
       <div class="mb-4">${this.renderHeader()}</div>
 
-      <hr class="mb-4" />
-
       <main>
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
@@ -391,8 +389,10 @@ export class CrawlDetail extends LiteElement {
 
   private renderHeader() {
     return html`
-      <header class="md:flex justify-between items-end">
-        <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
+      <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+        <h1
+          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
+        >
           ${this.renderName()}
         </h1>
         <div
