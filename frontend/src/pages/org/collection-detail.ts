@@ -9,6 +9,8 @@ import type { Collection } from "../../types/collection";
 import type { IntersectEvent } from "../../components/observable";
 
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
+const TABS = ["replay", "web-captures"] as const;
+export type Tab = (typeof TABS)[number];
 
 @localized()
 export class CollectionDetail extends LiteElement {
@@ -20,6 +22,9 @@ export class CollectionDetail extends LiteElement {
 
   @property({ type: String })
   collectionId!: string;
+
+  @property({ type: String })
+  resourceTab?: Tab = TABS[0];
 
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -35,6 +40,17 @@ export class CollectionDetail extends LiteElement {
 
   @state()
   private isDescriptionExpanded = false;
+
+  private readonly tabLabels: Record<Tab, { icon: any; text: string }> = {
+    replay: {
+      icon: { name: "link-replay", library: "app" },
+      text: msg("Replay"),
+    },
+    "web-captures": {
+      icon: { name: "list-ul", library: "default" },
+      text: msg("Included Web Captures"),
+    },
+  };
 
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId")) {
@@ -111,27 +127,26 @@ export class CollectionDetail extends LiteElement {
   `;
 
   private renderTabs = () => {
-    const isReplay = false;
     return html`
       <nav class="flex gap-2 mb-3">
-        <btrix-button
-          variant=${isReplay ? "primary" : "neutral"}
-          ?raised=${isReplay}
-          aria-selected="${isReplay}"
-          @click=${this.navLink}
-        >
-          <sl-icon name="link-replay" library="app"></sl-icon>
-          <span>${msg("Replay")}</span>
-        </btrix-button>
-        <btrix-button
-          variant=${isReplay ? "neutral" : "primary"}
-          ?raised=${!isReplay}
-          aria-selected="${!isReplay}"
-          @click=${this.navLink}
-        >
-          <sl-icon name="list-ul"></sl-icon>
-          <span>${msg("Selected Web Captures")}</span>
-        </btrix-button>
+        ${TABS.map((tabName) => {
+          const isSelected = tabName === this.resourceTab;
+          return html`
+            <btrix-button
+              variant=${isSelected ? "primary" : "neutral"}
+              ?raised=${isSelected}
+              aria-selected="${isSelected}"
+              href=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/${tabName}`}
+              @click=${this.navLink}
+            >
+              <sl-icon
+                name=${this.tabLabels[tabName].icon.name}
+                library=${this.tabLabels[tabName].icon.library}
+              ></sl-icon>
+              ${this.tabLabels[tabName].text}</btrix-button
+            >
+          `;
+        })}
       </nav>
     `;
   };

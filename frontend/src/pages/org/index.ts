@@ -30,6 +30,7 @@ import type {
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
+import type { Tab as CollectionTab } from "./collection-detail";
 
 export type OrgTab =
   | "crawls"
@@ -45,6 +46,7 @@ type Params = {
   browserId?: string;
   artifactId?: string;
   resourceId?: string;
+  resourceTab?: string;
   artifactType?: Crawl["type"];
 };
 
@@ -359,6 +361,7 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         orgId=${this.orgId!}
         collectionId=${this.params.resourceId}
+        resourceTab=${(this.params.resourceTab as CollectionTab) || "replay"}
         ?isCrawler=${this.isCrawler}
       ></btrix-collection-detail>`;
     }
