@@ -365,11 +365,12 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3"
+            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(3,10ch)_2.5rem] gap-3"
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
             <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
+            <div class="col-span-1 text-xs">${msg("Total Size")}</div>
             <div class="col-span-1 text-xs">${msg("Total Crawls")}</div>
             <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
           </div>
@@ -441,7 +442,7 @@ export class CollectionsList extends LiteElement {
     html`<li class="mb-2 last:mb-0">
       <div class="block border rounded leading-none">
         <div
-          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(2,10ch)_2.5rem] gap-3 lg:h-10 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(3,10ch)_2.5rem] gap-3 lg:h-10 items-center"
         >
           <div class="col-span-1 md:pl-3 truncate font-semibold">
             <a
@@ -468,6 +469,14 @@ export class CollectionsList extends LiteElement {
               hour="2-digit"
               minute="2-digit"
             ></sl-format-date>
+          </div>
+          <div
+            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          >
+            <sl-format-bytes
+              value=${col.totalSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
           </div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
