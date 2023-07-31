@@ -357,6 +357,20 @@ export class Org extends LiteElement {
         ></btrix-collection-edit>`;
       }
 
+      if (this.params.artifactId) {
+        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+        // TODO abstract into breadcrumbs
+        const crawlsBaseUrl = `/orgs/${this.orgId}/collections/view/${this.params.resourceId}/web-captures`;
+
+        return html` <btrix-crawl-detail
+          .authState=${this.authState!}
+          crawlId=${this.params.artifactId}
+          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+          crawlsBaseUrl=${crawlsBaseUrl}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-crawl-detail>`;
+      }
+
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId!}

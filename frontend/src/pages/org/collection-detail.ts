@@ -1,16 +1,45 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
+import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
+import { inactiveCrawlStates } from "../../utils/crawler";
 import type { Collection } from "../../types/collection";
-import type { IntersectEvent } from "../../components/observable";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "../../types/api";
+import type { Crawl, CrawlState, Upload } from "../../types/crawler";
+import type { PageChangeEvent } from "../../components/pagination";
 
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
 const TABS = ["replay", "web-captures"] as const;
 export type Tab = (typeof TABS)[number];
+type SortField = "started" | "firstSeed" | "fileSize";
+type SortDirection = "asc" | "desc";
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  started: {
+    label: msg("Date Started"),
+    defaultDirection: "desc",
+  },
+  firstSeed: {
+    label: msg("Crawl Start URL"),
+    defaultDirection: "desc",
+  },
+  fileSize: {
+    label: msg("File Size"),
+    defaultDirection: "desc",
+  },
+};
+const ABORT_REASON_THROTTLE = "throttled";
 
 @localized()
 export class CollectionDetail extends LiteElement {
@@ -33,13 +62,30 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
+  private webCaptures?: APIPaginatedList;
+
+  @state()
   private openDialogName?: "delete";
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDescriptionExpanded = false;
 
   @state()
-  private isDescriptionExpanded = false;
+  private orderBy: {
+    field: SortField;
+    direction: SortDirection;
+  } = {
+    field: "started",
+    direction: sortableFields["started"].defaultDirection!,
+  };
+
+  @state()
+  private filterBy: Partial<Record<keyof Crawl, any>> = {
+    state: inactiveCrawlStates,
+  };
+
+  // Use to cancel requests
+  private getWebCapturesController: AbortController | null = null;
 
   private readonly tabLabels: Record<Tab, { icon: any; text: string }> = {
     replay: {
@@ -48,7 +94,7 @@ export class CollectionDetail extends LiteElement {
     },
     "web-captures": {
       icon: { name: "list-ul", library: "default" },
-      text: msg("Included Web Captures"),
+      text: msg("Web Captures"),
     },
   };
 
@@ -56,6 +102,9 @@ export class CollectionDetail extends LiteElement {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
       this.fetchCollection();
+    }
+    if (changedProperties.has("collectionId")) {
+      this.fetchWebCaptures();
     }
   }
 
@@ -75,18 +124,22 @@ export class CollectionDetail extends LiteElement {
         </h2>
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      ${this.renderTabs()}
-      <div class="my-7">${this.renderDescription()}</div>
-      ${when(
-        this.collection?.resources.length,
-        () => html`<div>${this.renderReplay()}</div>`
+      <div class="mb-5">${this.renderTabs()}</div>
+
+      ${choose(
+        this.resourceTab,
+        [
+          ["replay", this.renderOverview],
+          ["web-captures", this.renderWebCaptures],
+        ],
+
+        () => html`<btrix-not-found></btrix-not-found>`
       )}
 
       <btrix-dialog
         label=${msg("Delete Collection?")}
         ?open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
           html`Are you sure you want to delete
@@ -128,7 +181,7 @@ export class CollectionDetail extends LiteElement {
 
   private renderTabs = () => {
     return html`
-      <nav class="flex gap-2 mb-3">
+      <nav class="flex gap-2">
         ${TABS.map((tabName) => {
           const isSelected = tabName === this.resourceTab;
           return html`
@@ -264,17 +317,97 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
+  private renderOverview = () => html`
+    ${this.renderReplay()}
+    <div class="my-7">${this.renderDescription()}</div>
+  `;
+
+  private renderWebCaptures = () => html`<section>
+    ${when(
+      this.webCaptures,
+      () => {
+        const { items, page, total, pageSize } = this.webCaptures!;
+        const hasItems = items.length;
+        return html`
+          <section>
+            ${hasItems ? this.renderWebCaptureList() : this.renderEmptyState()}
+          </section>
+          ${when(
+            hasItems || page > 1,
+            () => html`
+              <footer class="mt-6 flex justify-center">
+                <btrix-pagination
+                  page=${page}
+                  totalCount=${total}
+                  size=${pageSize}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchWebCaptures({
+                      page: e.detail.page,
+                    });
+
+                    // Scroll to top of list
+                    // TODO once deep-linking is implemented, scroll to top of pushstate
+                    this.scrollIntoView({ behavior: "smooth" });
+                  }}
+                ></btrix-pagination>
+              </footer>
+            `
+          )}
+        `;
+      },
+      () => html`
+        <div class="w-full flex items-center justify-center my-12 text-2xl">
+          <sl-spinner></sl-spinner>
+        </div>
+      `
+    )}
+  </section>`;
+
+  private renderWebCaptureList() {
+    if (!this.webCaptures) return;
+
+    return html`
+      <btrix-crawl-list
+        baseUrl=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/artifact`}
+      >
+        ${this.webCaptures.items.map(this.renderWebCaptureItem)}
+      </btrix-crawl-list>
+    `;
+  }
+
+  private renderEmptyState() {
+    if (this.webCaptures?.page && this.webCaptures?.page > 1) {
+      return html`
+        <div class="border-t border-b py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("Could not find page.")}
+          </p>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="border-t border-b py-5">
+        <p class="text-center text-neutral-500">
+          ${msg("No matching web captures found.")}
+        </p>
+      </div>
+    `;
+  }
+
+  private renderWebCaptureItem = (wc: Crawl | Upload) =>
+    html`
+      <btrix-crawl-list-item .crawl=${wc}>
+        <div slot="menuTrigger" role="none"></div>
+      </btrix-crawl-list-item>
+    `;
+
   private renderReplay() {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
     return html`<section>
-      <header class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
-          ${msg("Replay")}
-        </h3>
-      </header>
       <main>
         <div class="aspect-4/3 border rounded-lg overflow-hidden">
           ${guard(
@@ -369,6 +502,51 @@ export class CollectionDetail extends LiteElement {
   private async getCollection(): Promise<Collection> {
     const data = await this.apiFetch(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  /**
+   * Fetch web captures and update internal state
+   */
+  private async fetchWebCaptures(params?: APIPaginationQuery): Promise<void> {
+    this.cancelInProgressGetWebCaptures();
+    try {
+      this.webCaptures = await this.getWebCaptures();
+    } catch (e: any) {
+      if (e === ABORT_REASON_THROTTLE) {
+        console.debug("Fetch web captures aborted to throttle");
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve web captures at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private cancelInProgressGetWebCaptures() {
+    if (this.getWebCapturesController) {
+      this.getWebCapturesController.abort(ABORT_REASON_THROTTLE);
+      this.getWebCapturesController = null;
+    }
+  }
+
+  private async getWebCaptures(
+    params?: Partial<{
+      state: CrawlState[];
+    }> &
+      APIPaginationQuery &
+      APISortQuery
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify(params || {}, {
+      arrayFormat: "comma",
+    });
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
       this.authState!
     );
 

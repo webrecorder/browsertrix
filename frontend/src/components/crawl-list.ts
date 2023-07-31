@@ -226,9 +226,8 @@ export class CrawlListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href="${this.baseUrl || `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${
-        this.crawl?.id
-      }"
+      href="${this.baseUrl ||
+      `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${this.crawl?.id}"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -521,15 +520,9 @@ export class CrawlList extends LitElement {
         <div class="col">
           <slot name="idCol">${msg("Name")}</slot>
         </div>
-        <div class="col">
-          ${this.artifactType === "upload" ? msg("Uploaded") : msg("Finished")}
-        </div>
+        <div class="col">${msg("Finished")}</div>
         <div class="col">${msg("Size")}</div>
-        <div class="col">
-          ${this.artifactType === "upload"
-            ? msg("Uploaded By")
-            : msg("Started By")}
-        </div>
+        <div class="col">${msg("Initiated By")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>

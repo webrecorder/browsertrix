@@ -230,25 +230,32 @@ export class CrawlDetail extends LiteElement {
 
     // TODO abstract into breadcrumbs
     const isWorkflowArtifact = this.crawlsBaseUrl.includes("/workflows/");
+    const isCollectionArtifact = this.crawlsBaseUrl.includes("/collections/");
+
+    let label = msg("Back to All Crawls");
+    if (isWorkflowArtifact) {
+      label = msg("Back to Crawl Workflow");
+    } else if (isCollectionArtifact) {
+      label = msg("Back to Collection");
+    } else if (this.crawl?.type === "upload") {
+      label = msg("Back to All Uploads");
+    }
 
     return html`
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href="${this.crawlsBaseUrl}?artifactType=${this.crawl?.type}"
+          href="${this.crawlsBaseUrl}${isWorkflowArtifact ||
+          isCollectionArtifact
+            ? ""
+            : `?artifactType=${this.crawl?.type}`}"
           @click=${this.navLink}
         >
           <sl-icon
             name="arrow-left"
             class="inline-block align-middle"
           ></sl-icon>
-          <span class="inline-block align-middle"
-            >${isWorkflowArtifact
-              ? msg("Back to Crawl Workflow")
-              : this.crawl?.type === "upload"
-              ? msg("Back to All Uploads")
-              : msg("Back to All Crawls")}</span
-          >
+          <span class="inline-block align-middle">${label}</span>
         </a>
       </div>
 
