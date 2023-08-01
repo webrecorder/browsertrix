@@ -57,12 +57,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.frontend_limits_cpu }}
-              memory: {{ .Values.frontend_limits_memory }}
+              memory: {{ .Values.frontend_memory }}
 
             requests:
-              cpu: {{ .Values.frontend_requests_cpu }}
-              memory: {{ .Values.frontend_requests_memory }}
+              cpu: {{ .Values.frontend_cpu }}
+              memory: {{ .Values.frontend_memory }}
 
           readinessProbe:
             httpGet:

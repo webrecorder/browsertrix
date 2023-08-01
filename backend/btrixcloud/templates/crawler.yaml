@@ -149,12 +149,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ crawler_limits_cpu }}
-              memory: {{ crawler_limits_memory }}
+              memory: {{ crawler_memory }}
 
             requests:
-              cpu: {{ crawler_requests_cpu }}
-              memory: {{ crawler_requests_memory }}
+              cpu: {{ crawler_cpu }}
+              memory: {{ crawler_memory }}
 
           {% if crawler_liveness_port and crawler_liveness_port != '0' %}
           livenessProbe:

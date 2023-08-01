@@ -55,12 +55,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.backend_limits_cpu }}
-              memory: {{ .Values.backend_limits_memory }}
+              memory: {{ .Values.backend_memory }}
 
             requests:
-              cpu: {{ .Values.backend_requests_cpu }}
-              memory: {{ .Values.backend_requests_memory }}
+              cpu: {{ .Values.backend_cpu }}
+              memory: {{ .Values.backend_memory }}
 
           startupProbe:
             httpGet:
@@ -121,12 +120,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.backend_limits_cpu }}
-              memory: {{ .Values.backend_limits_memory }}
+              memory: {{ .Values.backend_memory }}
 
             requests:
-              cpu: {{ .Values.backend_requests_cpu }}
-              memory: {{ .Values.backend_requests_memory }}
+              cpu: {{ .Values.backend_cpu }}
+              memory: {{ .Values.backend_memory }}
 
           startupProbe:
             httpGet:
