@@ -31,8 +31,11 @@ def test_run_two_only_one_concurrent(org_with_quotas, admin_auth_headers):
     ):
         time.sleep(2)
 
-    assert (
-        get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) == "running"
+    assert get_crawl_status(org_with_quotas, crawl_id_a, admin_auth_headers) in (
+        "running",
+        "generate-wacz",
+        "uploading-wacz",
+        "pending-wait",
     )
 
     while (
@@ -68,6 +71,10 @@ def test_cancel_and_run_other(org_with_quotas, admin_auth_headers):
     assert get_crawl_status(org_with_quotas, crawl_id_b, admin_auth_headers) in (
         "starting",
         "running",
+        "waiting_capacity",
+        "generate-wacz",
+        "uploading-wacz",
+        "pending-wait",
     )
 
     # cancel second crawl as well

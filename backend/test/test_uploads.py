@@ -9,6 +9,8 @@ upload_id = None
 upload_id_2 = None
 upload_dl_path = None
 
+_coll_id = None
+
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -369,6 +371,307 @@ def test_list_all_crawls(admin_auth_headers, default_org_id):
         assert item["started"]
         assert item["finished"]
         assert item["state"]
+
+
+def test_get_all_crawls_by_name(admin_auth_headers, default_org_id, admin_crawl_id):
+    """Test filtering /all-crawls by name"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?name=test2.wacz",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    items = data["items"]
+    assert items[0]["id"] == upload_id_2
+    assert items[0]["name"] == "test2.wacz"
+
+    # Add name to admin_crawl_id
+    crawl_name = "crawl name for testing"
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={"name": crawl_name},
+    )
+    assert r.status_code == 200
+
+    # Test filtering crawls by name
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?name={crawl_name}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    items = data["items"]
+    assert items[0]["id"] == admin_crawl_id
+    assert items[0]["name"] == "Admin Test Crawl"
+
+
+def test_get_all_crawls_by_first_seed(
+    admin_auth_headers, default_org_id, admin_crawl_id
+):
+    """Test filtering /all-crawls by first seed"""
+    first_seed = "https://webrecorder.net"
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?firstSeed={first_seed}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    items = data["items"]
+    assert items[0]["id"] == admin_crawl_id
+    assert items[0]["name"] == "Admin Test Crawl"
+
+
+def test_get_all_crawls_by_type(admin_auth_headers, default_org_id, admin_crawl_id):
+    """Test filtering /all-crawls by crawl type"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?crawlType=crawl",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+    for item in data["items"]:
+        assert item["type"] == "crawl"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?crawlType=upload",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+    for item in data["items"]:
+        assert item["type"] == "upload"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?crawlType=invalid",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_crawl_type"
+
+
+def test_get_all_crawls_by_user(admin_auth_headers, default_org_id, admin_user_id):
+    """Test filtering /all-crawls by userid"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?userid={admin_user_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+    items = data["items"]
+    for item in items:
+        assert item["userid"] == admin_user_id
+
+
+def test_get_all_crawls_by_cid(admin_auth_headers, default_org_id, admin_config_id):
+    """Test filtering /all-crawls by cid"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?cid={admin_config_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["cid"] == admin_config_id
+
+
+def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl_id):
+    """Test filtering /all-crawls by cid"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?state=complete,partial_complete",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 4
+    items = data["items"]
+    for item in items:
+        assert item["state"] in ("complete", "partial_complete")
+
+
+def test_get_all_crawls_by_collection_id(
+    admin_auth_headers, default_org_id, admin_config_id
+):
+    """Test filtering /all-crawls by collection id"""
+    # Create collection and add upload to it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={
+            "crawlIds": [upload_id_2],
+            "name": "all-crawls collection",
+        },
+    )
+    assert r.status_code == 200
+    global _coll_id
+    _coll_id = r.json()["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
+    assert r.json()["items"][0]["id"] == upload_id_2
+
+
+def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
+    # Sort by started, descending (default)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=started",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["total"] == 6
+    items = data["items"]
+    assert len(items) == 6
+
+    last_created = None
+    for crawl in items:
+        if last_created:
+            assert crawl["started"] <= last_created
+        last_created = crawl["started"]
+
+    # Sort by started, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=started&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_created = None
+    for crawl in items:
+        if last_created:
+            assert crawl["started"] >= last_created
+        last_created = crawl["started"]
+
+    # Sort by finished
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=finished",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_finished = None
+    for crawl in items:
+        if not crawl["finished"]:
+            continue
+        if last_finished:
+            assert crawl["finished"] <= last_finished
+        last_finished = crawl["finished"]
+
+    # Sort by finished, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=finished&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_finished = None
+    for crawl in items:
+        if not crawl["finished"]:
+            continue
+        if last_finished:
+            assert crawl["finished"] >= last_finished
+        last_finished = crawl["finished"]
+
+    # Sort by fileSize
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileSize",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_size = None
+    for crawl in items:
+        if last_size:
+            assert crawl["fileSize"] <= last_size
+        last_size = crawl["fileSize"]
+
+    # Sort by fileSize, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileSize&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_size = None
+    for crawl in items:
+        if last_size:
+            assert crawl["fileSize"] >= last_size
+        last_size = crawl["fileSize"]
+
+    # Sort by fileCount
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileCount",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_count = None
+    for crawl in items:
+        if last_count:
+            assert crawl["fileCount"] <= last_count
+        last_count = crawl["fileCount"]
+
+    # Sort by fileCount, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileCount&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+
+    last_count = None
+    for crawl in items:
+        if last_count:
+            assert crawl["fileCount"] >= last_count
+        last_count = crawl["fileCount"]
+
+    # Invalid sort value
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=invalid",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_sort_by"
+
+    # Invalid sort_direction value
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=started&sortDirection=0",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_sort_direction"
+
+
+def test_all_crawls_search_values(admin_auth_headers, default_org_id, admin_crawl_id):
+    """Test that all-crawls search values return expected results"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data == {}
+    # TODO: Fix expected values
+    assert sorted(data["names"]) == sorted(["Admin Test Crawl", "test2.wacz"])
+    assert sorted(data["descriptions"]) == sorted(["Admin Test Crawl description"])
+    assert sorted(data["firstSeeds"]) == sorted(["https://webrecorder.net/"])
+    assert len(data["crawlIds"]) == 2
+    for id_ in (admin_crawl_id, upload_id_2):
+        assert id_ in data["crawlIds"]
 
 
 def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):

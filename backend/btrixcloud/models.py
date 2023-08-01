@@ -368,6 +368,8 @@ class CrawlOutWithResources(CrawlOut):
 class UpdateCrawl(BaseModel):
     """Update crawl"""
 
+    name: Optional[str]
+    description: Optional[str]
     tags: Optional[List[str]] = []
     description: Optional[str]
 
@@ -440,8 +442,6 @@ class UploadedCrawl(BaseCrawl):
 # ============================================================================
 class UpdateUpload(UpdateCrawl):
     """Update modal that also includes name"""
-
-    name: Optional[str]
 
 
 # ============================================================================

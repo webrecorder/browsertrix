@@ -119,6 +119,12 @@ def admin_config_id(admin_crawl_id):
 
 
 @pytest.fixture(scope="session")
+def admin_userid(admin_auth_headers):
+    r = requests.get(f"{API_PREFIX}/users/me", headers=crawler_auth_headers)
+    return r.json()["id"]
+
+
+@pytest.fixture(scope="session")
 def viewer_auth_headers(admin_auth_headers, default_org_id):
     requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/add-user",
