@@ -8,7 +8,9 @@ export class NotFound extends LitElement {
   }
   render() {
     return html`
-      <div class="text-xl text-gray-400">${msg("Page not found")}</div>
+      <div class="text-xl text-gray-400 text-center">
+        ${msg("Page not found")}
+      </div>
     `;
   }
 }

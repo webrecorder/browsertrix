@@ -129,6 +129,7 @@ export class Button extends LitElement {
         raised: this.raised,
       })}
       ?disabled=${this.disabled}
+      href=${ifDefined(this.href)}
       aria-label=${ifDefined(this.label)}
       @click=${this.handleClick}
     >

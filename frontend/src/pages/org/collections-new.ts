@@ -40,7 +40,7 @@ export class CollectionsNew extends LiteElement {
   }
 
   private renderHeader = () => html`
-    <nav class="mb-5">
+    <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
         href=${`/orgs/${this.orgId}/collections`}
@@ -69,9 +69,7 @@ export class CollectionsNew extends LiteElement {
       );
 
       this.notify({
-        message: msg(
-          str`Successfully created "${data.name}" Collection.`
-        ),
+        message: msg(str`Successfully created "${data.name}" Collection.`),
         variant: "success",
         icon: "check2-circle",
         duration: 8000,
